@@ -1,0 +1,205 @@
+// ─────────────────────────────────────────────
+// ENTITIES — Karma Community Domain Layer
+// Mapped to SRS Part III § 3.2
+// ─────────────────────────────────────────────
+
+import type {
+  AccountStatus,
+  Address,
+  AuthProvider,
+  Category,
+  FollowRequestStatus,
+  ItemCondition,
+  LocationDisplayLevel,
+  MessageKind,
+  MessageStatus,
+  NotificationPreferences,
+  OnboardingState,
+  Platform,
+  PostStatus,
+  PostType,
+  PostVisibility,
+  PrivacyMode,
+  QueueReason,
+  ReportReason,
+  ReportStatus,
+  ReportTargetType,
+} from './value-objects';
+
+// ── User ──────────────────────────────────────
+
+export interface User {
+  readonly userId: string;
+  readonly authProvider: AuthProvider;
+  readonly shareHandle: string;
+  displayName: string;
+  city: string;
+  cityName: string;
+  biography: string | null;
+  avatarUrl: string | null;
+  privacyMode: PrivacyMode;
+  privacyChangedAt: string | null;
+  accountStatus: AccountStatus;
+  onboardingState: OnboardingState;
+  notificationPreferences: NotificationPreferences;
+  isSuperAdmin: boolean;
+  closureExplainerDismissed: boolean;
+  firstPostNudgeDismissed: boolean;
+  // Counters (derived, maintained by domain events)
+  itemsGivenCount: number;
+  itemsReceivedCount: number;
+  activePostsCountInternal: number;
+  followersCount: number;
+  followingCount: number;
+  readonly createdAt: string;
+  updatedAt: string;
+}
+
+// ── AuthIdentity ──────────────────────────────
+
+export interface AuthIdentity {
+  readonly authIdentityId: string;
+  readonly userId: string;
+  readonly provider: AuthProvider;
+  readonly providerSubject: string;
+  readonly createdAt: string;
+}
+
+// ── Device ───────────────────────────────────
+
+export interface Device {
+  readonly deviceId: string;
+  readonly userId: string;
+  readonly platform: Platform;
+  pushToken: string;
+  lastSeenAt: string;
+  active: boolean;
+}
+
+// ── Post ──────────────────────────────────────
+
+export interface MediaAsset {
+  readonly mediaAssetId: string;
+  readonly postId: string | null;
+  readonly path: string;
+  readonly mimeType: string;
+  readonly sizeBytes: number;
+  readonly createdAt: string;
+}
+
+export interface Recipient {
+  readonly postId: string;
+  readonly recipientUserId: string;
+  readonly markedAt: string;
+}
+
+export interface Post {
+  readonly postId: string;
+  readonly ownerId: string;
+  readonly type: PostType;
+  status: PostStatus;
+  visibility: PostVisibility;
+  title: string;
+  description: string | null;
+  category: Category;
+  address: Address;
+  locationDisplayLevel: LocationDisplayLevel;
+  itemCondition: ItemCondition | null;  // only for Give
+  urgency: string | null;               // only for Request
+  mediaAssets: MediaAsset[];
+  recipient: Recipient | null;
+  reopenCount: number;
+  deleteAfter: string | null;
+  readonly createdAt: string;
+  updatedAt: string;
+}
+
+// ── Follow ────────────────────────────────────
+
+export interface FollowEdge {
+  readonly followerId: string;
+  readonly followedId: string;
+  readonly createdAt: string;
+}
+
+export interface FollowRequest {
+  readonly requesterId: string;
+  readonly targetId: string;
+  readonly createdAt: string;
+  status: FollowRequestStatus;
+  cooldownUntil: string | null;
+}
+
+// ── Chat ──────────────────────────────────────
+
+export interface Chat {
+  readonly chatId: string;
+  readonly participantIds: [string, string];
+  readonly anchorPostId: string | null;
+  readonly isSupportThread: boolean;
+  lastMessageAt: string | null;
+  readonly createdAt: string;
+}
+
+export interface Message {
+  readonly messageId: string;
+  readonly chatId: string;
+  readonly senderId: string | null;  // null = system message
+  readonly kind: MessageKind;
+  body: string;
+  systemPayload: Record<string, unknown> | null;
+  status: MessageStatus;
+  readonly createdAt: string;
+  deliveredAt: string | null;
+  readAt: string | null;
+}
+
+// ── Block ─────────────────────────────────────
+
+export interface Block {
+  readonly blockerId: string;
+  readonly blockedId: string;
+  readonly createdAt: string;
+}
+
+// ── Report ────────────────────────────────────
+
+export interface Report {
+  readonly reportId: string;
+  readonly reporterId: string;
+  readonly targetType: ReportTargetType;
+  readonly targetId: string | null;
+  readonly reason: ReportReason;
+  note: string | null;
+  status: ReportStatus;
+  readonly createdAt: string;
+  resolvedAt: string | null;
+}
+
+// ── Moderation ────────────────────────────────
+
+export interface ModerationQueueEntry {
+  readonly entryId: string;
+  readonly targetType: string;
+  readonly targetId: string;
+  readonly reason: QueueReason;
+  readonly createdAt: string;
+  resolvedAt: string | null;
+}
+
+// ── Stats ─────────────────────────────────────
+
+export interface CommunityStats {
+  usersTotal: number;
+  postsOpenPublic: number;
+  postsClosedDeliveredTotal: number;
+  asOf: string;
+}
+
+// ── City (reference) ──────────────────────────
+
+export interface City {
+  readonly cityId: string;
+  readonly nameHe: string;
+  readonly nameEn: string;
+}

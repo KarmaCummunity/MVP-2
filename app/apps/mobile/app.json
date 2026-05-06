@@ -1,0 +1,60 @@
+{
+  "expo": {
+    "name": "קארמה קהילה",
+    "slug": "karma-community",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "light",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#F97316"
+    },
+    "assetBundlePatterns": [
+      "**/*"
+    ],
+    "ios": {
+      "supportsTablet": false,
+      "bundleIdentifier": "com.karmacommunity.app",
+      "infoPlist": {
+        "NSCameraUsageDescription": "נדרש לצלם תמונות לפוסטים",
+        "NSPhotoLibraryUsageDescription": "נדרש לבחור תמונות לפוסטים"
+      }
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#F97316"
+      },
+      "package": "com.karmacommunity.app",
+      "permissions": [
+        "android.permission.CAMERA",
+        "android.permission.READ_EXTERNAL_STORAGE"
+      ]
+    },
+    "web": {
+      "bundler": "metro",
+      "output": "single",
+      "favicon": "./assets/favicon.png"
+    },
+    "plugins": [
+      "expo-dev-client",
+      "expo-router",
+      "expo-secure-store",
+      [
+        "expo-image-picker",
+        {
+          "photosPermission": "נדרש לבחור תמונות לפוסטים"
+        }
+      ],
+      "expo-localization",
+      "expo-font"
+    ],
+    "newArchEnabled": true,
+    "experiments": {
+      "typedRoutes": true
+    },
+    "scheme": "karmacommunity"
+  }
+}

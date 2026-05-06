@@ -1,0 +1,80 @@
+---
+description: SSOT pointers + Clean-Architecture invariants for Karma Community MVP
+alwaysApply: true
+---
+
+# Karma Community — Architecture & SSOT Rules
+
+## Two sources of truth (read before any architectural change)
+
+1. **`docs/SSOT/SRS.md`** — what the system must do (functional + non-functional requirements). Every change must trace to an `FR-*` ID.
+2. **`docs/SSOT/CODE_QUALITY.md`** — how the system is built. *Currently missing — see PROJECT_STATUS §6 TD-4.* In its absence, the architecture rules below are authoritative.
+
+The execution-state SSOT (what is done / what's next) is **`docs/SSOT/PROJECT_STATUS.md`** — see [`project-status-tracking.mdc`](./project-status-tracking.mdc).
+
+## Verification gate (mandatory)
+
+Every response that contains code MUST start with:
+
+```
+Mapped to SRS: [Requirement ID]. Refactor logged: [Yes/No/NA].
+```
+
+If no requirement applies (tooling, docs, infra-only), use `NA`.
+
+## Clean Architecture boundaries
+
+```
+infrastructure-supabase  →  application  →  domain
+       (impl)              (use cases)     (pure)
+```
+
+- **`packages/domain/`** — entities, value objects, invariants. **Zero dependencies** on `node_modules` (besides `typescript` dev-dep), zero imports from `application` or `infrastructure-*`. Entities prefer `readonly` fields.
+- **`packages/application/`** — use cases (one file per use case), repository / service ports (`I*.ts` interfaces). May depend on `@kc/domain`. **No I/O, no Supabase, no React.**
+- **`packages/infrastructure-supabase/`** — adapters that implement application ports. Owns Supabase, network, storage. **Never imported from `domain` or `application`.**
+- **`packages/ui/`** — design tokens, shared components. May depend on React Native primitives but not on `domain` business rules.
+- **`apps/mobile/`** — composition root: instantiates infrastructure, injects into use cases, wires to React.
+
+If you catch yourself importing `@kc/infrastructure-supabase` or `@supabase/supabase-js` from a `domain` or `application` file, **stop and revert** — push the integration to a port + adapter.
+
+## Hard constraints
+
+- **File size cap**: ≤ 200 lines per file. Split if you exceed.
+- **Indentation cap**: ≤ 3 levels. Extract if deeper.
+- **Cyclomatic complexity**: keep functions cohesive; prefer many small functions to one large one.
+- **No speculative abstractions** (YAGNI). No "nice-to-have" generalization unless an FR demands it.
+- **Minimal-footprint edits**: prefer atomic, localized changes. Don't rewrite a function to fix one branch.
+
+## Error handling
+
+- Domain code throws domain-specific error classes (e.g., `AuthError`, `PostError`). Never raw `Error`.
+- Application/infrastructure layers catch domain errors and map to user-visible states (UI alerts, toasts) or HTTP responses (Edge Functions).
+- Stack traces never leak to the UI or to API consumers.
+
+## Testing protocol
+
+- Any new domain or application code ships with unit tests beside it (`__tests__/` directory inside the package).
+- Tests cover both happy path and at least one boundary / error condition.
+- Test runner: `vitest`. Run with `pnpm --filter @kc/<package> test`.
+
+## "Propose and Proceed" rule
+
+When you spot tech debt outside the immediate scope:
+
+1. Append a `[PENDING REFACTOR]: <one-line desc>` entry to `docs/SSOT/PROJECT_STATUS.md` §6.
+2. (Once `CODE_QUALITY.md` exists, mirror there.)
+3. Continue the original task. **Do not refactor inline.**
+
+## Draft / POC mode
+
+Active only when the user prompt explicitly says `DRAFT` or `POC`. In that mode:
+
+- SRS-mapping verification is bypassed.
+- Architecture boundaries (above) remain 100% enforced.
+- Tests still required for any code that has a clear correctness contract.
+
+## Documentation language
+
+- All product / requirements docs (`PRD_MVP_SSOT_/`, `SRS/`) are bilingual: PRD in Hebrew (RTL), SRS in English.
+- All code comments and engineering docs (`PROJECT_STATUS.md`, `CODE_QUALITY.md`, this rule, ADRs) are in **English**.
+- UI strings live in `apps/mobile/src/i18n/he.ts` (Hebrew only for MVP per `R-MVP-Core-4`).

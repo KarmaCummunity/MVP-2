@@ -1,0 +1,277 @@
+# 2.7 Direct Messaging
+
+[← back to Part II index](./README.md)
+
+Prefix: `FR-CHAT-*`
+
+---
+
+## Scope
+
+1-on-1 text-only chat between two users:
+
+- Inbox list and search.
+- Conversation screen with text composition.
+- Read receipts.
+- Three entry points (post detail, user profile, support from Settings).
+- Auto-message templating for post-anchored conversations.
+- Block/report integration.
+- Special handling for the Super Admin chat (anchored support thread).
+
+Out of scope:
+
+- Group chat, image / voice / video / location / file attachments, reactions, post sharing — all explicitly excluded by `R-MVP-Chat-1` and `R-MVP-Chat-2`.
+
+---
+
+## FR-CHAT-001 — Inbox list
+
+**Description.**
+The list of all of my conversations, sorted by latest activity.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.2, `05_Screen_UI_Mapping.md` §4.1.
+
+**Acceptance Criteria.**
+- AC1. Each row: counterpart avatar + name, latest message preview (1 line), relative timestamp, unread indicator.
+- AC2. Sort by `last_message_at DESC`. Pinning is **not** in MVP.
+- AC3. Search by counterpart name (case-insensitive prefix match) is provided in the top bar.
+- AC4. Pagination: 30 conversations per page; infinite scroll.
+- AC5. The Super Admin support thread (when present) is **not** pinned; it appears in the same chronological list as any other thread.
+
+**Edge Cases.**
+- A counterpart deleted their account: the row shows a "Deleted user" placeholder; the thread remains accessible (`D-14`).
+- A counterpart is now blocked by me: the row is filtered out unless I open the blocked-users management screen (`FR-SETTINGS-005`).
+
+**Related.** Screens: 4.1 · Domain: `Chat`.
+
+---
+
+## FR-CHAT-002 — Conversation screen
+
+**Description.**
+1-on-1 conversation thread with composition controls.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.3, `05_Screen_UI_Mapping.md` §4.2.
+
+**Acceptance Criteria.**
+- AC1. Header: back button, counterpart avatar + name, `⋮` menu (`View profile`, `Block`, `Report conversation`).
+- AC2. Body: message bubbles (mine right-aligned in LTR, left-aligned in RTL; opposite for counterpart). Each bubble shows timestamp on tap.
+- AC3. Composer: single-line auto-growing text input + send button. **No** attachment buttons (`R-MVP-Chat-2`).
+- AC4. Read receipt: a `✓✓` indicator is shown next to a sent message once the counterpart's client confirms reading. Read receipts cannot be turned off in MVP (`R-MVP-Chat-5`).
+- AC5. Maximum message length: 2,000 characters. Inputs longer are blocked with an inline counter.
+
+**Related.** Screens: 4.2 · Domain: `Chat`, `Message`.
+
+---
+
+## FR-CHAT-003 — Send message
+
+**Description.**
+Submitting the composer creates a `Message` and pushes it to the recipient.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.3.
+
+**Acceptance Criteria.**
+- AC1. The message is appended optimistically to the local thread; on server ack, it transitions from `pending` to `delivered`; on read it transitions to `read`.
+- AC2. End-to-end delivery latency target ≤500 ms at p95 (`NFR-PERF-006`); the indicator transitions accordingly.
+- AC3. On network failure, the bubble shows a retry icon; tapping retries.
+- AC4. The recipient receives a notification (`FR-NOTIF-001`) — Critical category — unless their notification preferences disable it.
+
+**Edge Cases.**
+- Sending to a blocked-by-counterpart user fails silently from my side (the message ack returns success; the counterpart never sees it). This intentional opacity is part of `R-MVP-Privacy-3`.
+- Sending to a deleted user fails with a friendly error: *"This user is no longer available."*
+
+**Related.** Domain: `Message`, `Notification`.
+
+---
+
+## FR-CHAT-004 — Conversation context anchoring
+
+**Description.**
+Conversations may be anchored to a specific post for purposes of recipient-picker logic and the auto-message.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.4, `04_User_Flows.md` Flow 6.
+- Constraints: `R-MVP-Chat-3`.
+
+**Acceptance Criteria.**
+- AC1. A `Chat` between two users may have an `anchor_post_id`. Multiple anchors per user pair are not allowed in MVP — the same conversation is reused regardless of which post was the entry trigger; the first anchor wins, but newer anchors are tracked as `Chat.anchor_history` for analytics.
+- AC2. The conversation can also be opened directly from the counterpart's profile (`FR-CHAT-006`); in that case `anchor_post_id` is null.
+- AC3. The Super Admin support thread (`FR-CHAT-007`) sets `is_support_thread = true` to mark it for special UI treatment in the future, even if it does not differ functionally in MVP.
+
+**Edge Cases.**
+- The anchored post is later deleted: existing messages remain, but a banner appears at the top of the thread: *"The original post is no longer available."*
+
+**Related.** Domain: `Chat`, `Post`.
+
+---
+
+## FR-CHAT-005 — Auto-message for post-anchored chats
+
+**Description.**
+When a conversation is opened via a post's "Send Message" CTA, the composer is pre-filled with a templated message.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.5, `04_User_Flows.md` Flow 6.
+- Constraints: `R-MVP-Chat-4`.
+
+**Acceptance Criteria.**
+- AC1. Template (Hebrew baseline, localized via i18n): *"Hi! I saw your post about [post title]. I'd like to know more."*
+- AC2. The template is editable before sending; sending unchanged is allowed.
+- AC3. Sending the auto-message creates a real `Message` row (no special "auto" type) and emits the analytics event `chat_first_message` with `from_post = true`.
+- AC4. If the counterpart has already received this exact auto-message before for the same post (within the same `Chat`), opening the post and tapping "Send Message" deep-links to the existing thread without re-prefilling.
+
+**Related.** Screens: 4.2 · Domain: `Chat`, `Message`.
+
+---
+
+## FR-CHAT-006 — Open chat from a profile
+
+**Description.**
+The "Send Message" CTA on Other Profile opens or resumes a conversation with that user.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.4.
+- Constraints: `R-MVP-Chat-3`.
+
+**Acceptance Criteria.**
+- AC1. Available regardless of the target's privacy mode (DMs are not gated by follow approval).
+- AC2. If a `Chat` already exists with this user, the existing thread is opened; otherwise a new `Chat` is created with `anchor_post_id = null`.
+- AC3. The composer is empty (no auto-message).
+
+**Related.** Screens: 3.3.
+
+---
+
+## FR-CHAT-007 — Open support thread from Settings
+
+**Description.**
+The "Report an issue" CTA in Settings opens or resumes the user's chat thread with the Super Admin.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.4 (3rd entry point), §3.5.
+- Constraints: `R-MVP-Chat-3`.
+
+**Acceptance Criteria.**
+- AC1. Resolves the Super Admin's `User` record by the canonical email `karmacommunity2.0@gmail.com`.
+- AC2. If a `Chat` between me and the Super Admin already exists, that thread is reused; otherwise a new one is created with `is_support_thread = true`.
+- AC3. The Settings flow that triggers this also injects a system-message into the thread summarizing the report (`FR-MOD-002`); after injection, the user is dropped onto the conversation screen to continue freely.
+
+**Related.** Screens: 5.1, 4.2.
+
+---
+
+## FR-CHAT-008 — Restricted entry-points policy
+
+**Description.**
+A chat cannot be opened "out of the blue" from arbitrary surfaces.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.4.
+- Constraints: `R-MVP-Chat-3`.
+
+**Acceptance Criteria.**
+- AC1. The only valid entry points to a new chat are: (a) Post Detail (`FR-CHAT-005`), (b) Other Profile (`FR-CHAT-006`), (c) Settings → Report an Issue (`FR-CHAT-007`).
+- AC2. There is no "Compose new chat" button anywhere in the app.
+- AC3. Resuming an existing chat is allowed from the Inbox (`FR-CHAT-001`).
+
+---
+
+## FR-CHAT-009 — Block / unblock effects on chat
+
+**Description.**
+Blocking a counterpart filters and gates chat behavior.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.5.
+- Constraints: `R-MVP-Privacy-3`.
+
+**Acceptance Criteria.**
+- AC1. When I block a user, our existing `Chat` (if any) is hidden from my Inbox; the counterpart still sees the thread but cannot send messages to me.
+- AC2. When I unblock the user (per `D-11`), the thread reappears in my Inbox; the counterpart's send capability is restored.
+- AC3. The counterpart never receives an explicit notification that I blocked them; their send attempts succeed-locally and remain undelivered.
+
+**Related.** Domain: `Block`, `Chat`.
+
+---
+
+## FR-CHAT-010 — Reporting a conversation
+
+**Description.**
+Reporting from the conversation `⋮` menu treats the entire thread as the report target.
+
+**Source.**
+- PRD: `04_User_Flows.md` Flow 9.A.
+
+**Acceptance Criteria.**
+- AC1. The Report modal (`FR-MOD-001`) opens with `target_type = chat` and `target_id = chat.id`.
+- AC2. The Super Admin's chat receives a system message linking to the conversation snapshot and reason (`FR-ADMIN-001`).
+
+**Related.** Domain: `Report`.
+
+---
+
+## FR-CHAT-011 — Read receipts
+
+**Description.**
+A message is marked `read` when the recipient's conversation screen renders it for the first time.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.3.
+- Constraints: `R-MVP-Chat-5`.
+
+**Acceptance Criteria.**
+- AC1. The read transition is performed server-side on a "viewed" event from the recipient's client; client-side rendering alone is not sufficient.
+- AC2. Bulk-read API: opening a thread with N unread messages emits a single batch event to mark them all read.
+- AC3. Read receipts cannot be disabled in MVP.
+
+**Related.** Domain: `Message.status`.
+
+---
+
+## FR-CHAT-012 — Unread badge on top bar
+
+**Description.**
+The chat icon in the top bar carries a badge with the unread-message count.
+
+**Source.**
+- PRD: `06_Navigation_Structure.md` §6.2.
+
+**Acceptance Criteria.**
+- AC1. The badge shows the total unread message count across all conversations, capped visually at "9+".
+- AC2. The count updates within `NFR-PERF-005` of new messages arriving via Realtime.
+- AC3. Opening a thread updates the count immediately on the local client (optimistic) and reconciles with server upon ack.
+
+**Related.** Domain: `Chat`, `Message`.
+
+---
+
+## FR-CHAT-013 — Conversation retention after account deletion
+
+**Description.**
+When one party deletes their account, the other party retains the thread with a placeholder.
+
+**Source.**
+- Decisions: `D-14`.
+- Constraints: `R-MVP-Privacy-6`.
+
+**Acceptance Criteria.**
+- AC1. When a `User` is hard-deleted, the messages they sent are kept in the thread for the counterpart but their identity is replaced with a `Deleted user` placeholder (with a generic avatar).
+- AC2. The deleted user's own messages cannot be edited, replied to, or quoted; the thread is read-only from the counterpart's side **except** that they can still send messages — those messages are accepted and persisted but never delivered (no recipient).
+- AC3. After 90 days of read-only state, the thread is auto-archived (hidden from Inbox unless the user opens the Archived view in V1.5+; not part of MVP, so the thread stays visible but stale).
+
+**Edge Cases.**
+- The counterpart re-registers with the same identifier after the 30-day cooldown (`FR-AUTH-016`): they get a fresh account; the old thread does not link to them.
+
+**Related.** Domain: `Chat`, `Message`, `User`.
+
+---
+
+## Change Log
+
+| Version | Date | Summary |
+| ------- | ---- | ------- |
+| 0.1 | 2026-05-05 | Initial draft from PRD §3.4 and Decisions D-11, D-14. |

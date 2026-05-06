@@ -1,0 +1,81 @@
+---
+description: MANDATORY — every agent that touches a feature must read and update docs/SSOT/PROJECT_STATUS.md
+alwaysApply: true
+---
+
+# Project Status Tracking — Mandatory Workflow
+
+`docs/SSOT/PROJECT_STATUS.md` is the **execution-state SSOT**. Every agent (human or AI) that adds, fixes, or modifies a feature MUST keep it in sync.
+
+## Before you start any feature work
+
+1. **Read** `docs/SSOT/PROJECT_STATUS.md` — confirm the feature isn't already done, and pick the highest-priority pending item per §2 if no specific feature was assigned.
+2. **Read** the matching `FR-*` requirement in `docs/SSOT/SRS/02_functional_requirements/`.
+3. **Move** the feature in §2 from `⏳ Planned` → `🟡 In progress` and update §3 (Sprint Board).
+
+## While working
+
+- If you discover technical debt outside scope, append `[PENDING REFACTOR]` to §6 of `PROJECT_STATUS.md` (and to `docs/SSOT/CODE_QUALITY.md` once it exists). Do not refactor inline.
+- If a product/architecture decision is made on the fly, append it to §5 (and mirror to `SRS/appendices/C_decisions_log.md`).
+
+## Before you call the work done
+
+You MUST update `docs/SSOT/PROJECT_STATUS.md` in the same change-set as your code:
+
+1. **§2 Backlog**: flip the status to `🟢 Done` (or `🟡 In progress` if partial).
+2. **§4 Completed Features Log**: append a new entry at the top with:
+   - SRS IDs covered + PRD anchor
+   - Completed date (ISO)
+   - Branch / commit ref
+   - Files added / changed
+   - Tests run + result
+   - AC checklist verified
+   - Known gaps deferred (with backlog priority band)
+3. **§1 Snapshot**: bump `Last Updated`, completion %, counters.
+4. **§3 Sprint Board**: clear the in-progress slot, set "Up next" to the new highest-priority pending item.
+
+## Verification gate (already enforced by user rules)
+
+Every code-bearing response must prefix:
+
+```
+Mapped to SRS: [Requirement ID]. Refactor logged: [Yes/No/NA].
+```
+
+## What "touching a feature" means
+
+Any of:
+- Creating new domain/application/infrastructure code that maps to an `FR-*`.
+- Editing a screen, hook, or store tied to an `FR-*`.
+- Replacing mock data with real repository calls.
+- Fixing a defect in a feature already listed in §4.
+- Adding tests that change the AC-verified set for a feature.
+
+## What does NOT need a status update
+
+- Pure tooling changes (CI config, linter rules, dependency bumps with no behavior change).
+- Documentation-only edits to `SRS/`, `PRD_MVP_SSOT_/`, or this rule.
+- Hotfixes that don't change any AC of an `FR-*`.
+
+## Quick template for §4 entry
+
+```markdown
+### ✅ FR-XXX-NNN — <short title>
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-XXX-NNN |
+| PRD anchor | `0X_File.md` §X.Y |
+| Completed | YYYY-MM-DD |
+| Branch / commit | <ref> |
+| Files added | ... |
+| Files changed | ... |
+| Tech debt logged | TD-N (see §6) |
+| Tests | <command> — <result> |
+| AC verified | AC1–AC<n> |
+| Known gaps | <pointer to backlog band> |
+```
+
+## If you cannot update PROJECT_STATUS.md
+
+Stop. Either you don't have write access, the feature isn't tracked, or scope is unclear. Surface the issue to the user before proceeding — do not silently skip the update.

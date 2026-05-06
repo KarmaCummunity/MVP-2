@@ -1,0 +1,122 @@
+// ─────────────────────────────────────────────
+// VALUE OBJECTS — Karma Community Domain Layer
+// Mapped to SRS Part III § 3.3
+// ─────────────────────────────────────────────
+
+// ── Authentication ────────────────────────────
+
+export type AuthProvider = 'google' | 'apple' | 'phone' | 'email';
+
+export type Platform = 'ios' | 'android' | 'web';
+
+// ── User ──────────────────────────────────────
+
+export type PrivacyMode = 'Public' | 'Private';
+
+export type AccountStatus =
+  | 'pending_verification'
+  | 'active'
+  | 'suspended_for_false_reports'
+  | 'suspended_admin'
+  | 'banned'
+  | 'deleted';
+
+export type OnboardingState =
+  | 'pending_basic_info'
+  | 'pending_avatar'
+  | 'completed';
+
+// ── Post ──────────────────────────────────────
+
+export type PostType = 'Give' | 'Request';
+
+export type PostStatus =
+  | 'open'
+  | 'closed_delivered'
+  | 'deleted_no_recipient'
+  | 'expired'
+  | 'removed_admin';
+
+export type PostVisibility = 'Public' | 'FollowersOnly' | 'OnlyMe';
+
+export type LocationDisplayLevel = 'CityOnly' | 'CityAndStreet' | 'FullAddress';
+
+export type ItemCondition = 'New' | 'LikeNew' | 'Good' | 'Fair';
+
+export type Category =
+  | 'Furniture'
+  | 'Clothing'
+  | 'Books'
+  | 'Toys'
+  | 'BabyGear'
+  | 'Kitchen'
+  | 'Sports'
+  | 'Electronics'
+  | 'Tools'
+  | 'Other';
+
+// Hebrew labels for UI
+export const CATEGORY_LABELS: Record<Category, string> = {
+  Furniture: 'רהיטים',
+  Clothing: 'בגדים',
+  Books: 'ספרים',
+  Toys: 'משחקים',
+  BabyGear: 'ציוד תינוקות',
+  Kitchen: 'מטבח',
+  Sports: 'ספורט',
+  Electronics: 'חשמל',
+  Tools: 'כלי עבודה',
+  Other: 'אחר',
+};
+
+export const ALL_CATEGORIES: Category[] = [
+  'Furniture', 'Clothing', 'Books', 'Toys', 'BabyGear',
+  'Kitchen', 'Sports', 'Electronics', 'Tools', 'Other',
+];
+
+// ── Chat ──────────────────────────────────────
+
+export type MessageKind = 'user' | 'system';
+
+export type MessageStatus = 'pending' | 'delivered' | 'read';
+
+// ── Follow ────────────────────────────────────
+
+export type FollowRequestStatus = 'pending' | 'accepted' | 'rejected' | 'cancelled';
+
+// ── Moderation ────────────────────────────────
+
+export type ReportReason = 'Spam' | 'Offensive' | 'Misleading' | 'Illegal' | 'Other';
+
+export type ReportTargetType = 'post' | 'user' | 'chat' | 'none';
+
+export type ReportStatus = 'open' | 'confirmed_violation' | 'dismissed_no_violation';
+
+export type QueueReason = 'excessive_reopens' | 'forbidden_keyword' | 'manual_flag';
+
+// ── Address value object ──────────────────────
+
+export interface Address {
+  readonly city: string;   // city slug, e.g. "tel-aviv"
+  readonly cityName: string; // display name, e.g. "תל אביב"
+  readonly street: string;
+  readonly streetNumber: string;
+}
+
+export function createAddress(raw: {
+  city: string;
+  cityName: string;
+  street: string;
+  streetNumber: string;
+}): Address {
+  if (!raw.city) throw new Error('Address: city is required');
+  if (!raw.cityName) throw new Error('Address: cityName is required');
+  return { ...raw };
+}
+
+// ── Notification preferences ──────────────────
+
+export interface NotificationPreferences {
+  critical: boolean;
+  social: boolean;
+}

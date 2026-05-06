@@ -1,0 +1,30 @@
+{
+  "extends": "expo/tsconfig.base",
+  "compilerOptions": {
+    "strict": true,
+    "paths": {
+      "@kc/domain": [
+        "../../packages/domain/src/index.ts"
+      ],
+      "@kc/application": [
+        "../../packages/application/src/index.ts"
+      ],
+      "@kc/infrastructure-supabase": [
+        "../../packages/infrastructure-supabase/src/index.ts"
+      ],
+      "@kc/ui": [
+        "../../packages/ui/src/index.ts"
+      ],
+      "@/*": [
+        "./src/*"
+      ]
+    }
+  },
+  "include": [
+    "**/*.ts",
+    "**/*.tsx",
+    ".expo/types/**/*.d.ts",
+    "expo-env.d.ts",
+    ".expo/types/**/*.ts"
+  ]
+}
