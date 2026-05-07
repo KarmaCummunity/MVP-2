@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (P0.4-BE — SupabasePostRepository adapter; P0.3.c — FR-AUTH-015 soft gate wired into create-post publish) |
+| **Last Updated** | 2026-05-08 (P0.4-BE adapter + P0.3.c soft gate merged; audit hygiene — TD-41..43 captured + `CODE_AUDIT_2026-05-07.md` retired; P0.4-FE → In progress) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -30,11 +30,11 @@ This document is the **single source of truth for project execution state**. It 
 | ------ | ----- |
 | MVP completion (rough) | **~23%** (UI scaffolding + 2 auth paths + guest preview + onboarding slices A + C; DB schema applied; Posts repo adapter (BE) — FE wiring still mock-backed) |
 | Features 🟢 done | 4 |
-| Features 🟡 in progress | 2 (P0.3 — slice B remains; P0.4 — BE adapter merged, FE pending) |
+| Features 🟡 in progress | 2 (P0.3 — slice B remains; P0.4-FE — feed UI + create form) |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 4 (P0.3 slice B; P0.4-FE; P0.5; P0.6) |
+| P0 critical features remaining | 3 (P0.3 slice B; P0.5 chat; P0.6 closure) — P0.4-FE in progress |
 | Test coverage | use-case tests for `auth.*` (incl. Google + onboarding), feed selector |
-| Open tech-debt items | 4 |
+| Open tech-debt items | 35 (1 partial) |
 
 ### What works end-to-end today
 
@@ -114,7 +114,8 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Done | P0.2 — Database schema + RLS (all migrations 0001–0008 applied) | — | 2026-05-07 | 2026-05-07 |
 | Done | P0.4-BE — Posts adapter (Supabase) | agent-be | 2026-05-08 | 2026-05-08 |
 | In progress | P0.3 — Onboarding wizard (slices A + C merged; B = photo upload remains) | — | 2026-05-07 | — |
-| Up next | P0.4-FE — Feed UI + Create form (consumes adapter) | — | — | — |
+| In progress | P0.4-FE — Feed UI + Create form (consumes adapter, image upload, mock retirement) | agent-fe | 2026-05-08 | — |
+| Up next | P0.5 — Direct chat with realtime | — | — | — |
 
 ---
 
@@ -288,7 +289,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-9 | `android/` is gitignored (CNG workflow). Must run `expo run:android` with `JAVA_HOME=.../temurin-17.jdk`. Pinned in `package.json android` script. If CI added, set `JAVA_HOME` env var there too. | Low | 2026-05-06 | Open |
 | TD-10 | `AuthSession.displayName`/`avatarUrl` are an interim source for "My Profile" header (FR-AUTH-003 AC5). Once P0.2 lands and a real `Profile` table exists, the screen must read from `Profile` and these `AuthSession` fields become first-render fallback only. | Low | UX polish 2026-05-07 | Open |
 | TD-11 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (the post row is hidden by RLS, so its image paths are not enumerable). Replace with per-object signed URLs (or a private bucket + sign-on-fetch) once we serve at scale or once anyone audits the privacy story. | Low | P0.2.b 2026-05-07 | Open |
-| TD-12 | **Audit baseline 2026-05-07** — full review of code vs PRD/SRS produced 49 findings across P0/P1/P2/P3. See [`CODE_AUDIT_2026-05-07.md`](./CODE_AUDIT_2026-05-07.md). The TD rows below mirror that audit's individual items. | High | Audit 2026-05-07 | Open |
+| TD-12 | **Audit baseline 2026-05-07** — full review of code vs PRD/SRS produced 49 findings across P0/P1/P2/P3. All 49 findings are tracked as TD-13..TD-44 in this section + §2 backlog rows; final 3 gaps captured 2026-05-08 as TD-41..TD-43. Source file `CODE_AUDIT_2026-05-07.md` retired 2026-05-08 once every finding had a live owner. AUDIT-IDs cited in TD descriptions remain as historical provenance markers. | Low | Audit 2026-05-07 | ✅ Resolved 2026-05-08 |
 | TD-13 | No `IPostRepository` Supabase adapter — port declared, no implementation. Mock data still consumed by feed/create/post detail. (AUDIT-P0-01) | High | Audit 2026-05-07 | 🟡 Partial — adapter ships in P0.4-BE 2026-05-08; close/reopen remain `not_implemented('P0.6')` until closure slice; FE wiring still mock-backed until P0.4-FE merges |
 | TD-14 | No `IUserRepository` Supabase adapter; profile + user-detail screens use `MOCK_USER`. (AUDIT-P0-02) | High | Audit 2026-05-07 | Open (P0.4 / P2.4) |
 | TD-15 | No `IChatRepository` Supabase adapter; chat list + thread use `MOCK_MESSAGES`. (AUDIT-P0-03) | High | Audit 2026-05-07 | Open (P0.5) |
@@ -318,6 +319,9 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-39 | **Internal counter columns leak to non-owner viewers of Public profiles.** 0001's `users_select_public` policy + the row-level grant let any authenticated client read `active_posts_count_internal`, `items_given_count`, `items_received_count`, `posts_created_total`, `false_reports_count`, etc. on Public+active profiles. A non-owner can compute `internal − public_open − followers_only_open` to infer the existence of `OnlyMe` posts, violating FR-PROFILE-013 AC4's "**never** reveals" system-level guarantee, and FR-STATS-006 AC1's "stats screen never exposes data about other users" intent. Schema-level fix is awkward (Postgres column-grants apply per role *before* RLS, so revoking the grant from `authenticated` would also break the owner's own self-read). The correct fix is application-layer: the `IUserRepository` Supabase adapter (planned P2.4) MUST call `active_posts_count_for_viewer(owner, viewer)` for non-self reads and never project the raw `_internal` counter into Other-Profile responses. Add a lint/test to prevent regressions when the adapter is written. Schema-level reinforcement (a `users_public` view + revoke direct SELECT) is a possible future hardening but not blocking. | Med | P0.2.f1 audit 2026-05-07 | Open |
 | TD-40 | `SupabaseUserRepository` is a P0.3.a slice stub — only `getOnboardingState`, `setBasicInfo`, `setOnboardingState` are wired against `public.users`. The remaining 19 `IUserRepository` methods throw `not_implemented` and must be filled in during P0.4 (`findByAuthIdentity`, `findById`), P1.1 (follows + follow-requests), P1.4 (blocks), P2.4 (`update`, `findByHandle`, `delete`). Adapter file: `app/packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts`. The `not_implemented` errors include the slice that owns each method so callers know where to look. | Med | P0.3.a 2026-05-07 | Open |
 | TD-50 | `SupabasePostRepository` and `SupabaseAuthService` have no adapter-level tests (only `pnpm typecheck` + downstream use-case fakes guard them). Pure helpers (`mapPostRow`, `cursor.ts`, `mapAuthError`) deserve unit tests. Adding vitest to `@kc/infrastructure-supabase` is a small, focused slice. | Med | P0.4-BE 2026-05-08 | Open |
+| TD-41 | **AUDIT-X-01** — `is_blocked()` and `is_following()` are `SECURITY DEFINER` functions that bypass RLS (intentional, per P0.2.c — see §4 entry). A predicate defect here would silently break the privacy contract: a blocked user could see posts, or a non-follower could see `FollowersOnly` content, with no RLS error to flag it. Mitigation: add SQL probes (e.g. fixtures + assertions inside a vitest suite under `@kc/infrastructure-supabase`) covering: (a) `is_blocked(A,B)` returns true when A blocks B, (b) `is_following(A,B)` honors `accepted` follows but not `pending` ones, (c) `is_post_visible_to()` short-circuits on either side of a block. To wire when P0.4-FE first exercises FollowersOnly visibility paths end-to-end. | Med | Audit 2026-05-07 (X-01) | Open |
+| TD-42 | **AUDIT-P2-08** — Counter cards in `apps/mobile/app/(tabs)/profile.tsx` render literal `0` rather than reading from `users.followers_count`, `users.following_count`, `users.items_given_count`, `users.items_received_count`, and `active_posts_count_for_viewer(owner, viewer)`. The triggers shipped in P0.2.f and the columns are populated, but the UI was never bound. Resolve as part of P0.4-FE (My Profile slice — once `IUserRepository.findById` is wired) or split into P2.4 if the FE plan grows. Watch out for FR-PROFILE-013 / TD-39 — non-owner viewers must read via `active_posts_count_for_viewer()`, never the raw `_internal` column. | Low | Audit 2026-05-07 (P2-08) | Open |
+| TD-43 | **AUDIT-P3-07** — `docs/SSOT/SRS.md` Last-Updated header still shows `2026-05-05`, but new ACs were added on 2026-05-07 per the §4 "UX polish" entry (FR-AUTH-003 AC5 — Google identity on AuthSession; FR-PROFILE-001 AC4 + AC6 — avatar/displayName fallback). Bump the date and scan the `02_functional_requirements/` files for any other un-stamped edits. One-minute fix. | Low | Audit 2026-05-07 (P3-07) | Open |
 
 ---
 
