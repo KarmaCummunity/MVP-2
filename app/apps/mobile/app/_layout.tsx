@@ -14,6 +14,7 @@ import {
 } from '../src/services/authComposition';
 import { getOnboardingState } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
+import { ErrorBoundary } from '../src/components/ErrorBoundary';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -162,9 +163,10 @@ export default function RootLayout() {
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
       <SafeAreaProvider>
-        <QueryClientProvider client={queryClient}>
-          <StatusBar style="dark" />
-          <AuthGate>
+        <ErrorBoundary>
+          <QueryClientProvider client={queryClient}>
+            <StatusBar style="dark" />
+            <AuthGate>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -208,7 +210,8 @@ export default function RootLayout() {
               />
             </Stack>
           </AuthGate>
-        </QueryClientProvider>
+          </QueryClientProvider>
+        </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>
   );
