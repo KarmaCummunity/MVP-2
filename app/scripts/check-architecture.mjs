@@ -63,11 +63,8 @@ const DOMAIN_ERROR_RULE = {
   fromPattern: /^packages\/domain\/src\//,
   forbid: /\bthrow\s+new\s+Error\s*\(/,
   message:
-    'Domain code must throw a typed error class (e.g. DomainError, AuthError) — see TD-51 to introduce the base class. Raw `throw new Error(...)` is forbidden.',
-  exemptLines: new Set([
-    'packages/domain/src/value-objects.ts:112', // TD-51
-    'packages/domain/src/value-objects.ts:113', // TD-51
-  ]),
+    'Domain code must throw a typed error class (e.g. DomainError, ValidationError from `packages/domain/src/errors.ts`). Raw `throw new Error(...)` is forbidden.',
+  exemptLines: new Set(),
 };
 
 const SKIP_DIRS = new Set(['node_modules', 'dist', '.expo', '.turbo', '.next', 'build']);

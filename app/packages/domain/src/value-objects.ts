@@ -3,6 +3,8 @@
 // Mapped to SRS Part III § 3.3
 // ─────────────────────────────────────────────
 
+import { ValidationError } from './errors';
+
 // ── Authentication ────────────────────────────
 
 export type AuthProvider = 'google' | 'apple' | 'phone' | 'email';
@@ -109,8 +111,8 @@ export function createAddress(raw: {
   street: string;
   streetNumber: string;
 }): Address {
-  if (!raw.city) throw new Error('Address: city is required');
-  if (!raw.cityName) throw new Error('Address: cityName is required');
+  if (!raw.city) throw new ValidationError('Address: city is required', 'city');
+  if (!raw.cityName) throw new ValidationError('Address: cityName is required', 'cityName');
   return { ...raw };
 }
 
