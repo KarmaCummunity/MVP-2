@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (P0.4-BE — SupabasePostRepository adapter; TD-13 partial; TD-50 logged) |
+| **Last Updated** | 2026-05-08 (P0.4-BE — SupabasePostRepository adapter; P0.3.c — FR-AUTH-015 soft gate wired into create-post publish) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -28,11 +28,11 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~22%** (UI scaffolding + 2 auth paths + guest preview + onboarding slice A; DB schema applied; Posts repo adapter (BE) — FE wiring still mock-backed) |
+| MVP completion (rough) | **~23%** (UI scaffolding + 2 auth paths + guest preview + onboarding slices A + C; DB schema applied; Posts repo adapter (BE) — FE wiring still mock-backed) |
 | Features 🟢 done | 4 |
-| Features 🟡 in progress | 1 (P0.4 — BE adapter merged, FE pending) |
+| Features 🟡 in progress | 2 (P0.3 — slice B remains; P0.4 — BE adapter merged, FE pending) |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 3 (P0.3 slices B+C; P0.4-FE; P0.5; P0.6) |
+| P0 critical features remaining | 4 (P0.3 slice B; P0.4-FE; P0.5; P0.6) |
 | Test coverage | use-case tests for `auth.*` (incl. Google + onboarding), feed selector |
 | Open tech-debt items | 4 |
 
@@ -64,7 +64,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟢 Done (2026-05-07) | All migrations 0001–0008 applied. Repositories wired incrementally in P0.4–P0.6. |
-| P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟡 In progress | Slice A merged: Basic Info + Tour wired; Photo skip-stub. Slice B (photo upload) + slice C (FR-AUTH-015 soft gate) remain. |
+| P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟡 In progress | Slices A + C merged: Basic Info + Tour + soft gate live. Slice B (photo upload — camera/gallery + Storage) remains. |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
 | P0.6 | Closure flow (mark as delivered) | FR-CLOSURE-001…006 | ⏳ Planned | Required to capture the **North Star** metric (`closed_delivered` count) |
@@ -112,8 +112,8 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
 | Done | P0.2 — Database schema + RLS (all migrations 0001–0008 applied) | — | 2026-05-07 | 2026-05-07 |
-| In progress | P0.3 — Onboarding wizard (slice A merged; B = photo upload, C = FR-AUTH-015 soft gate) | — | 2026-05-07 | — |
-| In progress | P0.4-BE — Posts adapter (Supabase) | agent-be | 2026-05-08 | — |
+| Done | P0.4-BE — Posts adapter (Supabase) | agent-be | 2026-05-08 | 2026-05-08 |
+| In progress | P0.3 — Onboarding wizard (slices A + C merged; B = photo upload remains) | — | 2026-05-07 | — |
 | Up next | P0.4-FE — Feed UI + Create form (consumes adapter) | — | — | — |
 
 ---
@@ -130,6 +130,17 @@ Append-only. **Newest at top.** Git has the full file diff — see branch/commit
 - **Tests**: tsc clean (all 5 packages); 25/25 vitest still green; no new tests (adapter mirrors `SupabaseAuthService` precedent — see TD-50)
 - **Tech debt**: TD-13 partially resolved (close/reopen still stubbed for P0.6); adds TD-50 (no-tests for infra adapters)
 - **Open gaps**: FR-CLOSURE-* close/reopen (P0.6) · image upload from device FR-POST-005 (P0.4-FE) · realtime feed FR-FEED-014 (P1.2) · `update()` does not change mediaAssets (image swap on edit deferred)
+
+---
+
+### 🟢 P0.3.c — FR-AUTH-015 soft gate before first meaningful action
+- **SRS**: FR-AUTH-015 AC1 (modal mirrors basic-info form: display_name 1–50 + city + single "שמור והמשך" button), AC2 (Cancel = no side effects, returns to previous screen), AC3 (after save, deferred action proceeds)
+- **Branch**: `feat/FR-AUTH-015-fe-soft-gate` · 2026-05-08
+- **Files added**: `apps/mobile/src/components/OnboardingSoftGate.tsx` (provider + hook), `apps/mobile/src/components/OnboardingSoftGateModal.tsx`
+- **Files changed**: `apps/mobile/app/_layout.tsx` (wraps Stack with SoftGateProvider inside AuthGate), `apps/mobile/app/(tabs)/create.tsx` (publish gated via `requestSoftGate(publish)`)
+- **Tests**: 25/25 vitest · tsc clean (5 packages) · turbo lint = no-op (no lint task wired)
+- **Tech debt**: None
+- **Open gaps**: Other meaningful-action triggers in FR-AUTH-015 description (follow another user, send first chat message) wire later — `useSoftGate().requestSoftGate()` consumed by P1.1 follow buttons and P0.5 chat send when those land. Today only create-post publish is gated.
 
 ---
 
