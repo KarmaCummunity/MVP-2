@@ -5,3 +5,4 @@ export type { Database } from './database.types';
 export { SupabaseAuthService } from './auth/SupabaseAuthService';
 export { SupabaseUserRepository } from './users/SupabaseUserRepository';
 export { SupabaseCityRepository } from './cities/SupabaseCityRepository';
+export { SupabasePostRepository } from './posts/SupabasePostRepository';
