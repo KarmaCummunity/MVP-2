@@ -259,7 +259,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 
 | ID | Item | Severity | Origin | Status |
 | -- | ---- | -------- | ------ | ------ |
-| TD-1 | `database.types.ts` is a stub (`type Database = any`) — must be regenerated from real schema once §P0.2 lands | High | P0.1 | Open |
+| TD-1 | `database.types.ts` is a stub (`type Database = any`) — must be regenerated from real schema once §P0.2 lands | High | P0.1 | ✅ Resolved 2026-05-07 (Audit found file is 325 LOC of real generated types — see `CODE_AUDIT_2026-05-07.md` AUDIT-P3-02) |
 | TD-2 | FR-AUTH-006 AC1 requires breached-passwords check; not implemented (Supabase doesn't expose this OOTB; need HIBP API integration) | Med | P0.1 | Open |
 | TD-3 | FR-AUTH-013 AC1 races with deep-links: cold-start session check happens before deep-link routing; needs `expo-router` redirect-with-state pattern | Med | P0.1 | Open |
 | TD-4 | `docs/SSOT/CODE_QUALITY.md` is referenced from SRS.md but does not exist. Needs to be authored with: layer responsibilities, file-size cap policy, error mapping table, testing strategy, ADR template | High | Audit | Open |
@@ -270,6 +270,32 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-9 | `android/` is gitignored (CNG workflow). Must run `expo run:android` with `JAVA_HOME=.../temurin-17.jdk`. Pinned in `package.json android` script. If CI added, set `JAVA_HOME` env var there too. | Low | 2026-05-06 | Open |
 | TD-10 | `AuthSession.displayName`/`avatarUrl` are an interim source for "My Profile" header (FR-AUTH-003 AC5). Once P0.2 lands and a real `Profile` table exists, the screen must read from `Profile` and these `AuthSession` fields become first-render fallback only. | Low | UX polish 2026-05-07 | Open |
 | TD-11 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (the post row is hidden by RLS, so its image paths are not enumerable). Replace with per-object signed URLs (or a private bucket + sign-on-fetch) once we serve at scale or once anyone audits the privacy story. | Low | P0.2.b 2026-05-07 | Open |
+| TD-12 | **Audit baseline 2026-05-07** — full review of code vs PRD/SRS produced 49 findings across P0/P1/P2/P3. See [`CODE_AUDIT_2026-05-07.md`](./CODE_AUDIT_2026-05-07.md). The TD rows below mirror that audit's individual items. | High | Audit 2026-05-07 | Open |
+| TD-13 | No `IPostRepository` Supabase adapter — port declared, no implementation. Mock data still consumed by feed/create/post detail. (AUDIT-P0-01) | High | Audit 2026-05-07 | Open (P0.4) |
+| TD-14 | No `IUserRepository` Supabase adapter; profile + user-detail screens use `MOCK_USER`. (AUDIT-P0-02) | High | Audit 2026-05-07 | Open (P0.4 / P2.4) |
+| TD-15 | No `IChatRepository` Supabase adapter; chat list + thread use `MOCK_MESSAGES`. (AUDIT-P0-03) | High | Audit 2026-05-07 | Open (P0.5) |
+| TD-16 | Chat schema (`chats`, `messages`, RLS, realtime triggers) not yet migrated — planned `P0.2.d`. (AUDIT-P0-04) | High | Audit 2026-05-07 | Open (P0.2.d) |
+| TD-17 | Closure flow (mark delivered / un-mark / reopen / educational popup) entirely absent — North Star metric unmeasurable. (AUDIT-P0-05) | High | Audit 2026-05-07 | Open (P0.6) |
+| TD-18 | Reports + block/unblock + auto-removal + false-report sanctions UI absent. (AUDIT-P0-06) | High | Audit 2026-05-07 | Open (P0.2.e + P1.3 + P1.4) |
+| TD-19 | Push notifications: no device lifecycle, no fan-out, no preferences table. (AUDIT-P0-07) | High | Audit 2026-05-07 | Open (P1.5) |
+| TD-20 | Statistics: counters render `0`; no `bg-job-stats-recompute`; no community-stats endpoint; no activity timeline. (AUDIT-P0-08) | High | Audit 2026-05-07 | Open (P1.6) |
+| TD-21 | Counter triggers (`followers_count`, `following_count`, `active_posts_count_internal`, `items_given_count`, `items_received_count`) not written — planned `P0.2.f`; also missing `active_posts_count_public`. (AUDIT-P0-09 + AUDIT-X-04) | High | Audit 2026-05-07 | Open (P0.2.f) |
+| TD-22 | Onboarding wizard (Basic Info, Profile Photo, Welcome Tour, soft-gate on first action) skipped — users land on `(tabs)` immediately. (AUDIT-P0-10) | High | Audit 2026-05-07 | Open (P0.3) |
+| TD-23 | Image upload in `(tabs)/create.tsx` is a no-op (no picker, no resize, no upload, no EXIF strip). Photo is mandatory for `Give`. (AUDIT-P0-11 + AUDIT-X-03) | High | Audit 2026-05-07 | Open (P0.4) |
+| TD-24 | Apple SSO + Phone OTP buttons placeholder — required for iOS App Store + Israeli SMS path. (AUDIT-P0-12) | High | Audit 2026-05-07 | Open (P3.2 / P3.3) |
+| TD-25 | No "Follow Requests" UI (screen 5.4); private profile not functional client-side. (AUDIT-P0-13) | High | Audit 2026-05-07 | Open (P1.1) |
+| TD-26 | Free-text search, filter persistence, cold-start fallback, first-post nudge, community counter, realtime feed all absent. (AUDIT-P1-01..06) | High | Audit 2026-05-07 | Open (P1.2) |
+| TD-27 | Auto-message in chat from post + read-receipt persistence absent. (AUDIT-P1-07, AUDIT-P1-08) | High | Audit 2026-05-07 | Open (P0.5) |
+| TD-28 | Bio URL filter, Edit Profile screen, privacy toggle, upgrade-only enforcement on Edit Post all missing. (AUDIT-P1-12..14) | High | Audit 2026-05-07 | Open (P2.4) |
+| TD-29 | 7 files exceed `≤ 200 LOC` hard cap (`create.tsx` 333, `(auth)/index.tsx` 266, etc.). See `CODE_AUDIT_2026-05-07.md` Appendix A. (AUDIT-P2-01) | High | Audit 2026-05-07 | Open |
+| TD-30 | No JSDoc / TSDoc on most public exports across `domain`, `application`, `infrastructure`, mobile components. (AUDIT-P2-06) | Med | Audit 2026-05-07 | Open |
+| TD-31 | Test coverage limited to 6 files; no tests for repos, components, infra adapters, or invariants. (AUDIT-P2-05) | Med | Audit 2026-05-07 | Open |
+| TD-32 | `app/post/[id].tsx` falls back to `MOCK_POSTS[0]` on unknown ID — silent wrong-post display. Should render not-found. (AUDIT-P2-09) | Med | Audit 2026-05-07 | Open |
+| TD-33 | No top-level `<ErrorBoundary>` in `app/_layout.tsx` — Supabase failures crash the app. (AUDIT-P2-10) | Med | Audit 2026-05-07 | Open |
+| TD-34 | `CLAUDE.md` references `PRD_MVP_SSOT_/` (does not exist; correct path: `PRD_MVP_CORE_SSOT/`). `SRS.md:10` references `../../PRD_MVP/` (correct: `./PRD_MVP_CORE_SSOT/`). (AUDIT-P3-03 + AUDIT-P3-04) | Low | Audit 2026-05-07 | ✅ Resolved 2026-05-07 (paths fixed in this commit) |
+| TD-35 | `i18n/he.ts` (207 LOC) violates `≤ 200 LOC` cap; split per domain. (AUDIT-P3-08) | Low | Audit 2026-05-07 | Open |
+| TD-36 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit. (AUDIT-P3-06) | Low | Audit 2026-05-07 | Open |
+| TD-37 | Sprint Board §3 lists "P0.2 In progress" without indicating P0.2.d/e/f are unwritten — needs a refresh. (AUDIT-P3-05) | Low | Audit 2026-05-07 | Open |
 
 ---
 

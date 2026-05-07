@@ -7,7 +7,7 @@
 | **Document Status** | SSOT — actively maintained |
 | **Owner** | Product / Engineering |
 | **Last Updated** | 2026-05-05 |
-| **Source PRD** | [`PRD_MVP/`](../../PRD_MVP/00_Index.md) |
+| **Source PRD** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Companion Doc** | [`CODE_QUALITY.md`](./CODE_QUALITY.md) — architecture, patterns, tech debt |
 
 ---

@@ -6,7 +6,7 @@
 
 1. **`docs/SSOT/PROJECT_STATUS.md`** — execution-state SSOT (where we are, what's done, what's next).
 2. **`docs/SSOT/SRS.md`** + the relevant `FR-*` file under `docs/SSOT/SRS/02_functional_requirements/` for the feature you're touching.
-3. **`docs/SSOT/PRD_MVP_SSOT_/`** — product intent (Hebrew).
+3. **`docs/SSOT/PRD_MVP_CORE_SSOT/`** — product intent (Hebrew).
 
 ## You MUST follow these rules
 
