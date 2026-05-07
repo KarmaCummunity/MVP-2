@@ -15,6 +15,7 @@ import {
 import { getOnboardingState } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
+import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -167,6 +168,7 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <StatusBar style="dark" />
             <AuthGate>
+            <SoftGateProvider>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -209,6 +211,7 @@ export default function RootLayout() {
                 }}
               />
             </Stack>
+            </SoftGateProvider>
           </AuthGate>
           </QueryClientProvider>
         </ErrorBoundary>

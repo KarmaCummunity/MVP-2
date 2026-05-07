@@ -11,11 +11,13 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { CATEGORY_LABELS, ALL_CATEGORIES } from '@kc/domain';
 import type { PostType, Category, ItemCondition } from '@kc/domain';
+import { useSoftGate } from '../../src/components/OnboardingSoftGate';
 
 type PostVisibility = 'Public' | 'FollowersOnly' | 'OnlyMe';
 
 export default function CreatePostScreen() {
   const router = useRouter();
+  const { requestSoftGate } = useSoftGate();
   const [type, setType] = useState<PostType>('Give');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
@@ -27,7 +29,18 @@ export default function CreatePostScreen() {
 
   const isGive = type === 'Give';
 
-  const handlePublish = async () => {
+  const publish = async () => {
+    setLoading(true);
+    await new Promise((r) => setTimeout(r, 700));
+    setLoading(false);
+    Alert.alert('✅ הפוסט שלך פורסם!', '', [
+      { text: 'אוקיי', onPress: () => router.replace('/(tabs)') },
+    ]);
+  };
+
+  // FR-AUTH-015: gate publish on onboarding_state. requestSoftGate runs publish
+  // immediately if state !== pending_basic_info; otherwise opens the modal first.
+  const handlePublish = () => {
     if (!title.trim()) {
       Alert.alert('חסרה כותרת', 'יש להזין כותרת לפוסט');
       return;
@@ -36,12 +49,7 @@ export default function CreatePostScreen() {
       Alert.alert('כותרת קצרה מדי', 'הכותרת חייבת להכיל לפחות 3 תווים');
       return;
     }
-    setLoading(true);
-    await new Promise((r) => setTimeout(r, 700));
-    setLoading(false);
-    Alert.alert('✅ הפוסט שלך פורסם!', '', [
-      { text: 'אוקיי', onPress: () => router.replace('/(tabs)') },
-    ]);
+    requestSoftGate(publish);
   };
 
   return (
