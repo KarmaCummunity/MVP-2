@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (UX polish: tab bar, profile tabs/labels, real Google identity on `AuthSession`) |
+| **Last Updated** | 2026-05-07 (P0.2.a — Foundation & Identity migration written; awaiting operator apply) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -63,7 +63,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
-| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Branch `feat/p0-2-db-schema-rls`. Blocks every server-backed feature |
+| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). Branch `feat/p0-2-db-schema-rls`. **P0.2.a written; awaiting operator apply.** |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
@@ -119,6 +119,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟡 P0.2.a — Foundation & Identity (migration written, awaiting operator apply)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-AUTH-003 (Google sign-up bridge), FR-AUTH-006 (email sign-up bridge), FR-AUTH-010..012 (onboarding row exists), FR-PROFILE-001..007 (real `users` row), FR-PROFILE-013 (counter columns reserved) |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (see `supabase/README.md`). After apply, regenerate `database.types.ts` and commit a follow-up. |
+| Branch / commit | `feat/p0-2-db-schema-rls` |
+| Files added | `supabase/config.toml`, `supabase/migrations/0001_init_users.sql`, `supabase/seed.sql`, `supabase/README.md`, `docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md` |
+| Tech debt logged | TD-1 (database.types.ts) — partial close upcoming once types are regenerated. |
+| AC verified | SQL static review only. End-to-end verification deferred to operator: (1) sign in with Google, (2) confirm a row appears in `public.users` with the Google name + avatar, (3) re-sign-in does not duplicate. |
+| Known gaps | (a) Approved-follower expansion of `users` SELECT for `Private` rows ships in P0.2.c. (b) Counters are columns only — triggers that maintain them ship in P0.2.f. (c) `database.types.ts` still `any` until operator runs `supabase gen types`. |
+| Operator setup notes | Run `supabase login` then `supabase link --project-ref <ref>` once. Then `supabase db push` to apply this migration. Regenerate types with `supabase gen types typescript --project-id <ref> > app/packages/infrastructure-supabase/src/database.types.ts` and commit. |
+
+---
 
 ### ✅ UX polish — Tab bar + Profile labels + Real Google identity on `AuthSession`
 
