@@ -14,3 +14,10 @@ export * from './auth/CompleteBasicInfoUseCase';
 export * from './auth/CompleteOnboardingUseCase';
 export * from './feed/selectGuestPreviewPosts';
 export * from './feed/GetFeedUseCase';
+
+export * from './posts/errors';
+export * from './posts/CreatePostUseCase';
+export * from './posts/UpdatePostUseCase';
+export * from './posts/GetPostByIdUseCase';
+export * from './posts/GetMyPostsUseCase';
+export * from './posts/DeletePostUseCase';
