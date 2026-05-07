@@ -14,3 +14,6 @@ supabase/.branches/
 # tracked).
 .claude/worktrees/*/.DS_Store
 .claude/.DS_Store
+
+# Agent PR body scratch file (generated per-PR by `gh pr create --body-file`).
+.github/.pr-body.md

@@ -12,6 +12,7 @@
 
 - `.cursor/rules/srs-architecture.mdc` — Clean Architecture invariants, file-size caps, error handling.
 - `.cursor/rules/project-status-tracking.mdc` — **mandatory** update of `PROJECT_STATUS.md` on every feature change.
+- `.cursor/rules/git-workflow.mdc` — **mandatory** branch / commit / PR / merge workflow. Branches via `gh`, PRs auto-merge on green CI (squash). One-time machine setup: `SETUP_GIT_AGENT.md`.
 
 ## Verification gate
 

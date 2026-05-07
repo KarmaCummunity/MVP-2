@@ -1,0 +1,16 @@
+# Default owner for everything in the repo.
+# Add more lines below to scope ownership to specific paths.
+# Syntax: <pattern>  <@user-or-team> [<@user-or-team> ...]
+
+*           @navesarussi
+
+# Architecture / SSOT — extra eyes recommended on changes.
+/docs/SSOT/                       @navesarussi
+/.cursor/rules/                   @navesarussi
+/.github/                         @navesarussi
+
+# Backend / data — Supabase migrations and RLS.
+/supabase/                        @navesarussi
+
+# Domain layer — purity guarded.
+/app/packages/domain/             @navesarussi
