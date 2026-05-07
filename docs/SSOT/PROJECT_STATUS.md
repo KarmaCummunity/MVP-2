@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.a — Foundation & Identity migration written; awaiting operator apply) |
+| **Last Updated** | 2026-05-07 (P0.2.b — Posts core migration written; awaiting operator apply) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -63,7 +63,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
-| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). Branch `feat/p0-2-db-schema-rls`. **P0.2.a written; awaiting operator apply.** |
+| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). Branch `feat/p0-2-db-schema-rls`. **P0.2.a applied. P0.2.b written; awaiting operator apply.** |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
@@ -120,14 +120,31 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 Append-only. **Newest at top.**
 
-### 🟡 P0.2.a — Foundation & Identity (migration written, awaiting operator apply)
+### 🟡 P0.2.b — Posts core (migration written, awaiting operator apply)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-POST-001..020 (post lifecycle, fields, visibility, edit/delete, image cap, active-post cap), FR-FEED-001..002 (feed visibility predicate is the same function), FR-CLOSURE-002..003 (recipient row shape; the closure flow itself ships later), FR-POST-017 (recipient view path through `is_post_visible_to`). |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (`supabase db push`). After apply, regenerate `database.types.ts`. |
+| Branch / commit | `feat/p0-2-db-schema-rls` |
+| Files added | `supabase/migrations/0002_init_posts.sql` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md` |
+| Tech debt logged | TD-11 (below) — storage bucket is currently public; for `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability. Tighten to per-post signed URLs when relevant scale arrives. |
+| AC verified | SQL static review only. End-to-end verification deferred to operator. |
+| Known gaps | (a) `is_post_visible_to()` returns `false` for non-owner viewers of `FollowersOnly` posts — this is the deliberate placeholder until P0.2.c lands `follow_edges`. (b) Block-aware Public visibility also deferred to P0.2.c. (c) Counter-trigger maintenance for `users.active_posts_count_internal` ships in P0.2.f. |
+| Operator setup notes | `supabase db push`. Verify by signing in as the test user, manually inserting a row through the Supabase SQL editor: `insert into posts (owner_id, type, title, city, street, street_number) values ('<your-user-id>','Give','Test couch','tel-aviv','Bialik','12');` then re-running the mobile app to see it surface in the feed (P0.4 will wire the real CRUD). |
+
+---
+
+### ✅ P0.2.a — Foundation & Identity (applied to live project)
 
 | Field | Value |
 | ----- | ----- |
 | Mapped to SRS | FR-AUTH-003 (Google sign-up bridge), FR-AUTH-006 (email sign-up bridge), FR-AUTH-010..012 (onboarding row exists), FR-PROFILE-001..007 (real `users` row), FR-PROFILE-013 (counter columns reserved) |
 | PRD anchor | N/A — infrastructure |
-| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (see `supabase/README.md`). After apply, regenerate `database.types.ts` and commit a follow-up. |
-| Branch / commit | `feat/p0-2-db-schema-rls` |
+| Completed | 2026-05-07 — operator ran `supabase db push` against the live project (Postgres 17). |
+| Branch / commit | `feat/p0-2-db-schema-rls` (commit `1a04f0f`) |
 | Files added | `supabase/config.toml`, `supabase/migrations/0001_init_users.sql`, `supabase/seed.sql`, `supabase/README.md`, `docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md` |
 | Files changed | `docs/SSOT/PROJECT_STATUS.md` |
 | Tech debt logged | TD-1 (database.types.ts) — partial close upcoming once types are regenerated. |
@@ -235,6 +252,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-8 | Mobile typecheck shows duplicate-identifier errors in `lib.dom.d.ts` (`URLSearchParams`, `RequestInfo`, `XMLHttpRequestResponseType`) due to React Native + DOM type collision. Cascades into false "Promise constructor not found" errors. Standard RN+TS pitfall; fix by adjusting `tsconfig.json` `lib` to drop `DOM` or by upgrading `@types/react-native` typings | Med | P0.1 verify | Open |
 | TD-9 | `android/` is gitignored (CNG workflow). Must run `expo run:android` with `JAVA_HOME=.../temurin-17.jdk`. Pinned in `package.json android` script. If CI added, set `JAVA_HOME` env var there too. | Low | 2026-05-06 | Open |
 | TD-10 | `AuthSession.displayName`/`avatarUrl` are an interim source for "My Profile" header (FR-AUTH-003 AC5). Once P0.2 lands and a real `Profile` table exists, the screen must read from `Profile` and these `AuthSession` fields become first-render fallback only. | Low | UX polish 2026-05-07 | Open |
+| TD-11 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (the post row is hidden by RLS, so its image paths are not enumerable). Replace with per-object signed URLs (or a private bucket + sign-on-fetch) once we serve at scale or once anyone audits the privacy story. | Low | P0.2.b 2026-05-07 | Open |
 
 ---
 

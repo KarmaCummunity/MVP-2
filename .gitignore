@@ -1,0 +1,16 @@
+# macOS
+.DS_Store
+
+# Supabase CLI
+supabase/.temp/
+supabase/.branches/
+
+# IDE caches
+.vscode/
+.idea/
+
+# Claude / agent worktree marker (the actual worktree dir is checked-in
+# only as a metadata pointer; transient state inside it should not be
+# tracked).
+.claude/worktrees/*/.DS_Store
+.claude/.DS_Store
