@@ -6,7 +6,8 @@
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "turbo run lint",
+    "lint": "pnpm lint:arch && turbo run lint",
+    "lint:arch": "node scripts/check-architecture.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "deps": "npx pnpm@9.0.0 install",

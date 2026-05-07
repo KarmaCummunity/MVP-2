@@ -146,8 +146,81 @@ Claiming a slice is mechanical and uses only existing tools (no separate claims 
 
 ## 10. Out of scope / known gaps
 
-- **Three-or-more-agents case.** Not designed for. The §6 tiebreakers and the §7 TD-N range split assume exactly two lanes.
+- **Three-or-more-agents case.** This protocol is designed for exactly two lanes; §6 tiebreakers and §7 TD-N ranges assume two writers. **The migration path to 3+ writers is documented in §11 — read it before onboarding the third agent or developer.**
 - **Real-time signal between agents.** Polling `gh pr list` is the only signal. There is no chat or webhook. If a contract change is urgent, surface it in a PR comment and ping the user to relay.
 - **Automated lane enforcement.** Nothing in CI yet enforces that BE doesn't write into `apps/mobile`. Reviewing agent does it manually. A future CI check could parse the PR diff against the lane table in §4.
 - **TD-N range exhaustion.** If BE fills `TD-50..99` or FE fills `TD-100..149`, request a new range in a PR comment. No automation for this yet.
 - **Branch-name conventions.** This protocol introduces the `-be-` / `-fe-` infix; existing branches (e.g. `feat/p0-2-d-chat-messaging`) predate it and stay as-is. New branches follow §8.1.
+
+## 11. Scaling beyond two writers — the migration to vertical ownership
+
+This protocol is the **transitional model** for the 1-product-person + 2-AI-agents stage. It cannot scale to 3+ concurrent writers as written: the BE/FE split is horizontal (a layer is owned by exactly one lane), so two developers who both want to write a Supabase migration will block each other regardless of which feature they're shipping. The fix is to flip from **horizontal-lane** ownership to **vertical-feature** ownership.
+
+This section defines the destination model, the trigger that initiates the flip, and the migration steps.
+
+### 11.1 Destination model — feature ownership + CODEOWNERS
+
+Each writer (human developer or AI agent pair) owns one or more **features** end-to-end:
+
+- **Owns** = the writer is the default reviewer + decision-maker on every layer of that feature: DB migration → RLS → adapter → port → use case → screen.
+- **Encoded in** `.github/CODEOWNERS` at the file-path level. GitHub auto-requests the owner's review on any PR touching their paths and blocks merge until owner approval (when `CODEOWNERS` is paired with branch protection rules).
+- **Examples**:
+  - `Posts` owner gets `app/packages/**/posts/**`, `apps/mobile/app/(tabs)/create.tsx`, `apps/mobile/app/post/**`, `supabase/migrations/*posts*`.
+  - `Chat` owner gets `app/packages/**/chat/**`, `apps/mobile/app/chat/**`, `supabase/migrations/*chat*`.
+  - `Moderation` owner gets `app/packages/**/moderation/**`, `supabase/migrations/*moderation*`.
+
+Cross-cutting concerns (auth, navigation, theming, i18n, root layout) live in a **core zone** with multiple owners listed (any one can approve). Shared contract paths (`packages/{domain,application}/**` outside any feature subfolder) require **two owners' approval** — the feature consuming the contract change and the contract steward.
+
+### 11.2 What changes vs the two-lane protocol
+
+| §  | Current (2-lane)                                         | Vertical (3+ writers)                                                                         |
+| -- | -------------------------------------------------------- | --------------------------------------------------------------------------------------------- |
+| §4 | BE owns `supabase/**` + infra; FE owns `apps/mobile/**` + ui | Feature owner owns the feature's vertical slice across all layers; horizontal labels retire   |
+| §5 | Slice = `Pn.x-BE` + `Pn.x-FE`                            | Slice = `Pn.x` (single feature owner ships a vertical slice; sub-divides only if velocity demands) |
+| §6 | FE leads `domain`, BE leads ports                         | The feature owner leads the contract for their feature's entities and ports; **shared types/ports require RFC** (one-pager in `docs/superpowers/rfcs/`) |
+| §7 | TD-50..99 (BE) / TD-100..149 (FE)                         | TD-N is sequential and append-only; merge conflicts on the row resolve via rebase order. No range pre-allocation. |
+| §8 | Draft PR = lock; lane infix in branch name                | CODEOWNERS auto-routes review; branch infix becomes feature slug (e.g. `feat/FR-POST-001-feed-ui`, no lane) |
+| §9 | Tiebreakers BE-wins-ports / FE-wins-domain               | Tiebreaker is **the feature owner** for their feature's surface; cross-feature ties → RFC + user escalation |
+
+### 11.3 Trigger to flip
+
+Flip when **any one** of these is true:
+
+1. **A second human developer onboards.** Don't run two humans on a horizontal-lane model — it forces them into the same lane every sprint.
+2. **A single feature's velocity is bottlenecked by both lanes wanting the same file in the same week, twice.** Once is noise; twice is structural.
+3. **Contract-change overhead (§6) exceeds ~20% of slice time consistently.** Measured by: count of `(contract)` commits per slice ÷ total commits per slice. If you're spending more time negotiating contracts than implementing, the lane model is fighting you.
+
+The trigger is a one-way door: once flipped, the BE/FE protocol is retired (the spec stays for historical reference; new work follows §11).
+
+### 11.4 Migration steps
+
+The flip is a single ~1-day project, not a gradual transition. Half-flipped is worse than either end-state.
+
+1. **Pre-flip prep (1-2 hours, while still on BE/FE protocol):**
+   - Audit current PRs in flight; merge or close all open BE/FE slices before the flip.
+   - Draft the new `CODEOWNERS` mapping locally based on the current feature partition (`docs/SSOT/SRS/02_functional_requirements/` is the canonical feature list).
+   - Decide initial feature ownership for each writer. Default: dev who shipped a feature in the previous quarter owns it.
+2. **Flip commit (1 PR, 30 min):**
+   - Replace `CODEOWNERS` content with the feature-based mapping.
+   - Append a "DEPRECATED — see §11" banner to §4–§9 of this spec.
+   - Add a one-line `CLAUDE.md` pointer: "Coordination protocol: §11 (vertical) supersedes §4–§9 (horizontal) as of <date>."
+   - Update branch protection: require CODEOWNERS approval on protected paths.
+3. **Post-flip (first sprint after flip):**
+   - First slice each writer ships establishes their ownership in practice. Resolve any "who owns this file?" ambiguities by inspecting PR-review-request flow — whoever GitHub auto-pinged is the owner; if it pinged nobody, add a CODEOWNERS rule.
+   - Open the first cross-feature RFC (likely a shared-domain change) within the first sprint to exercise the `docs/superpowers/rfcs/` path.
+
+### 11.5 What stays the same
+
+The vertical model inherits the rest of this spec without change:
+
+- Clean Architecture invariants (`srs-architecture.mdc` + the `lint:arch` enforcement) apply equally.
+- `git-workflow.mdc` (branch naming, conventional commits, auto-merge on green CI) — unchanged.
+- `project-status-tracking.mdc` (`PROJECT_STATUS.md` discipline) — unchanged; only the "lane suffix" convention in §3 Sprint Board is dropped (rows become `Pn.x — <feature>` without a `-BE` / `-FE` suffix).
+- The verification gate (`Mapped to SRS: …`) — unchanged.
+- The "Propose and Proceed" rule — unchanged.
+
+### 11.6 What this spec does NOT cover for 3+ writers
+
+- **A formal RFC template.** Add one to `docs/superpowers/rfcs/00_template.md` at the time of the flip; defer until then to avoid premature design.
+- **Multiple AI agents per developer.** A developer running two agents on their own feature is a single-owner setup from CODEOWNERS' perspective; treat as one writer for §11.3 trigger purposes.
+- **Hand-off between feature owners.** Document the policy when the first hand-off happens, not before. Default expectation: a 1-week shadow period where the new owner pairs on PRs before assuming sole ownership.
