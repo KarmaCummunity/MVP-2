@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useShallow } from 'zustand/react/shallow';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { useFilterStore } from '../../src/store/filterStore';
@@ -19,13 +20,18 @@ export default function HomeFeedScreen() {
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
-  const filter = useFilterStore((s) => ({
-    type: s.type ?? undefined,
-    category: s.category ?? undefined,
-    city: s.city ?? undefined,
-    includeClosed: s.includeClosed,
-    sortBy: s.sortBy,
-  }));
+  // useShallow: object-returning selectors must use shallow equality so the
+  // result reference is stable across renders (Zustand v5 + React 19 strict
+  // useSyncExternalStore would otherwise loop on getSnapshot).
+  const filter = useFilterStore(
+    useShallow((s) => ({
+      type: s.type ?? undefined,
+      category: s.category ?? undefined,
+      city: s.city ?? undefined,
+      includeClosed: s.includeClosed,
+      sortBy: s.sortBy,
+    })),
+  );
   const activeCount = useFilterStore((s) => s.activeCount());
 
   const [searchText, setSearchText] = useState('');
