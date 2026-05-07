@@ -113,6 +113,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | ---- | ------- | ----- | ------- | ------ |
 | In progress | P0.2 — Database schema + RLS (a..f all written; a applied; b..f awaiting operator `db push`) | — | 2026-05-07 | — |
 | In progress | P0.3 — Onboarding wizard (slice A merged; B = photo upload, C = FR-AUTH-015 soft gate) | — | 2026-05-07 | — |
+| In progress | TD-33-FE — App-level ErrorBoundary (resilience baseline before P0.4) | agent-fe | 2026-05-08 | — |
 | Up next | P0.4 — Post creation + feed CRUD | — | — | — |
 
 ---
