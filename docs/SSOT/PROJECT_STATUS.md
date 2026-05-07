@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.3.a — Onboarding wizard slice A: Basic Info + Tour wired end-to-end; Photo skip-stub) |
+| **Last Updated** | 2026-05-07 (P0.3.a polish — Skip on every onboarding screen, dynamic cities from `public.cities` (1,306 from data.gov.il via migration 0008), dev reset button) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -120,6 +120,25 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟢 P0.3.a polish — Skip on every screen, dynamic cities, dev reset
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-AUTH-010 AC2 (canonical city list — now reads `public.cities` instead of a client-side constant), FR-AUTH-010 AC3 (Skip button on basic-info — was missing in slice A), FR-AUTH-011 AC3 (Skip button on photo, conditional state advance — only flips to `completed` when state is already `pending_avatar`), FR-AUTH-012 AC2 (Skip on tour was already correct). |
+| PRD anchor | `03_Core_Features.md` §3.1.2 |
+| Status | 🟢 Code merged. **Migration 0008 awaiting operator apply** (`supabase db push`). |
+| Branch / commit | `fix/onboarding-polish` |
+| Files added | `supabase/migrations/0008_seed_all_cities.sql` (1,400 lines — 1,306 city rows + slug→numeric backfill + `handle_new_user` trigger replacement), `app/packages/application/src/ports/ICityRepository.ts`, `app/packages/infrastructure-supabase/src/cities/SupabaseCityRepository.ts` |
+| Files changed | `app/packages/application/src/auth/CompleteBasicInfoUseCase.ts` (drops client-side list validation; takes `cityId + cityName` from caller), `app/packages/application/src/auth/__tests__/CompleteBasicInfoUseCase.test.ts` (boundary tests for empty cityId/cityName replace the now-impossible "unknown city_id" path), `app/packages/application/src/index.ts`, `app/packages/infrastructure-supabase/src/index.ts`, `app/apps/mobile/src/services/userComposition.ts` (adds `listCities`, `setOnboardingStateDirect`), `app/apps/mobile/src/components/CityPicker.tsx` (rewritten — search input + tanstack-query against `public.cities`), `app/apps/mobile/app/(onboarding)/basic-info.tsx` (Skip button; passes `{id, name}` from picker), `app/apps/mobile/app/(onboarding)/photo.tsx` (Skip button; only finalises onboarding when state is `pending_avatar`), `app/apps/mobile/app/_layout.tsx` (AuthGate loosened — only redirects from (auth)/(guest); FR-AUTH-015 will catch pending users elsewhere), `app/apps/mobile/app/settings.tsx` (`__DEV__`-gated "איפוס אונבורדינג" row), `docs/SSOT/PROJECT_STATUS.md` |
+| Files deleted | `app/packages/domain/src/cities.ts` (the static `IL_CITIES` constant — superseded by `public.cities`) |
+| Tech debt | None new. Closes a slice-A oversight where `IL_CITIES` was hard-coded against the SRS's "canonical Israeli city list" requirement. |
+| Tests | `vitest run` in `@kc/application`: **25/25 passing** (one boundary test rewritten — net same count). `tsc --noEmit` clean across all 5 packages. |
+| AC verified | FR-AUTH-010 AC2 (1,306 cities live in `public.cities`; picker queries them with search; no free-text path), AC3 (Skip on basic-info navigates to photo without writing; state stays `pending_basic_info`). FR-AUTH-011 AC3 (Skip on photo — state untouched if `pending_basic_info`, advanced to `completed` if `pending_avatar`). FR-AUTH-012 AC2 (Skip on tour, unchanged). |
+| Known gaps | (a) **FR-AUTH-015 soft-gate modal** still required (slice C) — until it lands, a user who skipped basic-info is parked in `(tabs)` indefinitely until they hit the dev reset or a future soft-gate prompt; functionally OK for MVP testing, blocking only for spec compliance. (b) Photo full upload still deferred to slice B (FR-AUTH-011 AC1+AC2). (c) `__DEV__`-only reset button works in Expo dev builds but is hidden in production — production testers will need real account deletion (FR-AUTH-016 / P2.2). |
+| Operator setup notes | `supabase db push` to apply 0008. The migration is idempotent; safe to re-run. After apply, regenerate `database.types.ts` so `cities` row types reflect the bulk-seeded data. Verify: (1) `select count(*) from public.cities;` returns ≥ 1,306; (2) any pre-existing test users with `users.city in ('tel-aviv','jerusalem',…)` were remapped to numeric codes; (3) creating a new auth user via the trigger inserts `city = '5000'`, `city_name = 'תל אביב - יפו'`. |
+
+---
 
 ### 🟢 P0.3.a — Onboarding wizard (Basic Info + Tour, photo skip-stub)
 
