@@ -14,6 +14,19 @@
 - `.cursor/rules/project-status-tracking.mdc` — **mandatory** update of `PROJECT_STATUS.md` on every feature change.
 - `.cursor/rules/git-workflow.mdc` — **mandatory** branch / commit / PR / merge workflow. Branches via `gh`, PRs auto-merge on green CI (squash). One-time machine setup: `SETUP_GIT_AGENT.md`.
 
+## Parallel-agents protocol (when two agents are running)
+
+If you are one of two parallel agents (FE / BE), you MUST follow [`docs/superpowers/specs/2026-05-07-parallel-agents-coordination-design.md`](docs/superpowers/specs/2026-05-07-parallel-agents-coordination-design.md) — lane definitions, claim mechanism (draft PR = lock), contract-change rule, conflict tiebreakers.
+
+Quick reference:
+
+- **BE lane** owns `supabase/**` + `packages/infrastructure-supabase/**`.
+- **FE lane** owns `apps/mobile/**` + `packages/ui/**`.
+- **Shared contract** (`packages/{domain,application}/**`): FE leads domain types, BE leads port signatures. Contract changes ship as their own commit with `(contract)` scope (e.g. `feat(contract): add IPostRepository.list`).
+- Branch naming: `<type>/<FR-id-or-scope>-<be|fe>-<slug>` (e.g. `feat/FR-POST-001-fe-feed-ui`).
+- §3 Sprint Board rows use lane suffix (e.g. `P0.4-FE — Feed UI`); Owner is `agent-fe` or `agent-be`.
+- New tech-debt IDs: BE uses `TD-50..99`, FE uses `TD-100..149`.
+
 ## Verification gate
 
 Every response that includes code must begin with:
