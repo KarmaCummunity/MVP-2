@@ -63,6 +63,7 @@ export class SupabaseAuthService implements IAuthService {
 }
 
 function toSession(s: SbSession): AuthSession {
+  const meta = (s.user.user_metadata ?? {}) as Record<string, unknown>;
   return {
     userId: s.user.id,
     email: s.user.email ?? null,
@@ -70,7 +71,17 @@ function toSession(s: SbSession): AuthSession {
     accessToken: s.access_token,
     refreshToken: s.refresh_token,
     expiresAt: s.expires_at ?? Math.floor(Date.now() / 1000) + (s.expires_in ?? 3600),
+    displayName: pickString(meta, ['full_name', 'name']),
+    avatarUrl: pickString(meta, ['avatar_url', 'picture']),
   };
+}
+
+function pickString(meta: Record<string, unknown>, keys: readonly string[]): string | null {
+  for (const k of keys) {
+    const v = meta[k];
+    if (typeof v === 'string' && v.trim().length > 0) return v;
+  }
+  return null;
 }
 
 function mapAuthError(err: SbAuthError): AuthError {

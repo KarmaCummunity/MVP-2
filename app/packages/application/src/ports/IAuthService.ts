@@ -13,6 +13,17 @@ export interface AuthSession {
   readonly accessToken: string;
   readonly refreshToken: string;
   readonly expiresAt: number; // unix seconds
+  /**
+   * FR-AUTH-003 AC5 (interim, pre-`Profile`-table). Populated by the Supabase
+   * adapter from `user.user_metadata.full_name` / `name`. `null` for users who
+   * signed up without an SSO that returned a name (e.g. email/password).
+   */
+  readonly displayName: string | null;
+  /**
+   * FR-AUTH-003 AC5 (interim, pre-`Profile`-table). Populated by the Supabase
+   * adapter from `user.user_metadata.avatar_url` / `picture`.
+   */
+  readonly avatarUrl: string | null;
 }
 
 export interface IAuthService {

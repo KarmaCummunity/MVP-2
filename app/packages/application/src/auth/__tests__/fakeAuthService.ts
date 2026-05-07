@@ -57,6 +57,8 @@ export function makeSession(overrides: Partial<AuthSession> = {}): AuthSession {
     accessToken: 'tok',
     refreshToken: 'ref',
     expiresAt: Math.floor(Date.now() / 1000) + 3600,
+    displayName: null,
+    avatarUrl: null,
     ...overrides,
   };
 }
