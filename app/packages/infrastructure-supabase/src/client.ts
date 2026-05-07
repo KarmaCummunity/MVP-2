@@ -8,6 +8,13 @@ import type { Database } from './database.types';
 
 let _client: SupabaseClient<Database> | null = null;
 
+/** AsyncStorage-shaped adapter (RN) or compatible sync storage. */
+export type SupabaseAuthStorage = {
+  getItem: (key: string) => Promise<string | null> | string | null;
+  setItem: (key: string, value: string) => Promise<void> | void;
+  removeItem: (key: string) => Promise<void> | void;
+};
+
 /**
  * Returns a singleton Supabase client.
  * Must be called after env vars are available.
@@ -18,11 +25,7 @@ let _client: SupabaseClient<Database> | null = null;
 export function getSupabaseClient(options?: {
   url?: string;
   anonKey?: string;
-  storage?: ConstructorParameters<typeof createClient>[2] extends
-    | { auth?: { storage?: infer S } }
-    | undefined
-    ? S
-    : never;
+  storage?: SupabaseAuthStorage;
 }): SupabaseClient<Database> {
   if (_client) return _client;
 
@@ -40,12 +43,18 @@ export function getSupabaseClient(options?: {
     );
   }
 
+  // Web: the OAuth redirect lands as a full page navigation — let the SDK consume `?code` from
+  // window.location and exchange it. Native: we drive the browser via WebBrowser, so opt out.
+  const detectSessionInUrl =
+    typeof window !== 'undefined' && typeof window.location !== 'undefined';
+
   _client = createClient<Database>(url, anonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl: false,
-      ...(options?.storage ? { storage: options.storage as never } : {}),
+      detectSessionInUrl,
+      flowType: 'pkce',
+      ...(options?.storage ? { storage: options.storage } : {}),
     },
   });
 

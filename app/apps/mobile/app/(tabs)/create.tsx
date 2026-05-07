@@ -86,6 +86,19 @@ export default function CreatePostScreen() {
           </TouchableOpacity>
         </View>
 
+        {/* Photo (Give only) — first field for "Give" */}
+        {isGive && (
+          <View style={styles.section}>
+            <Text style={styles.sectionLabel}>
+              תמונות <Text style={styles.required}>* (חובה עבור "לתת")</Text>
+            </Text>
+            <TouchableOpacity style={styles.photoPlaceholder}>
+              <Ionicons name="camera-outline" size={28} color={colors.textSecondary} />
+              <Text style={styles.photoText}>הוסף תמונה</Text>
+            </TouchableOpacity>
+          </View>
+        )}
+
         {/* Title */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>
@@ -195,18 +208,6 @@ export default function CreatePostScreen() {
           ))}
         </View>
 
-        {/* Photo placeholder */}
-        {isGive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>
-              תמונות <Text style={styles.required}>* (חובה עבור "לתת")</Text>
-            </Text>
-            <TouchableOpacity style={styles.photoPlaceholder}>
-              <Ionicons name="camera-outline" size={28} color={colors.textSecondary} />
-              <Text style={styles.photoText}>הוסף תמונה</Text>
-            </TouchableOpacity>
-          </View>
-        )}
       </ScrollView>
     </SafeAreaView>
   );

@@ -306,6 +306,7 @@ A non-authenticated user may view a sample of the feed (3 posts) before being as
 - AC2. Guest interactions are blocked: tapping a post / a profile / the "+" button / the message icon all surface the sign-up overlay (`FR-AUTH-014.a`).
 - AC3. The overlay copy emphasizes the size of the active community (parameterized count, see `FR-FEED-014`).
 - AC4. Closing the overlay returns the user to the guest feed; sign-up routes to `FR-AUTH-002`.
+- AC5. The client-side auth redirect gate must treat the dedicated guest-preview route (`Screen 1.7`) as reachable while unauthenticated: navigating there must not be cancelled by the same rule that sends anonymous users from the main shell to Splash/Auth.
 
 **Edge Cases.**
 - Fewer than 3 public posts exist system-wide: show all available; do not pad with closed posts.

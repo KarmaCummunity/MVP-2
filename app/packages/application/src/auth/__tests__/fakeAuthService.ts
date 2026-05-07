@@ -10,6 +10,12 @@ export class FakeAuthService implements IAuthService {
   currentSession: AuthSession | null = null;
   signOutCalled = 0;
 
+  googleAuthUrl = 'https://example.com/oauth';
+  googleAuthUrlError: Error | null = null;
+  exchangeResult: AuthSession | null = null;
+  exchangeError: Error | null = null;
+  lastExchangeCode: string | null = null;
+
   signUpWithEmail = async (_email: string, _password: string): Promise<AuthSession | null> => {
     if (this.signUpError) throw this.signUpError;
     return this.signUpResult;
@@ -29,6 +35,18 @@ export class FakeAuthService implements IAuthService {
   getCurrentSession = async (): Promise<AuthSession | null> => this.currentSession;
 
   onSessionChange = (_listener: (s: AuthSession | null) => void): (() => void) => () => undefined;
+
+  getGoogleAuthUrl = async (_redirectTo: string): Promise<string> => {
+    if (this.googleAuthUrlError) throw this.googleAuthUrlError;
+    return this.googleAuthUrl;
+  };
+
+  exchangeCodeForSession = async (code: string): Promise<AuthSession> => {
+    this.lastExchangeCode = code;
+    if (this.exchangeError) throw this.exchangeError;
+    if (!this.exchangeResult) throw new Error('no exchangeResult configured');
+    return this.exchangeResult;
+  };
 }
 
 export function makeSession(overrides: Partial<AuthSession> = {}): AuthSession {

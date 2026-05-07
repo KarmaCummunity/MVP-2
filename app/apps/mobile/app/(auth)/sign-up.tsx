@@ -113,7 +113,7 @@ export default function SignUpScreen() {
 
           <TouchableOpacity
             style={styles.switchMode}
-            onPress={() => router.push('/(auth)/sign-in')}
+            onPress={() => router.replace('/(auth)/sign-in')}
             disabled={loading}
           >
             <Text style={styles.switchModeText}>יש לי כבר חשבון — כניסה</Text>

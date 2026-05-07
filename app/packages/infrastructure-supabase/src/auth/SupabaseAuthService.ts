@@ -41,6 +41,23 @@ export class SupabaseAuthService implements IAuthService {
     });
     return () => data.subscription.unsubscribe();
   }
+
+  async getGoogleAuthUrl(redirectTo: string): Promise<string> {
+    const { data, error } = await this.client.auth.signInWithOAuth({
+      provider: 'google',
+      options: { redirectTo, skipBrowserRedirect: true },
+    });
+    if (error) throw mapAuthError(error);
+    if (!data.url) throw new AuthError('unknown', 'oauth_no_url');
+    return data.url;
+  }
+
+  async exchangeCodeForSession(code: string): Promise<AuthSession> {
+    const { data, error } = await this.client.auth.exchangeCodeForSession(code);
+    if (error) throw mapAuthError(error);
+    if (!data.session) throw new AuthError('unknown', 'oauth_no_session');
+    return toSession(data.session);
+  }
 }
 
 function toSession(s: SbSession): AuthSession {

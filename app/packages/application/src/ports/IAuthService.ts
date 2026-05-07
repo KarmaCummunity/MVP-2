@@ -28,4 +28,13 @@ export interface IAuthService {
 
   /** Subscribe to session changes (login, refresh, signout, server-side revoke). */
   onSessionChange(listener: (session: AuthSession | null) => void): () => void;
+
+  /**
+   * FR-AUTH-002 (Google): begin Google OAuth (PKCE). Returns the provider URL the
+   * caller must open in a browser. The browser redirects to `redirectTo` with `?code=...`.
+   */
+  getGoogleAuthUrl(redirectTo: string): Promise<string>;
+
+  /** FR-AUTH-002 (Google): exchange the OAuth `code` returned in the redirect for a session. */
+  exchangeCodeForSession(code: string): Promise<AuthSession>;
 }

@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
-import { PostCard } from '../../src/components/PostCard';
+import { PostCardGrid } from '../../src/components/PostCardGrid';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MOCK_POSTS } from '../../src/mock/data';
 import { useFilterStore } from '../../src/store/filterStore';
@@ -19,7 +19,6 @@ export default function HomeFeedScreen() {
   const [searchText, setSearchText] = useState('');
   const activeCount = useFilterStore((s) => s.activeCount());
 
-  // Filter mock data by search query
   const filteredPosts = MOCK_POSTS.filter((p) => {
     if (!searchText) return true;
     const q = searchText.toLowerCase();
@@ -94,11 +93,13 @@ export default function HomeFeedScreen() {
         </TouchableOpacity>
       </View>
 
-      {/* Feed */}
+      {/* Feed — 2 columns */}
       <FlatList
         data={filteredPosts}
         keyExtractor={(p) => p.postId}
-        renderItem={({ item }) => <PostCard post={item} />}
+        numColumns={2}
+        columnWrapperStyle={styles.row}
+        renderItem={({ item }) => <PostCardGrid post={item} />}
         contentContainerStyle={styles.listContent}
         ListEmptyComponent={
           <EmptyState
@@ -195,6 +196,11 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textInverse,
     fontSize: 10,
+  },
+  row: {
+    paddingHorizontal: spacing.base,
+    gap: spacing.sm,
+    marginBottom: spacing.sm,
   },
   listContent: {
     paddingTop: spacing.base,

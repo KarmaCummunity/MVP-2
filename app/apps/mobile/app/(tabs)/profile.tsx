@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
-  FlatList, ScrollView,
+  ScrollView,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
-import { PostCard } from '../../src/components/PostCard';
+import { PostCardProfile } from '../../src/components/PostCardProfile';
 import { EmptyState } from '../../src/components/EmptyState';
 import { MOCK_USER, MOCK_POSTS } from '../../src/mock/data';
 
@@ -21,9 +21,8 @@ export default function ProfileScreen() {
   const [activeTab, setActiveTab] = useState<Tab>('active');
 
   const user = MOCK_USER;
-  const myPosts = MOCK_POSTS.filter((p) => p.ownerId === 'me');
   // Show all mock posts on active tab since we have no "me" posts in mock data
-  const displayPosts = MOCK_POSTS.slice(0, 2);
+  const displayPosts = MOCK_POSTS.slice(0, 6);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -96,12 +95,14 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        {/* Posts */}
+        {/* Posts — 3-column grid */}
         {activeTab === 'active' ? (
           displayPosts.length > 0 ? (
-            displayPosts.map((post) => (
-              <PostCard key={post.postId} post={post} />
-            ))
+            <View style={styles.grid}>
+              {displayPosts.map((post) => (
+                <PostCardProfile key={post.postId} post={post} />
+              ))}
+            </View>
           ) : (
             <EmptyState
               emoji="📭"
@@ -215,4 +216,11 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.primary },
   tabText: { ...typography.button, color: colors.textSecondary },
   tabTextActive: { color: colors.primary },
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.base,
+    gap: spacing.xs,
+    paddingBottom: spacing['3xl'],
+  },
 });

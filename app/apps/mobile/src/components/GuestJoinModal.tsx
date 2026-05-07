@@ -1,0 +1,89 @@
+import React from 'react';
+import {
+  Modal,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Pressable,
+} from 'react-native';
+import { colors, spacing, radius, typography, shadow } from '@kc/ui';
+
+export interface GuestJoinModalProps {
+  visible: boolean;
+  message: string;
+  joinLabel: string;
+  onJoin: () => void;
+  onDismiss: () => void;
+}
+
+/** FR-AUTH-014: sign-up overlay shown when a guest attempts a blocked interaction. */
+export function GuestJoinModal({
+  visible,
+  message,
+  joinLabel,
+  onJoin,
+  onDismiss,
+}: Readonly<GuestJoinModalProps>) {
+  return (
+    <Modal
+      visible={visible}
+      transparent
+      animationType="fade"
+      onRequestClose={onDismiss}
+    >
+      <Pressable style={styles.backdrop} onPress={onDismiss}>
+        <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          <Text style={styles.message}>{message}</Text>
+          <TouchableOpacity style={styles.joinBtn} onPress={onJoin} activeOpacity={0.9}>
+            <Text style={styles.joinBtnText}>{joinLabel}</Text>
+          </TouchableOpacity>
+          <TouchableOpacity style={styles.dismissBtn} onPress={onDismiss}>
+            <Text style={styles.dismissText}>סגור</Text>
+          </TouchableOpacity>
+        </Pressable>
+      </Pressable>
+    </Modal>
+  );
+}
+
+const styles = StyleSheet.create({
+  backdrop: {
+    flex: 1,
+    backgroundColor: 'rgba(0,0,0,0.45)',
+    justifyContent: 'flex-end',
+  },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.xl,
+    borderTopRightRadius: radius.xl,
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    paddingBottom: spacing['2xl'],
+    ...shadow.card,
+  },
+  message: {
+    ...typography.bodyLarge,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: spacing.lg,
+  },
+  joinBtn: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  joinBtnText: {
+    ...typography.button,
+    color: colors.textInverse,
+  },
+  dismissBtn: {
+    marginTop: spacing.md,
+    alignItems: 'center',
+    padding: spacing.sm,
+  },
+  dismissText: {
+    ...typography.body,
+    color: colors.textSecondary,
+  },
+});
