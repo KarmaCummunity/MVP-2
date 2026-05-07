@@ -1,7 +1,9 @@
 // ─────────────────────────────────────────────
 // IAuthService — port for authentication providers.
-// Mapped to SRS: FR-AUTH-006, FR-AUTH-007, FR-AUTH-013, FR-AUTH-017
+// Mapped to SRS: FR-AUTH-003 (Google sign-up), FR-AUTH-006 (email sign-up),
+// FR-AUTH-007 (sign-in, all paths), FR-AUTH-013 (cold-start restore), FR-AUTH-017 (sign-out).
 // Adapter lives in @kc/infrastructure-supabase.
+// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
 export interface AuthSession {
@@ -28,4 +30,17 @@ export interface IAuthService {
 
   /** Subscribe to session changes (login, refresh, signout, server-side revoke). */
   onSessionChange(listener: (session: AuthSession | null) => void): () => void;
+
+  /**
+   * FR-AUTH-003 / FR-AUTH-007 (Google path): begin Google OAuth (PKCE). Returns the
+   * provider URL the caller must open in a browser; the browser redirects to
+   * `redirectTo` with `?code=...` once the user authorises.
+   */
+  getGoogleAuthUrl(redirectTo: string): Promise<string>;
+
+  /**
+   * FR-AUTH-003 / FR-AUTH-007 (Google path, completion): exchange the OAuth `code`
+   * returned in the provider redirect for an authenticated session.
+   */
+  exchangeCodeForSession(code: string): Promise<AuthSession>;
 }

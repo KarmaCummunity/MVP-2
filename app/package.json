@@ -9,9 +9,12 @@
     "lint": "turbo run lint",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "mobile": "pnpm --filter @kc/mobile start",
-    "ios": "pnpm --filter @kc/mobile ios",
-    "android": "pnpm --filter @kc/mobile android"
+    "deps": "npx pnpm@9.0.0 install",
+    "mobile": "npx pnpm@9.0.0 --filter @kc/mobile start",
+    "mobile:go": "npx pnpm@9.0.0 --filter @kc/mobile run start:go",
+    "mobile:go:tunnel": "npx pnpm@9.0.0 --filter @kc/mobile run start:go:tunnel",
+    "ios": "npx pnpm@9.0.0 --filter @kc/mobile ios",
+    "android": "npx pnpm@9.0.0 --filter @kc/mobile android"
   },
   "devDependencies": {
     "turbo": "^2.0.0",

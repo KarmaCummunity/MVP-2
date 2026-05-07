@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-06 (lint cleanup) |
+| **Last Updated** | 2026-05-07 (Google SSO) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -24,31 +24,31 @@ This document is the **single source of truth for project execution state**. It 
 
 ---
 
-## 1. Snapshot — Current State (2026-05-06)
+## 1. Snapshot — Current State (2026-05-07)
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~12%** (UI scaffolding done, no real backend integration yet) |
-| Features 🟢 done | 1 |
+| MVP completion (rough) | **~15%** (UI scaffolding + 2 auth paths live; DB schema still missing) |
+| Features 🟢 done | 3 |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 5 |
-| Test coverage | use-case tests for `auth.*` only |
+| Test coverage | use-case tests for `auth.*` (incl. Google), feed selector |
 | Open tech-debt items | 3 |
 
 ### What works end-to-end today
 
 - Monorepo build (`pnpm typecheck` passes)
-- **Native dev builds on iOS 26 + Android API-36 + Web** — all three platforms run correctly with Expo SDK 53 + expo-router 5
+- **Native dev builds on iOS 26 + Android API-36 + Web** — all three platforms run correctly with Expo SDK 54 + expo-router 6
 - All 27 MVP screens have UI scaffolding with mock data
-- **Real email/password authentication** — sign-up, sign-in, session resume, logout (FR-AUTH-006/007/013/017)
+- **Guest preview (peek feed)** — unauthenticated users open `(guest)/feed` with 3 public posts, join modal on card tap (`FR-AUTH-014`)
 
 ### What is fake / stubbed
 
-- All non-auth screens still consume mock data (`apps/mobile/src/mock/data.ts`)
+- All non-auth screens still consume mock data (`apps/mobile/src/mock/data.ts`), including guest preview (`FR-AUTH-014`)
 - No Supabase database schema / migrations / RLS yet
 - No real CRUD for posts, follows, chats, reports, notifications, stats
-- Google / Apple / Phone-OTP sign-in routes still call email sign-in screen as a placeholder
+- Apple / Phone-OTP sign-in routes still call email sign-in screen as a placeholder (Google SSO is real — see §4)
 - Forgot-password flow not implemented
 - Onboarding wizard (post-signup) is bypassed (lands on tabs directly)
 
@@ -94,10 +94,10 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | # | Feature | SRS IDs | Status | External setup needed |
 | - | ------- | ------- | ------ | --------------------- |
-| P3.1 | Google SSO sign-up / sign-in | FR-AUTH-003 | ⏳ Planned | Google Cloud OAuth client |
+| P3.1 | Google SSO sign-up / sign-in | FR-AUTH-003, FR-AUTH-007 | 🟢 Done (2026-05-07) | OAuth (PKCE) via Supabase + `expo-web-browser`; see §4 |
 | P3.2 | Apple SSO sign-up / sign-in (iOS only) | FR-AUTH-004 | ⏳ Planned | Apple Developer account |
 | P3.3 | Phone OTP | FR-AUTH-005 | ⏳ Planned | Twilio / Supabase phone provider config |
-| P3.4 | Guest preview | FR-AUTH-014 | ⏳ Planned | UI shortcut exists today; needs read-only data + sign-up overlay |
+| P3.4 | Guest preview | FR-AUTH-014 | 🟢 Done (2026-05-07) | Dedicated `(guest)/feed`, join modal, `selectGuestPreviewPosts` in `@kc/application` |
 
 ### 🌐 P4 — Cross-platform parity
 
@@ -119,6 +119,41 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### ✅ FR-AUTH-003 / FR-AUTH-007 (Google path) — Google SSO sign-in & sign-up
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-AUTH-003 (sign-up via Google), FR-AUTH-007 (sign-in, Google path), FR-AUTH-002 AC1 (button visible on Android/Web/iOS) |
+| PRD anchor | `03_Core_Features.md` §3.1.1 |
+| Completed | 2026-05-07 |
+| Branch / commit | (current working tree) |
+| Files added | `app/packages/application/src/auth/SignInWithGoogle.ts`, `app/packages/application/src/auth/__tests__/SignInWithGoogle.test.ts`, `app/apps/mobile/app/auth/callback.tsx` |
+| Files changed | `app/packages/application/src/ports/IAuthService.ts` (added `getGoogleAuthUrl` + `exchangeCodeForSession`), `app/packages/application/src/index.ts`, `app/packages/application/src/auth/__tests__/fakeAuthService.ts`, `app/packages/infrastructure-supabase/src/auth/SupabaseAuthService.ts` (OAuth + code exchange), `app/packages/infrastructure-supabase/src/client.ts` (PKCE flow, web/native storage split), `app/packages/infrastructure-supabase/src/index.ts` (export `SupabaseAuthStorage`), `app/apps/mobile/src/services/authComposition.ts` (wires `WebBrowser` + `AuthSession`), `app/apps/mobile/app/(auth)/index.tsx` (live Google handler + spinner), `app/apps/mobile/app/_layout.tsx` (whitelist `/auth/callback` while unauthenticated) |
+| Tech debt logged | NA |
+| Tests | `app/packages/application`: vitest run → **19/19 passing** (3 new for Google use case); `pnpm -r exec tsc --noEmit` → clean |
+| AC verified | FR-AUTH-002 AC1 (Google button rendered web/Android), FR-AUTH-003 AC1 (Supabase auto-creates User on first Google login + emits session), FR-AUTH-007 AC1 (existing Google user → silent re-sign-in, Supabase routes by `sub`); manual end-to-end on web preview confirmed by user (round-trip to Google + return with session) |
+| Known gaps | Apple SSO (P3.2) and Phone OTP (P3.3) still placeholder; deep-link race for native cold-start with deferred OAuth callback (TD-3 already tracked); `getGoogleAuthUrl` could surface `provider_disabled` as a typed `AuthError.code` rather than `'unknown'` (minor) |
+| Setup notes (operator-side) | Supabase Dashboard → Auth → Providers → Google: enable + Client ID + Client Secret. Auth → URL Configuration → Redirect URLs must include `http://localhost:8081/auth/callback` (web dev) and `karmacommunity://auth/callback` (native). Google Cloud OAuth client: Authorized redirect URI must include `https://<project>.supabase.co/auth/v1/callback`. |
+
+---
+
+### ✅ FR-AUTH-014 (+ FR-AUTH-001 AC3) — Guest preview feed
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-AUTH-014, FR-AUTH-001 AC3 |
+| PRD anchor | `03_Core_Features.md` §3.3.1.4, `05_Screen_UI_Mapping.md` §1.7 |
+| Completed | 2026-05-07 |
+| Branch / commit | (current working tree) |
+| Files added | `app/packages/application/src/feed/selectGuestPreviewPosts.ts`, `app/packages/application/src/feed/__tests__/selectGuestPreviewPosts.test.ts`, `app/apps/mobile/app/(guest)/_layout.tsx`, `app/apps/mobile/app/(guest)/feed.tsx`, `app/apps/mobile/src/components/GuestJoinModal.tsx` |
+| Files changed | `app/packages/application/src/index.ts`, `app/apps/mobile/app/_layout.tsx`, `app/apps/mobile/app/(auth)/index.tsx`, `app/apps/mobile/src/store/authStore.ts`, `app/apps/mobile/src/components/PostCard.tsx`, `docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md` (FR-AUTH-014 AC5) |
+| Tech debt logged | NA |
+| Tests | `app/packages/application`: `./node_modules/.bin/vitest run` → **16/16 passing**; `./node_modules/.bin/tsc --noEmit` → clean |
+| AC verified | FR-AUTH-014 AC1–AC5, FR-AUTH-001 AC3 (manual: AuthGate allows `(guest)` while unauthenticated; peek button navigates; authenticated users leaving guest group → tabs) |
+| Known gaps | Overlay does not yet wire `FR-FEED-014` live community count (copy uses static `guestBanner` string); SSO still placeholder (P3.1–P3.3) |
+
+---
 
 ### ✅ FR-AUTH-006 / 007 / 013 / 017 — Email/password authentication + session lifecycle
 

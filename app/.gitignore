@@ -4,7 +4,10 @@ node_modules/
 
 # Build outputs
 dist/
-.expo/
+# Expo: keep generated typed routes; ignore other .expo cache (per app)
+apps/mobile/.expo/**
+!apps/mobile/.expo/types/
+!apps/mobile/.expo/types/**
 *.tsbuildinfo
 
 # Environment

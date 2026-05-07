@@ -11,9 +11,11 @@ import { AvatarInitials } from './AvatarInitials';
 interface PostCardProps {
   post: PostWithOwner;
   onMessagePress?: () => void;
+  /** When set, card tap invokes this instead of navigating to post detail (guest preview). */
+  onPressOverride?: () => void;
 }
 
-export function PostCard({ post, onMessagePress }: PostCardProps) {
+export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProps) {
   const router = useRouter();
 
   const isGive = post.type === 'Give';
@@ -34,7 +36,9 @@ export function PostCard({ post, onMessagePress }: PostCardProps) {
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() => router.push(`/post/${post.postId}`)}
+      onPress={() =>
+        onPressOverride ? onPressOverride() : router.push(`/post/${post.postId}`)
+      }
     >
       {/* Header */}
       <View style={styles.header}>

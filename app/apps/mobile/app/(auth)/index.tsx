@@ -1,6 +1,8 @@
-// Splash / Welcome screen
-// Mapped to: SRS screen 1.1 Splash + 1.2 Auth
-import React from 'react';
+// Splash + Welcome / Auth-method picker.
+// Mapped to SRS: FR-AUTH-001 (splash), FR-AUTH-002 (auth entry, all methods),
+// FR-AUTH-014 (guest preview entry point).
+// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
+import React, { useState } from 'react';
 import {
   View,
   Text,
@@ -9,13 +11,48 @@ import {
   Platform,
   ScrollView,
   Image,
+  ActivityIndicator,
+  Alert,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useRouter, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
+import { isAuthError } from '@kc/application';
+import { useAuthStore } from '../../src/store/authStore';
+import {
+  getOAuthRedirectUri,
+  getSignInWithGoogleUseCase,
+} from '../../src/services/authComposition';
+import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const setGuest = useAuthStore((s) => s.setGuest);
+  const setSession = useAuthStore((s) => s.setSession);
+  const [googleLoading, setGoogleLoading] = useState(false);
+
+  const handleGoogle = async () => {
+    if (googleLoading) return;
+    setGoogleLoading(true);
+    try {
+      const { session } = await getSignInWithGoogleUseCase().execute({
+        redirectTo: getOAuthRedirectUri(),
+      });
+      setSession(session);
+      router.replace('/(tabs)');
+    } catch (err) {
+      const code = isAuthError(err) ? err.code : 'unknown';
+      const message =
+        isAuthError(err) && err.message === 'oauth_dismissed'
+          ? null // user closed the browser — silent
+          : isAuthError(err)
+            ? mapAuthErrorToHebrew(code)
+            : 'שגיאת רשת. נסה שוב.';
+      if (message) Alert.alert('כניסה עם Google נכשלה', message);
+    } finally {
+      setGoogleLoading(false);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container}>
@@ -62,7 +99,8 @@ export default function WelcomeScreen() {
             emoji="G"
             style={styles.googleBtn}
             textStyle={styles.googleBtnText}
-            onPress={() => router.push('/(auth)/sign-in')}
+            onPress={handleGoogle}
+            loading={googleLoading}
           />
 
           <AuthButton
@@ -84,7 +122,10 @@ export default function WelcomeScreen() {
           {/* Guest preview */}
           <TouchableOpacity
             style={styles.guestBtn}
-            onPress={() => router.replace('/(tabs)')}
+            onPress={() => {
+              setGuest(true);
+              router.replace('/(guest)/feed' as Href);
+            }}
           >
             <Text style={styles.guestBtnText}>הצץ בפיד (ללא כניסה)</Text>
           </TouchableOpacity>
@@ -104,13 +145,25 @@ interface AuthButtonProps {
   style: object;
   textStyle: object;
   onPress: () => void;
+  loading?: boolean;
 }
 
-function AuthButton({ label, emoji, style, textStyle, onPress }: Readonly<AuthButtonProps>) {
+function AuthButton({ label, emoji, style, textStyle, onPress, loading }: Readonly<AuthButtonProps>) {
   return (
-    <TouchableOpacity style={[styles.authBtn, style]} onPress={onPress} activeOpacity={0.85}>
-      <Text style={styles.authBtnEmoji}>{emoji}</Text>
-      <Text style={[styles.authBtnText, textStyle]}>{label}</Text>
+    <TouchableOpacity
+      style={[styles.authBtn, style, loading && styles.authBtnDisabled]}
+      onPress={onPress}
+      activeOpacity={0.85}
+      disabled={loading}
+    >
+      {loading ? (
+        <ActivityIndicator color={(textStyle as { color?: string }).color ?? colors.textPrimary} />
+      ) : (
+        <>
+          <Text style={styles.authBtnEmoji}>{emoji}</Text>
+          <Text style={[styles.authBtnText, textStyle]}>{label}</Text>
+        </>
+      )}
     </TouchableOpacity>
   );
 }
@@ -191,6 +244,7 @@ const styles = StyleSheet.create({
   googleBtnText: { color: colors.textPrimary },
   phoneBtn: { backgroundColor: colors.primary },
   phoneBtnText: { color: colors.textInverse },
+  authBtnDisabled: { opacity: 0.7 },
   emailBtn: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },
   emailBtnText: { color: colors.textPrimary },
   guestBtn: {
