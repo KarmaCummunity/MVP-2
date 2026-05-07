@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.d — Chat & Messaging migration written; awaiting operator apply) |
+| **Last Updated** | 2026-05-07 (P0.2.e — Moderation migration written; awaiting operator apply) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -63,7 +63,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
-| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c + P0.2.d written; awaiting operator apply** (`supabase db push`). Remaining: P0.2.e (moderation), P0.2.f (counter triggers + community_stats). |
+| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c + P0.2.d + P0.2.e written; awaiting operator apply** (`supabase db push`). Remaining: P0.2.f (counter triggers + community_stats). |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
@@ -119,6 +119,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟡 P0.2.e — Moderation (migration written, awaiting operator apply)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-MOD-001 (report a target — 24h dedup, target reachability), FR-MOD-002 (issue report — `target_type='none'` row shape), FR-MOD-005 (auto-removal at 3 distinct reporters: post → `removed_admin`, user → `suspended_admin`, chat → `removed_at`), FR-MOD-008 (suspect queue with `excessive_reopens`, partial UNIQUE on open entries), FR-MOD-010 (false-report counter — column + increment trigger; sanction escalation deferred to admin tooling), FR-MOD-011 (reporter-side hides — auto-row on every report INSERT, filtered by `is_post_visible_to`), FR-MOD-012 (audit log on block/unblock, report, auto-remove, dismiss/confirm). Cross-references INV-C3 (Domain 3.5 — `posts.reopen_count >= 5` ⇒ queue entry). Closes the P0.2.d note about `kind='system'` messages by adding the `inject_system_message` SECURITY DEFINER RPC and wiring it into the report INSERT trigger (FR-MOD-001 AC4). |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (`supabase db push`). After apply, regenerate `database.types.ts`. |
+| Branch / commit | `feat/p0-2-e-moderation-schema` (this commit) |
+| Files added | `supabase/migrations/0005_init_moderation.sql` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md`, `docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md` |
+| Tech debt logged | TD-38 (below) — sanction escalation logic (7d → 30d → permanent per FR-MOD-010 AC2) is intentionally NOT triggered by the database; the `false_reports_count` column increments, but admin-tooling decides when to flip `account_status` to `suspended_for_false_reports` and stamp `account_status_until`. The trigger ground is laid (the column lives on `users` from this migration); the sliding-window decision lives at the application layer. |
+| AC verified | SQL static review only. End-to-end verification deferred to operator (probes below). |
+| Known gaps | (a) Sanction escalation tier logic — see TD-12. (b) Forbidden-keyword detection (FR-MOD-008 AC1 reason `forbidden_keyword`) is not wired by trigger here — it's the responsibility of a future content-moderation service that calls `insert into moderation_queue_entries`. The schema accepts the reason value. (c) Notifications to the target owner on auto-removal (FR-MOD-005 AC5 — Critical category) ship with FR-NOTIF later. (d) Restore action (`FR-ADMIN-002`) is not part of this slice — `restore_target` is in the audit `action` enum so the trigger can stamp it when admin tooling lands. |
+| Operator setup notes | `supabase db push`. Verify after applying 0001..0005: (1) `select public.is_admin(null::uuid);` returns `false`. (2) As a regular user A, `insert into public.reports (reporter_id, target_type, target_id, reason) values (A, 'post', '<post>', 'Spam');` succeeds; immediately a row appears in `public.reporter_hides` and another in `public.audit_events` (`action='report_target'`). (3) Re-running the same INSERT within 24h must error `duplicate_report`. (4) Two more distinct reporters reporting the same post must transition `posts.status` to `removed_admin` and write an `auto_remove_target` audit row. (5) After bumping a `posts.reopen_count` to 5, a queue row appears with `reason='excessive_reopens'`. After verification, regenerate `database.types.ts` and commit. |
+
+---
 
 ### 🟡 P0.2.d — Chat & Messaging (migration written, awaiting operator apply)
 
@@ -313,6 +330,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-35 | `i18n/he.ts` (207 LOC) violates `≤ 200 LOC` cap; split per domain. (AUDIT-P3-08) | Low | Audit 2026-05-07 | Open |
 | TD-36 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit. (AUDIT-P3-06) | Low | Audit 2026-05-07 | Open |
 | TD-37 | Sprint Board §3 lists "P0.2 In progress" without indicating P0.2.d/e/f are unwritten — needs a refresh. (AUDIT-P3-05) | Low | Audit 2026-05-07 | Open |
+| TD-38 | FR-MOD-010 sanction escalation (7d → 30d → permanent) is **schema only** in P0.2.e: `users.false_reports_count` increments via the report-status trigger, but the actual transition to `suspended_for_false_reports` and the stamping of `account_status_until` are **not** triggered by the DB. Reason: the rule is a 30-day sliding-window count of dismissed reports — the count, the window, and the tier escalation are admin-tooling decisions that should live with `FR-ADMIN-*` flow code (not in a generic trigger). Schema columns (`false_reports_count`, `false_report_sanction_count`, `account_status_until`) are reserved on `users` so the application can flip them when the admin slice lands. | Med | P0.2.e 2026-05-07 | Open |
 
 ---
 
