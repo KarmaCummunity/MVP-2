@@ -13,3 +13,4 @@ export * from './auth/RestoreSession';
 export * from './auth/CompleteBasicInfoUseCase';
 export * from './auth/CompleteOnboardingUseCase';
 export * from './feed/selectGuestPreviewPosts';
+export * from './feed/GetFeedUseCase';
