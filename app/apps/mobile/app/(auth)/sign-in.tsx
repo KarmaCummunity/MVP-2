@@ -36,7 +36,7 @@ export default function SignInScreen() {
     try {
       const { session } = await getSignInUseCase().execute({ email, password });
       setSession(session);
-      router.replace('/(tabs)');
+      // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
     } catch (err) {
       const message = isAuthError(err)
         ? mapAuthErrorToHebrew(err.code)

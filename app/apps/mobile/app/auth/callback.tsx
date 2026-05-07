@@ -42,7 +42,7 @@ export default function AuthCallbackScreen() {
         const session = await exchangeOAuthCode(code);
         if (cancelled) return;
         setSession(session);
-        router.replace('/(tabs)');
+        // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
       } catch (err) {
         if (cancelled) return;
         const msg = isAuthError(err)
