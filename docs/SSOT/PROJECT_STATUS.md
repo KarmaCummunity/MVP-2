@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.f — Stats counters + community_stats migration written; awaiting operator apply) |
+| **Last Updated** | 2026-05-07 (P0.2.f1 — `users` added to `supabase_realtime` publication; counter-column visibility gap logged as TD-39) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -120,6 +120,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 Append-only. **Newest at top.**
 
+### 🟡 P0.2.f1 — Users Realtime publication + counter-column visibility gap (audit follow-up)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-PROFILE-013 AC5 (counters **projected via Realtime**), NFR-PERF-005 (≤2,000 ms Realtime freshness). |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (`supabase db push`). The migration is fully guarded — safe to run on environments where `supabase_realtime` doesn't exist yet. |
+| Branch / commit | `feat/p0-2-f1-users-realtime-and-td39` |
+| Files added | `supabase/migrations/0007_users_realtime_publication.sql` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md` (this entry + TD-39 below + Known-gaps update on P0.2.f) |
+| Tech debt logged | TD-39 (below) — non-owner SELECT of internal counter columns is allowed by 0001's row-level `users_select_public` policy. Mitigation lives at the application repository layer (must use `active_posts_count_for_viewer()` instead of reading `active_posts_count_internal` directly). |
+| AC verified | SQL static review only. Operator probe: after apply, `select tablename from pg_publication_tables where pubname = 'supabase_realtime' and schemaname = 'public';` must include `users`. Then `update public.users set followers_count = followers_count where user_id = '<id>';` should fire a Realtime event for any subscriber on that row. |
+| Known gaps | None new — see TD-39 for the column-visibility note. |
+| Operator setup notes | `supabase db push`. Re-running 0007 is a no-op due to the `pg_publication_tables` guard. |
+
+---
+
 ### 🟡 P0.2.f — Stats projections + counter triggers + community_stats (migration written, awaiting operator apply)
 
 | Field | Value |
@@ -132,7 +149,7 @@ Append-only. **Newest at top.**
 | Files changed | `docs/SSOT/PROJECT_STATUS.md` |
 | Tech debt logged | None new. Closes TD-21 (counter triggers complete, including the previously-missing `active_posts_count_public` — split into `active_posts_count_public_open` + `active_posts_count_followers_only_open` because FR-PROFILE-013 AC2 is viewer-dependent). Partially closes TD-20 (community_stats endpoint shape exists; activity timeline + nightly drift recompute job stay open under FR-STATS-003 / FR-STATS-005 application code). |
 | AC verified | SQL static review only. End-to-end verification deferred to operator (probes below). |
-| Known gaps | (a) FR-STATS-003 activity timeline ships at the application layer (read-side projection over posts/recipients events) — not in this slice. (b) FR-STATS-005 nightly `bg-job-stats-recompute` is the durable equivalent of the on-write triggers; the Edge Function ships in P1.6. The schema seam is the `stats_safe_dec` NOTICE log, which an operator can scrape for `stats_drift_detected`. (c) FR-CLOSURE-008's actual `bg-job-soft-delete-cleanup` Edge Function is not in this slice — only the supporting partial index ships here. (d) Hard-delete of a `closed_delivered` post does NOT roll back `items_given_count` (FR-STATS-005 reconciles drift). The legitimate path for `closed_delivered` is reopen → status trigger handles it. (e) `community_stats` is a regular view, not materialised; SRS FR-STATS-004 AC2's 60s freshness contract is fulfilled at the edge cache layer, not the DB. Promote to MV + pg_cron when scale warrants. |
+| Known gaps | (a) FR-STATS-003 activity timeline ships at the application layer (read-side projection over posts/recipients events) — not in this slice. (b) FR-STATS-005 nightly `bg-job-stats-recompute` is the durable equivalent of the on-write triggers; the Edge Function ships in P1.6. The schema seam is the `stats_safe_dec` NOTICE log, which an operator can scrape for `stats_drift_detected`. (c) FR-CLOSURE-008's actual `bg-job-soft-delete-cleanup` Edge Function is not in this slice — only the supporting partial index ships here. (d) Hard-delete of a `closed_delivered` post does NOT roll back `items_given_count` (FR-STATS-005 reconciles drift). The legitimate path for `closed_delivered` is reopen → status trigger handles it. (e) `community_stats` is a regular view, not materialised; SRS FR-STATS-004 AC2's 60s freshness contract is fulfilled at the edge cache layer, not the DB. Promote to MV + pg_cron when scale warrants. (f) **`users` not added to `supabase_realtime` publication** — fixed in follow-up P0.2.f1 (above). FR-PROFILE-013 AC5 was unfulfilled at original P0.2.f land. (g) **Internal counter columns are SELECT-able by any authenticated viewer of a Public profile** (FR-PROFILE-013 AC4 system-level guarantee leaks at the schema). Logged as TD-39 — mitigation is application-layer discipline (read `active_posts_count_for_viewer()`, never the raw `_internal` column for non-owners). |
 | Operator setup notes | `supabase db push`. Verify after applying 0001..0006: (1) `select * from public.community_stats;` returns one row with three integers + `as_of` timestamp. (2) As user A insert a `Public` open post — `select active_posts_count_internal, active_posts_count_public_open, posts_created_total from public.users where user_id = A;` must show 1, 1, 1. (3) Update its `visibility` to `OnlyMe` is forbidden by `posts_visibility_upgrade_check` (visibility is upgrade-only); update an `OnlyMe` post to `Public` and re-check — `public_open` must increment. (4) Delete the post — `active_posts_count_internal` and `active_posts_count_public_open` must decrement to 0; `posts_created_total` stays at 1 (lifetime counter). (5) `select public.active_posts_count_for_viewer(A, A);` returns the internal count; `select public.active_posts_count_for_viewer(A, null);` returns the anon-viewer (public-only) count. (6) Two users follow each other — `followers_count` and `following_count` of both must be 1. (7) `select public.stats_safe_dec(0);` returns 0 and emits a NOTICE in pg logs. After verification, regenerate `database.types.ts` and commit. |
 
 ---
@@ -348,6 +365,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-36 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit. (AUDIT-P3-06) | Low | Audit 2026-05-07 | Open |
 | TD-37 | Sprint Board §3 lists "P0.2 In progress" without indicating P0.2.d/e/f are unwritten — needs a refresh. (AUDIT-P3-05) | Low | Audit 2026-05-07 | Open |
 | TD-38 | FR-MOD-010 sanction escalation (7d → 30d → permanent) is **schema only** in P0.2.e: `users.false_reports_count` increments via the report-status trigger, but the actual transition to `suspended_for_false_reports` and the stamping of `account_status_until` are **not** triggered by the DB. Reason: the rule is a 30-day sliding-window count of dismissed reports — the count, the window, and the tier escalation are admin-tooling decisions that should live with `FR-ADMIN-*` flow code (not in a generic trigger). Schema columns (`false_reports_count`, `false_report_sanction_count`, `account_status_until`) are reserved on `users` so the application can flip them when the admin slice lands. | Med | P0.2.e 2026-05-07 | Open |
+| TD-39 | **Internal counter columns leak to non-owner viewers of Public profiles.** 0001's `users_select_public` policy + the row-level grant let any authenticated client read `active_posts_count_internal`, `items_given_count`, `items_received_count`, `posts_created_total`, `false_reports_count`, etc. on Public+active profiles. A non-owner can compute `internal − public_open − followers_only_open` to infer the existence of `OnlyMe` posts, violating FR-PROFILE-013 AC4's "**never** reveals" system-level guarantee, and FR-STATS-006 AC1's "stats screen never exposes data about other users" intent. Schema-level fix is awkward (Postgres column-grants apply per role *before* RLS, so revoking the grant from `authenticated` would also break the owner's own self-read). The correct fix is application-layer: the `IUserRepository` Supabase adapter (planned P2.4) MUST call `active_posts_count_for_viewer(owner, viewer)` for non-self reads and never project the raw `_internal` counter into Other-Profile responses. Add a lint/test to prevent regressions when the adapter is written. Schema-level reinforcement (a `users_public` view + revoke direct SELECT) is a possible future hardening but not blocking. | Med | P0.2.f1 audit 2026-05-07 | Open |
 
 ---
 
