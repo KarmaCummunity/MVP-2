@@ -70,7 +70,6 @@ export default function ProfileScreen() {
             </View>
           </View>
 
-          {/* TD-42: followers/following/items_given/items_received still 0 — needs IUserRepository.findById (P2.4). */}
           <View style={styles.statsRow}>
             <StatItem count={0} label="עוקבים" />
             <View style={styles.statDivider} />
