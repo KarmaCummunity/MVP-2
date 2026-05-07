@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (TD-33 — ErrorBoundary on root layout; token-efficiency pass: §4 compressed, OPERATOR_RUNBOOK.md extracted, §1/§2/§3 updated to reflect migrations applied) |
+| **Last Updated** | 2026-05-08 (P0.4-BE — SupabasePostRepository adapter; TD-13 partial; TD-50 logged) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -24,17 +24,17 @@ This document is the **single source of truth for project execution state**. It 
 
 ---
 
-## 1. Snapshot — Current State (2026-05-07)
+## 1. Snapshot — Current State (2026-05-08)
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~18%** (UI scaffolding + 2 auth paths + guest preview + onboarding slice A; DB schema applied) |
+| MVP completion (rough) | **~22%** (UI scaffolding + 2 auth paths + guest preview + onboarding slice A; DB schema applied; Posts repo adapter (BE) — FE wiring still mock-backed) |
 | Features 🟢 done | 4 |
-| Features 🟡 in progress | 0 |
+| Features 🟡 in progress | 1 (P0.4 — BE adapter merged, FE pending) |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 3 (P0.3 slices B+C; P0.4–P0.6 planned) |
+| P0 critical features remaining | 3 (P0.3 slices B+C; P0.4-FE; P0.5; P0.6) |
 | Test coverage | use-case tests for `auth.*` (incl. Google + onboarding), feed selector |
-| Open tech-debt items | 3 |
+| Open tech-debt items | 4 |
 
 ### What works end-to-end today
 
@@ -113,13 +113,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | ---- | ------- | ----- | ------- | ------ |
 | Done | P0.2 — Database schema + RLS (all migrations 0001–0008 applied) | — | 2026-05-07 | 2026-05-07 |
 | In progress | P0.3 — Onboarding wizard (slice A merged; B = photo upload, C = FR-AUTH-015 soft gate) | — | 2026-05-07 | — |
-| Up next | P0.4 — Post creation + feed CRUD | — | — | — |
+| In progress | P0.4-BE — Posts adapter (Supabase) | agent-be | 2026-05-08 | — |
+| Up next | P0.4-FE — Feed UI + Create form (consumes adapter) | — | — | — |
 
 ---
 
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.** Git has the full file diff — see branch/commit. Operator verification steps are in [OPERATOR_RUNBOOK.md](./OPERATOR_RUNBOOK.md).
+
+---
+
+### 🟢 P0.4-BE — Posts repository adapter (Supabase)
+- **SRS**: FR-POST-001..004, 008..011, 014; FR-FEED-001..005, 013
+- **Branch**: `feat/FR-POST-001-be-posts-repo` · 2026-05-08
+- **Tests**: tsc clean (all 5 packages); 25/25 vitest still green; no new tests (adapter mirrors `SupabaseAuthService` precedent — see TD-50)
+- **Tech debt**: TD-13 partially resolved (close/reopen still stubbed for P0.6); adds TD-50 (no-tests for infra adapters)
+- **Open gaps**: FR-CLOSURE-* close/reopen (P0.6) · image upload from device FR-POST-005 (P0.4-FE) · realtime feed FR-FEED-014 (P1.2) · `update()` does not change mediaAssets (image swap on edit deferred)
 
 ---
 
@@ -268,7 +278,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-10 | `AuthSession.displayName`/`avatarUrl` are an interim source for "My Profile" header (FR-AUTH-003 AC5). Once P0.2 lands and a real `Profile` table exists, the screen must read from `Profile` and these `AuthSession` fields become first-render fallback only. | Low | UX polish 2026-05-07 | Open |
 | TD-11 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (the post row is hidden by RLS, so its image paths are not enumerable). Replace with per-object signed URLs (or a private bucket + sign-on-fetch) once we serve at scale or once anyone audits the privacy story. | Low | P0.2.b 2026-05-07 | Open |
 | TD-12 | **Audit baseline 2026-05-07** — full review of code vs PRD/SRS produced 49 findings across P0/P1/P2/P3. See [`CODE_AUDIT_2026-05-07.md`](./CODE_AUDIT_2026-05-07.md). The TD rows below mirror that audit's individual items. | High | Audit 2026-05-07 | Open |
-| TD-13 | No `IPostRepository` Supabase adapter — port declared, no implementation. Mock data still consumed by feed/create/post detail. (AUDIT-P0-01) | High | Audit 2026-05-07 | Open (P0.4) |
+| TD-13 | No `IPostRepository` Supabase adapter — port declared, no implementation. Mock data still consumed by feed/create/post detail. (AUDIT-P0-01) | High | Audit 2026-05-07 | 🟡 Partial — adapter ships in P0.4-BE 2026-05-08; close/reopen remain `not_implemented('P0.6')` until closure slice; FE wiring still mock-backed until P0.4-FE merges |
 | TD-14 | No `IUserRepository` Supabase adapter; profile + user-detail screens use `MOCK_USER`. (AUDIT-P0-02) | High | Audit 2026-05-07 | Open (P0.4 / P2.4) |
 | TD-15 | No `IChatRepository` Supabase adapter; chat list + thread use `MOCK_MESSAGES`. (AUDIT-P0-03) | High | Audit 2026-05-07 | Open (P0.5) |
 | TD-16 | Chat schema (`chats`, `messages`, RLS, realtime triggers) not yet migrated — planned `P0.2.d`. (AUDIT-P0-04) | High | Audit 2026-05-07 | ✅ Resolved (P0.2.d applied) |
@@ -296,6 +306,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-38 | FR-MOD-010 sanction escalation (7d → 30d → permanent) is **schema only** in P0.2.e: `users.false_reports_count` increments via the report-status trigger, but the actual transition to `suspended_for_false_reports` and the stamping of `account_status_until` are **not** triggered by the DB. Reason: the rule is a 30-day sliding-window count of dismissed reports — the count, the window, and the tier escalation are admin-tooling decisions that should live with `FR-ADMIN-*` flow code (not in a generic trigger). Schema columns (`false_reports_count`, `false_report_sanction_count`, `account_status_until`) are reserved on `users` so the application can flip them when the admin slice lands. | Med | P0.2.e 2026-05-07 | Open |
 | TD-39 | **Internal counter columns leak to non-owner viewers of Public profiles.** 0001's `users_select_public` policy + the row-level grant let any authenticated client read `active_posts_count_internal`, `items_given_count`, `items_received_count`, `posts_created_total`, `false_reports_count`, etc. on Public+active profiles. A non-owner can compute `internal − public_open − followers_only_open` to infer the existence of `OnlyMe` posts, violating FR-PROFILE-013 AC4's "**never** reveals" system-level guarantee, and FR-STATS-006 AC1's "stats screen never exposes data about other users" intent. Schema-level fix is awkward (Postgres column-grants apply per role *before* RLS, so revoking the grant from `authenticated` would also break the owner's own self-read). The correct fix is application-layer: the `IUserRepository` Supabase adapter (planned P2.4) MUST call `active_posts_count_for_viewer(owner, viewer)` for non-self reads and never project the raw `_internal` counter into Other-Profile responses. Add a lint/test to prevent regressions when the adapter is written. Schema-level reinforcement (a `users_public` view + revoke direct SELECT) is a possible future hardening but not blocking. | Med | P0.2.f1 audit 2026-05-07 | Open |
 | TD-40 | `SupabaseUserRepository` is a P0.3.a slice stub — only `getOnboardingState`, `setBasicInfo`, `setOnboardingState` are wired against `public.users`. The remaining 19 `IUserRepository` methods throw `not_implemented` and must be filled in during P0.4 (`findByAuthIdentity`, `findById`), P1.1 (follows + follow-requests), P1.4 (blocks), P2.4 (`update`, `findByHandle`, `delete`). Adapter file: `app/packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts`. The `not_implemented` errors include the slice that owns each method so callers know where to look. | Med | P0.3.a 2026-05-07 | Open |
+| TD-50 | `SupabasePostRepository` and `SupabaseAuthService` have no adapter-level tests (only `pnpm typecheck` + downstream use-case fakes guard them). Pure helpers (`mapPostRow`, `cursor.ts`, `mapAuthError`) deserve unit tests. Adding vitest to `@kc/infrastructure-supabase` is a small, focused slice. | Med | P0.4-BE 2026-05-08 | Open |
 
 ---
 
