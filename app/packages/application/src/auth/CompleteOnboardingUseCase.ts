@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────
-// CompleteOnboardingUseCase — FR-AUTH-012 AC3.
-// Sets onboarding_state to 'completed'. Idempotent.
-// ─────────────────────────────────────────────
-
+/** FR-AUTH-012 AC3: Set onboarding_state to 'completed'. Idempotent. */
 import type { IUserRepository } from '../ports/IUserRepository';
 
 export interface CompleteOnboardingInput {

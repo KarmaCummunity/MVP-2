@@ -1,28 +1,11 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0003_init_following_blocking
--- P0.2.c — Following & Blocking
--- Mapped to:
---   FR-FOLLOW-001  follow a public profile (instant edge)
---   FR-FOLLOW-002  unfollow
---   FR-FOLLOW-003  send follow request to a private profile
---   FR-FOLLOW-004  cancel pending request (requester)
---   FR-FOLLOW-005  approve pending request (target) → creates edge
---   FR-FOLLOW-006  reject pending request (target) → 14-day cooldown
---   FR-FOLLOW-008  re-follow after cooldown expiry
---   FR-FOLLOW-009  remove existing follower (followed-side delete)
---   FR-FOLLOW-012  follow side-effects on FollowersOnly visibility (RLS-enforced)
---   FR-MOD-003     block a user (creates row, cascades follow + cancels requests)
---   FR-MOD-004     unblock a user
---   FR-MOD-009     mutual filtering of blocked users (bilateral RLS predicate)
---   FR-PROFILE-003 approved-follower expansion of Private profile SELECT
--- See: docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md §P0.2.c
+-- 0003_init_following_blocking | P0.2.c — Following & Blocking
+-- FR-FOLLOW-001..006+008+009+012, FR-MOD-003+004+009, FR-PROFILE-003
 --
--- This slice closes the placeholders left in 0002_init_posts.sql:
+-- Closes placeholders left in 0002_init_posts.sql:
 --   - is_post_visible_to(): FollowersOnly branch wired against follow_edges,
 --     and a block-aware short-circuit added for every branch.
---   - users RLS: a SELECT policy is added for approved followers of Private
---     profiles, and the existing public-SELECT policy gains the block check.
--- ─────────────────────────────────────────────────────────────────────────────
+--   - users RLS: SELECT policy added for approved followers of Private profiles,
+--     and the existing public-SELECT policy gains the block check.
 
 -- ── 1. follow_edges ──────────────────────────────────────────────────────────
 -- Directed edge "follower follows followed". Hard-deleted on unfollow,

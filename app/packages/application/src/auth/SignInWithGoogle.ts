@@ -1,10 +1,4 @@
-// ─────────────────────────────────────────────
-// Use case: Sign in / sign up via Google (OAuth, PKCE flow).
-// Mapped to SRS: FR-AUTH-003 (sign up via Google), FR-AUTH-007 (sign in).
-// Supabase auto-routes by Google `sub`: existing user → sign in, new → sign up.
-// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
-// ─────────────────────────────────────────────
-
+/** FR-AUTH-003+007 (Google OAuth PKCE): Supabase auto-routes by `sub` — new user → sign up, existing → sign in. */
 import type { IAuthService, AuthSession } from '../ports/IAuthService';
 import { AuthError } from './errors';
 

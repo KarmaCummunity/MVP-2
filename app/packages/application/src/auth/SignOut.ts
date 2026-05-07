@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────
-// Use case: Sign out current user.
-// Mapped to SRS: FR-AUTH-017
-// ─────────────────────────────────────────────
-
+/** FR-AUTH-017: Sign out current user. */
 import type { IAuthService } from '../ports/IAuthService';
 
 export class SignOutUseCase {

@@ -1,9 +1,5 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0002_init_posts
--- P0.2.b — Posts core (posts, media_assets, recipients, visibility helper)
--- Mapped to: FR-POST-001..020, FR-FEED-001..002, FR-CLOSURE-002..003
---            (closure flow itself ships later; we only need the row shape now).
--- See: docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md §P0.2.b
+-- 0002_init_posts | P0.2.b — Posts core (posts, media_assets, recipients, visibility helper)
+-- FR-POST-001..020, FR-FEED-001..002, FR-CLOSURE-002..003 (closure flow ships later; row shape only)
 --
 -- Visibility model recap:
 --   Public        — everyone (subject to block check; block check ships P0.2.c)
@@ -12,7 +8,6 @@
 -- The is_post_visible_to() helper below has a deliberately conservative
 -- FollowersOnly branch for now (returns false for non-owners). Replace its
 -- body in P0.2.c once follow_edges + blocks land.
--- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── 1. posts ─────────────────────────────────────────────────────────────────
 create table if not exists public.posts (

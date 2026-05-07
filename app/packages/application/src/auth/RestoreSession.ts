@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────
-// Use case: Restore persisted session on cold start.
-// Mapped to SRS: FR-AUTH-013
-// ─────────────────────────────────────────────
-
+/** FR-AUTH-013: Restore persisted session on cold start. */
 import type { IAuthService, AuthSession } from '../ports/IAuthService';
 
 export interface RestoreSessionOutput {

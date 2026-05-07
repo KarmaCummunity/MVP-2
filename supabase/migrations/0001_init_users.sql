@@ -1,10 +1,5 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0001_init_users
--- P0.2.a — Foundation & Identity
--- Mapped to: FR-AUTH-003, FR-AUTH-006, FR-AUTH-010..012, FR-PROFILE-001..007,
---            FR-PROFILE-013, FR-AUTH-016 (status enum only — flow is later).
--- See: docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md
--- ─────────────────────────────────────────────────────────────────────────────
+-- 0001_init_users | P0.2.a — Foundation & Identity
+-- FR-AUTH-003, FR-AUTH-006, FR-AUTH-010..012, FR-PROFILE-001..007, FR-PROFILE-013, FR-AUTH-016 (status enum only)
 
 -- ── Extensions ───────────────────────────────────────────────────────────────
 create extension if not exists pgcrypto;  -- gen_random_uuid()

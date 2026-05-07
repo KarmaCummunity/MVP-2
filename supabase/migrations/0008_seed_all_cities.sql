@@ -1,17 +1,11 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0008_seed_all_cities
--- Bulk-seed all 1,306 Israeli settlements from data.gov.il dataset
--- (resource_id 5c78e9fa-c2e2-4771-93ff-7f400a12f7ba). Replaces the 20-slug
--- placeholder seed from 0001 with the canonical CBS settlement-symbol system.
+-- 0008_seed_all_cities | Bulk-seed 1,306 Israeli settlements from data.gov.il
+-- (resource_id 5c78e9fa-c2e2-4771-93ff-7f400a12f7ba); replaces 20-slug placeholder from 0001.
 --
--- Order of operations matters because of FK from users.city → cities.city_id:
+-- Order matters (FK: users.city → cities.city_id):
 --   1. INSERT all 1,306 gov.il rows (idempotent via ON CONFLICT).
---   2. Backfill any existing users.city values that still reference a legacy
---      slug — remap them to the canonical numeric code.
+--   2. Backfill existing users.city slug values → canonical numeric code.
 --   3. DELETE the 20 legacy slug rows (no FK violations possible after step 2).
---   4. Replace handle_new_user() so newly created users default to '5000'
---      (Tel Aviv) instead of 'tel-aviv'.
--- ─────────────────────────────────────────────────────────────────────────────
+--   4. Replace handle_new_user() so new users default to '5000' (Tel Aviv).
 
 -- ── 1. Bulk seed all gov.il cities ───────────────────────────────────────────
 insert into public.cities (city_id, name_he, name_en) values

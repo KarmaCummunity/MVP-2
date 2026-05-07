@@ -1,13 +1,5 @@
-// ─────────────────────────────────────────────
-// CompleteBasicInfoUseCase — FR-AUTH-010.
-// Validates display_name + city, persists via IUserRepository, advances
-// onboarding_state from pending_basic_info → pending_avatar.
-//
-// City id+name are taken from the caller (the CityPicker selects a row from
-// the live `public.cities` table, so client-side validation against a hard-
-// coded list is unnecessary — the DB FK is the final guard).
-// ─────────────────────────────────────────────
-
+/** FR-AUTH-010: Validate display_name + city; advance onboarding_state pending_basic_info → pending_avatar.
+ *  City id+name come from the caller (CityPicker queries public.cities); DB FK is the final guard. */
 import type { IUserRepository } from '../ports/IUserRepository';
 
 export interface CompleteBasicInfoInput {

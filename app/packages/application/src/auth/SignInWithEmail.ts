@@ -1,8 +1,4 @@
-// ─────────────────────────────────────────────
-// Use case: Sign in via email + password.
-// Mapped to SRS: FR-AUTH-007 (email path)
-// ─────────────────────────────────────────────
-
+/** FR-AUTH-007 (email path): Sign in via email + password. */
 import type { IAuthService, AuthSession } from '../ports/IAuthService';
 import { AuthError } from './errors';
 

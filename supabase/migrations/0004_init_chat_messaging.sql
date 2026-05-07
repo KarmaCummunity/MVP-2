@@ -1,23 +1,5 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0004_init_chat_messaging
--- P0.2.d — Chat & Messaging
--- Mapped to:
---   FR-CHAT-001  inbox list (sorted by last_message_at)
---   FR-CHAT-002  conversation screen (2,000-char body cap)
---   FR-CHAT-003  send message (status state machine)
---   FR-CHAT-004  conversation context anchoring (one chat per pair, anchor first-wins)
---   FR-CHAT-005  auto-message for post-anchored chats (no special row type)
---   FR-CHAT-006  open chat from a profile (anchor null)
---   FR-CHAT-007  open support thread (is_support_thread auto-set on insert)
---   FR-CHAT-009  block/unblock effects (blocker hides chat; blocked still sees;
---                blocked-side messages can be persisted but never delivered)
---   FR-CHAT-010  reporting a conversation (target_type=chat in P0.2.e)
---   FR-CHAT-011  read receipts (server-side `delivered`/`read` transitions)
---   FR-CHAT-012  unread badge (uses (chat_id, status) partial index)
---   FR-CHAT-013  retention after account deletion (sender_id ON DELETE SET NULL)
---   FR-MOD-009   bilateral filtering — chat dimension uses directional has_blocked()
---                because the blocked party intentionally still sees the chat.
--- See: docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md §P0.2.d
+-- 0004_init_chat_messaging | P0.2.d — Chat & Messaging
+-- FR-CHAT-001..007+009+011+012+013, FR-MOD-009
 --
 -- Why directional `has_blocked` and not bilateral `is_blocked` for chats:
 --   FR-CHAT-009 AC1 carves chats out of the bilateral block rule (FR-MOD-009).
@@ -26,7 +8,6 @@
 --   `is_chat_visible_to(chat, A)` returns false — so the messages SELECT policy
 --   filters them out for A. This is precisely "succeed-locally and remain
 --   undelivered" (FR-CHAT-009 AC3).
--- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── 1. chats ─────────────────────────────────────────────────────────────────
 -- One row per ordered pair (a < b). The canonicalize trigger below swaps inputs

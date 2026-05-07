@@ -1,14 +1,5 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0006_init_stats_counters
--- P0.2.f — Stats projections + counter triggers + community_stats view
--- Mapped to: FR-STATS-001..006 (personal counters + reactivity + drift seam),
---            FR-PROFILE-013 (public/internal active-posts split — viewer-aware),
---            FR-FEED-014 (active-community counter), FR-CLOSURE-008 (data shape
---            only — the bg-job-soft-delete-cleanup itself ships as an Edge
---            Function later; this migration adds the supporting partial index),
---            FR-PROFILE-001 AC2 (followers / following on profile header),
---            FR-FEED-015 (first-post nudge needs `posts_created_total`).
--- See: docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md §P0.2.f
+-- 0006_init_stats_counters | P0.2.f — Stats projections + counter triggers + community_stats view
+-- FR-STATS-001..006, FR-PROFILE-013, FR-FEED-014+015, FR-CLOSURE-008 (data shape only), FR-PROFILE-001 AC2
 --
 -- Counters live as denormalised columns on `public.users`. Ground truth is the
 -- mutating tables (posts, recipients, follow_edges); these triggers keep the
@@ -21,7 +12,6 @@
 -- an approved follower) and cannot be condensed to a single column. We store
 -- TWO columns (public_open + followers_only_open) and expose
 -- `active_posts_count_for_viewer(owner, viewer)` for the viewer-aware total.
--- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── 1. Schema additions on public.users ─────────────────────────────────────
 alter table public.users

@@ -1,25 +1,10 @@
--- ─────────────────────────────────────────────────────────────────────────────
--- Migration: 0005_init_moderation
--- P0.2.e — Moderation schema (reports, queue, reporter-side hides, audit log)
--- Mapped to:
---   FR-MOD-001 report a content target (post / user / chat) with 24h dedup
---   FR-MOD-002 report a general issue (target_type=none) — chat side ships at app layer
---   FR-MOD-005 auto-removal at 3 distinct reporters (post → removed_admin,
---              user → suspended_admin, chat → removed_at)
---   FR-MOD-008 suspect queue (excessive_reopens, forbidden_keyword, manual_flag)
---   FR-MOD-010 false-report sanctions (schema only — escalation logic ships
---              with admin tooling later; the counter is incremented here on
---              every dismissed_no_violation transition)
---   FR-MOD-011 reporter-side hides (FR-MOD-011 AC1 — visibility filter)
---   FR-MOD-012 audit logging (block/unblock, report, auto-remove)
---   FR-CHAT-009 / 010    chat dimension uses chats.removed_at (added below)
---   INV-C3 (Domain 3.5) post.reopen_count >= 5 ⇒ queue entry exists
+-- 0005_init_moderation | P0.2.e — Moderation schema (reports, queue, reporter-side hides, audit log)
+-- FR-MOD-001+002+005+008+010+011+012, FR-CHAT-009+010, INV-C3
 --
 -- Closes the P0.2.d note about kind='system' messages: this migration adds
 -- the SECURITY DEFINER `inject_system_message()` RPC that the moderation
 -- triggers call to drop a system message into the super admin's support
 -- thread (FR-MOD-001 AC4) — same RPC FR-MOD-002 will call from the app layer.
--- ─────────────────────────────────────────────────────────────────────────────
 
 -- ── 0. users — schema additions for sanctions ────────────────────────────────
 -- false_reports_count is incremented by the report-status-change trigger.
