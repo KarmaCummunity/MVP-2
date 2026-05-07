@@ -31,7 +31,7 @@ export default function SignUpScreen() {
 
       if (session) {
         setSession(session);
-        router.replace('/(tabs)');
+        // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
       } else if (pendingVerification) {
         Alert.alert(
           'כמעט שם',

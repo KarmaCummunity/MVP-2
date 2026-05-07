@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.f1 — `users` added to `supabase_realtime` publication; counter-column visibility gap logged as TD-39) |
+| **Last Updated** | 2026-05-07 (P0.3.a — Onboarding wizard slice A: Basic Info + Tour wired end-to-end; Photo skip-stub) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -28,12 +28,12 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~15%** (UI scaffolding + 2 auth paths live + guest preview; DB schema still missing) |
-| Features 🟢 done | 3 |
+| MVP completion (rough) | **~18%** (UI scaffolding + 2 auth paths + guest preview + onboarding slice A; DB schema written) |
+| Features 🟢 done | 4 |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 5 |
-| Test coverage | use-case tests for `auth.*` (incl. Google), feed selector |
+| P0 critical features remaining | 4 (P0.2 in progress; P0.4–P0.6 planned) |
+| Test coverage | use-case tests for `auth.*` (incl. Google + onboarding), feed selector |
 | Open tech-debt items | 3 |
 
 ### What works end-to-end today
@@ -50,7 +50,7 @@ This document is the **single source of truth for project execution state**. It 
 - No real CRUD for posts, follows, chats, reports, notifications, stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as a placeholder (Google SSO is real — see §4)
 - Forgot-password flow not implemented
-- Onboarding wizard (post-signup) is bypassed (lands on tabs directly)
+- Onboarding wizard photo step is a skip-only stub (full camera/gallery/resize/EXIF/Storage upload deferred to P0.3.b)
 
 ---
 
@@ -64,7 +64,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c + P0.2.d + P0.2.e + P0.2.f written; awaiting operator apply** (`supabase db push`). All slices SQL-complete. |
-| P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
+| P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟡 In progress | Slice A merged: Basic Info + Tour wired; Photo skip-stub. Slice B (photo upload) + slice C (FR-AUTH-015 soft gate) remain. |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
 | P0.6 | Closure flow (mark as delivered) | FR-CLOSURE-001…006 | ⏳ Planned | Required to capture the **North Star** metric (`closed_delivered` count) |
@@ -112,13 +112,32 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
 | In progress | P0.2 — Database schema + RLS (a..f all written; a applied; b..f awaiting operator `db push`) | — | 2026-05-07 | — |
-| Up next | P0.3 — Onboarding wizard | — | — | — |
+| In progress | P0.3 — Onboarding wizard (slice A merged; B = photo upload, C = FR-AUTH-015 soft gate) | — | 2026-05-07 | — |
+| Up next | P0.4 — Post creation + feed CRUD | — | — | — |
 
 ---
 
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟢 P0.3.a — Onboarding wizard (Basic Info + Tour, photo skip-stub)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-AUTH-010 (basic info — display_name 1-50 chars, city dropdown via `IL_CITIES`, no free-text), FR-AUTH-011 (skip-only stub — current avatar from `user_metadata` is kept; full upload in slice B), FR-AUTH-012 (3-slide welcome tour with Skip on every slide), FR-AUTH-007 AC1+AC2 (returning users with `onboarding_state = completed` skip the wizard; `pending_basic_info` / `pending_avatar` resume at the right step). |
+| PRD anchor | `03_Core_Features.md` §3.1.2, `05_Screen_UI_Mapping.md` §1.4–1.6 |
+| Completed | 2026-05-07 |
+| Branch / commit | `feat/FR-AUTH-010-onboarding-wizard` |
+| Files added | `app/packages/domain/src/cities.ts`, `app/packages/application/src/auth/CompleteBasicInfoUseCase.ts`, `app/packages/application/src/auth/CompleteOnboardingUseCase.ts`, `app/packages/application/src/auth/__tests__/{CompleteBasicInfoUseCase,CompleteOnboardingUseCase}.test.ts`, `app/packages/application/src/auth/__tests__/fakeUserRepository.ts`, `app/packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts`, `app/apps/mobile/src/services/userComposition.ts`, `app/apps/mobile/src/components/CityPicker.tsx`, `app/apps/mobile/app/(onboarding)/{_layout,basic-info,photo,tour}.tsx`, `docs/superpowers/plans/2026-05-07-p0-3-onboarding-wizard.md` |
+| Files changed | `app/packages/domain/src/index.ts`, `app/packages/application/src/ports/IUserRepository.ts`, `app/packages/application/src/index.ts`, `app/packages/infrastructure-supabase/src/index.ts`, `app/apps/mobile/src/store/authStore.ts`, `app/apps/mobile/app/_layout.tsx`, `app/apps/mobile/app/(auth)/sign-in.tsx`, `app/apps/mobile/app/(auth)/sign-up.tsx`, `app/apps/mobile/app/auth/callback.tsx`, `docs/SSOT/PROJECT_STATUS.md` |
+| Tech debt | Adds **TD-40** below (`SupabaseUserRepository` non-onboarding methods are `not_implemented` stubs — populated incrementally during P0.4 / P1.1 / P1.4 / P2.4). |
+| Tests | `vitest run` in `@kc/application`: **25/25 passing** (6 new — 4 for `CompleteBasicInfoUseCase`, 2 for `CompleteOnboardingUseCase`). `tsc --noEmit` clean across all 5 packages (`@kc/domain`, `@kc/application`, `@kc/infrastructure-supabase`, `@kc/ui`, `@kc/mobile`). |
+| AC verified (logically) | FR-AUTH-010 AC1, AC2, AC4. FR-AUTH-011 AC3 (skip path keeps SSO/initials avatar), AC4 (SSO photo shown), AC5 (errors recoverable). FR-AUTH-012 AC1, AC2, AC3, AC4. FR-AUTH-007 AC2 (resume at right step on cold-start). |
+| Known gaps | (a) **Photo full upload** (FR-AUTH-011 AC1+AC2 — camera/gallery + 1024px resize + JPEG q=85 + EXIF strip + Storage upload) ships in slice B. (b) **FR-AUTH-015 soft-gate modal** (re-prompt on first meaningful action when state is `pending_basic_info`) ships in slice C. (c) FR-AUTH-010 AC3 explicit "Skip" affordance is not yet rendered on the basic-info screen — until slice C lands the soft gate, killing the app at step 1 leaves the user in `pending_basic_info` and re-enters the wizard next launch (functionally equivalent to AC3, just less ergonomic). (d) `IUserRepository` non-onboarding methods (follows, blocks, identity lookup, full `findById/update/delete`) are stubbed — see TD-40. (e) The state-machine flips to `completed` at the end of step 2 (photo skip), not at the end of step 3 (tour); rationale documented in plan — tour is intentionally non-blocking and skippable. |
+| Operator setup notes | None. Schema is unchanged. RLS on `users` already grants `update (display_name, city, city_name, onboarding_state, …)` to `authenticated` (per migration 0001 §7), and the `users_update_self` policy enforces `auth.uid() = user_id`. Verify after merging by signing up a fresh user via email → expect `(onboarding)/basic-info` → fill name + pick city → expect `(onboarding)/photo` → tap "המשך" → expect `(onboarding)/tour` → tap through 3 slides → land on `(tabs)`. Re-sign-in must skip the wizard. |
+
+---
 
 ### 🟡 P0.2.f1 — Users Realtime publication + counter-column visibility gap (audit follow-up)
 
@@ -366,6 +385,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-37 | Sprint Board §3 lists "P0.2 In progress" without indicating P0.2.d/e/f are unwritten — needs a refresh. (AUDIT-P3-05) | Low | Audit 2026-05-07 | Open |
 | TD-38 | FR-MOD-010 sanction escalation (7d → 30d → permanent) is **schema only** in P0.2.e: `users.false_reports_count` increments via the report-status trigger, but the actual transition to `suspended_for_false_reports` and the stamping of `account_status_until` are **not** triggered by the DB. Reason: the rule is a 30-day sliding-window count of dismissed reports — the count, the window, and the tier escalation are admin-tooling decisions that should live with `FR-ADMIN-*` flow code (not in a generic trigger). Schema columns (`false_reports_count`, `false_report_sanction_count`, `account_status_until`) are reserved on `users` so the application can flip them when the admin slice lands. | Med | P0.2.e 2026-05-07 | Open |
 | TD-39 | **Internal counter columns leak to non-owner viewers of Public profiles.** 0001's `users_select_public` policy + the row-level grant let any authenticated client read `active_posts_count_internal`, `items_given_count`, `items_received_count`, `posts_created_total`, `false_reports_count`, etc. on Public+active profiles. A non-owner can compute `internal − public_open − followers_only_open` to infer the existence of `OnlyMe` posts, violating FR-PROFILE-013 AC4's "**never** reveals" system-level guarantee, and FR-STATS-006 AC1's "stats screen never exposes data about other users" intent. Schema-level fix is awkward (Postgres column-grants apply per role *before* RLS, so revoking the grant from `authenticated` would also break the owner's own self-read). The correct fix is application-layer: the `IUserRepository` Supabase adapter (planned P2.4) MUST call `active_posts_count_for_viewer(owner, viewer)` for non-self reads and never project the raw `_internal` counter into Other-Profile responses. Add a lint/test to prevent regressions when the adapter is written. Schema-level reinforcement (a `users_public` view + revoke direct SELECT) is a possible future hardening but not blocking. | Med | P0.2.f1 audit 2026-05-07 | Open |
+| TD-40 | `SupabaseUserRepository` is a P0.3.a slice stub — only `getOnboardingState`, `setBasicInfo`, `setOnboardingState` are wired against `public.users`. The remaining 19 `IUserRepository` methods throw `not_implemented` and must be filled in during P0.4 (`findByAuthIdentity`, `findById`), P1.1 (follows + follow-requests), P1.4 (blocks), P2.4 (`update`, `findByHandle`, `delete`). Adapter file: `app/packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts`. The `not_implemented` errors include the slice that owns each method so callers know where to look. | Med | P0.3.a 2026-05-07 | Open |
 
 ---
 

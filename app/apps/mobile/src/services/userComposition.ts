@@ -1,0 +1,55 @@
+// ─────────────────────────────────────────────
+// Composition root for IUserRepository — wires Supabase adapter into use cases.
+// Mapped to SRS: FR-AUTH-007 AC2, FR-AUTH-010, FR-AUTH-012.
+// ─────────────────────────────────────────────
+
+import { Platform } from 'react-native';
+import AsyncStorage from '@react-native-async-storage/async-storage';
+import {
+  getSupabaseClient,
+  SupabaseUserRepository,
+  type SupabaseAuthStorage,
+} from '@kc/infrastructure-supabase';
+import {
+  CompleteBasicInfoUseCase,
+  CompleteOnboardingUseCase,
+  type IUserRepository,
+} from '@kc/application';
+import type { OnboardingState } from '@kc/domain';
+
+let _userRepo: IUserRepository | null = null;
+let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
+let _completeOnboarding: CompleteOnboardingUseCase | null = null;
+
+function pickStorage(): SupabaseAuthStorage | undefined {
+  if (Platform.OS === 'web') {
+    if (typeof window === 'undefined' || !window.localStorage) return undefined;
+    return window.localStorage;
+  }
+  return AsyncStorage;
+}
+
+function getUserRepo(): IUserRepository {
+  if (_userRepo) return _userRepo;
+  _userRepo = new SupabaseUserRepository(getSupabaseClient({ storage: pickStorage() }));
+  return _userRepo;
+}
+
+export function getCompleteBasicInfoUseCase(): CompleteBasicInfoUseCase {
+  if (!_completeBasicInfo) {
+    _completeBasicInfo = new CompleteBasicInfoUseCase(getUserRepo());
+  }
+  return _completeBasicInfo;
+}
+
+export function getCompleteOnboardingUseCase(): CompleteOnboardingUseCase {
+  if (!_completeOnboarding) {
+    _completeOnboarding = new CompleteOnboardingUseCase(getUserRepo());
+  }
+  return _completeOnboarding;
+}
+
+/** Read state directly through the repo — used by AuthGate before routing. */
+export function getOnboardingState(userId: string): Promise<OnboardingState> {
+  return getUserRepo().getOnboardingState(userId);
+}

@@ -12,6 +12,7 @@ import {
   getRestoreSessionUseCase,
   subscribeToSession,
 } from '../src/services/authComposition';
+import { getOnboardingState } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
 
 SplashScreen.preventAutoHideAsync();
@@ -26,7 +27,14 @@ const queryClient = new QueryClient({
 function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
   const segments = useSegments();
-  const { isAuthenticated, isLoading, setSession } = useAuthStore();
+  const {
+    session,
+    isAuthenticated,
+    isLoading,
+    onboardingState,
+    setSession,
+    setOnboardingState,
+  } = useAuthStore();
 
   // FR-AUTH-013: cold-start session restore.
   useEffect(() => {
@@ -56,21 +64,55 @@ function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
     }
   }, [isLoading]);
 
-  // Redirect: unauth → (auth) or (guest) only; auth → tabs (leave auth + guest groups).
-  // Exception: `/auth/callback` is the OAuth landing route — must stay reachable while
-  // unauthenticated long enough to exchange the OAuth code for a session.
+  // FR-AUTH-007 AC2: read users.onboarding_state once we know the user.
+  useEffect(() => {
+    if (!isAuthenticated || !session) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        const state = await getOnboardingState(session.userId);
+        if (!cancelled) setOnboardingState(state);
+      } catch {
+        // Network/permission failure: assume completed to avoid trapping a real
+        // user in an onboarding loop. Re-queried next session start.
+        if (!cancelled) setOnboardingState('completed');
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [isAuthenticated, session, setOnboardingState]);
+
+  // Redirect: unauth → (auth) or (guest) only; auth → onboarding step matching
+  // onboarding_state, or (tabs) when completed.
+  // Exception: `/auth/callback` is the OAuth landing route — must stay reachable
+  // while unauthenticated long enough to exchange the OAuth code for a session.
   useEffect(() => {
     if (isLoading) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inGuestGroup = (segments[0] as string | undefined) === '(guest)';
+    const inOnboarding = (segments[0] as string | undefined) === '(onboarding)';
     const isOAuthCallback =
       (segments[0] as string | undefined) === 'auth' && segments[1] === 'callback';
-    if (!isAuthenticated && !inAuthGroup && !inGuestGroup && !isOAuthCallback) {
-      router.replace('/(auth)');
-    } else if (isAuthenticated && (inAuthGroup || inGuestGroup)) {
+
+    if (!isAuthenticated) {
+      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback) {
+        router.replace('/(auth)');
+      }
+      return;
+    }
+
+    // Authenticated. Hold off any redirect until onboarding state is loaded.
+    if (onboardingState === null) return;
+
+    if (onboardingState === 'pending_basic_info' && !inOnboarding) {
+      router.replace('/(onboarding)/basic-info');
+    } else if (onboardingState === 'pending_avatar' && !inOnboarding) {
+      router.replace('/(onboarding)/photo');
+    } else if (onboardingState === 'completed' && (inAuthGroup || inGuestGroup)) {
       router.replace('/(tabs)');
     }
-  }, [isLoading, isAuthenticated, segments, router]);
+  }, [isLoading, isAuthenticated, onboardingState, segments, router]);
 
   if (isLoading) {
     return (
@@ -123,6 +165,7 @@ export default function RootLayout() {
             >
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="(guest)" options={{ headerShown: false }} />
+              <Stack.Screen name="(onboarding)" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
               <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
               <Stack.Screen
