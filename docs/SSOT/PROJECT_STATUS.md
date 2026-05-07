@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.c — Following & Blocking migration written; awaiting operator apply) |
+| **Last Updated** | 2026-05-07 (P0.2.d — Chat & Messaging migration written; awaiting operator apply) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -63,7 +63,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
-| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c written; awaiting operator apply** (`supabase db push`). Remaining: P0.2.d (chat), P0.2.e (moderation), P0.2.f (counter triggers + community_stats). |
+| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c + P0.2.d written; awaiting operator apply** (`supabase db push`). Remaining: P0.2.e (moderation), P0.2.f (counter triggers + community_stats). |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
@@ -119,6 +119,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟡 P0.2.d — Chat & Messaging (migration written, awaiting operator apply)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-CHAT-001 (inbox), FR-CHAT-002 (conversation, 2,000-char cap), FR-CHAT-003 (send + pending/delivered/read state machine), FR-CHAT-004 (anchor first-wins, one chat per pair), FR-CHAT-005 (auto-message — no special row type), FR-CHAT-006 (open from profile, anchor null), FR-CHAT-007 (support thread auto-flag via super-admin participant), FR-CHAT-009 (block carve-out: blocker hides chat; blocked still sees, messages stay pending), FR-CHAT-011 (read-receipt server-side transitions), FR-CHAT-012 (unread badge — partial index `messages_chat_unread_idx`), FR-CHAT-013 (sender_id ON DELETE SET NULL preserves message body for the counterpart). Cross-references FR-MOD-009 (chat dimension carved out per FR-CHAT-009 AC1). |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (`supabase db push`). After apply, regenerate `database.types.ts`. Realtime publication add-table is gated by `if exists pg_publication`, so the migration is safe on local without breaking production. |
+| Branch / commit | `feat/p0-2-d-chat-messaging` (this commit) |
+| Files added | `supabase/migrations/0004_init_chat_messaging.sql` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md`, `docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md` |
+| Tech debt logged | None new. Adds two new SECURITY DEFINER helpers (`has_blocked` directional, `is_chat_visible_to`) — same auditing posture as `is_blocked`/`is_following` introduced in P0.2.c. |
+| AC verified | SQL static review only. End-to-end verification deferred to operator (probes below). |
+| Known gaps | (a) System messages (kind='system') currently have no client-facing INSERT path — they ship in P0.2.e via SECURITY DEFINER RPCs (`inject_system_message`) plus the FR-MOD-002 report-issue auto-inject. (b) Counter maintenance for `users.unread_messages_count` is not in the schema; clients compute the badge via `count(*) where status<>'read' and sender_id<>auth.uid()`. Wholesale unread denormalization is a P1.5 concern at most. (c) `Chat.anchor_history` (FR-CHAT-004 AC1 analytics-side) is intentionally not modelled — analytics events are emitted at the application layer instead. (d) FR-CHAT-013 AC3 90-day archive is post-MVP (V1.5+) and intentionally not modelled here. |
+| Operator setup notes | `supabase db push`. Verify after applying 0001..0004: (1) `select public.has_blocked(null::uuid, null::uuid);` returns `false` (NULL-safe). (2) Insert two real users A, B; `insert into public.chats (participant_a, participant_b) values (B, A) returning participant_a, participant_b;` — must return `(A, B)` thanks to the canonicalize trigger. (3) `insert into public.messages (chat_id, sender_id, body) values ('<chat>', A, 'hello');` — must succeed and bump `chats.last_message_at`. (4) After A blocks B: re-running `select * from public.chats where chat_id = '<chat>'` as A returns 0 rows (RLS hides), but the same query as B still returns the row. (5) Send a Realtime subscribe from a client to `messages:chat_id=eq.<chat>` and verify events are delivered to the recipient only. After verification, regenerate `database.types.ts` and commit. |
+
+---
 
 ### 🟡 P0.2.c — Following & Blocking (migration written, awaiting operator apply)
 
