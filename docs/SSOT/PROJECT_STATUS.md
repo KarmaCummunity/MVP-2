@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.3.a polish — Skip on every onboarding screen, dynamic cities from `public.cities` (1,306 from data.gov.il via migration 0008), dev reset button + parallel-agents protocol adopted) |
+| **Last Updated** | 2026-05-08 (TD-33 — app-level ErrorBoundary wrapping the root layout; resilience baseline before P0.4) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -113,7 +113,6 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | ---- | ------- | ----- | ------- | ------ |
 | In progress | P0.2 — Database schema + RLS (a..f all written; a applied; b..f awaiting operator `db push`) | — | 2026-05-07 | — |
 | In progress | P0.3 — Onboarding wizard (slice A merged; B = photo upload, C = FR-AUTH-015 soft gate) | — | 2026-05-07 | — |
-| In progress | TD-33-FE — App-level ErrorBoundary (resilience baseline before P0.4) | agent-fe | 2026-05-08 | — |
 | Up next | P0.4 — Post creation + feed CRUD | — | — | — |
 
 ---
@@ -399,7 +398,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-30 | No JSDoc / TSDoc on most public exports across `domain`, `application`, `infrastructure`, mobile components. (AUDIT-P2-06) | Med | Audit 2026-05-07 | Open |
 | TD-31 | Test coverage limited to 6 files; no tests for repos, components, infra adapters, or invariants. (AUDIT-P2-05) | Med | Audit 2026-05-07 | Open |
 | TD-32 | `app/post/[id].tsx` falls back to `MOCK_POSTS[0]` on unknown ID — silent wrong-post display. Should render not-found. (AUDIT-P2-09) | Med | Audit 2026-05-07 | Open |
-| TD-33 | No top-level `<ErrorBoundary>` in `app/_layout.tsx` — Supabase failures crash the app. (AUDIT-P2-10) | Med | Audit 2026-05-07 | Open |
+| TD-33 | No top-level `<ErrorBoundary>` in `app/_layout.tsx` — Supabase failures crash the app. (AUDIT-P2-10) | Med | Audit 2026-05-07 | ✅ Resolved 2026-05-08 (`apps/mobile/src/components/ErrorBoundary.tsx` wraps the root inside `SafeAreaProvider`; Hebrew fallback + retry; dev-only message detail) |
 | TD-34 | `CLAUDE.md` references `PRD_MVP_SSOT_/` (does not exist; correct path: `PRD_MVP_CORE_SSOT/`). `SRS.md:10` references `../../PRD_MVP/` (correct: `./PRD_MVP_CORE_SSOT/`). (AUDIT-P3-03 + AUDIT-P3-04) | Low | Audit 2026-05-07 | ✅ Resolved 2026-05-07 (paths fixed in this commit) |
 | TD-35 | `i18n/he.ts` (207 LOC) violates `≤ 200 LOC` cap; split per domain. (AUDIT-P3-08) | Low | Audit 2026-05-07 | Open |
 | TD-36 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit. (AUDIT-P3-06) | Low | Audit 2026-05-07 | Open |
