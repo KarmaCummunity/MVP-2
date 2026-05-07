@@ -14,21 +14,22 @@ import { getCompleteOnboardingUseCase } from '../../src/services/userComposition
 export default function OnboardingPhotoScreen() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
+  const onboardingState = useAuthStore((s) => s.onboardingState);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [loading, setLoading] = useState(false);
 
-  const handleContinue = async () => {
+  // Tour completion is what flips state to `completed` (FR-AUTH-012 AC3),
+  // but we only do that when the user already filled in step 1 (state ===
+  // pending_avatar). If they skipped step 1, leave state at pending_basic_info
+  // — FR-AUTH-015 soft gate (slice C) will catch them on first meaningful action.
+  const finalize = async () => {
     if (!session) return;
     setLoading(true);
     try {
-      // FR-AUTH-011 AC3: skip leaves the user with their current avatar (Google
-      // avatar from user_metadata, or initial-letter silhouette). The trigger
-      // already pre-filled `users.avatar_url` on signup, so no write is needed.
-      // We mark onboarding 'completed' before the tour because the tour is
-      // non-blocking content (FR-AUTH-012 AC2 — Skip on every slide). If the
-      // user kills the app mid-tour they should not re-enter onboarding.
-      await getCompleteOnboardingUseCase().execute({ userId: session.userId });
-      setOnboardingState('completed');
+      if (onboardingState === 'pending_avatar') {
+        await getCompleteOnboardingUseCase().execute({ userId: session.userId });
+        setOnboardingState('completed');
+      }
       router.replace('/(onboarding)/tour');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
@@ -41,7 +42,12 @@ export default function OnboardingPhotoScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <Text style={styles.step}>שלב 2 מתוך 3</Text>
+        <View style={styles.headerRow}>
+          <Text style={styles.step}>שלב 2 מתוך 3</Text>
+          <TouchableOpacity onPress={finalize} disabled={loading} accessibilityRole="button">
+            <Text style={styles.skip}>דלג</Text>
+          </TouchableOpacity>
+        </View>
         <Text style={styles.title}>תמונת פרופיל</Text>
         <Text style={styles.subtitle}>אפשר להוסיף עכשיו או בהמשך</Text>
 
@@ -55,7 +61,7 @@ export default function OnboardingPhotoScreen() {
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity style={styles.cta} onPress={handleContinue} disabled={loading}>
+        <TouchableOpacity style={styles.cta} onPress={finalize} disabled={loading}>
           {loading ? (
             <ActivityIndicator color={colors.textInverse} />
           ) : (
@@ -78,7 +84,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
     gap: spacing.base,
   },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   step: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  skip: { ...typography.body, color: colors.primary },
   title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
   subtitle: {
     ...typography.body,

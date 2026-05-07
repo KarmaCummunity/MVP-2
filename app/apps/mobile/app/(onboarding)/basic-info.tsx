@@ -16,14 +16,14 @@ export default function OnboardingBasicInfoScreen() {
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [displayName, setDisplayName] = useState(session?.displayName ?? '');
-  const [cityId, setCityId] = useState<string | null>(null);
+  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [loading, setLoading] = useState(false);
 
-  const canContinue = displayName.trim().length > 0 && cityId !== null;
+  const canContinue = displayName.trim().length > 0 && city !== null;
 
   const handleContinue = async () => {
     if (!session) return;
-    if (!canContinue || !cityId) {
+    if (!canContinue || !city) {
       Alert.alert('שגיאה', 'יש למלא שם ועיר');
       return;
     }
@@ -32,7 +32,8 @@ export default function OnboardingBasicInfoScreen() {
       await getCompleteBasicInfoUseCase().execute({
         userId: session.userId,
         displayName,
-        cityId,
+        cityId: city.id,
+        cityName: city.name,
       });
       setOnboardingState('pending_avatar');
       router.replace('/(onboarding)/photo');
@@ -44,6 +45,13 @@ export default function OnboardingBasicInfoScreen() {
     }
   };
 
+  // FR-AUTH-010 AC3: Skip advances to step 2 but leaves onboarding_state at
+  // pending_basic_info. FR-AUTH-015 (slice C) will catch the user the next
+  // time they attempt a meaningful action and re-prompt for these fields.
+  const handleSkip = () => {
+    router.replace('/(onboarding)/photo');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <KeyboardAvoidingView
@@ -51,7 +59,12 @@ export default function OnboardingBasicInfoScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.content}>
-          <Text style={styles.step}>שלב 1 מתוך 3</Text>
+          <View style={styles.headerRow}>
+            <Text style={styles.step}>שלב 1 מתוך 3</Text>
+            <TouchableOpacity onPress={handleSkip} disabled={loading} accessibilityRole="button">
+              <Text style={styles.skip}>דלג</Text>
+            </TouchableOpacity>
+          </View>
           <Text style={styles.title}>פרטים בסיסיים</Text>
           <Text style={styles.subtitle}>איך נכיר אותך?</Text>
 
@@ -71,7 +84,7 @@ export default function OnboardingBasicInfoScreen() {
 
           <View style={styles.field}>
             <Text style={styles.label}>עיר מגורים</Text>
-            <CityPicker value={cityId} onChange={setCityId} disabled={loading} />
+            <CityPicker value={city} onChange={setCity} disabled={loading} />
           </View>
 
           <View style={{ flex: 1 }} />
@@ -102,7 +115,9 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
     gap: spacing.base,
   },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   step: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  skip: { ...typography.body, color: colors.primary },
   title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
   subtitle: {
     ...typography.body,

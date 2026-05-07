@@ -1,24 +1,42 @@
 // ─────────────────────────────────────────────
-// CityPicker — modal selector for IL_CITIES.
-// FR-AUTH-010 AC2: city is a dropdown of the canonical Israeli city list; no free text.
+// CityPicker — modal selector backed by `public.cities` (1,306 settlements
+// seeded from data.gov.il). FR-AUTH-010 AC2: city is a dropdown of the
+// canonical Israeli city list — no free-text. Searchable because scrolling
+// 1,306 rows blind is unusable.
 // ─────────────────────────────────────────────
 
-import React, { useState } from 'react';
+import React, { useMemo, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, Modal, FlatList, StyleSheet,
+  View, Text, TextInput, TouchableOpacity, Modal, FlatList, StyleSheet,
+  ActivityIndicator,
 } from 'react-native';
-import { IL_CITIES, findCityById } from '@kc/domain';
+import { useQuery } from '@tanstack/react-query';
 import { colors, typography, spacing, radius } from '@kc/ui';
+import type { City } from '@kc/domain';
+import { listCities } from '../services/userComposition';
 
 interface Props {
-  readonly value: string | null;
-  readonly onChange: (cityId: string) => void;
+  readonly value: { id: string; name: string } | null;
+  readonly onChange: (selection: { id: string; name: string }) => void;
   readonly disabled?: boolean;
 }
 
 export function CityPicker({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);
-  const selected = value ? findCityById(value) : undefined;
+  const [query, setQuery] = useState('');
+
+  const { data: cities, isLoading, error } = useQuery<City[]>({
+    queryKey: ['cities'],
+    queryFn: listCities,
+    staleTime: 1000 * 60 * 60, // 1h — cities rarely change
+  });
+
+  const filtered = useMemo(() => {
+    if (!cities) return [];
+    const q = query.trim();
+    if (!q) return cities;
+    return cities.filter((c) => c.nameHe.includes(q) || c.nameEn.toLowerCase().includes(q.toLowerCase()));
+  }, [cities, query]);
 
   return (
     <>
@@ -31,10 +49,10 @@ export function CityPicker({ value, onChange, disabled }: Props) {
         <Text
           style={[
             styles.value,
-            !selected && { color: colors.textDisabled },
+            !value && { color: colors.textDisabled },
           ]}
         >
-          {selected ? selected.nameHe : 'בחר עיר'}
+          {value ? value.name : 'בחר עיר'}
         </Text>
       </TouchableOpacity>
 
@@ -49,23 +67,48 @@ export function CityPicker({ value, onChange, disabled }: Props) {
           activeOpacity={1}
           onPress={() => setOpen(false)}
         >
-          <View style={styles.sheet}>
+          <View style={styles.sheet} onStartShouldSetResponder={() => true}>
             <Text style={styles.sheetTitle}>בחר עיר</Text>
-            <FlatList
-              data={IL_CITIES}
-              keyExtractor={(c) => c.cityId}
-              renderItem={({ item }) => (
-                <TouchableOpacity
-                  style={styles.row}
-                  onPress={() => {
-                    onChange(item.cityId);
-                    setOpen(false);
-                  }}
-                >
-                  <Text style={styles.rowText}>{item.nameHe}</Text>
-                </TouchableOpacity>
-              )}
+            <TextInput
+              style={styles.search}
+              placeholder="חיפוש עיר…"
+              placeholderTextColor={colors.textDisabled}
+              value={query}
+              onChangeText={setQuery}
+              textAlign="right"
+              autoCorrect={false}
+              autoCapitalize="none"
             />
+            {isLoading && (
+              <View style={styles.statusRow}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            )}
+            {error && (
+              <Text style={styles.errorText}>שגיאה בטעינת רשימת הערים. נסה שוב.</Text>
+            )}
+            {!isLoading && !error && (
+              <FlatList
+                data={filtered}
+                keyExtractor={(c) => c.cityId}
+                keyboardShouldPersistTaps="handled"
+                ListEmptyComponent={
+                  <Text style={styles.emptyText}>לא נמצאו ערים תואמות.</Text>
+                }
+                renderItem={({ item }) => (
+                  <TouchableOpacity
+                    style={styles.row}
+                    onPress={() => {
+                      onChange({ id: item.cityId, name: item.nameHe });
+                      setOpen(false);
+                      setQuery('');
+                    }}
+                  >
+                    <Text style={styles.rowText}>{item.nameHe}</Text>
+                  </TouchableOpacity>
+                )}
+              />
+            )}
           </View>
         </TouchableOpacity>
       </Modal>
@@ -90,11 +133,12 @@ const styles = StyleSheet.create({
     justifyContent: 'flex-end',
   },
   sheet: {
-    maxHeight: '70%',
+    height: '70%',
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingTop: spacing.base,
+    paddingHorizontal: spacing.base,
   },
   sheetTitle: {
     ...typography.h3,
@@ -102,9 +146,33 @@ const styles = StyleSheet.create({
     textAlign: 'center',
     marginBottom: spacing.sm,
   },
+  search: {
+    height: 44,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+  statusRow: { paddingVertical: spacing.lg, alignItems: 'center' },
+  errorText: {
+    ...typography.body,
+    color: colors.error,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+  },
+  emptyText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingVertical: spacing.lg,
+  },
   row: {
     paddingVertical: spacing.base,
-    paddingHorizontal: spacing.xl,
+    paddingHorizontal: spacing.sm,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },

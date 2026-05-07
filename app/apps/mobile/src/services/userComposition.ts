@@ -1,5 +1,6 @@
 // ─────────────────────────────────────────────
-// Composition root for IUserRepository — wires Supabase adapter into use cases.
+// Composition root for IUserRepository + ICityRepository — wires Supabase
+// adapters into use cases and exposes helpers for AuthGate / dev tools.
 // Mapped to SRS: FR-AUTH-007 AC2, FR-AUTH-010, FR-AUTH-012.
 // ─────────────────────────────────────────────
 
@@ -8,16 +9,19 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getSupabaseClient,
   SupabaseUserRepository,
+  SupabaseCityRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
   CompleteBasicInfoUseCase,
   CompleteOnboardingUseCase,
+  type ICityRepository,
   type IUserRepository,
 } from '@kc/application';
-import type { OnboardingState } from '@kc/domain';
+import type { City, OnboardingState } from '@kc/domain';
 
 let _userRepo: IUserRepository | null = null;
+let _cityRepo: ICityRepository | null = null;
 let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
 let _completeOnboarding: CompleteOnboardingUseCase | null = null;
 
@@ -33,6 +37,12 @@ function getUserRepo(): IUserRepository {
   if (_userRepo) return _userRepo;
   _userRepo = new SupabaseUserRepository(getSupabaseClient({ storage: pickStorage() }));
   return _userRepo;
+}
+
+function getCityRepo(): ICityRepository {
+  if (_cityRepo) return _cityRepo;
+  _cityRepo = new SupabaseCityRepository(getSupabaseClient({ storage: pickStorage() }));
+  return _cityRepo;
 }
 
 export function getCompleteBasicInfoUseCase(): CompleteBasicInfoUseCase {
@@ -52,4 +62,17 @@ export function getCompleteOnboardingUseCase(): CompleteOnboardingUseCase {
 /** Read state directly through the repo — used by AuthGate before routing. */
 export function getOnboardingState(userId: string): Promise<OnboardingState> {
   return getUserRepo().getOnboardingState(userId);
+}
+
+/** Direct setter used by the dev reset button (Settings). No validation — dev tool. */
+export function setOnboardingStateDirect(
+  userId: string,
+  state: OnboardingState,
+): Promise<void> {
+  return getUserRepo().setOnboardingState(userId, state);
+}
+
+/** Lists every Israeli city from `public.cities` ordered by Hebrew name. */
+export function listCities(): Promise<City[]> {
+  return getCityRepo().listAll();
 }

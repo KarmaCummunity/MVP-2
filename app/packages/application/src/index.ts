@@ -2,6 +2,7 @@ export * from './ports/IUserRepository';
 export * from './ports/IPostRepository';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
+export * from './ports/ICityRepository';
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
