@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.b — Posts core migration written; awaiting operator apply) |
+| **Last Updated** | 2026-05-07 (P0.2.c — Following & Blocking migration written; awaiting operator apply) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -63,7 +63,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
-| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). Branch `feat/p0-2-db-schema-rls`. **P0.2.a applied. P0.2.b written; awaiting operator apply.** |
+| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c written; awaiting operator apply** (`supabase db push`). Remaining: P0.2.d (chat), P0.2.e (moderation), P0.2.f (counter triggers + community_stats). |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
@@ -119,6 +119,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟡 P0.2.c — Following & Blocking (migration written, awaiting operator apply)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-FOLLOW-001 (instant edge on Public), FR-FOLLOW-002 (unfollow), FR-FOLLOW-003 (request to Private), FR-FOLLOW-004 (cancel), FR-FOLLOW-005 (approve → edge), FR-FOLLOW-006 (reject + 14-day cooldown), FR-FOLLOW-008 (re-follow after cooldown), FR-FOLLOW-009 (remove follower — followed-side delete), FR-FOLLOW-012 (FollowersOnly visibility now wired in `is_post_visible_to`), FR-MOD-003 (block + cascading side effects), FR-MOD-004 (unblock — application layer; row deletion is a simple DELETE under RLS), FR-MOD-009 (bilateral filtering at the data layer), FR-PROFILE-003 (approved-follower expansion of Private SELECT). |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (`supabase db push`). After apply, regenerate `database.types.ts`. |
+| Branch / commit | `feat/p0-2-c-following-blocking` (this commit) |
+| Files added | `supabase/migrations/0003_init_following_blocking.sql` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md` |
+| Tech debt logged | None new. Closes the P0.2.b placeholder in `is_post_visible_to` (FollowersOnly was returning `false` for non-owners; now resolves through `is_following()`). Adds the block short-circuit that was deferred from P0.2.b. |
+| AC verified | SQL static review only. End-to-end verification deferred to operator (sketch in `Operator setup notes` below). |
+| Known gaps | (a) Counter maintenance for `users.followers_count` / `users.following_count` ships in P0.2.f. Until then, app reads can use `count(*)` from `follow_edges`. (b) Notifications on follow / follow-request / approval (FR-NOTIF-006/007/008) ship later — the data shape exists; the push layer does not. (c) Chat-side filtering of blocked pairs is referenced by FR-MOD-003 AC4 but lives in P0.2.d (chats table not yet present). (d) `is_blocked` and `is_following` are SECURITY DEFINER functions that bypass RLS by design — auditors should know this is intentional (the visibility predicates need to read both directions of `blocks` and need to short-circuit the chicken-and-egg between users RLS and follow_edges RLS). |
+| Operator setup notes | `supabase db push`. Verify with three quick SQL probes after applying both 0002 (if not yet applied) and 0003: (1) `select public.is_blocked('00000000-0000-0000-0000-000000000000'::uuid, '00000000-0000-0000-0000-000000000000'::uuid);` returns `false` (NULL-safe). (2) After two real users A and B exist, run `insert into public.follow_edges(follower_id, followed_id) values ('A','A');` — must error `self_follow_forbidden`. (3) `insert into public.blocks(blocker_id, blocked_id) values ('A','B'); insert into public.follow_edges(follower_id, followed_id) values ('A','B');` — second statement must error `blocked_relationship`. After verification, regenerate `database.types.ts` (`supabase gen types typescript --project-id <id> > app/packages/infrastructure-supabase/src/database.types.ts`) and commit. |
+
+---
 
 ### 🟡 P0.2.b — Posts core (migration written, awaiting operator apply)
 
