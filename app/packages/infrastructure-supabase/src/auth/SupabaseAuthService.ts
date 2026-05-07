@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────
-// SupabaseAuthService — adapter for IAuthService.
-// Mapped to SRS: FR-AUTH-006, FR-AUTH-007, FR-AUTH-013, FR-AUTH-017
+// SupabaseAuthService — adapter for IAuthService backed by @supabase/supabase-js.
+// Mapped to SRS: FR-AUTH-003 (Google sign-up), FR-AUTH-006 (email sign-up),
+// FR-AUTH-007 (sign-in, all paths), FR-AUTH-013 (cold-start restore), FR-AUTH-017 (sign-out).
+// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
 import type { SupabaseClient, AuthError as SbAuthError, Session as SbSession } from '@supabase/supabase-js';

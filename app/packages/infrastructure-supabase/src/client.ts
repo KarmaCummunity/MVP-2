@@ -43,16 +43,13 @@ export function getSupabaseClient(options?: {
     );
   }
 
-  // Web: the OAuth redirect lands as a full page navigation — let the SDK consume `?code` from
-  // window.location and exchange it. Native: we drive the browser via WebBrowser, so opt out.
-  const detectSessionInUrl =
-    typeof window !== 'undefined' && typeof window.location !== 'undefined';
-
+  // Web and native both exchange the OAuth `code` explicitly via the auth/callback route,
+  // so disable auto-detect to avoid racing the explicit exchange.
   _client = createClient<Database>(url, anonKey, {
     auth: {
       autoRefreshToken: true,
       persistSession: true,
-      detectSessionInUrl,
+      detectSessionInUrl: false,
       flowType: 'pkce',
       ...(options?.storage ? { storage: options.storage } : {}),
     },

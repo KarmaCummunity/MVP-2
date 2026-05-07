@@ -57,11 +57,15 @@ function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   }, [isLoading]);
 
   // Redirect: unauth → (auth) or (guest) only; auth → tabs (leave auth + guest groups).
+  // Exception: `/auth/callback` is the OAuth landing route — must stay reachable while
+  // unauthenticated long enough to exchange the OAuth code for a session.
   useEffect(() => {
     if (isLoading) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inGuestGroup = (segments[0] as string | undefined) === '(guest)';
-    if (!isAuthenticated && !inAuthGroup && !inGuestGroup) {
+    const isOAuthCallback =
+      (segments[0] as string | undefined) === 'auth' && segments[1] === 'callback';
+    if (!isAuthenticated && !inAuthGroup && !inGuestGroup && !isOAuthCallback) {
       router.replace('/(auth)');
     } else if (isAuthenticated && (inAuthGroup || inGuestGroup)) {
       router.replace('/(tabs)');
@@ -120,6 +124,7 @@ export default function RootLayout() {
               <Stack.Screen name="(auth)" options={{ headerShown: false }} />
               <Stack.Screen name="(guest)" options={{ headerShown: false }} />
               <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
+              <Stack.Screen name="auth/callback" options={{ headerShown: false }} />
               <Stack.Screen
                 name="post/[id]"
                 options={{

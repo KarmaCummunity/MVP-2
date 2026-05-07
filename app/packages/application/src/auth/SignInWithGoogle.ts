@@ -1,6 +1,8 @@
 // ─────────────────────────────────────────────
-// Use case: Sign in via Google (OAuth / PKCE).
-// Mapped to SRS: FR-AUTH-002 (Google path)
+// Use case: Sign in / sign up via Google (OAuth, PKCE flow).
+// Mapped to SRS: FR-AUTH-003 (sign up via Google), FR-AUTH-007 (sign in).
+// Supabase auto-routes by Google `sub`: existing user → sign in, new → sign up.
+// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
 import type { IAuthService, AuthSession } from '../ports/IAuthService';
@@ -11,8 +13,16 @@ import { AuthError } from './errors';
  * the user to be redirected back to `redirectTo`, and resolve with the redirect URL
  * (or `null` if the user dismissed the browser).
  *
- * In Expo, the mobile composition root injects an implementation that wraps
- * `WebBrowser.openAuthSessionAsync`.
+ * On native (iOS/Android) the mobile composition root injects an implementation that
+ * wraps `WebBrowser.openAuthSessionAsync`, which keeps control inside JS — this use
+ * case completes end-to-end in one turn.
+ *
+ * On web, the same wrapper triggers a top-level navigation to the OAuth provider, so
+ * the JS context is destroyed before this use case can resolve. The OAuth round-trip
+ * is then completed by the dedicated `/auth/callback` route, which calls
+ * `IAuthService.exchangeCodeForSession` directly. This use case is therefore mainly
+ * exercised on native; on web only `IAuthService.getGoogleAuthUrl` runs before the
+ * navigation.
  */
 export type OpenAuthSession = (
   url: string,

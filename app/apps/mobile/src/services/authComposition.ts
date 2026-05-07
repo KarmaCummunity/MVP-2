@@ -1,7 +1,9 @@
 // ─────────────────────────────────────────────
 // Composition root — wires Supabase adapter into application use cases.
 // Lives in the mobile app (composition root); not in /domain or /application.
-// Mapped to SRS: FR-AUTH-006, FR-AUTH-007, FR-AUTH-013, FR-AUTH-017
+// Mapped to SRS: FR-AUTH-003 (Google sign-up), FR-AUTH-006 (email sign-up),
+// FR-AUTH-007 (sign-in, all paths), FR-AUTH-013 (cold-start restore), FR-AUTH-017 (sign-out).
+// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
 import { Platform } from 'react-native';
@@ -19,6 +21,7 @@ import {
   SignInWithGoogleUseCase,
   SignOutUseCase,
   SignUpWithEmailUseCase,
+  type AuthSession as KcAuthSession,
   type IAuthService,
   type OpenAuthSession,
 } from '@kc/application';
@@ -88,6 +91,11 @@ export function getSignOutUseCase(): SignOutUseCase {
 export function getRestoreSessionUseCase(): RestoreSessionUseCase {
   if (!_restore) _restore = new RestoreSessionUseCase(getAuthService());
   return _restore;
+}
+
+/** Used by the `/auth/callback` route to exchange an OAuth code for a session. */
+export function exchangeOAuthCode(code: string): Promise<KcAuthSession> {
+  return getAuthService().exchangeCodeForSession(code);
 }
 
 export function subscribeToSession(
