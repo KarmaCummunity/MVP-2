@@ -26,7 +26,7 @@ The right decomposition follows the **entity-cluster** boundaries — groups of 
 | **P0.2.b — Posts core** | `posts`, `media_assets`, `recipients` | Visibility rules from PostVisibility (Public / FollowersOnly / OnlyMe). `OnlyMe` posts visible only to `owner_id = auth.uid()`. `FollowersOnly` posts require approved `follow_edges` row. | P0.4 (post CRUD) | 🟡 written, awaiting apply |
 | **P0.2.c — Following & Blocking** | `follow_edges`, `follow_requests`, `blocks` | Self-write only. Blocks are bilateral — visibility predicates everywhere include `NOT EXISTS (block from row.user to viewer OR viewer to row.user)`. | P1.1, P1.4 | 🟡 written, awaiting apply |
 | **P0.2.d — Chat & Messaging** | `chats`, `messages` | Both participants RW; non-participants 0 visibility. `support_thread` flag uses an admin role join. | P0.5 | 🟡 written, awaiting apply |
-| **P0.2.e — Moderation** | `reports`, `moderation_queue_entries` | Reporters see own reports; admin role sees all. Queue entries admin-only. | P1.3, P2.5 | ⏳ pending |
+| **P0.2.e — Moderation** | `reports`, `moderation_queue_entries`, `reporter_hides`, `audit_events` (+ `users.false_reports_count`/`account_status_until`/`chats.removed_at` schema additions) | Reporters see own reports; admin sees all. Queue entries admin-only. Reporter-side hides self-only. Audit events admin-SELECT only; INSERT only via SECURITY DEFINER triggers. | P1.3, P2.5 | 🟡 written, awaiting apply |
 | **P0.2.f — Stats projections + bg jobs** | counter triggers (denormalized columns on `users`), `community_stats` materialized view, scheduled job for `bg-job-soft-delete-cleanup` | Read-only for everyone on aggregates; trigger logic runs as `SECURITY DEFINER`. | P1.6, FR-CLOSURE-008 | ⏳ pending |
 
 **Cross-cutting per slice:**
