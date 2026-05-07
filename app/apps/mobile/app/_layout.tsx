@@ -83,15 +83,21 @@ function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
     };
   }, [isAuthenticated, session, setOnboardingState]);
 
-  // Redirect: unauth → (auth) or (guest) only; auth → onboarding step matching
-  // onboarding_state, or (tabs) when completed.
+  // Redirect rules:
+  //   - Unauth + outside (auth)/(guest)/auth/callback → (auth).
+  //   - Auth + just landed in (auth) or (guest) → onboarding step matching
+  //     onboarding_state, or (tabs) when completed.
+  //   - Auth + already past the gates (in (tabs) / (onboarding) / detail
+  //     screens) → no auto-redirect. FR-AUTH-015 soft-gate (slice C) is what
+  //     re-prompts pending_basic_info users on their first meaningful action;
+  //     auto-redirecting from tabs back to onboarding would create a loop
+  //     after FR-AUTH-010 AC3's Skip flow.
   // Exception: `/auth/callback` is the OAuth landing route — must stay reachable
   // while unauthenticated long enough to exchange the OAuth code for a session.
   useEffect(() => {
     if (isLoading) return;
     const inAuthGroup = segments[0] === '(auth)';
     const inGuestGroup = (segments[0] as string | undefined) === '(guest)';
-    const inOnboarding = (segments[0] as string | undefined) === '(onboarding)';
     const isOAuthCallback =
       (segments[0] as string | undefined) === 'auth' && segments[1] === 'callback';
 
@@ -102,14 +108,17 @@ function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
       return;
     }
 
-    // Authenticated. Hold off any redirect until onboarding state is loaded.
+    // Authenticated. Only redirect from the auth/guest groups; otherwise let
+    // the user stay where they are. Hold off until onboarding state is loaded
+    // so we don't briefly send them to (tabs) and then bounce to onboarding.
+    if (!inAuthGroup && !inGuestGroup) return;
     if (onboardingState === null) return;
 
-    if (onboardingState === 'pending_basic_info' && !inOnboarding) {
+    if (onboardingState === 'pending_basic_info') {
       router.replace('/(onboarding)/basic-info');
-    } else if (onboardingState === 'pending_avatar' && !inOnboarding) {
+    } else if (onboardingState === 'pending_avatar') {
       router.replace('/(onboarding)/photo');
-    } else if (onboardingState === 'completed' && (inAuthGroup || inGuestGroup)) {
+    } else {
       router.replace('/(tabs)');
     }
   }, [isLoading, isAuthenticated, onboardingState, segments, router]);

@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
 import { getSignOutUseCase } from '../src/services/authComposition';
+import { setOnboardingStateDirect } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
 
 interface SettingsRowProps {
@@ -34,10 +35,42 @@ function SettingsRow({ label, icon, onPress, rightElement, destructive }: Readon
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const session = useAuthStore((s) => s.session);
+  const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
   const [notificationsOn, setNotificationsOn] = React.useState(true);
   const [privateProfile, setPrivateProfile] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
+  const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
+
+  const handleResetOnboarding = () => {
+    if (!session) return;
+    Alert.alert(
+      'איפוס אונבורדינג',
+      'הפעולה תחזיר את מצב האונבורדינג להתחלה ותפתח את אשף ההרשמה מחדש. ' +
+        'הפרופיל לא יימחק.',
+      [
+        { text: 'ביטול', style: 'cancel' },
+        {
+          text: 'איפוס',
+          style: 'destructive',
+          onPress: async () => {
+            setResettingOnboarding(true);
+            try {
+              await setOnboardingStateDirect(session.userId, 'pending_basic_info');
+              setOnboardingStateLocal('pending_basic_info');
+              router.replace('/(onboarding)/basic-info');
+            } catch (err) {
+              const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+              Alert.alert('האיפוס נכשל', msg);
+            } finally {
+              setResettingOnboarding(false);
+            }
+          },
+        },
+      ],
+    );
+  };
 
   const handleSignOut = async () => {
     if (signingOut) return;
@@ -117,6 +150,20 @@ export default function SettingsScreen() {
           <SettingsRow label="תנאי שימוש" icon="document-text-outline" onPress={() => {}} />
           <SettingsRow label="מדיניות פרטיות" icon="shield-outline" onPress={() => {}} />
         </View>
+
+        {/* Dev tools — testing onboarding without account deletion */}
+        {__DEV__ && (
+          <>
+            <Text style={styles.sectionTitle}>כלי פיתוח</Text>
+            <View style={styles.section}>
+              <SettingsRow
+                label={resettingOnboarding ? 'מאפס...' : 'איפוס אונבורדינג (דיבוג)'}
+                icon="refresh-outline"
+                onPress={handleResetOnboarding}
+              />
+            </View>
+          </>
+        )}
 
         {/* Account actions */}
         <View style={[styles.section, { marginTop: spacing.sm }]}>
