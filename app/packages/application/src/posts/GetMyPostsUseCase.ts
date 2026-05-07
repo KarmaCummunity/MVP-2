@@ -1,0 +1,34 @@
+/** FR-POST-016: list the caller's own posts (any visibility, owner sees all). */
+import type { IPostRepository } from '../ports/IPostRepository';
+import type { Post, PostStatus } from '@kc/domain';
+
+export interface GetMyPostsInput {
+  userId: string;
+  status: PostStatus[];
+  limit?: number;
+  cursor?: string;
+}
+
+export interface GetMyPostsOutput {
+  posts: Post[];
+}
+
+const DEFAULT_LIMIT = 20;
+const HARD_MAX = 100;
+
+export class GetMyPostsUseCase {
+  constructor(private readonly repo: IPostRepository) {}
+
+  async execute(input: GetMyPostsInput): Promise<GetMyPostsOutput> {
+    if (input.status.length === 0) {
+      throw new Error('GetMyPostsUseCase: status must include at least one value');
+    }
+    const limit = clamp(input.limit ?? DEFAULT_LIMIT, 1, HARD_MAX);
+    const posts = await this.repo.getMyPosts(input.userId, input.status, limit, input.cursor);
+    return { posts };
+  }
+}
+
+function clamp(n: number, lo: number, hi: number): number {
+  return Math.max(lo, Math.min(hi, Math.trunc(n)));
+}

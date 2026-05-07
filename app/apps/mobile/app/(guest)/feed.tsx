@@ -1,16 +1,17 @@
-// Guest preview feed — FR-AUTH-014 (screen 1.7)
+// Guest preview feed — FR-AUTH-014 (screen 1.7) — wired to live IPostRepository (P0.4-FE).
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, StyleSheet, TouchableOpacity, Platform } from 'react-native';
+import { View, Text, FlatList, StyleSheet, TouchableOpacity, Platform, ActivityIndicator } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
+import { useQuery } from '@tanstack/react-query';
 import { selectGuestPreviewPosts } from '@kc/application';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { PostCard } from '../../src/components/PostCard';
 import { GuestJoinModal } from '../../src/components/GuestJoinModal';
-import { MOCK_POSTS } from '../../src/mock/data';
 import { useAuthStore } from '../../src/store/authStore';
+import { getFeedUseCase } from '../../src/services/postsComposition';
 
 export default function GuestPreviewFeedScreen() {
   const router = useRouter();
@@ -19,7 +20,14 @@ export default function GuestPreviewFeedScreen() {
   const setGuest = useAuthStore((s) => s.setGuest);
   const [modalVisible, setModalVisible] = useState(false);
 
-  const posts = useMemo(() => selectGuestPreviewPosts(MOCK_POSTS), []);
+  const query = useQuery({
+    queryKey: ['guest-feed'],
+    queryFn: () => getFeedUseCase().execute({ viewerId: null, filter: {}, limit: 6 }),
+  });
+  const posts = useMemo(
+    () => selectGuestPreviewPosts(query.data?.posts ?? []),
+    [query.data?.posts],
+  );
 
   const goAuth = () => {
     setGuest(false);
@@ -52,17 +60,23 @@ export default function GuestPreviewFeedScreen() {
         <View style={styles.headerSpacer} />
       </View>
 
-      <FlatList
-        data={posts}
-        keyExtractor={(item) => item.postId}
-        contentContainerStyle={styles.list}
-        ListEmptyComponent={
-          <Text style={styles.empty}>{t('feed.noResults')}</Text>
-        }
-        renderItem={({ item }) => (
-          <PostCard post={item} onPressOverride={openGate} />
-        )}
-      />
+      {query.isLoading ? (
+        <View style={styles.loadingWrap}>
+          <ActivityIndicator color={colors.primary} />
+        </View>
+      ) : (
+        <FlatList
+          data={posts}
+          keyExtractor={(item) => item.postId}
+          contentContainerStyle={styles.list}
+          ListEmptyComponent={
+            <Text style={styles.empty}>{t('feed.noResults')}</Text>
+          }
+          renderItem={({ item }) => (
+            <PostCard post={item} onPressOverride={openGate} />
+          )}
+        />
+      )}
 
       <View style={[styles.bottomBar, { paddingBottom: spacing.lg + insets.bottom }]}>
         <Text style={styles.bottomHint}>{t('feed.guestBanner')}</Text>
@@ -98,6 +112,7 @@ const styles = StyleSheet.create({
   headerTitle: { ...typography.h3, color: colors.textPrimary },
   headerSpacer: { width: 40 },
   list: { paddingTop: spacing.md, paddingBottom: 160 },
+  loadingWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', paddingTop: spacing.xl },
   empty: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.xl },
   bottomBar: {
     position: 'absolute',

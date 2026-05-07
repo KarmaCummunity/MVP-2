@@ -1,0 +1,111 @@
+import React from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  RefreshControl,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { colors, spacing, typography } from '@kc/ui';
+import type { PostWithOwner } from '@kc/application';
+import { PostCardGrid } from './PostCardGrid';
+import { EmptyState } from './EmptyState';
+
+interface Props {
+  data: PostWithOwner[] | undefined;
+  isLoading: boolean;
+  isRefetching: boolean;
+  isError: boolean;
+  onRefresh: () => void;
+  onRetry: () => void;
+  onEndReached?: () => void;
+  hasMore?: boolean;
+  /** Override card-tap handler (used by guest feed for the join modal). */
+  onCardPress?: (post: PostWithOwner) => void;
+}
+
+export function PostFeedList({
+  data,
+  isLoading,
+  isRefetching,
+  isError,
+  onRefresh,
+  onRetry,
+  onEndReached,
+  hasMore,
+  onCardPress,
+}: Props) {
+  if (isLoading && !data) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator color={colors.primary} size="large" />
+      </View>
+    );
+  }
+  if (isError && !data) {
+    return (
+      <View style={styles.center}>
+        <Text style={styles.errorTitle}>שגיאה בטעינת הפוסטים</Text>
+        <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
+          <Text style={styles.retryText}>נסה שוב</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+  return (
+    <FlatList
+      data={data ?? []}
+      keyExtractor={(p) => p.postId}
+      numColumns={2}
+      columnWrapperStyle={styles.row}
+      renderItem={({ item }) => (
+        <PostCardGrid
+          post={item}
+          onPressOverride={onCardPress ? () => onCardPress(item) : undefined}
+        />
+      )}
+      contentContainerStyle={styles.listContent}
+      ListEmptyComponent={
+        <EmptyState
+          emoji="🔍"
+          title="לא נמצאו פוסטים"
+          subtitle="נסה לשנות את הסינון או חפש בכל הערים."
+        />
+      }
+      ListFooterComponent={
+        hasMore && data && data.length > 0 ? (
+          <View style={styles.footer}>
+            <ActivityIndicator color={colors.primary} />
+          </View>
+        ) : null
+      }
+      refreshControl={
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
+      }
+      onEndReached={onEndReached}
+      onEndReachedThreshold={0.4}
+      showsVerticalScrollIndicator={false}
+    />
+  );
+}
+
+const styles = StyleSheet.create({
+  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl, gap: spacing.base },
+  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  retryBtn: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: 999,
+  },
+  retryText: { ...typography.button, color: colors.textInverse },
+  row: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
+  listContent: { paddingTop: spacing.base, paddingBottom: spacing['3xl'] },
+  footer: { paddingVertical: spacing.base, alignItems: 'center' },
+});
