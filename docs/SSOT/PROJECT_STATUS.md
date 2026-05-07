@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-07 (P0.2.e — Moderation migration written; awaiting operator apply) |
+| **Last Updated** | 2026-05-07 (P0.2.f — Stats counters + community_stats migration written; awaiting operator apply) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -63,7 +63,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
-| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c + P0.2.d + P0.2.e written; awaiting operator apply** (`supabase db push`). Remaining: P0.2.f (counter triggers + community_stats). |
+| P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟡 In progress | Decomposed into P0.2.a..f (see plan). **P0.2.a applied. P0.2.b + P0.2.c + P0.2.d + P0.2.e + P0.2.f written; awaiting operator apply** (`supabase db push`). All slices SQL-complete. |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | ⏳ Planned | Currently skipped — lands on tabs |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
@@ -111,7 +111,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
-| In progress | P0.2 — Database schema + RLS | — | 2026-05-07 | — |
+| In progress | P0.2 — Database schema + RLS (a..f all written; a applied; b..f awaiting operator `db push`) | — | 2026-05-07 | — |
 | Up next | P0.3 — Onboarding wizard | — | — | — |
 
 ---
@@ -119,6 +119,23 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.**
+
+### 🟡 P0.2.f — Stats projections + counter triggers + community_stats (migration written, awaiting operator apply)
+
+| Field | Value |
+| ----- | ----- |
+| Mapped to SRS | FR-STATS-001 (personal stats screen — three counter cards), FR-STATS-002 (counter semantics: `items_given_count` ± on closure transitions, `items_received_count` ± on Recipient row, `active_posts_count_internal` = open posts of any visibility, clamp-at-zero per AC4), FR-STATS-004 (community stats panel — `community_stats` view with `registered_users` / `active_public_posts` / `items_delivered_total`), FR-STATS-005 (drift recompute seam — `stats_safe_dec` raises NOTICE on clamp; nightly job ships separately), FR-STATS-006 (privacy — view selectable by anon+authenticated; counters projected via `users` RLS unchanged), FR-PROFILE-001 AC2 (profile header followers / following / active counters now maintained), FR-PROFILE-013 (public/internal active-posts split — viewer-aware via `active_posts_count_for_viewer(owner, viewer)`; never reveals OnlyMe presence to non-owners per AC4), FR-FEED-014 (active-community counter shares `community_stats.active_public_posts`), FR-FEED-015 (first-post nudge — partial index on `users.posts_created_total = 0 AND first_post_nudge_dismissed = false`), FR-CLOSURE-008 (data shape only — `posts_pending_hard_delete_idx` partial index for the future bg-job-soft-delete-cleanup Edge Function). |
+| PRD anchor | N/A — infrastructure |
+| Status | 🟡 SQL written, reviewed, committed. **Operator must apply** (`supabase db push`). After apply, regenerate `database.types.ts`. The migration is idempotent (backfill is a recompute from ground truth — safe to re-run). |
+| Branch / commit | `feat/p0-2-f-stats-counters` (this commit) |
+| Files added | `supabase/migrations/0006_init_stats_counters.sql` |
+| Files changed | `docs/SSOT/PROJECT_STATUS.md` |
+| Tech debt logged | None new. Closes TD-21 (counter triggers complete, including the previously-missing `active_posts_count_public` — split into `active_posts_count_public_open` + `active_posts_count_followers_only_open` because FR-PROFILE-013 AC2 is viewer-dependent). Partially closes TD-20 (community_stats endpoint shape exists; activity timeline + nightly drift recompute job stay open under FR-STATS-003 / FR-STATS-005 application code). |
+| AC verified | SQL static review only. End-to-end verification deferred to operator (probes below). |
+| Known gaps | (a) FR-STATS-003 activity timeline ships at the application layer (read-side projection over posts/recipients events) — not in this slice. (b) FR-STATS-005 nightly `bg-job-stats-recompute` is the durable equivalent of the on-write triggers; the Edge Function ships in P1.6. The schema seam is the `stats_safe_dec` NOTICE log, which an operator can scrape for `stats_drift_detected`. (c) FR-CLOSURE-008's actual `bg-job-soft-delete-cleanup` Edge Function is not in this slice — only the supporting partial index ships here. (d) Hard-delete of a `closed_delivered` post does NOT roll back `items_given_count` (FR-STATS-005 reconciles drift). The legitimate path for `closed_delivered` is reopen → status trigger handles it. (e) `community_stats` is a regular view, not materialised; SRS FR-STATS-004 AC2's 60s freshness contract is fulfilled at the edge cache layer, not the DB. Promote to MV + pg_cron when scale warrants. |
+| Operator setup notes | `supabase db push`. Verify after applying 0001..0006: (1) `select * from public.community_stats;` returns one row with three integers + `as_of` timestamp. (2) As user A insert a `Public` open post — `select active_posts_count_internal, active_posts_count_public_open, posts_created_total from public.users where user_id = A;` must show 1, 1, 1. (3) Update its `visibility` to `OnlyMe` is forbidden by `posts_visibility_upgrade_check` (visibility is upgrade-only); update an `OnlyMe` post to `Public` and re-check — `public_open` must increment. (4) Delete the post — `active_posts_count_internal` and `active_posts_count_public_open` must decrement to 0; `posts_created_total` stays at 1 (lifetime counter). (5) `select public.active_posts_count_for_viewer(A, A);` returns the internal count; `select public.active_posts_count_for_viewer(A, null);` returns the anon-viewer (public-only) count. (6) Two users follow each other — `followers_count` and `following_count` of both must be 1. (7) `select public.stats_safe_dec(0);` returns 0 and emits a NOTICE in pg logs. After verification, regenerate `database.types.ts` and commit. |
+
+---
 
 ### 🟡 P0.2.e — Moderation (migration written, awaiting operator apply)
 
@@ -313,7 +330,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-18 | Reports + block/unblock + auto-removal + false-report sanctions UI absent. (AUDIT-P0-06) | High | Audit 2026-05-07 | Open (P0.2.e + P1.3 + P1.4) |
 | TD-19 | Push notifications: no device lifecycle, no fan-out, no preferences table. (AUDIT-P0-07) | High | Audit 2026-05-07 | Open (P1.5) |
 | TD-20 | Statistics: counters render `0`; no `bg-job-stats-recompute`; no community-stats endpoint; no activity timeline. (AUDIT-P0-08) | High | Audit 2026-05-07 | Open (P1.6) |
-| TD-21 | Counter triggers (`followers_count`, `following_count`, `active_posts_count_internal`, `items_given_count`, `items_received_count`) not written — planned `P0.2.f`; also missing `active_posts_count_public`. (AUDIT-P0-09 + AUDIT-X-04) | High | Audit 2026-05-07 | Open (P0.2.f) |
+| TD-21 | Counter triggers (`followers_count`, `following_count`, `active_posts_count_internal`, `items_given_count`, `items_received_count`) not written — planned `P0.2.f`; also missing `active_posts_count_public`. (AUDIT-P0-09 + AUDIT-X-04) | High | Audit 2026-05-07 | ✅ Resolved 2026-05-07 (P0.2.f — `0006_init_stats_counters.sql` adds all triggers; `active_posts_count_public` is split into `_public_open` + `_followers_only_open` per FR-PROFILE-013 AC2 viewer-dependence; viewer-aware total via `active_posts_count_for_viewer(owner, viewer)`. Nightly drift recompute (FR-STATS-005) tracked under TD-20 / P1.6.) |
 | TD-22 | Onboarding wizard (Basic Info, Profile Photo, Welcome Tour, soft-gate on first action) skipped — users land on `(tabs)` immediately. (AUDIT-P0-10) | High | Audit 2026-05-07 | Open (P0.3) |
 | TD-23 | Image upload in `(tabs)/create.tsx` is a no-op (no picker, no resize, no upload, no EXIF strip). Photo is mandatory for `Give`. (AUDIT-P0-11 + AUDIT-X-03) | High | Audit 2026-05-07 | Open (P0.4) |
 | TD-24 | Apple SSO + Phone OTP buttons placeholder — required for iOS App Store + Israeli SMS path. (AUDIT-P0-12) | High | Audit 2026-05-07 | Open (P3.2 / P3.3) |
