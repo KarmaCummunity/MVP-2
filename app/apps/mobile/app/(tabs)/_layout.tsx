@@ -1,18 +1,15 @@
 // Bottom Tab Navigator
-// Mapped to: SRS §6.1 — 3 tabs (RTL: Profile | Plus | Home)
+// Mapped to: SRS §6.1 — 3 tabs (RTL: Profile | Plus | Home), icon-only side tabs.
 import React from 'react';
-import { Tabs, useRouter } from 'expo-router';
-import { TouchableOpacity, View, StyleSheet, Text, Platform } from 'react-native';
+import { Tabs } from 'expo-router';
+import { View, StyleSheet, Text } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, spacing, shadow, typography } from '@kc/ui';
+import { colors, shadow } from '@kc/ui';
 
-function TabBarIcon({ focused, emoji, label }: { focused: boolean; emoji: string; label: string }) {
+function TabBarIcon({ focused, emoji }: { focused: boolean; emoji: string }) {
   return (
-    <View style={[tabStyles.iconWrap]}>
+    <View style={tabStyles.iconWrap}>
       <Text style={[tabStyles.emoji, focused && tabStyles.emojiActive]}>{emoji}</Text>
-      <Text style={[tabStyles.label, focused ? tabStyles.labelActive : tabStyles.labelInactive]}>
-        {label}
-      </Text>
     </View>
   );
 }
@@ -21,7 +18,7 @@ function PlusTabIcon({ focused }: { focused: boolean }) {
   return (
     <View style={tabStyles.plusWrap}>
       <View style={[tabStyles.plusCircle, focused && tabStyles.plusCircleActive]}>
-        <Text style={tabStyles.plusText}>+</Text>
+        <Text style={[tabStyles.plusText, focused && tabStyles.plusTextActive]}>+</Text>
       </View>
     </View>
   );
@@ -45,9 +42,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="profile"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} emoji="👤" label="פרופיל" />
-          ),
+          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} emoji="👤" />,
         }}
       />
       <Tabs.Screen
@@ -59,9 +54,7 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          tabBarIcon: ({ focused }) => (
-            <TabBarIcon focused={focused} emoji="🏠" label="בית" />
-          ),
+          tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} emoji="🏠" />,
         }}
       />
     </Tabs>
@@ -79,24 +72,14 @@ const tabStyles = StyleSheet.create({
   },
   iconWrap: {
     alignItems: 'center',
-    gap: 2,
+    justifyContent: 'center',
   },
   emoji: {
-    fontSize: 22,
+    fontSize: 24,
     opacity: 0.5,
   },
   emojiActive: {
     opacity: 1,
-  },
-  label: {
-    ...typography.caption,
-  },
-  labelActive: {
-    color: colors.tabActive,
-    fontWeight: '600',
-  },
-  labelInactive: {
-    color: colors.tabInactive,
   },
   plusWrap: {
     alignItems: 'center',
@@ -119,5 +102,8 @@ const tabStyles = StyleSheet.create({
     color: colors.primary,
     lineHeight: 32,
     fontWeight: '700',
+  },
+  plusTextActive: {
+    color: colors.surface,
   },
 });

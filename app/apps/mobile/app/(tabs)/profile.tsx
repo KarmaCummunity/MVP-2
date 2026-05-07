@@ -1,5 +1,5 @@
 // My Profile screen
-// Mapped to: SRS §3.2.1
+// Mapped to: FR-PROFILE-001 (header, tabs, counters), FR-AUTH-003 AC5 (Google name/avatar via AuthSession)
 import React, { useState } from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet,
@@ -10,19 +10,17 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius, shadow } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
-import { PostCardProfile } from '../../src/components/PostCardProfile';
 import { EmptyState } from '../../src/components/EmptyState';
-import { MOCK_USER, MOCK_POSTS } from '../../src/mock/data';
+import { useAuthStore } from '../../src/store/authStore';
 
-type Tab = 'active' | 'closed';
+type Tab = 'open' | 'closed';
 
 export default function ProfileScreen() {
   const router = useRouter();
-  const [activeTab, setActiveTab] = useState<Tab>('active');
+  const session = useAuthStore((s) => s.session);
+  const [activeTab, setActiveTab] = useState<Tab>('open');
 
-  const user = MOCK_USER;
-  // Show all mock posts on active tab since we have no "me" posts in mock data
-  const displayPosts = MOCK_POSTS.slice(0, 6);
+  const displayName = resolveDisplayName(session);
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -42,26 +40,23 @@ export default function ProfileScreen() {
         <View style={styles.profileCard}>
           <View style={styles.profileHeader}>
             <AvatarInitials
-              name={user.displayName}
-              avatarUrl={user.avatarUrl}
+              name={displayName}
+              avatarUrl={session?.avatarUrl ?? null}
               size={72}
             />
             <View style={styles.profileInfo}>
-              <Text style={styles.displayName}>{user.displayName}</Text>
-              <Text style={styles.city}>📍 {user.cityName}</Text>
-              {user.biography ? (
-                <Text style={styles.bio}>{user.biography}</Text>
-              ) : null}
+              <Text style={styles.displayName}>{displayName}</Text>
+              {session?.email ? <Text style={styles.email}>{session.email}</Text> : null}
             </View>
           </View>
 
-          {/* Stats row */}
+          {/* Stats row — until P0.2 lands, real follow/post counters do not exist (FR-PROFILE-001 AC6) */}
           <View style={styles.statsRow}>
-            <StatItem count={user.followersCount} label="עוקבים" />
+            <StatItem count={0} label="עוקבים" />
             <View style={styles.statDivider} />
-            <StatItem count={user.followingCount} label="נעקבים" />
+            <StatItem count={0} label="נעקבים" />
             <View style={styles.statDivider} />
-            <StatItem count={user.activePostsCountInternal} label="פוסטים" />
+            <StatItem count={0} label="פוסטים" />
           </View>
 
           {/* Action buttons */}
@@ -78,11 +73,11 @@ export default function ProfileScreen() {
         {/* Tabs */}
         <View style={styles.tabs}>
           <TouchableOpacity
-            style={[styles.tab, activeTab === 'active' && styles.tabActive]}
-            onPress={() => setActiveTab('active')}
+            style={[styles.tab, activeTab === 'open' && styles.tabActive]}
+            onPress={() => setActiveTab('open')}
           >
-            <Text style={[styles.tabText, activeTab === 'active' && styles.tabTextActive]}>
-              פוסטים פעילים
+            <Text style={[styles.tabText, activeTab === 'open' && styles.tabTextActive]}>
+              פוסטים פתוחים
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
@@ -90,36 +85,37 @@ export default function ProfileScreen() {
             onPress={() => setActiveTab('closed')}
           >
             <Text style={[styles.tabText, activeTab === 'closed' && styles.tabTextActive]}>
-              פוסטים שנמסרו
+              פוסטים סגורים
             </Text>
           </TouchableOpacity>
         </View>
 
-        {/* Posts — 3-column grid */}
-        {activeTab === 'active' ? (
-          displayPosts.length > 0 ? (
-            <View style={styles.grid}>
-              {displayPosts.map((post) => (
-                <PostCardProfile key={post.postId} post={post} />
-              ))}
-            </View>
-          ) : (
-            <EmptyState
-              emoji="📭"
-              title="אין פוסטים פעילים"
-              subtitle="פרסם את הפוסט הראשון שלך!"
-            />
-          )
+        {/* No real posts data yet (P0.4). Both tabs render empty until then. */}
+        {activeTab === 'open' ? (
+          <EmptyState
+            emoji="📭"
+            title="אין פוסטים פתוחים"
+            subtitle="פרסם את הפוסט הראשון שלך!"
+          />
         ) : (
           <EmptyState
             emoji="📦"
-            title="אין פוסטים שנמסרו עדיין"
+            title="אין פוסטים סגורים עדיין"
             subtitle="פוסטים שסגרת כ-נמסר יופיעו כאן."
           />
         )}
       </ScrollView>
     </SafeAreaView>
   );
+}
+
+function resolveDisplayName(session: ReturnType<typeof useAuthStore.getState>['session']): string {
+  if (session?.displayName && session.displayName.trim().length > 0) return session.displayName;
+  if (session?.email) {
+    const local = session.email.split('@')[0];
+    if (local && local.length > 0) return local;
+  }
+  return 'משתמש';
 }
 
 function StatItem({ count, label }: { count: number; label: string }) {
@@ -166,8 +162,7 @@ const styles = StyleSheet.create({
   },
   profileInfo: { flex: 1, gap: spacing.xs },
   displayName: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
-  city: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
-  bio: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  email: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   statsRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -216,11 +211,4 @@ const styles = StyleSheet.create({
   tabActive: { borderBottomColor: colors.primary },
   tabText: { ...typography.button, color: colors.textSecondary },
   tabTextActive: { color: colors.primary },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.base,
-    gap: spacing.xs,
-    paddingBottom: spacing['3xl'],
-  },
 });

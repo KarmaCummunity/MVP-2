@@ -84,6 +84,7 @@ A new user signs up using Google and lands in the onboarding wizard with name an
 - AC2. If a `User` already exists for the same Google `sub`, the user is signed in (treated as `FR-AUTH-007`) — no duplicate created.
 - AC3. The user proceeds to the onboarding wizard (`FR-AUTH-010`) with the prefilled fields editable.
 - AC4. Cancellation of the Google consent screen returns the user to `FR-AUTH-002` with no state change.
+- AC5. **Session profile metadata (MVP, pre-`Profile`-table)**: until the `Profile` table exists (`PROJECT_STATUS.md` P0.2), the `AuthSession` returned by `IAuthService` exposes `displayName: string | null` and `avatarUrl: string | null`, derived in the Supabase adapter from `user.user_metadata.full_name` (or `name`) and `user.user_metadata.avatar_url` (or `picture`) respectively. These fields are the **interim** source of truth for "My Profile" header; once `FR-PROFILE-007` ships against the real `Profile` table, the screen reads from `Profile` and the `AuthSession` fields become a fallback for first render only. Tracked as TD: "migrate displayName/avatarUrl off AuthSession to Profile read once P0.2 lands."
 
 **Edge Cases.**
 - The Google account has no profile picture: user proceeds with the default silhouette and is offered the upload step in onboarding.
