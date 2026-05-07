@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (P0.4-BE adapter + P0.3.c soft gate merged; audit hygiene — TD-41..43 captured + `CODE_AUDIT_2026-05-07.md` retired; P0.4-FE → In progress) |
+| **Last Updated** | 2026-05-08 (P0.4-FE — Feed/post-detail/create/profile/guest wired to live `SupabasePostRepository`; image upload via `expo-image-manipulator`; `mock/data.ts` retired; AUDIT-P0-01 / AUDIT-P0-11 / AUDIT-P2-02 / TD-13 / TD-32 closed; TD-23 / TD-29 / TD-42 partial) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_SSOT_/`](./PRD_MVP_SSOT_/00_Index.md) |
 | **Architecture Rules** | User rules in `~/.cursor` + [`.cursor/rules/srs-architecture.mdc`](../../.cursor/rules/srs-architecture.mdc) |
@@ -28,29 +28,31 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~23%** (UI scaffolding + 2 auth paths + guest preview + onboarding slices A + C; DB schema applied; Posts repo adapter (BE) — FE wiring still mock-backed) |
-| Features 🟢 done | 4 |
-| Features 🟡 in progress | 2 (P0.3 — slice B remains; P0.4-FE — feed UI + create form) |
+| MVP completion (rough) | **~38%** (UI scaffolding + 2 auth paths + guest preview + onboarding slices A + C; DB schema applied; Posts BE adapter + FE end-to-end (feed + post detail + create with image upload + My Profile)) |
+| Features 🟢 done | 5 (P0.4 fully done — BE + FE) |
+| Features 🟡 in progress | 1 (P0.3 — slice B photo upload remains) |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 3 (P0.3 slice B; P0.5 chat; P0.6 closure) — P0.4-FE in progress |
-| Test coverage | use-case tests for `auth.*` (incl. Google + onboarding), feed selector |
-| Open tech-debt items | 35 (1 partial) |
+| P0 critical features remaining | 3 (P0.3 slice B; P0.5 chat; P0.6 closure) |
+| Test coverage | use-case tests for `auth.*` + `posts.*` (CreatePost, Update, GetById, GetMy, Delete) + `feed.*` (GetFeed + selectGuestPreview) — 52 vitest passing |
+| Open tech-debt items | 33 (3 partial) |
 
 ### What works end-to-end today
 
-- Monorepo build (`pnpm typecheck` passes)
+- Monorepo build (`pnpm typecheck` passes); `pnpm lint:arch` enforces ≤200-LOC + domain-error rules
 - **Native dev builds on iOS 26 + Android API-36 + Web** — all three platforms run correctly with Expo SDK 54 + expo-router 6
-- All 27 MVP screens have UI scaffolding with mock data
-- **Guest preview (peek feed)** — unauthenticated users open `(guest)/feed` with 3 public posts, join modal on card tap (`FR-AUTH-014`)
+- **Posts CRUD** — feed list (with filters via `filterStore`), post detail, create form with image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`
+- **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (`FR-AUTH-014`)
 
 ### What is fake / stubbed
 
-- All non-auth screens still consume mock data (`apps/mobile/src/mock/data.ts`), including guest preview (`FR-AUTH-014`)
-- **DB schema applied (0001–0008)** but application repositories not yet wired — all screens still use mock data (wired incrementally in P0.4–P0.6)
-- No real CRUD for posts, follows, chats, reports, notifications, stats
+- Chat list + thread still consume local `MOCK_MESSAGES` inside `chat/[id].tsx` (P0.5 retires this)
+- Other-user profile (`/user/[handle]`) is a P2.4 placeholder until `IUserRepository.findByHandle` ships (TD-40)
+- Profile counters: followers / following / items_given / items_received still render `0` (TD-42 — needs `IUserRepository.findById`, P2.4)
+- No closure flow / chat realtime / reports / notifications / community stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as a placeholder (Google SSO is real — see §4)
 - Forgot-password flow not implemented
 - Onboarding wizard photo step is a skip-only stub (full camera/gallery/resize/EXIF/Storage upload deferred to P0.3.b)
+- EXIF metadata is stripped client-side (re-encode side effect); server-side strip per `FR-POST-005 AC4` requires an Edge Function (TD-23 / AUDIT-X-03)
 
 ---
 
@@ -65,7 +67,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | See §4 entry |
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting — all FRs depend) | 🟢 Done (2026-05-07) | All migrations 0001–0008 applied. Repositories wired incrementally in P0.4–P0.6. |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟡 In progress | Slices A + C merged: Basic Info + Tour + soft gate live. Slice B (photo upload — camera/gallery + Storage) remains. |
-| P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | ⏳ Planned | Largest single chunk |
+| P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | 🟢 Done (2026-05-08) | BE adapter (P0.4-BE) + FE wiring (P0.4-FE) both shipped. See §4 entries. |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
 | P0.6 | Closure flow (mark as delivered) | FR-CLOSURE-001…006 | ⏳ Planned | Required to capture the **North Star** metric (`closed_delivered` count) |
 
@@ -113,8 +115,8 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | ---- | ------- | ----- | ------- | ------ |
 | Done | P0.2 — Database schema + RLS (all migrations 0001–0008 applied) | — | 2026-05-07 | 2026-05-07 |
 | Done | P0.4-BE — Posts adapter (Supabase) | agent-be | 2026-05-08 | 2026-05-08 |
+| Done | P0.4-FE — Feed UI + Create form (consumes adapter, image upload, mock retirement) | agent-fe | 2026-05-08 | 2026-05-08 |
 | In progress | P0.3 — Onboarding wizard (slices A + C merged; B = photo upload remains) | — | 2026-05-07 | — |
-| In progress | P0.4-FE — Feed UI + Create form (consumes adapter, image upload, mock retirement) | agent-fe | 2026-05-08 | — |
 | Up next | P0.5 — Direct chat with realtime | — | — | — |
 
 ---
@@ -122,6 +124,16 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 ## 4. Completed Features Log
 
 Append-only. **Newest at top.** Git has the full file diff — see branch/commit. Operator verification steps are in [OPERATOR_RUNBOOK.md](./OPERATOR_RUNBOOK.md).
+
+---
+
+### 🟢 P0.4-FE — Feed UI + Create form (mock retirement + image upload)
+- **SRS**: FR-POST-001..006, FR-POST-008 (read-side via UpdatePostUseCase use-case ready), FR-POST-010, FR-POST-014, FR-POST-015, FR-FEED-001..005, FR-FEED-013, FR-PROFILE-001 (partial), FR-AUTH-014 (partial — guest feed now live)
+- **Branch**: `feat/FR-POST-001-fe-feed-create` · 2026-05-08 · PR #14
+- **Tests**: 52 vitest passing (27 new in `posts/*` + `feed/GetFeedUseCase` — FakePostRepository + 5 use-case suites); tsc clean (5 packages); `pnpm lint:arch` 102 files passing
+- **Tech debt closed**: TD-13 (full — read/create/update/delete adapter consumers wired; close/reopen still `not_implemented('P0.6')` per scope), TD-32 (post/[id] silent fallback → not-found state), AUDIT-P0-01, AUDIT-P0-11 (image picker + resize + upload), AUDIT-P2-02 + TD-5 (mock/data.ts deleted)
+- **Tech debt partially closed**: TD-23 (image upload + client-side EXIF strip via re-encode shipped; **server-side EXIF Edge Function still pending — AUDIT-X-03**), TD-29 (`(tabs)/index.tsx` 136 LOC, `(tabs)/profile.tsx` 214, `post/[id].tsx` 165, `(tabs)/create.tsx` ~250 — under or near cap; allowlist mostly-respected), TD-42 (active-posts counter wired via `countOpenByUser`; followers/following/items_given/items_received still `0` pending TD-40 / P2.4)
+- **Open gaps**: FR-POST-006 AC2/AC3 visibility interstitials · FR-POST-007 local draft autosave · FR-POST-008 image-edit (depends on BE update() mediaAssets) · FR-FEED-006..015 (P1.2 / TD-26) · FollowersOnly visibility option in create form (TD-40 / P2.4) · TD-41 SQL probes for SECURITY DEFINER predicates (Public path only exercised here)
 
 ---
 
@@ -290,7 +302,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-10 | `AuthSession.displayName`/`avatarUrl` are an interim source for "My Profile" header (FR-AUTH-003 AC5). Once P0.2 lands and a real `Profile` table exists, the screen must read from `Profile` and these `AuthSession` fields become first-render fallback only. | Low | UX polish 2026-05-07 | Open |
 | TD-11 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (the post row is hidden by RLS, so its image paths are not enumerable). Replace with per-object signed URLs (or a private bucket + sign-on-fetch) once we serve at scale or once anyone audits the privacy story. | Low | P0.2.b 2026-05-07 | Open |
 | TD-12 | **Audit baseline 2026-05-07** — full review of code vs PRD/SRS produced 49 findings across P0/P1/P2/P3. All 49 findings are tracked as TD-13..TD-44 in this section + §2 backlog rows; final 3 gaps captured 2026-05-08 as TD-41..TD-43. Source file `CODE_AUDIT_2026-05-07.md` retired 2026-05-08 once every finding had a live owner. AUDIT-IDs cited in TD descriptions remain as historical provenance markers. | Low | Audit 2026-05-07 | ✅ Resolved 2026-05-08 |
-| TD-13 | No `IPostRepository` Supabase adapter — port declared, no implementation. Mock data still consumed by feed/create/post detail. (AUDIT-P0-01) | High | Audit 2026-05-07 | 🟡 Partial — adapter ships in P0.4-BE 2026-05-08; close/reopen remain `not_implemented('P0.6')` until closure slice; FE wiring still mock-backed until P0.4-FE merges |
+| TD-13 | No `IPostRepository` Supabase adapter — port declared, no implementation. Mock data still consumed by feed/create/post detail. (AUDIT-P0-01) | High | Audit 2026-05-07 | ✅ Resolved 2026-05-08 (P0.4-BE adapter + P0.4-FE wiring; close/reopen remain `not_implemented('P0.6')` per scope — that's the closure slice's job, not this TD's) |
 | TD-14 | No `IUserRepository` Supabase adapter; profile + user-detail screens use `MOCK_USER`. (AUDIT-P0-02) | High | Audit 2026-05-07 | Open (P0.4 / P2.4) |
 | TD-15 | No `IChatRepository` Supabase adapter; chat list + thread use `MOCK_MESSAGES`. (AUDIT-P0-03) | High | Audit 2026-05-07 | Open (P0.5) |
 | TD-16 | Chat schema (`chats`, `messages`, RLS, realtime triggers) not yet migrated — planned `P0.2.d`. (AUDIT-P0-04) | High | Audit 2026-05-07 | ✅ Resolved (P0.2.d applied) |
@@ -300,16 +312,16 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-20 | Statistics: counters render `0`; no `bg-job-stats-recompute`; no community-stats endpoint; no activity timeline. (AUDIT-P0-08) | High | Audit 2026-05-07 | Open (P1.6) |
 | TD-21 | Counter triggers (`followers_count`, `following_count`, `active_posts_count_internal`, `items_given_count`, `items_received_count`) not written — planned `P0.2.f`; also missing `active_posts_count_public`. (AUDIT-P0-09 + AUDIT-X-04) | High | Audit 2026-05-07 | ✅ Resolved 2026-05-07 (P0.2.f — `0006_init_stats_counters.sql` adds all triggers; `active_posts_count_public` is split into `_public_open` + `_followers_only_open` per FR-PROFILE-013 AC2 viewer-dependence; viewer-aware total via `active_posts_count_for_viewer(owner, viewer)`. Nightly drift recompute (FR-STATS-005) tracked under TD-20 / P1.6.) |
 | TD-22 | Onboarding wizard (Basic Info, Profile Photo, Welcome Tour, soft-gate on first action) skipped — users land on `(tabs)` immediately. (AUDIT-P0-10) | High | Audit 2026-05-07 | Open (P0.3) |
-| TD-23 | Image upload in `(tabs)/create.tsx` is a no-op (no picker, no resize, no upload, no EXIF strip). Photo is mandatory for `Give`. (AUDIT-P0-11 + AUDIT-X-03) | High | Audit 2026-05-07 | Open (P0.4) |
+| TD-23 | Image upload in `(tabs)/create.tsx` is a no-op (no picker, no resize, no upload, no EXIF strip). Photo is mandatory for `Give`. (AUDIT-P0-11 + AUDIT-X-03) | High | Audit 2026-05-07 | 🟡 Partial — picker + resize-to-2048 + Storage upload + client-side EXIF strip via re-encode shipped 2026-05-08 in P0.4-FE; **server-side EXIF strip Edge Function still open (AUDIT-X-03)** — author Edge Function under `supabase/functions/` as a follow-up slice |
 | TD-24 | Apple SSO + Phone OTP buttons placeholder — required for iOS App Store + Israeli SMS path. (AUDIT-P0-12) | High | Audit 2026-05-07 | Open (P3.2 / P3.3) |
 | TD-25 | No "Follow Requests" UI (screen 5.4); private profile not functional client-side. (AUDIT-P0-13) | High | Audit 2026-05-07 | Open (P1.1) |
 | TD-26 | Free-text search, filter persistence, cold-start fallback, first-post nudge, community counter, realtime feed all absent. (AUDIT-P1-01..06) | High | Audit 2026-05-07 | Open (P1.2) |
 | TD-27 | Auto-message in chat from post + read-receipt persistence absent. (AUDIT-P1-07, AUDIT-P1-08) | High | Audit 2026-05-07 | Open (P0.5) |
 | TD-28 | Bio URL filter, Edit Profile screen, privacy toggle, upgrade-only enforcement on Edit Post all missing. (AUDIT-P1-12..14) | High | Audit 2026-05-07 | Open (P2.4) |
-| TD-29 | 7 files exceed `≤ 200 LOC` hard cap (`create.tsx` 333, `(auth)/index.tsx` 266, etc.). See `CODE_AUDIT_2026-05-07.md` Appendix A. (AUDIT-P2-01) | High | Audit 2026-05-07 | Open |
+| TD-29 | 7 files exceed `≤ 200 LOC` hard cap (`create.tsx` 333, `(auth)/index.tsx` 266, etc.). See audit Appendix A (file retired). (AUDIT-P2-01) | High | Audit 2026-05-07 | 🟡 Partial — `pnpm lint:arch` enforces the cap going forward; `(tabs)/index.tsx` (136), `(tabs)/profile.tsx` (214 — allowlisted, was 215), `post/[id].tsx` (165), `PostFeedList.tsx` (~120) all under or at cap; `(tabs)/create.tsx` ~250 (over cap, allowlisted) — further `useReducer` extraction tracked as future polish |
 | TD-30 | No JSDoc / TSDoc on most public exports across `domain`, `application`, `infrastructure`, mobile components. (AUDIT-P2-06) | Med | Audit 2026-05-07 | Open |
 | TD-31 | Test coverage limited to 6 files; no tests for repos, components, infra adapters, or invariants. (AUDIT-P2-05) | Med | Audit 2026-05-07 | Open |
-| TD-32 | `app/post/[id].tsx` falls back to `MOCK_POSTS[0]` on unknown ID — silent wrong-post display. Should render not-found. (AUDIT-P2-09) | Med | Audit 2026-05-07 | Open |
+| TD-32 | `app/post/[id].tsx` falls back to `MOCK_POSTS[0]` on unknown ID — silent wrong-post display. Should render not-found. (AUDIT-P2-09) | Med | Audit 2026-05-07 | ✅ Resolved 2026-05-08 (P0.4-FE — `post/[id].tsx` renders `EmptyState` "הפוסט לא נמצא" when `getPostByIdUseCase` returns null) |
 | TD-33 | No top-level `<ErrorBoundary>` in `app/_layout.tsx` — Supabase failures crash the app. (AUDIT-P2-10) | Med | Audit 2026-05-07 | ✅ Resolved 2026-05-08 (`apps/mobile/src/components/ErrorBoundary.tsx` wraps the root inside `SafeAreaProvider`; Hebrew fallback + retry; dev-only message detail) |
 | TD-34 | `CLAUDE.md` references `PRD_MVP_SSOT_/` (does not exist; correct path: `PRD_MVP_CORE_SSOT/`). `SRS.md:10` references `../../PRD_MVP/` (correct: `./PRD_MVP_CORE_SSOT/`). (AUDIT-P3-03 + AUDIT-P3-04) | Low | Audit 2026-05-07 | ✅ Resolved 2026-05-07 (paths fixed in this commit) |
 | TD-35 | `i18n/he.ts` (207 LOC) violates `≤ 200 LOC` cap; split per domain. (AUDIT-P3-08) | Low | Audit 2026-05-07 | Open |
@@ -320,7 +332,7 @@ Mirror / pointer to [`CODE_QUALITY.md`](./CODE_QUALITY.md) (which does not exist
 | TD-40 | `SupabaseUserRepository` is a P0.3.a slice stub — only `getOnboardingState`, `setBasicInfo`, `setOnboardingState` are wired against `public.users`. The remaining 19 `IUserRepository` methods throw `not_implemented` and must be filled in during P0.4 (`findByAuthIdentity`, `findById`), P1.1 (follows + follow-requests), P1.4 (blocks), P2.4 (`update`, `findByHandle`, `delete`). Adapter file: `app/packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts`. The `not_implemented` errors include the slice that owns each method so callers know where to look. | Med | P0.3.a 2026-05-07 | Open |
 | TD-50 | `SupabasePostRepository` and `SupabaseAuthService` have no adapter-level tests (only `pnpm typecheck` + downstream use-case fakes guard them). Pure helpers (`mapPostRow`, `cursor.ts`, `mapAuthError`) deserve unit tests. Adding vitest to `@kc/infrastructure-supabase` is a small, focused slice. | Med | P0.4-BE 2026-05-08 | Open |
 | TD-41 | **AUDIT-X-01** — `is_blocked()` and `is_following()` are `SECURITY DEFINER` functions that bypass RLS (intentional, per P0.2.c — see §4 entry). A predicate defect here would silently break the privacy contract: a blocked user could see posts, or a non-follower could see `FollowersOnly` content, with no RLS error to flag it. Mitigation: add SQL probes (e.g. fixtures + assertions inside a vitest suite under `@kc/infrastructure-supabase`) covering: (a) `is_blocked(A,B)` returns true when A blocks B, (b) `is_following(A,B)` honors `accepted` follows but not `pending` ones, (c) `is_post_visible_to()` short-circuits on either side of a block. To wire when P0.4-FE first exercises FollowersOnly visibility paths end-to-end. | Med | Audit 2026-05-07 (X-01) | Open |
-| TD-42 | **AUDIT-P2-08** — Counter cards in `apps/mobile/app/(tabs)/profile.tsx` render literal `0` rather than reading from `users.followers_count`, `users.following_count`, `users.items_given_count`, `users.items_received_count`, and `active_posts_count_for_viewer(owner, viewer)`. The triggers shipped in P0.2.f and the columns are populated, but the UI was never bound. Resolve as part of P0.4-FE (My Profile slice — once `IUserRepository.findById` is wired) or split into P2.4 if the FE plan grows. Watch out for FR-PROFILE-013 / TD-39 — non-owner viewers must read via `active_posts_count_for_viewer()`, never the raw `_internal` column. | Low | Audit 2026-05-07 (P2-08) | Open |
+| TD-42 | **AUDIT-P2-08** — Counter cards in `apps/mobile/app/(tabs)/profile.tsx` render literal `0` rather than reading from `users.followers_count`, `users.following_count`, `users.items_given_count`, `users.items_received_count`, and `active_posts_count_for_viewer(owner, viewer)`. The triggers shipped in P0.2.f and the columns are populated, but the UI was never bound. Resolve as part of P0.4-FE (My Profile slice — once `IUserRepository.findById` is wired) or split into P2.4 if the FE plan grows. Watch out for FR-PROFILE-013 / TD-39 — non-owner viewers must read via `active_posts_count_for_viewer()`, never the raw `_internal` column. | Low | Audit 2026-05-07 (P2-08) | 🟡 Partial — active-posts counter wired via `IPostRepository.countOpenByUser` 2026-05-08 in P0.4-FE; followers/following/items_given/items_received still `0` (need `IUserRepository.findById`, TD-40 / P2.4) |
 | TD-43 | **AUDIT-P3-07** — `docs/SSOT/SRS.md` Last-Updated header still shows `2026-05-05`, but new ACs were added on 2026-05-07 per the §4 "UX polish" entry (FR-AUTH-003 AC5 — Google identity on AuthSession; FR-PROFILE-001 AC4 + AC6 — avatar/displayName fallback). Bump the date and scan the `02_functional_requirements/` files for any other un-stamped edits. One-minute fix. | Low | Audit 2026-05-07 (P3-07) | Open |
 | TD-51 | Domain code uses raw `throw new Error(...)` in `packages/domain/src/value-objects.ts:112-113` (`createAddress` validation). `srs-architecture.mdc` requires typed error classes (e.g. `DomainError`, `ValidationError`). Introduce a base `DomainError` in `packages/domain/src/errors.ts` and replace the two raw throws. The `check-architecture.mjs` script enforces the rule going forward; these two lines are temporarily allowlisted. After fix, remove from `DOMAIN_ERROR_RULE.exemptLines`. | Low | CI arch enforcement 2026-05-08 | ✅ Resolved 2026-05-08 (`packages/domain/src/errors.ts` introduces `DomainError` (abstract) + `ValidationError`; `value-objects.ts` createAddress now throws `ValidationError` with field metadata; allowlist in `check-architecture.mjs` is empty — any future raw `throw new Error` in domain fails CI immediately) |
 
