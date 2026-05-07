@@ -1,4 +1,4 @@
-import type { User, AuthIdentity, FollowEdge, FollowRequest, Block } from '@kc/domain';
+import type { User, AuthIdentity, FollowEdge, FollowRequest, Block, OnboardingState } from '@kc/domain';
 
 // ── IUserRepository ───────────────────────────
 // Port (interface) for user persistence.
@@ -10,6 +10,19 @@ export interface IUserRepository {
   create(user: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User>;
   update(userId: string, patch: Partial<User>): Promise<User>;
   delete(userId: string): Promise<void>;
+
+  // ── Onboarding (P0.3) ─────────────────────────
+  /** FR-AUTH-007 AC2: read state to decide where to land on cold-start. */
+  getOnboardingState(userId: string): Promise<OnboardingState>;
+
+  /** FR-AUTH-010: persist step-1 fields. `cityName` must mirror the matching `cities.name_he` row. */
+  setBasicInfo(
+    userId: string,
+    params: { displayName: string; city: string; cityName: string },
+  ): Promise<void>;
+
+  /** FR-AUTH-010 AC3 / FR-AUTH-012 AC3: advance the onboarding state machine. */
+  setOnboardingState(userId: string, state: OnboardingState): Promise<void>;
 
   // Follows
   follow(followerId: string, followedId: string): Promise<FollowEdge>;
