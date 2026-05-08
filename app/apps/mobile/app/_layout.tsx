@@ -35,26 +35,41 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
   const segments = useSegments() as string[];
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
-  const onboardingState = useAuthStore((s) => s.onboardingState);
 
-  // Tab bar shows once the user is past auth + onboarding. Hidden on (auth),
-  // (guest), (onboarding), and the OAuth callback route — never anywhere else,
-  // so detail screens (chat, post, user, settings) keep the bar visible.
+  // Global tab bar shows on detail screens (chat / post / user / settings) so
+  // the user keeps a consistent bottom nav. Inside (tabs) the native expo-router
+  // <Tabs> layout owns its own bar — we skip the global one to avoid doubling.
+  // We deliberately do NOT gate on `onboardingState === 'completed'` because
+  // AuthGate already redirects pending users to (onboarding); checking it here
+  // creates a flicker window where the bar is hidden until the async DB read
+  // resolves, even though we're definitely past auth.
   const head = segments[0] as string | undefined;
   const isOAuthCallback = head === 'auth' && segments[1] === 'callback';
   const showTabBar =
     !isLoading &&
     isAuthenticated &&
-    onboardingState === 'completed' &&
     head !== '(auth)' &&
     head !== '(guest)' &&
     head !== '(onboarding)' &&
+    head !== '(tabs)' &&
     !isOAuthCallback;
 
+  // RN-Web's flex layout doesn't reliably split height between a flex:1 child
+  // and an intrinsic-height sibling — the inner View ends up at full height
+  // and squeezes TabBar past the viewport. Positioning TabBar absolutely at
+  // the bottom is robust across iOS / Android / web. The Stack content gets
+  // bottom padding so the chat composer / scrollable list don't sit under it.
+  const TAB_BAR_HEIGHT = 68;
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flex: 1 }}>{children}</View>
-      {showTabBar && <TabBar />}
+      <View style={{ flex: 1, paddingBottom: showTabBar ? TAB_BAR_HEIGHT : 0 }}>
+        {children}
+      </View>
+      {showTabBar && (
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+          <TabBar />
+        </View>
+      )}
     </View>
   );
 }
