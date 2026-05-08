@@ -5,7 +5,7 @@ import {
   Modal, View, Text, TouchableOpacity, StyleSheet, Pressable,
 } from 'react-native';
 import { colors, typography, spacing, radius, shadow } from '@kc/ui';
-import { isCameraAvailable, type AvatarSource } from '../services/imageUpload';
+import { isCameraAvailable, type AvatarSource } from '../services/avatarUpload';
 
 interface Props {
   readonly visible: boolean;

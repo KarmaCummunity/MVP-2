@@ -10,7 +10,7 @@ import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { PhotoSourceSheet } from '../../src/components/PhotoSourceSheet';
 import { useAuthStore } from '../../src/store/authStore';
 import { getCompleteOnboardingUseCase, getSetAvatarUseCase } from '../../src/services/userComposition';
-import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../../src/services/imageUpload';
+import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../../src/services/avatarUpload';
 
 export default function OnboardingPhotoScreen() {
   const router = useRouter();
