@@ -2,7 +2,7 @@
 
 > Verification steps extracted from PROJECT_STATUS.md §4 to avoid per-entry repetition.
 
-**Status**: Migrations 0001–0008 all applied to the live Supabase project (confirmed 2026-05-07).
+**Status**: Migrations 0001–0008 all applied to the live Supabase project (confirmed 2026-05-07). **0009 pending** (P0.3.b shipped 2026-05-08 — apply before testing onboarding photo upload end-to-end).
 
 ## Standard procedure for any migration
 
@@ -157,3 +157,27 @@ select count(*) from public.cities; -- ≥ 1,306
 ```
 
 Regenerate `database.types.ts` after applying.
+
+---
+
+## 0009 — Avatars Storage bucket {#0009}
+
+Required for FR-AUTH-011 (onboarding profile photo) and FR-PROFILE-007 (Edit Profile photo replace).
+
+```sql
+-- Bucket must exist with the right shape
+select id, public, file_size_limit, allowed_mime_types
+from storage.buckets where id = 'avatars';
+-- → ('avatars', true, 524288, '{image/jpeg}')
+
+-- 4 RLS policies must exist on storage.objects
+select polname from pg_policies
+where schemaname = 'storage' and tablename = 'objects' and polname like 'avatars_%';
+-- → avatars_insert_own, avatars_update_own, avatars_delete_own, avatars_read_public
+
+-- As authenticated user A, upload to <user_a_id>/avatar.jpg → success
+-- As authenticated user A, upload to <user_b_id>/avatar.jpg → RLS denied
+-- As anon, fetch public URL of any avatars/<id>/avatar.jpg → 200 OK
+```
+
+After apply, verify in the app: onboarding photo step → camera or gallery → image visible after upload → "Continue with current photo" advances to tour. Errors keep Skip available.
