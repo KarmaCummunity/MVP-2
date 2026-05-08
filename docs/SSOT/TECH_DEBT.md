@@ -47,7 +47,7 @@
 | TD-26 | 🔴 | Free-text search, filter persistence, cold-start fallback, first-post nudge, community counter, realtime feed all absent | P1.2 |
 | TD-27 | 🔴 | Auto-message in chat from post + read-receipt persistence absent | P0.5 |
 | TD-28 | 🔴 | Bio URL filter, Edit Profile screen, privacy toggle, upgrade-only enforcement on Edit Post all missing | P2.4 |
-| TD-29 | 🟠 | `pnpm lint:arch` enforces `≤ 200 LOC` cap. `(tabs)/index.tsx` (136), `(tabs)/profile.tsx` (214 — allowlisted, was 215), `post/[id].tsx` (165) under or at cap. `(tabs)/create.tsx` ~250 — over cap, allowlisted; `useReducer` extraction tracked as future polish | Opportunistic — (tabs)/create.tsx during P0.6 closure work |
+| TD-29 | 🟠 | `pnpm lint:arch` enforces `≤ 200 LOC` cap. `(tabs)/index.tsx` (136), `(tabs)/profile.tsx` (214 — allowlisted), `post/[id].tsx` (165), `_layout.tsx` (108 — was 265, dropped from allowlist 2026-05-08 via AuthGate / BackButton / TabBar extraction) under cap. `(tabs)/create.tsx` ~250 — over cap, allowlisted; `useReducer` extraction tracked as future polish. `settings.tsx` 228 (allowlist 232 — onboarding-reset web fix added a few lines) | Opportunistic — (tabs)/create.tsx during P0.6 closure work |
 | TD-35 | 🟢 | `i18n/he.ts` (207 LOC) violates `≤ 200 LOC` cap; split per domain | Opportunistic |
 | TD-42 | 🟢 | Counter cards in `apps/mobile/app/(tabs)/profile.tsx` — followers/following/items_given/items_received still render `0` (active-posts wired in P0.4-FE). Need `IUserRepository.findById`. **Watch FR-PROFILE-013 / TD-39**: non-owner viewers must read via `active_posts_count_for_viewer()`, never raw `_internal` | P2.4 (with TD-40) |
 
