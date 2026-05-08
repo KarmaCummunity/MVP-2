@@ -13,6 +13,7 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 - **Tech debt closed**: TD-22 (P0.3 onboarding wizard fully done — slices A + B + C); also closes the FR-AUTH-011 piece of TD-22 entirely
 - **Tech debt partially closed**: TD-40 (`SupabaseUserRepository.setAvatar` wired — 18 stubs remaining)
 - **New migration**: `0009_init_avatars_bucket.sql` — `avatars` Storage bucket (public-read, owner-folder RLS, 512KB cap, image/jpeg only). Same posture as `post-images`; both tracked under TD-11 for pre-launch tightening to signed URLs.
+- **Operator**: 0009 applied ✅ 2026-05-08
 - **Open gaps**: Camera capture is mobile-only (web users get gallery-only — `isCameraAvailable === false`). Server-side EXIF Edge Function still pending (TD-23). FR-PROFILE-007 Edit Profile photo replace will reuse `SetAvatarUseCase` + `pickAvatarImage` + `resizeAndUploadAvatar` when P2.4 lands.
 
 ---

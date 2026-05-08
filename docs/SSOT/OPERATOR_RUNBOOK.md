@@ -2,7 +2,7 @@
 
 > Verification steps extracted from PROJECT_STATUS.md §4 to avoid per-entry repetition.
 
-**Status**: Migrations 0001–0008 all applied to the live Supabase project (confirmed 2026-05-07). **0009 pending** (P0.3.b shipped 2026-05-08 — apply before testing onboarding photo upload end-to-end).
+**Status**: Migrations 0001–0009 all applied to the live Supabase project (0009 applied 2026-05-08).
 
 ## Standard procedure for any migration
 
