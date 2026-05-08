@@ -171,7 +171,7 @@ export async function pickAvatarImage(source: AvatarSource): Promise<PickedImage
 /**
  * FR-AUTH-011 AC2: resize to 1024px max edge + JPEG q=0.85, upload to `avatars` bucket
  * at `<userId>/avatar.jpg` (single file per user; upsert on every change).
- * Returns the full public URL to persist into `users.photo_url`.
+ * Returns the full public URL to persist into `users.avatar_url`.
  */
 export async function resizeAndUploadAvatar(picked: PickedImage, userId: string): Promise<string> {
   if (!userId) throw new Error('resizeAndUploadAvatar: userId is required');
