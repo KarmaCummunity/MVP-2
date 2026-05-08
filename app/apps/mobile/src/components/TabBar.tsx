@@ -67,6 +67,7 @@ const styles = StyleSheet.create({
     borderTopWidth: 1,
     borderTopColor: colors.border,
     flexDirection: 'row-reverse', // RTL
+    height: 68, // explicit — without this, RN-Web collapses the row to 0px
     paddingTop: 8,
     ...shadow.card,
   },
