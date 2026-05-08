@@ -1,11 +1,11 @@
 // ─────────────────────────────────────────────
-// Image upload pipelines.
-//   • Posts: gallery → resize-2048 + JPEG q=0.85 → post-images bucket. FR-POST-005 AC1..AC3.
-//   • Avatars: camera|gallery → resize-1024 + JPEG q=0.85 → avatars bucket. FR-AUTH-011 AC1+AC2.
-// AC4 EXIF strip is best-effort (re-encode) until the server-side Edge Function lands per TD-23.
+// Post-image pick + upload pipeline (FR-POST-005).
+// Gallery → resize-2048 + JPEG q=0.85 → post-images bucket.
+// AC4 EXIF strip is best-effort (re-encode) until the server-side Edge
+// Function lands per TD-23.
+// Avatar pipeline lives in ./avatarUpload.ts.
 // ─────────────────────────────────────────────
 
-import { Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as Crypto from 'expo-crypto';
@@ -14,10 +14,8 @@ import type { MediaAssetInput } from '@kc/application';
 import { MAX_MEDIA_ASSETS } from '@kc/domain';
 
 const POST_RESIZE_MAX_EDGE = 2048;
-const AVATAR_RESIZE_MAX_EDGE = 1024;
-const COMPRESS = 0.85; // JPEG quality (FR-POST-005 AC3 + FR-AUTH-011 AC2)
+const COMPRESS = 0.85; // JPEG quality (FR-POST-005 AC3)
 const POST_BUCKET = 'post-images';
-const AVATAR_BUCKET = 'avatars';
 
 export interface PickedImage {
   uri: string;
@@ -43,7 +41,7 @@ export async function pickPostImages(alreadyPicked: number): Promise<PickedImage
   if (!perm.granted) return [];
 
   const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
+    mediaTypes: ['images'] as ImagePicker.MediaType[], // SDK 54 array form
     allowsMultipleSelection: true,
     selectionLimit: remaining,
     quality: 1,
@@ -123,71 +121,4 @@ export async function resizeAndUploadImage(
 /** Generate a per-create-action UUID for the storage folder. */
 export function newUploadBatchId(): string {
   return Crypto.randomUUID();
-}
-
-// ── Avatars (FR-AUTH-011) ──────────────────────────────────────────────────────
-
-export type AvatarSource = 'camera' | 'gallery';
-
-/** Camera capture is mobile-only; web users are gallery-only. */
-export const isCameraAvailable = Platform.OS !== 'web';
-
-/**
- * FR-AUTH-011 AC1: pick a single image from the camera or the gallery.
- * Returns null on cancel / permission denial / camera-on-web.
- */
-export async function pickAvatarImage(source: AvatarSource): Promise<PickedImage | null> {
-  if (source === 'camera') {
-    if (!isCameraAvailable) return null;
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return null;
-    const result = await ImagePicker.launchCameraAsync({
-      mediaTypes: ImagePicker.MediaTypeOptions.Images,
-      allowsEditing: true,
-      aspect: [1, 1],
-      quality: 1,
-      exif: false,
-    });
-    if (result.canceled) return null;
-    const a = result.assets[0];
-    return { uri: a.uri, width: a.width, height: a.height, fileSize: a.fileSize ?? null };
-  }
-
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return null;
-  const result = await ImagePicker.launchImageLibraryAsync({
-    mediaTypes: ImagePicker.MediaTypeOptions.Images,
-    allowsMultipleSelection: false,
-    allowsEditing: true,
-    aspect: [1, 1],
-    quality: 1,
-    exif: false,
-  });
-  if (result.canceled) return null;
-  const a = result.assets[0];
-  return { uri: a.uri, width: a.width, height: a.height, fileSize: a.fileSize ?? null };
-}
-
-/**
- * FR-AUTH-011 AC2: resize to 1024px max edge + JPEG q=0.85, upload to `avatars` bucket
- * at `<userId>/avatar.jpg` (single file per user; upsert on every change).
- * Returns the full public URL to persist into `users.avatar_url`.
- */
-export async function resizeAndUploadAvatar(picked: PickedImage, userId: string): Promise<string> {
-  if (!userId) throw new Error('resizeAndUploadAvatar: userId is required');
-  const { blob } = await resizeImage(picked.uri, AVATAR_RESIZE_MAX_EDGE);
-  const path = `${userId}/avatar.jpg`;
-
-  const client = getSupabaseClient();
-  const { error } = await client.storage
-    .from(AVATAR_BUCKET)
-    .upload(path, blob, {
-      contentType: 'image/jpeg',
-      upsert: true,
-    });
-  if (error) throw new Error(`avatar_upload: ${error.message}`);
-
-  // Cache-bust so the new image replaces a previously-cached avatar URL on the same path.
-  const { data } = client.storage.from(AVATAR_BUCKET).getPublicUrl(path);
-  return `${data.publicUrl}?v=${Date.now()}`;
 }
