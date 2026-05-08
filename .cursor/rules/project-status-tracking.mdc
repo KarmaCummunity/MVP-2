@@ -15,24 +15,25 @@ alwaysApply: true
 
 ## While working
 
-- If you discover technical debt outside scope, append `[PENDING REFACTOR]` to §6 of `PROJECT_STATUS.md` (and to `docs/SSOT/CODE_QUALITY.md` once it exists). Do not refactor inline.
-- If a product/architecture decision is made on the fly, append it to §5 (and mirror to `SRS/appendices/C_decisions_log.md`).
+- If you discover technical debt outside scope, append a row to `docs/SSOT/TECH_DEBT.md` under the right Active section (BE: `TD-50..99`, FE: `TD-100..149`). Do not refactor inline.
+- If a product/architecture decision is made on the fly, append it to PROJECT_STATUS §4 (and mirror to `SRS/appendices/C_decisions_log.md`).
 
 ## Before you call the work done
 
-You MUST update `docs/SSOT/PROJECT_STATUS.md` in the same change-set as your code:
+You MUST update SSOT docs in the same change-set as your code:
 
-1. **§2 Backlog**: flip the status to `🟢 Done` (or `🟡 In progress` if partial).
-2. **§4 Completed Features Log**: append a new entry at the top with:
+1. **PROJECT_STATUS §2 Backlog**: flip the status to `🟢 Done` (or `🟡 In progress` if partial).
+2. **`docs/SSOT/HISTORY.md`**: append a new entry at the **top** with:
    - SRS IDs covered + PRD anchor
    - Completed date (ISO)
-   - Branch / commit ref
-   - Files added / changed
+   - Branch / PR ref
    - Tests run + result
+   - Tech-debt deltas (closed, partial, new)
    - AC checklist verified
    - Known gaps deferred (with backlog priority band)
-3. **§1 Snapshot**: bump `Last Updated`, completion %, counters.
-4. **§3 Sprint Board**: clear the in-progress slot, set "Up next" to the new highest-priority pending item.
+3. **PROJECT_STATUS §1 Snapshot**: bump `Last Updated`, completion %, counters, "What works"/"What is stubbed" if behavior changed.
+4. **`docs/SSOT/TECH_DEBT.md`**: close resolved TDs (move to Resolved) and add new ones.
+5. **PROJECT_STATUS §3 Sprint Board**: clear the in-progress slot, set "Up next" to the new highest-priority pending item.
 
 ## Verification gate (already enforced by user rules)
 
@@ -48,7 +49,7 @@ Any of:
 - Creating new domain/application/infrastructure code that maps to an `FR-*`.
 - Editing a screen, hook, or store tied to an `FR-*`.
 - Replacing mock data with real repository calls.
-- Fixing a defect in a feature already listed in §4.
+- Fixing a defect in a feature already listed in `HISTORY.md`.
 - Adding tests that change the AC-verified set for a feature.
 
 ## What does NOT need a status update
@@ -57,23 +58,16 @@ Any of:
 - Documentation-only edits to `SRS/`, `PRD_MVP_SSOT_/`, or this rule.
 - Hotfixes that don't change any AC of an `FR-*`.
 
-## Quick template for §4 entry
+## Quick template for HISTORY.md entry
 
 ```markdown
-### ✅ FR-XXX-NNN — <short title>
-
-| Field | Value |
-| ----- | ----- |
-| Mapped to SRS | FR-XXX-NNN |
-| PRD anchor | `0X_File.md` §X.Y |
-| Completed | YYYY-MM-DD |
-| Branch / commit | <ref> |
-| Files added | ... |
-| Files changed | ... |
-| Tech debt logged | TD-N (see §6) |
-| Tests | <command> — <result> |
-| AC verified | AC1–AC<n> |
-| Known gaps | <pointer to backlog band> |
+### 🟢 <Slice> — <short title>
+- **SRS**: FR-XXX-NNN, ...
+- **Branch**: `<branch>` · YYYY-MM-DD · PR #N
+- **Tests**: <count> vitest passing · tsc clean (N packages) · `pnpm lint:arch` <count> files passing
+- **Tech debt closed**: TD-N (full / context)
+- **Tech debt partially closed**: TD-N (what shipped / what remains)
+- **Open gaps**: FR-XXX-NNN <gap> · TD-N <gap>
 ```
 
 ## If you cannot update PROJECT_STATUS.md
