@@ -55,7 +55,7 @@ export class SupabaseUserRepository implements IUserRepository {
   async setAvatar(userId: string, avatarUrl: string | null): Promise<void> {
     const { error } = await this.client
       .from('users')
-      .update({ photo_url: avatarUrl })
+      .update({ avatar_url: avatarUrl })
       .eq('user_id', userId);
     if (error) throw new Error(`setAvatar: ${error.message}`);
   }
