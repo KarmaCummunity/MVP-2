@@ -12,6 +12,7 @@ interface Row {
   city: string;
   cityName: string;
   onboardingState: OnboardingState;
+  avatarUrl?: string | null;
 }
 
 export interface FakeUserRepo extends IUserRepository {
@@ -72,6 +73,15 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         onboardingState: 'pending_basic_info' as OnboardingState,
       };
       rows.set(userId, { ...row, onboardingState: state });
+    },
+    async setAvatar(userId, avatarUrl) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, avatarUrl });
     },
   };
 }

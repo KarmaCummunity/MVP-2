@@ -24,6 +24,12 @@ export interface IUserRepository {
   /** FR-AUTH-010 AC3 / FR-AUTH-012 AC3: advance the onboarding state machine. */
   setOnboardingState(userId: string, state: OnboardingState): Promise<void>;
 
+  /**
+   * FR-AUTH-011 AC4 + AC5: persist the user's profile photo URL.
+   * Pass `null` to clear an SSO-prefilled or previously-uploaded avatar (FR-PROFILE-007 also calls this).
+   */
+  setAvatar(userId: string, avatarUrl: string | null): Promise<void>;
+
   // Follows
   follow(followerId: string, followedId: string): Promise<FollowEdge>;
   unfollow(followerId: string, followedId: string): Promise<void>;

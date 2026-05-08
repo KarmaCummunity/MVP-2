@@ -12,6 +12,7 @@ export * from './auth/SignOut';
 export * from './auth/RestoreSession';
 export * from './auth/CompleteBasicInfoUseCase';
 export * from './auth/CompleteOnboardingUseCase';
+export * from './auth/SetAvatarUseCase';
 export * from './feed/selectGuestPreviewPosts';
 export * from './feed/GetFeedUseCase';
 
