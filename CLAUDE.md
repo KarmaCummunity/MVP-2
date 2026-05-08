@@ -4,9 +4,12 @@
 
 ## You MUST read these before doing anything
 
-1. **`docs/SSOT/PROJECT_STATUS.md`** — execution-state SSOT (where we are, what's done, what's next).
-2. **`docs/SSOT/SRS.md`** + the relevant `FR-*` file under `docs/SSOT/SRS/02_functional_requirements/` for the feature you're touching.
-3. **`docs/SSOT/PRD_MVP_CORE_SSOT/`** — product intent (Hebrew).
+1. **`docs/SSOT/PROJECT_STATUS.md`** — execution-state SSOT (where we are, what's done, what's next). Compact dashboard.
+2. **`docs/SSOT/TECH_DEBT.md`** — active technical debt grouped by area. Scan items in the area you're touching before opening a PR; close adjacent debt opportunistically when scope is small.
+3. **`docs/SSOT/SRS.md`** + the relevant `FR-*` file under `docs/SSOT/SRS/02_functional_requirements/` for the feature you're touching.
+4. **`docs/SSOT/PRD_MVP_CORE_SSOT/`** — product intent (Hebrew).
+
+> Historical feature log lives in `docs/SSOT/HISTORY.md` — read on demand, not every session.
 
 ## You MUST follow these rules
 
