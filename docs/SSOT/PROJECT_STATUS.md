@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (doc cleanup — §4 history extracted to [`HISTORY.md`](./HISTORY.md), §6 tech debt extracted to [`TECH_DEBT.md`](./TECH_DEBT.md)) |
+| **Last Updated** | 2026-05-08 (P0.3.b — FR-AUTH-011 onboarding photo upload shipped; closes TD-22, partial TD-40 (setAvatar). Earlier today: doc cleanup — §4 history → [`HISTORY.md`](./HISTORY.md), §6 → [`TECH_DEBT.md`](./TECH_DEBT.md)) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -30,13 +30,13 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~38%** (UI scaffolding + 2 auth paths + guest preview + onboarding slices A + C; DB schema applied; Posts BE adapter + FE end-to-end) |
-| Features 🟢 done | 5 |
-| Features 🟡 in progress | 1 (P0.3 — slice B photo upload remains) |
+| MVP completion (rough) | **~42%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding (basic info + photo + tour + soft gate)**; DB schema applied; Posts BE adapter + FE end-to-end) |
+| Features 🟢 done | 6 (P0.3 fully done — slice A + B + C) |
+| Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 3 (P0.3 slice B; P0.5 chat; P0.6 closure) |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` — 52 vitest passing |
-| Open tech-debt items | **30 active** (3 partial), **11 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| P0 critical features remaining | 2 (P0.5 chat; P0.6 closure) |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` — 57 vitest passing |
+| Open tech-debt items | **29 active** (3 partial), **12 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -53,7 +53,6 @@ This document is the **single source of truth for project execution state**. It 
 - No closure flow / chat realtime / reports / notifications / community stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as placeholder (Google SSO is real)
 - Forgot-password flow not implemented
-- Onboarding wizard photo step is a skip-only stub (full flow deferred to P0.3.b — **next slice**)
 - EXIF metadata is stripped client-side (re-encode side effect); server-side strip per FR-POST-005 AC4 requires an Edge Function (TD-23)
 
 ---
@@ -68,7 +67,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | - | ------- | ------- | ------ | ----- |
 | P0.1 | Real email/password authentication + session lifecycle | FR-AUTH-006, 007, 013, 017 | 🟢 Done (2026-05-06) | |
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting) | 🟢 Done (2026-05-07) | All migrations 0001–0008 applied |
-| P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟡 In progress | Slices A + C merged. **Slice B (photo upload) remains — current task.** |
+| P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟢 Done (2026-05-08) | All slices A + B + C shipped |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | 🟢 Done (2026-05-08) | BE + FE both shipped |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
 | P0.6 | Closure flow (mark as delivered) | FR-CLOSURE-001…006 | ⏳ Planned | Required to capture the **North Star** metric (`closed_delivered` count) |
@@ -115,10 +114,10 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
-| In progress | **P0.3.b — Onboarding photo upload** (slice B) | — | 2026-05-08 | — |
-| Up next | P0.5 — Direct chat with realtime | — | — | — |
+| Up next | **P0.5 — Direct chat with realtime** | — | — | — |
+| Then | P0.6 — Closure flow | — | — | — |
 
-Most recently shipped: **P0.4-FE** (Feed UI + Create form, mock retirement, image upload — 2026-05-08). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P0.3.b** (FR-AUTH-011 onboarding photo upload — 2026-05-08). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 

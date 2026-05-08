@@ -15,6 +15,7 @@ import {
 import {
   CompleteBasicInfoUseCase,
   CompleteOnboardingUseCase,
+  SetAvatarUseCase,
   type ICityRepository,
   type IUserRepository,
 } from '@kc/application';
@@ -24,6 +25,7 @@ let _userRepo: IUserRepository | null = null;
 let _cityRepo: ICityRepository | null = null;
 let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
 let _completeOnboarding: CompleteOnboardingUseCase | null = null;
+let _setAvatar: SetAvatarUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -57,6 +59,13 @@ export function getCompleteOnboardingUseCase(): CompleteOnboardingUseCase {
     _completeOnboarding = new CompleteOnboardingUseCase(getUserRepo());
   }
   return _completeOnboarding;
+}
+
+export function getSetAvatarUseCase(): SetAvatarUseCase {
+  if (!_setAvatar) {
+    _setAvatar = new SetAvatarUseCase(getUserRepo());
+  }
+  return _setAvatar;
 }
 
 /** Read state directly through the repo — used by AuthGate before routing. */

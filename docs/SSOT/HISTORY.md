@@ -6,6 +6,17 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 P0.3.b — FR-AUTH-011 onboarding photo upload (camera + gallery + Storage)
+- **SRS**: FR-AUTH-011 AC1 (camera + gallery), AC2 (resize 1024 + JPEG q=0.85), AC3 (skip → silhouette via `AvatarInitials`), AC4 (SSO-prefilled, replaceable, removable), AC5 (errors recoverable — Alert + Skip remains available)
+- **Branch**: `feat/FR-AUTH-011-onboarding-photo` · 2026-05-08
+- **Tests**: 57 vitest passing (5 new in `auth/SetAvatarUseCase`) · tsc clean (5 packages) · `pnpm lint:arch` 105 files passing
+- **Tech debt closed**: TD-22 (P0.3 onboarding wizard fully done — slices A + B + C); also closes the FR-AUTH-011 piece of TD-22 entirely
+- **Tech debt partially closed**: TD-40 (`SupabaseUserRepository.setAvatar` wired — 18 stubs remaining)
+- **New migration**: `0009_init_avatars_bucket.sql` — `avatars` Storage bucket (public-read, owner-folder RLS, 512KB cap, image/jpeg only). Same posture as `post-images`; both tracked under TD-11 for pre-launch tightening to signed URLs.
+- **Open gaps**: Camera capture is mobile-only (web users get gallery-only — `isCameraAvailable === false`). Server-side EXIF Edge Function still pending (TD-23). FR-PROFILE-007 Edit Profile photo replace will reuse `SetAvatarUseCase` + `pickAvatarImage` + `resizeAndUploadAvatar` when P2.4 lands.
+
+---
+
 ### 🟢 P0.4-FE — Feed UI + Create form (mock retirement + image upload)
 - **SRS**: FR-POST-001..006, FR-POST-008 (read-side via UpdatePostUseCase use-case ready), FR-POST-010, FR-POST-014, FR-POST-015, FR-FEED-001..005, FR-FEED-013, FR-PROFILE-001 (partial), FR-AUTH-014 (partial — guest feed now live)
 - **Branch**: `feat/FR-POST-001-fe-feed-create` · 2026-05-08 · PR #14
