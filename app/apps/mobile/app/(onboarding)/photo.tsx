@@ -1,30 +1,67 @@
-// Onboarding step 2 — FR-AUTH-011 (slice A: skip-only stub).
-// Full camera + gallery + resize + EXIF + Storage upload ships in P0.3.b.
+// Onboarding step 2 — FR-AUTH-011 (full slice B: camera + gallery + resize + upload).
+// AC1 camera+gallery · AC2 resize 1024 + JPEG q=0.85 · AC3 skip → silhouette ·
+// AC4 SSO-prefilled, replaceable/removable · AC5 errors recoverable.
 import React, { useState } from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert,
-} from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
+import { PhotoSourceSheet } from '../../src/components/PhotoSourceSheet';
 import { useAuthStore } from '../../src/store/authStore';
-import { getCompleteOnboardingUseCase } from '../../src/services/userComposition';
+import { getCompleteOnboardingUseCase, getSetAvatarUseCase } from '../../src/services/userComposition';
+import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../../src/services/imageUpload';
 
 export default function OnboardingPhotoScreen() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const onboardingState = useAuthStore((s) => s.onboardingState);
+  const setSession = useAuthStore((s) => s.setSession);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
-  const [loading, setLoading] = useState(false);
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const [finalizing, setFinalizing] = useState(false);
 
-  // Tour completion is what flips state to `completed` (FR-AUTH-012 AC3),
-  // but we only do that when the user already filled in step 1 (state ===
-  // pending_avatar). If they skipped step 1, leave state at pending_basic_info
-  // — FR-AUTH-015 soft gate (slice C) will catch them on first meaningful action.
+  const avatarUrl = session?.avatarUrl ?? null;
+  const hasAvatar = !!avatarUrl;
+  const busy = uploading || finalizing;
+
+  const handlePick = async (source: AvatarSource) => {
+    setSheetVisible(false);
+    if (!session) return;
+    setUploading(true);
+    try {
+      const picked = await pickAvatarImage(source);
+      if (!picked) return; // user cancelled or denied permission
+      const url = await resizeAndUploadAvatar(picked, session.userId);
+      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: url });
+      setSession({ ...session, avatarUrl: url });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      Alert.alert('העלאת התמונה נכשלה', `אפשר לדלג ולהוסיף תמונה מאוחר יותר.\n${msg}`);
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemove = async () => {
+    setSheetVisible(false);
+    if (!session) return;
+    setUploading(true);
+    try {
+      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: null });
+      setSession({ ...session, avatarUrl: null });
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      Alert.alert('הסרת התמונה נכשלה', msg);
+    } finally {
+      setUploading(false);
+    }
+  };
+
   const finalize = async () => {
     if (!session) return;
-    setLoading(true);
+    setFinalizing(true);
     try {
       if (onboardingState === 'pending_avatar') {
         await getCompleteOnboardingUseCase().execute({ userId: session.userId });
@@ -35,7 +72,7 @@ export default function OnboardingPhotoScreen() {
       const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
       Alert.alert('שמירה נכשלה', msg);
     } finally {
-      setLoading(false);
+      setFinalizing(false);
     }
   };
 
@@ -44,33 +81,64 @@ export default function OnboardingPhotoScreen() {
       <View style={styles.content}>
         <View style={styles.headerRow}>
           <Text style={styles.step}>שלב 2 מתוך 3</Text>
-          <TouchableOpacity onPress={finalize} disabled={loading} accessibilityRole="button">
+          <TouchableOpacity onPress={finalize} disabled={busy} accessibilityRole="button">
             <Text style={styles.skip}>דלג</Text>
           </TouchableOpacity>
         </View>
         <Text style={styles.title}>תמונת פרופיל</Text>
         <Text style={styles.subtitle}>אפשר להוסיף עכשיו או בהמשך</Text>
 
-        <View style={styles.avatarWrap}>
+        <TouchableOpacity
+          style={styles.avatarWrap}
+          onPress={() => !busy && setSheetVisible(true)}
+          disabled={busy}
+          accessibilityRole="button"
+          accessibilityLabel={hasAvatar ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
+        >
           <AvatarInitials
             name={session?.displayName ?? 'משתמש'}
-            avatarUrl={session?.avatarUrl ?? null}
+            avatarUrl={avatarUrl}
             size={120}
           />
-        </View>
+          {uploading && (
+            <View style={styles.avatarSpinner}>
+              <ActivityIndicator color={colors.textInverse} size="large" />
+            </View>
+          )}
+        </TouchableOpacity>
+
+        <TouchableOpacity
+          style={[styles.changeBtn, busy && { opacity: 0.5 }]}
+          onPress={() => setSheetVisible(true)}
+          disabled={busy}
+        >
+          <Text style={styles.changeBtnText}>
+            {hasAvatar ? 'החלף תמונה' : 'בחר תמונה'}
+          </Text>
+        </TouchableOpacity>
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity style={styles.cta} onPress={finalize} disabled={loading}>
-          {loading ? (
+        <TouchableOpacity style={[styles.cta, busy && { opacity: 0.7 }]} onPress={finalize} disabled={busy}>
+          {finalizing ? (
             <ActivityIndicator color={colors.textInverse} />
           ) : (
-            <Text style={styles.ctaText}>המשך עם התמונה הנוכחית</Text>
+            <Text style={styles.ctaText}>
+              {hasAvatar ? 'המשך עם התמונה הנוכחית' : 'המשך ללא תמונה'}
+            </Text>
           )}
         </TouchableOpacity>
 
         <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בהגדרות.</Text>
       </View>
+
+      <PhotoSourceSheet
+        visible={sheetVisible}
+        canRemove={hasAvatar}
+        onPick={handlePick}
+        onRemove={handleRemove}
+        onClose={() => setSheetVisible(false)}
+      />
     </SafeAreaView>
   );
 }
@@ -92,9 +160,25 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
     textAlign: 'right',
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
-  avatarWrap: { alignItems: 'center', marginVertical: spacing.xl },
+  avatarWrap: { alignItems: 'center', marginVertical: spacing.lg },
+  avatarSpinner: {
+    position: 'absolute',
+    width: 120, height: 120,
+    borderRadius: 60,
+    backgroundColor: 'rgba(0,0,0,0.4)',
+    justifyContent: 'center', alignItems: 'center',
+  },
+  changeBtn: {
+    alignSelf: 'center',
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.lg,
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.primary,
+  },
+  changeBtnText: { ...typography.button, color: colors.primary },
   cta: {
     height: 52,
     backgroundColor: colors.primary,
