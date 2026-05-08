@@ -1,7 +1,7 @@
 // Settings screen stub
 // Mapped to: SRS §3.5, FR-AUTH-017 (logout)
 import React from 'react';
-import { Alert, View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
+import { Alert, Platform, View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -11,22 +11,16 @@ import { setOnboardingStateDirect } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
 
 interface SettingsRowProps {
-  label: string;
-  icon: string;
+  label: string; icon: string;
   onPress?: () => void;
   rightElement?: React.ReactNode;
   destructive?: boolean;
 }
-
 function SettingsRow({ label, icon, onPress, rightElement, destructive }: Readonly<SettingsRowProps>) {
   return (
     <TouchableOpacity style={styles.row} onPress={onPress}>
-      <Ionicons
-        name={icon as never}
-        size={20}
-        color={destructive ? colors.error : colors.textSecondary}
-        style={styles.rowIcon}
-      />
+      <Ionicons name={icon as never} size={20} style={styles.rowIcon}
+        color={destructive ? colors.error : colors.textSecondary} />
       <Text style={[styles.rowLabel, destructive && { color: colors.error }]}>{label}</Text>
       {rightElement ?? <Ionicons name="chevron-back" size={18} color={colors.textDisabled} />}
     </TouchableOpacity>
@@ -43,33 +37,35 @@ export default function SettingsScreen() {
   const [signingOut, setSigningOut] = React.useState(false);
   const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
 
+  const performReset = async () => {
+    if (!session) return;
+    setResettingOnboarding(true);
+    try {
+      await setOnboardingStateDirect(session.userId, 'pending_basic_info');
+      setOnboardingStateLocal('pending_basic_info');
+      router.replace('/(onboarding)/basic-info');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      if (Platform.OS === 'web') window.alert(`האיפוס נכשל: ${msg}`);
+      else Alert.alert('האיפוס נכשל', msg);
+    } finally {
+      setResettingOnboarding(false);
+    }
+  };
+
+  // RN-Web's Alert.alert collapses 3-button alerts to window.confirm and never
+  // invokes the destructive callback — branch by platform.
   const handleResetOnboarding = () => {
     if (!session) return;
-    Alert.alert(
-      'איפוס אונבורדינג',
-      'הפעולה תחזיר את מצב האונבורדינג להתחלה ותפתח את אשף ההרשמה מחדש. ' +
-        'הפרופיל לא יימחק.',
-      [
-        { text: 'ביטול', style: 'cancel' },
-        {
-          text: 'איפוס',
-          style: 'destructive',
-          onPress: async () => {
-            setResettingOnboarding(true);
-            try {
-              await setOnboardingStateDirect(session.userId, 'pending_basic_info');
-              setOnboardingStateLocal('pending_basic_info');
-              router.replace('/(onboarding)/basic-info');
-            } catch (err) {
-              const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-              Alert.alert('האיפוס נכשל', msg);
-            } finally {
-              setResettingOnboarding(false);
-            }
-          },
-        },
-      ],
-    );
+    const msg = 'הפעולה תחזיר את מצב האונבורדינג להתחלה ותפתח את אשף ההרשמה מחדש. הפרופיל לא יימחק.\n\nלהמשיך?';
+    if (Platform.OS === 'web') {
+      if (window.confirm(msg)) void performReset();
+      return;
+    }
+    Alert.alert('איפוס אונבורדינג', msg, [
+      { text: 'ביטול', style: 'cancel' },
+      { text: 'איפוס', style: 'destructive', onPress: performReset },
+    ]);
   };
 
   const handleSignOut = async () => {

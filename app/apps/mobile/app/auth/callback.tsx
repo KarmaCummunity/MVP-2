@@ -4,7 +4,7 @@
 // AuthGate in `app/_layout.tsx` whitelists this route so unauth users can reach it.
 // docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { colors, spacing, typography } from '@kc/ui';
 import { isAuthError } from '@kc/application';
@@ -42,7 +42,22 @@ export default function AuthCallbackScreen() {
         const session = await exchangeOAuthCode(code);
         if (cancelled) return;
         setSession(session);
-        // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
+        // On web the OAuth provider redirects this route inside a popup window
+        // (window.opener !== null). Supabase persists the session to localStorage
+        // during the exchange, so the parent window's onAuthStateChange listener
+        // (subscribeToSession in app/_layout.tsx) picks it up via the storage
+        // event. Closing the popup hands control back to the parent, which then
+        // routes to (onboarding) / (tabs) based on onboarding_state.
+        if (
+          Platform.OS === 'web' &&
+          typeof window !== 'undefined' &&
+          window.opener &&
+          !window.opener.closed
+        ) {
+          window.close();
+          return;
+        }
+        // Native in-app browser and same-tab web fallthrough: AuthGate routes us.
       } catch (err) {
         if (cancelled) return;
         const msg = isAuthError(err)

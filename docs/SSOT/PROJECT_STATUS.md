@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (P0.3.b — FR-AUTH-011 onboarding photo upload shipped; closes TD-22, partial TD-40 (setAvatar). Earlier today: doc cleanup — §4 history → [`HISTORY.md`](./HISTORY.md), §6 → [`TECH_DEBT.md`](./TECH_DEBT.md)) |
+| **Last Updated** | 2026-05-08 (UX bug fixes — onboarding reset on web, OAuth popup auto-close, persistent global tab bar on detail screens, explicit back button. P0.3.b earlier: FR-AUTH-011 onboarding photo upload — closes TD-22, partial TD-40. Doc cleanup earlier: §4 → [`HISTORY.md`](./HISTORY.md), §6 → [`TECH_DEBT.md`](./TECH_DEBT.md).) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
