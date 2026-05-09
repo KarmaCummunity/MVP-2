@@ -17,6 +17,8 @@ import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
 import { ReportChatModal } from '../../src/components/ReportChatModal';
 import { MessageBubble } from '../../src/components/MessageBubble';
+import { AnchorDeletedBanner } from '../../src/components/AnchorDeletedBanner';
+import { getPostByIdUseCase } from '../../src/services/postsComposition';
 
 export default function ChatScreen() {
   const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string }>();
@@ -29,6 +31,7 @@ export default function ChatScreen() {
   const [counterpart, setCounterpart] = useState<{ displayName: string; isDeleted: boolean }>({ displayName: '', isDeleted: false });
   const [input, setInput] = useState(prefill ?? '');
   const [reportOpen, setReportOpen] = useState(false);
+  const [anchorMissing, setAnchorMissing] = useState(false);
 
   useEffect(() => {
     let cancelled = false;
@@ -47,6 +50,21 @@ export default function ChatScreen() {
       useChatStore.getState().stopThreadSub(chatId);
     };
   }, [chatId, userId]);
+
+  // FR-CHAT-004 edge: anchored post may have been deleted. Show banner if missing.
+  useEffect(() => {
+    if (!chat?.anchorPostId) { setAnchorMissing(false); return; }
+    let cancelled = false;
+    (async () => {
+      try {
+        const { post } = await getPostByIdUseCase().execute({ postId: chat.anchorPostId!, viewerId: userId });
+        if (!cancelled) setAnchorMissing(post === null);
+      } catch {
+        if (!cancelled) setAnchorMissing(true);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, [chat?.anchorPostId, userId]);
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -122,6 +140,7 @@ export default function ChatScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={88}
       >
+        {anchorMissing && <AnchorDeletedBanner />}
         <FlatList
           data={messages}
           keyExtractor={(m) => m.clientId}

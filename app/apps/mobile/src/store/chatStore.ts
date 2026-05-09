@@ -107,7 +107,22 @@ export const useChatStore = create<ChatState>((set, get) => ({
   applyIncomingMessage: (chatId, msg) =>
     set((s) => {
       const list = s.threads[chatId] ?? [];
+      // Already present by server messageId — skip.
       if (list.some((m) => m.messageId === msg.messageId)) return s;
+      // Race: this is our own message echoing back via realtime BEFORE sendMessage.execute
+      // resolved. Find the pending optimistic row with the same sender + body and reconcile
+      // in place so we don't double-render. Edge case: two identical messages back-to-back
+      // could couple to the wrong row — acceptable for MVP.
+      const optimisticIdx = list.findIndex(
+        (m) => m.status === 'pending' && m.senderId === msg.senderId && m.body === msg.body,
+      );
+      if (optimisticIdx >= 0) {
+        const next = list.map((m, i) =>
+          i === optimisticIdx ? { ...msg, clientId: m.clientId, failed: false } : m,
+        );
+        return { threads: { ...s.threads, [chatId]: next } };
+      }
+      // Genuinely new incoming message.
       const next = [...list, toOptimistic(msg)].sort(compareCreatedAt);
       return { threads: { ...s.threads, [chatId]: next } };
     }),
