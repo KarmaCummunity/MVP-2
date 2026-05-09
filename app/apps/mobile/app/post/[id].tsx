@@ -61,6 +61,10 @@ export default function PostDetailScreen() {
     );
   }
 
+  // FR-POST-015 AC1: owner sees owner-mode controls (Edit / Mark Delivered /
+  // Delete arrive with P0.6); the viewer's "Send Message to Poster" CTA must
+  // not be shown to the owner — tapping it would create a chat with self.
+  const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isGive = post.type === 'Give';
   const firstImageUrl = (() => {
     if (post.mediaAssets.length === 0) return null;
@@ -131,11 +135,17 @@ export default function PostDetailScreen() {
         </View>
       </ScrollView>
 
-      <View style={styles.cta}>
-        <TouchableOpacity style={styles.messageBtn} onPress={() => router.push(`/chat/c-${post.ownerId}`)}>
-          <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
-        </TouchableOpacity>
-      </View>
+      {isOwner ? (
+        <View style={styles.ownerHint}>
+          <Text style={styles.ownerHintText}>זה הפוסט שלך · עריכה / סגירה / מחיקה יגיעו ב־P0.6</Text>
+        </View>
+      ) : (
+        <View style={styles.cta}>
+          <TouchableOpacity style={styles.messageBtn} onPress={() => router.push(`/chat/c-${post.ownerId}`)}>
+            <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
+          </TouchableOpacity>
+        </View>
+      )}
     </SafeAreaView>
   );
 }
@@ -174,4 +184,6 @@ const styles = StyleSheet.create({
   cta: { flexDirection: 'row', padding: spacing.base, gap: spacing.sm, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
   messageBtn: { flex: 1, height: 50, backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
   messageBtnText: { ...typography.button, color: colors.textInverse },
+  ownerHint: { padding: spacing.base, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center' },
+  ownerHintText: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
 });

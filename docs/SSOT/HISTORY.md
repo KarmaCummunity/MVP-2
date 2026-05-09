@@ -6,6 +6,17 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 Audit P0.3 + P0.4 spec→impl + fix F1 (owner self-chat CTA)
+- **SRS**: FR-POST-015 AC1 (owner-mode CTA differentiation) — direct fix · audit covered FR-AUTH-011, FR-AUTH-014, FR-AUTH-015, FR-POST-001..010, FR-FEED-001..005
+- **Branch**: `fix/FR-POST-015-owner-mode-cta` · 2026-05-09
+- **Tests**: tsc clean (5 packages) · 57 vitest passing · `pnpm lint:arch` passing · `post/[id].tsx` 189 LOC (under 200 cap)
+- **Tech debt closed**: F1 (owner viewing own post saw "Send Message to Poster" — tap created chat with self). `app/post/[id].tsx` now branches on `isOwner = post.ownerId === viewerId`; viewer-mode CTA stays for non-owners, owner sees a placeholder hint until P0.6 closure controls land
+- **Tech debt added** (new TDs from the audit): TD-100 (image carousel), TD-101 (city free-text — data corruption 🔴), TD-102 (guest overlay count hardcoded), TD-103 (Request can't attach images), TD-104 (locationDisplayLevel chooser missing), TD-105 (Publish enabled w/empty required), TD-106 (Profile dead buttons), TD-107 (Settings dead rows), TD-108 (avatar Storage leak)
+- **Recent fixes verified in code** (PRs #21–#24): web OAuth popup close (`auth/callback.tsx:51-59`), onboarding reset on web (`settings.tsx:58-69` platform-branched), global TabBar on detail screens (`_layout.tsx:48-55`), `users.avatar_url` column (`SupabaseUserRepository:58`), iOS avatar picker (square crop client-side via ImageManipulator). All confirmed correct
+- **Open gaps**: TD-100..108 (above) — TD-101 is the priority since it's silently corrupting data. FR-POST-015 AC2/AC3 visibility banners (OnlyMe/FollowersOnly) intentionally deferred from this fix to keep `post/[id].tsx` under the 200 LOC cap; they ride along the next P0.6 owner-mode UI slice
+
+---
+
 ### 🟢 P0.3.b — FR-AUTH-011 onboarding photo upload (camera + gallery + Storage)
 - **SRS**: FR-AUTH-011 AC1 (camera + gallery), AC2 (resize 1024 + JPEG q=0.85), AC3 (skip → silhouette via `AvatarInitials`), AC4 (SSO-prefilled, replaceable, removable), AC5 (errors recoverable — Alert + Skip remains available)
 - **Branch**: `feat/FR-AUTH-011-onboarding-photo` · 2026-05-08
