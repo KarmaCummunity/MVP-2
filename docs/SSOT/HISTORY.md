@@ -6,6 +6,17 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 TD-110 — iOS image-picker permission UX + native rebuild
+- **SRS**: FR-AUTH-011 AC5 (errors recoverable) — strengthened to "no silent denials"; FR-POST-005 (image upload) — same UX
+- **Branch**: `fix/TD-110-image-permission-rebuild` · 2026-05-09
+- **Tests**: tsc clean (5 packages) · 57 vitest passing · `pnpm lint:arch` 109 files passing
+- **Tech debt closed**: TD-110 (iOS gallery picker dropped the app on iOS 26 because the native build pre-dated `NSPhotoLibraryUsageDescription` + `NSCameraUsageDescription` in `app.json`. Bundle ID also stuck on Xcode default `org.name.app` instead of `com.karmacommunity.app`)
+- **Code change**: `pickAvatarImage` (`src/services/avatarUpload.ts`) + `pickPostImages` (`src/services/imageUpload.ts`) now route via `ensureMediaLibraryPermission` / `ensureCameraPermission`. On `canAskAgain === false` (user permanently denied) they show a Hebrew alert with "פתח הגדרות" → `Linking.openSettings()`. First-time denials still return null silently — the next tap re-invokes the system prompt.
+- **Native side**: ran `expo prebuild --platform ios --clean` to regenerate `ios/` from the canonical `app.json` (CNG — `app/.gitignore` already lists `ios/`). The new build carries the usage descriptions + correct bundle ID.
+- **Open gaps**: Web has no permission concept (browser handles it). Android side will pick up the same `app.json` config on its next prebuild.
+
+---
+
 ### 🟢 TD-109 — emoji literals → Ionicons across tab bar + EmptyState
 - **SRS**: SRS §6.1 (tabs icon-only) — visual fidelity restored cross-platform
 - **Branch**: `fix/TD-109-replace-emoji-icons` · 2026-05-09
