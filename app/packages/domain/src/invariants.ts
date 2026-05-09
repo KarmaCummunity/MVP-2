@@ -115,3 +115,9 @@ export const DESCRIPTION_MAX_CHARS = 500;
  * Message body max length.
  */
 export const MESSAGE_MAX_CHARS = 2000;
+
+/**
+ * Report note max length.
+ * Mapped to: FR-MOD-001 (DB CHECK on reports.note)
+ */
+export const REPORT_NOTE_MAX_LENGTH = 500;

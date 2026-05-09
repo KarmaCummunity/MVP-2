@@ -2,6 +2,7 @@
 // rules between (auth) / (guest) / (onboarding) / (tabs).
 // Mapped to SRS: FR-AUTH-007 AC2, FR-AUTH-013 (cold-start), FR-AUTH-014 (guest),
 // FR-AUTH-010 AC3 (Skip preserves location).
+// FR-CHAT-001: inbox subscription started on sign-in, torn down on sign-out.
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Image, View } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
@@ -13,6 +14,8 @@ import {
 } from '../services/authComposition';
 import { getOnboardingState } from '../services/userComposition';
 import { useAuthStore } from '../store/authStore';
+import { useChatStore } from '../store/chatStore';
+import { container } from '../lib/container';
 
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
@@ -69,6 +72,17 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       cancelled = true;
     };
   }, [isAuthenticated, session, setOnboardingState]);
+
+  // FR-CHAT-001: start inbox subscription on sign-in; tear it down on sign-out.
+  // This effect mirrors the session effect above — it runs whenever `session`
+  // changes so the subscription lifecycle is always in sync with auth state.
+  useEffect(() => {
+    if (session?.userId) {
+      useChatStore.getState().startInboxSub(session.userId, container.chatRepo, container.chatRealtime);
+    } else {
+      useChatStore.getState().resetOnSignOut();
+    }
+  }, [session]);
 
   // Redirect rules:
   //   - Unauth + outside (auth)/(guest)/auth/callback → (auth).

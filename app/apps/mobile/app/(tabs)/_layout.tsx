@@ -4,6 +4,9 @@
 // Both bars use Ionicons (TD-109) — emoji literals were unreliable on iOS
 // simulator (Apple Color Emoji glyph cache) and produced tofu boxes.
 // Mapped to: SRS §6.1 — 5 tabs (RTL: Profile | Search | Plus | Donations | Home), per D-16.
+// FR-CHAT-012: ChatBadge rendered inside the per-screen <TopBar /> which each
+// tab includes via SafeAreaView (Home/Profile/Donations). The native Tabs
+// header is kept hidden so we don't double-render.
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Text } from 'react-native';

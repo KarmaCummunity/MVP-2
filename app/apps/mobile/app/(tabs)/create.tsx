@@ -1,9 +1,9 @@
 // Create Post — wired to IPostRepository (P0.4-FE).
 // Mapped to: FR-POST-001..006, FR-POST-010 (delete) lives elsewhere.
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
-import React, { useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -15,6 +15,7 @@ import { ALL_CATEGORIES, CATEGORY_LABELS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
+import { useLastAddressStore } from '../../src/store/lastAddressStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
 import { getCreatePostUseCase } from '../../src/services/postsComposition';
 import {
@@ -33,17 +34,47 @@ export default function CreatePostScreen() {
   const { requestSoftGate } = useSoftGate();
   const ownerId = session?.userId;
 
+  // Pre-fill address from the last successfully published post (persisted via
+  // useLastAddressStore). Lazy init reads whatever's in the store at mount —
+  // for the first post in a fresh session AsyncStorage may still be hydrating;
+  // a useEffect below seeds the fields once hydration finishes (without
+  // overwriting user edits).
+  const lastAddress = useLastAddressStore.getState();
+
   const [type, setType] = useState<PostType>('Give');
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [category, setCategory] = useState<Category>('Other');
   const [condition, setCondition] = useState<ItemCondition>('Good');
   const [urgency, setUrgency] = useState('');
-  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
-  const [street, setStreet] = useState('');
-  const [streetNumber, setStreetNumber] = useState('');
+  const [city, setCity] = useState<{ id: string; name: string } | null>(
+    lastAddress.cityId && lastAddress.cityName
+      ? { id: lastAddress.cityId, name: lastAddress.cityName }
+      : null,
+  );
+  const [street, setStreet] = useState(lastAddress.street);
+  const [streetNumber, setStreetNumber] = useState(lastAddress.streetNumber);
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
+
+  // Late-hydration seed: if AsyncStorage finished loading after this screen
+  // mounted, populate the address fields from the store — but only if the user
+  // hasn't started editing them yet. The ref always points to the latest
+  // values so the subscription closure can read them when it fires.
+  const fieldsRef = useRef({ city, street, streetNumber });
+  fieldsRef.current = { city, street, streetNumber };
+  useEffect(() => {
+    const unsub = useLastAddressStore.subscribe((s) => {
+      const cur = fieldsRef.current;
+      const userUntouched =
+        cur.city === null && cur.street === '' && cur.streetNumber === '';
+      if (!userUntouched) return;
+      if (s.cityId && s.cityName) setCity({ id: s.cityId, name: s.cityName });
+      if (s.street) setStreet(s.street);
+      if (s.streetNumber) setStreetNumber(s.streetNumber);
+    });
+    return unsub;
+  }, []);
   const [visibility, setVisibility] = useState<'Public' | 'OnlyMe'>('Public');
 
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
@@ -96,14 +127,35 @@ export default function CreatePostScreen() {
       });
     },
     onSuccess: async () => {
+      // Persist the address so the next post pre-fills these fields.
+      if (city) {
+        useLastAddressStore.getState().setLastAddress({
+          cityId: city.id,
+          cityName: city.name,
+          street,
+          streetNumber,
+        });
+      }
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
-      Alert.alert('✅ הפוסט שלך פורסם!', '', [{ text: 'אוקיי', onPress: () => router.replace('/(tabs)') }]);
+      // Web: Alert.alert renders as window.confirm in RN-Web and is often
+      // invisible inside iframe previews. Navigate immediately and surface
+      // success via a query param the feed reads to flash a toast banner.
+      if (Platform.OS === 'web') {
+        router.replace('/(tabs)?published=1');
+      } else {
+        Alert.alert('✅ הפוסט שלך פורסם!', '', [{ text: 'אוקיי', onPress: () => router.replace('/(tabs)') }]);
+      }
     },
     onError: (err) => {
       const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
-      Alert.alert('פרסום נכשל', message);
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(`פרסום נכשל: ${message}`);
+      } else {
+        Alert.alert('פרסום נכשל', message);
+      }
     },
   });
 
@@ -190,21 +242,6 @@ export default function CreatePostScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="פרטים נוספים על החפץ..."
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            multiline
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{description.length}/500</Text>
-        </View>
-
-        <View style={styles.section}>
           <Text style={styles.sectionLabel}>כתובת <Text style={styles.required}>*</Text></Text>
           <CityPicker value={city} onChange={setCity} disabled={isPublishing} />
           <View style={styles.streetRow}>
@@ -225,6 +262,21 @@ export default function CreatePostScreen() {
               textAlign="right"
             />
           </View>
+        </View>
+
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
+          <TextInput
+            style={[styles.input, styles.textarea]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="פרטים נוספים על החפץ..."
+            placeholderTextColor={colors.textDisabled}
+            textAlign="right"
+            multiline
+            maxLength={500}
+          />
+          <Text style={styles.charCount}>{description.length}/500</Text>
         </View>
 
         <LocationDisplayLevelChooser

@@ -203,3 +203,12 @@ export interface City {
   readonly nameHe: string;
   readonly nameEn: string;
 }
+
+// ── ReportSubmission (FR-MOD-001 minimal — submission only) ───────────────
+
+export interface ReportSubmission {
+  targetType: ReportTargetType;
+  targetId: string | null;             // null iff targetType === 'none'
+  reason: ReportReason;
+  note?: string;                       // ≤ REPORT_NOTE_MAX_LENGTH
+}

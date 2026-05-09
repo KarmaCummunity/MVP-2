@@ -2,9 +2,10 @@ import type { Chat, Message } from '@kc/domain';
 
 export interface ChatWithPreview extends Chat {
   otherParticipant: {
-    userId: string;
+    userId: string | null;            // null when counterpart hard-deleted
     displayName: string;
     avatarUrl: string | null;
+    isDeleted: boolean;
   };
   lastMessage: Message | null;
   unreadCount: number;
@@ -16,7 +17,7 @@ export interface IChatRepository {
   findOrCreateChat(
     userId: string,
     otherUserId: string,
-    anchorPostId?: string
+    anchorPostId?: string,
   ): Promise<Chat>;
   findById(chatId: string): Promise<Chat | null>;
 
@@ -24,17 +25,29 @@ export interface IChatRepository {
   getMessages(
     chatId: string,
     limit: number,
-    cursor?: string
+    beforeCreatedAt?: string,
   ): Promise<Message[]>;
 
   sendMessage(
     chatId: string,
     senderId: string,
-    body: string
+    body: string,
   ): Promise<Message>;
 
   markRead(chatId: string, userId: string): Promise<void>;
 
-  // Support thread
-  getOrCreateSupportThread(userId: string, superAdminId: string): Promise<Chat>;
+  // Counters / counterpart resolution
+  getUnreadTotal(userId: string): Promise<number>;
+  getCounterpart(
+    chat: Chat,
+    viewerId: string,
+  ): Promise<{
+    userId: string | null;
+    displayName: string;
+    avatarUrl: string | null;
+    isDeleted: boolean;
+  }>;
+
+  // Support thread (FR-CHAT-007)
+  getOrCreateSupportThread(userId: string): Promise<Chat>;
 }

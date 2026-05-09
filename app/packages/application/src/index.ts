@@ -3,6 +3,9 @@ export * from './ports/IPostRepository';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
+export type { IChatRealtime, InboxStreamCallbacks, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
+export type { IBlockRepository } from './ports/IBlockRepository';
+export type { IReportRepository } from './ports/IReportRepository';
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
@@ -23,3 +26,28 @@ export * from './posts/UpdatePostUseCase';
 export * from './posts/GetPostByIdUseCase';
 export * from './posts/GetMyPostsUseCase';
 export * from './posts/DeletePostUseCase';
+
+// Chat use cases
+export { BuildAutoMessageUseCase } from './chat/BuildAutoMessageUseCase';
+export { SendMessageUseCase } from './chat/SendMessageUseCase';
+export type { SendMessageInput } from './chat/SendMessageUseCase';
+export { OpenOrCreateChatUseCase } from './chat/OpenOrCreateChatUseCase';
+export type { OpenOrCreateChatInput } from './chat/OpenOrCreateChatUseCase';
+export { ListChatsUseCase } from './chat/ListChatsUseCase';
+export { MarkChatReadUseCase } from './chat/MarkChatReadUseCase';
+export { GetUnreadTotalUseCase } from './chat/GetUnreadTotalUseCase';
+export { GetSupportThreadUseCase } from './chat/GetSupportThreadUseCase';
+export { ChatError } from './chat/errors';
+export type { ChatErrorCode } from './chat/errors';
+
+// Block use cases
+export { BlockUserUseCase } from './block/BlockUserUseCase';
+export { UnblockUserUseCase } from './block/UnblockUserUseCase';
+export { BlockError } from './block/errors';
+export type { BlockErrorCode } from './block/errors';
+
+// Report use cases
+export { ReportChatUseCase } from './reports/ReportChatUseCase';
+export type { ReportChatInput } from './reports/ReportChatUseCase';
+export { ReportError } from './reports/errors';
+export type { ReportErrorCode } from './reports/errors';

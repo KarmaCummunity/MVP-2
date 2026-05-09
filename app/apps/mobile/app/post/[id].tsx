@@ -1,5 +1,5 @@
 // Post detail — wired to live IPostRepository (P0.4-FE).
-// Mapped to: FR-POST-014, FR-POST-015. Closes TD-32 / AUDIT-P2-09.
+// Mapped to: FR-POST-014, FR-POST-015, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
 import React from 'react';
 import {
   ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
@@ -17,6 +17,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
+import { contactPoster } from '../../src/lib/contactPoster';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -133,7 +134,7 @@ export default function PostDetailScreen() {
         </View>
       ) : (
         <View style={styles.cta}>
-          <TouchableOpacity style={styles.messageBtn} onPress={() => router.push(`/chat/c-${post.ownerId}`)}>
+          <TouchableOpacity style={styles.messageBtn} onPress={() => contactPoster(viewerId, post, router)}>
             <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
           </TouchableOpacity>
         </View>

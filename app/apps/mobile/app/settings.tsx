@@ -142,7 +142,11 @@ export default function SettingsScreen() {
         {/* Support */}
         <Text style={styles.sectionTitle}>תמיכה</Text>
         <View style={styles.section}>
-          <SettingsRow label="דווח על בעיה" icon="alert-circle-outline" onPress={() => {}} />
+          <SettingsRow
+            label="דווח על בעיה"
+            icon="alert-circle-outline"
+            onPress={() => router.push('/settings/report-issue')}
+          />
           <SettingsRow label="תנאי שימוש" icon="document-text-outline" onPress={() => {}} />
           <SettingsRow label="מדיניות פרטיות" icon="shield-outline" onPress={() => {}} />
         </View>
