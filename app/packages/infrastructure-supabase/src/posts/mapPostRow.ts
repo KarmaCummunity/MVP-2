@@ -81,8 +81,20 @@ export function mapPostRow(row: PostJoinedRow): Post {
 }
 
 export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner {
+  // Owner can be null when:
+  // 1. The user_id was deleted from public.users (FK posts_owner_id_fkey is ON DELETE
+  //    cascading, but if a row was orphaned through some other path the join returns null).
+  // 2. RLS hides the owner row from the viewer (rare with current users RLS, but possible).
+  // Per FR-CHAT-013 / R-MVP-Privacy-6 placeholder convention, surface a "משתמש שנמחק"
+  // placeholder rather than throwing — one orphan post must not crash the feed.
   if (!row.owner) {
-    throw new Error(`mapPostWithOwnerRow: post ${row.post_id} has no owner row`);
+    return {
+      ...mapPostRow(row),
+      ownerName: 'משתמש שנמחק',
+      ownerAvatarUrl: null,
+      ownerHandle: '',
+      ownerPrivacyMode: 'Public',
+    };
   }
   return {
     ...mapPostRow(row),

@@ -145,31 +145,57 @@ export const useChatStore = create<ChatState>((set, get) => ({
     })),
 
   startInboxSub: async (userId, repo, realtime) => {
+    // Reserve the slot synchronously to block races (StrictMode double-fire,
+    // re-renders before the await resolves). Without this, the second call
+    // sees inboxSub === null and proceeds, which makes Supabase add new
+    // postgres_changes handlers to a channel that already called subscribe().
     if (get().inboxSub) return;
-    const [chats, unread] = await Promise.all([
-      repo.getMyChats(userId),
-      repo.getUnreadTotal(userId),
-    ]);
-    set({ inbox: chats, unreadTotal: unread });
-    const unsub = realtime.subscribeToInbox(userId, {
-      onChatChanged: (chat) => get().upsertChatPreview(chat),
-      onUnreadTotalChanged: (total) => set({ unreadTotal: total }),
-    });
-    set({ inboxSub: unsub });
+    const noopUnsub: Unsubscribe = () => {};
+    set({ inboxSub: noopUnsub });
+    try {
+      const [chats, unread] = await Promise.all([
+        repo.getMyChats(userId),
+        repo.getUnreadTotal(userId),
+      ]);
+      // If a sign-out raced with us, abort.
+      if (get().inboxSub !== noopUnsub) return;
+      set({ inbox: chats, unreadTotal: unread });
+      const unsub = realtime.subscribeToInbox(userId, {
+        onChatChanged: (chat) => get().upsertChatPreview(chat),
+        onUnreadTotalChanged: (total) => set({ unreadTotal: total }),
+      });
+      set({ inboxSub: unsub });
+    } catch (err) {
+      // Release the slot on failure so the next mount can retry.
+      if (get().inboxSub === noopUnsub) set({ inboxSub: null });
+      throw err;
+    }
   },
 
   startThreadSub: async (chatId, repo, realtime) => {
     if (get().threadSubs[chatId]) return;
-    const msgs = await repo.getMessages(chatId, 50);
-    get().setThreadMessages(chatId, msgs);
-    const unsub = realtime.subscribeToChat(chatId, {
-      onMessage: (m) => get().applyIncomingMessage(chatId, m),
-      onMessageStatusChanged: (p) => get().applyStatusChange(chatId, p),
-      onError: () => {
-        /* deferred: surface to screen via ChatChannelStatus hook later */
-      },
-    });
-    set((s) => ({ threadSubs: { ...s.threadSubs, [chatId]: unsub } }));
+    const noopUnsub: Unsubscribe = () => {};
+    set((s) => ({ threadSubs: { ...s.threadSubs, [chatId]: noopUnsub } }));
+    try {
+      const msgs = await repo.getMessages(chatId, 50);
+      if (get().threadSubs[chatId] !== noopUnsub) return;
+      get().setThreadMessages(chatId, msgs);
+      const unsub = realtime.subscribeToChat(chatId, {
+        onMessage: (m) => get().applyIncomingMessage(chatId, m),
+        onMessageStatusChanged: (p) => get().applyStatusChange(chatId, p),
+        onError: () => {
+          /* deferred: surface to screen via ChatChannelStatus hook later */
+        },
+      });
+      set((s) => ({ threadSubs: { ...s.threadSubs, [chatId]: unsub } }));
+    } catch (err) {
+      set((s) => {
+        if (s.threadSubs[chatId] !== noopUnsub) return s;
+        const { [chatId]: _, ...rest } = s.threadSubs;
+        return { threadSubs: rest };
+      });
+      throw err;
+    }
   },
 
   stopThreadSub: (chatId) =>
