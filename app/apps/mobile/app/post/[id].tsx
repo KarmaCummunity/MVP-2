@@ -2,7 +2,7 @@
 // Mapped to: FR-POST-014, FR-POST-015. Closes TD-32 / AUDIT-P2-09.
 import React from 'react';
 import {
-  ActivityIndicator, Image, ScrollView, StyleSheet, Text, TouchableOpacity, View,
+  ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -14,11 +14,9 @@ import { colors, radius, spacing, typography } from '@kc/ui';
 import { CATEGORY_LABELS } from '@kc/domain';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { EmptyState } from '../../src/components/EmptyState';
+import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
-import { getSupabaseClient } from '@kc/infrastructure-supabase';
-
-const STORAGE_BUCKET = 'post-images';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -66,11 +64,6 @@ export default function PostDetailScreen() {
   // not be shown to the owner — tapping it would create a chat with self.
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isGive = post.type === 'Give';
-  const firstImageUrl = (() => {
-    if (post.mediaAssets.length === 0) return null;
-    const path = post.mediaAssets[0]!.path;
-    return getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
-  })();
   const locationText = (() => {
     if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
     if (post.locationDisplayLevel === 'CityAndStreet')
@@ -82,14 +75,13 @@ export default function PostDetailScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.imageArea}>
-          {firstImageUrl ? (
-            <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" />
-          ) : (
-            <Text style={styles.imagePlaceholderEmoji}>{isGive ? '🎁' : '🔍'}</Text>
-          )}
+        <View style={styles.imageWrap}>
+          <PostImageCarousel
+            mediaAssets={post.mediaAssets}
+            fallbackIcon={isGive ? 'gift-outline' : 'search-outline'}
+          />
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
-            <Text style={styles.typeTagText}>{isGive ? '🎁 לתת' : '🔍 לבקש'}</Text>
+            <Text style={styles.typeTagText}>{isGive ? 'לתת' : 'לבקש'}</Text>
           </View>
         </View>
 
@@ -156,9 +148,7 @@ const styles = StyleSheet.create({
   errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
   retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: colors.primary, borderRadius: 999 },
   retryText: { ...typography.button, color: colors.textInverse },
-  imageArea: { height: 240, backgroundColor: colors.primarySurface, justifyContent: 'center', alignItems: 'center', overflow: 'hidden' },
-  image: { width: '100%', height: '100%' },
-  imagePlaceholderEmoji: { fontSize: 72 },
+  imageWrap: { position: 'relative' },
   typeTagOverlay: {
     position: 'absolute', bottom: spacing.base, right: spacing.base,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,

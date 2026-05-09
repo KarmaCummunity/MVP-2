@@ -6,6 +6,18 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 Feed image rendering + post-detail carousel (FR-POST-014 AC1)
+- **SRS**: FR-POST-014 AC1 (post-detail exposes every uploaded image)
+- **Branch**: `fix/FR-POST-001-fe-create-post-e2e` (extends the create-post fix below) · 2026-05-09
+- **Tests**: tsc clean (5 packages) · 68 vitest passing · `pnpm lint:arch` 124 files passing
+- **Tech debt closed**: TD-100 (carousel missing), TD-111 (PostCardGrid never rendered uploaded images)
+- **Bug**: after publishing succeeded (the FK fix above), the user reported feed cards still showed only an emoji placeholder (web rendered 🎁; iOS rendered tofu `?` — same Apple-Color-Emoji glyph cache regression as TD-109). Post-detail also exposed only the first image of a multi-image post.
+- **PostCardGrid**: now renders `<Image>` from the first `mediaAssets` entry via `getSupabaseClient().storage.from('post-images').getPublicUrl(path)`; falls back to an Ionicons gift/search glyph (consistent with TD-109 closure) when the post has no media.
+- **PostImageCarousel** (new component): paged horizontal `FlatList` (no extra deps), counter chip "n / N", animated active dot. Replaces the single-image block in `app/post/[id].tsx`. Falls back to the same Ionicons glyph when empty.
+- **Cleanup**: post-detail emoji-as-icon (`🎁 לתת` / `🔍 לבקש`) reduced to plain Hebrew labels in the type tag, since the carousel itself fills the visual hero space.
+
+---
+
 ### 🟢 Create-post end-to-end fix (FR-POST-001..004 / FR-POST-019 AC1)
 - **SRS**: FR-POST-001 (create), FR-POST-002 AC3 (canonical address) + AC4 (disabled-until-valid Publish), FR-POST-003 AC3 (locationDisplayLevel chooser), FR-POST-004 AC2 (Request can attach optional images), FR-POST-019 AC1 (city is canonical)
 - **Branch**: `fix/FR-POST-001-fe-create-post-e2e` · 2026-05-09
