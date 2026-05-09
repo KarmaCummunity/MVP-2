@@ -5,6 +5,9 @@ const MESSAGES: Record<PostErrorCode, string> = {
   title_too_long: 'הכותרת ארוכה מ-80 תווים.',
   description_too_long: 'התיאור ארוך מ-500 תווים.',
   address_required: 'יש להזין עיר, רחוב ומספר בית.',
+  address_invalid: 'הכתובת שהוזנה אינה תקינה.',
+  street_number_invalid: 'מספר הבית לא תקין. השתמש בספרות בלבד (אפשר אות לועזית בסוף, למשל 12 או 12B).',
+  city_not_found: 'העיר שנבחרה לא נמצאה ברשימה. אנא בחר עיר מהרשימה.',
   image_required_for_give: 'פוסטים מסוג "לתת" חייבים לפחות תמונה אחת.',
   too_many_media_assets: 'מותר עד 5 תמונות לפוסט.',
   condition_required_for_give: 'יש לבחור מצב לחפץ שניתן.',
@@ -15,6 +18,7 @@ const MESSAGES: Record<PostErrorCode, string> = {
   invalid_visibility: 'בחירת הפרטיות לא תקינה.',
   invalid_category: 'הקטגוריה לא תקינה.',
   invalid_location_display_level: 'רמת תצוגת המיקום לא תקינה.',
+  forbidden: 'אין לך הרשאה לפרסם פוסט זה. נסה להתחבר מחדש.',
   unknown: 'אירעה שגיאה. נסה שוב.',
 };
 
