@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-08 (P0.3.b — TD-22 closed; TD-40 setAvatar wired) |
+| **Last Updated** | 2026-05-09 (P0.3 + P0.4 spec audit — added TD-100..108 from anomaly findings; TD-29 LOC re-validated for `post/[id].tsx` after F1 fix) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
@@ -50,6 +50,15 @@
 | TD-29 | 🟠 | `pnpm lint:arch` enforces `≤ 200 LOC` cap. `(tabs)/index.tsx` (136), `(tabs)/profile.tsx` (214 — allowlisted), `post/[id].tsx` (165), `_layout.tsx` (108 — was 265, dropped from allowlist 2026-05-08 via AuthGate / BackButton / TabBar extraction) under cap. `(tabs)/create.tsx` ~250 — over cap, allowlisted; `useReducer` extraction tracked as future polish. `settings.tsx` 228 (allowlist 232 — onboarding-reset web fix added a few lines) | Opportunistic — (tabs)/create.tsx during P0.6 closure work |
 | TD-35 | 🟢 | `i18n/he.ts` (207 LOC) violates `≤ 200 LOC` cap; split per domain | Opportunistic |
 | TD-42 | 🟢 | Counter cards in `apps/mobile/app/(tabs)/profile.tsx` — followers/following/items_given/items_received still render `0` (active-posts wired in P0.4-FE). Need `IUserRepository.findById`. **Watch FR-PROFILE-013 / TD-39**: non-owner viewers must read via `active_posts_count_for_viewer()`, never raw `_internal` | P2.4 (with TD-40) |
+| TD-100 | 🔴 | **FR-POST-014 AC1 — image carousel missing.** `app/post/[id].tsx` renders only `mediaAssets[0]`. Posts with 2–5 images expose only the first one to viewers. Replace `<Image>` with horizontal paged FlatList | P0.6 (or follow-up to P0.4-FE) |
+| TD-101 | 🔴 | **FR-POST-019 AC1 / FR-POST-002 AC3 — city is free text.** `app/(tabs)/create.tsx` uses `<TextInput>` for `address.city`. Spec mandates the canonical IL list (CityPicker exists, used in onboarding/soft-gate). **Silent data corruption**: posts being created right now carry non-canonical city values that won't match `FR-FEED-006` city-equality sort. Swap to `<CityPicker>`; persist `cityId` separately if needed | Opportunistic (recommend ASAP — accumulating bad data) |
+| TD-102 | 🟠 | **FR-AUTH-014 AC3 + FR-FEED-014 — guest overlay count hardcoded.** `i18n/he.ts` `feed.guestBanner` says `"50+ פוסטים פעילים"` literally. Spec requires parameterized count from `community_stats.active_public_posts_count` (already exists per migration 0006). Read once on guest-feed mount + interpolate | Opportunistic |
+| TD-103 | 🟠 | **FR-POST-004 AC2 — Request type cannot attach images.** `app/(tabs)/create.tsx:153` wraps `<PhotoPicker>` in `{isGive && ...}`. Spec allows up to 5 (optional) images for Request as well. Drop the guard, set `required={isGive}` instead | Opportunistic |
+| TD-104 | 🟠 | **FR-POST-003 AC3 — `locationDisplayLevel` chooser missing.** `app/(tabs)/create.tsx:87` hardcodes `'CityAndStreet'`. Users cannot choose `CityOnly` (privacy-protective) or `FullAddress`. Add chooser component with the three options | Opportunistic |
+| TD-105 | 🟠 | **FR-POST-002 AC4 — Publish button enabled with empty required fields.** `app/(tabs)/create.tsx:120-123` only disables on `isPublishing`. No client-side validation. Server rejection appears as a toast — bad UX. Compute `isFormValid` from title/city/street/streetNumber/(images if Give); disable button + inline error markers | Opportunistic |
+| TD-106 | 🟠 | **FR-PROFILE-001 — Edit Profile + Share buttons dead.** `app/(tabs)/profile.tsx:82-87` — both `<TouchableOpacity>` lack `onPress`. Silent UI. At minimum show "בקרוב" alert until Edit Profile (P2.4) lands | P2.4 |
+| TD-107 | 🟠 | **Settings screen — 7 dead rows + dangerous silent Delete account.** `app/settings.tsx` has `onPress={() => {}}` on lines 99, 132, 133, 139, 145, 146, 147, 175. The destructive-styled "מחק חשבון" (line 175) silently no-ops — confusing for a "permanent" action. Show "בקרוב" alerts until each row's owning slice ships (P1.x / P2.2 / P2.4) | Opportunistic |
+| TD-108 | 🟢 | **FR-AUTH-011 AC4 — avatar removal leaks Storage object.** `app/(onboarding)/photo.tsx:47-60` clears `users.avatar_url = null` but never deletes `avatars/<userId>/avatar.jpg`. ~50KB leak per remove (not a privacy issue — RLS still owns the path). Call `client.storage.from('avatars').remove([path])` before persisting null | Opportunistic |
 
 ### Process · docs · tooling
 
