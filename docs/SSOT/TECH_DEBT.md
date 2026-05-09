@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (P0.3 + P0.4 spec audit — added TD-100..108 from anomaly findings; TD-29 LOC re-validated for `post/[id].tsx` after F1 fix) |
+| **Last Updated** | 2026-05-09 (TD-109 closed — emoji literals replaced with Ionicons across TabBar / (tabs)/_layout / EmptyState; iOS-simulator tofu rendering fixed) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
@@ -90,6 +90,7 @@
 | TD-37 | Sprint Board listed "P0.2 In progress" without indicating P0.2.d/e/f are unwritten | 2026-05-07 (sprint board updated; all migrations applied) |
 | TD-51 | Domain code used raw `throw new Error(...)` in `value-objects.ts:112-113` | 2026-05-08 (`packages/domain/src/errors.ts` introduces `DomainError` + `ValidationError`; allowlist in `check-architecture.mjs` is empty — any future raw `throw new Error` in domain fails CI immediately) |
 | TD-22 | Onboarding wizard slices A + B + C all shipped (basic info + photo upload + tour + soft-gate) | 2026-05-08 (P0.3.b — `(onboarding)/photo.tsx` wired to `pickAvatarImage` + `resizeAndUploadAvatar` + `SetAvatarUseCase`; migration `0009_init_avatars_bucket.sql`; supports camera+gallery on mobile, gallery-only on web) |
+| TD-109 | Emoji literals (🏠 / 👤 / 📭 / 📦 / 🔍 / 🔎 / 💬 / 👤) used as icon glyphs in TabBar + (tabs)/_layout + EmptyState rendered as `?` tofu boxes on iOS 26 simulator (Apple Color Emoji glyph cache). | 2026-05-09 (replaced with `@expo/vector-icons` Ionicons across all sites; `EmptyState` API now takes `icon: keyof typeof Ionicons.glyphMap`. Type-checked; works cross-platform without depending on the system emoji font) |
 
 ---
 

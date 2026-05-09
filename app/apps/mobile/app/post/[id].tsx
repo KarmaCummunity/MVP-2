@@ -53,7 +53,7 @@ export default function PostDetailScreen() {
     return (
       <SafeAreaView style={styles.container}>
         <EmptyState
-          emoji="🔎"
+          icon="search-outline"
           title="הפוסט לא נמצא"
           subtitle="ייתכן שהוא נסגר או שאין לך הרשאה לצפייה."
         />

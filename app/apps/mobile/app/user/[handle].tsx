@@ -11,7 +11,7 @@ export default function UserProfileScreen() {
   return (
     <SafeAreaView style={{ flex: 1, backgroundColor: colors.background }}>
       <EmptyState
-        emoji="👤"
+        icon="person-outline"
         title="פרופיל ציבורי"
         subtitle={`@${handle ?? '—'} · התצוגה המלאה תיתמך לאחר השלמת מאגר המשתמשים (P2.4).`}
       />

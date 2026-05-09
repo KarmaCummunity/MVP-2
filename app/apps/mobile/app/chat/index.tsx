@@ -65,7 +65,7 @@ export default function ChatListScreen() {
         ItemSeparatorComponent={() => <View style={styles.separator} />}
         ListEmptyComponent={
           <EmptyState
-            emoji="💬"
+            icon="chatbubbles-outline"
             title="אין שיחות עדיין"
             subtitle="פנה למפרסמים ישירות מתוך הפוסטים."
           />

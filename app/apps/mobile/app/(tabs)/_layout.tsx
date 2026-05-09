@@ -1,18 +1,25 @@
 // Bottom Tab Navigator — owns the tab bar inside (tabs) routes.
 // On detail screens (chat, post, user, settings — outside (tabs)), the same
 // look-alike bar is rendered globally at the root layout via <TabBar />.
+// Both bars use Ionicons (TD-109) — emoji literals were unreliable on iOS
+// simulator (Apple Color Emoji glyph cache) and produced tofu boxes.
 // Mapped to: SRS §6.1 — 3 tabs (RTL: Profile | Plus | Home), icon-only side tabs.
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, shadow } from '@kc/ui';
 
-function TabBarIcon({ focused, emoji }: { focused: boolean; emoji: string }) {
+type IoniconName = keyof typeof Ionicons.glyphMap;
+
+function TabBarIcon({ focused, name }: { focused: boolean; name: { active: IoniconName; inactive: IoniconName } }) {
   return (
-    <View style={s.iconWrap}>
-      <Text style={[s.emoji, focused && s.emojiActive]}>{emoji}</Text>
-    </View>
+    <Ionicons
+      name={focused ? name.active : name.inactive}
+      size={26}
+      color={focused ? colors.primary : colors.textSecondary}
+    />
   );
 }
 
@@ -39,7 +46,11 @@ export default function TabsLayout() {
       {/* RTL order: Profile (right) | Plus (center) | Home (left) */}
       <Tabs.Screen
         name="profile"
-        options={{ tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} emoji="👤" /> }}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} name={{ active: 'person', inactive: 'person-outline' }} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="create"
@@ -47,7 +58,11 @@ export default function TabsLayout() {
       />
       <Tabs.Screen
         name="index"
-        options={{ tabBarIcon: ({ focused }) => <TabBarIcon focused={focused} emoji="🏠" /> }}
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} name={{ active: 'home', inactive: 'home-outline' }} />
+          ),
+        }}
       />
     </Tabs>
   );
@@ -62,9 +77,6 @@ const s = StyleSheet.create({
     flexDirection: 'row-reverse',
     ...shadow.card,
   },
-  iconWrap: { alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 24, opacity: 0.5 },
-  emojiActive: { opacity: 1 },
   plusWrap: { alignItems: 'center', justifyContent: 'center', marginBottom: 6 },
   plusCircle: {
     width: 52, height: 52, borderRadius: 26,

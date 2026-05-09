@@ -6,6 +6,16 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 TD-109 — emoji literals → Ionicons across tab bar + EmptyState
+- **SRS**: SRS §6.1 (tabs icon-only) — visual fidelity restored cross-platform
+- **Branch**: `fix/TD-109-replace-emoji-icons` · 2026-05-09
+- **Tests**: tsc clean (5 packages) · 57 vitest passing · `pnpm lint:arch` 109 files passing
+- **Tech debt closed**: TD-109 (iOS 26 simulator rendered emoji glyphs as `?` tofu boxes — Apple Color Emoji font wasn't reliably available across simulator boots / Metro reloads)
+- **Files touched**: `src/components/TabBar.tsx`, `app/(tabs)/_layout.tsx`, `src/components/EmptyState.tsx` (API change: `emoji: string` → `icon: keyof typeof Ionicons.glyphMap`); 5 callers updated (`post/[id].tsx`, `(tabs)/profile.tsx`, `user/[handle].tsx`, `chat/index.tsx`, `src/components/PostFeedList.tsx`)
+- **Open gaps**: None. `(tabs)/_layout.tsx`'s active-state colour now drives the highlight (previously emoji-opacity), aligning with how `<TabBar />` already worked
+
+---
+
 ### 🟢 Audit P0.3 + P0.4 spec→impl + fix F1 (owner self-chat CTA)
 - **SRS**: FR-POST-015 AC1 (owner-mode CTA differentiation) — direct fix · audit covered FR-AUTH-011, FR-AUTH-014, FR-AUTH-015, FR-POST-001..010, FR-FEED-001..005
 - **Branch**: `fix/FR-POST-015-owner-mode-cta` · 2026-05-09

@@ -113,9 +113,9 @@ export default function ProfileScreen() {
           </View>
         ) : (myPostsQuery.data?.posts.length ?? 0) === 0 ? (
           activeTab === 'open' ? (
-            <EmptyState emoji="📭" title="אין פוסטים פתוחים" subtitle="פרסם את הפוסט הראשון שלך!" />
+            <EmptyState icon="mail-open-outline" title="אין פוסטים פתוחים" subtitle="פרסם את הפוסט הראשון שלך!" />
           ) : (
-            <EmptyState emoji="📦" title="אין פוסטים סגורים עדיין" subtitle="פוסטים שסגרת כ-נמסר יופיעו כאן." />
+            <EmptyState icon="archive-outline" title="אין פוסטים סגורים עדיין" subtitle="פוסטים שסגרת כ-נמסר יופיעו כאן." />
           )
         ) : (
           <View style={styles.postList}>
