@@ -20,13 +20,18 @@ import { MessageBubble } from '../../src/components/MessageBubble';
 import { AnchorDeletedBanner } from '../../src/components/AnchorDeletedBanner';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 
+// Stable empty fallback — must NOT be inlined inside the selector. useSyncExternalStore
+// compares snapshots via Object.is; a fresh `[]` per call would trip an infinite re-render
+// loop while threads[chatId] is undefined (i.e. before startThreadSub resolves).
+const EMPTY_MESSAGES: OptimisticMessage[] = [];
+
 export default function ChatScreen() {
   const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string }>();
   const chatId = id!;
   const navigation = useNavigation();
   const userId = useAuthStore((s) => s.session?.userId)!;
 
-  const messages = useChatStore((s) => s.threads[chatId] ?? []);
+  const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
   const [chat, setChat] = useState<Chat | null>(null);
   const [counterpart, setCounterpart] = useState<{ displayName: string; isDeleted: boolean }>({ displayName: '', isDeleted: false });
   const [input, setInput] = useState(prefill ?? '');
