@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (Create-post e2e fix + feed image rendering. Create form: `<CityPicker>` (FK 400 was blocking every publish), street_number regex validation, locationDisplayLevel chooser, optional Request images, Publish disabled-until-valid, typed Postgres-error mapping (TD-101/103/104/105 closed). Feed: `PostCardGrid` now renders the uploaded thumbnail (TD-111 closed); `PostImageCarousel` (paged + counter + dots) replaces the single-image post-detail view (TD-100 closed). Earlier today: FR-PROFILE-007 partial, TD-110 permission UX, D-16 Donations + Search tabs, TD-109 emoji→Ionicons.) |
+| **Last Updated** | 2026-05-10 (P0.5 — direct chat with realtime: 4 phases shipped on feat/FR-CHAT-001-chat-realtime — domain+ports+use-cases (TDD, +11 vitest), migrations 0010+0011, Supabase adapters incl. realtime, Zustand chatStore + composition root, replaced Inbox+Conversation mocks, new user/[handle] + settings/report-issue screens.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -26,16 +26,16 @@ This document is the **single source of truth for project execution state**. It 
 
 ---
 
-## 1. Snapshot — Current State (2026-05-09)
+## 1. Snapshot — Current State (2026-05-10)
 
 | Metric | Value |
 | ------ | ----- |
 | MVP completion (rough) | **~42%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding (basic info + photo + tour + soft gate)**; DB schema applied; Posts BE adapter + FE end-to-end) |
 | Features 🟢 done | 6 (P0.3 fully done — slice A + B + C) |
-| Features 🟡 in progress | 0 |
+| Features 🟡 in progress | 1 (P0.5 chat — implementation complete, manual verification + PR pending) |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 2 (P0.5 chat; P0.6 closure) |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` — 68 vitest passing |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` — 79 vitest passing |
 | Open tech-debt items | **32 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
@@ -45,12 +45,15 @@ This document is the **single source of truth for project execution state**. It 
 - **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing.
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
 
+### What is in flight
+
+- **P0.5 — Direct chat with realtime** — implementation complete on `feat/FR-CHAT-001-chat-realtime`; manual verification + PR pending. Domain+ports+use-cases (TDD, +11 vitest), migrations 0010+0011, Supabase adapters incl. realtime, Zustand `chatStore` + composition root, replaced Inbox+Conversation mocks, new `user/[handle]` + `settings/report-issue` screens.
+
 ### What is fake / stubbed
 
-- Chat list + thread still consume local `MOCK_MESSAGES` inside `chat/[id].tsx` (P0.5 retires this)
-- Other-user profile (`/user/[handle]`) is a P2.4 placeholder until `IUserRepository.findByHandle` ships (TD-40)
+- Other-user profile (`/user/[handle]`) has minimal real data (avatar, name, handle, bio, Send-message + Block CTAs) via `findByHandle`; counters (followers/following/items_given/items_received) still render `0` (TD-40 partial, TD-42)
 - Profile counters: followers / following / items_given / items_received still render `0` (TD-42 — needs `IUserRepository.findById`, P2.4)
-- No closure flow / chat realtime / reports / notifications / community stats
+- No closure flow / reports / notifications / community stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as placeholder (Google SSO is real)
 - Forgot-password flow not implemented
 - EXIF metadata is stripped client-side (re-encode side effect); server-side strip per FR-POST-005 AC4 requires an Edge Function (TD-23)
@@ -69,7 +72,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting) | 🟢 Done (2026-05-07) | All migrations 0001–0008 applied |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟢 Done (2026-05-08) | All slices A + B + C shipped |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | 🟢 Done (2026-05-08) | BE + FE both shipped |
-| P0.5 | Direct chat with realtime | FR-CHAT-001…008 | ⏳ Planned | Required for delivery coordination — the PMF loop |
+| P0.5 | Direct chat with realtime | FR-CHAT-001…008 | 🟡 In progress | Branch feat/FR-CHAT-001-chat-realtime — implementation complete; manual verification + PR pending. Defers: push notifs (P1.5/TD-115), full report flow (P1.3/TD-116), report-summary system message (P1.3/TD-117). |
 | P0.6 | Closure flow (mark as delivered) | FR-CLOSURE-001…006 | ⏳ Planned | Required to capture the **North Star** metric (`closed_delivered` count) |
 
 ### 📈 P1 — High priority (PMF quality)
@@ -82,7 +85,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P1.4 | Block / unblock + visibility restoration | FR-MOD-009, 010 | ⏳ Planned | |
 | P1.5 | Push notifications (Critical + Social) | FR-NOTIF-001…006 | ⏳ Planned | |
 | P1.6 | Personal & community stats | FR-STATS-001…004 | ⏳ Planned | |
-| P1.7 | Donations Hub + Search tab placeholder + 5-tab bottom bar | FR-DONATE-001…005, FR-FEED-016, FR-CHAT-008 (extended) | 🟡 In progress (this work) | Per `D-16` (2026-05-09). Light FE-only change; volunteer-message use-case reuses existing `FR-CHAT-007` admin thread. **Note:** while P0.5 chat is still mock-backed, the Time composer routes through the same ports — when P0.5 lands, no changes needed here. |
+| P1.7 | Donations Hub + Search tab placeholder + 5-tab bottom bar | FR-DONATE-001…005, FR-FEED-016, FR-CHAT-008 (extended) | ⏳ Planned (parked pending TD-114) | Per `D-16` (2026-05-09). Wire-up of volunteer-composer → support thread deferred to a separate post-P0.5 PR once `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` are merged. |
 
 ### 📊 P2 — Polish
 
@@ -116,9 +119,9 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
-| In progress | **P1.7 — Donations + Search tabs (D-16)** | — | 2026-05-09 | — |
-| Up next | P0.5 — Direct chat with realtime | — | — | — |
-| Then | P0.6 — Closure flow | — | — | — |
+| In progress 1 | **P0.5 — Direct chat with realtime** | agent-fe + agent-be | 2026-05-10 | — |
+| Up next | P0.6 — Closure flow | — | — | — |
+| Then | P1.7 — Donations + Search tabs wire-up (post-P0.5 PR, TD-114) | — | — | — |
 
 Most recently shipped: **TD-109** (emoji → Ionicons across tab bar + EmptyState, fixes iOS-simulator tofu — 2026-05-09). Full log in [`HISTORY.md`](./HISTORY.md).
 
@@ -136,6 +139,7 @@ Mirror of [`SRS/appendices/C_decisions_log.md`](./SRS/appendices/C_decisions_log
 | EXEC-4 | Adopted parallel-agents coordination protocol (lanes, draft-PR claim mechanism, `(contract)` scope rule, TD-N range split, tiebreakers). Spec at `docs/superpowers/specs/2026-05-07-parallel-agents-coordination-design.md`; pointer in `CLAUDE.md` | Two-agent setup | 2026-05-07 |
 | EXEC-5 | Doc structure: `PROJECT_STATUS.md` is the live execution dashboard (≤120 lines); `HISTORY.md` is append-only feature log; `TECH_DEBT.md` is the active debt register grouped by area. CLAUDE.md points to all three | Doc cleanup | 2026-05-08 |
 | D-16 | Reintroduce dedicated **Donations** and **Search** tabs in the bottom bar (5 tabs total). Search ships as a placeholder (`FR-FEED-016`); universal-search engine deferred to P2.6. Donations Hub ships fully (`FR-DONATE-001..005`); Time + Money are coming-soon screens with external partner links + volunteer-message composer wired to `FR-CHAT-007`. | Product | 2026-05-09 |
+| EXEC-6 | P0.5 chat: two-port split (`IChatRepository` + `IChatRealtime`). Subscriptions stay out of use cases — managed by Zustand `chatStore` directly. Use cases remain pure (input → `Promise<output>`). | P0.5 design | 2026-05-10 |
 
 ---
 
