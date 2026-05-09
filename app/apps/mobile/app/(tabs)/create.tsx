@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { ALL_CATEGORIES, CATEGORY_LABELS } from '@kc/domain';
-import type { Category, ItemCondition, PostType } from '@kc/domain';
+import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
@@ -21,6 +21,7 @@ import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
 import { CityPicker } from '../../src/components/CityPicker';
+import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
@@ -41,6 +42,8 @@ export default function CreatePostScreen() {
   const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
+  const [locationDisplayLevel, setLocationDisplayLevel] =
+    useState<LocationDisplayLevel>('CityAndStreet');
   const [visibility, setVisibility] = useState<'Public' | 'OnlyMe'>('Public');
 
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
@@ -86,7 +89,7 @@ export default function CreatePostScreen() {
         description: description.trim() ? description : null,
         category,
         address: { city: city.id, cityName: city.name, street, streetNumber },
-        locationDisplayLevel: 'CityAndStreet',
+        locationDisplayLevel,
         itemCondition: isGive ? condition : null,
         urgency: !isGive && urgency.trim() ? urgency : null,
         mediaAssets: uploads.map((u) => ({ path: u.path, mimeType: u.mimeType, sizeBytes: u.sizeBytes })),
@@ -212,6 +215,12 @@ export default function CreatePostScreen() {
             />
           </View>
         </View>
+
+        <LocationDisplayLevelChooser
+          value={locationDisplayLevel}
+          onChange={setLocationDisplayLevel}
+          disabled={isPublishing}
+        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>קטגוריה</Text>
