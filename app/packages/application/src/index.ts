@@ -3,6 +3,9 @@ export * from './ports/IPostRepository';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
+export type { IChatRealtime, InboxStreamCallbacks, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
+export type { IBlockRepository } from './ports/IBlockRepository';
+export type { IReportRepository } from './ports/IReportRepository';
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
