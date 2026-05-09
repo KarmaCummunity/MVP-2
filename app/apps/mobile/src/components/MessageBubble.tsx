@@ -9,6 +9,21 @@ export function MessageBubble({
   m, mine, onRetry,
 }: { m: OptimisticMessage; mine: boolean; onRetry: () => void }) {
   const [showTime, setShowTime] = useState(false);
+
+  // System messages (FR-CHAT-007 / FR-MOD-002) — neutral pill, centered, no
+  // sender bubble or read-receipt. system_payload carries structured data;
+  // body carries a Hebrew summary the trigger built.
+  if (m.kind === 'system') {
+    return (
+      <View style={styles.systemWrap}>
+        <View style={styles.systemPill}>
+          <Ionicons name="information-circle-outline" size={14} color={colors.textSecondary} />
+          <Text style={styles.systemText}>{m.body}</Text>
+        </View>
+      </View>
+    );
+  }
+
   return (
     <TouchableOpacity activeOpacity={0.8} onPress={() => setShowTime((s) => !s)}>
       <View style={[styles.bubble, mine ? styles.bubbleMine : styles.bubbleOther]}>
@@ -39,4 +54,14 @@ const styles = StyleSheet.create({
   bubbleMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
   timeText: { ...typography.caption, color: colors.textSecondary },
   readReceipt: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  systemWrap: { alignItems: 'center', paddingVertical: spacing.xs },
+  systemPill: {
+    flexDirection: 'row', alignItems: 'center', gap: 4,
+    backgroundColor: colors.background,
+    borderWidth: 1, borderColor: colors.border,
+    paddingHorizontal: spacing.md, paddingVertical: spacing.xs,
+    borderRadius: radius.full,
+    maxWidth: '90%',
+  },
+  systemText: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
 });
