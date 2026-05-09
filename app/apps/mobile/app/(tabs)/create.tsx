@@ -109,6 +109,16 @@ export default function CreatePostScreen() {
 
   const isPublishing = publish.isPending || uploadingCount > 0;
 
+  // FR-POST-002 AC4: Publish stays disabled until required fields are populated.
+  // streetNumber regex is enforced server-side and surfaced via use-case +
+  // adapter mapping; we only block on presence here.
+  const isFormValid =
+    title.trim().length > 0 &&
+    city !== null &&
+    street.trim().length > 0 &&
+    streetNumber.trim().length > 0 &&
+    (!isGive || uploads.length > 0);
+
   // FR-AUTH-015: gate publish on onboarding_state. requestSoftGate runs publish
   // immediately if state !== pending_basic_info; otherwise opens the modal first.
   const handlePublish = () => {
@@ -123,9 +133,10 @@ export default function CreatePostScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>פוסט חדש</Text>
         <TouchableOpacity
-          style={[styles.publishBtn, isPublishing && { opacity: 0.7 }]}
+          style={[styles.publishBtn, (isPublishing || !isFormValid) && { opacity: 0.5 }]}
           onPress={handlePublish}
-          disabled={isPublishing}
+          disabled={isPublishing || !isFormValid}
+          accessibilityState={{ disabled: isPublishing || !isFormValid }}
         >
           {isPublishing ? (
             <ActivityIndicator color={colors.textInverse} size="small" />
