@@ -777,6 +777,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      rpc_chat_mark_read: { Args: { p_chat_id: string }; Returns: undefined }
+      rpc_chat_unread_total: { Args: never; Returns: number }
+      rpc_get_or_create_support_thread: {
+        Args: never
+        Returns: {
+          anchor_post_id: string | null
+          chat_id: string
+          created_at: string
+          is_support_thread: boolean
+          last_message_at: string
+          participant_a: string
+          participant_b: string
+          removed_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "chats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
     }
     Enums: {
