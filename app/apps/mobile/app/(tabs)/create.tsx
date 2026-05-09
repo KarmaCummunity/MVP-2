@@ -152,16 +152,14 @@ export default function CreatePostScreen() {
           </TouchableOpacity>
         </View>
 
-        {isGive && (
-          <PhotoPicker
-            uploads={uploads}
-            isUploading={uploadingCount > 0}
-            uploadingCount={uploadingCount}
-            required={true}
-            onAdd={handlePick}
-            onRemove={handleRemove}
-          />
-        )}
+        <PhotoPicker
+          uploads={uploads}
+          isUploading={uploadingCount > 0}
+          uploadingCount={uploadingCount}
+          required={isGive}
+          onAdd={handlePick}
+          onRemove={handleRemove}
+        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>כותרת <Text style={styles.required}>*</Text></Text>
