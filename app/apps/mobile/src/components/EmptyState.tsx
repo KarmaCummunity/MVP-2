@@ -1,18 +1,19 @@
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
 
 interface EmptyStateProps {
-  emoji: string;
+  icon: keyof typeof Ionicons.glyphMap;
   title: string;
   subtitle?: string;
   action?: React.ReactNode;
 }
 
-export function EmptyState({ emoji, title, subtitle, action }: EmptyStateProps) {
+export function EmptyState({ icon, title, subtitle, action }: EmptyStateProps) {
   return (
     <View style={styles.container}>
-      <Text style={styles.emoji}>{emoji}</Text>
+      <Ionicons name={icon} size={56} color={colors.textDisabled} style={styles.icon} />
       <Text style={styles.title}>{title}</Text>
       {subtitle ? <Text style={styles.subtitle}>{subtitle}</Text> : null}
       {action ? <View style={styles.action}>{action}</View> : null}
@@ -27,8 +28,7 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     padding: spacing['2xl'],
   },
-  emoji: {
-    fontSize: 48,
+  icon: {
     marginBottom: spacing.base,
   },
   title: {

@@ -69,7 +69,7 @@ export function PostFeedList({
       contentContainerStyle={styles.listContent}
       ListEmptyComponent={
         <EmptyState
-          emoji="🔍"
+          icon="search-outline"
           title="לא נמצאו פוסטים"
           subtitle="נסה לשנות את הסינון או חפש בכל הערים."
         />

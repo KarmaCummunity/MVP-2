@@ -1,10 +1,13 @@
 // Single global tab bar — rendered at the root layout for every post-auth,
-// post-onboarding route (including detail screens like chat/[id], post/[id],
-// user/[handle], settings). (tabs)/_layout.tsx uses <Slot> so this is the only
-// tab bar in the app — uniform UX, no flicker when crossing tab → detail.
+// post-onboarding route OUTSIDE (tabs) (i.e. detail screens like chat/[id],
+// post/[id], user/[handle], settings). Inside (tabs), the native expo-router
+// <Tabs> in (tabs)/_layout.tsx owns its own bar; the root layout hides this
+// global bar there to avoid doubling. Both bars use Ionicons (TD-109) — emoji
+// literals were unreliable on iOS simulator and produced "?" tofu boxes.
 // Mapped to: SRS §6.1 — 3 tabs (RTL: Profile | Plus | Home), icon-only.
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, shadow } from '@kc/ui';
@@ -37,7 +40,11 @@ export function TabBar() {
         accessibilityLabel="פרופיל"
         style={styles.tabBtn}
       >
-        <Text style={[styles.emoji, active === 'profile' && styles.emojiActive]}>👤</Text>
+        <Ionicons
+          name={active === 'profile' ? 'person' : 'person-outline'}
+          size={26}
+          color={active === 'profile' ? colors.primary : colors.textSecondary}
+        />
       </Pressable>
       <Pressable
         onPress={() => router.push('/(tabs)/create')}
@@ -55,7 +62,11 @@ export function TabBar() {
         accessibilityLabel="בית"
         style={styles.tabBtn}
       >
-        <Text style={[styles.emoji, active === 'home' && styles.emojiActive]}>🏠</Text>
+        <Ionicons
+          name={active === 'home' ? 'home' : 'home-outline'}
+          size={26}
+          color={active === 'home' ? colors.primary : colors.textSecondary}
+        />
       </Pressable>
     </View>
   );
@@ -72,8 +83,6 @@ const styles = StyleSheet.create({
     ...shadow.card,
   },
   tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  emoji: { fontSize: 24, opacity: 0.5 },
-  emojiActive: { opacity: 1 },
   plusCircle: {
     width: 52,
     height: 52,

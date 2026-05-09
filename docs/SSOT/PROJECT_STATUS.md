@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (P0.3 + P0.4 spec→impl audit — fixed FR-POST-015 AC1 owner self-chat CTA; logged TD-100..108 from anomaly findings. TD-101 city free-text flagged as silent data corruption.) |
+| **Last Updated** | 2026-05-09 (TD-109 — emoji literals replaced with Ionicons across TabBar + (tabs)/_layout + EmptyState; iOS-simulator tofu rendering fixed. Earlier today: P0.3+P0.4 audit, FR-POST-015 AC1 owner-mode CTA fix, TD-100..108 logged.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -36,7 +36,7 @@ This document is the **single source of truth for project execution state**. It 
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 2 (P0.5 chat; P0.6 closure) |
 | Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` — 57 vitest passing |
-| Open tech-debt items | **38 active** (3 partial), **12 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Open tech-debt items | **38 active** (3 partial), **13 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -117,7 +117,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Up next | **P0.5 — Direct chat with realtime** | — | — | — |
 | Then | P0.6 — Closure flow | — | — | — |
 
-Most recently shipped: **Audit P0.3 + P0.4 spec→impl + fix F1** (FR-POST-015 AC1 owner self-chat CTA — 2026-05-09). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **TD-109** (emoji → Ionicons across tab bar + EmptyState, fixes iOS-simulator tofu — 2026-05-09). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 
