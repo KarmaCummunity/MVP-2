@@ -6,6 +6,19 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 FR-PROFILE-007 (partial) — Edit Profile + photo-upload encoding fix
+- **SRS**: FR-PROFILE-007 AC1 (avatar / display_name / city / biography editable), AC3 (bio URL filter)
+- **Branch**: `fix/TD-110-photo-upload-and-edit-profile` · 2026-05-09
+- **Tests**: tsc clean (5 packages) · 65 vitest passing (8 new in `auth/UpdateProfileUseCase`) · `pnpm lint:arch` 114 files passing
+- **Tech debt closed**: TD-106 (Edit Profile button now navigates to a working screen — Share button still a no-op, deferred)
+- **Tech debt partially closed**: TD-40 (`SupabaseUserRepository` adds `setBiography` + `getEditableProfile` — 16 stubs remain)
+- **Photo-upload bug fix**: `pickAvatarImage` / `pickPostImages` were uploading **0-byte files** on iOS — `fetch(file://uri).blob()` returns empty / partial Blobs in many SDK 54 builds. Both pipelines now go through `ImageManipulator({ base64: true })` + `base64ToUint8Array` (new `src/services/mediaEncoding.ts`) and upload raw bytes. The user's "I picked an image but profile photo stayed empty" bug is the visible symptom.
+- **New screen**: `app/edit-profile.tsx` (180 LOC) + `src/components/EditProfileAvatar.tsx` (77 LOC). Pre-fills via `getEditableProfile`; saves via `UpdateProfileUseCase` (Hebrew validation messages for `invalid_display_name` / `biography_too_long` / `biography_url_forbidden` / `invalid_city`). Avatar replace/remove uses the same pickAvatarImage path as onboarding.
+- **Routing**: `app/_layout.tsx` registers `<Stack.Screen name="edit-profile">` with `detailHeader` and `'עריכת פרופיל'` title. `(tabs)/profile.tsx` "ערוך פרופיל" button now `router.push('/edit-profile')`.
+- **Open gaps**: full FR-PROFILE-007 — read-only email/phone/SSO display (AC2), URL regex still inline (configurable list per spec is post-MVP), atomic single-statement `update()` deferred to P2.4. UpdateProfileUseCase makes 1–3 sequential setX calls instead of one transaction.
+
+---
+
 ### 🟢 TD-110 — iOS image-picker permission UX + native rebuild
 - **SRS**: FR-AUTH-011 AC5 (errors recoverable) — strengthened to "no silent denials"; FR-POST-005 (image upload) — same UX
 - **Branch**: `fix/TD-110-image-permission-rebuild` · 2026-05-09

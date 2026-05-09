@@ -16,6 +16,7 @@ import {
   CompleteBasicInfoUseCase,
   CompleteOnboardingUseCase,
   SetAvatarUseCase,
+  UpdateProfileUseCase,
   type ICityRepository,
   type IUserRepository,
 } from '@kc/application';
@@ -26,6 +27,7 @@ let _cityRepo: ICityRepository | null = null;
 let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
 let _completeOnboarding: CompleteOnboardingUseCase | null = null;
 let _setAvatar: SetAvatarUseCase | null = null;
+let _updateProfile: UpdateProfileUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -66,6 +68,18 @@ export function getSetAvatarUseCase(): SetAvatarUseCase {
     _setAvatar = new SetAvatarUseCase(getUserRepo());
   }
   return _setAvatar;
+}
+
+export function getUpdateProfileUseCase(): UpdateProfileUseCase {
+  if (!_updateProfile) {
+    _updateProfile = new UpdateProfileUseCase(getUserRepo());
+  }
+  return _updateProfile;
+}
+
+/** FR-PROFILE-007: read editable fields for the Edit Profile form. */
+export function getEditableProfile(userId: string) {
+  return getUserRepo().getEditableProfile(userId);
 }
 
 /** Read state directly through the repo — used by AuthGate before routing. */

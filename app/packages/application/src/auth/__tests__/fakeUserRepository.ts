@@ -13,6 +13,7 @@ interface Row {
   cityName: string;
   onboardingState: OnboardingState;
   avatarUrl?: string | null;
+  biography?: string | null;
 }
 
 export interface FakeUserRepo extends IUserRepository {
@@ -82,6 +83,25 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         onboardingState: 'pending_basic_info' as OnboardingState,
       };
       rows.set(userId, { ...row, avatarUrl });
+    },
+    async setBiography(userId, biography) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, biography });
+    },
+    async getEditableProfile(userId) {
+      const row = rows.get(userId);
+      if (!row) throw new Error(`fakeUserRepo: no row for userId=${userId}`);
+      return {
+        displayName: row.displayName,
+        city: row.city,
+        cityName: row.cityName,
+        biography: row.biography ?? null,
+      };
     },
   };
 }

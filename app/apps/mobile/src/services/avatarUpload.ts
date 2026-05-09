@@ -9,6 +9,7 @@ import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { PickedImage } from './imageUpload';
+import { base64ToUint8Array } from './mediaEncoding';
 
 const AVATAR_RESIZE_EDGE = 1024;
 const COMPRESS = 0.85;
@@ -87,10 +88,11 @@ export async function pickAvatarImage(source: AvatarSource): Promise<PickedImage
 }
 
 /**
- * Square center-crop the picked image then resize to size×size and JPEG-encode.
- * Returns a Blob ready for Supabase Storage.
+ * Square center-crop the picked image, resize to size×size, JPEG-encode, and
+ * return raw bytes (avoids the unreliable `fetch(file://).blob()` path — see
+ * `mediaEncoding.ts` for context).
  */
-async function squareCropAndResize(picked: PickedImage, size: number): Promise<Blob> {
+async function squareCropAndResize(picked: PickedImage, size: number): Promise<Uint8Array> {
   const side = Math.min(picked.width, picked.height);
   const originX = Math.max(0, Math.round((picked.width - side) / 2));
   const originY = Math.max(0, Math.round((picked.height - side) / 2));
@@ -100,10 +102,10 @@ async function squareCropAndResize(picked: PickedImage, size: number): Promise<B
       { crop: { originX, originY, width: side, height: side } },
       { resize: { width: size, height: size } },
     ],
-    { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG },
+    { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG, base64: true },
   );
-  const response = await fetch(m.uri);
-  return response.blob();
+  if (!m.base64) throw new Error('avatar_resize: manipulator returned no base64 payload');
+  return base64ToUint8Array(m.base64);
 }
 
 /**
@@ -114,12 +116,12 @@ async function squareCropAndResize(picked: PickedImage, size: number): Promise<B
  */
 export async function resizeAndUploadAvatar(picked: PickedImage, userId: string): Promise<string> {
   if (!userId) throw new Error('resizeAndUploadAvatar: userId is required');
-  const blob = await squareCropAndResize(picked, AVATAR_RESIZE_EDGE);
+  const bytes = await squareCropAndResize(picked, AVATAR_RESIZE_EDGE);
   const path = `${userId}/avatar.jpg`;
   const client = getSupabaseClient();
   const { error } = await client.storage
     .from(AVATAR_BUCKET)
-    .upload(path, blob, { contentType: 'image/jpeg', upsert: true });
+    .upload(path, bytes, { contentType: 'image/jpeg', upsert: true });
   if (error) throw new Error(`avatar_upload: ${error.message}`);
   const { data } = client.storage.from(AVATAR_BUCKET).getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;

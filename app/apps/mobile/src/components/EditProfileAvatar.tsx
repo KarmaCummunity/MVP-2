@@ -1,0 +1,77 @@
+// FR-PROFILE-007 — avatar editor block for the Edit Profile screen.
+// Owns the local upload state + PhotoSourceSheet so the parent screen stays
+// focused on form orchestration. The parent receives the new URL (or null)
+// via `onChange` and is responsible for persisting on Save.
+import React, { useState } from 'react';
+import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { colors, spacing, typography } from '@kc/ui';
+import { AvatarInitials } from './AvatarInitials';
+import { PhotoSourceSheet } from './PhotoSourceSheet';
+import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../services/avatarUpload';
+
+interface Props {
+  readonly userId: string;
+  readonly displayName: string;
+  readonly avatarUrl: string | null;
+  readonly disabled?: boolean;
+  readonly onChange: (next: string | null) => void;
+}
+
+export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, onChange }: Props) {
+  const [sheetVisible, setSheetVisible] = useState(false);
+  const [uploading, setUploading] = useState(false);
+  const busy = !!disabled || uploading;
+
+  const handlePick = async (source: AvatarSource) => {
+    setSheetVisible(false);
+    setUploading(true);
+    try {
+      const picked = await pickAvatarImage(source);
+      if (!picked) return;
+      const url = await resizeAndUploadAvatar(picked, userId);
+      onChange(url);
+    } catch (err) {
+      Alert.alert('העלאת התמונה נכשלה', err instanceof Error ? err.message : 'נסה שוב.');
+    } finally {
+      setUploading(false);
+    }
+  };
+
+  const handleRemove = () => {
+    setSheetVisible(false);
+    onChange(null); // staged — persisted on Save
+  };
+
+  return (
+    <View style={styles.wrap}>
+      <TouchableOpacity
+        onPress={() => !busy && setSheetVisible(true)}
+        disabled={busy}
+        accessibilityRole="button"
+        accessibilityLabel={avatarUrl ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
+      >
+        <AvatarInitials name={displayName || 'משתמש'} avatarUrl={avatarUrl} size={104} />
+        {uploading && (
+          <View style={styles.spinner}><ActivityIndicator color={colors.textInverse} /></View>
+        )}
+      </TouchableOpacity>
+      <Text style={styles.hint}>{avatarUrl ? 'החלף תמונה' : 'הוסף תמונה'}</Text>
+      <PhotoSourceSheet
+        visible={sheetVisible}
+        canRemove={!!avatarUrl}
+        onPick={handlePick}
+        onRemove={handleRemove}
+        onClose={() => setSheetVisible(false)}
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  wrap: { alignItems: 'center', marginVertical: spacing.base, gap: spacing.sm },
+  spinner: {
+    position: 'absolute', width: 104, height: 104, borderRadius: 52,
+    backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center',
+  },
+  hint: { ...typography.caption, color: colors.primary },
+});

@@ -107,6 +107,7 @@ export default function RootLayout() {
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="auth/callback" />
                     <Stack.Screen name="settings" />
+                    <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
                     <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
                     <Stack.Screen name="user/[handle]" options={{ ...detailHeader, headerTitle: 'פרופיל' }} />
                     <Stack.Screen name="chat/[id]" options={detailHeader} />

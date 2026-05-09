@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (TD-110 — iOS image-picker permission UX + native iOS rebuild for missing `NSPhotoLibrary`/`NSCameraUsageDescription`. Earlier today: D-16 Donations + Search tabs reintroduced into MVP — new SRS `FR-DONATE-001..005` ([`13_donations.md`](./SRS/02_functional_requirements/13_donations.md)) + `FR-FEED-016`, `FR-CHAT-008 AC1` extended with 4th entry-point, PRD §5.1/§5.2/§5.3 + §6.1/§6.4 updated, design spec at [`docs/superpowers/specs/2026-05-09-donations-and-search-tabs-design.md`](../superpowers/specs/2026-05-09-donations-and-search-tabs-design.md). TD-109 emoji→Ionicons, P0.3+P0.4 audit, FR-POST-015 AC1 fix, TD-100..108 logged.) |
+| **Last Updated** | 2026-05-09 (FR-PROFILE-007 partial — Edit Profile screen + photo-upload encoding fix (`base64 → Uint8Array` replaces unreliable `fetch(file://).blob()` on iOS). TD-106 closed. Earlier today: TD-110 permission UX + iOS rebuild, D-16 Donations + Search tabs (FR-DONATE-001..005, FR-FEED-016), TD-109 emoji→Ionicons, P0.3+P0.4 audit + FR-POST-015 AC1 fix.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
