@@ -1,24 +1,37 @@
 // Home Feed — wired to IPostRepository (P0.4-FE).
 // Mapped to: FR-FEED-001, 002, 003 (basic), 004, 005, 013.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  Image, StyleSheet, Text, TextInput, TouchableOpacity, View,
+  StyleSheet, Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { PostFeedList } from '../../src/components/PostFeedList';
+import { TopBar } from '../../src/components/TopBar';
 import { useFilterStore } from '../../src/store/filterStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { getFeedUseCase } from '../../src/services/postsComposition';
 
 export default function HomeFeedScreen() {
   const router = useRouter();
+  const params = useLocalSearchParams<{ published?: string }>();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
+
+  // Brief success banner after publish (web — Alert.alert is unreliable in RN-Web).
+  const [publishedToast, setPublishedToast] = useState(false);
+  useEffect(() => {
+    if (params.published !== '1') return;
+    setPublishedToast(true);
+    const t = setTimeout(() => setPublishedToast(false), 2200);
+    // Clear the query param so a refresh doesn't re-fire the toast.
+    router.setParams({ published: undefined });
+    return () => clearTimeout(t);
+  }, [params.published, router]);
 
   // useShallow: object-returning selectors must use shallow equality so the
   // result reference is stable across renders (Zustand v5 + React 19 strict
@@ -48,15 +61,14 @@ export default function HomeFeedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
-      <View style={styles.topBar}>
-        <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/chat/')}>
-          <Ionicons name="chatbubbles-outline" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Image source={require('../../assets/logo.png')} style={styles.topBarLogo} resizeMode="contain" />
-        <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings')}>
-          <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-      </View>
+      <TopBar />
+
+      {publishedToast && (
+        <View style={styles.toast}>
+          <Ionicons name="checkmark-circle" size={18} color={colors.textInverse} />
+          <Text style={styles.toastText}>הפוסט שלך פורסם!</Text>
+        </View>
+      )}
 
       <View style={styles.searchRow}>
         <View style={styles.searchInput}>
@@ -108,13 +120,6 @@ export default function HomeFeedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  topBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
-  topBarLogo: { height: 36, width: 36 },
-  iconBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   searchRow: {
     flexDirection: 'row', alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
@@ -139,4 +144,14 @@ const styles = StyleSheet.create({
     justifyContent: 'center', alignItems: 'center',
   },
   filterBadgeText: { ...typography.caption, color: colors.textInverse, fontSize: 10 },
+  toast: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.sm,
+    backgroundColor: colors.primary,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+  },
+  toastText: { ...typography.body, color: colors.textInverse, fontWeight: '600' as const },
 });

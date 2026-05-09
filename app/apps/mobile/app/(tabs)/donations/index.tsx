@@ -8,6 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, spacing, typography } from '@kc/ui';
 import { Text } from 'react-native';
 import { DonationTile } from '../../../src/components/DonationTile';
+import { TopBar } from '../../../src/components/TopBar';
 
 export default function DonationsHubScreen() {
   const router = useRouter();
@@ -15,6 +16,7 @@ export default function DonationsHubScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TopBar />
       <ScrollView contentContainerStyle={styles.scroll}>
         <Text style={styles.title}>{t('donations.hubTitle')}</Text>
         <View style={styles.tiles}>

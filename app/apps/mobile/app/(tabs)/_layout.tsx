@@ -4,14 +4,15 @@
 // Both bars use Ionicons (TD-109) — emoji literals were unreliable on iOS
 // simulator (Apple Color Emoji glyph cache) and produced tofu boxes.
 // Mapped to: SRS §6.1 — 5 tabs (RTL: Profile | Search | Plus | Donations | Home), per D-16.
-// FR-CHAT-012: ChatBadge rendered in Home tab header right slot.
+// FR-CHAT-012: ChatBadge rendered inside the per-screen <TopBar /> which each
+// tab includes via SafeAreaView (Home/Profile/Donations). The native Tabs
+// header is kept hidden so we don't double-render.
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { colors, shadow } from '@kc/ui';
-import { ChatBadge } from '../../src/components/ChatBadge';
 
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
@@ -77,10 +78,6 @@ export default function TabsLayout() {
       <Tabs.Screen
         name="index"
         options={{
-          headerShown: true,
-          headerTitle: '',
-          headerStyle: { backgroundColor: colors.surface },
-          headerRight: () => <ChatBadge />,
           tabBarIcon: ({ focused }) => (
             <TabBarIcon focused={focused} name={{ active: 'home', inactive: 'home-outline' }} />
           ),

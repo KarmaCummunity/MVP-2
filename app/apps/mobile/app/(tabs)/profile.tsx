@@ -14,6 +14,7 @@ import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import { CATEGORY_LABELS } from '@kc/domain';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { EmptyState } from '../../src/components/EmptyState';
+import { TopBar } from '../../src/components/TopBar';
 import { useAuthStore } from '../../src/store/authStore';
 import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
 
@@ -46,15 +47,10 @@ export default function ProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
+      <TopBar />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.topBar}>
+        <View style={styles.sectionHeader}>
           <Text style={styles.topBarTitle}>הפרופיל שלי</Text>
-          <TouchableOpacity
-            style={styles.iconBtn}
-            onPress={() => router.push('/settings')}
-          >
-            <Ionicons name="settings-outline" size={22} color={colors.textPrimary} />
-          </TouchableOpacity>
         </View>
 
         <View style={styles.profileCard}>
@@ -162,6 +158,11 @@ const statStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  sectionHeader: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.sm,
+  },
   topBar: {
     flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,

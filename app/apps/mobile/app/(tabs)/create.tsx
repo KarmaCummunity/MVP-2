@@ -3,7 +3,7 @@
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -139,11 +139,23 @@ export default function CreatePostScreen() {
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
-      Alert.alert('✅ הפוסט שלך פורסם!', '', [{ text: 'אוקיי', onPress: () => router.replace('/(tabs)') }]);
+      // Web: Alert.alert renders as window.confirm in RN-Web and is often
+      // invisible inside iframe previews. Navigate immediately and surface
+      // success via a query param the feed reads to flash a toast banner.
+      if (Platform.OS === 'web') {
+        router.replace('/(tabs)?published=1');
+      } else {
+        Alert.alert('✅ הפוסט שלך פורסם!', '', [{ text: 'אוקיי', onPress: () => router.replace('/(tabs)') }]);
+      }
     },
     onError: (err) => {
       const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
-      Alert.alert('פרסום נכשל', message);
+      if (Platform.OS === 'web') {
+        // eslint-disable-next-line no-alert
+        window.alert(`פרסום נכשל: ${message}`);
+      } else {
+        Alert.alert('פרסום נכשל', message);
+      }
     },
   });
 

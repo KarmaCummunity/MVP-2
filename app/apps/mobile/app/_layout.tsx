@@ -111,7 +111,8 @@ export default function RootLayout() {
                     <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
                     <Stack.Screen name="user/[handle]" options={{ ...detailHeader, headerTitle: 'פרופיל' }} />
                     <Stack.Screen name="chat/[id]" options={detailHeader} />
-                    <Stack.Screen name="chat/index" options={{ ...detailHeader, headerTitle: 'הודעות' }} />
+                    {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
+                    <Stack.Screen name="chat/index" options={{ headerShown: false }} />
                   </Stack>
                 </ShellWithTabBar>
               </SoftGateProvider>
