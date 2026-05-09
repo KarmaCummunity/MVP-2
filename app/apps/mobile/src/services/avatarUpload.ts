@@ -4,7 +4,7 @@
 // → upload to `avatars` bucket at <userId>/avatar.jpg → return public URL.
 // ─────────────────────────────────────────────
 
-import { Platform } from 'react-native';
+import { Alert, Linking, Platform } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -20,6 +20,44 @@ export type AvatarSource = 'camera' | 'gallery';
 export const isCameraAvailable = Platform.OS !== 'web';
 
 /**
+ * If the OS-level permission was permanently denied (`canAskAgain === false`),
+ * surface an actionable alert that opens iOS / Android Settings. If denied but
+ * the system can still prompt next time, return false silently — the next tap
+ * triggers the system sheet again.
+ *
+ * Returns `true` when the caller may proceed (granted or limited).
+ */
+async function ensureMediaLibraryPermission(): Promise<boolean> {
+  const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (result.granted) return true;
+  if (result.canAskAgain) return false;
+  Alert.alert(
+    'גישה לגלריה נדחתה',
+    'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קארמה קהילה → תמונות.',
+    [
+      { text: 'ביטול', style: 'cancel' },
+      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
+    ],
+  );
+  return false;
+}
+
+async function ensureCameraPermission(): Promise<boolean> {
+  const result = await ImagePicker.requestCameraPermissionsAsync();
+  if (result.granted) return true;
+  if (result.canAskAgain) return false;
+  Alert.alert(
+    'גישה למצלמה נדחתה',
+    'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קארמה קהילה → מצלמה.',
+    [
+      { text: 'ביטול', style: 'cancel' },
+      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
+    ],
+  );
+  return false;
+}
+
+/**
  * FR-AUTH-011 AC1: pick a single image from the camera or the gallery.
  * Returns null on cancel / permission denial / camera-on-web.
  *
@@ -32,21 +70,19 @@ export async function pickAvatarImage(source: AvatarSource): Promise<PickedImage
   const mediaTypes = ['images'] as ImagePicker.MediaType[]; // SDK 54 array form
   if (source === 'camera') {
     if (!isCameraAvailable) return null;
-    const perm = await ImagePicker.requestCameraPermissionsAsync();
-    if (!perm.granted) return null;
+    if (!(await ensureCameraPermission())) return null;
     const r = await ImagePicker.launchCameraAsync({ mediaTypes, quality: 1, exif: false });
     if (r.canceled) return null;
-    const a = r.assets[0];
+    const a = r.assets[0]!;
     return { uri: a.uri, width: a.width, height: a.height, fileSize: a.fileSize ?? null };
   }
 
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return null;
+  if (!(await ensureMediaLibraryPermission())) return null;
   const r = await ImagePicker.launchImageLibraryAsync({
     mediaTypes, allowsMultipleSelection: false, quality: 1, exif: false,
   });
   if (r.canceled) return null;
-  const a = r.assets[0];
+  const a = r.assets[0]!;
   return { uri: a.uri, width: a.width, height: a.height, fileSize: a.fileSize ?? null };
 }
 

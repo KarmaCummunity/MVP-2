@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (TD-109 — emoji literals replaced with Ionicons across TabBar + (tabs)/_layout + EmptyState; iOS-simulator tofu rendering fixed. Earlier today: P0.3+P0.4 audit, FR-POST-015 AC1 owner-mode CTA fix, TD-100..108 logged.) |
+| **Last Updated** | 2026-05-09 (TD-110 — iOS image-picker permission UX + native iOS rebuild for missing `NSPhotoLibrary`/`NSCameraUsageDescription`. Earlier today: D-16 Donations + Search tabs reintroduced into MVP — new SRS `FR-DONATE-001..005` ([`13_donations.md`](./SRS/02_functional_requirements/13_donations.md)) + `FR-FEED-016`, `FR-CHAT-008 AC1` extended with 4th entry-point, PRD §5.1/§5.2/§5.3 + §6.1/§6.4 updated, design spec at [`docs/superpowers/specs/2026-05-09-donations-and-search-tabs-design.md`](../superpowers/specs/2026-05-09-donations-and-search-tabs-design.md). TD-109 emoji→Ionicons, P0.3+P0.4 audit, FR-POST-015 AC1 fix, TD-100..108 logged.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -82,6 +82,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P1.4 | Block / unblock + visibility restoration | FR-MOD-009, 010 | ⏳ Planned | |
 | P1.5 | Push notifications (Critical + Social) | FR-NOTIF-001…006 | ⏳ Planned | |
 | P1.6 | Personal & community stats | FR-STATS-001…004 | ⏳ Planned | |
+| P1.7 | Donations Hub + Search tab placeholder + 5-tab bottom bar | FR-DONATE-001…005, FR-FEED-016, FR-CHAT-008 (extended) | 🟡 In progress (this work) | Per `D-16` (2026-05-09). Light FE-only change; volunteer-message use-case reuses existing `FR-CHAT-007` admin thread. **Note:** while P0.5 chat is still mock-backed, the Time composer routes through the same ports — when P0.5 lands, no changes needed here. |
 
 ### 📊 P2 — Polish
 
@@ -92,6 +93,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P2.3 | Forgot password (email) | FR-AUTH-008 | ⏳ Planned |
 | P2.4 | Edit profile, privacy mode toggle | FR-PROFILE-001…007 | ⏳ Planned |
 | P2.5 | Super-admin in-chat moderation | FR-ADMIN-001…003 | ⏳ Planned |
+| P2.6 | Universal search engine (people + items + future categories) | `FR-FEED-017+` (TBD) | ⏳ Planned | Replaces the Search-tab placeholder (`FR-FEED-016`). Spec to be authored when prioritized. End-of-MVP scope per `D-16`. |
 
 ### 💎 P3 — Additional auth methods
 
@@ -114,7 +116,8 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
-| Up next | **P0.5 — Direct chat with realtime** | — | — | — |
+| In progress | **P1.7 — Donations + Search tabs (D-16)** | — | 2026-05-09 | — |
+| Up next | P0.5 — Direct chat with realtime | — | — | — |
 | Then | P0.6 — Closure flow | — | — | — |
 
 Most recently shipped: **TD-109** (emoji → Ionicons across tab bar + EmptyState, fixes iOS-simulator tofu — 2026-05-09). Full log in [`HISTORY.md`](./HISTORY.md).
@@ -132,6 +135,7 @@ Mirror of [`SRS/appendices/C_decisions_log.md`](./SRS/appendices/C_decisions_log
 | EXEC-3 | Vitest chosen as the unit-test runner for `@kc/domain` and `@kc/application` (lightweight, native ESM, fast) | P0.1 | 2026-05-06 |
 | EXEC-4 | Adopted parallel-agents coordination protocol (lanes, draft-PR claim mechanism, `(contract)` scope rule, TD-N range split, tiebreakers). Spec at `docs/superpowers/specs/2026-05-07-parallel-agents-coordination-design.md`; pointer in `CLAUDE.md` | Two-agent setup | 2026-05-07 |
 | EXEC-5 | Doc structure: `PROJECT_STATUS.md` is the live execution dashboard (≤120 lines); `HISTORY.md` is append-only feature log; `TECH_DEBT.md` is the active debt register grouped by area. CLAUDE.md points to all three | Doc cleanup | 2026-05-08 |
+| D-16 | Reintroduce dedicated **Donations** and **Search** tabs in the bottom bar (5 tabs total). Search ships as a placeholder (`FR-FEED-016`); universal-search engine deferred to P2.6. Donations Hub ships fully (`FR-DONATE-001..005`); Time + Money are coming-soon screens with external partner links + volunteer-message composer wired to `FR-CHAT-007`. | Product | 2026-05-09 |
 
 ---
 

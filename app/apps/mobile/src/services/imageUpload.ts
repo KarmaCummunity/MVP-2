@@ -6,6 +6,7 @@
 // Avatar pipeline lives in ./avatarUpload.ts.
 // ─────────────────────────────────────────────
 
+import { Alert, Linking } from 'react-native';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as Crypto from 'expo-crypto';
@@ -30,6 +31,26 @@ export interface UploadedAsset extends MediaAssetInput {
 }
 
 /**
+ * If permission is permanently denied (`canAskAgain === false`), surface an
+ * actionable alert that opens iOS / Android Settings. Returns true when the
+ * caller may proceed.
+ */
+async function ensureMediaLibraryPermission(): Promise<boolean> {
+  const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
+  if (result.granted) return true;
+  if (result.canAskAgain) return false;
+  Alert.alert(
+    'גישה לגלריה נדחתה',
+    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קארמה קהילה → תמונות.',
+    [
+      { text: 'ביטול', style: 'cancel' },
+      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
+    ],
+  );
+  return false;
+}
+
+/**
  * FR-POST-005 AC2: picks up to (MAX - already) images from the gallery.
  * Returns [] if the user cancels or denies permission.
  */
@@ -37,8 +58,7 @@ export async function pickPostImages(alreadyPicked: number): Promise<PickedImage
   const remaining = Math.max(0, MAX_MEDIA_ASSETS - alreadyPicked);
   if (remaining === 0) return [];
 
-  const perm = await ImagePicker.requestMediaLibraryPermissionsAsync();
-  if (!perm.granted) return [];
+  if (!(await ensureMediaLibraryPermission())) return [];
 
   const result = await ImagePicker.launchImageLibraryAsync({
     mediaTypes: ['images'] as ImagePicker.MediaType[], // SDK 54 array form
