@@ -6,6 +6,20 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 Create-post end-to-end fix (FR-POST-001..004 / FR-POST-019 AC1)
+- **SRS**: FR-POST-001 (create), FR-POST-002 AC3 (canonical address) + AC4 (disabled-until-valid Publish), FR-POST-003 AC3 (locationDisplayLevel chooser), FR-POST-004 AC2 (Request can attach optional images), FR-POST-019 AC1 (city is canonical)
+- **Branch**: `fix/FR-POST-001-fe-create-post-e2e` · 2026-05-09
+- **Tests**: tsc clean (5 packages) · 68 vitest passing (+3 in `CreatePostUseCase` for `street_number` cases) · `pnpm lint:arch` 123 files passing
+- **Tech debt closed**: TD-101 (city free-text → `<CityPicker>`), TD-103 (Request couldn't attach images), TD-104 (locationDisplayLevel chooser), TD-105 (Publish enabled with empty fields)
+- **Bug fix**: every publish (Give and Request) was returning **400 Bad Request** from `POST /rest/v1/posts`. Root cause was the create form posting free-typed Hebrew text into `posts.city`, which is `text not null references public.cities(city_id)` — a 1,306-row seeded slug table. The FK check rejected the insert before RLS even ran. Secondary risk: `street_number` CHECK regex (`^[0-9]+[A-Za-z]?$`) would also fail on Hebrew letters or punctuation.
+- **Domain**: new `STREET_NUMBER_PATTERN` regex constant mirrors the DB CHECK so the pattern lives in one place.
+- **Application**: `CreatePostUseCase` now validates `streetNumber` against `STREET_NUMBER_PATTERN` before the network call. New `PostErrorCode`s — `street_number_invalid`, `city_not_found`, `address_invalid`, `forbidden` — surface DB constraint failures as Hebrew messages instead of generic "שגיאת רשת" toasts.
+- **Infra**: extracted `mapInsertError()` (own file — keeps `SupabasePostRepository` under TD-50 size cap) translates Postgres error codes 23502/23503/23514/42501 into typed `PostError` instances.
+- **UI**: `(tabs)/create.tsx` swaps the city `<TextInput>` for the canonical `<CityPicker>` (already used by `basic-info.tsx` / `edit-profile.tsx`); city state shape becomes `{ id, name } | null`. New `<LocationDisplayLevelChooser>` component (CityOnly / CityAndStreet / FullAddress) replaces the hardcoded `'CityAndStreet'`. `<PhotoPicker>` no longer guarded by `isGive` — Request may attach 0–5 optional images. `isFormValid` derived from required fields disables Publish (visibly dimmed at 0.5 opacity) until ready.
+- **Open gaps**: browser end-to-end verification was limited — auth-gated route prevented automated publishing without test credentials. Code paths verified via tsc + 68 vitest + arch-lint; user to confirm publish in their authenticated session.
+
+---
+
 ### 🟢 FR-PROFILE-007 (partial) — Edit Profile + photo-upload encoding fix
 - **SRS**: FR-PROFILE-007 AC1 (avatar / display_name / city / biography editable), AC3 (bio URL filter)
 - **Branch**: `fix/TD-110-photo-upload-and-edit-profile` · 2026-05-09
