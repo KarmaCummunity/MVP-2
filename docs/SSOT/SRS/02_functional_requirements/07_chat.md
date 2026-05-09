@@ -174,7 +174,7 @@ A chat cannot be opened "out of the blue" from arbitrary surfaces.
 - Constraints: `R-MVP-Chat-3`.
 
 **Acceptance Criteria.**
-- AC1. The only valid entry points to a new chat are: (a) Post Detail (`FR-CHAT-005`), (b) Other Profile (`FR-CHAT-006`), (c) Settings → Report an Issue (`FR-CHAT-007`).
+- AC1. The only valid entry points to a new chat are: (a) Post Detail (`FR-CHAT-005`), (b) Other Profile (`FR-CHAT-006`), (c) Settings → Report an Issue (`FR-CHAT-007`), **(d) Donations · Time → Volunteer Message Composer (`FR-DONATE-004`)** — this entry-point routes to the same Super Admin support thread as (c) (`is_support_thread = true`); it does not create a duplicate thread. **MVP-core deferral:** until P0.5 chat ships, the Donations · Time composer stores intent locally (see `FR-DONATE-004` AC3 / TD-114) and shows a success alert; it does not navigate to chat.
 - AC2. There is no "Compose new chat" button anywhere in the app.
 - AC3. Resuming an existing chat is allowed from the Inbox (`FR-CHAT-001`).
 
@@ -275,3 +275,4 @@ When one party deletes their account, the other party retains the thread with a 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.4 and Decisions D-11, D-14. |
+| 0.2 | 2026-05-09 | Extended `FR-CHAT-008 AC1` with 4th entry-point (Donations · Time) per `D-16` / `FR-DONATE-004`. |

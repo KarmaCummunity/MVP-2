@@ -63,6 +63,7 @@ Mapped to SRS: [Requirement ID]. Refactor logged: [Yes / No / NA].
 | Personal & Community Stats | [`02_functional_requirements/10_statistics.md`](./SRS/02_functional_requirements/10_statistics.md) | `FR-STATS-*` |
 | Settings | [`02_functional_requirements/11_settings.md`](./SRS/02_functional_requirements/11_settings.md) | `FR-SETTINGS-*` |
 | Super Admin (in-chat) | [`02_functional_requirements/12_super_admin.md`](./SRS/02_functional_requirements/12_super_admin.md) | `FR-ADMIN-*` |
+| Donations Hub | [`02_functional_requirements/13_donations.md`](./SRS/02_functional_requirements/13_donations.md) | `FR-DONATE-*` |
 
 ### Part III — Domain Model
 
@@ -129,6 +130,7 @@ The following architectural and product decisions are **fixed** for the MVP. The
 | D-13 | False-report sanctions escalate: 7 days → 30 days → permanent | Product |
 | D-14 | Deleted account leaves chat history visible to the other party with a "Deleted user" placeholder | Product |
 | D-15 | Empty states are warm and CTA-driven (not neutral) across feed, chat list, follower list, my-posts | Product |
+| D-16 | Reintroduce dedicated **Donations** and **Search** tabs in the bottom bar (5 tabs total). Search ships as a placeholder; universal-search engine deferred to end-of-MVP. | Product / Navigation |
 
 ---
 

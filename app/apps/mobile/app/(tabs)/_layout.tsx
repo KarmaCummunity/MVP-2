@@ -3,7 +3,7 @@
 // look-alike bar is rendered globally at the root layout via <TabBar />.
 // Both bars use Ionicons (TD-109) — emoji literals were unreliable on iOS
 // simulator (Apple Color Emoji glyph cache) and produced tofu boxes.
-// Mapped to: SRS §6.1 — 3 tabs (RTL: Profile | Plus | Home), icon-only side tabs.
+// Mapped to: SRS §6.1 — 5 tabs (RTL: Profile | Search | Plus | Donations | Home), per D-16.
 import React from 'react';
 import { Tabs } from 'expo-router';
 import { View, StyleSheet, Text } from 'react-native';
@@ -43,7 +43,7 @@ export default function TabsLayout() {
         tabBarShowLabel: false,
       }}
     >
-      {/* RTL order: Profile (right) | Plus (center) | Home (left) */}
+      {/* RTL order: Profile (right) | Search | Plus (center) | Donations | Home (left) */}
       <Tabs.Screen
         name="profile"
         options={{
@@ -53,8 +53,24 @@ export default function TabsLayout() {
         }}
       />
       <Tabs.Screen
+        name="search"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} name={{ active: 'search', inactive: 'search-outline' }} />
+          ),
+        }}
+      />
+      <Tabs.Screen
         name="create"
         options={{ tabBarIcon: ({ focused }) => <PlusTabIcon focused={focused} /> }}
+      />
+      <Tabs.Screen
+        name="donations"
+        options={{
+          tabBarIcon: ({ focused }) => (
+            <TabBarIcon focused={focused} name={{ active: 'heart', inactive: 'heart-outline' }} />
+          ),
+        }}
       />
       <Tabs.Screen
         name="index"

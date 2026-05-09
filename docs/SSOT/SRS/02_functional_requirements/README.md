@@ -22,6 +22,7 @@ This part defines **what the system must do** in user-observable terms. Each fun
 | 2.10 | [`10_statistics.md`](./10_statistics.md) | `FR-STATS-*` | Personal stat counters, community stats, activity timeline. |
 | 2.11 | [`11_settings.md`](./11_settings.md) | `FR-SETTINGS-*` | Settings screen, account info, privacy controls, blocked users, support, legal, logout, account deletion. |
 | 2.12 | [`12_super_admin.md`](./12_super_admin.md) | `FR-ADMIN-*` | In-chat moderation surface, restore-on-system-message, manual ban / delete. |
+| 2.13 | [`13_donations.md`](./13_donations.md) | `FR-DONATE-*` | Donations Hub (3 tiles), Money/Time sub-screens with external partner links, volunteer-message composer. |
 
 ## Reading conventions
 

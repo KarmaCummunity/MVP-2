@@ -1,7 +1,10 @@
 // ─────────────────────────────────────────────
 // Hebrew translations — Karma Community
 // Mapped to: R-MVP-Core-4 (עברית בלבד ב-MVP)
+// Domains split into separate files to keep this file under its size budget (TD-35).
 // ─────────────────────────────────────────────
+
+import { donations, search } from './donations';
 
 const he = {
   // App
@@ -181,6 +184,12 @@ const he = {
     communityDelivered: 'חפצים שנמסרו',
     recentActivity: 'פעילות אחרונה',
   },
+
+  // Donations (D-16, FR-DONATE-001..005) — see donations.ts
+  donations,
+
+  // Search (D-16, FR-FEED-016) — see donations.ts
+  search,
 
   // General
   general: {

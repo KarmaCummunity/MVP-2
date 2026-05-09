@@ -284,6 +284,27 @@ The guest overlay and the feed empty state may include an "X active posts in the
 
 ---
 
+## FR-FEED-016 — Search hub placeholder
+
+**Description.**
+The dedicated Search tab in the bottom bar opens a placeholder screen that explicitly tells the user where search is available today (the Home Feed). The universal-search engine itself — across people, items, and future donation categories — is deferred to a later milestone (`FR-FEED-017+`, to be specced when prioritized).
+
+**Source.**
+- Design spec: [`docs/superpowers/specs/2026-05-09-donations-and-search-tabs-design.md`](../../../superpowers/specs/2026-05-09-donations-and-search-tabs-design.md) §5.1.
+- Decisions: `D-16`.
+
+**Acceptance Criteria.**
+- AC1. The Search tab (`🔍`) in the bottom bar mounts a screen at `/(tabs)/search`.
+- AC2. The screen shows a header *"חיפוש אוניברסלי בקרוב"* and body *"בנתיים, חיפוש פוסטים זמין ישירות בפיד הראשי."*
+- AC3. A secondary CTA labeled *"עבור לפיד הראשי"* navigates to `/(tabs)` (Home Feed).
+- AC4. **No active search input** is rendered. The screen must not imply that a search will execute, since the engine is not yet wired.
+- AC5. The screen is fully accessible per `NFR-A11Y-002`.
+- AC6. The in-feed search (`FR-FEED-003`) and Filter Modal (`FR-FEED-004`) are unchanged and remain the canonical search surface for posts in MVP.
+
+**Related.** Screens: 2.5 · `FR-FEED-003`, `FR-FEED-004`.
+
+---
+
 ## FR-FEED-015 — First-post nudge card
 
 **Description.**
@@ -307,3 +328,4 @@ A dismissible card on the feed prompts users who have never created a post.
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.1–§3.3.2 and Decisions D-8, D-9, D-15. |
+| 0.2 | 2026-05-09 | Added `FR-FEED-016` (Search hub placeholder) per `D-16`. |
