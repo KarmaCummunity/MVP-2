@@ -20,6 +20,7 @@ import { getCreatePostUseCase } from '../../src/services/postsComposition';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
+import { CityPicker } from '../../src/components/CityPicker';
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
@@ -37,7 +38,7 @@ export default function CreatePostScreen() {
   const [category, setCategory] = useState<Category>('Other');
   const [condition, setCondition] = useState<ItemCondition>('Good');
   const [urgency, setUrgency] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
   const [visibility, setVisibility] = useState<'Public' | 'OnlyMe'>('Public');
@@ -76,6 +77,7 @@ export default function CreatePostScreen() {
   const publish = useMutation({
     mutationFn: async () => {
       if (!ownerId) throw new Error('not_authenticated');
+      if (!city) throw new Error('city_required');
       return getCreatePostUseCase().execute({
         ownerId,
         type,
@@ -83,7 +85,7 @@ export default function CreatePostScreen() {
         title,
         description: description.trim() ? description : null,
         category,
-        address: { city, cityName: city, street, streetNumber },
+        address: { city: city.id, cityName: city.name, street, streetNumber },
         locationDisplayLevel: 'CityAndStreet',
         itemCondition: isGive ? condition : null,
         urgency: !isGive && urgency.trim() ? urgency : null,
@@ -192,14 +194,7 @@ export default function CreatePostScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>כתובת <Text style={styles.required}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            value={city}
-            onChangeText={setCity}
-            placeholder="עיר"
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-          />
+          <CityPicker value={city} onChange={setCity} disabled={isPublishing} />
           <View style={styles.streetRow}>
             <TextInput
               style={[styles.input, { flex: 2 }]}
