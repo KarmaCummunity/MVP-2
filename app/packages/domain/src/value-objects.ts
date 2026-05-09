@@ -116,6 +116,11 @@ export function createAddress(raw: {
   return { ...raw };
 }
 
+// Street number must be digits, optionally followed by a single Latin letter.
+// Mirrors the DB CHECK on `posts.street_number` in `0002_init_posts.sql`.
+// Keep these two definitions in sync.
+export const STREET_NUMBER_PATTERN = /^[0-9]+[A-Za-z]?$/;
+
 // ── Notification preferences ──────────────────
 
 export interface NotificationPreferences {
