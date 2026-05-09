@@ -6,6 +6,9 @@ export type PostErrorCode =
   | 'title_too_long'
   | 'description_too_long'
   | 'address_required'
+  | 'address_invalid'
+  | 'street_number_invalid'
+  | 'city_not_found'
   | 'image_required_for_give'
   | 'too_many_media_assets'
   | 'condition_required_for_give'
@@ -16,6 +19,7 @@ export type PostErrorCode =
   | 'invalid_visibility'
   | 'invalid_category'
   | 'invalid_location_display_level'
+  | 'forbidden'
   | 'unknown';
 
 export class PostError extends Error {

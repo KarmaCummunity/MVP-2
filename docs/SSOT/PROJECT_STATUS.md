@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (FR-PROFILE-007 partial — Edit Profile screen + photo-upload encoding fix (`base64 → Uint8Array` replaces unreliable `fetch(file://).blob()` on iOS). TD-106 closed. Earlier today: TD-110 permission UX + iOS rebuild, D-16 Donations + Search tabs (FR-DONATE-001..005, FR-FEED-016), TD-109 emoji→Ionicons, P0.3+P0.4 audit + FR-POST-015 AC1 fix.) |
+| **Last Updated** | 2026-05-09 (Create-post e2e fix + feed image rendering. Create form: `<CityPicker>` (FK 400 was blocking every publish), street_number regex validation, locationDisplayLevel chooser, optional Request images, Publish disabled-until-valid, typed Postgres-error mapping (TD-101/103/104/105 closed). Feed: `PostCardGrid` now renders the uploaded thumbnail (TD-111 closed); `PostImageCarousel` (paged + counter + dots) replaces the single-image post-detail view (TD-100 closed). Earlier today: FR-PROFILE-007 partial, TD-110 permission UX, D-16 Donations + Search tabs, TD-109 emoji→Ionicons.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -35,14 +35,14 @@ This document is the **single source of truth for project execution state**. It 
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 2 (P0.5 chat; P0.6 closure) |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` — 57 vitest passing |
-| Open tech-debt items | **38 active** (3 partial), **13 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` — 68 vitest passing |
+| Open tech-debt items | **32 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
 - Monorepo build (`pnpm typecheck` passes); `pnpm lint:arch` enforces ≤200-LOC + domain-error rules
 - Native dev builds on iOS 26 + Android API-36 + Web — all three platforms run correctly with Expo SDK 54 + expo-router 6
-- **Posts CRUD** — feed list (with filters via `filterStore`), post detail, create form with image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`
+- **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing.
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
 
 ### What is fake / stubbed

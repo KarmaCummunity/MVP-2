@@ -1,13 +1,17 @@
 // app/apps/mobile/src/components/PostCardGrid.tsx
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
+import { getSupabaseClient } from '@kc/infrastructure-supabase';
+
+const STORAGE_BUCKET = 'post-images';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 2 columns, spacing.base (16) padding on each side, spacing.sm (8) gap between columns
@@ -31,6 +35,10 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
     ? post.address.cityName
     : `${post.address.cityName}, ${post.address.street}`;
 
+  const firstImageUrl = post.mediaAssets[0]
+    ? getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(post.mediaAssets[0].path).data.publicUrl
+    : null;
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -41,9 +49,11 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
     >
       {/* Image / icon area */}
       <View style={styles.imageArea}>
-        <Text style={styles.categoryIcon}>
-          {isGive ? '🎁' : '🔍'}
-        </Text>
+        {firstImageUrl ? (
+          <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <Ionicons name={isGive ? 'gift-outline' : 'search-outline'} size={36} color={colors.textSecondary} />
+        )}
         {/* Type tag overlay */}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
@@ -78,9 +88,11 @@ const styles = StyleSheet.create({
     backgroundColor: colors.skeleton,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  categoryIcon: {
-    fontSize: 36,
+  image: {
+    width: '100%',
+    height: '100%',
   },
   typeTag: {
     position: 'absolute',

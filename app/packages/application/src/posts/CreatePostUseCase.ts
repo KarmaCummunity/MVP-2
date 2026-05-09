@@ -1,7 +1,7 @@
 /** FR-POST-001..005: validate inputs and forward to IPostRepository.create. */
 import type { CreatePostInput, IPostRepository } from '../ports/IPostRepository';
 import type { Post } from '@kc/domain';
-import { TITLE_MAX_CHARS, DESCRIPTION_MAX_CHARS, MAX_MEDIA_ASSETS } from '@kc/domain';
+import { TITLE_MAX_CHARS, DESCRIPTION_MAX_CHARS, MAX_MEDIA_ASSETS, STREET_NUMBER_PATTERN } from '@kc/domain';
 import { PostError } from './errors';
 
 export interface CreatePostOutput {
@@ -29,6 +29,9 @@ export class CreatePostUseCase {
 
     if (!input.address.city || !input.address.street || !input.address.streetNumber)
       throw new PostError('address_required', 'address_required');
+
+    if (!STREET_NUMBER_PATTERN.test(input.address.streetNumber.trim()))
+      throw new PostError('street_number_invalid', 'street_number_invalid');
 
     if (input.mediaAssets.length > MAX_MEDIA_ASSETS)
       throw new PostError('too_many_media_assets', `too_many_media_assets (>${MAX_MEDIA_ASSETS})`);

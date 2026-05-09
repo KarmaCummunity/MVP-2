@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { ALL_CATEGORIES, CATEGORY_LABELS } from '@kc/domain';
-import type { Category, ItemCondition, PostType } from '@kc/domain';
+import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
@@ -20,6 +20,8 @@ import { getCreatePostUseCase } from '../../src/services/postsComposition';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
+import { CityPicker } from '../../src/components/CityPicker';
+import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
@@ -37,9 +39,11 @@ export default function CreatePostScreen() {
   const [category, setCategory] = useState<Category>('Other');
   const [condition, setCondition] = useState<ItemCondition>('Good');
   const [urgency, setUrgency] = useState('');
-  const [city, setCity] = useState('');
+  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
+  const [locationDisplayLevel, setLocationDisplayLevel] =
+    useState<LocationDisplayLevel>('CityAndStreet');
   const [visibility, setVisibility] = useState<'Public' | 'OnlyMe'>('Public');
 
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
@@ -76,6 +80,7 @@ export default function CreatePostScreen() {
   const publish = useMutation({
     mutationFn: async () => {
       if (!ownerId) throw new Error('not_authenticated');
+      if (!city) throw new Error('city_required');
       return getCreatePostUseCase().execute({
         ownerId,
         type,
@@ -83,8 +88,8 @@ export default function CreatePostScreen() {
         title,
         description: description.trim() ? description : null,
         category,
-        address: { city, cityName: city, street, streetNumber },
-        locationDisplayLevel: 'CityAndStreet',
+        address: { city: city.id, cityName: city.name, street, streetNumber },
+        locationDisplayLevel,
         itemCondition: isGive ? condition : null,
         urgency: !isGive && urgency.trim() ? urgency : null,
         mediaAssets: uploads.map((u) => ({ path: u.path, mimeType: u.mimeType, sizeBytes: u.sizeBytes })),
@@ -104,6 +109,16 @@ export default function CreatePostScreen() {
 
   const isPublishing = publish.isPending || uploadingCount > 0;
 
+  // FR-POST-002 AC4: Publish stays disabled until required fields are populated.
+  // streetNumber regex is enforced server-side and surfaced via use-case +
+  // adapter mapping; we only block on presence here.
+  const isFormValid =
+    title.trim().length > 0 &&
+    city !== null &&
+    street.trim().length > 0 &&
+    streetNumber.trim().length > 0 &&
+    (!isGive || uploads.length > 0);
+
   // FR-AUTH-015: gate publish on onboarding_state. requestSoftGate runs publish
   // immediately if state !== pending_basic_info; otherwise opens the modal first.
   const handlePublish = () => {
@@ -118,9 +133,10 @@ export default function CreatePostScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>פוסט חדש</Text>
         <TouchableOpacity
-          style={[styles.publishBtn, isPublishing && { opacity: 0.7 }]}
+          style={[styles.publishBtn, (isPublishing || !isFormValid) && { opacity: 0.5 }]}
           onPress={handlePublish}
-          disabled={isPublishing}
+          disabled={isPublishing || !isFormValid}
+          accessibilityState={{ disabled: isPublishing || !isFormValid }}
         >
           {isPublishing ? (
             <ActivityIndicator color={colors.textInverse} size="small" />
@@ -150,16 +166,14 @@ export default function CreatePostScreen() {
           </TouchableOpacity>
         </View>
 
-        {isGive && (
-          <PhotoPicker
-            uploads={uploads}
-            isUploading={uploadingCount > 0}
-            uploadingCount={uploadingCount}
-            required={true}
-            onAdd={handlePick}
-            onRemove={handleRemove}
-          />
-        )}
+        <PhotoPicker
+          uploads={uploads}
+          isUploading={uploadingCount > 0}
+          uploadingCount={uploadingCount}
+          required={isGive}
+          onAdd={handlePick}
+          onRemove={handleRemove}
+        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>כותרת <Text style={styles.required}>*</Text></Text>
@@ -192,14 +206,7 @@ export default function CreatePostScreen() {
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>כתובת <Text style={styles.required}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            value={city}
-            onChangeText={setCity}
-            placeholder="עיר"
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-          />
+          <CityPicker value={city} onChange={setCity} disabled={isPublishing} />
           <View style={styles.streetRow}>
             <TextInput
               style={[styles.input, { flex: 2 }]}
@@ -219,6 +226,12 @@ export default function CreatePostScreen() {
             />
           </View>
         </View>
+
+        <LocationDisplayLevelChooser
+          value={locationDisplayLevel}
+          onChange={setLocationDisplayLevel}
+          disabled={isPublishing}
+        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>קטגוריה</Text>

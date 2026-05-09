@@ -120,4 +120,36 @@ describe('CreatePostUseCase', () => {
       uc.execute(baseInput({ address: { city: '', cityName: '', street: '', streetNumber: '' } })),
     ).rejects.toMatchObject({ code: 'address_required' });
   });
+
+  it('rejects street_number with Hebrew letter (FR-POST-002 AC3)', async () => {
+    const repo = new FakePostRepository();
+    const uc = new CreatePostUseCase(repo);
+    await expect(
+      uc.execute(
+        baseInput({ address: { city: 'tel-aviv', cityName: 'תל אביב', street: 'אלנבי', streetNumber: '12א' } }),
+      ),
+    ).rejects.toMatchObject({ code: 'street_number_invalid' });
+  });
+
+  it('rejects street_number with punctuation (FR-POST-002 AC3)', async () => {
+    const repo = new FakePostRepository();
+    const uc = new CreatePostUseCase(repo);
+    await expect(
+      uc.execute(
+        baseInput({ address: { city: 'tel-aviv', cityName: 'תל אביב', street: 'אלנבי', streetNumber: '12/3' } }),
+      ),
+    ).rejects.toMatchObject({ code: 'street_number_invalid' });
+  });
+
+  it('accepts street_number with digit+latin-letter suffix (FR-POST-002 AC3)', async () => {
+    const repo = new FakePostRepository();
+    repo.createResult = { ...makePostWithOwner() };
+    const uc = new CreatePostUseCase(repo);
+    await expect(
+      uc.execute(
+        baseInput({ address: { city: 'tel-aviv', cityName: 'תל אביב', street: 'אלנבי', streetNumber: '12B' } }),
+      ),
+    ).resolves.toBeDefined();
+    expect(repo.lastCreateArgs?.address.streetNumber).toBe('12B');
+  });
 });

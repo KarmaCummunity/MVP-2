@@ -1,7 +1,6 @@
 // SupabasePostRepository — adapter for IPostRepository.
 // Mapped to SRS: FR-POST-001..004, FR-POST-008..011, FR-POST-014, FR-FEED-001..005, FR-FEED-013.
 // Closure stubs (close/reopen) ship in P0.6. See PROJECT_STATUS §6 TD-13.
-// docs/SSOT/SRS/02_functional_requirements/04_posts.md
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
@@ -22,6 +21,7 @@ import {
   type PostJoinedRow,
   type PostWithOwnerJoinedRow,
 } from './mapPostRow';
+import { mapInsertError } from './mapInsertError';
 import { decodeCursor, encodeCursor } from './cursor';
 
 const NOT_IMPL = (name: string, slice: string) =>
@@ -114,7 +114,7 @@ export class SupabasePostRepository implements IPostRepository {
       })
       .select('post_id')
       .single();
-    if (insertErr) throw new Error(`create.post: ${insertErr.message}`);
+    if (insertErr) throw mapInsertError(insertErr);
     if (!insertedPost) throw new Error('create.post: no row returned');
 
     const postId = insertedPost.post_id;
