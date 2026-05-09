@@ -60,6 +60,41 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`setAvatar: ${error.message}`);
   }
 
+  async setBiography(userId: string, biography: string | null): Promise<void> {
+    const { error } = await this.client
+      .from('users')
+      .update({ biography })
+      .eq('user_id', userId);
+    if (error) throw new Error(`setBiography: ${error.message}`);
+  }
+
+  async getEditableProfile(userId: string): Promise<{
+    displayName: string;
+    city: string;
+    cityName: string;
+    biography: string | null;
+  }> {
+    const { data, error } = await this.client
+      .from('users')
+      .select('display_name, city, city_name, biography')
+      .eq('user_id', userId)
+      .single();
+    if (error) throw new Error(`getEditableProfile: ${error.message}`);
+    if (!data) throw new Error('getEditableProfile: no row');
+    const row = data as {
+      display_name: string;
+      city: string;
+      city_name: string;
+      biography: string | null;
+    };
+    return {
+      displayName: row.display_name,
+      city: row.city,
+      cityName: row.city_name,
+      biography: row.biography,
+    };
+  }
+
   // ── Methods deferred to later slices ─────────────────────────────────────
 
   async findById(_userId: string): Promise<never> {

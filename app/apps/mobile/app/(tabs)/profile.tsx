@@ -79,7 +79,7 @@ export default function ProfileScreen() {
           </View>
 
           <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.editBtn}>
+            <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
               <Text style={styles.editBtnText}>ערוך פרופיל</Text>
             </TouchableOpacity>
             <TouchableOpacity style={styles.shareBtn}>

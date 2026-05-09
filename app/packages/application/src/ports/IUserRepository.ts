@@ -30,6 +30,25 @@ export interface IUserRepository {
    */
   setAvatar(userId: string, avatarUrl: string | null): Promise<void>;
 
+  /**
+   * FR-PROFILE-007 AC1: persist a user's biography. Pass `null` to clear it.
+   * Caller is expected to enforce ≤ 200 chars + URL-filter validation upstream;
+   * the DB still applies the length CHECK as defence in depth.
+   */
+  setBiography(userId: string, biography: string | null): Promise<void>;
+
+  /**
+   * FR-PROFILE-007: read the four editable fields for the Edit Profile form.
+   * Avoids needing the full `findById` (which depends on follower / counter
+   * mappings deferred to P2.4). Throws if the row is missing.
+   */
+  getEditableProfile(userId: string): Promise<{
+    displayName: string;
+    city: string;
+    cityName: string;
+    biography: string | null;
+  }>;
+
   // Follows
   follow(followerId: string, followedId: string): Promise<FollowEdge>;
   unfollow(followerId: string, followedId: string): Promise<void>;

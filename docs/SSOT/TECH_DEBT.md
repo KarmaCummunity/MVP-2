@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-09 (TD-110 closed — permission UX + native iOS rebuild for missing NSPhotoLibrary/NSCamera usage descriptions; gallery + camera now degrade gracefully on permanent denial) |
+| **Last Updated** | 2026-05-09 (FR-PROFILE-007 partial — Edit Profile screen + photo upload encoding fix; TD-106 closed (Edit Profile button wired); TD-110 closed earlier today) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
@@ -56,7 +56,7 @@
 | TD-103 | 🟠 | **FR-POST-004 AC2 — Request type cannot attach images.** `app/(tabs)/create.tsx:153` wraps `<PhotoPicker>` in `{isGive && ...}`. Spec allows up to 5 (optional) images for Request as well. Drop the guard, set `required={isGive}` instead | Opportunistic |
 | TD-104 | 🟠 | **FR-POST-003 AC3 — `locationDisplayLevel` chooser missing.** `app/(tabs)/create.tsx:87` hardcodes `'CityAndStreet'`. Users cannot choose `CityOnly` (privacy-protective) or `FullAddress`. Add chooser component with the three options | Opportunistic |
 | TD-105 | 🟠 | **FR-POST-002 AC4 — Publish button enabled with empty required fields.** `app/(tabs)/create.tsx:120-123` only disables on `isPublishing`. No client-side validation. Server rejection appears as a toast — bad UX. Compute `isFormValid` from title/city/street/streetNumber/(images if Give); disable button + inline error markers | Opportunistic |
-| TD-106 | 🟠 | **FR-PROFILE-001 — Edit Profile + Share buttons dead.** `app/(tabs)/profile.tsx:82-87` — both `<TouchableOpacity>` lack `onPress`. Silent UI. At minimum show "בקרוב" alert until Edit Profile (P2.4) lands | P2.4 |
+| TD-106 | 🟠 | ~~**FR-PROFILE-001 — Edit Profile + Share buttons dead.**~~ Edit Profile button now navigates to `app/edit-profile.tsx` (FR-PROFILE-007 partial — name + city + biography + avatar editable; persists via `UpdateProfileUseCase`). Share button still no-op (deferred — needs deep-link generator). | Closed 2026-05-09 (Edit Profile portion); Share row remains a P2.4 nit |
 | TD-107 | 🟠 | **Settings screen — 7 dead rows + dangerous silent Delete account.** `app/settings.tsx` has `onPress={() => {}}` on lines 99, 132, 133, 139, 145, 146, 147, 175. The destructive-styled "מחק חשבון" (line 175) silently no-ops — confusing for a "permanent" action. Show "בקרוב" alerts until each row's owning slice ships (P1.x / P2.2 / P2.4) | Opportunistic |
 | TD-108 | 🟢 | **FR-AUTH-011 AC4 — avatar removal leaks Storage object.** `app/(onboarding)/photo.tsx:47-60` clears `users.avatar_url = null` but never deletes `avatars/<userId>/avatar.jpg`. ~50KB leak per remove (not a privacy issue — RLS still owns the path). Call `client.storage.from('avatars').remove([path])` before persisting null | Opportunistic |
 

@@ -13,6 +13,7 @@ import * as Crypto from 'expo-crypto';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { MediaAssetInput } from '@kc/application';
 import { MAX_MEDIA_ASSETS } from '@kc/domain';
+import { base64ToUint8Array } from './mediaEncoding';
 
 const POST_RESIZE_MAX_EDGE = 2048;
 const COMPRESS = 0.85; // JPEG quality (FR-POST-005 AC3)
@@ -92,20 +93,18 @@ export function buildPostImagePath(userId: string, batchUuid: string, ordinal: n
 }
 
 /**
- * Resize the image to a max-edge size and re-encode to JPEG (strips most EXIF).
- * Returns a Blob ready for Supabase Storage upload.
+ * Resize the image to a max-edge size, JPEG-encode, and return raw bytes.
+ * fetch(file://).blob() is unreliable on iOS — see `mediaEncoding.ts` for context.
  */
-async function resizeImage(uri: string, maxEdge: number): Promise<{ blob: Blob; sizeBytes: number }> {
+async function resizeImage(uri: string, maxEdge: number): Promise<{ bytes: Uint8Array; sizeBytes: number }> {
   const manipulated = await ImageManipulator.manipulateAsync(
     uri,
     [{ resize: { width: maxEdge } }],
-    { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG },
+    { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG, base64: true },
   );
-  // Fetch the resized file back as a Blob — Supabase JS upload signature wants
-  // an ArrayBuffer / Blob / File, not a file:// URI.
-  const response = await fetch(manipulated.uri);
-  const blob = await response.blob();
-  return { blob, sizeBytes: blob.size };
+  if (!manipulated.base64) throw new Error('image_resize: manipulator returned no base64 payload');
+  const bytes = base64ToUint8Array(manipulated.base64);
+  return { bytes, sizeBytes: bytes.byteLength };
 }
 
 /**
@@ -118,13 +117,13 @@ export async function resizeAndUploadImage(
   batchUuid: string,
   ordinal: number,
 ): Promise<UploadedAsset> {
-  const { blob, sizeBytes } = await resizeImage(picked.uri, POST_RESIZE_MAX_EDGE);
+  const { bytes, sizeBytes } = await resizeImage(picked.uri, POST_RESIZE_MAX_EDGE);
   const path = buildPostImagePath(userId, batchUuid, ordinal);
 
   const client = getSupabaseClient();
   const { error } = await client.storage
     .from(POST_BUCKET)
-    .upload(path, blob, {
+    .upload(path, bytes, {
       contentType: 'image/jpeg',
       upsert: true, // tolerate retries for the same ordinal
     });
