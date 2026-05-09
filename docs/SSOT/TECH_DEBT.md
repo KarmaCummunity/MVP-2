@@ -93,6 +93,7 @@
 | TD-105 | **FR-POST-002 AC4 — Publish enabled with empty fields.** Added `isFormValid` derived from title/city/street/streetNumber and (Give-only) uploads; Publish disabled and dimmed until valid. Companion: typed `PostError` mapping for Postgres FK/CHECK/RLS replaces the bare `Error` so errors surface as Hebrew messages, not generic toasts. | 2026-05-09 |
 | TD-100 | **FR-POST-014 AC1 — image carousel missing.** `app/post/[id].tsx` rendered only `mediaAssets[0]`. New `<PostImageCarousel>` (paged horizontal FlatList with counter chip + page-dots) shows every image; falls back to an Ionicons gift/search glyph when empty. | 2026-05-09 |
 | TD-111 | **Feed cards never rendered uploaded images.** `PostCardGrid` showed only an emoji placeholder (🎁 / 🔍) regardless of `mediaAssets`. On iOS the emoji rendered as a tofu `?` (same Apple Color Emoji glyph-cache regression as TD-109). Now renders the first image via `getPublicUrl`, falling back to an `Ionicons` gift/search glyph for posts without media. | 2026-05-09 |
+| TD-112 | 🟠 | **`SupabaseUserRepository` over 200-line cap (219 lines).** Growing file: `findByHandle` inline mapper added in P0.5 phase-5c. Split into `SupabaseUserRepository.ts` (onboarding slice) + `SupabaseUserRepositoryProfile.ts` (profile/find slice) once more NOT_IMPL methods are wired in P2.4. | P2.4 |
 
 ---
 
