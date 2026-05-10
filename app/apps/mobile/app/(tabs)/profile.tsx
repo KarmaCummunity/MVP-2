@@ -1,7 +1,8 @@
-// My Profile screen — wired to getMyPosts + countOpenByUser (P0.4-FE).
-// Mapped to: FR-PROFILE-001 (header, tabs, counters), FR-AUTH-003 AC5 (Google name/avatar via AuthSession),
-// FR-POST-016 (caller's own posts list).
-// TD-42 (followers/following/items_given/items_received) remains until IUserRepository.findById ships (P2.4).
+// My Profile screen — header + tabs + caller's own posts.
+// Mapped to: FR-PROFILE-001 AC1 (avatar + display_name + biography + counters in header),
+//   FR-AUTH-003 AC5 (session name/avatar used as first-render fallback while findById is in flight),
+//   FR-POST-016 (caller's own posts list).
+// Closes TD-42 (followers/following counters now read from User via IUserRepository.findById).
 import React, { useState } from 'react';
 import {
   ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
@@ -17,6 +18,7 @@ import { PostCardProfile } from '../../src/components/PostCardProfile';
 import { TopBar } from '../../src/components/TopBar';
 import { useAuthStore } from '../../src/store/authStore';
 import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
+import { getUserRepo } from '../../src/services/userComposition';
 
 type Tab = 'open' | 'closed';
 
@@ -26,7 +28,15 @@ export default function ProfileScreen() {
   const userId = session?.userId;
   const [activeTab, setActiveTab] = useState<Tab>('open');
 
-  const displayName = resolveDisplayName(session);
+  const userQuery = useQuery({
+    queryKey: ['user-profile', userId],
+    queryFn: () => getUserRepo().findById(userId!),
+    enabled: Boolean(userId),
+  });
+  const user = userQuery.data ?? null;
+  const displayName = (user?.displayName?.trim() || resolveDisplayName(session));
+  const avatarUrl = user?.avatarUrl ?? session?.avatarUrl ?? null;
+  const biography = user?.biography ?? null;
 
   const openCountQuery = useQuery({
     queryKey: ['my-open-count', userId],
@@ -57,19 +67,20 @@ export default function ProfileScreen() {
           <View style={styles.profileHeader}>
             <AvatarInitials
               name={displayName}
-              avatarUrl={session?.avatarUrl ?? null}
+              avatarUrl={avatarUrl}
               size={72}
             />
             <View style={styles.profileInfo}>
               <Text style={styles.displayName}>{displayName}</Text>
               {session?.email ? <Text style={styles.email}>{session.email}</Text> : null}
+              {biography ? <Text style={styles.biography}>{biography}</Text> : null}
             </View>
           </View>
 
           <View style={styles.statsRow}>
-            <StatItem count={0} label="עוקבים" />
+            <StatItem count={user?.followersCount ?? 0} label="עוקבים" />
             <View style={styles.statDivider} />
-            <StatItem count={0} label="נעקבים" />
+            <StatItem count={user?.followingCount ?? 0} label="נעקבים" />
             <View style={styles.statDivider} />
             <StatItem count={openCountQuery.data ?? 0} label="פוסטים" />
           </View>
@@ -151,18 +162,8 @@ const statStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  sectionHeader: {
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
-    paddingBottom: spacing.sm,
-  },
-  topBar: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
+  sectionHeader: { paddingHorizontal: spacing.base, paddingTop: spacing.base, paddingBottom: spacing.sm },
   topBarTitle: { ...typography.h3, color: colors.textPrimary },
-  iconBtn: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
   profileCard: {
     margin: spacing.base, backgroundColor: colors.surface, borderRadius: radius.lg,
     padding: spacing.base, ...shadow.card, gap: spacing.base,
@@ -171,6 +172,7 @@ const styles = StyleSheet.create({
   profileInfo: { flex: 1, gap: spacing.xs },
   displayName: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
   email: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  biography: { ...typography.body, color: colors.textPrimary, textAlign: 'right', marginTop: spacing.xs },
   statsRow: {
     flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm,
     borderTopWidth: 1, borderTopColor: colors.border,
@@ -198,10 +200,5 @@ const styles = StyleSheet.create({
   tabText: { ...typography.button, color: colors.textSecondary },
   tabTextActive: { color: colors.primary },
   loadingWrap: { padding: spacing.xl, alignItems: 'center' },
-  grid: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    paddingHorizontal: spacing.base,
-    gap: spacing.xs,
-  },
+  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
 });

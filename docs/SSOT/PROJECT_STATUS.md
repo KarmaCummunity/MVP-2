@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P0.6 — closure flow shipped. FR-CLOSURE-001..005 + 008 + 009. 109 vitest passing. PR pending Supabase ops: enable `pg_cron` + apply migrations 0015 + 0016.) |
+| **Last Updated** | 2026-05-10 (FR-PROFILE-001 AC1 — bio + real follower/following counters wired in My Profile via `IUserRepository.findById`. Closed TD-42 + TD-10. Cleaned 2 dead style entries on the way.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -51,8 +51,8 @@ This document is the **single source of truth for project execution state**. It 
 
 ### What is fake / stubbed
 
-- Other-user profile (`/user/[handle]`) has minimal real data (avatar, name, handle, bio, Send-message + Block CTAs) via `findByHandle`; counters (followers/following/items_given/items_received) still render `0` (TD-40 partial, TD-42)
-- Profile counters: followers / following / items_given / items_received still render `0` (TD-42 — needs `IUserRepository.findById`, P2.4)
+- Other-user profile (`/user/[handle]`) has minimal real data (avatar, name, handle, bio, Send-message + Block CTAs) via `findByHandle`; counters still render `0` there (TD-14 — separate from My Profile)
+- My Profile (`(tabs)/profile.tsx`) now renders real biography + real followers/following counters via `findById` (closed TD-42 + TD-10, 2026-05-10); items_given/items_received remain 0 there because the layout doesn't surface them
 - No closure flow / reports / notifications / community stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as placeholder (Google SSO is real)
 - Forgot-password flow not implemented
