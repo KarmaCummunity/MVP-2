@@ -33,7 +33,6 @@ export default function SettingsScreen() {
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
   const [notificationsOn, setNotificationsOn] = React.useState(true);
-  const [privateProfile, setPrivateProfile] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
   const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
 
@@ -119,17 +118,10 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>פרטיות</Text>
         <View style={styles.section}>
           <SettingsRow
-            label="🔒 פרופיל פרטי"
+            label="פרופיל פרטי"
             icon="lock-closed-outline"
-            rightElement={
-              <Switch
-                value={privateProfile}
-                onValueChange={setPrivateProfile}
-                trackColor={{ true: colors.primary }}
-              />
-            }
+            onPress={() => router.push('/settings/privacy' as never)}
           />
-          <SettingsRow label="בקשות עקיבה" icon="people-outline" onPress={() => {}} />
           <SettingsRow label="משתמשים חסומים" icon="ban-outline" onPress={() => {}} />
         </View>
 
