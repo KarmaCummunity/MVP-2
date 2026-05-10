@@ -5,6 +5,7 @@ export interface ChatWithPreview extends Chat {
     userId: string | null;            // null when counterpart hard-deleted
     displayName: string;
     avatarUrl: string | null;
+    shareHandle: string | null;       // null when counterpart hard-deleted
     isDeleted: boolean;
   };
   lastMessage: Message | null;
@@ -45,6 +46,7 @@ export interface IChatRepository {
     userId: string | null;
     displayName: string;
     avatarUrl: string | null;
+    shareHandle: string | null;
     isDeleted: boolean;
   }>;
 

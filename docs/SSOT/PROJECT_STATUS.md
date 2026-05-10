@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (FR-DONATE-006..009 — 6 new donation categories + community-curated NGO link lists with Edge-Function-backed URL validation; DB migration 0014; appended to existing Time/Money screens.) |
+| **Last Updated** | 2026-05-10 (P0.5 polish — profile posts as 3-col image grid; `/user/[handle]` doubled-header fixed (uses Stack.Screen options); chat header title is tappable → user profile (`shareHandle` added to Counterpart contract); chat unread badge clears optimistically on conversation open via `markChatLocallyRead`.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |

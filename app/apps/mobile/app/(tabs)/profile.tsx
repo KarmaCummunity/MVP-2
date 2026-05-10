@@ -11,9 +11,9 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
-import { CATEGORY_LABELS } from '@kc/domain';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { EmptyState } from '../../src/components/EmptyState';
+import { PostCardProfile } from '../../src/components/PostCardProfile';
 import { TopBar } from '../../src/components/TopBar';
 import { useAuthStore } from '../../src/store/authStore';
 import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
@@ -114,16 +114,9 @@ export default function ProfileScreen() {
             <EmptyState icon="archive-outline" title="אין פוסטים סגורים עדיין" subtitle="פוסטים שסגרת כ-נמסר יופיעו כאן." />
           )
         ) : (
-          <View style={styles.postList}>
+          <View style={styles.grid}>
             {(myPostsQuery.data?.posts ?? []).map((p) => (
-              <TouchableOpacity
-                key={p.postId}
-                style={styles.row}
-                onPress={() => router.push(`/post/${p.postId}`)}
-              >
-                <Text style={styles.rowTitle} numberOfLines={1}>{p.title}</Text>
-                <Text style={styles.rowMeta}>{CATEGORY_LABELS[p.category]} · {p.address.cityName}</Text>
-              </TouchableOpacity>
+              <PostCardProfile key={p.postId} post={p} />
             ))}
           </View>
         )}
@@ -205,11 +198,10 @@ const styles = StyleSheet.create({
   tabText: { ...typography.button, color: colors.textSecondary },
   tabTextActive: { color: colors.primary },
   loadingWrap: { padding: spacing.xl, alignItems: 'center' },
-  postList: { paddingHorizontal: spacing.base, gap: spacing.sm },
-  row: {
-    backgroundColor: colors.surface, borderRadius: radius.md, padding: spacing.base,
-    borderWidth: 1, borderColor: colors.border, gap: 4,
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    paddingHorizontal: spacing.base,
+    gap: spacing.xs,
   },
-  rowTitle: { ...typography.body, color: colors.textPrimary, fontWeight: '600', textAlign: 'right' },
-  rowMeta: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
 });

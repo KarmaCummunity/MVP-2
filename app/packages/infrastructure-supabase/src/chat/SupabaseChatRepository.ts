@@ -15,6 +15,7 @@ type Counterpart = {
   userId: string | null;
   displayName: string;
   avatarUrl: string | null;
+  shareHandle: string | null;
   isDeleted: boolean;
 };
 
@@ -141,7 +142,7 @@ export class SupabaseChatRepository implements IChatRepository {
         : chat.participantIds[0];
     const { data, error } = await this.client
       .from('users')
-      .select('user_id, display_name, avatar_url')
+      .select('user_id, display_name, avatar_url, share_handle')
       .eq('user_id', otherId)
       .maybeSingle();
     if (error) throw mapChatError(error);
@@ -150,6 +151,7 @@ export class SupabaseChatRepository implements IChatRepository {
         userId: null,
         displayName: 'משתמש שנמחק',
         avatarUrl: null,
+        shareHandle: null,
         isDeleted: true,
       };
     }
@@ -157,6 +159,7 @@ export class SupabaseChatRepository implements IChatRepository {
       userId: data.user_id,
       displayName: data.display_name,
       avatarUrl: data.avatar_url,
+      shareHandle: data.share_handle,
       isDeleted: false,
     };
   }

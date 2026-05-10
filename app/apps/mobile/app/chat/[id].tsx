@@ -5,7 +5,7 @@ import {
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation } from 'expo-router';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { randomUUID } from 'expo-crypto';
 import type { Chat } from '@kc/domain';
@@ -29,11 +29,16 @@ export default function ChatScreen() {
   const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string }>();
   const chatId = id!;
   const navigation = useNavigation();
+  const router = useRouter();
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
   const [chat, setChat] = useState<Chat | null>(null);
-  const [counterpart, setCounterpart] = useState<{ displayName: string; isDeleted: boolean }>({ displayName: '', isDeleted: false });
+  const [counterpart, setCounterpart] = useState<{
+    displayName: string;
+    shareHandle: string | null;
+    isDeleted: boolean;
+  }>({ displayName: '', shareHandle: null, isDeleted: false });
   const [input, setInput] = useState(prefill ?? '');
   const [reportOpen, setReportOpen] = useState(false);
   const [anchorMissing, setAnchorMissing] = useState(false);
@@ -46,9 +51,14 @@ export default function ChatScreen() {
       const cp = await container.chatRepo.getCounterpart(c, userId);
       if (cancelled) return;
       setChat(c);
-      setCounterpart({ displayName: cp.displayName, isDeleted: cp.isDeleted });
+      setCounterpart({
+        displayName: cp.displayName,
+        shareHandle: cp.shareHandle,
+        isDeleted: cp.isDeleted,
+      });
       await useChatStore.getState().startThreadSub(chatId, container.chatRepo, container.chatRealtime);
       await container.markChatRead.execute({ chatId, userId });
+      useChatStore.getState().markChatLocallyRead(chatId);
     })();
     return () => {
       cancelled = true;
@@ -76,7 +86,11 @@ export default function ChatScreen() {
     [messages, userId],
   );
   useEffect(() => {
-    if (unreadIncoming) void container.markChatRead.execute({ chatId, userId });
+    if (!unreadIncoming) return;
+    void (async () => {
+      await container.markChatRead.execute({ chatId, userId });
+      useChatStore.getState().markChatLocallyRead(chatId);
+    })();
   }, [unreadIncoming, chatId, userId]);
 
   const doBlock = async () => {
@@ -92,8 +106,19 @@ export default function ChatScreen() {
   };
 
   useLayoutEffect(() => {
+    const title = counterpart.isDeleted ? 'משתמש שנמחק' : counterpart.displayName;
+    const canOpenProfile = !counterpart.isDeleted && !!counterpart.shareHandle && !chat?.isSupportThread;
     navigation.setOptions({
-      title: counterpart.isDeleted ? 'משתמש שנמחק' : counterpart.displayName,
+      title,
+      headerTitle: () => (
+        <TouchableOpacity
+          disabled={!canOpenProfile}
+          onPress={() => router.push(`/user/${counterpart.shareHandle}`)}
+          accessibilityRole={canOpenProfile ? 'button' : undefined}
+        >
+          <Text style={styles.headerTitle}>{title}</Text>
+        </TouchableOpacity>
+      ),
       headerRight: () => chat?.isSupportThread ? null : (
         <TouchableOpacity
           onPress={() =>
@@ -108,7 +133,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, counterpart, chat?.isSupportThread]);
+  }, [navigation, router, counterpart, chat?.isSupportThread]);
 
   const send = async (overrideClientId?: string, overrideBody?: string) => {
     const body = (overrideBody ?? input).trim();
@@ -186,6 +211,7 @@ export default function ChatScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
   messageList: { padding: spacing.base, gap: spacing.sm },
   inputBar: {
     flexDirection: 'row', alignItems: 'flex-end',

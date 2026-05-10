@@ -12,7 +12,13 @@ export class FakeChatRepository implements IChatRepository {
       .filter((c) => c.participantIds.includes(userId))
       .map((c) => ({
         ...c,
-        otherParticipant: { userId: 'other', displayName: 'other', avatarUrl: null, isDeleted: false },
+        otherParticipant: {
+          userId: 'other',
+          displayName: 'other',
+          avatarUrl: null,
+          shareHandle: 'other',
+          isDeleted: false,
+        },
         lastMessage: this.messages.filter((m) => m.chatId === c.chatId).at(-1) ?? null,
         unreadCount: this.unread[c.chatId] ?? 0,
       }));
@@ -72,7 +78,7 @@ export class FakeChatRepository implements IChatRepository {
 
   async getCounterpart(chat: Chat, viewerId: string) {
     const other = chat.participantIds[0] === viewerId ? chat.participantIds[1] : chat.participantIds[0];
-    return { userId: other, displayName: 'fake', avatarUrl: null, isDeleted: false };
+    return { userId: other, displayName: 'fake', avatarUrl: null, shareHandle: 'fake', isDeleted: false };
   }
 
   async getOrCreateSupportThread(userId: string): Promise<Chat> {

@@ -1,12 +1,14 @@
 // Other-user profile (minimal) — FR-CHAT-006 entry point. Closes part of TD-40.
 // Avatar, display name, handle, bio + Send-message / Block CTAs.
+// Header is owned by the Stack (`_layout.tsx` → `detailHeader`); we override the
+// title per-user via `<Stack.Screen options={{ headerTitle }} />` so we don't
+// render a second in-screen header (the cause of the doubled-header bug).
 import React, { useEffect, useState } from 'react';
 import {
   ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -65,13 +67,7 @@ export default function UserProfileScreen() {
   if (u === null) {
     return (
       <SafeAreaView style={styles.container}>
-        <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()}>
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
-          <Text style={styles.title}>פרופיל</Text>
-          <View style={{ width: 24 }} />
-        </View>
+        <Stack.Screen options={{ headerTitle: 'פרופיל' }} />
         <View style={styles.body}>
           <Text style={styles.title}>משתמש לא נמצא</Text>
         </View>
@@ -101,16 +97,10 @@ export default function UserProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
-        <Text style={styles.title}>{u.displayName}</Text>
-        <View style={{ width: 24 }} />
-      </View>
-
+      <Stack.Screen options={{ headerTitle: u.displayName }} />
       <View style={styles.body}>
         <AvatarInitials name={u.displayName} avatarUrl={u.avatarUrl} size={96} />
+        <Text style={styles.displayName}>{u.displayName}</Text>
         <Text style={styles.handle}>@{u.shareHandle}</Text>
         {u.biography ? <Text style={styles.bio}>{u.biography}</Text> : null}
 
@@ -127,13 +117,9 @@ export default function UserProfileScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  header: {
-    flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
   title: { ...typography.h3, color: colors.textPrimary },
   body: { padding: spacing.base, alignItems: 'center', gap: spacing.md },
+  displayName: { ...typography.h2, color: colors.textPrimary, marginTop: spacing.sm },
   handle: { ...typography.body, color: colors.textSecondary },
   bio: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
   btnPrimary: {
@@ -143,6 +129,7 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     alignSelf: 'stretch',
     alignItems: 'center',
+    marginTop: spacing.md,
   },
   btnPrimaryText: { ...typography.body, color: colors.textInverse, fontWeight: '700' as const },
   btnGhost: { paddingVertical: spacing.md, alignItems: 'center' },
