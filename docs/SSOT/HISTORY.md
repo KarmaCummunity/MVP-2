@@ -8,6 +8,26 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 - **2026-05-10 — FR-ADMIN-009 + post-detail ⋮ menu (FR-POST-010 · FR-POST-014 AC4 · FR-POST-015 AC1 · FR-MOD-001 · FR-MOD-007 · FR-ADMIN-009)** — Branch `claude/unruffled-black-7d25c9` · 114 vitest (109 + 2 `AdminRemovePostUseCase` + 3 `ReportPostUseCase`). Migration `0020_admin_remove_post.sql` adds the `SECURITY DEFINER` RPC gated on `is_admin(auth.uid())` (writes `manual_remove_target` audit event, idempotent, no schema change). New use cases: `AdminRemovePostUseCase`, `ReportPostUseCase`. New mobile components: `PostMenuButton`, `PostMenuSheet`, `ReportPostModal`, `ConfirmActionModal` + `useIsSuperAdmin` + `usePostMenuActions` hook. Owner sees Delete; viewer sees Report + Block; super admin viewing someone else's post additionally sees Remove-as-admin. Mounted as a floating overlay on the post image (not the Stack header — `setOptions({headerRight})` did not propagate to react-native-web's navigator). Defers: TD-52 (admin restore RPC), TD-124 (feed-card ⋮ menu), TD-125 (Edit owner action), TD-126 (surface `removed_admin` to owner with banner).
 
+---
+
+### 🟢 FR-CHAT-002 — Chat screen web defect repair
+- **SRS**: FR-CHAT-002 (chat conversation screen) — four web-only defects reported by the user against the existing P0.5 implementation. No AC change.
+- **Branch / PR**: `fix/FR-CHAT-002-fe-web-chat-screen-bugs` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · 113 vitest passing · `pnpm lint:arch` green (TD-118 entry for `chat/[id].tsx` removed — file dropped from 229→194 LOC).
+- **Defects fixed**:
+  1. **Header title off-center on web** — `_layout.tsx` `detailHeader` was missing `headerTitleAlign: 'center'`; native iOS already centers, Android + RN-Web default to start-aligned, which under forced RTL pushed the title to the right edge.
+  2. **⋮-menu unreachable on web** — `Alert.alert(title, msg, buttons[])` on react-native-web collapses to a plain `window.alert(title)` and silently drops the `buttons[]`. Replaced with a `<ChatActionMenu>` bottom-sheet `Modal`+`Pressable` (cross-platform; matches the visual language of `PhotoSourceSheet`).
+  3. **Slow chat load on web** — chat-open `useEffect` ran four awaits strictly serial (`findById` → `getCounterpart` → `startThreadSub` → `markChatRead`). Refactored into three parallel paths (chat→counterpart, messages, mark-read) inside a new `useChatInit` hook. Title/messages now first-paint independently.
+  4. **Initial scroll showed first message instead of last** — `FlatList` had no `inverted` prop. Added `inverted` with a `useMemo` reverse of the messages selector; the store contract (asc) is unchanged for every other consumer.
+- **Code**:
+  - **UI (mobile)** — `apps/mobile/app/_layout.tsx` (one-line `detailHeader` config); `apps/mobile/app/chat/[id].tsx` (294→194 LOC after extractions); two new files: `apps/mobile/src/components/ChatActionMenu.tsx` (modal action sheet) and `apps/mobile/src/components/useChatInit.ts` (`useChatInit` + `useAnchorMissing` hooks). Tokens: `colors.overlay`, `typography.semiBold` used in place of inline `'rgba(...)'` and `fontWeight: '600'`.
+  - **Tooling** — `app/scripts/check-architecture.mjs` allowlist entry for `chat/[id].tsx` removed.
+- **Tech-debt deltas**: TD-118 marked **partial** — chat/[id].tsx side closed (allowlist removed); `chatStore.ts` (232) still allowlisted, store-slice split deferred.
+- **Open gaps**: pre-existing race in `chatStore.startThreadSub` (rare unmount-during-await orphans the realtime channel) and pre-existing duplicate mark-read RPC on chat open via `unreadIncoming` effect — both out of scope for this defect repair.
+- **Manual setup remaining**: none.
+
+---
+
 ### 🟢 Closure UX polish — profile grid auto-refresh + post-detail pop-back on close
 - **SRS**: FR-CLOSURE-001 (mark as delivered) · FR-CLOSURE-005 (reopen) · FR-POST-016 (caller's own posts list). Polish on top of P0.6.
 - **Branch / PR**: `fix/FR-CLOSURE-001-profile-grid-refresh` · 2026-05-10

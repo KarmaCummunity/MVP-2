@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (FR-PROFILE-001 AC1 — bio + real follower/following counters wired in `(tabs)/profile.tsx` via `findById`. Closed TD-42 + TD-10. No new debt.) |
+| **Last Updated** | 2026-05-10 (FR-CHAT-002 web fixes — TD-118 partially closed: chat/[id].tsx now 194 LOC, allowlist entry removed; chatStore.ts (232) still allowlisted.) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
@@ -59,7 +59,7 @@
 | TD-108 | 🟢 | **FR-AUTH-011 AC4 — avatar removal leaks Storage object.** `app/(onboarding)/photo.tsx:47-60` clears `users.avatar_url = null` but never deletes `avatars/<userId>/avatar.jpg`. ~50KB leak per remove (not a privacy issue — RLS still owns the path). Call `client.storage.from('avatars').remove([path])` before persisting null | Opportunistic |
 | TD-114 | 🟠 | **Donations · Time → support thread wire-up.** **P0.5 ready** — `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` + the `/chat/[id]` route now exist. Wire-up in `app/(tabs)/donations/time.tsx`'s volunteer composer to navigate to the support thread is a separate post-P0.5 PR. | Post-P0.5 follow-up |
 | TD-115 | 🔴 | **Push notifications wiring for chat absent.** Required by FR-CHAT-003 AC4. Depends on FR-NOTIF-001..006 (P1.5). Currently messages send + receive via Realtime, but no push is delivered when the app is backgrounded. | P1.5 |
-| TD-118 | 🟠 | **Chat screen + store over 200-line cap.** `apps/mobile/app/chat/[id].tsx` (229) and `apps/mobile/src/store/chatStore.ts` (232) — crossed the cap during P0.5 post-merge fixes; chat-header tap-to-profile (FR-CHAT-006 polish) + `markChatLocallyRead` action (FR-CHAT-012 polish) pushed both further. Both allowlisted. Split paths: extract `<ConversationHeader>` (now also owns the tappable-title + counterpart resolution) + `<RetryBanner>` from the screen; split the store into `chatStoreInbox.ts` + `chatStoreThread.ts` slices. | Opportunistic |
+| TD-118 | 🟠 | **Chat store still over 200-line cap.** `apps/mobile/src/store/chatStore.ts` (232) remains allowlisted; the screen side closed 2026-05-10 by extracting `useChatInit`/`useAnchorMissing` hooks + `<ChatActionMenu>` (chat/[id].tsx now 194). Remaining split path: split the store into `chatStoreInbox.ts` + `chatStoreThread.ts` slices. **Partial.** | Opportunistic |
 | TD-119 | 🟠 | **Notify recipient on mark.** FR-CLOSURE-006 — Critical-category notification ("[Owner] סימן אותך כמקבל של [post]") is not delivered when a recipient is marked. Currently the recipient sees the mark passively when they next view the post. Depends on FR-NOTIF-001..006 (P1.5). | P1.5 |
 | TD-120 | 🟠 | **Recipient un-marks self.** FR-CLOSURE-007 — recipient cannot remove their own credit. UI absent; use case absent; FR-NOTIF-013 (notify owner on un-mark) also depends on push. | P2.x |
 | TD-121 | 🟠 | **Suspect flag at 5+ reopens.** FR-CLOSURE-010 — `posts.reopen_count` is incremented on every reopen (via 0015 RPC), but no moderation queue entry is created when the count reaches 5. Depends on FR-MOD-008 (P1.3). | P1.3 |

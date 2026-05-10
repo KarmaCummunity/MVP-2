@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (FR-ADMIN-009 + post-detail ⋮ menu shipped on top of closure UX polish + FR-PROFILE-001 AC1; 114 vitest passing; DB schema applied through 0020.) |
+| **Last Updated** | 2026-05-10 (FR-ADMIN-009 post-detail ⋮ menu + FR-CHAT-002 web defect repair + closure UX polish + FR-PROFILE-001 AC1; 114 vitest passing; DB schema applied through 0020.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -72,7 +72,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting) | 🟢 Done (2026-05-07) | All migrations 0001–0008 applied |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟢 Done (2026-05-08) | All slices A + B + C shipped |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | 🟢 Done (2026-05-08) | BE + FE both shipped |
-| P0.5 | Direct chat with realtime | FR-CHAT-001…008 | 🟢 Done (2026-05-10) | Merged in PR #31; polished in PR #35. Defers: push notifs (P1.5/TD-115), full report flow (P1.3/TD-116), report-summary system message (P1.3/TD-117). |
+| P0.5 | Direct chat with realtime | FR-CHAT-001…008 | 🟢 Done (2026-05-10) | Merged in PR #31; polished in PR #35; web-defect repair 2026-05-10 (header centering, ⋮-menu reachable on web, parallel chat-open, latest-message-on-entry). Defers: push notifs (P1.5/TD-115), full report flow (P1.3/TD-116), report-summary system message (P1.3/TD-117). |
 | P0.6 | Closure flow (mark as delivered + reopen + cleanup cron) | FR-CLOSURE-001…005, 008, 009 | 🟢 Done (2026-05-10) | Branch `feat/FR-CLOSURE-001-closure-flow`. Polish 2026-05-10: profile grid + counter auto-refresh after close/reopen (cache invalidation in `OwnerActionsBar`); post-detail pops back after successful close. Defers: notify on mark (P1.5/TD-119), recipient un-marks self (P2.x/TD-120), suspect flag (P1.3/TD-121), storage orphan reconcile (TD-122), telemetry events (TD-123). |
 
 ### 📈 P1 — High priority (PMF quality)
