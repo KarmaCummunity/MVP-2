@@ -3,7 +3,7 @@
 
 export const donations = {
   tabLabel: 'תרומות',
-  hubTitle: 'תרומות',
+  hubTitle: 'תרומות של:',
   items: { title: 'חפצים', subtitle: 'תרומה ובקשת חפצים' },
   time: { title: 'זמן', subtitle: 'התנדבות וזמן פנוי' },
   money: { title: 'כסף', subtitle: 'תרומה כספית' },
