@@ -35,6 +35,10 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 215 }],
   ['apps/mobile/app/chat/[id].tsx', { td: 'TD-118', max: 229 }],
   ['apps/mobile/src/store/chatStore.ts', { td: 'TD-118', max: 232 }],
+  ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-52', max: 418 }],
+  ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-124', max: 646 }],
+  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-124', max: 306 }],
+  ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-124', max: 354 }],
 ]);
 
 const LAYER_RULES = [
