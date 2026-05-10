@@ -105,7 +105,10 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
-    flexDirection: 'row-reverse', // RTL
+    // Children are written in RTL reading order (Profile, Search, +, Donations, Home).
+    // With dir=rtl on web and I18nManager.isRTL on native, default `row` lays them
+    // out right-to-left. `row-reverse` would double-flip on web → LTR visual.
+    flexDirection: 'row',
     height: 68, // explicit — without this, RN-Web collapses the row to 0px
     paddingTop: 8,
     ...shadow.card,
