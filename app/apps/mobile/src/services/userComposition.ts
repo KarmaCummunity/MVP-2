@@ -16,6 +16,7 @@ import {
   CompleteBasicInfoUseCase,
   CompleteOnboardingUseCase,
   DismissClosureExplainerUseCase,
+  SearchUsersForClosureUseCase,
   SetAvatarUseCase,
   UpdateProfileUseCase,
   type ICityRepository,
@@ -30,6 +31,7 @@ let _completeOnboarding: CompleteOnboardingUseCase | null = null;
 let _setAvatar: SetAvatarUseCase | null = null;
 let _updateProfile: UpdateProfileUseCase | null = null;
 let _dismissClosureExplainer: DismissClosureExplainerUseCase | null = null;
+let _searchUsersForClosure: SearchUsersForClosureUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -108,4 +110,12 @@ export function getDismissClosureExplainerUseCase(): DismissClosureExplainerUseC
     _dismissClosureExplainer = new DismissClosureExplainerUseCase(getUserRepo());
   }
   return _dismissClosureExplainer;
+}
+
+/** FR-CLOSURE-003 (extension) — search any user for the closure recipient picker. */
+export function getSearchUsersForClosureUseCase(): SearchUsersForClosureUseCase {
+  if (!_searchUsersForClosure) {
+    _searchUsersForClosure = new SearchUsersForClosureUseCase(getUserRepo());
+  }
+  return _searchUsersForClosure;
 }

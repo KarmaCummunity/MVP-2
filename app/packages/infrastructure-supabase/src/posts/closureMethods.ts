@@ -127,16 +127,25 @@ export async function getClosureCandidates(
   if (ownerErr) throw mapClosurePgError(ownerErr);
   const ownerId = ownerRow.owner_id;
 
+  // Pull EVERY chat the owner is part of (not just chats anchored to THIS post).
+  // Reason: `findOrCreateChat` reuses an existing chat between two users and
+  // never re-anchors it to the new post — so a chat that started about post A
+  // remains anchor=A forever, even if the same two users are now talking about
+  // post B. Filtering by anchor_post_id was hiding real chat partners. Also
+  // exclude support threads (admin) and removed chats.
   const { data: chats, error: chatErr } = await client
     .from('chats')
-    .select('chat_id, participant_a, participant_b, last_message_at')
-    .eq('anchor_post_id', postId);
+    .select('chat_id, participant_a, participant_b, last_message_at, is_support_thread, removed_at')
+    .or(`participant_a.eq.${ownerId},participant_b.eq.${ownerId}`)
+    .eq('is_support_thread', false)
+    .is('removed_at', null);
   if (chatErr) throw mapClosurePgError(chatErr);
 
   // Dedupe by partner userId, keep latest last_message_at.
   const partners = new Map<string, string>();
   for (const c of chats ?? []) {
     const otherId = c.participant_a === ownerId ? c.participant_b : c.participant_a;
+    if (otherId === ownerId) continue; // safety
     if (!c.last_message_at) continue;
     const prev = partners.get(otherId);
     if (!prev || prev < c.last_message_at) partners.set(otherId, c.last_message_at);
