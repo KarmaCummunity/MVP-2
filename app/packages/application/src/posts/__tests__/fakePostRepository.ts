@@ -139,6 +139,7 @@ export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostW
     urgency: null,
     mediaAssets: [],
     recipient: null,
+    recipientUser: null,
     reopenCount: 0,
     deleteAfter: null,
     createdAt: '2026-05-08T10:00:00.000Z',
