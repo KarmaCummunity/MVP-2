@@ -9,10 +9,18 @@ import { getUserRepo } from '../../services/userComposition';
 export function ClosureExplainerSheet() {
   const step = useClosureStore((s) => s.step);
   const dismiss = useClosureStore((s) => s.dismissExplainer);
-  const reset = useClosureStore((s) => s.reset);
+  const completeWithoutExplainer = useClosureStore((s) => s.completeWithoutExplainer);
   const userId = useAuthStore((s) => s.session?.userId);
   const [stayDismissed, setStayDismissed] = useState(false);
   const [alreadyDismissed, setAlreadyDismissed] = useState<boolean | null>(null);
+
+  // Reset local state whenever we leave 'explainer' so the next closure starts fresh.
+  useEffect(() => {
+    if (step !== 'explainer') {
+      setStayDismissed(false);
+      setAlreadyDismissed(null);
+    }
+  }, [step]);
 
   // Check the persistent flag once when the explainer step is reached.
   useEffect(() => {
@@ -31,20 +39,25 @@ export function ClosureExplainerSheet() {
     };
   }, [step, userId]);
 
-  // Already dismissed forever — fast-forward to done without rendering.
+  // Already dismissed forever — fast-forward to step='done' so OwnerActionsBar
+  // sees the success signal and refetches the post. Using `reset()` here would
+  // jump straight to 'idle' and skip the parent's onAfterMutation. (B3)
   useEffect(() => {
     if (step === 'explainer' && alreadyDismissed === true) {
-      reset();
+      completeWithoutExplainer();
     }
-  }, [step, alreadyDismissed, reset]);
+  }, [step, alreadyDismissed, completeWithoutExplainer]);
 
   const visible = step === 'explainer' && alreadyDismissed === false;
 
   if (!userId) return null;
 
+  // Tapping the backdrop or hardware back during the explainer is treated as
+  // "got it, no persist" — the closure already succeeded, so we still want
+  // OwnerActionsBar to refetch (step='done', not 'idle').
   return (
-    <Modal visible={visible} transparent animationType="fade" onRequestClose={reset}>
-      <Pressable style={styles.backdrop} onPress={reset}>
+    <Modal visible={visible} transparent animationType="fade" onRequestClose={completeWithoutExplainer}>
+      <Pressable style={styles.backdrop} onPress={completeWithoutExplainer}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.title}>✨  תודה שתרמת!</Text>
           <Text style={styles.body}>כך זה עובד:</Text>

@@ -51,13 +51,21 @@ export async function closePost(
     if (!reread) throw new PostError('unknown', `post ${postId} disappeared after close`);
     return reread;
   }
-  // Close without recipient: single-table UPDATE; trigger fires items_given +1.
+  // Close without recipient: single-table UPDATE gated on status='open' to
+  // prevent a race where a concurrent close_post_with_recipient already moved
+  // the post to closed_delivered (B7). If the gate misses, no rows are
+  // affected and we surface a typed error.
   const deleteAfter = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-  const { error } = await client
+  const { data: updated, error } = await client
     .from('posts')
     .update({ status: 'deleted_no_recipient', delete_after: deleteAfter })
-    .eq('post_id', postId);
+    .eq('post_id', postId)
+    .eq('status', 'open')
+    .select('post_id');
   if (error) throw mapClosurePgError(error);
+  if (!updated || updated.length === 0) {
+    throw new PostError('closure_wrong_status', 'closure_wrong_status');
+  }
   const reread = await fetchPostById(client, postId);
   if (!reread) throw new PostError('unknown', `post ${postId} disappeared after close`);
   return reread;
@@ -79,16 +87,24 @@ export async function reopenPost(
     const { error } = await client.rpc('reopen_post_marked', { p_post_id: postId });
     if (error) throw mapClosurePgError(error);
   } else if (current.status === 'deleted_no_recipient') {
-    // Single-table UPDATE; trigger handles items_given −1.
-    const { error } = await client
+    // Single-table UPDATE gated on status='deleted_no_recipient' to prevent a
+    // race where the post moved to a different state between the SELECT and
+    // the UPDATE (e.g. admin removed, or the cleanup cron hard-deleted) (B8).
+    // The trigger handles items_given −1.
+    const { data: updated, error } = await client
       .from('posts')
       .update({
         status: 'open',
         delete_after: null,
         reopen_count: (current.reopen_count ?? 0) + 1,
       })
-      .eq('post_id', postId);
+      .eq('post_id', postId)
+      .eq('status', 'deleted_no_recipient')
+      .select('post_id');
     if (error) throw mapClosurePgError(error);
+    if (!updated || updated.length === 0) {
+      throw new PostError('closure_wrong_status', 'closure_wrong_status');
+    }
   } else {
     throw new PostError('closure_wrong_status', 'closure_wrong_status');
   }
