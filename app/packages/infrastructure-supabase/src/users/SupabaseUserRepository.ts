@@ -17,6 +17,15 @@ import {
   listFollowers,
   listFollowing,
 } from './follow/followMethods';
+import {
+  sendRequest,
+  cancelRequest,
+  acceptRequest,
+  rejectRequest,
+  listPendingRaw,
+  listPendingWithUsers,
+} from './follow/followRequestMethods';
+import { fetchFollowStateRaw } from './follow/getFollowState';
 
 const NOT_IMPL = (name: string, slice: string) =>
   new Error(`SupabaseUserRepository.${name}: not_implemented (${slice})`);
@@ -77,8 +86,15 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`setBiography: ${error.message}`);
   }
 
-  async setPrivacyMode(_userId: string, _mode: import('@kc/domain').PrivacyMode): Promise<User> {
-    throw NOT_IMPL('setPrivacyMode', 'P1.1');
+  async setPrivacyMode(userId: string, mode: import('@kc/domain').PrivacyMode): Promise<User> {
+    const { data, error } = await this.client
+      .from('users')
+      .update({ privacy_mode: mode, privacy_changed_at: new Date().toISOString() })
+      .eq('user_id', userId)
+      .select('*')
+      .single();
+    if (error) throw new Error(`setPrivacyMode: ${error.message}`);
+    return mapUserRow(data as unknown as UserRow);
   }
 
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */
@@ -164,26 +180,26 @@ export class SupabaseUserRepository implements IUserRepository {
   async getFollowing(userId: string, limit: number, cursor?: string) {
     return listFollowing(this.client, userId, limit, cursor);
   }
-  async sendFollowRequest(): Promise<never> {
-    throw NOT_IMPL('sendFollowRequest', 'P1.1');
+  async sendFollowRequest(requesterId: string, targetId: string) {
+    return sendRequest(this.client, requesterId, targetId);
   }
-  async acceptFollowRequest(_requesterId: string, _targetId: string): Promise<void> {
-    throw NOT_IMPL('acceptFollowRequest', 'P1.1');
+  async cancelFollowRequest(requesterId: string, targetId: string): Promise<void> {
+    return cancelRequest(this.client, requesterId, targetId);
   }
-  async rejectFollowRequest(_requesterId: string, _targetId: string): Promise<void> {
-    throw NOT_IMPL('rejectFollowRequest', 'P1.1');
+  async acceptFollowRequest(requesterId: string, targetId: string): Promise<void> {
+    return acceptRequest(this.client, requesterId, targetId);
   }
-  async cancelFollowRequest(_requesterId: string, _targetId: string): Promise<void> {
-    throw NOT_IMPL('cancelFollowRequest', 'P1.1');
+  async rejectFollowRequest(requesterId: string, targetId: string): Promise<void> {
+    return rejectRequest(this.client, requesterId, targetId);
   }
-  async getPendingFollowRequests(): Promise<never> {
-    throw NOT_IMPL('getPendingFollowRequests', 'P1.1');
+  async getPendingFollowRequests(userId: string) {
+    return listPendingRaw(this.client, userId);
   }
-  async getPendingFollowRequestsWithUsers(): Promise<never> {
-    throw NOT_IMPL('getPendingFollowRequestsWithUsers', 'P1.1');
+  async getPendingFollowRequestsWithUsers(userId: string, limit: number, cursor?: string) {
+    return listPendingWithUsers(this.client, userId, limit, cursor);
   }
-  async getFollowStateRaw(): Promise<never> {
-    throw NOT_IMPL('getFollowStateRaw', 'P1.1');
+  async getFollowStateRaw(viewerId: string, targetUserId: string) {
+    return fetchFollowStateRaw(this.client, viewerId, targetUserId);
   }
   async block(): Promise<never> {
     throw NOT_IMPL('block', 'P1.4');
