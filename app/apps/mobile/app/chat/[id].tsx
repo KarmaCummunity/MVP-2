@@ -51,19 +51,7 @@ export default function ChatScreen() {
     })();
   }, [unreadIncoming, chatId, userId]);
 
-  const doBlock = async () => {
-    if (!chat) return;
-    const otherId = chat.participantIds[0] === userId ? chat.participantIds[1] : chat.participantIds[0];
-    try {
-      await container.blockUser.execute({ blockerId: userId, blockedId: otherId });
-      Alert.alert('המשתמש נחסם');
-      navigation.goBack();
-    } catch {
-      Alert.alert('שגיאה', 'לא ניתן לחסום כעת.');
-    }
-  };
-
-  useLayoutEffect(() => {
+useLayoutEffect(() => {
     const title = counterpart.isDeleted ? 'משתמש שנמחק' : counterpart.displayName;
     const canOpenProfile = !counterpart.isDeleted && !!counterpart.shareHandle && !chat?.isSupportThread;
     navigation.setOptions({
@@ -168,7 +156,6 @@ export default function ChatScreen() {
         visible={menuOpen}
         onClose={() => setMenuOpen(false)}
         onReport={() => { setMenuOpen(false); setReportOpen(true); }}
-        onBlock={() => { setMenuOpen(false); void doBlock(); }}
       />
     </SafeAreaView>
   );

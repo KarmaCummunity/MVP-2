@@ -125,7 +125,6 @@ export default function SettingsScreen() {
             onPress={() => router.push('/settings/privacy' as never)}
           />
           <SettingsRow label={t('settings.followRequests')} icon="people-outline" onPress={() => router.push('/settings/follow-requests' as never)} />
-          <SettingsRow label={t('settings.blockedUsers')} icon="ban-outline" onPress={() => {}} />
         </View>
 
         {/* Stats */}

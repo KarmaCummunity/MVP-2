@@ -104,32 +104,14 @@ export default function OtherProfileScreen() {
     router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
   };
 
-  const block = () => {
-    if (!me) return;
-    Alert.alert('חסום משתמש?', `${u.displayName} לא יוכל לראות את הפרופיל שלך או לשלוח לך הודעות.`, [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'חסום', style: 'destructive', onPress: async () => {
-        try { await container.blockUser.execute({ blockerId: me, blockedId: u.userId }); router.back(); }
-        catch { Alert.alert('שגיאה'); }
-      } },
-    ]);
-  };
-
   const showLocked = u.privacyMode === 'Private' && followInfo?.state !== 'following' && !isMe;
-  // ⋮ hidden for self + super-admin (admin = support channel, FR-CHAT-007).
-  const showMenu = Boolean(me) && !isMe && !u.isSuperAdmin;
-  const HeaderMenu = showMenu ? () => (
-    <TouchableOpacity onPress={block} accessibilityLabel="עוד פעולות" style={styles.headerBtn}>
-      <Ionicons name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
-    </TouchableOpacity>
-  ) : undefined;
   // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
   const followState = followInfo?.state ?? 'not_following_public';
   const showFollowButton = Boolean(me) && !isMe;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: '', headerRight: HeaderMenu }} />
+      <Stack.Screen options={{ headerTitle: '' }} />
       <ScrollView>
         <View style={styles.card}>
           <ProfileHeader
@@ -196,5 +178,4 @@ const styles = StyleSheet.create({
   btnFlex: { flex: 1 },
   msgBtn: { flex: 1, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: S.md, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: S.xs },
   msgBtnText: { ...typography.button, color: colors.textPrimary },
-  headerBtn: { paddingHorizontal: S.sm, paddingVertical: S.xs },
 });
