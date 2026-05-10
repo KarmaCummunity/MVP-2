@@ -25,6 +25,7 @@ export class FakePostRepository implements IPostRepository {
   lastCreateArgs: CreatePostInput | null = null;
   lastUpdateArgs: { postId: string; patch: UpdatePostInput } | null = null;
   lastDeletePostId: string | null = null;
+  lastAdminRemovePostId: string | null = null;
   lastGetMyPostsArgs: { userId: string; status: PostStatus[]; limit: number; cursor?: string } | null = null;
   lastCountOpenUserId: string | null = null;
 
@@ -36,6 +37,7 @@ export class FakePostRepository implements IPostRepository {
   findByIdResult: PostWithOwner | null = null;
   findByIdError: Error | null = null;
   deleteError: Error | null = null;
+  adminRemoveError: Error | null = null;
   countOpenResult = 0;
   myPostsResult: Post[] = [];
 
@@ -72,6 +74,11 @@ export class FakePostRepository implements IPostRepository {
   delete = async (postId: string): Promise<void> => {
     this.lastDeletePostId = postId;
     if (this.deleteError) throw this.deleteError;
+  };
+
+  adminRemove = async (postId: string): Promise<void> => {
+    this.lastAdminRemovePostId = postId;
+    if (this.adminRemoveError) throw this.adminRemoveError;
   };
 
   // ── Closure (P0.6) ───────────────────────────────────────────────────────
