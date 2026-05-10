@@ -30,6 +30,16 @@ export interface PostWithOwner extends Post {
   ownerPrivacyMode: 'Public' | 'Private';
 }
 
+/** FR-CLOSURE-003 AC1/AC2 — chat-partner candidate for the recipient picker. */
+export interface ClosureCandidate {
+  userId: string;
+  fullName: string;
+  avatarUrl: string | null;
+  cityName: string | null;
+  /** ISO timestamp of the latest message in the anchored chat. Used for sort. */
+  lastMessageAt: string;
+}
+
 export interface MediaAssetInput {
   path: string;
   mimeType: string;
@@ -78,9 +88,19 @@ export interface IPostRepository {
   update(postId: string, patch: UpdatePostInput): Promise<Post>;
   delete(postId: string): Promise<void>;
 
-  // Closure (filled in P0.6 — closure flow slice)
+  // Closure (FR-CLOSURE-001..005)
+  // close: branches inside the impl —
+  //   recipientUserId !== null  → RPC `close_post_with_recipient` (atomic insert + status)
+  //   recipientUserId === null  → UPDATE status='deleted_no_recipient', delete_after=now()+7d
+  // Both paths bump items_given_count via the existing posts trigger; the
+  // recipient path also bumps items_received_count via the recipients trigger.
   close(postId: string, recipientUserId: string | null): Promise<Post>;
+  // reopen: branches inside the impl —
+  //   current status closed_delivered      → RPC `reopen_post_marked` (delete recipient row + status)
+  //   current status deleted_no_recipient  → UPDATE status='open', delete_after=null
   reopen(postId: string): Promise<Post>;
+  /** Recipient picker source: distinct chat partners on this post, sorted by latest message recency. */
+  getClosureCandidates(postId: string): Promise<ClosureCandidate[]>;
 
   // User's own posts
   getMyPosts(

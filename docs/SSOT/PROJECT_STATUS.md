@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P4.1 — web deploy pipeline: `Dockerfile` + `railway.json` so Railway builds the static SPA via `pnpm build:web` + `serve --single`. Local `docker build` + `docker run` smoke tested.) |
+| **Last Updated** | 2026-05-10 (P0.6 — closure flow shipped. FR-CLOSURE-001..005 + 008 + 009. 109 vitest passing. PR pending Supabase ops: enable `pg_cron` + apply migrations 0015 + 0016.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -30,13 +30,13 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~42%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding (basic info + photo + tour + soft gate)**; DB schema applied; Posts BE adapter + FE end-to-end) |
-| Features 🟢 done | 6 (P0.3 fully done — slice A + B + C) |
-| Features 🟡 in progress | 1 (P0.5 chat — implementation complete, manual verification + PR pending) |
+| MVP completion (rough) | **~50%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow**; DB schema applied through 0016) |
+| Features 🟢 done | 8 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8) |
+| Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
-| P0 critical features remaining | 2 (P0.5 chat; P0.6 closure) |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` — 79 vitest passing |
-| Open tech-debt items | **32 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| P0 critical features remaining | 0 — all P0 shipped |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` — **109 vitest passing** |
+| Open tech-debt items | **37 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -47,7 +47,7 @@ This document is the **single source of truth for project execution state**. It 
 
 ### What is in flight
 
-- **P0.5 — Direct chat with realtime** — implementation complete on `feat/FR-CHAT-001-chat-realtime`; manual verification + PR pending. Domain+ports+use-cases (TDD, +11 vitest), migrations 0010+0011, Supabase adapters incl. realtime, Zustand `chatStore` + composition root, replaced Inbox+Conversation mocks, new `user/[handle]` + `settings/report-issue` screens.
+- (none — all P0 shipped; next priority is P1.x per §2)
 
 ### What is fake / stubbed
 
@@ -72,8 +72,8 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P0.2 | Database schema, RLS policies, migrations | (Cross-cutting) | 🟢 Done (2026-05-07) | All migrations 0001–0008 applied |
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟢 Done (2026-05-08) | All slices A + B + C shipped |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | 🟢 Done (2026-05-08) | BE + FE both shipped |
-| P0.5 | Direct chat with realtime | FR-CHAT-001…008 | 🟡 In progress | Branch feat/FR-CHAT-001-chat-realtime — implementation complete; manual verification + PR pending. Defers: push notifs (P1.5/TD-115), full report flow (P1.3/TD-116), report-summary system message (P1.3/TD-117). |
-| P0.6 | Closure flow (mark as delivered) | FR-CLOSURE-001…006 | ⏳ Planned | Required to capture the **North Star** metric (`closed_delivered` count) |
+| P0.5 | Direct chat with realtime | FR-CHAT-001…008 | 🟢 Done (2026-05-10) | Merged in PR #31; polished in PR #35. Defers: push notifs (P1.5/TD-115), full report flow (P1.3/TD-116), report-summary system message (P1.3/TD-117). |
+| P0.6 | Closure flow (mark as delivered + reopen + cleanup cron) | FR-CLOSURE-001…005, 008, 009 | 🟢 Done (2026-05-10) | Branch `feat/FR-CLOSURE-001-closure-flow`. Defers: notify on mark (P1.5/TD-119), recipient un-marks self (P2.x/TD-120), suspect flag (P1.3/TD-121), storage orphan reconcile (TD-122), telemetry events (TD-123). |
 
 ### 📈 P1 — High priority (PMF quality)
 
@@ -120,11 +120,10 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
-| In progress 1 | **P0.5 — Direct chat with realtime** | agent-fe + agent-be | 2026-05-10 | — |
-| Up next | P0.6 — Closure flow | — | — | — |
-| Then | P1.7 — Donations + Search tabs wire-up (post-P0.5 PR, TD-114) | — | — | — |
+| In progress | (none) | — | — | — |
+| Up next | P1.x — pick next per §2 (likely P1.1 Following or P1.2 Search/filters) | — | — | — |
 
-Most recently shipped: **P4.1** (web deploy pipeline → Railway at `dev3.karma-community-kc.com`; multistage `Dockerfile` + `railway.json` force-Dockerfile-builder; runtime `serve --single` for SPA fallback; runbook at `docs/DEPLOY_WEB.md` — 2026-05-10). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P0.6** (closure flow — FR-CLOSURE-001..005 + 008 + 009 verified; 4 use cases + 19 vitest, 2 SQL migrations including daily `pg_cron` cleanup, 3-step UX with hybrid Step 1+2 sheet — 2026-05-10). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 

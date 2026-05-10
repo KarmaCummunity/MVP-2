@@ -68,6 +68,15 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`setBiography: ${error.message}`);
   }
 
+  /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */
+  async dismissClosureExplainer(userId: string): Promise<void> {
+    const { error } = await this.client
+      .from('users')
+      .update({ closure_explainer_dismissed: true })
+      .eq('user_id', userId);
+    if (error) throw new Error(`dismissClosureExplainer: ${error.message}`);
+  }
+
   async getEditableProfile(userId: string): Promise<{
     displayName: string;
     city: string;

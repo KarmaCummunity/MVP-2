@@ -49,6 +49,9 @@ export interface IUserRepository {
     biography: string | null;
   }>;
 
+  /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */
+  dismissClosureExplainer(userId: string): Promise<void>;
+
   // Follows
   follow(followerId: string, followedId: string): Promise<FollowEdge>;
   unfollow(followerId: string, followedId: string): Promise<void>;

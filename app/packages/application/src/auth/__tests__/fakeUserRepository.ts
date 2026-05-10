@@ -14,6 +14,7 @@ interface Row {
   onboardingState: OnboardingState;
   avatarUrl?: string | null;
   biography?: string | null;
+  closureExplainerDismissed?: boolean;
 }
 
 export interface FakeUserRepo extends IUserRepository {
@@ -102,6 +103,15 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         cityName: row.cityName,
         biography: row.biography ?? null,
       };
+    },
+    async dismissClosureExplainer(userId) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, closureExplainerDismissed: true });
     },
   };
 }

@@ -26,6 +26,11 @@ export * from './posts/UpdatePostUseCase';
 export * from './posts/GetPostByIdUseCase';
 export * from './posts/GetMyPostsUseCase';
 export * from './posts/DeletePostUseCase';
+export * from './posts/MarkAsDeliveredUseCase';
+export * from './posts/ReopenPostUseCase';
+export * from './posts/GetClosureCandidatesUseCase';
+
+export * from './auth/DismissClosureExplainerUseCase';
 
 // Chat use cases
 export { BuildAutoMessageUseCase } from './chat/BuildAutoMessageUseCase';

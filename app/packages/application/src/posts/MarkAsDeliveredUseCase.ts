@@ -1,0 +1,37 @@
+/** FR-CLOSURE-001..003: validate owner + status + recipient, then close. */
+import type { Post } from '@kc/domain';
+import type { IPostRepository } from '../ports/IPostRepository';
+import { PostError } from './errors';
+
+export interface MarkAsDeliveredInput {
+  postId: string;
+  ownerId: string;
+  recipientUserId: string | null;
+}
+
+export interface MarkAsDeliveredOutput {
+  post: Post;
+}
+
+export class MarkAsDeliveredUseCase {
+  constructor(private readonly repo: IPostRepository) {}
+
+  async execute(input: MarkAsDeliveredInput): Promise<MarkAsDeliveredOutput> {
+    const post = await this.repo.findById(input.postId, input.ownerId);
+    if (!post) throw new PostError('forbidden', 'post_not_found');
+    if (post.ownerId !== input.ownerId)
+      throw new PostError('closure_not_owner', 'closure_not_owner');
+    if (post.status !== 'open')
+      throw new PostError('closure_wrong_status', 'closure_wrong_status');
+
+    if (input.recipientUserId !== null) {
+      const candidates = await this.repo.getClosureCandidates(input.postId);
+      const isPartner = candidates.some((c) => c.userId === input.recipientUserId);
+      if (!isPartner)
+        throw new PostError('closure_recipient_not_in_chat', 'closure_recipient_not_in_chat');
+    }
+
+    const closed = await this.repo.close(input.postId, input.recipientUserId);
+    return { post: closed };
+  }
+}

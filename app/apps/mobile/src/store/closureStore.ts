@@ -1,0 +1,91 @@
+// ─────────────────────────────────────────────
+// FR-CLOSURE-001..005 — composition root for the closure flow.
+// Holds: which post is currently being closed, current step,
+// recipient candidates. Actions delegate to use cases.
+// ─────────────────────────────────────────────
+
+import { create } from 'zustand';
+import type { ClosureCandidate } from '@kc/application';
+import {
+  getGetClosureCandidatesUseCase,
+  getMarkAsDeliveredUseCase,
+} from '../services/postsComposition';
+import { getDismissClosureExplainerUseCase } from '../services/userComposition';
+
+export type ClosureStep = 'idle' | 'confirm' | 'pick' | 'explainer' | 'done' | 'error';
+
+interface ClosureState {
+  postId: string | null;
+  step: ClosureStep;
+  candidates: ClosureCandidate[];
+  selectedRecipientId: string | null;
+  errorMessage: string | null;
+  isBusy: boolean;
+}
+
+interface ClosureActions {
+  start(postId: string, ownerId: string): Promise<void>;
+  selectRecipient(userId: string | null): void;
+  confirmStep1(): void;
+  closeWith(recipientUserId: string | null, ownerId: string): Promise<void>;
+  dismissExplainer(stayDismissed: boolean, userId: string): Promise<void>;
+  reset(): void;
+}
+
+const INITIAL: ClosureState = {
+  postId: null,
+  step: 'idle',
+  candidates: [],
+  selectedRecipientId: null,
+  errorMessage: null,
+  isBusy: false,
+};
+
+export const useClosureStore = create<ClosureState & ClosureActions>((set, get) => ({
+  ...INITIAL,
+
+  async start(postId, ownerId) {
+    set({ ...INITIAL, postId, step: 'confirm', isBusy: true });
+    try {
+      const candidates = await getGetClosureCandidatesUseCase().execute({ postId, ownerId });
+      set({ candidates, isBusy: false });
+    } catch (e) {
+      set({ step: 'error', isBusy: false, errorMessage: (e as Error).message });
+    }
+  },
+
+  selectRecipient(userId) {
+    set({ selectedRecipientId: userId });
+  },
+
+  confirmStep1() {
+    set({ step: 'pick' });
+  },
+
+  async closeWith(recipientUserId, ownerId) {
+    const postId = get().postId;
+    if (!postId) return;
+    set({ isBusy: true, errorMessage: null });
+    try {
+      await getMarkAsDeliveredUseCase().execute({ postId, ownerId, recipientUserId });
+      set({ step: 'explainer', isBusy: false });
+    } catch (e) {
+      set({ step: 'error', isBusy: false, errorMessage: (e as Error).message });
+    }
+  },
+
+  async dismissExplainer(stayDismissed, userId) {
+    if (stayDismissed) {
+      try {
+        await getDismissClosureExplainerUseCase().execute({ userId });
+      } catch {
+        // Non-blocking — closure already succeeded; the flag flip is best-effort.
+      }
+    }
+    set({ step: 'done' });
+  },
+
+  reset() {
+    set(INITIAL);
+  },
+}));

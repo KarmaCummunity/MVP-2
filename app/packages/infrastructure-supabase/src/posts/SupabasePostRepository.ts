@@ -1,9 +1,9 @@
 // SupabasePostRepository — adapter for IPostRepository.
-// Mapped to SRS: FR-POST-001..004, FR-POST-008..011, FR-POST-014, FR-FEED-001..005, FR-FEED-013.
-// Closure stubs (close/reopen) ship in P0.6. See PROJECT_STATUS §6 TD-13.
+// Mapped to SRS: FR-POST-001..004, FR-POST-008..011, FR-POST-014, FR-FEED-001..005, FR-FEED-013, FR-CLOSURE-001..005.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
+  ClosureCandidate,
   CreatePostInput,
   FeedPage,
   IPostRepository,
@@ -23,9 +23,11 @@ import {
 } from './mapPostRow';
 import { mapInsertError } from './mapInsertError';
 import { decodeCursor, encodeCursor } from './cursor';
-
-const NOT_IMPL = (name: string, slice: string) =>
-  new Error(`SupabasePostRepository.${name}: not_implemented (${slice})`);
+import {
+  closePost as closePostHelper,
+  reopenPost as reopenPostHelper,
+  getClosureCandidates as getClosureCandidatesHelper,
+} from './closureMethods';
 
 const FEED_HARD_MAX = 100;
 
@@ -176,12 +178,15 @@ export class SupabasePostRepository implements IPostRepository {
     if (error) throw new Error(`delete: ${error.message}`);
   }
 
-  // ── Closure (P0.6) ──────────────────────────────────────────────────────
-  async close(_postId: string, _recipientUserId: string | null): Promise<Post> {
-    throw NOT_IMPL('close', 'P0.6');
+  // ── Closure (FR-CLOSURE-001..005) — delegated to closureMethods ─────────
+  close(postId: string, recipientUserId: string | null): Promise<Post> {
+    return closePostHelper(this.client, postId, recipientUserId);
   }
-  async reopen(_postId: string): Promise<Post> {
-    throw NOT_IMPL('reopen', 'P0.6');
+  reopen(postId: string): Promise<Post> {
+    return reopenPostHelper(this.client, postId);
+  }
+  getClosureCandidates(postId: string): Promise<ClosureCandidate[]> {
+    return getClosureCandidatesHelper(this.client, postId);
   }
 
   // ── User's own posts ────────────────────────────────────────────────────
