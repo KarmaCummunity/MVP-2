@@ -26,7 +26,8 @@ const FILE_SIZE_CAP = 200;
 const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 386 }],
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 266 }],
-  ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 245 }],
+  // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
+  ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 232 }],
   ['apps/mobile/app/(tabs)/profile.tsx', { td: 'TD-29', max: 215 }],
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 212 }],

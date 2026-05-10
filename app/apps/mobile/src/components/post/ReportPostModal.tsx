@@ -89,6 +89,7 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
               style={[styles.btn, styles.btnPrimary, submitting && styles.btnDisabled]}
               onPress={submit}
               disabled={submitting}
+              accessibilityState={{ disabled: submitting }}
             >
               <Text style={styles.btnPrimaryText}>{submitting ? 'שולח...' : 'שלח דיווח'}</Text>
             </TouchableOpacity>

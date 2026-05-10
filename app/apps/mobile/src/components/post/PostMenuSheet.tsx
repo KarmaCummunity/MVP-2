@@ -5,9 +5,9 @@ import { useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
-import { container } from '../../lib/container';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { ReportPostModal } from './ReportPostModal';
+import { usePostMenuActions } from '../../hooks/usePostMenuActions';
 
 interface Props {
   visible: boolean;
@@ -30,14 +30,19 @@ export function PostMenuSheet({
   onAfterRemoval,
 }: Props) {
   const [active, setActive] = useState<ActiveModal>(null);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const { busy, error, clearError, handleOwnerDelete, handleAdminRemove, handleBlock } =
+    usePostMenuActions({
+      post,
+      viewerId,
+      onAfterRemoval,
+      onSettle: () => setActive(null),
+    });
 
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isAdminViewingOther = isSuperAdmin && !isOwner;
 
   function openModal(name: Exclude<ActiveModal, null>) {
-    setError(null);
+    clearError();
     onClose();
     setActive(name);
   }
@@ -45,50 +50,7 @@ export function PostMenuSheet({
   function closeModal() {
     if (busy) return;
     setActive(null);
-    setError(null);
-  }
-
-  async function handleOwnerDelete() {
-    setBusy(true);
-    setError(null);
-    try {
-      await container.deletePost.execute({ postId: post.postId });
-      setActive(null);
-      onAfterRemoval();
-    } catch (e) {
-      setError('המחיקה נכשלה, נסה שוב.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleAdminRemove() {
-    setBusy(true);
-    setError(null);
-    try {
-      await container.adminRemovePost.execute({ postId: post.postId });
-      setActive(null);
-      onAfterRemoval();
-    } catch (e) {
-      setError('ההסרה נכשלה, נסה שוב.');
-    } finally {
-      setBusy(false);
-    }
-  }
-
-  async function handleBlock() {
-    if (!viewerId) return;
-    setBusy(true);
-    setError(null);
-    try {
-      await container.blockUser.execute({ blockerId: viewerId, blockedId: post.ownerId });
-      setActive(null);
-      onAfterRemoval();
-    } catch (e) {
-      setError('החסימה נכשלה, נסה שוב.');
-    } finally {
-      setBusy(false);
-    }
+    clearError();
   }
 
   return (
@@ -161,7 +123,7 @@ export function PostMenuSheet({
       <ReportPostModal
         postId={post.postId}
         visible={active === 'report'}
-        onClose={() => setActive(null)}
+        onClose={closeModal}
       />
     </>
   );
@@ -208,7 +170,7 @@ const styles = StyleSheet.create({
     gap: 12,
   },
   itemIcon: { fontSize: 22 },
-  itemLabel: { fontSize: 16, color: colors.textPrimary, textAlign: 'right', flex: 1 },
+  itemLabel: { fontSize: 16, color: colors.textPrimary, textAlign: 'right' },
   itemLabelDestructive: { color: colors.error },
   itemLabelMuted: { color: colors.textSecondary },
 });
