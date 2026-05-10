@@ -10,20 +10,15 @@ interface Props {
   readonly visible: boolean;
   readonly onClose: () => void;
   readonly onReport: () => void;
-  readonly onBlock: () => void;
 }
 
-export function ChatActionMenu({ visible, onClose, onReport, onBlock }: Props) {
+export function ChatActionMenu({ visible, onClose, onReport }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <TouchableOpacity style={styles.item} onPress={onReport} accessibilityRole="button">
             <Text style={styles.itemText}>דווח על השיחה</Text>
-          </TouchableOpacity>
-          <View style={styles.divider} />
-          <TouchableOpacity style={styles.item} onPress={onBlock} accessibilityRole="button">
-            <Text style={[styles.itemText, styles.itemDestructive]}>חסום משתמש</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.item} onPress={onClose} accessibilityRole="button">

@@ -19,7 +19,7 @@ interface Props {
   onAfterRemoval: () => void;
 }
 
-type ActiveModal = null | 'delete-owner' | 'admin-remove' | 'block' | 'report';
+type ActiveModal = null | 'delete-owner' | 'admin-remove' | 'report';
 
 export function PostMenuSheet({
   visible,
@@ -30,10 +30,9 @@ export function PostMenuSheet({
   onAfterRemoval,
 }: Props) {
   const [active, setActive] = useState<ActiveModal>(null);
-  const { busy, error, clearError, handleOwnerDelete, handleAdminRemove, handleBlock } =
+  const { busy, error, clearError, handleOwnerDelete, handleAdminRemove } =
     usePostMenuActions({
       post,
-      viewerId,
       onAfterRemoval,
       onSettle: () => setActive(null),
     });
@@ -68,7 +67,6 @@ export function PostMenuSheet({
             ) : (
               <>
                 <MenuItem icon="🚩" label="דווח" onPress={() => openModal('report')} />
-                <MenuItem icon="🚫" label="חסום משתמש" onPress={() => openModal('block')} />
                 {isAdminViewingOther ? (
                   <MenuItem
                     icon="🛡️"
@@ -108,19 +106,7 @@ export function PostMenuSheet({
         onConfirm={handleAdminRemove}
       />
 
-      <ConfirmActionModal
-        visible={active === 'block'}
-        title={`🚫 לחסום את ${post.ownerName}?`}
-        message="לא תראה יותר פוסטים שלו, והוא לא יוכל ליצור איתך קשר. ניתן לבטל בהגדרות → משתמשים חסומים."
-        confirmLabel="חסום"
-        destructive
-        isBusy={busy}
-        errorMessage={error}
-        onCancel={closeModal}
-        onConfirm={handleBlock}
-      />
-
-      <ReportPostModal
+<ReportPostModal
         postId={post.postId}
         visible={active === 'report'}
         onClose={closeModal}

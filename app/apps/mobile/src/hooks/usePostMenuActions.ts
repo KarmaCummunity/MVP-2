@@ -7,7 +7,6 @@ import { container } from '../lib/container';
 
 interface Args {
   post: PostWithOwner;
-  viewerId: string | null;
   /** Called after a successful destructive action. */
   onAfterRemoval: () => void;
   /**
@@ -24,10 +23,9 @@ interface PostMenuActions {
   clearError: () => void;
   handleOwnerDelete: () => Promise<void>;
   handleAdminRemove: () => Promise<void>;
-  handleBlock: () => Promise<void>;
 }
 
-export function usePostMenuActions({ post, viewerId, onAfterRemoval, onSettle }: Args): PostMenuActions {
+export function usePostMenuActions({ post, onAfterRemoval, onSettle }: Args): PostMenuActions {
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -58,18 +56,7 @@ export function usePostMenuActions({ post, viewerId, onAfterRemoval, onSettle }:
     [run, post.postId],
   );
 
-  const handleBlock = useCallback(
-    () =>
-      viewerId === null
-        ? Promise.resolve()
-        : run(
-            () => container.blockUser.execute({ blockerId: viewerId, blockedId: post.ownerId }),
-            'החסימה נכשלה, נסה שוב.',
-          ),
-    [run, viewerId, post.ownerId],
-  );
-
   const clearError = useCallback(() => setError(null), []);
 
-  return { busy, error, clearError, handleOwnerDelete, handleAdminRemove, handleBlock };
+  return { busy, error, clearError, handleOwnerDelete, handleAdminRemove };
 }
