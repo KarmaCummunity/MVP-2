@@ -10,11 +10,13 @@
 //   4. Pick from any user (with search) → toggle 'search' mode + select + Mark and Close
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
 import { colors } from '@kc/ui';
+import type { PostType } from '@kc/domain';
 import { useClosureStore } from '../../store/closureStore';
 import { ChatsPane, ModeTabs, SearchPane } from './ClosureRecipientPanes';
 
 interface Props {
   ownerId: string;
+  postType: PostType;
   isBusy: boolean;
   errorMessage: string | null;
   onMarkAndClose: () => void;
@@ -24,6 +26,7 @@ interface Props {
 
 export function ClosureStep2({
   ownerId,
+  postType,
   isBusy,
   errorMessage,
   onMarkAndClose,
@@ -46,9 +49,12 @@ export function ClosureStep2({
     !isSearching &&
     searchResults.length === 0;
 
+  const give = postType === 'Give';
+  const title = give ? '🎁  למי מסרת את הפריט?' : '🎁  ממי קיבלת את הפריט?';
+
   return (
     <View>
-      <Text style={styles.title}>🎁  למי מסרת את הפריט?</Text>
+      <Text style={styles.title}>{title}</Text>
 
       <ModeTabs pickMode={pickMode} chatsCount={candidates.length} onChange={setPickMode} />
 

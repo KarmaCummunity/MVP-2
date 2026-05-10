@@ -6,6 +6,7 @@
 
 import { create } from 'zustand';
 import type { ClosureCandidate } from '@kc/application';
+import type { PostType } from '@kc/domain';
 import {
   getGetClosureCandidatesUseCase,
   getMarkAsDeliveredUseCase,
@@ -20,6 +21,9 @@ export type PickMode = 'chats' | 'search';
 
 interface ClosureState {
   postId: string | null;
+  /** Drives Hebrew copy in every step — Give vs Request flips the directional
+   *  language ("מסרת ל" vs "קיבלת מ") and the Step-1 question. */
+  postType: PostType | null;
   step: ClosureStep;
   pickMode: PickMode;
   /** Chat partners (loaded once on start). */
@@ -34,7 +38,7 @@ interface ClosureState {
 }
 
 interface ClosureActions {
-  start(postId: string, ownerId: string): Promise<void>;
+  start(postId: string, ownerId: string, postType: PostType): Promise<void>;
   selectRecipient(userId: string | null): void;
   setPickMode(mode: PickMode): void;
   setSearchQuery(query: string, ownerId: string): void;
@@ -50,6 +54,7 @@ interface ClosureActions {
 
 const INITIAL: ClosureState = {
   postId: null,
+  postType: null,
   step: 'idle',
   pickMode: 'chats',
   candidates: [],
@@ -68,8 +73,8 @@ let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 export const useClosureStore = create<ClosureState & ClosureActions>((set, get) => ({
   ...INITIAL,
 
-  async start(postId, ownerId) {
-    set({ ...INITIAL, postId, step: 'confirm', isBusy: true });
+  async start(postId, ownerId, postType) {
+    set({ ...INITIAL, postId, postType, step: 'confirm', isBusy: true });
     try {
       const candidates = await getGetClosureCandidatesUseCase().execute({ postId, ownerId });
       set({ candidates, isBusy: false });

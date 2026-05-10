@@ -8,6 +8,7 @@ import { getUserRepo } from '../../services/userComposition';
 
 export function ClosureExplainerSheet() {
   const step = useClosureStore((s) => s.step);
+  const postType = useClosureStore((s) => s.postType);
   const dismiss = useClosureStore((s) => s.dismissExplainer);
   const completeWithoutExplainer = useClosureStore((s) => s.completeWithoutExplainer);
   const userId = useAuthStore((s) => s.session?.userId);
@@ -55,19 +56,28 @@ export function ClosureExplainerSheet() {
   // Tapping the backdrop or hardware back during the explainer is treated as
   // "got it, no persist" — the closure already succeeded, so we still want
   // OwnerActionsBar to refetch (step='done', not 'idle').
+  // Direction flips by post.type. The "give" copy is what was originally
+  // shipped; the "request" copy mirrors it for the recipient-side flow.
+  const give = postType !== 'Request';
+  const titleText = give ? '✨  תודה שתרמת!' : '✨  תודה שעדכנת!';
+  const markedBullet = give
+    ? '• פוסטים שסומנו עם מקבל — נשמרים לתמיד ומופיעים בסטטיסטיקה שלך ושל המקבל.'
+    : '• פוסטים שסומנו עם נותן — נשמרים לתמיד ומופיעים בסטטיסטיקה שלך ושל הנותן.';
+  const counterBullet = give
+    ? '• בכל מקרה — "פריטים שתרמתי" שלך עולה ב-1.'
+    : '• בכל מקרה — "פריטים שקיבלתי" שלך עולה ב-1.';
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={completeWithoutExplainer}>
       <Pressable style={styles.backdrop} onPress={completeWithoutExplainer}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>✨  תודה שתרמת!</Text>
+          <Text style={styles.title}>{titleText}</Text>
           <Text style={styles.body}>כך זה עובד:</Text>
-          <Text style={styles.bullet}>
-            • פוסטים שסומנו עם מקבל — נשמרים לתמיד ומופיעים בסטטיסטיקה שלך ושל המקבל.
-          </Text>
+          <Text style={styles.bullet}>{markedBullet}</Text>
           <Text style={styles.bullet}>
             • פוסטים שנסגרו בלי לסמן — נשמרים 7 ימים למקרה של טעות, ואז נמחקים אוטומטית.
           </Text>
-          <Text style={styles.bullet}>• בכל מקרה — &quot;פריטים שתרמתי&quot; שלך עולה ב-1.</Text>
+          <Text style={styles.bullet}>{counterBullet}</Text>
 
           <Pressable
             onPress={() => setStayDismissed((v) => !v)}
