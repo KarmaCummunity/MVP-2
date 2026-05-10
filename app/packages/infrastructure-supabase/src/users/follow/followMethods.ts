@@ -65,14 +65,13 @@ export async function listFollowers(
   limit: number,
   cursor?: string,
 ): Promise<User[]> {
-  const q = client
+  const base = client
     .from('follow_edges')
     .select('follower:follower_id(*)')
     .eq('followed_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
-  if (cursor) q.lt('follower_id', cursor);
-  const { data, error } = await q;
+  const { data, error } = await (cursor ? base.lt('follower_id', cursor) : base);
   if (error) throw mapFollowError(error);
   return ((data ?? []) as unknown as { follower: UserRow | null }[])
     .map((r) => r.follower)
@@ -86,14 +85,13 @@ export async function listFollowing(
   limit: number,
   cursor?: string,
 ): Promise<User[]> {
-  const q = client
+  const base = client
     .from('follow_edges')
     .select('followed:followed_id(*)')
     .eq('follower_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
-  if (cursor) q.lt('followed_id', cursor);
-  const { data, error } = await q;
+  const { data, error } = await (cursor ? base.lt('followed_id', cursor) : base);
   if (error) throw mapFollowError(error);
   return ((data ?? []) as unknown as { followed: UserRow | null }[])
     .map((r) => r.followed)
