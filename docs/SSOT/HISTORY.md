@@ -6,6 +6,21 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 P0.6 — Closure flow (FR-CLOSURE-001..005, 008, 009 verified)
+- **SRS**: FR-CLOSURE-001 (initiate from PostDetail) · FR-CLOSURE-002 (Step 1 confirm) · FR-CLOSURE-003 (Step 2 recipient picker — with chat partners + empty state) · FR-CLOSURE-004 (Step 3 one-time educational explainer + dismiss-forever flag) · FR-CLOSURE-005 (reopen `closed_delivered` and in-grace `deleted_no_recipient`) · FR-CLOSURE-008 (daily `pg_cron` cleanup of expired unmarked closures) · FR-CLOSURE-009 (stat projection — pre-existing 0006 triggers verified to fire on every transition).
+- **Branch / PR**: `feat/FR-CLOSURE-001-closure-flow` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · **109 vitest passing** (was 90; +19 closure use-case tests across 4 new files) · `pnpm lint:arch` green (after extracting `closureMethods.ts` from `SupabasePostRepository.ts` and bumping 2 allowlist entries).
+- **Code**:
+  - **Domain** — zero changes; `PostStatus` enum + `User.closureExplainerDismissed` + `Post.reopenCount/deleteAfter` were already in place from P0.2.
+  - **Application** — 4 new use cases (`MarkAsDeliveredUseCase`, `ReopenPostUseCase`, `GetClosureCandidatesUseCase`, `DismissClosureExplainerUseCase`); 4 new `PostError` codes; 2 port additions (`IPostRepository.getClosureCandidates`, `IUserRepository.dismissClosureExplainer`); contract commit isolated.
+  - **Infrastructure / DB** — 2 migrations: `0015_closure_rpcs.sql` (atomic `close_post_with_recipient` + `reopen_post_marked` SECURITY INVOKER functions; `closure_*` SQLSTATE P0001 codes); `0016_closure_cleanup_cron.sql` (daily 04:00-UTC `pg_cron` schedule of `closure_cleanup_expired_with_metric()`; `closure_cleanup_metrics` table). Repo impl: `closureMethods.ts` (extracted) + `SupabasePostRepository.{close,reopen,getClosureCandidates}` delegations + `SupabaseUserRepository.dismissClosureExplainer`.
+  - **UI (mobile)** — 5 new components in `src/components/closure/`: `RecipientPickerRow`, `ClosureSheet` (Step 1 + Step 2 hybrid bottom sheet), `ClosureExplainerSheet` (Step 3, conditional on persisted flag), `ReopenConfirmModal` (two copy variants), `OwnerActionsBar`. Plus `closureStore.ts` (Zustand step machine) and Hebrew copy throughout. PostDetail wires `OwnerActionsBar` for owners; `(tabs)/profile.tsx` 'closed' tab now also covers `deleted_no_recipient` so in-grace posts surface for reopen.
+- **Tech-debt deltas**: +TD-119 (notify recipient on mark — depends on FR-NOTIF push, P1.5) · +TD-120 (recipient un-marks self, FR-CLOSURE-007, P2.x) · +TD-121 (suspect flag at 5+ reopens, FR-CLOSURE-010, depends on FR-MOD-008 P1.3) · +TD-122 (storage orphan reconciliation — `media_assets` rows cascade but blobs in `post-images` bucket need a daily reconcile Edge Function) · +TD-123 (closure telemetry events, e.g. `closure_step1_completed` per FR-CLOSURE-002 AC3 — no telemetry infra in repo yet). No closures.
+- **Open gaps**: FR-CLOSURE-006 / 007 / 010 deferred per spec; storage orphan blobs accumulate until TD-122 lands; bulk RPC application requires the operator to run `0015` + enable `pg_cron` and run `0016` on the dev project (see [`OPERATOR_RUNBOOK.md`](./../OPERATOR_RUNBOOK.md)).
+- **Manual setup remaining (one-time, in Supabase dashboard)**: (1) Database → Extensions → enable `pg_cron`. (2) Apply migrations `0015_closure_rpcs.sql` + `0016_closure_cleanup_cron.sql` (CI/CD applies on merge if configured; otherwise SQL editor).
+
+---
+
 ### 🟢 Web deploy pipeline → Railway with Dockerfile (P4.1)
 - **SRS**: NFR-PLAT-* — Railway now builds and serves the static SPA at `https://dev3.karma-community-kc.com`. Replaces the failing Railpack auto-detect that couldn't make sense of the pnpm monorepo.
 - **Branch**: `chore/railway-dockerfile` · 2026-05-10

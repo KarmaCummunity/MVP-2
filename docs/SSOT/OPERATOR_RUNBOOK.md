@@ -181,3 +181,51 @@ where schemaname = 'storage' and tablename = 'objects' and polname like 'avatars
 ```
 
 After apply, verify in the app: onboarding photo step → camera or gallery → image visible after upload → "Continue with current photo" advances to tour. Errors keep Skip available.
+
+---
+
+## P0.6 — Closure flow (one-time setup, 2026-05-10)
+
+The closure flow ships two SQL migrations that depend on the `pg_cron` extension being enabled on the Supabase project. The migration file is idempotent and safe to re-run.
+
+### 1. Enable `pg_cron` extension
+
+In the Supabase dashboard:
+
+1. Database → Extensions → search "pg_cron".
+2. Toggle **Enable**.
+
+### 2. Apply migrations
+
+```bash
+# From the repo root, with the Supabase CLI logged in to the dev project:
+supabase migration up 0015_closure_rpcs.sql
+supabase migration up 0016_closure_cleanup_cron.sql
+
+# Or via the dashboard SQL editor: paste each file's contents and run.
+```
+
+### 3. Verify
+
+```sql
+-- Two new RPCs exist
+select proname from pg_proc
+ where proname in ('close_post_with_recipient', 'reopen_post_marked', 'closure_cleanup_expired_with_metric');
+-- → 3 rows
+
+-- Daily cron schedule installed
+select jobname, schedule from cron.job where jobname = 'closure_cleanup_daily';
+-- → ('closure_cleanup_daily', '0 4 * * *')
+
+-- Metric table exists
+select count(*) from public.closure_cleanup_metrics; -- 0 until first run
+```
+
+### 4. App-side smoke (after migrations)
+
+- Sign in as a test user with at least one open post and one chat partner on it.
+- PostDetail → "סמן כנמסר ✓" → Step 1 confirm → Step 2 picker → "סמן וסגור ✓" → Step 3 explainer → done.
+- Profile → "פריטים שתרמתי" should be +1.
+- Reopen the same post via "📤 פתח מחדש" → counter -1.
+
+Repeat for staging / prod when promoting.
