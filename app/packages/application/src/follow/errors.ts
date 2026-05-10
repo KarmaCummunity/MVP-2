@@ -28,6 +28,7 @@ export class FollowError extends Error {
     this.code = code;
     this.cooldownUntil = opts.cooldownUntil;
     this.cause = opts.cause;
+    Object.setPrototypeOf(this, FollowError.prototype);
   }
 }
 
