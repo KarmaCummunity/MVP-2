@@ -27,7 +27,9 @@ export function ClosureSheet() {
     <Modal visible={visible} transparent animationType="slide" onRequestClose={reset}>
       <Pressable style={styles.backdrop} onPress={reset}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          {step === 'confirm' ? <Step1 onConfirm={confirmStep1} onCancel={reset} /> : null}
+          {step === 'confirm' ? (
+            <Step1 onConfirm={confirmStep1} onCancel={reset} isBusy={isBusy} />
+          ) : null}
           {step === 'pick' && ownerId ? (
             <Step2
               candidates={candidates}
@@ -46,7 +48,15 @@ export function ClosureSheet() {
   );
 }
 
-function Step1({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () => void }) {
+function Step1({
+  onConfirm,
+  onCancel,
+  isBusy,
+}: {
+  onConfirm: () => void;
+  onCancel: () => void;
+  isBusy: boolean;
+}) {
   return (
     <View>
       <Text style={styles.title}>🤝  האם הפריט באמת נמסר?</Text>
@@ -57,8 +67,16 @@ function Step1({ onConfirm, onCancel }: { onConfirm: () => void; onCancel: () =>
         <Pressable onPress={onCancel} style={[styles.btn, styles.btnSecondary]}>
           <Text style={styles.btnSecondaryText}>ביטול</Text>
         </Pressable>
-        <Pressable onPress={onConfirm} style={[styles.btn, styles.btnPrimary]}>
-          <Text style={styles.btnPrimaryText}>כן, נמסר ✓</Text>
+        <Pressable
+          onPress={onConfirm}
+          disabled={isBusy}
+          style={[styles.btn, styles.btnPrimary, isBusy && styles.btnDisabled]}
+        >
+          {isBusy ? (
+            <ActivityIndicator color={colors.textInverse} />
+          ) : (
+            <Text style={styles.btnPrimaryText}>כן, נמסר ✓</Text>
+          )}
         </Pressable>
       </View>
     </View>

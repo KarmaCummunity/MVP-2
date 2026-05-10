@@ -29,6 +29,10 @@ interface ClosureActions {
   confirmStep1(): void;
   closeWith(recipientUserId: string | null, ownerId: string): Promise<void>;
   dismissExplainer(stayDismissed: boolean, userId: string): Promise<void>;
+  /** Skip the explainer step and signal success — used when the user has already
+   *  ticked "אל תציג שוב". Sets step='done' so subscribers (OwnerActionsBar)
+   *  can react and refetch their data. */
+  completeWithoutExplainer(): void;
   reset(): void;
 }
 
@@ -82,6 +86,10 @@ export const useClosureStore = create<ClosureState & ClosureActions>((set, get) 
         // Non-blocking — closure already succeeded; the flag flip is best-effort.
       }
     }
+    set({ step: 'done' });
+  },
+
+  completeWithoutExplainer() {
     set({ step: 'done' });
   },
 

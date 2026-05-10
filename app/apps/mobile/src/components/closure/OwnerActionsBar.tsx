@@ -4,8 +4,8 @@
 //   deleted_no_recipient (in grace)   → "📤 פתח מחדש"
 //   deleted_no_recipient (past grace) → no CTA (post is on its way out)
 //   removed_admin / expired           → no CTA
-import { useState } from 'react';
-import { View, Pressable, Text, StyleSheet, Alert, ActivityIndicator } from 'react-native';
+import { useEffect, useState } from 'react';
+import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { Post } from '@kc/domain';
 import { isPostError, type PostErrorCode } from '@kc/application';
@@ -25,16 +25,21 @@ interface Props {
 export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
   const startClosure = useClosureStore((s) => s.start);
   const closureStep = useClosureStore((s) => s.step);
+  const closureBusy = useClosureStore((s) => s.isBusy);
   const resetClosure = useClosureStore((s) => s.reset);
   const [reopenOpen, setReopenOpen] = useState(false);
   const [isReopening, setIsReopening] = useState(false);
   const [reopenError, setReopenError] = useState<string | null>(null);
 
-  // When the closure flow finishes, refresh the parent's data.
-  if (closureStep === 'done') {
-    resetClosure();
-    onAfterMutation();
-  }
+  // When the closure flow finishes, refresh the parent's data. MUST run in
+  // useEffect — calling parent setState during render is a React anti-pattern
+  // (B2). Reset the store here too so the next closure starts clean.
+  useEffect(() => {
+    if (closureStep === 'done') {
+      resetClosure();
+      onAfterMutation();
+    }
+  }, [closureStep, resetClosure, onAfterMutation]);
 
   const isOpen = post.status === 'open';
   const isReopenable =
@@ -68,7 +73,8 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
       <View style={styles.bar}>
         {isOpen ? (
           <Pressable
-            style={styles.btnPrimary}
+            style={[styles.btnPrimary, (closureBusy || closureStep !== 'idle') && styles.btnDisabled]}
+            disabled={closureBusy || closureStep !== 'idle'}
             onPress={() => startClosure(post.postId, ownerId)}
             accessibilityLabel="סמן כנמסר"
           >
@@ -76,7 +82,8 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
           </Pressable>
         ) : (
           <Pressable
-            style={styles.btnPrimary}
+            style={[styles.btnPrimary, (isReopening || reopenOpen) && styles.btnDisabled]}
+            disabled={isReopening || reopenOpen}
             onPress={() => {
               setReopenError(null);
               setReopenOpen(true);
@@ -129,6 +136,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   btnPrimaryText: { ...typography.button, color: colors.textInverse },
+  btnDisabled: { opacity: 0.5 },
   busyOverlay: {
     position: 'absolute',
     bottom: 80,
