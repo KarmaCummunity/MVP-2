@@ -19,6 +19,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
+import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -107,6 +108,10 @@ export default function PostDetailScreen() {
           )}
 
           {post.description && <Text style={styles.description}>{post.description}</Text>}
+
+          {post.status === 'closed_delivered' && post.recipientUser ? (
+            <RecipientCallout postType={post.type} recipient={post.recipientUser} />
+          ) : null}
 
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={16} color={colors.textSecondary} />

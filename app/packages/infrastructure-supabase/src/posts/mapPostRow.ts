@@ -17,10 +17,14 @@ type MediaAssetRow = Database['public']['Tables']['media_assets']['Row'];
 type RecipientRow = Database['public']['Tables']['recipients']['Row'];
 type UserRow = Database['public']['Tables']['users']['Row'];
 
+type RecipientWithUserRow = RecipientRow & {
+  user?: Pick<UserRow, 'user_id' | 'display_name' | 'avatar_url' | 'share_handle'> | null;
+};
+
 export interface PostJoinedRow extends PostRow {
   city_ref?: { name_he: string } | null;
   media_assets?: MediaAssetRow[] | null;
-  recipient?: RecipientRow | null;
+  recipient?: RecipientWithUserRow | null;
 }
 
 export interface PostWithOwnerJoinedRow extends PostJoinedRow {
@@ -80,6 +84,17 @@ export function mapPostRow(row: PostJoinedRow): Post {
   };
 }
 
+function mapRecipientUser(row: PostJoinedRow): PostWithOwner['recipientUser'] {
+  const u = row.recipient?.user;
+  if (!u) return null;
+  return {
+    userId: u.user_id,
+    displayName: u.display_name,
+    shareHandle: u.share_handle,
+    avatarUrl: u.avatar_url,
+  };
+}
+
 export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner {
   // Owner can be null when:
   // 1. The user_id was deleted from public.users (FK posts_owner_id_fkey is ON DELETE
@@ -87,6 +102,7 @@ export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner 
   // 2. RLS hides the owner row from the viewer (rare with current users RLS, but possible).
   // Per FR-CHAT-013 / R-MVP-Privacy-6 placeholder convention, surface a "משתמש שנמחק"
   // placeholder rather than throwing — one orphan post must not crash the feed.
+  const recipientUser = mapRecipientUser(row);
   if (!row.owner) {
     return {
       ...mapPostRow(row),
@@ -94,6 +110,7 @@ export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner 
       ownerAvatarUrl: null,
       ownerHandle: '',
       ownerPrivacyMode: 'Public',
+      recipientUser,
     };
   }
   return {
@@ -102,14 +119,20 @@ export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner 
     ownerAvatarUrl: row.owner.avatar_url,
     ownerHandle: row.owner.share_handle,
     ownerPrivacyMode: row.owner.privacy_mode as 'Public' | 'Private',
+    recipientUser,
   };
 }
 
+// `recipient` join nests the marked user so PostDetail can render
+// "נמסר ל-X" / "ניתן על-ידי X" with a profile link without a second round-trip.
 export const POST_SELECT_OWNER = `
   *,
   city_ref:cities!posts_city_fkey(name_he),
   media_assets(*),
-  recipient:recipients(*),
+  recipient:recipients(
+    *,
+    user:users!recipients_recipient_user_id_fkey(user_id, display_name, avatar_url, share_handle)
+  ),
   owner:users!posts_owner_id_fkey(user_id, display_name, avatar_url, share_handle, privacy_mode)
 `;
 

@@ -20,6 +20,7 @@ const base = (id: string, createdAt: string, visibility: 'Public' | 'FollowersOn
   urgency: null,
   mediaAssets: [],
   recipient: null,
+  recipientUser: null,
   reopenCount: 0,
   deleteAfter: null,
   createdAt,
