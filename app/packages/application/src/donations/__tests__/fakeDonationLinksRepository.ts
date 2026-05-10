@@ -1,0 +1,47 @@
+import type { DonationCategorySlug, DonationLink } from '@kc/domain';
+import type {
+  AddDonationLinkInput,
+  IDonationLinksRepository,
+} from '../../ports/IDonationLinksRepository';
+
+export function makeLink(overrides: Partial<DonationLink> = {}): DonationLink {
+  return {
+    id: 'l_1',
+    categorySlug: 'food',
+    url: 'https://example.org',
+    displayName: 'Example NGO',
+    description: null,
+    submittedBy: 'u_1',
+    validatedAt: '2026-05-10T00:00:00.000Z',
+    hiddenAt: null,
+    createdAt: '2026-05-10T00:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export class FakeDonationLinksRepository implements IDonationLinksRepository {
+  listResult: DonationLink[] = [];
+  addResult: DonationLink = makeLink();
+  addError: Error | null = null;
+  hideError: Error | null = null;
+
+  lastListSlug: DonationCategorySlug | null = null;
+  lastAddInput: AddDonationLinkInput | null = null;
+  lastHideId: string | null = null;
+
+  async listByCategory(slug: DonationCategorySlug): Promise<DonationLink[]> {
+    this.lastListSlug = slug;
+    return this.listResult;
+  }
+
+  async addViaEdgeFunction(input: AddDonationLinkInput): Promise<DonationLink> {
+    this.lastAddInput = input;
+    if (this.addError) throw this.addError;
+    return this.addResult;
+  }
+
+  async softHide(linkId: string): Promise<void> {
+    this.lastHideId = linkId;
+    if (this.hideError) throw this.hideError;
+  }
+}
