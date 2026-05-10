@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P0.6 — closure flow shipped. FR-CLOSURE-001..005 + 008 + 009. 109 vitest passing. PR pending Supabase ops: enable `pg_cron` + apply migrations 0015 + 0016.) |
+| **Last Updated** | 2026-05-10 (FR-ADMIN-009 + post-detail ⋮ menu shipped. 114 vitest passing.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -31,18 +31,18 @@ This document is the **single source of truth for project execution state**. It 
 | Metric | Value |
 | ------ | ----- |
 | MVP completion (rough) | **~50%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow**; DB schema applied through 0016) |
-| Features 🟢 done | 8 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8) |
+| Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + FR-ADMIN-009) |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` — **109 vitest passing** |
-| Open tech-debt items | **37 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` — **114 vitest passing** + posts.adminRemove + reports.post |
+| Open tech-debt items | **41 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
 - Monorepo build (`pnpm typecheck` passes); `pnpm lint:arch` enforces ≤200-LOC + domain-error rules
 - Native dev builds on iOS 26 + Android API-36 + Web — all three platforms run correctly with Expo SDK 54 + expo-router 6
-- **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing.
+- **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing. Post detail now exposes a role-aware ⋮ overflow menu (FR-POST-014 AC4 + FR-POST-015 AC1 partial): viewer → דווח/חסום משתמש; owner → מחק; super-admin viewing someone else's post → דווח/חסום + הסר כאדמין (FR-ADMIN-009 via the new admin_remove_post RPC).
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
 
 ### What is in flight
@@ -123,7 +123,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | In progress | (none) | — | — | — |
 | Up next | P1.x — pick next per §2 (likely P1.1 Following or P1.2 Search/filters) | — | — | — |
 
-Most recently shipped: **P0.6** (closure flow — FR-CLOSURE-001..005 + 008 + 009 verified; 4 use cases + 19 vitest, 2 SQL migrations including daily `pg_cron` cleanup, 3-step UX with hybrid Step 1+2 sheet — 2026-05-10). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **FR-ADMIN-009** — post-detail ⋮ overflow menu (Report + Block + Owner-Delete + Admin-Remove) — 0017_admin_remove_post.sql RPC, 5 new mobile components, useIsSuperAdmin hook, 114 vitest passing — 2026-05-10. Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 
