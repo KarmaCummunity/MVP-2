@@ -36,7 +36,7 @@ function pickStorage(): SupabaseAuthStorage | undefined {
   return AsyncStorage;
 }
 
-const supabase = getSupabaseClient({ storage: pickStorage() });
+export const supabase = getSupabaseClient({ storage: pickStorage() });
 
 const chatRepo = new SupabaseChatRepository(supabase);
 const chatRealtime = new SupabaseChatRealtime(supabase);
