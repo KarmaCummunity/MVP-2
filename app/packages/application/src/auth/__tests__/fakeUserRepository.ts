@@ -47,6 +47,9 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     getPendingFollowRequests: notImpl(
       'getPendingFollowRequests',
     ) as IUserRepository['getPendingFollowRequests'],
+    getPendingFollowRequestsWithUsers: notImpl(
+      'getPendingFollowRequestsWithUsers',
+    ) as IUserRepository['getPendingFollowRequestsWithUsers'],
     block: notImpl('block') as IUserRepository['block'],
     unblock: notImpl('unblock') as IUserRepository['unblock'],
     getBlockedUsers: notImpl('getBlockedUsers') as IUserRepository['getBlockedUsers'],

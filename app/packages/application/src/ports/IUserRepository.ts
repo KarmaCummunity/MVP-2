@@ -81,6 +81,16 @@ export interface IUserRepository {
   cancelFollowRequest(requesterId: string, targetId: string): Promise<void>;
   getPendingFollowRequests(userId: string): Promise<FollowRequest[]>;
 
+  /**
+   * FR-FOLLOW-007 AC2 — pending requests joined with the requester's User row.
+   * Used to render avatar+name+city without a second round-trip per row.
+   */
+  getPendingFollowRequestsWithUsers(
+    userId: string,
+    limit: number,
+    cursor?: string,
+  ): Promise<import('../follow/types').PaginatedRequests>;
+
   // Blocks
   block(blockerId: string, blockedId: string): Promise<Block>;
   unblock(blockerId: string, blockedId: string): Promise<void>;

@@ -76,3 +76,6 @@ export * from './follow/CancelFollowRequestUseCase';
 export * from './follow/AcceptFollowRequestUseCase';
 export * from './follow/RejectFollowRequestUseCase';
 export * from './follow/RemoveFollowerUseCase';
+export * from './follow/ListFollowersUseCase';
+export * from './follow/ListFollowingUseCase';
+export * from './follow/ListPendingFollowRequestsUseCase';

@@ -172,6 +172,9 @@ export class SupabaseUserRepository implements IUserRepository {
   async getPendingFollowRequests(): Promise<never> {
     throw NOT_IMPL('getPendingFollowRequests', 'P1.1');
   }
+  async getPendingFollowRequestsWithUsers(): Promise<never> {
+    throw NOT_IMPL('getPendingFollowRequestsWithUsers', 'P1.1');
+  }
   async block(): Promise<never> {
     throw NOT_IMPL('block', 'P1.4');
   }

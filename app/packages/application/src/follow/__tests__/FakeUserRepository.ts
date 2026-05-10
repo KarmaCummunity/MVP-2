@@ -84,6 +84,20 @@ export class FakeUserRepository implements IUserRepository {
     return this.pendingRequests;
   }
 
+  pendingRequestsWithUsers: import('../types').PaginatedRequests = {
+    requests: [],
+    nextCursor: null,
+  };
+
+  async getPendingFollowRequestsWithUsers(
+    userId: string,
+    _limit: number,
+    _cursor?: string,
+  ) {
+    this.lastGetPendingRequests = { userId };
+    return this.pendingRequestsWithUsers;
+  }
+
   // ── User read methods used by follow use cases ────────────────────────
   async findById(): Promise<User | null> {
     return this.user;
