@@ -8,6 +8,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IUserRepository } from '@kc/application';
 import type { OnboardingState, User } from '@kc/domain';
+import { mapUserRow, type UserRow } from './mapUserRow';
 
 const NOT_IMPL = (name: string, slice: string) =>
   new Error(`SupabaseUserRepository.${name}: not_implemented (${slice})`);
@@ -106,67 +107,26 @@ export class SupabaseUserRepository implements IUserRepository {
 
   // ── Methods deferred to later slices ─────────────────────────────────────
 
-  async findById(_userId: string): Promise<never> {
-    throw NOT_IMPL('findById', 'P0.4');
+  async findById(userId: string): Promise<User | null> {
+    return this.fetchUserBy('user_id', userId);
   }
   async findByHandle(handle: string): Promise<User | null> {
+    return this.fetchUserBy('share_handle', handle);
+  }
+
+  /** Shared helper: SELECT * FROM users WHERE <col> = <value>, mapped to domain. */
+  private async fetchUserBy(
+    column: 'user_id' | 'share_handle',
+    value: string,
+  ): Promise<User | null> {
     const { data, error } = await this.client
       .from('users')
       .select('*')
-      .eq('share_handle', handle)
+      .eq(column, value)
       .maybeSingle();
-    if (error) throw new Error(`findByHandle: ${error.message}`);
+    if (error) throw new Error(`fetchUserBy(${column}): ${error.message}`);
     if (!data) return null;
-    const row = data as {
-      user_id: string;
-      auth_provider: string;
-      share_handle: string;
-      display_name: string;
-      city: string;
-      city_name: string;
-      biography: string | null;
-      avatar_url: string | null;
-      privacy_mode: string;
-      privacy_changed_at: string | null;
-      account_status: string;
-      onboarding_state: string;
-      notification_preferences: unknown;
-      is_super_admin: boolean;
-      closure_explainer_dismissed: boolean;
-      first_post_nudge_dismissed: boolean;
-      items_given_count: number;
-      items_received_count: number;
-      active_posts_count_internal: number;
-      followers_count: number;
-      following_count: number;
-      created_at: string;
-      updated_at: string;
-    };
-    return {
-      userId: row.user_id,
-      authProvider: row.auth_provider as User['authProvider'],
-      shareHandle: row.share_handle,
-      displayName: row.display_name,
-      city: row.city,
-      cityName: row.city_name,
-      biography: row.biography,
-      avatarUrl: row.avatar_url,
-      privacyMode: row.privacy_mode as User['privacyMode'],
-      privacyChangedAt: row.privacy_changed_at,
-      accountStatus: row.account_status as User['accountStatus'],
-      onboardingState: row.onboarding_state as User['onboardingState'],
-      notificationPreferences: row.notification_preferences as User['notificationPreferences'],
-      isSuperAdmin: row.is_super_admin,
-      closureExplainerDismissed: row.closure_explainer_dismissed,
-      firstPostNudgeDismissed: row.first_post_nudge_dismissed,
-      itemsGivenCount: row.items_given_count,
-      itemsReceivedCount: row.items_received_count,
-      activePostsCountInternal: row.active_posts_count_internal,
-      followersCount: row.followers_count,
-      followingCount: row.following_count,
-      createdAt: row.created_at,
-      updatedAt: row.updated_at,
-    };
+    return mapUserRow(data as unknown as UserRow);
   }
   async create(): Promise<never> {
     throw NOT_IMPL('create', 'auto-created by handle_new_user trigger');
@@ -213,8 +173,23 @@ export class SupabaseUserRepository implements IUserRepository {
   async unblock(_blockerId: string, _blockedId: string): Promise<void> {
     throw NOT_IMPL('unblock', 'P1.4');
   }
-  async getBlockedUsers(): Promise<never> {
-    throw NOT_IMPL('getBlockedUsers', 'P1.4');
+  /**
+   * Returns the users this caller has blocked. RLS on `public.blocks` is
+   * `auth.uid() = blocker_id` for SELECT, which matches our query (no need
+   * for SECURITY DEFINER). Used by FR-CLOSURE-003 to filter the recipient
+   * picker, by future FR-FEED-* visibility helpers, and the Blocked Users
+   * settings screen (P1.4 — read path is here, the toggle lives in P1.4).
+   */
+  async getBlockedUsers(userId: string): Promise<User[]> {
+    const { data, error } = await this.client
+      .from('blocks')
+      .select('blocked:blocked_id(*)')
+      .eq('blocker_id', userId);
+    if (error) throw new Error(`getBlockedUsers: ${error.message}`);
+    return ((data ?? []) as unknown as { blocked: UserRow | null }[])
+      .map((r) => r.blocked)
+      .filter((u): u is UserRow => u !== null)
+      .map(mapUserRow);
   }
   async isBlocked(_blockerId: string, _blockedId: string): Promise<boolean> {
     throw NOT_IMPL('isBlocked', 'P1.4');

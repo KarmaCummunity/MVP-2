@@ -8,6 +8,7 @@ import type { ClosureCandidate } from '@kc/application';
 import { useClosureStore } from '../../store/closureStore';
 import { useAuthStore } from '../../store/authStore';
 import { RecipientPickerRow } from './RecipientPickerRow';
+import { ClosureErrorPane } from './ClosureErrorPane';
 
 export function ClosureSheet() {
   const step = useClosureStore((s) => s.step);
@@ -21,7 +22,9 @@ export function ClosureSheet() {
   const reset = useClosureStore((s) => s.reset);
   const ownerId = useAuthStore((s) => s.session?.userId);
 
-  const visible = step === 'confirm' || step === 'pick';
+  // step='error' is shown so the user sees feedback instead of a faded button
+  // with nothing happening (the original bug report).
+  const visible = step === 'confirm' || step === 'pick' || step === 'error';
 
   return (
     <Modal visible={visible} transparent animationType="slide" onRequestClose={reset}>
@@ -41,6 +44,9 @@ export function ClosureSheet() {
               onCloseWithoutMarking={() => closeWith(null, ownerId)}
               onCancel={reset}
             />
+          ) : null}
+          {step === 'error' ? (
+            <ClosureErrorPane errorMessage={errorMessage} onClose={reset} />
           ) : null}
         </Pressable>
       </Pressable>
