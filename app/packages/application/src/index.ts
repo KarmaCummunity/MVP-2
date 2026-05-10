@@ -71,3 +71,5 @@ export * from './follow/errors';
 export * from './follow/types';
 export * from './follow/FollowUserUseCase';
 export * from './follow/UnfollowUserUseCase';
+export * from './follow/SendFollowRequestUseCase';
+export * from './follow/CancelFollowRequestUseCase';
