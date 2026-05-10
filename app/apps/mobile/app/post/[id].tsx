@@ -63,9 +63,7 @@ export default function PostDetailScreen() {
     );
   }
 
-  // FR-POST-015 AC1: owner sees owner-mode controls (Edit / Mark Delivered /
-  // Delete arrive with P0.6); the viewer's "Send Message to Poster" CTA must
-  // not be shown to the owner — tapping it would create a chat with self.
+  // FR-POST-015 AC1: owner-mode CTAs vs viewer's "Send Message to Poster".
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isGive = post.type === 'Give';
   const locationText = (() => {
@@ -87,10 +85,7 @@ export default function PostDetailScreen() {
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
             <Text style={styles.typeTagText}>{isGive ? 'לתת' : 'לבקש'}</Text>
           </View>
-          {/* FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009 — floating ⋮ menu.
-              Rendered as an overlay on the image (not via the Stack header) so
-              it works consistently on native + react-native-web without
-              depending on navigator.setOptions plumbing. */}
+          {/* FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009 — ⋮ menu (overlay, not Stack header). */}
           <View style={styles.menuOverlay} pointerEvents="box-none">
             <PostMenuButton post={post} />
           </View>
@@ -146,7 +141,12 @@ export default function PostDetailScreen() {
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
-          onAfterMutation={() => void query.refetch()}
+          // onClosed: pop back; onReopened: refetch in place (CTA flips).
+          onClosed={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }}
+          onReopened={() => void query.refetch()}
         />
       ) : !isOwner ? (
         <View style={styles.cta}>

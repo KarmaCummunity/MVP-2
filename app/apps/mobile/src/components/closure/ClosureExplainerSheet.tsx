@@ -41,8 +41,8 @@ export function ClosureExplainerSheet() {
   }, [step, userId]);
 
   // Already dismissed forever — fast-forward to step='done' so OwnerActionsBar
-  // sees the success signal and refetches the post. Using `reset()` here would
-  // jump straight to 'idle' and skip the parent's onAfterMutation. (B3)
+  // sees the success signal and notifies the parent. Using `reset()` here would
+  // jump straight to 'idle' and skip the parent's onClosed callback. (B3)
   useEffect(() => {
     if (step === 'explainer' && alreadyDismissed === true) {
       completeWithoutExplainer();
@@ -55,7 +55,7 @@ export function ClosureExplainerSheet() {
 
   // Tapping the backdrop or hardware back during the explainer is treated as
   // "got it, no persist" — the closure already succeeded, so we still want
-  // OwnerActionsBar to refetch (step='done', not 'idle').
+  // OwnerActionsBar to fire onClosed (step='done', not 'idle').
   // Direction flips by post.type. The "give" copy is what was originally
   // shipped; the "request" copy mirrors it for the recipient-side flow.
   const give = postType !== 'Request';

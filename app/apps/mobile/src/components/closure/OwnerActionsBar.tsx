@@ -7,6 +7,7 @@
 //   removed_admin / expired           → no CTA
 import { useEffect, useState } from 'react';
 import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { Post } from '@kc/domain';
 import { isPostError, type PostErrorCode } from '@kc/application';
@@ -20,10 +21,16 @@ import { ReopenConfirmModal } from './ReopenConfirmModal';
 interface Props {
   post: Post;
   ownerId: string;
-  onAfterMutation: () => void;
+  /** Called after a successful "mark as delivered". Parent typically navigates
+   * back, since the post is no longer the focus once the closure is done. */
+  onClosed: () => void;
+  /** Called after a successful reopen. Parent typically refetches the detail
+   * query so the now-open post stays on screen with the updated CTA. */
+  onReopened: () => void;
 }
 
-export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
+export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) {
+  const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
   const closureStep = useClosureStore((s) => s.step);
   const closureBusy = useClosureStore((s) => s.isBusy);
@@ -35,12 +42,18 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
   // When the closure flow finishes, refresh the parent's data. MUST run in
   // useEffect — calling parent setState during render is a React anti-pattern
   // (B2). Reset the store here too so the next closure starts clean.
+  // Invalidate post-list caches so the profile grid (open/closed tabs) and
+  // header counter reflect the new status without a manual refresh — same
+  // keys create.tsx invalidates after publishing a new post.
   useEffect(() => {
     if (closureStep === 'done') {
       resetClosure();
-      onAfterMutation();
+      void queryClient.invalidateQueries({ queryKey: ['feed'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      onClosed();
     }
-  }, [closureStep, resetClosure, onAfterMutation]);
+  }, [closureStep, resetClosure, onClosed, queryClient]);
 
   const isOpen = post.status === 'open';
   const isReopenable =
@@ -63,7 +76,10 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
     try {
       await getReopenPostUseCase().execute({ postId: post.postId, ownerId });
       setReopenOpen(false);
-      onAfterMutation();
+      await queryClient.invalidateQueries({ queryKey: ['feed'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      onReopened();
     } catch (e) {
       const code: PostErrorCode = isPostError(e) ? e.code : 'unknown';
       setReopenError(mapPostErrorToHebrew(code));

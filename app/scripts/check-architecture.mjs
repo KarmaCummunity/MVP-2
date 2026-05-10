@@ -37,8 +37,9 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/chat/[id].tsx', { td: 'TD-118', max: 229 }],
   ['apps/mobile/src/store/chatStore.ts', { td: 'TD-118', max: 232 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
-  // Pre-existing on main before this PR; allow-listed here to unblock the
-  // FR-ADMIN-009 PR. TD-128 tracks the split work.
+  // Pre-existing before FR-ADMIN-009; tracked as TD-128 for the split work.
+  // (main also allowlisted these but mis-pointed TD-52/TD-124 — those IDs
+  // belong to admin-restore RPC and feed-card menu, not search files.)
   ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-128', max: 418 }],
   ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-128', max: 646 }],
   ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 306 }],
