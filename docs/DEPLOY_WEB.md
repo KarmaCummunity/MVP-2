@@ -1,97 +1,99 @@
-# Web Deployment — Cloudflare Pages → `dev3.karma-community-kc.com`
+# Web Deployment — Railway → `dev3.karma-community-kc.com`
 
-> Operator runbook. Design lives in [`docs/superpowers/specs/2026-05-10-cloudflare-pages-web-deploy-design.md`](./superpowers/specs/2026-05-10-cloudflare-pages-web-deploy-design.md).
+Operator runbook for the static-SPA web build of the Expo Router app, deployed on Railway with a Dockerfile.
 
-## What this gives us
+> Earlier design considered Cloudflare Pages — kept for context at [`docs/superpowers/specs/2026-05-10-cloudflare-pages-web-deploy-design.md`](./superpowers/specs/2026-05-10-cloudflare-pages-web-deploy-design.md). The actual production deploy uses Railway because the project + custom domain were already provisioned there.
 
-- Static SPA build of the Expo Router web target, served from `https://dev3.karma-community-kc.com`.
-- Auto-deploy on every push to `main` (production), per-PR preview URLs (`<branch>.<project>.pages.dev`).
-- Free SSL on the custom domain.
-- **Zero impact** on `.github/workflows/ci.yml` — Cloudflare's build runs on its own infrastructure.
+## What's checked into the repo
+
+| File | Purpose |
+| ---- | ------- |
+| [`Dockerfile`](../Dockerfile) | Multistage build: stage 1 runs `pnpm install` + `pnpm build:web`; stage 2 is a tiny `node:20-alpine` image that serves `dist/` with `serve --single` (SPA fallback). |
+| [`railway.json`](../railway.json) | Forces Railway to use the Dockerfile (bypasses Railpack auto-detect, which can't handle our pnpm monorepo). |
+| [`.dockerignore`](../.dockerignore) | Keeps the build context small (excludes `docs/`, `supabase/`, `.git`, `node_modules`, etc.). |
+| `app/package.json` scripts | `pnpm build:web` → `expo export -p web` + writes `_redirects` (no-op on Railway since `serve --single` handles fallback, but harmless). |
+
+The mobile CI/CD (`.github/workflows/ci.yml`) is unchanged — Railway builds in its own infrastructure.
+
+## Railway service configuration (one-time)
+
+In the Railway dashboard for the **MVP-2** service:
+
+### 1. Variables
+
+Add these under **Variables** (all three available at both build time and runtime):
+
+| Name | Value | Source |
+| ---- | ----- | ------ |
+| `EXPO_PUBLIC_SUPABASE_URL` | `https://roeefqpdbftlndzsvhfj.supabase.co` | matches `app/apps/mobile/.env` |
+| `EXPO_PUBLIC_SUPABASE_ANON_KEY` | `sb_publishable_…` | matches `app/apps/mobile/.env` (publishable key — safe to inline in client bundle) |
+| `PORT` | (leave unset; Railway injects it automatically) | — |
+
+The Dockerfile declares `ARG EXPO_PUBLIC_SUPABASE_URL` and `ARG EXPO_PUBLIC_SUPABASE_ANON_KEY` so Railway passes them as build args (they get inlined into the JS bundle by `expo export`).
+
+### 2. Settings
+
+- **Source repo**: `KarmaCummunity/MVP-2` (already connected).
+- **Branch**: `main` (production).
+- **Builder**: leave on auto — `railway.json` overrides it to Dockerfile.
+- **Healthcheck**: optional. If you want one, set path `/` and timeout `30s`.
+
+### 3. Public domain
+
+Already configured: `dev3.karma-community-kc.com` is mapped to this service. No DNS changes needed unless you want to confirm:
+
+```bash
+dig CNAME dev3.karma-community-kc.com +short
+# should print Railway's CNAME target
+```
+
+### 4. Supabase Auth → URL Configuration
+
+Required so Google SSO and other OAuth flows accept the deployed origin. Once, in the Supabase dashboard for project `roeefqpdbftlndzsvhfj` → Authentication → URL Configuration → **Redirect URLs**, add:
+
+```
+https://dev3.karma-community-kc.com/**
+```
 
 ## Local commands
 
-| Command | What it does |
-| ------- | ------------ |
-| `pnpm build:web` (from `app/`) | Runs `expo export -p web` and writes `_redirects` for SPA fallback. Output: `app/apps/mobile/dist/`. |
-| `pnpm preview:web` (from `app/`) | Serves the built `dist/` on `http://localhost:3000` with SPA fallback enabled. Use to verify deep links work before pushing. |
+| Command | Purpose |
+| ------- | ------- |
+| `pnpm build:web` (from `app/`) | Produce `app/apps/mobile/dist/` exactly the way the Docker builder does (without Docker). |
+| `pnpm preview:web` (from `app/`) | Serve the local `dist/` with SPA fallback on `localhost:3000`. |
+| `docker build --build-arg EXPO_PUBLIC_SUPABASE_URL=… --build-arg EXPO_PUBLIC_SUPABASE_ANON_KEY=… -t kc-web .` | Reproduce the Railway build locally. |
+| `docker run -p 4322:3000 kc-web` | Run the produced image on `localhost:4322`. |
 
-## Cloudflare Pages — first-time setup
+## Deploy flow
 
-Done **once** per environment. Requires a Cloudflare account.
-
-1. Cloudflare dashboard → Pages → **Create a project** → **Connect to Git**.
-2. Select GitHub → authorize → pick `KarmaCummunity/MVP-2`.
-3. Build configuration:
-   | Field | Value |
-   | ----- | ----- |
-   | Project name | `karma-community-mvp2` (used as the default `*.pages.dev` URL) |
-   | Production branch | `main` |
-   | Framework preset | None |
-   | Build command | `cd app && pnpm install --frozen-lockfile && pnpm build:web` |
-   | Build output directory | `app/apps/mobile/dist` |
-   | Root directory | `/` (leave default) |
-4. **Environment variables** (add to **both** Production and Preview):
-   - `EXPO_PUBLIC_SUPABASE_URL` = the value from `app/apps/mobile/.env`
-   - `EXPO_PUBLIC_SUPABASE_ANON_KEY` = the value from `app/apps/mobile/.env`
-   - `NODE_VERSION` = `20`
-5. Save → Cloudflare runs the first build. Wait until it goes green.
-
-### Custom domain
-
-After the first deploy succeeds:
-
-1. Cloudflare project → **Custom domains** → **Set up a custom domain** → enter `dev3.karma-community-kc.com`.
-2. Cloudflare prints the exact CNAME target (e.g. `karma-community-mvp2.pages.dev`). Copy it.
-3. In Hostinger DNS panel for `karma-community-kc.com`:
-   - Type: `CNAME`
-   - Name: `dev3`
-   - Target: paste the Cloudflare value
-   - TTL: default
-4. Back in Cloudflare → wait for the green checkmark next to the domain (usually <5 min). SSL is provisioned automatically.
-
-### Supabase Auth redirect URLs (one-time)
-
-Without this, Google SSO (and any future OAuth) on the deployed web app will reject the callback.
-
-1. Supabase dashboard → project `roeefqpdbftlndzsvhfj` → Authentication → **URL Configuration**.
-2. Add to **Redirect URLs**:
-   ```
-   https://dev3.karma-community-kc.com/**
-   ```
-3. Save.
-
-## Decommissioning Railway (after Cloudflare is verified)
-
-The repo has no Railway config files (it was set up via Railway's GitHub auto-detect, which is exactly why it kept failing — there is no Dockerfile to build).
-
-To stop the failed-build noise on every PR:
-
-1. Railway dashboard → MVP-2 project → Settings → **Delete project**, **or** Settings → GitHub → **Disconnect repository**.
-
-Either action removes the GitHub webhook that triggers the failing builds. No repo changes needed.
+1. PR merges to `main`.
+2. Railway picks up the push, runs `docker build` using `Dockerfile` (per `railway.json`).
+3. New image is deployed; old one is replaced once healthchecks pass.
+4. Live at `https://dev3.karma-community-kc.com`.
 
 ## Verifying a deploy
 
-After a push to `main` (or opening a PR), Cloudflare's build runs. Steps to verify:
+```bash
+curl -sSI https://dev3.karma-community-kc.com/                # → HTTP/2 200
+curl -sSI https://dev3.karma-community-kc.com/donations       # → HTTP/2 200 (SPA fallback)
+curl -sSI https://dev3.karma-community-kc.com/chat/abc        # → HTTP/2 200 (SPA fallback)
+curl -sSI https://dev3.karma-community-kc.com/favicon.ico     # → HTTP/2 200, image/x-icon
+```
 
-1. **Build went green** — Cloudflare dashboard → Deployments → latest is green.
-2. **Bundle served** — `curl -sSI https://dev3.karma-community-kc.com/` returns `HTTP/2 200`.
-3. **SPA fallback works** — `curl -sSI https://dev3.karma-community-kc.com/donations` returns `HTTP/2 200` (same content as `/`, served via the `_redirects` rule).
-4. **Static assets resolve** — `curl -sSI https://dev3.karma-community-kc.com/favicon.ico` returns `HTTP/2 200` with `Content-Type: image/x-icon`.
-5. **Manual smoke** — open the URL in Chrome/Safari, exercise: feed → donations grid → sign-in → post detail. RTL must render correctly.
+Manual smoke test in a browser: feed loads → donations grid → sign-in (Google SSO) → post detail. Hebrew RTL must render correctly.
 
 ## Rollback
 
-- **Bad code went live**: revert the offending commit on `main`. Cloudflare auto-rebuilds the previous good state (~1 min).
-- **Need site down immediately**: Cloudflare project → Settings → **Pause deployments** + remove the custom domain. DNS reverts within Hostinger's TTL.
+- **Bad code went live**: revert the offending commit on `main`. Railway auto-redeploys the previous good state (~2-3 min build time).
+- **Need site down immediately**: Railway dashboard → service → **Settings** → toggle **Public Networking off**, or pause deployments.
 
 ## Troubleshooting
 
 | Symptom | Cause | Fix |
 | ------- | ----- | --- |
-| Cloudflare build fails on `pnpm install` | wrong Node version | Set `NODE_VERSION=20` env var. |
-| Build succeeds but `/donations` 404s | `_redirects` missing from output | Confirm `pnpm build:web` ends with `[web-postbuild] wrote …/_redirects`. |
-| Custom domain stuck on "Verifying" >15 min | DNS hasn't propagated | `dig CNAME dev3.karma-community-kc.com` should show the Cloudflare target. If not, double-check the Hostinger record. |
+| Railway build fails on "Railpack process exited with an error" | `railway.json` not picked up | Confirm `railway.json` is at the **repo root** (not inside `app/`). |
+| Build succeeds but the bundle has `undefined` instead of Supabase URL | Build args not passed | Check `EXPO_PUBLIC_SUPABASE_URL` and `EXPO_PUBLIC_SUPABASE_ANON_KEY` are set under Railway → Variables and that they're enabled for **Build**. |
+| `/donations` returns 404 in the browser | `serve --single` not running | Check the runtime CMD in `Dockerfile`: should be `serve dist --single --listen ${PORT:-3000}`. |
 | Google SSO returns "redirect_uri_mismatch" | Supabase redirect list incomplete | Add `https://dev3.karma-community-kc.com/**` per the Supabase step above. |
-| Bundle larger than expected | Native-only deps pulled in | Check the bundler output in Cloudflare logs for unexpected `react-native` modules — file an issue and add a web shim. |
+| Build slow (~3 min) on every push | Layer cache miss | Railway caches Docker layers between builds — first build is slow, subsequent builds with unchanged `pnpm-lock.yaml` should reuse the install layer. If they don't, check the Dockerfile for layer-busting `COPY` ordering. |
+| Bundle size warning | RN web app is naturally large | Current bundle is ~4.4 MB pre-gzip. Acceptable for now. Future optimization: enable Hermes/Metro tree-shaking, lazy-load donations sub-routes. |
