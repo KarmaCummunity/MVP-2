@@ -6,9 +6,22 @@ import { I18nManager, Platform, View } from 'react-native';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
 // this at module load (not inside an effect) so the first paint is already RTL.
+// Title + favicon overrides live here too: with `web.output: "single"` Expo
+// builds from a default template that uses `expo.name`, so we can't use a
+// `+html.tsx` (those only apply to `static` output).
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   document.documentElement.dir = 'rtl';
   document.documentElement.lang = 'he';
+  document.title = 'KC - קהילת קארמה';
+  // Expo's prod export injects `<link rel="icon" href="/favicon.ico" />` from
+  // `web.favicon`, but the dev server doesn't — inject it here so the tab icon
+  // shows during local development too. No-op when the link already exists.
+  if (!document.querySelector('link[rel="icon"]')) {
+    const link = document.createElement('link');
+    link.rel = 'icon';
+    link.href = '/favicon.ico';
+    document.head.appendChild(link);
+  }
 }
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
