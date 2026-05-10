@@ -10,6 +10,7 @@ import {
   SupabaseBlockRepository,
   SupabaseReportRepository,
   SupabaseDonationLinksRepository,
+  SupabasePostRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -23,6 +24,9 @@ import {
   BlockUserUseCase,
   UnblockUserUseCase,
   ReportChatUseCase,
+  ReportPostUseCase,
+  DeletePostUseCase,
+  AdminRemovePostUseCase,
   ListDonationLinksUseCase,
   AddDonationLinkUseCase,
   RemoveDonationLinkUseCase,
@@ -43,6 +47,7 @@ const chatRealtime = new SupabaseChatRealtime(supabase);
 const blockRepo = new SupabaseBlockRepository(supabase);
 const reportRepo = new SupabaseReportRepository(supabase);
 const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
+const postRepo = new SupabasePostRepository(supabase);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
@@ -62,6 +67,11 @@ export const container = {
   blockUser: new BlockUserUseCase(blockRepo),
   unblockUser: new UnblockUserUseCase(blockRepo),
   reportChat: new ReportChatUseCase(reportRepo),
+  reportPost: new ReportPostUseCase(reportRepo),
+
+  // Post moderation
+  deletePost: new DeletePostUseCase(postRepo),
+  adminRemovePost: new AdminRemovePostUseCase(postRepo),
 
   // Donation links
   listDonationLinks: new ListDonationLinksUseCase(donationLinksRepo),

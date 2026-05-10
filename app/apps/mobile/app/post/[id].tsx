@@ -4,7 +4,7 @@ import React from 'react';
 import {
   ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -19,6 +19,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
+import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -76,6 +77,11 @@ export default function PostDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <Stack.Screen
+        options={{
+          headerRight: () => <PostMenuButton post={post} />,
+        }}
+      />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.imageWrap}>
           <PostImageCarousel
