@@ -1,4 +1,5 @@
 import type {
+  ClosureCandidate,
   CreatePostInput,
   FeedPage,
   IPostRepository,
@@ -7,6 +8,7 @@ import type {
   UpdatePostInput,
 } from '../../ports/IPostRepository';
 import type { Post, PostStatus } from '@kc/domain';
+import type { PostError } from '../errors';
 
 /**
  * In-memory IPostRepository for use-case tests. Captures the last call to each
@@ -72,11 +74,33 @@ export class FakePostRepository implements IPostRepository {
     if (this.deleteError) throw this.deleteError;
   };
 
-  close = async (): Promise<Post> => {
-    throw new Error('FakePostRepository.close: not used in P0.4-FE');
+  // ── Closure (P0.6) ───────────────────────────────────────────────────────
+  closeResult: Post | null = null;
+  reopenResult: Post | null = null;
+  closeError: PostError | Error | null = null;
+  reopenError: PostError | Error | null = null;
+  closureCandidatesResult: ClosureCandidate[] = [];
+  lastCloseArgs: { postId: string; recipientUserId: string | null } | null = null;
+  lastReopenArgs: { postId: string } | null = null;
+  lastGetClosureCandidatesPostId: string | null = null;
+
+  close = async (postId: string, recipientUserId: string | null): Promise<Post> => {
+    this.lastCloseArgs = { postId, recipientUserId };
+    if (this.closeError) throw this.closeError;
+    if (!this.closeResult) throw new Error('FakePostRepository: closeResult not configured');
+    return this.closeResult;
   };
-  reopen = async (): Promise<Post> => {
-    throw new Error('FakePostRepository.reopen: not used in P0.4-FE');
+
+  reopen = async (postId: string): Promise<Post> => {
+    this.lastReopenArgs = { postId };
+    if (this.reopenError) throw this.reopenError;
+    if (!this.reopenResult) throw new Error('FakePostRepository: reopenResult not configured');
+    return this.reopenResult;
+  };
+
+  getClosureCandidates = async (postId: string): Promise<ClosureCandidate[]> => {
+    this.lastGetClosureCandidatesPostId = postId;
+    return this.closureCandidatesResult;
   };
 
   getMyPosts = async (
@@ -119,6 +143,17 @@ export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostW
     deleteAfter: null,
     createdAt: '2026-05-08T10:00:00.000Z',
     updatedAt: '2026-05-08T10:00:00.000Z',
+    ...overrides,
+  };
+}
+
+export function makeClosureCandidate(overrides: Partial<ClosureCandidate> = {}): ClosureCandidate {
+  return {
+    userId: 'u_recipient',
+    fullName: 'דנה לוי',
+    avatarUrl: null,
+    cityName: 'תל אביב',
+    lastMessageAt: '2026-05-10T10:00:00.000Z',
     ...overrides,
   };
 }
