@@ -22,6 +22,12 @@ export const modalStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     ...typography.body,
     color: colors.textPrimary,
+    textAlign: 'right',
+    writingDirection: 'rtl',
+  },
+  inputUrl: {
+    textAlign: 'left',
+    writingDirection: 'ltr',
   },
   inputMulti: { minHeight: 80 },
   helper: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
