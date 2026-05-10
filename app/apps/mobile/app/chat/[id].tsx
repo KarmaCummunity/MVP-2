@@ -8,7 +8,6 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { randomUUID } from 'expo-crypto';
-import type { Chat } from '@kc/domain';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
 import { colors, typography, spacing, radius } from '@kc/ui';
@@ -16,9 +15,10 @@ import { useChatStore, type OptimisticMessage } from '../../src/store/chatStore'
 import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
 import { ReportChatModal } from '../../src/components/ReportChatModal';
+import { ChatActionMenu } from '../../src/components/ChatActionMenu';
 import { MessageBubble } from '../../src/components/MessageBubble';
 import { AnchorDeletedBanner } from '../../src/components/AnchorDeletedBanner';
-import { getPostByIdUseCase } from '../../src/services/postsComposition';
+import { useChatInit, useAnchorMissing } from '../../src/components/useChatInit';
 
 // Stable empty fallback — must NOT be inlined inside the selector. useSyncExternalStore
 // compares snapshots via Object.is; a fresh `[]` per call would trip an infinite re-render
@@ -33,53 +33,11 @@ export default function ChatScreen() {
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
-  const [chat, setChat] = useState<Chat | null>(null);
-  const [counterpart, setCounterpart] = useState<{
-    displayName: string;
-    shareHandle: string | null;
-    isDeleted: boolean;
-  }>({ displayName: '', shareHandle: null, isDeleted: false });
+  const { chat, counterpart } = useChatInit(chatId, userId);
   const [input, setInput] = useState(prefill ?? '');
   const [reportOpen, setReportOpen] = useState(false);
-  const [anchorMissing, setAnchorMissing] = useState(false);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      const c = await container.chatRepo.findById(chatId);
-      if (cancelled || !c) return;
-      const cp = await container.chatRepo.getCounterpart(c, userId);
-      if (cancelled) return;
-      setChat(c);
-      setCounterpart({
-        displayName: cp.displayName,
-        shareHandle: cp.shareHandle,
-        isDeleted: cp.isDeleted,
-      });
-      await useChatStore.getState().startThreadSub(chatId, container.chatRepo, container.chatRealtime);
-      await container.markChatRead.execute({ chatId, userId });
-      useChatStore.getState().markChatLocallyRead(chatId);
-    })();
-    return () => {
-      cancelled = true;
-      useChatStore.getState().stopThreadSub(chatId);
-    };
-  }, [chatId, userId]);
-
-  // FR-CHAT-004 edge: anchored post may have been deleted. Show banner if missing.
-  useEffect(() => {
-    if (!chat?.anchorPostId) { setAnchorMissing(false); return; }
-    let cancelled = false;
-    (async () => {
-      try {
-        const { post } = await getPostByIdUseCase().execute({ postId: chat.anchorPostId!, viewerId: userId });
-        if (!cancelled) setAnchorMissing(post === null);
-      } catch {
-        if (!cancelled) setAnchorMissing(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [chat?.anchorPostId, userId]);
+  const [menuOpen, setMenuOpen] = useState(false);
+  const anchorMissing = useAnchorMissing(chat?.anchorPostId, userId);
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -120,15 +78,10 @@ export default function ChatScreen() {
         </TouchableOpacity>
       ),
       headerRight: () => chat?.isSupportThread ? null : (
-        <TouchableOpacity
-          onPress={() =>
-            Alert.alert('פעולות', undefined, [
-              { text: 'חסום', style: 'destructive', onPress: doBlock },
-              { text: 'דווח על השיחה', onPress: () => setReportOpen(true) },
-              { text: 'ביטול', style: 'cancel' },
-            ])
-          }
-        >
+        // Custom modal-driven menu instead of Alert.alert — RN-Web's Alert
+        // collapses the buttons[] into a plain window.alert, so the chat
+        // ⋮ menu was effectively unreachable on web.
+        <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel="פעולות">
           <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       ),
@@ -163,6 +116,10 @@ export default function ChatScreen() {
   const showCounter = counter >= 1900;
   const sendDisabled = counter === 0 || counter > MESSAGE_MAX_CHARS;
 
+  // Store stays asc (other consumers depend on it); FlatList inverts to put
+  // the newest message at the visual bottom on entry.
+  const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView
@@ -172,7 +129,8 @@ export default function ChatScreen() {
       >
         {anchorMissing && <AnchorDeletedBanner />}
         <FlatList
-          data={messages}
+          data={reversedMessages}
+          inverted
           keyExtractor={(m) => m.clientId}
           contentContainerStyle={styles.messageList}
           renderItem={({ item }) => (
@@ -205,6 +163,13 @@ export default function ChatScreen() {
       </KeyboardAvoidingView>
 
       <ReportChatModal chatId={chatId} visible={reportOpen} onClose={() => setReportOpen(false)} />
+
+      <ChatActionMenu
+        visible={menuOpen}
+        onClose={() => setMenuOpen(false)}
+        onReport={() => { setMenuOpen(false); setReportOpen(true); }}
+        onBlock={() => { setMenuOpen(false); void doBlock(); }}
+      />
     </SafeAreaView>
   );
 }
