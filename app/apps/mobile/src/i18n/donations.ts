@@ -84,7 +84,78 @@ export const donations = {
 
 export const search = {
   tabLabel: 'חיפוש',
-  title: 'חיפוש אוניברסלי בקרוב',
-  subtitle: 'בנתיים, חיפוש פוסטים זמין ישירות בפיד הראשי.',
-  goToFeed: 'עבור לפיד הראשי',
+  title: 'חיפוש',
+  placeholder: 'חפש אנשים, פוסטים, קישורים...',
+
+  // Category chips
+  all: 'הכל',
+  posts: 'פוסטים',
+  people: 'אנשים',
+  links: 'קישורים',
+
+  // Sort options
+  sortBy: 'מיין לפי',
+  sortRelevance: 'רלוונטיות',
+  sortNewest: 'חדש ביותר',
+  sortFollowers: 'עוקבים',
+
+  // Filter
+  filters: 'סינון',
+  filterCity: 'עיר',
+  filterPostType: 'סוג פוסט',
+  filterCategory: 'קטגוריה',
+  filterDonationCategory: 'קטגוריית תרומה',
+  filterMinFollowers: 'מינימום עוקבים',
+  clearFilters: 'נקה סינון',
+  applyFilters: 'החל סינון',
+
+  // Results sections
+  sectionPeople: 'אנשים',
+  sectionPosts: 'פוסטים',
+  sectionLinks: 'קישורים',
+  showAll: 'הצג הכל',
+
+  // Result info
+  followers: '{{count}} עוקבים',
+  givenItems: '{{count}} פריטים נתנו',
+  inCategory: 'בקטגוריית {{category}}',
+
+  // States
+  noResults: 'לא נמצאו תוצאות',
+  noResultsDesc: 'נסו מילות חיפוש אחרות או שנו את הסינון.',
+  recentSearches: 'חיפושים אחרונים',
+  clearRecent: 'נקה היסטוריה',
+  startSearching: 'התחילו לחפש',
+  startSearchingDesc: 'חפשו אנשים, פוסטים וקישורים בכל הקהילה.',
+  minChars: 'הקלידו לפחות 2 תווים',
+  loading: 'מחפש...',
+  nationalLinks: 'מציג קישורים ארציים',
+  give: 'נתינה',
+  request: 'בקשה',
+
+  // Post categories for filter
+  categories: {
+    Furniture: 'רהיטים',
+    Clothing: 'בגדים',
+    Books: 'ספרים',
+    Toys: 'משחקים',
+    BabyGear: 'ציוד תינוקות',
+    Kitchen: 'מטבח',
+    Sports: 'ספורט',
+    Electronics: 'חשמל',
+    Tools: 'כלי עבודה',
+    Other: 'אחר',
+  },
+
+  // Donation categories for filter
+  donationCategories: {
+    time: 'זמן',
+    money: 'כסף',
+    food: 'אוכל',
+    housing: 'דיור',
+    transport: 'תחבורה',
+    knowledge: 'ידע',
+    animals: 'חיות',
+    medical: 'רפואה',
+  },
 } as const;

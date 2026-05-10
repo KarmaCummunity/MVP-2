@@ -51,6 +51,9 @@ const detailHeader = {
   headerBackVisible: false,
   headerTintColor: colors.primary,
   headerStyle: { backgroundColor: colors.surface },
+  // Native iOS already centers the title; Android + RN-Web default to start-aligned
+  // which under forced RTL pushes the title to the right edge. Center everywhere.
+  headerTitleAlign: 'center',
 } as const;
 
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {

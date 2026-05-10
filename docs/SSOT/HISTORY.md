@@ -31,6 +31,10 @@ Highlights:
 
 ---
 
+- **2026-05-10 — FR-ADMIN-009 + post-detail ⋮ menu (FR-POST-010 · FR-POST-014 AC4 · FR-POST-015 AC1 · FR-MOD-001 · FR-MOD-007 · FR-ADMIN-009)** — Branch `claude/unruffled-black-7d25c9` · 114 vitest (109 + 2 `AdminRemovePostUseCase` + 3 `ReportPostUseCase`). Migration `0020_admin_remove_post.sql` adds the `SECURITY DEFINER` RPC gated on `is_admin(auth.uid())` (writes `manual_remove_target` audit event, idempotent, no schema change). New use cases: `AdminRemovePostUseCase`, `ReportPostUseCase`. New mobile components: `PostMenuButton`, `PostMenuSheet`, `ReportPostModal`, `ConfirmActionModal` + `useIsSuperAdmin` + `usePostMenuActions` hook. Owner sees Delete; viewer sees Report + Block; super admin viewing someone else's post additionally sees Remove-as-admin. Mounted as a floating overlay on the post image (not the Stack header — `setOptions({headerRight})` did not propagate to react-native-web's navigator). Defers: TD-52 (admin restore RPC), TD-124 (feed-card ⋮ menu), TD-125 (Edit owner action), TD-126 (surface `removed_admin` to owner with banner).
+
+---
+
 ### 🟢 FR-CHAT-002 — Chat screen web defect repair
 - **SRS**: FR-CHAT-002 (chat conversation screen) — four web-only defects reported by the user against the existing P0.5 implementation. No AC change.
 - **Branch / PR**: `fix/FR-CHAT-002-fe-web-chat-screen-bugs` · 2026-05-10
@@ -48,6 +52,19 @@ Highlights:
 - **Manual setup remaining**: none.
 
 ---
+
+### 🟢 Closure UX polish — profile grid auto-refresh + post-detail pop-back on close
+- **SRS**: FR-CLOSURE-001 (mark as delivered) · FR-CLOSURE-005 (reopen) · FR-POST-016 (caller's own posts list). Polish on top of P0.6.
+- **Branch / PR**: `fix/FR-CLOSURE-001-profile-grid-refresh` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · 113 vitest passing · `pnpm lint:arch` green. Manual: marked an open post as delivered → pops back to profile, post visible under "פוסטים סגורים" tab and "פוסטים פתוחים" counter decremented immediately; reopened from the closed grid → CTA flips, returning to profile shows it under "פתוחים" without a manual reload.
+- **Code**:
+  - `OwnerActionsBar.tsx` — split the single `onAfterMutation` callback into semantic `onClosed` / `onReopened`. Added `useQueryClient` and invalidate `['feed']` + `['my-posts']` + `['my-open-count']` after both successful mutations (mirrors the same invalidation set `create.tsx` already runs after publishing). The `closureStep === 'done'` useEffect now fires `onClosed`; `handleReopen` fires `onReopened`.
+  - `app/post/[id].tsx` — `onClosed` pops back (`router.canGoBack()` ? `router.back()` : `router.replace('/(tabs)')`) since the post is no longer the focus once it's closed and the profile grid is already refreshed; `onReopened` keeps the existing `query.refetch()` so the user stays on the now-open post with the "סמן כנמסר ✓" CTA.
+- **Tech-debt deltas**: none.
+- **Open gaps**: none.
+
+---
+
 
 ### 🟢 P0.6 — Closure flow (FR-CLOSURE-001..005, 008, 009 verified)
 - **SRS**: FR-CLOSURE-001 (initiate from PostDetail) · FR-CLOSURE-002 (Step 1 confirm) · FR-CLOSURE-003 (Step 2 recipient picker — with chat partners + empty state) · FR-CLOSURE-004 (Step 3 one-time educational explainer + dismiss-forever flag) · FR-CLOSURE-005 (reopen `closed_delivered` and in-grace `deleted_no_recipient`) · FR-CLOSURE-008 (daily `pg_cron` cleanup of expired unmarked closures) · FR-CLOSURE-009 (stat projection — pre-existing 0006 triggers verified to fire on every transition).

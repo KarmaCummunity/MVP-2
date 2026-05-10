@@ -101,6 +101,16 @@ export interface IPostRepository {
   update(postId: string, patch: UpdatePostInput): Promise<Post>;
   delete(postId: string): Promise<void>;
 
+  /**
+   * FR-ADMIN-009 — flip a post's status to `removed_admin` via the
+   * `admin_remove_post` RPC. Server re-checks `is_admin(auth.uid())`;
+   * non-admin callers receive a `forbidden` PostError.
+   *
+   * Idempotent: calling again on an already-removed post is a quiet
+   * no-op (no second audit row).
+   */
+  adminRemove(postId: string): Promise<void>;
+
   // Closure (FR-CLOSURE-001..005)
   // close: branches inside the impl —
   //   recipientUserId !== null  → RPC `close_post_with_recipient` (atomic insert + status)

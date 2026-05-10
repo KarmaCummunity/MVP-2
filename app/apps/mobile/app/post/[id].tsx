@@ -19,6 +19,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
+import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 
 export default function PostDetailScreen() {
@@ -62,9 +63,7 @@ export default function PostDetailScreen() {
     );
   }
 
-  // FR-POST-015 AC1: owner sees owner-mode controls (Edit / Mark Delivered /
-  // Delete arrive with P0.6); the viewer's "Send Message to Poster" CTA must
-  // not be shown to the owner — tapping it would create a chat with self.
+  // FR-POST-015 AC1: owner-mode CTAs vs viewer's "Send Message to Poster".
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isGive = post.type === 'Give';
   const locationText = (() => {
@@ -85,6 +84,10 @@ export default function PostDetailScreen() {
           />
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
             <Text style={styles.typeTagText}>{isGive ? 'לתת' : 'לבקש'}</Text>
+          </View>
+          {/* FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009 — ⋮ menu (overlay, not Stack header). */}
+          <View style={styles.menuOverlay} pointerEvents="box-none">
+            <PostMenuButton post={post} />
           </View>
         </View>
 
@@ -138,7 +141,12 @@ export default function PostDetailScreen() {
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
-          onAfterMutation={() => void query.refetch()}
+          // onClosed: pop back; onReopened: refetch in place (CTA flips).
+          onClosed={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }}
+          onReopened={() => void query.refetch()}
         />
       ) : !isOwner ? (
         <View style={styles.cta}>
@@ -161,6 +169,11 @@ const styles = StyleSheet.create({
   typeTagOverlay: {
     position: 'absolute', bottom: spacing.base, right: spacing.base,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
+  },
+  menuOverlay: {
+    position: 'absolute', top: spacing.sm, start: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: radius.full,
   },
   giveTag: { backgroundColor: colors.giveTagBg },
   requestTag: { backgroundColor: colors.requestTagBg },

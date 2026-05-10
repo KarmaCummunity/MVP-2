@@ -30,19 +30,19 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~58%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile**; DB schema applied through 0016) |
+| MVP completion (rough) | **~58%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile**; DB schema applied through 0020) |
 | Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + P1.1) |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **144 vitest passing** |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **148 vitest passing** |
 | Open tech-debt items | **40 active** (3 partial), **21 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
 - Monorepo build (`pnpm typecheck` passes); `pnpm lint:arch` enforces ≤200-LOC + domain-error rules
 - Native dev builds on iOS 26 + Android API-36 + Web — all three platforms run correctly with Expo SDK 54 + expo-router 6
-- **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing.
+- **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing. Post detail now exposes a role-aware ⋮ overflow menu (FR-POST-014 AC4 + FR-POST-015 AC1 partial): viewer → דווח/חסום משתמש; owner → מחק; super-admin viewing someone else's post → דווח/חסום + הסר כאדמין (FR-ADMIN-009 via the new admin_remove_post RPC).
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
 - **Following + Other-User Profile** — full follow mechanism (instant for Public, request/accept/reject/14d-cooldown for Private), remove-follower, follow-state machine, Followers + Following lists with search, /settings/privacy toggle + /settings/follow-requests inbox. Other-user profile rebuilt to feature-parity with My Profile (closed posts visible too — per EXEC-7).
 
@@ -73,7 +73,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P0.3 | Onboarding wizard (basic info + photo + tour) wired to backend | FR-AUTH-010, 011, 012, 015 | 🟢 Done (2026-05-08) | All slices A + B + C shipped |
 | P0.4 | Post creation + feed (real CRUD, RLS-aware) | FR-POST-001…010, FR-FEED-001…005 | 🟢 Done (2026-05-08) | BE + FE both shipped |
 | P0.5 | Direct chat with realtime | FR-CHAT-001…008 | 🟢 Done (2026-05-10) | Merged in PR #31; polished in PR #35; web-defect repair 2026-05-10 (header centering, ⋮-menu reachable on web, parallel chat-open, latest-message-on-entry). Defers: push notifs (P1.5/TD-115), full report flow (P1.3/TD-116), report-summary system message (P1.3/TD-117). |
-| P0.6 | Closure flow (mark as delivered + reopen + cleanup cron) | FR-CLOSURE-001…005, 008, 009 | 🟢 Done (2026-05-10) | Branch `feat/FR-CLOSURE-001-closure-flow`. Defers: notify on mark (P1.5/TD-119), recipient un-marks self (P2.x/TD-120), suspect flag (P1.3/TD-121), storage orphan reconcile (TD-122), telemetry events (TD-123). |
+| P0.6 | Closure flow (mark as delivered + reopen + cleanup cron) | FR-CLOSURE-001…005, 008, 009 | 🟢 Done (2026-05-10) | Branch `feat/FR-CLOSURE-001-closure-flow`. Polish 2026-05-10: profile grid + counter auto-refresh after close/reopen (cache invalidation in `OwnerActionsBar`); post-detail pops back after successful close. Defers: notify on mark (P1.5/TD-119), recipient un-marks self (P2.x/TD-120), suspect flag (P1.3/TD-121), storage orphan reconcile (TD-122), telemetry events (TD-123). |
 
 ### 📈 P1 — High priority (PMF quality)
 

@@ -20,6 +20,8 @@ export const colors = {
   errorLight: '#FEE2E2',
   warning: '#F59E0B',
   warningLight: '#FEF3C7',
+  info: '#3B82F6',
+  infoLight: '#DBEAFE',
 
   // Backgrounds
   background: '#F9FAFB',

@@ -1,6 +1,6 @@
 // Composition root — singleton instances of all chat use cases bound to Supabase adapters.
 // Screens import the use cases from here, not from @kc/application directly.
-// Mapped to SRS: FR-CHAT-001..013.
+// Mapped to SRS: FR-CHAT-001..013, FR-POST-010, FR-POST-014 AC4, FR-POST-015 AC1, FR-MOD-001, FR-MOD-007, FR-ADMIN-009.
 import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
@@ -10,6 +10,7 @@ import {
   SupabaseBlockRepository,
   SupabaseReportRepository,
   SupabaseDonationLinksRepository,
+  SupabasePostRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -23,6 +24,9 @@ import {
   BlockUserUseCase,
   UnblockUserUseCase,
   ReportChatUseCase,
+  ReportPostUseCase,
+  DeletePostUseCase,
+  AdminRemovePostUseCase,
   ListDonationLinksUseCase,
   AddDonationLinkUseCase,
   RemoveDonationLinkUseCase,
@@ -36,13 +40,14 @@ function pickStorage(): SupabaseAuthStorage | undefined {
   return AsyncStorage;
 }
 
-const supabase = getSupabaseClient({ storage: pickStorage() });
+export const supabase = getSupabaseClient({ storage: pickStorage() });
 
 const chatRepo = new SupabaseChatRepository(supabase);
 const chatRealtime = new SupabaseChatRealtime(supabase);
 const blockRepo = new SupabaseBlockRepository(supabase);
 const reportRepo = new SupabaseReportRepository(supabase);
 const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
+const postRepo = new SupabasePostRepository(supabase);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
@@ -62,6 +67,11 @@ export const container = {
   blockUser: new BlockUserUseCase(blockRepo),
   unblockUser: new UnblockUserUseCase(blockRepo),
   reportChat: new ReportChatUseCase(reportRepo),
+  reportPost: new ReportPostUseCase(reportRepo),
+
+  // Post moderation
+  deletePost: new DeletePostUseCase(postRepo),
+  adminRemovePost: new AdminRemovePostUseCase(postRepo),
 
   // Donation links
   listDonationLinks: new ListDonationLinksUseCase(donationLinksRepo),
