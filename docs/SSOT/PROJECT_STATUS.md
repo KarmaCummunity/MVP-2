@@ -36,7 +36,7 @@ This document is the **single source of truth for project execution state**. It 
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
 | Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` — **114 vitest passing** + posts.adminRemove + reports.post |
-| Open tech-debt items | **41 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Open tech-debt items | **42 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
