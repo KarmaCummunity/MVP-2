@@ -55,6 +55,8 @@ export type { BlockErrorCode } from './block/errors';
 // Report use cases
 export { ReportChatUseCase } from './reports/ReportChatUseCase';
 export type { ReportChatInput } from './reports/ReportChatUseCase';
+export { ReportPostUseCase } from './reports/ReportPostUseCase';
+export type { ReportPostInput } from './reports/ReportPostUseCase';
 export { ReportError } from './reports/errors';
 export type { ReportErrorCode } from './reports/errors';
 
