@@ -65,3 +65,7 @@ export { AddDonationLinkUseCase } from './donations/AddDonationLinkUseCase';
 export { RemoveDonationLinkUseCase } from './donations/RemoveDonationLinkUseCase';
 export { DonationLinkError } from './donations/errors';
 export type { DonationLinkErrorCode } from './donations/errors';
+
+// Follow use cases (P1.1)
+export * from './follow/errors';
+export * from './follow/types';
