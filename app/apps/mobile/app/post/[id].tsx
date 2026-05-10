@@ -138,7 +138,17 @@ export default function PostDetailScreen() {
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
-          onAfterMutation={() => void query.refetch()}
+          // After "סמן כנמסר" the post leaves the open feed and the user is
+          // typically done with it — pop back to wherever they came from
+          // (usually the profile grid, which already refreshed via the
+          // OwnerActionsBar cache invalidation).
+          onClosed={() => {
+            if (router.canGoBack()) router.back();
+            else router.replace('/(tabs)');
+          }}
+          // After reopen the post becomes interesting again — stay on screen
+          // and refetch so the CTA flips back to "סמן כנמסר ✓".
+          onReopened={() => void query.refetch()}
         />
       ) : !isOwner ? (
         <View style={styles.cta}>
