@@ -21,7 +21,7 @@ const MESSAGES: Record<PostErrorCode, string> = {
   forbidden: 'אין לך הרשאה לפעולה זו. נסה להתחבר מחדש.',
   closure_not_owner: 'רק בעל הפוסט יכול לסמן או לפתוח אותו מחדש.',
   closure_wrong_status: 'הפוסט במצב שאינו מאפשר את הפעולה הזו.',
-  closure_recipient_not_in_chat: 'אפשר לסמן רק מישהו שהיה איתך בצ\'אט על הפוסט.',
+  closure_recipient_not_in_chat: 'אי אפשר לסמן את עצמך, ולא משתמש שלא קיים.',
   reopen_window_expired: 'הזמן לפתוח את הפוסט מחדש כבר עבר — הוא נמחק לתמיד.',
   unknown: 'אירעה שגיאה. נסה שוב.',
 };

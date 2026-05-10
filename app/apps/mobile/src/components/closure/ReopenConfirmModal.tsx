@@ -1,11 +1,15 @@
 // FR-CLOSURE-005 AC2 — confirmation modal for reopening a closed post.
-// Two copy variants based on the current closed state.
+// Copy varies on TWO axes:
+//   1. status:  closed_delivered (with consequences) vs deleted_no_recipient (cancel cleanup)
+//   2. type:    Give (owner gave / marked received) vs Request (owner received / marked gave)
 import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { colors } from '@kc/ui';
+import type { PostType } from '@kc/domain';
 
 interface Props {
   visible: boolean;
   variant: 'closed_delivered' | 'deleted_no_recipient';
+  postType: PostType;
   isBusy: boolean;
   errorMessage?: string | null;
   onCancel: () => void;
@@ -15,11 +19,20 @@ interface Props {
 export function ReopenConfirmModal({
   visible,
   variant,
+  postType,
   isBusy,
   errorMessage,
   onCancel,
   onConfirm,
 }: Props) {
+  const give = postType === 'Give';
+  // Marked-user direction: Give → "מי שקיבל"; Request → "מי שמסר".
+  const markedSideLabel = give ? 'מי שקיבל' : 'מי שמסר לך';
+  // Counters from the user's mental model — see RecipientCallout for the same
+  // convention. The DB columns lag this naming for Request posts (TD pending).
+  const ownerCounter = give ? 'פריטים שתרמתי' : 'פריטים שקיבלתי';
+  const markedCounter = give ? 'פריטים שקיבלתי' : 'פריטים שתרמתי';
+
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
@@ -28,11 +41,11 @@ export function ReopenConfirmModal({
           {variant === 'closed_delivered' ? (
             <View>
               <Text style={styles.body}>הפוסט יחזור להיות פעיל בפיד.</Text>
-              <Text style={styles.bullet}>• הסימון של מי שקיבל יוסר.</Text>
+              <Text style={styles.bullet}>• הסימון של {markedSideLabel} יוסר.</Text>
               <Text style={styles.bullet}>
-                • &quot;פריטים שקיבלתי&quot; שלו יקטן ב-1 (בלי התראה).
+                • &quot;{markedCounter}&quot; שלו יקטן ב-1 (בלי התראה).
               </Text>
-              <Text style={styles.bullet}>• &quot;פריטים שתרמתי&quot; שלך יקטן ב-1.</Text>
+              <Text style={styles.bullet}>• &quot;{ownerCounter}&quot; שלך יקטן ב-1.</Text>
             </View>
           ) : (
             <Text style={styles.body}>הפוסט יחזור להיות פעיל בפיד והוא לא יימחק.</Text>
