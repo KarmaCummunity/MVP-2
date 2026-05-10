@@ -6,6 +6,10 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+- **2026-05-10 — FR-ADMIN-009 + post-detail ⋮ menu (FR-POST-010 · FR-POST-014 AC4 · FR-POST-015 AC1 · FR-MOD-001 · FR-MOD-007 · FR-ADMIN-009)** — Branch `claude/unruffled-black-7d25c9` · 114 vitest (109 + 2 `AdminRemovePostUseCase` + 3 `ReportPostUseCase`). Migration `0020_admin_remove_post.sql` adds the `SECURITY DEFINER` RPC gated on `is_admin(auth.uid())` (writes `manual_remove_target` audit event, idempotent, no schema change). New use cases: `AdminRemovePostUseCase`, `ReportPostUseCase`. New mobile components: `PostMenuButton`, `PostMenuSheet`, `ReportPostModal`, `ConfirmActionModal` + `useIsSuperAdmin` + `usePostMenuActions` hook. Owner sees Delete; viewer sees Report + Block; super admin viewing someone else's post additionally sees Remove-as-admin. Mounted as a floating overlay on the post image (not the Stack header — `setOptions({headerRight})` did not propagate to react-native-web's navigator). Defers: TD-52 (admin restore RPC), TD-124 (feed-card ⋮ menu), TD-125 (Edit owner action), TD-126 (surface `removed_admin` to owner with banner).
+
+---
+
 ### 🟢 FR-CHAT-002 — Chat screen web defect repair
 - **SRS**: FR-CHAT-002 (chat conversation screen) — four web-only defects reported by the user against the existing P0.5 implementation. No AC change.
 - **Branch / PR**: `fix/FR-CHAT-002-fe-web-chat-screen-bugs` · 2026-05-10
