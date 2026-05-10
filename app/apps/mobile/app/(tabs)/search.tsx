@@ -45,6 +45,7 @@ import {
   LinkResultCard,
 } from '../../src/components/SearchResultCard';
 import { SearchFilterSheet } from '../../src/components/SearchFilterSheet';
+import { TopBar } from '../../src/components/TopBar';
 
 // ── Constants ─────────────────────────────────
 /** Debounce delay for search input to avoid excessive queries. */
@@ -154,9 +155,7 @@ export default function SearchScreen() {
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       {/* ── Header ──────────────────────────── */}
-      <View style={styles.searchHeader}>
-        <Text style={styles.headerTitle}>{t.title}</Text>
-      </View>
+      <TopBar />
 
       {/* ── Search bar + filter button ──────── */}
       <View style={styles.searchRow}>
@@ -403,18 +402,7 @@ const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
 
   // ── Header ──────────────────────────────────
-  searchHeader: {
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  headerTitle: {
-    ...typography.h2,
-    color: colors.textPrimary,
-    textAlign: 'right',
-  },
+  // (searchHeader removed in favor of TopBar)
 
   // ── Search bar ──────────────────────────────
   searchRow: {

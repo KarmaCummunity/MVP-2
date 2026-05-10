@@ -4,6 +4,7 @@ import React from 'react';
 import { Alert, Platform, View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
 import { getSignOutUseCase } from '../src/services/authComposition';
@@ -29,6 +30,7 @@ function SettingsRow({ label, icon, onPress, rightElement, destructive }: Readon
 
 export default function SettingsScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
@@ -88,22 +90,22 @@ export default function SettingsScreen() {
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.title}>הגדרות</Text>
+        <Text style={styles.title}>{t('settings.title')}</Text>
         <View style={{ width: 24 }} />
       </View>
 
       <ScrollView>
         {/* Account */}
-        <Text style={styles.sectionTitle}>חשבון</Text>
+        <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
         <View style={styles.section}>
-          <SettingsRow label="שם משתמש ופרטים" icon="person-outline" onPress={() => {}} />
+          <SettingsRow label={t('settings.accountDetails')} icon="person-outline" onPress={() => router.push('/edit-profile')} />
         </View>
 
         {/* Notifications */}
-        <Text style={styles.sectionTitle}>התראות</Text>
+        <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
         <View style={styles.section}>
           <SettingsRow
-            label="התראות מופעלות"
+            label={t('settings.notificationsOn')}
             icon="notifications-outline"
             rightElement={
               <Switch
@@ -116,10 +118,10 @@ export default function SettingsScreen() {
         </View>
 
         {/* Privacy */}
-        <Text style={styles.sectionTitle}>פרטיות</Text>
+        <Text style={styles.sectionTitle}>{t('settings.privacy')}</Text>
         <View style={styles.section}>
           <SettingsRow
-            label="🔒 פרופיל פרטי"
+            label={t('settings.privateProfileToggle')}
             icon="lock-closed-outline"
             rightElement={
               <Switch
@@ -129,35 +131,35 @@ export default function SettingsScreen() {
               />
             }
           />
-          <SettingsRow label="בקשות עקיבה" icon="people-outline" onPress={() => {}} />
-          <SettingsRow label="משתמשים חסומים" icon="ban-outline" onPress={() => {}} />
+          <SettingsRow label={t('settings.followRequests')} icon="people-outline" onPress={() => {}} />
+          <SettingsRow label={t('settings.blockedUsers')} icon="ban-outline" onPress={() => {}} />
         </View>
 
         {/* Stats */}
-        <Text style={styles.sectionTitle}>סטטיסטיקות</Text>
+        <Text style={styles.sectionTitle}>{t('settings.statsSection')}</Text>
         <View style={styles.section}>
-          <SettingsRow label="הסטטיסטיקות שלי" icon="stats-chart-outline" onPress={() => {}} />
+          <SettingsRow label={t('settings.stats')} icon="stats-chart-outline" onPress={() => router.push('/stats')} />
         </View>
 
         {/* Support */}
-        <Text style={styles.sectionTitle}>תמיכה</Text>
+        <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
           <SettingsRow
-            label="דווח על בעיה"
+            label={t('settings.reportIssue')}
             icon="alert-circle-outline"
             onPress={() => router.push('/settings/report-issue')}
           />
-          <SettingsRow label="תנאי שימוש" icon="document-text-outline" onPress={() => {}} />
-          <SettingsRow label="מדיניות פרטיות" icon="shield-outline" onPress={() => {}} />
+          <SettingsRow label={t('settings.termsAndPrivacy')} icon="document-text-outline" onPress={() => router.push('/legal')} />
+          <SettingsRow label={t('settings.about')} icon="information-circle-outline" onPress={() => router.push('/about')} />
         </View>
 
         {/* Dev tools — testing onboarding without account deletion */}
         {__DEV__ && (
           <>
-            <Text style={styles.sectionTitle}>כלי פיתוח</Text>
+            <Text style={styles.sectionTitle}>{t('settings.devTools')}</Text>
             <View style={styles.section}>
               <SettingsRow
-                label={resettingOnboarding ? 'מאפס...' : 'איפוס אונבורדינג (דיבוג)'}
+                label={resettingOnboarding ? t('settings.resetting') : t('settings.resetOnboarding')}
                 icon="refresh-outline"
                 onPress={handleResetOnboarding}
               />
@@ -168,19 +170,19 @@ export default function SettingsScreen() {
         {/* Account actions */}
         <View style={[styles.section, { marginTop: spacing.sm }]}>
           <SettingsRow
-            label={signingOut ? 'מתנתק...' : 'התנתקות'}
+            label={signingOut ? t('settings.loggingOut') : t('settings.logout')}
             icon="log-out-outline"
             onPress={handleSignOut}
           />
           <SettingsRow
-            label="מחק חשבון"
+            label={t('settings.deleteAccount')}
             icon="trash-outline"
             destructive
             onPress={() => {}}
           />
         </View>
 
-        <Text style={styles.version}>קארמה קהילה v0.1.0</Text>
+        <Text style={styles.version}>{t('settings.version')} v0.1.0</Text>
       </ScrollView>
     </SafeAreaView>
   );
