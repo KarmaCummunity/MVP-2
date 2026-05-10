@@ -42,11 +42,11 @@ export const colors = {
   tabActive: '#F97316',
   tabInactive: '#9CA3AF',
 
-  // Post type tags
-  giveTag: '#22C55E',
-  giveTagBg: '#DCFCE7',
-  requestTag: '#6366F1',
-  requestTagBg: '#E0E7FF',
+  // Post type tags — aligned with brand palette (orange primary / neutral gray)
+  giveTag: '#F97316',
+  giveTagBg: '#FFF7ED',
+  requestTag: '#4B5563',
+  requestTagBg: '#E5E7EB',
 
   // Visibility badges
   publicBadge: '#6B7280',

@@ -76,7 +76,7 @@ export function TabBar() {
         onPress={() => router.push('/(tabs)/create')}
         accessibilityRole="button"
         accessibilityLabel="פוסט חדש"
-        style={styles.tabBtn}
+        style={styles.plusTabBtn}
       >
         <View style={[styles.plusCircle, active === 'create' && styles.plusCircleActive]}>
           <Text style={[styles.plusText, active === 'create' && styles.plusTextActive]}>+</Text>
@@ -111,19 +111,22 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     height: 68, // explicit — without this, RN-Web collapses the row to 0px
     paddingTop: 8,
+    overflow: 'visible', // allow the plus circle to protrude above the bar
     ...shadow.card,
   },
   tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
+  plusTabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
   plusCircle: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
+    width: 64,
+    height: 64,
+    borderRadius: 32,
     backgroundColor: colors.primaryLight,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 6,
+    marginTop: -16, // protrude above the tab bar; negative margin keeps touch target aligned
+    ...shadow.card,
   },
   plusCircleActive: { backgroundColor: colors.primary },
-  plusText: { fontSize: 28, color: colors.primary, lineHeight: 32, fontWeight: '700' },
+  plusText: { fontSize: 32, color: colors.primary, lineHeight: 36, fontWeight: '700' },
   plusTextActive: { color: colors.surface },
 });
