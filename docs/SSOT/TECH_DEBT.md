@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P4.1 web deploy pipeline — no new debt; deploy is config + 13-line postbuild script. Spec + runbook checked in.) |
+| **Last Updated** | 2026-05-10 (P4.1 — Dockerfile + railway.json shipped for Railway deploy; superseded the Cloudflare Pages design. No new debt.) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.

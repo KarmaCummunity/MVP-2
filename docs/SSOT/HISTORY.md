@@ -6,7 +6,17 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
-### 🟢 Web deploy pipeline → Cloudflare Pages at `dev3.karma-community-kc.com` (P4.1)
+### 🟢 Web deploy pipeline → Railway with Dockerfile (P4.1)
+- **SRS**: NFR-PLAT-* — Railway now builds and serves the static SPA at `https://dev3.karma-community-kc.com`. Replaces the failing Railpack auto-detect that couldn't make sense of the pnpm monorepo.
+- **Branch**: `chore/railway-dockerfile` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · 90 vitest passing · `pnpm lint:arch` 180 files passing. Local `docker build --build-arg EXPO_PUBLIC_SUPABASE_URL=… --build-arg EXPO_PUBLIC_SUPABASE_ANON_KEY=… -t kc-web:test .` produces the image; `docker run -p 4322:3000 kc-web:test` serves correctly — `/`, `/donations`, `/chat/abc` all return 200 (SPA fallback via `serve --single`); `<title>קארמה קהילה</title>` (RTL Hebrew correct).
+- **Code**: `Dockerfile` (multistage — stage 1: `node:20-bookworm-slim` runs `pnpm install --frozen-lockfile` + `pnpm build:web`; stage 2: `node:20-alpine` runs `serve dist --single --listen $PORT`). `railway.json` sets builder=DOCKERFILE so Railpack is bypassed entirely. `.dockerignore` keeps the build context small (excludes `docs/`, `supabase/`, `node_modules`, etc).
+- **Runbook**: [`docs/DEPLOY_WEB.md`](./../../docs/DEPLOY_WEB.md) — Railway variables, settings, public domain, Supabase redirect URL, deploy flow, verification curls, troubleshooting.
+- **Manual setup remaining (one-time, in Railway + Supabase dashboards)**: (1) Railway Variables: add `EXPO_PUBLIC_SUPABASE_URL` + `EXPO_PUBLIC_SUPABASE_ANON_KEY` (already documented). (2) Supabase Auth → URL Configuration: add `https://dev3.karma-community-kc.com/**` to Redirect URLs. After step 1, the next push to `main` builds successfully on Railway.
+
+---
+
+### 🟢 Web deploy pipeline preliminary work — Cloudflare Pages design + `pnpm build:web` script (P4.1, superseded)
 - **SRS**: NFR-PLAT-* — `react-native-web` parity is now deployable to a public URL with auto-deploy on every `main` push and per-PR preview URLs.
 - **Branch**: `chore/web-deploy-cloudflare-pages` · 2026-05-10
 - **Tests**: tsc clean (5 packages) · 90 vitest passing · `pnpm lint:arch` 180 files passing. Local smoke: `pnpm build:web` produces a 4.43 MB SPA bundle in `app/apps/mobile/dist/`; `pnpm preview:web` serves it with SPA fallback enabled, all routes (`/`, `/donations`, `/chat/abc`) return 200.
