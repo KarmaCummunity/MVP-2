@@ -156,8 +156,28 @@ The Super Admin retrieves global statistics directly via the database for produc
 
 ---
 
+## FR-ADMIN-009 — Manual delete from post screen
+
+**Description.**
+While signed in as the Super Admin, the post detail screen exposes an "Remove as admin" action inside the `⋮` overflow menu, separate from the report-channel flow in `FR-ADMIN-005`.
+
+**Source.**
+- This document, §10 of `docs/superpowers/specs/2026-05-10-admin-delete-post-and-post-menu-design.md`.
+
+**Acceptance Criteria.**
+- AC1. The action is hidden for non-admin sessions and for posts the admin owns (the admin sees their owner-mode menu instead).
+- AC2. Confirms with a modal, then sets `Post.status = 'removed_admin'`. Hard delete is **not** performed.
+- AC3. Authorization is re-checked server-side via `is_admin(auth.uid())` inside a `SECURITY DEFINER` RPC; client gating is convenience only.
+- AC4. An `audit_events` row is written with `action = 'manual_remove_target'`, `actor_id`, `target_type = 'post'`, `target_id = postId`.
+- AC5. The action is idempotent: re-issuing it on an already-removed post is a quiet no-op and does not write a second audit row.
+
+**Related.** Domain: `Post.status`, `AuditEvent`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
+| 0.2 | 2026-05-10 | Added FR-ADMIN-009 (manual delete from post screen). |
