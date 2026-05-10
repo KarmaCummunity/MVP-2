@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P0.5 polish — profile posts as 3-col image grid; `/user/[handle]` doubled-header fixed (uses Stack.Screen options); chat header title is tappable → user profile (`shareHandle` added to Counterpart contract); chat unread badge clears optimistically on conversation open via `markChatLocallyRead`.) |
+| **Last Updated** | 2026-05-10 (P4.1 — web deploy pipeline: `pnpm build:web` (Expo export + `_redirects` for SPA fallback) + Cloudflare Pages runbook. Replaces failing Railway auto-detect.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -112,7 +112,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | # | Feature | SRS IDs | Status |
 | - | ------- | ------- | ------ |
-| P4.1 | Dedicated web app shell (or document `react-native-web` parity) | NFR-PLAT-* | ⏳ Planned |
+| P4.1 | `react-native-web` parity + Cloudflare Pages deploy at `dev3.karma-community-kc.com` | NFR-PLAT-* | 🟢 Done (2026-05-10) |
 
 ---
 
@@ -124,7 +124,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Up next | P0.6 — Closure flow | — | — | — |
 | Then | P1.7 — Donations + Search tabs wire-up (post-P0.5 PR, TD-114) | — | — | — |
 
-Most recently shipped: **TD-109** (emoji → Ionicons across tab bar + EmptyState, fixes iOS-simulator tofu — 2026-05-09). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P4.1** (web deploy pipeline → Cloudflare Pages at `dev3.karma-community-kc.com`; `pnpm build:web` produces SPA-ready `dist/` with `_redirects`; runbook at `docs/DEPLOY_WEB.md` — 2026-05-10). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 
