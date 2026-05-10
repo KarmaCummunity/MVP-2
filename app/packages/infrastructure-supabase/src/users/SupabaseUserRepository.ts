@@ -10,6 +10,13 @@ import type { IUserRepository } from '@kc/application';
 import type { OnboardingState, User } from '@kc/domain';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { searchUsers } from './searchUsers';
+import {
+  followEdge,
+  unfollowEdge,
+  isFollowingEdge,
+  listFollowers,
+  listFollowing,
+} from './follow/followMethods';
 
 const NOT_IMPL = (name: string, slice: string) =>
   new Error(`SupabaseUserRepository.${name}: not_implemented (${slice})`);
@@ -142,20 +149,20 @@ export class SupabaseUserRepository implements IUserRepository {
   async delete(_userId: string): Promise<void> {
     throw NOT_IMPL('delete', 'P2.2');
   }
-  async follow(): Promise<never> {
-    throw NOT_IMPL('follow', 'P1.1');
+  async follow(followerId: string, followedId: string) {
+    return followEdge(this.client, followerId, followedId);
   }
-  async unfollow(_followerId: string, _followedId: string): Promise<void> {
-    throw NOT_IMPL('unfollow', 'P1.1');
+  async unfollow(followerId: string, followedId: string): Promise<void> {
+    return unfollowEdge(this.client, followerId, followedId);
   }
-  async isFollowing(_followerId: string, _followedId: string): Promise<boolean> {
-    throw NOT_IMPL('isFollowing', 'P1.1');
+  async isFollowing(followerId: string, followedId: string): Promise<boolean> {
+    return isFollowingEdge(this.client, followerId, followedId);
   }
-  async getFollowers(): Promise<never> {
-    throw NOT_IMPL('getFollowers', 'P1.1');
+  async getFollowers(userId: string, limit: number, cursor?: string) {
+    return listFollowers(this.client, userId, limit, cursor);
   }
-  async getFollowing(): Promise<never> {
-    throw NOT_IMPL('getFollowing', 'P1.1');
+  async getFollowing(userId: string, limit: number, cursor?: string) {
+    return listFollowing(this.client, userId, limit, cursor);
   }
   async sendFollowRequest(): Promise<never> {
     throw NOT_IMPL('sendFollowRequest', 'P1.1');
