@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P0.5 — direct chat with realtime: 4 phases shipped on feat/FR-CHAT-001-chat-realtime — domain+ports+use-cases (TDD, +11 vitest), migrations 0010+0011, Supabase adapters incl. realtime, Zustand chatStore + composition root, replaced Inbox+Conversation mocks, new user/[handle] + settings/report-issue screens.) |
+| **Last Updated** | 2026-05-10 (FR-DONATE-006..009 — 6 new donation categories + community-curated NGO link lists with Edge-Function-backed URL validation; DB migration 0014; appended to existing Time/Money screens.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -86,6 +86,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P1.5 | Push notifications (Critical + Social) | FR-NOTIF-001…006 | ⏳ Planned | |
 | P1.6 | Personal & community stats | FR-STATS-001…004 | ⏳ Planned | |
 | P1.7 | Donations Hub + Search tab placeholder + 5-tab bottom bar | FR-DONATE-001…005, FR-FEED-016, FR-CHAT-008 (extended) | ⏳ Planned (parked pending TD-114) | Per `D-16` (2026-05-09). Wire-up of volunteer-composer → support thread deferred to a separate post-P0.5 PR once `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` are merged. |
+| P1.8 | Donation categories + community NGO link lists | FR-DONATE-006…009 | 🟢 Done (2026-05-10) | 6 new tiles (אוכל, דיור, תחבורה, ידע, חיות, רפואה) + community-curated link list per category (auto-publish + Edge-Function URL reachability). DB-backed; lists also added to existing Time/Money screens. |
 
 ### 📊 P2 — Polish
 

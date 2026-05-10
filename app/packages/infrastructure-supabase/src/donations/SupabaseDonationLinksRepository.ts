@@ -1,0 +1,75 @@
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { DonationCategorySlug, DonationLink } from '@kc/domain';
+import { DonationLinkError } from '@kc/application';
+import type {
+  AddDonationLinkInput,
+  IDonationLinksRepository,
+} from '@kc/application';
+import type { Database } from '../database.types';
+
+type LinkRow = Database['public']['Tables']['donation_links']['Row'];
+
+function mapRow(row: LinkRow): DonationLink {
+  return {
+    id: row.id,
+    categorySlug: row.category_slug as DonationCategorySlug,
+    url: row.url,
+    displayName: row.display_name,
+    description: row.description,
+    submittedBy: row.submitted_by,
+    validatedAt: row.validated_at,
+    hiddenAt: row.hidden_at,
+    createdAt: row.created_at,
+  };
+}
+
+export class SupabaseDonationLinksRepository implements IDonationLinksRepository {
+  constructor(private readonly client: SupabaseClient<Database>) {}
+
+  async listByCategory(slug: DonationCategorySlug): Promise<DonationLink[]> {
+    const { data, error } = await this.client
+      .from('donation_links')
+      .select('*')
+      .eq('category_slug', slug)
+      .is('hidden_at', null)
+      .order('created_at', { ascending: false });
+    if (error) throw new DonationLinkError('network', error.message, error);
+    return (data ?? []).map(mapRow);
+  }
+
+  async addViaEdgeFunction(input: AddDonationLinkInput): Promise<DonationLink> {
+    const { data, error } = await this.client.functions.invoke<{
+      ok: boolean;
+      code?: string;
+      link?: LinkRow;
+    }>('validate-donation-link', {
+      body: {
+        category_slug: input.categorySlug,
+        url: input.url,
+        display_name: input.displayName,
+        description: input.description ?? null,
+      },
+    });
+    if (error) throw new DonationLinkError('network', error.message, error);
+    if (!data || !data.ok || !data.link) {
+      const code = (data?.code ?? 'unknown') as
+        | 'invalid_input'
+        | 'invalid_url'
+        | 'unreachable'
+        | 'rate_limited'
+        | 'unauthorized'
+        | 'unknown';
+      throw new DonationLinkError(code, `validate-donation-link returned ${code}`);
+    }
+    return mapRow(data.link);
+  }
+
+  async softHide(linkId: string): Promise<void> {
+    const userId = (await this.client.auth.getUser()).data.user?.id ?? null;
+    const { error } = await this.client
+      .from('donation_links')
+      .update({ hidden_at: new Date().toISOString(), hidden_by: userId })
+      .eq('id', linkId);
+    if (error) throw new DonationLinkError('network', error.message, error);
+  }
+}

@@ -225,6 +225,77 @@ export type Database = {
           },
         ]
       }
+      donation_categories: {
+        Row: {
+          icon_name: string
+          is_active: boolean
+          label_he: string
+          slug: string
+          sort_order: number
+        }
+        Insert: {
+          icon_name: string
+          is_active?: boolean
+          label_he: string
+          slug: string
+          sort_order: number
+        }
+        Update: {
+          icon_name?: string
+          is_active?: boolean
+          label_he?: string
+          slug?: string
+          sort_order?: number
+        }
+        Relationships: []
+      }
+      donation_links: {
+        Row: {
+          category_slug: string
+          created_at: string
+          description: string | null
+          display_name: string
+          hidden_at: string | null
+          hidden_by: string | null
+          id: string
+          submitted_by: string
+          url: string
+          validated_at: string
+        }
+        Insert: {
+          category_slug: string
+          created_at?: string
+          description?: string | null
+          display_name: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          submitted_by: string
+          url: string
+          validated_at: string
+        }
+        Update: {
+          category_slug?: string
+          created_at?: string
+          description?: string | null
+          display_name?: string
+          hidden_at?: string | null
+          hidden_by?: string | null
+          id?: string
+          submitted_by?: string
+          url?: string
+          validated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "donation_links_category_slug_fkey"
+            columns: ["category_slug"]
+            isOneToOne: false
+            referencedRelation: "donation_categories"
+            referencedColumns: ["slug"]
+          },
+        ]
+      }
       follow_edges: {
         Row: {
           created_at: string

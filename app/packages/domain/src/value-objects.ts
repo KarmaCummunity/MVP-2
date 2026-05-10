@@ -127,3 +127,26 @@ export interface NotificationPreferences {
   critical: boolean;
   social: boolean;
 }
+
+// ── Donations ─────────────────────────────────
+// FR-DONATE-006..009. Slug values mirror the CHECK on donation_categories.slug.
+
+export type DonationCategorySlug =
+  | 'time'
+  | 'money'
+  | 'food'
+  | 'housing'
+  | 'transport'
+  | 'knowledge'
+  | 'animals'
+  | 'medical';
+
+export const DONATION_CATEGORY_SLUGS: readonly DonationCategorySlug[] = [
+  'time', 'money', 'food', 'housing', 'transport', 'knowledge', 'animals', 'medical',
+] as const;
+
+// Mirrors the CHECK constraints in 0014_donation_categories_and_links.sql.
+export const DONATION_LINK_DISPLAY_NAME_MIN = 2;
+export const DONATION_LINK_DISPLAY_NAME_MAX = 80;
+export const DONATION_LINK_DESCRIPTION_MAX = 280;
+export const DONATION_LINK_URL_PATTERN = /^https?:\/\//i;

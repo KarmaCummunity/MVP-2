@@ -71,6 +71,7 @@ A coming-soon screen for the Money modality that links out to the partner platfo
 - AC3. The link opens in the platform's external browser (no in-app WebView).
 - AC4. If `Linking.canOpenURL` returns false, an inline error is shown: *"לא הצלחנו לפתוח את הקישור. נסו דפדפן אחר."*
 - AC5. The screen is auth-required in MVP-core (`FR-DONATE-005`); see TD-112 for future guest-scope mirror.
+- AC6. **(FR-DONATE-007 augmentation, 2026-05-10)** Below the existing CTA, the screen renders a `<DonationLinksList categorySlug="money" />` section — same component as the new category screens — listing community-curated links and exposing the *"+"* add-link button.
 
 **Related.** Screens: 2.7 · External link target: `jgive.com`.
 
@@ -99,6 +100,7 @@ A coming-soon screen for the Time modality that links out to `Lev Echad / we-me`
 - AC6. The use-case **resolves** the Super Admin user record by canonical email `karmacommunity2.0@gmail.com` (identical to `FR-CHAT-007 AC1`) and **finds-or-creates** the support `Chat` (`is_support_thread = true`). It **does not** create a second support thread when one already exists.
 - AC7. The first message body is the user's text **prefixed** with the literal string *"התנדבות בארגון: "*. The prefix is contractual and is not localized in MVP.
 - AC8. Network failure: the textbox content is preserved and an inline retry control is shown: *"לא נשלח. נסו שוב."*
+- AC9. **(FR-DONATE-007 augmentation, 2026-05-10)** Below the volunteer composer, the screen renders a `<DonationLinksList categorySlug="time" />` section — same component as the new category screens — listing community-curated links and exposing the *"+"* add-link button.
 
 **Related.** Screens: 2.8 · `FR-CHAT-007` · External link target: `we-me.app`.
 
@@ -124,8 +126,71 @@ A future enhancement (`TD-112`) may mirror the Money and Time sub-screens into a
 
 ---
 
+## FR-DONATE-006 — Donations Hub: 6 new category tiles
+
+**Description.**
+The Donations Hub is extended with 6 community-driven category tiles below the existing items/time/money tiles, separated by a thin divider.
+
+**Source.**
+- Design spec: [`docs/superpowers/specs/2026-05-10-donation-categories-and-links-design.md`](../../../superpowers/specs/2026-05-10-donation-categories-and-links-design.md).
+
+**Acceptance Criteria.**
+- AC1. Tile order (visual top-to-bottom in RTL): existing **חפצים → זמן → כסף** group, then divider, then new group **אוכל → דיור → תחבורה → ידע → חיות → רפואה**.
+- AC2. Each new tile uses the same `<DonationTile>` component (same height, icon, title, subtitle styling) as the existing tiles.
+- AC3. Tap routes to `/(tabs)/donations/category/<slug>` where `<slug>` is one of `food`, `housing`, `transport`, `knowledge`, `animals`, `medical`. The route renders a hero (icon + title + subtitle) and the `<DonationLinksList>` for that slug.
+- AC4. The category list (`donation_categories`) and per-category links (`donation_links`) are persisted in Postgres and shared across all users; categories are seeded by migration `0014_donation_categories_and_links.sql`.
+
+---
+
+## FR-DONATE-007 — DonationLinksList component
+
+**Description.**
+A reusable component renders the community-curated NGO link list for any category slug in `('time','money','food','housing','transport','knowledge','animals','medical')`. Used both on the new dynamic category screen and embedded below the existing Time and Money screens.
+
+**Acceptance Criteria.**
+- AC1. Lists rows where `donation_links.category_slug = slug AND hidden_at IS NULL`, newest first.
+- AC2. Header row shows the section title (*"עמותות וקישורים"*) and a small *"+"* icon button (32×32, primary color) on the leading RTL edge.
+- AC3. Each row shows: site favicon (with `link-outline` Ionicon fallback on image error), display name (h3), description (body, 2-line clamp), and tiny domain chip. Tap → `Linking.openURL(url)`.
+- AC4. Empty state shows a friendly message + centered *"הוספת קישור ראשון"* CTA that opens the add-link modal.
+- AC5. Loading state shows an `ActivityIndicator`; transient load failure shows an inline error + *"נסה שוב"* retry button.
+- AC6. The `embedded` prop renders rows in a non-scrolling `View` (for nesting inside an outer `ScrollView`); without it, rows render in a `FlatList`.
+
+---
+
+## FR-DONATE-008 — Add link flow + Edge Function validation
+
+**Description.**
+Any signed-in user can submit a new donation link via a modal sheet. The submission is validated server-side by the `validate-donation-link` Edge Function which performs a URL reachability check and inserts the row using the service-role key. Direct `donation_links` INSERT from client roles is blocked by RLS.
+
+**Acceptance Criteria.**
+- AC1. The modal collects: URL, display name (2..80 chars), description (optional, ≤280 chars).
+- AC2. The *"הוסף"* primary action is disabled until URL matches `^https?://` and display name length is in range.
+- AC3. On submit, the client calls the `validate-donation-link` Edge Function. The function:
+  - Validates inputs and confirms `category_slug` is one of the 8 allowed slugs.
+  - Enforces a soft rate-limit of 10 inserts per user per hour; over-limit returns `rate_limited`.
+  - Performs `fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) })`. On 4xx/5xx or `405`, retries once with `GET`. Treats status `200..399` as reachable.
+  - On reachability success, inserts a row with `validated_at = now()` using the service-role client and returns the inserted row.
+- AC4. UI feedback during submit: button shows a spinner with the label *"מאמת קישור..."*; on success the modal closes and the new row is prepended to the list; on failure an inline localized error message is shown keyed off the returned `code` (`invalid_url`, `unreachable`, `rate_limited`, `unauthorized`, `network`, `unknown`).
+- AC5. Auto-publish: a successfully inserted row is visible to all signed-in users immediately (no admin approval queue).
+
+---
+
+## FR-DONATE-009 — Reporting and removal
+
+**Description.**
+Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דווח על קישור"*, and (only for the submitter) *"מחק"*.
+
+**Acceptance Criteria.**
+- AC1. *"פתח"* → `Linking.openURL(url)`.
+- AC2. *"דווח על קישור"* → reuses the existing get-or-create support thread (`FR-CHAT-007`) and sends a system-style message: `דיווח על קישור (donation_link:<id>) — <url>`. A success alert is shown.
+- AC3. *"מחק"* is shown only when `donation_links.submitted_by = auth.uid()`. On confirm, soft-hides the row by setting `hidden_at = now(), hidden_by = auth.uid()`. The row is removed from the local list immediately.
+- AC4. Soft-hide authorization is enforced by the `donation_links_update_own_or_admin` RLS policy (own row OR `users.is_super_admin = true`).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-09 | Initial draft. Reintroduces Donations tab into MVP per `D-16`. Defines `FR-DONATE-001..005`. |
+| 0.2 | 2026-05-10 | Adds `FR-DONATE-006..009` — 6 new category tiles + community-curated NGO link list (auto-publish + Edge-Function URL reachability). Augments `FR-DONATE-003` AC6 and `FR-DONATE-004` AC9 to embed the new list section. |

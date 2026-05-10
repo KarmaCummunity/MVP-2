@@ -6,6 +6,21 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 Donation categories + community NGO link lists (FR-DONATE-006..009)
+- **SRS**: FR-DONATE-006 (6 new tiles: אוכל / דיור / תחבורה / ידע / חיות / רפואה), FR-DONATE-007 (DonationLinksList component), FR-DONATE-008 (Edge-Function-validated add-link flow), FR-DONATE-009 (report + soft-hide). Augments FR-DONATE-003 AC6 + FR-DONATE-004 AC9 to embed list section under existing Time/Money screens.
+- **Branch**: `feat/FR-DONATE-006-donation-categories-and-links` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · 79 vitest passing · `pnpm lint:arch` passing (no allowlist additions; entities split into `donations.ts`, list/modal split into focused files + a `useDonationLinkActions` hook)
+- **DB**: migration `0014_donation_categories_and_links.sql` — `donation_categories` (lookup, 8 slugs seeded) + `donation_links` (community-curated, RLS: select-visible-or-own-or-admin; insert blocked from clients; update/delete own-or-admin).
+- **Edge Function**: `supabase/functions/validate-donation-link` — verifies user JWT, validates inputs, soft rate-limits to 10/user/hour, performs server-side `HEAD` (with `GET` fallback on 405/4xx) reachability check (5s timeout, redirects followed, status 200..399 = ok), inserts via service-role on success.
+- **Domain**: `DonationCategorySlug` value-object + `DONATION_CATEGORY_SLUGS`, `DONATION_LINK_*` length/regex constants. `DonationCategory` + `DonationLink` entities in new `donations.ts`.
+- **Application**: `IDonationLinksRepository` port (list/addViaEdgeFunction/softHide), `ListDonationLinksUseCase`, `AddDonationLinkUseCase` (client-side input length pre-validation), `RemoveDonationLinkUseCase`, `DonationLinkError`.
+- **Infra**: `SupabaseDonationLinksRepository` — list visible rows, invoke Edge Function, soft-hide via UPDATE.
+- **Mobile**: dynamic route `/(tabs)/donations/category/[slug].tsx` (hero + DonationLinksList), 6 new tiles in Hub (separated by divider after the existing 3), `<DonationLinksList>` appended to existing Time + Money screens via `embedded` prop. New components: `DonationLinkRow` (favicon + display name + 2-line description + domain chip + open + overflow menu), `AddDonationLinkModal` (URL/name/description form, async validate, inline error per code), `useDonationLinkActions` hook (action sheet + report-via-support-thread + confirm-soft-hide). Composition root extended with the three use-cases.
+- **i18n**: `donations.categories.*`, `donations.links.*`, `donations.addLinkModal.*` (Hebrew).
+- **Out of scope (deferred)**: pre-moderation queue, periodic dead-link crawler, guest-mirror (still TD-112), super-admin bulk-hide UI (RLS allows it from admin tools).
+
+---
+
 ### 🟢 Feed image rendering + post-detail carousel (FR-POST-014 AC1)
 - **SRS**: FR-POST-014 AC1 (post-detail exposes every uploaded image)
 - **Branch**: `fix/FR-POST-001-fe-create-post-e2e` (extends the create-post fix below) · 2026-05-09
