@@ -34,6 +34,7 @@ import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { BackButton } from '../src/components/BackButton';
+import { DevBanner } from '../src/components/DevBanner';
 import { TabBar } from '../src/components/TabBar';
 
 SplashScreen.preventAutoHideAsync();
@@ -112,6 +113,7 @@ export default function RootLayout() {
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
             <StatusBar style="dark" />
+            <DevBanner />
             <AuthGate>
               <SoftGateProvider>
                 <ShellWithTabBar>
