@@ -9,6 +9,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IUserRepository } from '@kc/application';
 import type { OnboardingState, User } from '@kc/domain';
 import { mapUserRow, type UserRow } from './mapUserRow';
+import { searchUsers } from './searchUsers';
 
 const NOT_IMPL = (name: string, slice: string) =>
   new Error(`SupabaseUserRepository.${name}: not_implemented (${slice})`);
@@ -180,6 +181,13 @@ export class SupabaseUserRepository implements IUserRepository {
    * picker, by future FR-FEED-* visibility helpers, and the Blocked Users
    * settings screen (P1.4 — read path is here, the toggle lives in P1.4).
    */
+  searchUsers(
+    query: string,
+    opts: { excludeUserId: string; limit: number },
+  ): Promise<User[]> {
+    return searchUsers(this.client, query, opts);
+  }
+
   async getBlockedUsers(userId: string): Promise<User[]> {
     const { data, error } = await this.client
       .from('blocks')
