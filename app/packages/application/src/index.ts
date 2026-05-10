@@ -79,3 +79,4 @@ export * from './follow/RemoveFollowerUseCase';
 export * from './follow/ListFollowersUseCase';
 export * from './follow/ListFollowingUseCase';
 export * from './follow/ListPendingFollowRequestsUseCase';
+export * from './follow/GetFollowStateUseCase';

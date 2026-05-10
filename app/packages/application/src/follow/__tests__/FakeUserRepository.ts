@@ -11,7 +11,7 @@ import type {
   PrivacyMode,
   User,
 } from '@kc/domain';
-import type { IUserRepository } from '../../ports/IUserRepository';
+import type { FollowStateRaw, IUserRepository } from '../../ports/IUserRepository';
 
 const N = (m: string) => () => Promise.reject(new Error(`fake.${m}: not_used_in_test`));
 
@@ -96,6 +96,18 @@ export class FakeUserRepository implements IUserRepository {
   ) {
     this.lastGetPendingRequests = { userId };
     return this.pendingRequestsWithUsers;
+  }
+
+  followStateRaw: FollowStateRaw = {
+    target: null,
+    followingExists: false,
+    pendingRequestExists: false,
+    cooldownUntil: null,
+    blocked: false,
+  };
+
+  async getFollowStateRaw(): Promise<FollowStateRaw> {
+    return this.followStateRaw;
   }
 
   // ── User read methods used by follow use cases ────────────────────────

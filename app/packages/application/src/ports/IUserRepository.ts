@@ -4,6 +4,16 @@ import type { User, AuthIdentity, FollowEdge, FollowRequest, Block, OnboardingSt
 // Port (interface) for user persistence.
 // Implementations live in infrastructure-supabase.
 
+/** Raw signals from DB used to derive FR-FOLLOW-011 state. */
+export interface FollowStateRaw {
+  /** target.privacy_mode + target.account_status. null if target not visible / does not exist. */
+  target: { userId: string; privacyMode: 'Public' | 'Private'; accountStatus: 'active' | 'suspended' | 'deleted' } | null;
+  followingExists: boolean;
+  pendingRequestExists: boolean;
+  cooldownUntil: string | null;
+  blocked: boolean;
+}
+
 export interface IUserRepository {
   findById(userId: string): Promise<User | null>;
   findByHandle(handle: string): Promise<User | null>;
@@ -90,6 +100,13 @@ export interface IUserRepository {
     limit: number,
     cursor?: string,
   ): Promise<import('../follow/types').PaginatedRequests>;
+
+  /**
+   * FR-FOLLOW-011 — single round-trip probe. Returns raw signals the
+   * GetFollowStateUseCase needs to derive a FollowState. Avoids 4 separate
+   * round-trips on every profile load.
+   */
+  getFollowStateRaw(viewerId: string, targetUserId: string): Promise<FollowStateRaw>;
 
   // Blocks
   block(blockerId: string, blockedId: string): Promise<Block>;
