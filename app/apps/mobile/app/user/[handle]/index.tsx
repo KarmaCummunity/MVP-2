@@ -70,10 +70,10 @@ export default function OtherProfileScreen() {
   });
 
   if (!handle || userQuery.isLoading)
-    return <SafeAreaView style={styles.container}><ActivityIndicator style={{ marginTop: 80 }} color={colors.primary} /></SafeAreaView>;
+    return <SafeAreaView style={styles.container} edges={['bottom']}><ActivityIndicator style={{ marginTop: 80 }} color={colors.primary} /></SafeAreaView>;
 
   if (!u) return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen options={{ headerTitle: 'פרופיל' }} />
       <View style={styles.notFound}><Text style={styles.notFoundText}>משתמש לא נמצא</Text></View>
     </SafeAreaView>
@@ -120,10 +120,15 @@ export default function OtherProfileScreen() {
   };
 
   const showLocked = u.privacyMode === 'Private' && followInfo?.state !== 'following' && !isMe;
+  const HeaderMenu = !isMe ? () => (
+    <TouchableOpacity onPress={block} accessibilityLabel="עוד פעולות" style={styles.headerBtn}>
+      <Ionicons name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
+    </TouchableOpacity>
+  ) : undefined;
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: u.displayName }} />
+    <SafeAreaView style={styles.container} edges={['bottom']}>
+      <Stack.Screen options={{ headerTitle: '', headerRight: HeaderMenu }} />
       <ScrollView>
         <View style={styles.card}>
           <ProfileHeader
@@ -158,9 +163,6 @@ export default function OtherProfileScreen() {
                 <Ionicons name="chatbubble-outline" size={18} color={colors.primary} />
                 <Text style={styles.msgBtnText}>שלח הודעה</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.iconBtn} onPress={block}>
-                <Ionicons name="ellipsis-horizontal" size={20} color={colors.textPrimary} />
-              </TouchableOpacity>
             </View>
           ) : null}
         </View>
@@ -190,7 +192,7 @@ const styles = StyleSheet.create({
   card: { margin: S.base, backgroundColor: colors.surface, borderRadius: radius.lg, padding: S.base, ...shadow.card, gap: S.base },
   actionRow: { flexDirection: 'row', gap: S.sm, alignItems: 'center' },
   btnFlex: { flex: 1 },
-  msgBtn: { height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: S.md, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: S.xs },
+  msgBtn: { flex: 1, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: S.md, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: S.xs },
   msgBtnText: { ...typography.button, color: colors.textPrimary },
-  iconBtn: { width: 40, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, justifyContent: 'center', alignItems: 'center' },
+  headerBtn: { paddingHorizontal: S.sm, paddingVertical: S.xs },
 });

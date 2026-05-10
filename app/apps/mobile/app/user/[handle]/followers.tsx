@@ -49,11 +49,11 @@ export default function FollowersListScreen() {
   });
 
   if (!owner) {
-    return <SafeAreaView style={styles.container}><ActivityIndicator color={colors.primary} /></SafeAreaView>;
+    return <SafeAreaView style={styles.container} edges={['bottom']}><ActivityIndicator color={colors.primary} /></SafeAreaView>;
   }
   if (!allowed) {
     return (
-      <SafeAreaView style={styles.container}>
+      <SafeAreaView style={styles.container} edges={['bottom']}>
         <Stack.Screen options={{ headerTitle: 'עוקבים' }} />
         <LockedPanel />
       </SafeAreaView>
@@ -85,7 +85,7 @@ export default function FollowersListScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen options={{ headerTitle: 'עוקבים' }} />
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color={colors.textSecondary} />
