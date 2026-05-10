@@ -39,7 +39,7 @@ export default function ProfileScreen() {
     queryFn: () =>
       getMyPostsUseCase().execute({
         userId: userId!,
-        status: activeTab === 'open' ? ['open'] : ['closed_delivered'],
+        status: activeTab === 'open' ? ['open'] : ['closed_delivered', 'deleted_no_recipient'],
         limit: 30,
       }),
     enabled: Boolean(userId),

@@ -1,7 +1,7 @@
 // SupabasePostRepository — adapter for IPostRepository.
 // Mapped to SRS: FR-POST-001..004, FR-POST-008..011, FR-POST-014, FR-FEED-001..005, FR-FEED-013, FR-CLOSURE-001..005.
 
-import type { PostgrestError, SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   ClosureCandidate,
   CreatePostInput,
@@ -11,7 +11,6 @@ import type {
   PostWithOwner,
   UpdatePostInput,
 } from '@kc/application';
-import { PostError, type PostErrorCode } from '@kc/application';
 import type { Post, PostStatus } from '@kc/domain';
 import type { Database } from '../database.types';
 import {
@@ -24,20 +23,11 @@ import {
 } from './mapPostRow';
 import { mapInsertError } from './mapInsertError';
 import { decodeCursor, encodeCursor } from './cursor';
-
-const CLOSURE_CODES = new Set<PostErrorCode>([
-  'closure_not_owner',
-  'closure_wrong_status',
-  'closure_recipient_not_in_chat',
-  'reopen_window_expired',
-]);
-
-function mapClosurePgError(error: PostgrestError): PostError {
-  const msg = error.message?.trim() ?? '';
-  if (CLOSURE_CODES.has(msg as PostErrorCode))
-    return new PostError(msg as PostErrorCode, msg, error);
-  return new PostError('unknown', error.message ?? 'closure_unknown', error);
-}
+import {
+  closePost as closePostHelper,
+  reopenPost as reopenPostHelper,
+  getClosureCandidates as getClosureCandidatesHelper,
+} from './closureMethods';
 
 const FEED_HARD_MAX = 100;
 
@@ -188,112 +178,15 @@ export class SupabasePostRepository implements IPostRepository {
     if (error) throw new Error(`delete: ${error.message}`);
   }
 
-  // ── Closure (FR-CLOSURE-001..005) ───────────────────────────────────────
-  async close(postId: string, recipientUserId: string | null): Promise<Post> {
-    if (recipientUserId !== null) {
-      // Atomic via RPC (0015): insert recipient + flip status. Triggers cascade
-      // both items_received +1 (recipients trigger) and items_given +1 (posts trigger).
-      const { data, error } = await this.client.rpc('close_post_with_recipient', {
-        p_post_id: postId,
-        p_recipient_user_id: recipientUserId,
-      });
-      if (error) throw mapClosurePgError(error);
-      if (!data) throw new PostError('unknown', 'close_post_with_recipient: no row');
-      // The RPC returns a posts row; we re-read with the bare select so the mapper
-      // gets the same shape it gets from `findById`.
-      const reread = await this.fetchPostById(postId);
-      if (!reread) throw new PostError('unknown', `post ${postId} disappeared after close`);
-      return reread;
-    }
-    // Close without recipient: status → deleted_no_recipient, delete_after = +7d.
-    const deleteAfter = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000).toISOString();
-    const { error } = await this.client
-      .from('posts')
-      .update({ status: 'deleted_no_recipient', delete_after: deleteAfter })
-      .eq('post_id', postId);
-    if (error) throw mapClosurePgError(error);
-    const reread = await this.fetchPostById(postId);
-    if (!reread) throw new PostError('unknown', `post ${postId} disappeared after close`);
-    return reread;
+  // ── Closure (FR-CLOSURE-001..005) — delegated to closureMethods ─────────
+  close(postId: string, recipientUserId: string | null): Promise<Post> {
+    return closePostHelper(this.client, postId, recipientUserId);
   }
-
-  async reopen(postId: string): Promise<Post> {
-    // Need to know the current status to pick the path.
-    const { data: current, error: readErr } = await this.client
-      .from('posts')
-      .select('status, reopen_count')
-      .eq('post_id', postId)
-      .single();
-    if (readErr) throw mapClosurePgError(readErr);
-
-    if (current.status === 'closed_delivered') {
-      // Atomic via RPC (0015): delete recipient + flip status + reopen_count++.
-      const { error } = await this.client.rpc('reopen_post_marked', { p_post_id: postId });
-      if (error) throw mapClosurePgError(error);
-    } else if (current.status === 'deleted_no_recipient') {
-      // Single-table UPDATE; trigger handles items_given −1.
-      const { error } = await this.client
-        .from('posts')
-        .update({
-          status: 'open',
-          delete_after: null,
-          reopen_count: (current.reopen_count ?? 0) + 1,
-        })
-        .eq('post_id', postId);
-      if (error) throw mapClosurePgError(error);
-    } else {
-      throw new PostError('closure_wrong_status', 'closure_wrong_status');
-    }
-
-    const reread = await this.fetchPostById(postId);
-    if (!reread) throw new PostError('unknown', `post ${postId} disappeared after reopen`);
-    return reread;
+  reopen(postId: string): Promise<Post> {
+    return reopenPostHelper(this.client, postId);
   }
-
-  async getClosureCandidates(postId: string): Promise<ClosureCandidate[]> {
-    // Step 1: read post owner so we know which side of each chat is the partner.
-    const { data: ownerRow, error: ownerErr } = await this.client
-      .from('posts')
-      .select('owner_id')
-      .eq('post_id', postId)
-      .single();
-    if (ownerErr) throw mapClosurePgError(ownerErr);
-    const ownerId = ownerRow.owner_id;
-
-    // Step 2: chats anchored to this post.
-    const { data: chats, error: chatErr } = await this.client
-      .from('chats')
-      .select('chat_id, participant_a, participant_b, last_message_at')
-      .eq('anchor_post_id', postId);
-    if (chatErr) throw mapClosurePgError(chatErr);
-
-    // Step 3: dedupe by partner userId, keep latest last_message_at.
-    const partners = new Map<string, string>(); // partnerUserId → ISO last_message_at
-    for (const c of chats ?? []) {
-      const otherId = c.participant_a === ownerId ? c.participant_b : c.participant_a;
-      if (!c.last_message_at) continue;
-      const prev = partners.get(otherId);
-      if (!prev || prev < c.last_message_at) partners.set(otherId, c.last_message_at);
-    }
-
-    if (partners.size === 0) return [];
-
-    const ids = Array.from(partners.keys());
-    const { data: users, error: usersErr } = await this.client
-      .from('users')
-      .select('user_id, display_name, avatar_url, city_name')
-      .in('user_id', ids);
-    if (usersErr) throw mapClosurePgError(usersErr);
-
-    return (users ?? [])
-      .map((u) => ({
-        userId: u.user_id,
-        fullName: u.display_name ?? '',
-        avatarUrl: u.avatar_url,
-        cityName: u.city_name ?? null,
-        lastMessageAt: partners.get(u.user_id) ?? '',
-      }))
-      .sort((a, b) => (a.lastMessageAt < b.lastMessageAt ? 1 : -1));
+  getClosureCandidates(postId: string): Promise<ClosureCandidate[]> {
+    return getClosureCandidatesHelper(this.client, postId);
   }
 
   // ── User's own posts ────────────────────────────────────────────────────

@@ -18,6 +18,7 @@ import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
+import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -128,17 +129,19 @@ export default function PostDetailScreen() {
         </View>
       </ScrollView>
 
-      {isOwner ? (
-        <View style={styles.ownerHint}>
-          <Text style={styles.ownerHintText}>זה הפוסט שלך · עריכה / סגירה / מחיקה יגיעו ב־P0.6</Text>
-        </View>
-      ) : (
+      {isOwner && viewerId ? (
+        <OwnerActionsBar
+          post={post}
+          ownerId={viewerId}
+          onAfterMutation={() => void query.refetch()}
+        />
+      ) : !isOwner ? (
         <View style={styles.cta}>
           <TouchableOpacity style={styles.messageBtn} onPress={() => contactPoster(viewerId, post, router)}>
             <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
           </TouchableOpacity>
         </View>
-      )}
+      ) : null}
     </SafeAreaView>
   );
 }
@@ -175,6 +178,4 @@ const styles = StyleSheet.create({
   cta: { flexDirection: 'row', padding: spacing.base, gap: spacing.sm, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
   messageBtn: { flex: 1, height: 50, backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
   messageBtnText: { ...typography.button, color: colors.textInverse },
-  ownerHint: { padding: spacing.base, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, alignItems: 'center' },
-  ownerHintText: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
 });

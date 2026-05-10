@@ -156,47 +156,14 @@ function Step2({
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    flex: 1,
-    backgroundColor: colors.overlay,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    backgroundColor: colors.surface,
-    padding: 20,
-    borderTopLeftRadius: 16,
-    borderTopRightRadius: 16,
-    maxHeight: '80%',
-  },
-  title: {
-    fontSize: 18,
-    fontWeight: '700',
-    textAlign: 'right',
-    marginBottom: 8,
-    color: colors.textPrimary,
-  },
-  body: {
-    fontSize: 15,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    marginBottom: 16,
-    lineHeight: 22,
-  },
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
+  sheet: { backgroundColor: colors.surface, padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '80%' },
+  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 8, color: colors.textPrimary },
+  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', marginBottom: 16, lineHeight: 22 },
   list: { maxHeight: 280, marginBottom: 8 },
-  error: {
-    fontSize: 14,
-    color: colors.error,
-    textAlign: 'right',
-    marginBottom: 8,
-  },
+  error: { fontSize: 14, color: colors.error, textAlign: 'right', marginBottom: 8 },
   actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
-  btn: {
-    flex: 1,
-    paddingVertical: 12,
-    borderRadius: 8,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+  btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnSecondary: { backgroundColor: colors.skeleton },
