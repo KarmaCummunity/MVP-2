@@ -114,5 +114,6 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
       rows.set(userId, { ...row, closureExplainerDismissed: true });
     },
     searchUsers: notImpl('searchUsers') as IUserRepository['searchUsers'],
+    setPrivacyMode: notImpl('setPrivacyMode') as IUserRepository['setPrivacyMode'],
   };
 }

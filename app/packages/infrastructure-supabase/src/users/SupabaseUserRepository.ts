@@ -70,6 +70,10 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`setBiography: ${error.message}`);
   }
 
+  async setPrivacyMode(_userId: string, _mode: import('@kc/domain').PrivacyMode): Promise<User> {
+    throw NOT_IMPL('setPrivacyMode', 'P1.1');
+  }
+
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */
   async dismissClosureExplainer(userId: string): Promise<void> {
     const { error } = await this.client

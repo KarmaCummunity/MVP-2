@@ -38,6 +38,13 @@ export interface IUserRepository {
   setBiography(userId: string, biography: string | null): Promise<void>;
 
   /**
+   * FR-PROFILE-005, 006 — flips users.privacy_mode and stamps privacy_changed_at.
+   * Returns the updated User. Idempotent at the DB layer; the use case prevents
+   * pointless writes when the mode is unchanged.
+   */
+  setPrivacyMode(userId: string, mode: import('@kc/domain').PrivacyMode): Promise<User>;
+
+  /**
    * FR-PROFILE-007: read the four editable fields for the Edit Profile form.
    * Avoids needing the full `findById` (which depends on follower / counter
    * mappings deferred to P2.4). Throws if the row is missing.
