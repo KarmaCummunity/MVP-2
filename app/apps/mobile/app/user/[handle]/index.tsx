@@ -46,7 +46,7 @@ export default function OtherProfileScreen() {
   const stateQuery = useQuery({
     queryKey: ['follow-state', me, u?.userId],
     queryFn: () => getGetFollowStateUseCase().execute({ viewerId: me!, targetUserId: u!.userId }),
-    enabled: Boolean(me && u?.userId),
+    enabled: Boolean(me && u?.userId && me !== u.userId),
   });
   const followInfo = stateQuery.data;
 
