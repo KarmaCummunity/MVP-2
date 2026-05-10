@@ -89,7 +89,7 @@ export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }
 
             <Text style={styles.label}>{t('donations.addLinkModal.urlLabel')}</Text>
             <TextInput
-              style={styles.input}
+              style={[styles.input, styles.inputUrl]}
               value={url}
               onChangeText={setUrl}
               placeholder={t('donations.addLinkModal.urlPlaceholder')}
@@ -97,7 +97,6 @@ export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="url"
-              textAlign="left"
               editable={!submitting}
             />
 
@@ -109,7 +108,6 @@ export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }
               placeholder={t('donations.addLinkModal.namePlaceholder')}
               placeholderTextColor={colors.textDisabled}
               maxLength={DONATION_LINK_DISPLAY_NAME_MAX}
-              textAlign="right"
               editable={!submitting}
             />
 
@@ -121,7 +119,6 @@ export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }
               placeholder={t('donations.addLinkModal.descriptionPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               maxLength={DONATION_LINK_DESCRIPTION_MAX}
-              textAlign="right"
               textAlignVertical="top"
               multiline
               editable={!submitting}

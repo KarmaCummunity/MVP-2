@@ -8,6 +8,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { Post } from '@kc/domain';
+import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 
 const STORAGE_BUCKET = 'post-images';
@@ -48,7 +49,10 @@ export function PostCardProfile({ post, onPressOverride }: PostCardProfileProps)
           </Text>
         </View>
       </View>
-      <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
+      <View style={styles.titleRow}>
+        <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
+        <Text style={styles.categoryText} numberOfLines={1}>{CATEGORY_LABELS[post.category]}</Text>
+      </View>
     </TouchableOpacity>
   );
 }
@@ -86,10 +90,23 @@ const styles = StyleSheet.create({
   },
   giveTagText: { color: colors.giveTag },
   requestTagText: { color: colors.requestTag },
+  titleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.xs,
+    paddingVertical: spacing.xs,
+  },
   title: {
     ...typography.caption,
     color: colors.textPrimary,
     textAlign: 'right',
-    padding: spacing.xs,
+    flex: 1,
+  },
+  categoryText: {
+    ...typography.label,
+    fontSize: 9,
+    color: colors.primary,
+    flexShrink: 0,
   },
 });

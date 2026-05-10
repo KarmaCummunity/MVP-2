@@ -94,7 +94,6 @@ export default function DonationsTimeScreen() {
           multiline
           numberOfLines={5}
           maxLength={COMPOSER_MAX_CHARS}
-          textAlign="right"
           textAlignVertical="top"
         />
         <Pressable
@@ -177,6 +176,8 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     ...typography.body,
     color: colors.textPrimary,
+    textAlign: 'right',
+    writingDirection: 'rtl',
   },
   send: {
     backgroundColor: colors.primary,

@@ -9,6 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
+import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 
 const STORAGE_BUCKET = 'post-images';
@@ -54,7 +55,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
         ) : (
           <Ionicons name={isGive ? 'gift-outline' : 'search-outline'} size={36} color={colors.textSecondary} />
         )}
-        {/* Type tag overlay */}
+        {/* Type tag overlay (top-right in RTL) */}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
             {isGive ? 'לתת' : 'לבקש'}
@@ -64,7 +65,14 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
 
       {/* Text content */}
       <View style={styles.content}>
-        <Text style={styles.title} numberOfLines={2}>{post.title}</Text>
+        <View style={styles.titleRow}>
+          <Text style={styles.title} numberOfLines={2}>{post.title}</Text>
+          <View style={styles.categoryTag}>
+            <Text style={styles.categoryTagText} numberOfLines={1}>
+              {CATEGORY_LABELS[post.category]}
+            </Text>
+          </View>
+        </View>
         <Text style={styles.meta} numberOfLines={1}>
           {post.ownerName} · {timeAgo}
         </Text>
@@ -114,12 +122,30 @@ const styles = StyleSheet.create({
     padding: spacing.sm,
     gap: 2,
   },
+  titleRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
   title: {
     ...typography.body,
     fontWeight: '600',
     color: colors.textPrimary,
     textAlign: 'right',
     fontSize: 13,
+    flex: 1,
+  },
+  categoryTag: {
+    paddingHorizontal: spacing.xs,
+    paddingVertical: 1,
+    borderRadius: radius.sm,
+    backgroundColor: colors.primaryLight,
+    flexShrink: 0,
+  },
+  categoryTagText: {
+    ...typography.label,
+    fontSize: 10,
+    color: colors.primary,
   },
   meta: {
     ...typography.caption,
