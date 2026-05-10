@@ -1,5 +1,5 @@
 // Post-domain orchestration errors. Mirrors auth/errors.ts.
-// Mapped to SRS: FR-POST-002, FR-POST-003, FR-POST-004, FR-POST-005, FR-POST-009.
+// Mapped to SRS: FR-POST-002..005, FR-POST-009, FR-CLOSURE-001..005.
 
 export type PostErrorCode =
   | 'title_required'
@@ -20,6 +20,10 @@ export type PostErrorCode =
   | 'invalid_category'
   | 'invalid_location_display_level'
   | 'forbidden'
+  | 'closure_not_owner'
+  | 'closure_wrong_status'
+  | 'closure_recipient_not_in_chat'
+  | 'reopen_window_expired'
   | 'unknown';
 
 export class PostError extends Error {
