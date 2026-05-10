@@ -6,6 +6,49 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P1.1 Following + Other-User Profile
+
+**SRS:** FR-FOLLOW-001..009, 011, 012; FR-PROFILE-002..006, 009, 010, 013.
+**Branch / PR:** `claude/loving-varahamihira-01cd6d` (single-branch, single-PR).
+**Tests:** 109 → 144 vitest passing (+35 follow tests across 12 files).
+**TD deltas:** Closed TD-14, TD-40 (partial). Opened TD-124..TD-128.
+**Open gaps:**
+- Push notifications for follow events deferred to P1.5 (TD-124).
+- Optimistic updates not yet wired on Follow button (TD-125).
+- Cooldown error toast lacks N-days remaining text (TD-126).
+- Report action absent from Other-Profile ⋮ menu (TD-127, P1.3 scope).
+
+Highlights:
+- 12 new follow use cases under `packages/application/src/follow/` (one file each, all TDD with vitest).
+- `IUserRepository` now declares 14 follow-related methods (incl. `getFollowStateRaw`, `getPendingFollowRequestsWithUsers`, `setPrivacyMode`) — all NOT_IMPL stubs in `SupabaseUserRepository` replaced with real implementations.
+- Five Postgres-error codes mapped via `mapFollowError` (self-follow, blocked, already-following, cooldown, pending-exists).
+- Six shared profile subcomponents under `apps/mobile/src/components/profile/` (Header, StatsRow, Tabs, PostsGrid, LockedPanel, FollowButton).
+- My Profile refactored to use shared components — no visual change, dropped from 204 → 137 LOC.
+- `/user/[handle]` rebuilt as a full profile (3 modes: Public / Private-approved / Private-not-approved).
+- `/user/[handle]/followers` + `/following` list screens with search.
+- `/settings/privacy` (Public↔Private toggle + auto-approve on Private→Public via DB trigger) + `/settings/follow-requests` (approve/reject inbox).
+- Closed posts now visible on other-user profile (EXEC-7 reverses prior PRD carveout).
+
+---
+
+### 🟢 FR-CHAT-002 — Chat screen web defect repair
+- **SRS**: FR-CHAT-002 (chat conversation screen) — four web-only defects reported by the user against the existing P0.5 implementation. No AC change.
+- **Branch / PR**: `fix/FR-CHAT-002-fe-web-chat-screen-bugs` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · 113 vitest passing · `pnpm lint:arch` green (TD-118 entry for `chat/[id].tsx` removed — file dropped from 229→194 LOC).
+- **Defects fixed**:
+  1. **Header title off-center on web** — `_layout.tsx` `detailHeader` was missing `headerTitleAlign: 'center'`; native iOS already centers, Android + RN-Web default to start-aligned, which under forced RTL pushed the title to the right edge.
+  2. **⋮-menu unreachable on web** — `Alert.alert(title, msg, buttons[])` on react-native-web collapses to a plain `window.alert(title)` and silently drops the `buttons[]`. Replaced with a `<ChatActionMenu>` bottom-sheet `Modal`+`Pressable` (cross-platform; matches the visual language of `PhotoSourceSheet`).
+  3. **Slow chat load on web** — chat-open `useEffect` ran four awaits strictly serial (`findById` → `getCounterpart` → `startThreadSub` → `markChatRead`). Refactored into three parallel paths (chat→counterpart, messages, mark-read) inside a new `useChatInit` hook. Title/messages now first-paint independently.
+  4. **Initial scroll showed first message instead of last** — `FlatList` had no `inverted` prop. Added `inverted` with a `useMemo` reverse of the messages selector; the store contract (asc) is unchanged for every other consumer.
+- **Code**:
+  - **UI (mobile)** — `apps/mobile/app/_layout.tsx` (one-line `detailHeader` config); `apps/mobile/app/chat/[id].tsx` (294→194 LOC after extractions); two new files: `apps/mobile/src/components/ChatActionMenu.tsx` (modal action sheet) and `apps/mobile/src/components/useChatInit.ts` (`useChatInit` + `useAnchorMissing` hooks). Tokens: `colors.overlay`, `typography.semiBold` used in place of inline `'rgba(...)'` and `fontWeight: '600'`.
+  - **Tooling** — `app/scripts/check-architecture.mjs` allowlist entry for `chat/[id].tsx` removed.
+- **Tech-debt deltas**: TD-118 marked **partial** — chat/[id].tsx side closed (allowlist removed); `chatStore.ts` (232) still allowlisted, store-slice split deferred.
+- **Open gaps**: pre-existing race in `chatStore.startThreadSub` (rare unmount-during-await orphans the realtime channel) and pre-existing duplicate mark-read RPC on chat open via `unreadIncoming` effect — both out of scope for this defect repair.
+- **Manual setup remaining**: none.
+
+---
+
 ### 🟢 P0.6 — Closure flow (FR-CLOSURE-001..005, 008, 009 verified)
 - **SRS**: FR-CLOSURE-001 (initiate from PostDetail) · FR-CLOSURE-002 (Step 1 confirm) · FR-CLOSURE-003 (Step 2 recipient picker — with chat partners + empty state) · FR-CLOSURE-004 (Step 3 one-time educational explainer + dismiss-forever flag) · FR-CLOSURE-005 (reopen `closed_delivered` and in-grace `deleted_no_recipient`) · FR-CLOSURE-008 (daily `pg_cron` cleanup of expired unmarked closures) · FR-CLOSURE-009 (stat projection — pre-existing 0006 triggers verified to fire on every transition).
 - **Branch / PR**: `feat/FR-CLOSURE-001-closure-flow` · 2026-05-10
