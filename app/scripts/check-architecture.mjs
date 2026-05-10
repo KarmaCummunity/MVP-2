@@ -28,7 +28,6 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 266 }],
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 245 }],
   ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 232 }],
-  ['apps/mobile/app/(tabs)/profile.tsx', { td: 'TD-29', max: 204 }],
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 212 }],
   ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 217 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
