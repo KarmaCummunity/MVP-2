@@ -882,6 +882,8 @@ export type Database = {
       // P0.6 cleanup cron (0016) — manually added until next typegen run.
       closure_cleanup_expired: { Args: Record<string, never>; Returns: number }
       closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }
+      // FR-ADMIN-009 (0017) — manually added until next typegen run.
+      admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
     }
     Enums: {
       [_ in never]: never

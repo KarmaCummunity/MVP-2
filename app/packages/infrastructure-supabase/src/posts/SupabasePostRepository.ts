@@ -2,6 +2,7 @@
 // Mapped to SRS: FR-POST-001..004, FR-POST-008..011, FR-POST-014, FR-FEED-001..005, FR-FEED-013, FR-CLOSURE-001..005.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { PostError } from '@kc/application';
 import type {
   ClosureCandidate,
   CreatePostInput,
@@ -176,6 +177,18 @@ export class SupabasePostRepository implements IPostRepository {
   async delete(postId: string): Promise<void> {
     const { error } = await this.client.from('posts').delete().eq('post_id', postId);
     if (error) throw new Error(`delete: ${error.message}`);
+  }
+
+  async adminRemove(postId: string): Promise<void> {
+    const { error } = await this.client.rpc('admin_remove_post', { p_post_id: postId });
+    if (error) {
+      // Postgres errcode 42501 (insufficient_privilege) → forbidden.
+      // PostgREST surfaces this as `code: '42501'` on the returned error.
+      if (error.code === '42501' || /forbidden/i.test(error.message)) {
+        throw new PostError('forbidden', error.message);
+      }
+      throw new Error(`adminRemove: ${error.message}`);
+    }
   }
 
   // ── Closure (FR-CLOSURE-001..005) — delegated to closureMethods ─────────
