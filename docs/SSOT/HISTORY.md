@@ -6,6 +6,17 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+### 🟢 Web deploy pipeline → Cloudflare Pages at `dev3.karma-community-kc.com` (P4.1)
+- **SRS**: NFR-PLAT-* — `react-native-web` parity is now deployable to a public URL with auto-deploy on every `main` push and per-PR preview URLs.
+- **Branch**: `chore/web-deploy-cloudflare-pages` · 2026-05-10
+- **Tests**: tsc clean (5 packages) · 90 vitest passing · `pnpm lint:arch` 180 files passing. Local smoke: `pnpm build:web` produces a 4.43 MB SPA bundle in `app/apps/mobile/dist/`; `pnpm preview:web` serves it with SPA fallback enabled, all routes (`/`, `/donations`, `/chat/abc`) return 200.
+- **Design**: [`docs/superpowers/specs/2026-05-10-cloudflare-pages-web-deploy-design.md`](./../../docs/superpowers/specs/2026-05-10-cloudflare-pages-web-deploy-design.md). Decision: drop the failing Railway auto-detect (no Dockerfile committed → fails every push); Cloudflare Pages is free, native-SPA, and runs entirely outside `.github/workflows/ci.yml` so the mobile CI is untouched.
+- **Code**: two scripts on `app/package.json` — `build:web` runs `expo export -p web` then `node scripts/web-postbuild.mjs` which writes `_redirects` (`/* /index.html 200`) into `dist/` so deep-link refresh doesn't 404. `preview:web` uses `serve --single` for the same fallback locally. `dist/` added to `app/apps/mobile/.gitignore`.
+- **Runbook**: [`docs/DEPLOY_WEB.md`](./../../docs/DEPLOY_WEB.md) — Cloudflare project settings, Hostinger DNS CNAME for `dev3`, Supabase redirect-URL config, Railway decommission steps, verification curls, troubleshooting table.
+- **Manual setup remaining (one-time, in dashboards)**: (1) connect repo in Cloudflare Pages with the documented build command + env vars; (2) add `dev3` CNAME in Hostinger DNS; (3) add `https://dev3.karma-community-kc.com/**` to Supabase Auth → URL Configuration; (4) delete the Railway project to stop the failed-build noise. All four steps documented in `DEPLOY_WEB.md`.
+
+---
+
 ### 🟢 Donation categories + community NGO link lists (FR-DONATE-006..009)
 - **SRS**: FR-DONATE-006 (6 new tiles: אוכל / דיור / תחבורה / ידע / חיות / רפואה), FR-DONATE-007 (DonationLinksList component), FR-DONATE-008 (Edge-Function-validated add-link flow), FR-DONATE-009 (report + soft-hide). Augments FR-DONATE-003 AC6 + FR-DONATE-004 AC9 to embed list section under existing Time/Money screens.
 - **Branch**: `feat/FR-DONATE-006-donation-categories-and-links` · 2026-05-10
