@@ -86,4 +86,24 @@ describe('GetClosureCandidatesUseCase', () => {
 
     expect(postRepo.lastGetClosureCandidatesPostId).toBe('p_xyz');
   });
+
+  it('falls back to "no blocks" when the block repo throws (regression: closure flow getting stuck)', async () => {
+    const postRepo = new FakePostRepository();
+    postRepo.closureCandidatesResult = [
+      makeClosureCandidate({ userId: 'u_a' }),
+      makeClosureCandidate({ userId: 'u_b' }),
+    ];
+    const userRepo = {
+      // Simulates the original NOT_IMPL stub OR a transient RLS / network failure.
+      getBlockedUsers: async () => {
+        throw new Error('getBlockedUsers: not_implemented (P1.4)');
+      },
+    };
+    const uc = new GetClosureCandidatesUseCase(postRepo, userRepo as unknown as IUserRepository);
+
+    const candidates = await uc.execute({ postId: 'p_1', ownerId: 'u_owner' });
+
+    expect(candidates).toHaveLength(2);
+    expect(candidates.map((c) => c.userId)).toEqual(['u_a', 'u_b']);
+  });
 });
