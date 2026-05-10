@@ -58,9 +58,11 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
   const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
   const isLoading = useAuthStore((s) => s.isLoading);
 
-  // Global tab bar shows on detail screens (chat / post / user / settings) so
-  // the user keeps a consistent bottom nav. Inside (tabs) the native expo-router
-  // <Tabs> layout owns its own bar — we skip the global one to avoid doubling.
+  // Global tab bar is the single bottom-bar implementation in the app — it
+  // shows on every post-auth, post-onboarding screen, including (tabs). The
+  // (tabs) layout suppresses its own RN BottomTabBar (tabBar={() => null}),
+  // so we render exactly one bar everywhere and there is nothing to keep in
+  // sync between two implementations.
   // We deliberately do NOT gate on `onboardingState === 'completed'` because
   // AuthGate already redirects pending users to (onboarding); checking it here
   // creates a flicker window where the bar is hidden until the async DB read
@@ -73,7 +75,6 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
     head !== '(auth)' &&
     head !== '(guest)' &&
     head !== '(onboarding)' &&
-    head !== '(tabs)' &&
     !isOAuthCallback;
 
   // RN-Web's flex layout doesn't reliably split height between a flex:1 child

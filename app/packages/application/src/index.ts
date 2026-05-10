@@ -30,6 +30,7 @@ export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
 export * from './posts/AdminRemovePostUseCase';
+export * from './posts/SearchUsersForClosureUseCase';
 
 export * from './auth/DismissClosureExplainerUseCase';
 
@@ -67,3 +68,8 @@ export { AddDonationLinkUseCase } from './donations/AddDonationLinkUseCase';
 export { RemoveDonationLinkUseCase } from './donations/RemoveDonationLinkUseCase';
 export { DonationLinkError } from './donations/errors';
 export type { DonationLinkErrorCode } from './donations/errors';
+
+// Search use cases
+export type { ISearchRepository, UniversalSearchResults } from './ports/ISearchRepository';
+export { UniversalSearchUseCase } from './search/UniversalSearchUseCase';
+export type { UniversalSearchInput } from './search/UniversalSearchUseCase';

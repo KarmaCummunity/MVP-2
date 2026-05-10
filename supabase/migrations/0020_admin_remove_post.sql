@@ -1,4 +1,4 @@
--- 0017_admin_remove_post | FR-ADMIN-009
+-- 0020_admin_remove_post | FR-ADMIN-009 (renumbered from 0017 — 0017–0019 taken by main during merge)
 -- Super-admin flips Post.status to 'removed_admin' from the post detail screen.
 -- Server re-checks is_admin(auth.uid()) — client gating is convenience only.
 -- Idempotent: re-running on an already-removed post is a no-op (no extra audit
@@ -40,5 +40,8 @@ begin
 end;
 $$;
 
+-- Postgres grants EXECUTE to PUBLIC by default on new functions; revoke first
+-- (PUBLIC includes anon), then grant explicitly to authenticated. Defense in
+-- depth: the function body also re-checks is_admin(auth.uid()).
+revoke execute on function public.admin_remove_post(uuid) from public;
 grant execute on function public.admin_remove_post(uuid) to authenticated;
-revoke execute on function public.admin_remove_post(uuid) from anon;

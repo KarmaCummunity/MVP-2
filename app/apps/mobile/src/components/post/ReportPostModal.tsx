@@ -1,5 +1,5 @@
 // FR-MOD-001 — Report modal opened from post-detail ⋮ menu. Mirror of ReportChatModal.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
@@ -26,6 +26,17 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+
+  // Reset to defaults when the modal closes so the next open starts fresh
+  // (otherwise reason/note persist across openings on the same mounted
+  // instance — see CodeRabbit on PR #51).
+  useEffect(() => {
+    if (!visible) {
+      setReason('Spam');
+      setNote('');
+      setSubmitting(false);
+    }
+  }, [visible]);
 
   const submit = async () => {
     if (!userId) return;

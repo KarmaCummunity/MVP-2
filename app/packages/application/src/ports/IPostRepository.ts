@@ -28,6 +28,19 @@ export interface PostWithOwner extends Post {
   ownerAvatarUrl: string | null;
   ownerHandle: string;
   ownerPrivacyMode: 'Public' | 'Private';
+  /**
+   * Populated when a post is `closed_delivered` and the recipients row was joined.
+   * The label rendered on PostDetail depends on `post.type`:
+   *   - Give    → "נמסר ל-{recipientUser.displayName}"
+   *   - Request → "ניתן על-ידי {recipientUser.displayName}"
+   * Tap opens /user/{shareHandle}.
+   */
+  recipientUser: {
+    userId: string;
+    displayName: string;
+    shareHandle: string;
+    avatarUrl: string | null;
+  } | null;
 }
 
 /** FR-CLOSURE-003 AC1/AC2 — chat-partner candidate for the recipient picker. */

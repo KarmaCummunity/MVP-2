@@ -24,12 +24,11 @@ export class MarkAsDeliveredUseCase {
     if (post.status !== 'open')
       throw new PostError('closure_wrong_status', 'closure_wrong_status');
 
-    if (input.recipientUserId !== null) {
-      const candidates = await this.repo.getClosureCandidates(input.postId);
-      const isPartner = candidates.some((c) => c.userId === input.recipientUserId);
-      if (!isPartner)
-        throw new PostError('closure_recipient_not_in_chat', 'closure_recipient_not_in_chat');
-    }
+    // Reject marking self as recipient — handled defensively here AND in the
+    // SQL function (0017). The recipient existence check itself runs in the
+    // RPC; we trust it rather than round-tripping a separate `findById`.
+    if (input.recipientUserId !== null && input.recipientUserId === input.ownerId)
+      throw new PostError('closure_recipient_not_in_chat', 'closure_recipient_not_in_chat');
 
     const closed = await this.repo.close(input.postId, input.recipientUserId);
     return { post: closed };

@@ -52,6 +52,14 @@ export interface IUserRepository {
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */
   dismissClosureExplainer(userId: string): Promise<void>;
 
+  /**
+   * Lightweight user search by display name or share handle (case-insensitive
+   * substring). Used by the closure flow's "pick from any user" mode (option 4)
+   * when the recipient isn't in the owner's chat list. Excludes the caller
+   * themselves and any users they have blocked.
+   */
+  searchUsers(query: string, opts: { excludeUserId: string; limit: number }): Promise<User[]>;
+
   // Follows
   follow(followerId: string, followedId: string): Promise<FollowEdge>;
   unfollow(followerId: string, followedId: string): Promise<void>;

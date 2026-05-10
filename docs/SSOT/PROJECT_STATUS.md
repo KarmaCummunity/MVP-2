@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (FR-ADMIN-009 + post-detail ⋮ menu shipped. 114 vitest passing.) |
+| **Last Updated** | 2026-05-10 (FR-ADMIN-009 + post-detail ⋮ menu shipped on top of FR-PROFILE-001 AC1; 114 vitest passing; DB schema applied through 0020.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -30,7 +30,7 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~50%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow**; DB schema applied through 0016) |
+| MVP completion (rough) | **~50%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + admin remove-post; DB schema applied through 0020) |
 | Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + FR-ADMIN-009) |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
@@ -51,8 +51,8 @@ This document is the **single source of truth for project execution state**. It 
 
 ### What is fake / stubbed
 
-- Other-user profile (`/user/[handle]`) has minimal real data (avatar, name, handle, bio, Send-message + Block CTAs) via `findByHandle`; counters (followers/following/items_given/items_received) still render `0` (TD-40 partial, TD-42)
-- Profile counters: followers / following / items_given / items_received still render `0` (TD-42 — needs `IUserRepository.findById`, P2.4)
+- Other-user profile (`/user/[handle]`) has minimal real data (avatar, name, handle, bio, Send-message + Block CTAs) via `findByHandle`; counters still render `0` there (TD-14 — separate from My Profile)
+- My Profile (`(tabs)/profile.tsx`) now renders real biography + real followers/following counters via `findById` (closed TD-42 + TD-10, 2026-05-10); items_given/items_received remain 0 there because the layout doesn't surface them
 - No closure flow / reports / notifications / community stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as placeholder (Google SSO is real)
 - Forgot-password flow not implemented
@@ -123,7 +123,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | In progress | (none) | — | — | — |
 | Up next | P1.x — pick next per §2 (likely P1.1 Following or P1.2 Search/filters) | — | — | — |
 
-Most recently shipped: **FR-ADMIN-009** — post-detail ⋮ overflow menu (Report + Block + Owner-Delete + Admin-Remove) — 0017_admin_remove_post.sql RPC, 5 new mobile components, useIsSuperAdmin hook, 114 vitest passing — 2026-05-10. Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **FR-ADMIN-009** — post-detail ⋮ overflow menu (Report + Block + Owner-Delete + Admin-Remove) — 0020_admin_remove_post.sql RPC, 5 new mobile components, useIsSuperAdmin hook, 114 vitest passing — 2026-05-10. Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 

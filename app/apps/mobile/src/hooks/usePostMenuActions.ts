@@ -10,7 +10,11 @@ interface Args {
   viewerId: string | null;
   /** Called after a successful destructive action. */
   onAfterRemoval: () => void;
-  /** Called once the action settles (success or failure) so the parent can close the active modal. */
+  /**
+   * Called only after a successful action so the parent can close the active
+   * modal. On failure the modal stays open so the error can render —
+   * `error` propagates instead.
+   */
   onSettle: () => void;
 }
 

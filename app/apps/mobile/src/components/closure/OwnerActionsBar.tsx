@@ -1,5 +1,6 @@
 // FR-CLOSURE-001 + FR-CLOSURE-005 — owner CTAs on PostDetail.
-//   open                              → "סמן כנמסר ✓"
+//   open (Give)     → "סמן כנמסר ✓"
+//   open (Request)  → "סמן שקיבלתי ✓"
 //   closed_delivered                  → "📤 פתח מחדש"
 //   deleted_no_recipient (in grace)   → "📤 פתח מחדש"
 //   deleted_no_recipient (past grace) → no CTA (post is on its way out)
@@ -53,6 +54,9 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
     return null;
   }
 
+  // Direction flips by post.type — see RecipientCallout for the same convention.
+  const markCtaText = post.type === 'Give' ? 'סמן כנמסר ✓' : 'סמן שקיבלתי ✓';
+
   async function handleReopen() {
     setIsReopening(true);
     setReopenError(null);
@@ -75,10 +79,10 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
           <Pressable
             style={[styles.btnPrimary, (closureBusy || closureStep !== 'idle') && styles.btnDisabled]}
             disabled={closureBusy || closureStep !== 'idle'}
-            onPress={() => startClosure(post.postId, ownerId)}
-            accessibilityLabel="סמן כנמסר"
+            onPress={() => startClosure(post.postId, ownerId, post.type)}
+            accessibilityLabel={markCtaText}
           >
-            <Text style={styles.btnPrimaryText}>סמן כנמסר ✓</Text>
+            <Text style={styles.btnPrimaryText}>{markCtaText}</Text>
           </Pressable>
         ) : (
           <Pressable
@@ -100,6 +104,7 @@ export function OwnerActionsBar({ post, ownerId, onAfterMutation }: Props) {
       <ReopenConfirmModal
         visible={reopenOpen}
         variant={post.status === 'closed_delivered' ? 'closed_delivered' : 'deleted_no_recipient'}
+        postType={post.type}
         isBusy={isReopening}
         errorMessage={reopenError}
         onCancel={() => {

@@ -67,14 +67,30 @@ describe('MarkAsDeliveredUseCase', () => {
     ).rejects.toMatchObject({ code: 'closure_wrong_status' });
   });
 
-  it('rejects when recipient is not a chat partner', async () => {
+  it('allows recipients who are NOT chat partners (per 0017 relaxation)', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = makePostWithOwner({ ownerId: 'u_owner', status: 'open' });
-    repo.closureCandidatesResult = [makeClosureCandidate({ userId: 'u_someone_else' })];
+    repo.closureCandidatesResult = []; // no chat partners — owner picked from search
+    repo.closeResult = baseClosed();
+    const uc = new MarkAsDeliveredUseCase(repo);
+
+    const out = await uc.execute({
+      postId: 'p_1',
+      ownerId: 'u_owner',
+      recipientUserId: 'u_picked_via_search',
+    });
+
+    expect(out.post.status).toBe('closed_delivered');
+    expect(repo.lastCloseArgs).toEqual({ postId: 'p_1', recipientUserId: 'u_picked_via_search' });
+  });
+
+  it('rejects self-recipient (owner cannot mark themselves)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ ownerId: 'u_owner', status: 'open' });
     const uc = new MarkAsDeliveredUseCase(repo);
 
     await expect(
-      uc.execute({ postId: 'p_1', ownerId: 'u_owner', recipientUserId: 'u_imposter' }),
+      uc.execute({ postId: 'p_1', ownerId: 'u_owner', recipientUserId: 'u_owner' }),
     ).rejects.toMatchObject({ code: 'closure_recipient_not_in_chat' });
   });
 

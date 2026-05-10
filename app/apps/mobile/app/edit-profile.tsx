@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { CityPicker } from '../src/components/CityPicker';
 import { EditProfileAvatar } from '../src/components/EditProfileAvatar';
@@ -26,6 +27,7 @@ interface InitialState {
 
 export default function EditProfileScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
   const setSession = useAuthStore((s) => s.setSession);
 
@@ -97,6 +99,7 @@ export default function EditProfileScreen() {
         ...(avatarChanged ? { avatarUrl } : {}),
       });
       setSession({ ...session, displayName: trimmedName, avatarUrl });
+      await queryClient.invalidateQueries({ queryKey: ['user-profile', session.userId] });
       router.back();
     } catch (err) {
       const code = err instanceof Error ? err.message : 'שגיאה לא ידועה';

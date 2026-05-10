@@ -29,13 +29,20 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 232 }],
-  ['apps/mobile/app/(tabs)/profile.tsx', { td: 'TD-29', max: 215 }],
+  ['apps/mobile/app/(tabs)/profile.tsx', { td: 'TD-29', max: 204 }],
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 212 }],
   ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 217 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
-  ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 232 }],
+  ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 215 }],
   ['apps/mobile/app/chat/[id].tsx', { td: 'TD-118', max: 229 }],
   ['apps/mobile/src/store/chatStore.ts', { td: 'TD-118', max: 232 }],
+  // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
+  // Pre-existing on main before this PR; allow-listed here to unblock the
+  // FR-ADMIN-009 PR. TD-128 tracks the split work.
+  ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-128', max: 418 }],
+  ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-128', max: 646 }],
+  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 306 }],
+  ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
 ]);
 
 const LAYER_RULES = [
