@@ -1,11 +1,12 @@
-// Donations · Money — coming-soon copy + external link to jgive.com.
-// Mapped to: FR-DONATE-003 / D-16.
+// Donations · Money — coming-soon copy + external link to jgive.com + community NGO links list.
+// Mapped to: FR-DONATE-003 (top section) / FR-DONATE-007..009 (list section) / D-16.
 import React from 'react';
 import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '@kc/ui';
+import { DonationLinksList } from '../../../src/components/DonationLinksList';
 
 const JGIVE_URL = 'https://jgive.com';
 
@@ -41,6 +42,10 @@ export default function DonationsMoneyScreen() {
           <Text style={styles.ctaText}>{t('donations.moneyScreen.openLink')}</Text>
           <Ionicons name="open-outline" size={18} color={colors.textInverse} />
         </Pressable>
+
+        <View style={styles.divider} />
+
+        <DonationLinksList categorySlug="money" embedded />
       </ScrollView>
     </SafeAreaView>
   );
@@ -88,5 +93,10 @@ const styles = StyleSheet.create({
   ctaText: {
     ...typography.button,
     color: colors.textInverse,
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
   },
 });

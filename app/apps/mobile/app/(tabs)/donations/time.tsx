@@ -1,6 +1,6 @@
-// Donations · Time — coming-soon copy + external link to we-me.app + volunteer composer.
-// Mapped to: FR-DONATE-004 / D-16. TD-114 (post-P0.5): replace local intent log
-// with a real sendVolunteerMessageToAdmin use-case + chat navigation.
+// Donations · Time — coming-soon copy + external link to we-me.app + volunteer composer + community NGO links list.
+// Mapped to: FR-DONATE-004 (top section + composer) / FR-DONATE-007..009 (list section) / D-16.
+// TD-114 (post-P0.5): replace local intent log with a real sendVolunteerMessageToAdmin use-case + chat navigation.
 import React, { useState } from 'react';
 import {
   Alert,
@@ -17,6 +17,7 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '@kc/ui';
+import { DonationLinksList } from '../../../src/components/DonationLinksList';
 
 const WE_ME_URL = 'https://www.we-me.app/';
 const INTENT_LOG_KEY = 'volunteer_intent_log';
@@ -112,6 +113,10 @@ export default function DonationsTimeScreen() {
             {t('donations.timeScreen.sendButton')}
           </Text>
         </Pressable>
+
+        <View style={styles.divider} />
+
+        <DonationLinksList categorySlug="time" embedded />
       </ScrollView>
     </SafeAreaView>
   );
@@ -155,15 +160,8 @@ const styles = StyleSheet.create({
     borderRadius: radius.lg,
   },
   ctaPressed: { backgroundColor: colors.primaryDark },
-  ctaText: {
-    ...typography.button,
-    color: colors.textInverse,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
-  },
+  ctaText: { ...typography.button, color: colors.textInverse },
+  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
   composerHeading: {
     ...typography.body,
     color: colors.textPrimary,
@@ -188,9 +186,6 @@ const styles = StyleSheet.create({
   },
   sendPressed: { backgroundColor: colors.primaryDark },
   sendDisabled: { backgroundColor: colors.primaryLight, opacity: 0.6 },
-  sendText: {
-    ...typography.button,
-    color: colors.textInverse,
-  },
+  sendText: { ...typography.button, color: colors.textInverse },
   sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
 });
