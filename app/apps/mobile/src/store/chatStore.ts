@@ -23,6 +23,10 @@ interface ChatState {
   setInbox(chats: ChatWithPreview[]): void;
   upsertChatPreview(chat: Chat): void;
   setUnreadTotal(n: number): void;
+  /** Optimistically clear a chat's unread badge — both per-row and total — when
+   * the user opens the conversation. Realtime debounced refetch reconciles
+   * later, but the UI shouldn't lag on a confirmed local action (FR-CHAT-012). */
+  markChatLocallyRead(chatId: string): void;
 
   setThreadMessages(chatId: string, msgs: Message[]): void;
   appendOptimistic(chatId: string, msg: OptimisticMessage): void;
@@ -74,6 +78,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   setUnreadTotal: (n) => set({ unreadTotal: n }),
+
+  markChatLocallyRead: (chatId) =>
+    set((s) => {
+      const inbox = s.inbox;
+      if (!inbox) return s;
+      const row = inbox.find((c) => c.chatId === chatId);
+      if (!row || row.unreadCount === 0) return s;
+      const nextTotal = Math.max(0, s.unreadTotal - row.unreadCount);
+      const nextInbox = inbox.map((c) =>
+        c.chatId === chatId ? { ...c, unreadCount: 0 } : c,
+      );
+      return { inbox: nextInbox, unreadTotal: nextTotal };
+    }),
 
   setThreadMessages: (chatId, msgs) => {
     const next = msgs.map(toOptimistic).sort(compareCreatedAt);

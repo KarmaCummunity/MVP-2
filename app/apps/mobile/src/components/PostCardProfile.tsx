@@ -1,24 +1,32 @@
-// app/apps/mobile/src/components/PostCardProfile.tsx
+// 3-column thumbnail card used in profile post grids.
+// Renders the first uploaded image; falls back to an Ionicons gift/search glyph.
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions,
+  View, Text, TouchableOpacity, StyleSheet, Dimensions, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
-import type { PostWithOwner } from '@kc/application';
+import type { Post } from '@kc/domain';
+import { getSupabaseClient } from '@kc/infrastructure-supabase';
 
+const STORAGE_BUCKET = 'post-images';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// 3 columns, spacing.base (16) padding each side, spacing.xs (4) gap × 2
+// 3 columns, spacing.base (16) padding each side, spacing.xs (4) gap × 2.
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.xs * 2) / 3;
 
 interface PostCardProfileProps {
-  post: PostWithOwner;
+  post: Post;
   onPressOverride?: () => void;
 }
 
 export function PostCardProfile({ post, onPressOverride }: PostCardProfileProps) {
   const router = useRouter();
   const isGive = post.type === 'Give';
+
+  const firstImageUrl = post.mediaAssets[0]
+    ? getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(post.mediaAssets[0].path).data.publicUrl
+    : null;
 
   return (
     <TouchableOpacity
@@ -28,20 +36,18 @@ export function PostCardProfile({ post, onPressOverride }: PostCardProfileProps)
         onPressOverride ? onPressOverride() : router.push(`/post/${post.postId}`)
       }
     >
-      {/* Square image / icon area */}
       <View style={styles.imageArea}>
-        <Text style={styles.categoryIcon}>
-          {isGive ? '🎁' : '🔍'}
-        </Text>
-        {/* Type tag overlay */}
+        {firstImageUrl ? (
+          <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" />
+        ) : (
+          <Ionicons name={isGive ? 'gift-outline' : 'search-outline'} size={28} color={colors.textSecondary} />
+        )}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
             {isGive ? 'לתת' : 'לבקש'}
           </Text>
         </View>
       </View>
-
-      {/* Title */}
       <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
     </TouchableOpacity>
   );
@@ -61,10 +67,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.skeleton,
     justifyContent: 'center',
     alignItems: 'center',
+    overflow: 'hidden',
   },
-  categoryIcon: {
-    fontSize: 24,
-  },
+  image: { width: '100%', height: '100%' },
   typeTag: {
     position: 'absolute',
     top: spacing.xs,

@@ -2,6 +2,14 @@ import '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, useSegments } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
+
+// Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
+// nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
+// this at module load (not inside an effect) so the first paint is already RTL.
+if (Platform.OS === 'web' && typeof document !== 'undefined') {
+  document.documentElement.dir = 'rtl';
+  document.documentElement.lang = 'he';
+}
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';

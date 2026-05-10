@@ -53,12 +53,19 @@ export async function getMyChats(
   );
   const usersRes = await client
     .from('users')
-    .select('user_id, display_name, avatar_url')
+    .select('user_id, display_name, avatar_url, share_handle')
     .in('user_id', otherIds);
   if (usersRes.error) throw mapChatError(usersRes.error);
-  const userMap = new Map<string, { displayName: string; avatarUrl: string | null }>();
+  const userMap = new Map<
+    string,
+    { displayName: string; avatarUrl: string | null; shareHandle: string | null }
+  >();
   for (const u of usersRes.data ?? []) {
-    userMap.set(u.user_id, { displayName: u.display_name, avatarUrl: u.avatar_url });
+    userMap.set(u.user_id, {
+      displayName: u.display_name,
+      avatarUrl: u.avatar_url,
+      shareHandle: u.share_handle,
+    });
   }
 
   return chats.map((c) => {
@@ -72,9 +79,16 @@ export async function getMyChats(
             userId: otherId,
             displayName: found.displayName,
             avatarUrl: found.avatarUrl,
+            shareHandle: found.shareHandle,
             isDeleted: false,
           }
-        : { userId: null, displayName: 'משתמש שנמחק', avatarUrl: null, isDeleted: true },
+        : {
+            userId: null,
+            displayName: 'משתמש שנמחק',
+            avatarUrl: null,
+            shareHandle: null,
+            isDeleted: true,
+          },
       lastMessage: lastMessageByChat.get(c.chatId) ?? null,
       unreadCount: unreadByChat[c.chatId] ?? 0,
     };

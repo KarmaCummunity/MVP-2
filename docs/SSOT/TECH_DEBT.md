@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (P0.5 follow-up — registered TD-118; bumped TD-29 caps for `(tabs)/create.tsx` 341→386 + `(tabs)/profile.tsx` 214→215 after post-merge fix commits) |
+| **Last Updated** | 2026-05-10 (chat/profile UI polish — bumped TD-118 caps for `chat/[id].tsx` 203→229 + `chatStore.ts` 215→232 after tappable-header + local-mark-read additions) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
@@ -58,7 +58,7 @@
 | TD-108 | 🟢 | **FR-AUTH-011 AC4 — avatar removal leaks Storage object.** `app/(onboarding)/photo.tsx:47-60` clears `users.avatar_url = null` but never deletes `avatars/<userId>/avatar.jpg`. ~50KB leak per remove (not a privacy issue — RLS still owns the path). Call `client.storage.from('avatars').remove([path])` before persisting null | Opportunistic |
 | TD-114 | 🟠 | **Donations · Time → support thread wire-up.** **P0.5 ready** — `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` + the `/chat/[id]` route now exist. Wire-up in `app/(tabs)/donations/time.tsx`'s volunteer composer to navigate to the support thread is a separate post-P0.5 PR. | Post-P0.5 follow-up |
 | TD-115 | 🔴 | **Push notifications wiring for chat absent.** Required by FR-CHAT-003 AC4. Depends on FR-NOTIF-001..006 (P1.5). Currently messages send + receive via Realtime, but no push is delivered when the app is backgrounded. | P1.5 |
-| TD-118 | 🟠 | **Chat screen + store over 200-line cap.** `apps/mobile/app/chat/[id].tsx` (203) and `apps/mobile/src/store/chatStore.ts` (215) crossed the cap during P0.5 post-merge fixes (inbox-sub race fix, anchor-deleted banner, infinite-loop guard). Both allowlisted. Split paths: extract `<ConversationHeader>` + `<RetryBanner>` from the screen; split the store into `chatStoreInbox.ts` + `chatStoreThread.ts` slices. | Opportunistic — P0.6 closure |
+| TD-118 | 🟠 | **Chat screen + store over 200-line cap.** `apps/mobile/app/chat/[id].tsx` (229) and `apps/mobile/src/store/chatStore.ts` (232) — crossed the cap during P0.5 post-merge fixes; chat-header tap-to-profile (FR-CHAT-006 polish) + `markChatLocallyRead` action (FR-CHAT-012 polish) pushed both further. Both allowlisted. Split paths: extract `<ConversationHeader>` (now also owns the tappable-title + counterpart resolution) + `<RetryBanner>` from the screen; split the store into `chatStoreInbox.ts` + `chatStoreThread.ts` slices. | Opportunistic — P0.6 closure |
 
 ### Process · docs · tooling
 
