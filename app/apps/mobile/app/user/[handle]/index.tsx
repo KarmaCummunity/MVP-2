@@ -3,10 +3,7 @@
 // Mapped to SRS: FR-PROFILE-002, 003, 004; FR-FOLLOW-001..006, 011, 012.
 
 import React from 'react';
-import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet,
-  Text, TouchableOpacity, View,
-} from 'react-native';
+import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -23,11 +20,7 @@ import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
-import {
-  getFollowUserUseCase, getUnfollowUserUseCase,
-  getSendFollowRequestUseCase, getCancelFollowRequestUseCase,
-  getGetFollowStateUseCase,
-} from '../../../src/services/followComposition';
+import { getFollowUserUseCase, getUnfollowUserUseCase, getSendFollowRequestUseCase, getCancelFollowRequestUseCase, getGetFollowStateUseCase } from '../../../src/services/followComposition';
 
 export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
@@ -58,6 +51,9 @@ export default function OtherProfileScreen() {
 
   const isMe = me === u?.userId;
   const allowed = isMe || followInfo?.state === 'following' || u?.privacyMode === 'Public';
+
+  // /user/[my-handle] redirects to the My Profile tab.
+  React.useEffect(() => { if (isMe) router.replace('/(tabs)/profile'); }, [isMe, router]);
 
   const postsQuery = useQuery({
     queryKey: ['profile-other-posts', u?.userId, activeTab],
@@ -120,11 +116,16 @@ export default function OtherProfileScreen() {
   };
 
   const showLocked = u.privacyMode === 'Private' && followInfo?.state !== 'following' && !isMe;
-  const HeaderMenu = !isMe ? () => (
+  // ⋮ hidden for self + super-admin (admin = support channel, FR-CHAT-007).
+  const showMenu = Boolean(me) && !isMe && !u.isSuperAdmin;
+  const HeaderMenu = showMenu ? () => (
     <TouchableOpacity onPress={block} accessibilityLabel="עוד פעולות" style={styles.headerBtn}>
       <Ionicons name="ellipsis-horizontal" size={22} color={colors.textPrimary} />
     </TouchableOpacity>
   ) : undefined;
+  // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
+  const followState = followInfo?.state ?? 'not_following_public';
+  const showFollowButton = Boolean(me) && !isMe;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -150,12 +151,13 @@ export default function OtherProfileScreen() {
 
           {!isMe ? (
             <View style={styles.actionRow}>
-              {followInfo ? (
+              {showFollowButton ? (
                 <View style={styles.btnFlex}>
                   <FollowButton
-                    state={followInfo.state}
-                    cooldownUntil={followInfo.cooldownUntil}
+                    state={followState}
+                    cooldownUntil={followInfo?.cooldownUntil}
                     onPress={onFollowPress}
+                    busy={!followInfo}
                   />
                 </View>
               ) : null}
