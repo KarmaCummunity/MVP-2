@@ -15,6 +15,7 @@ import {
 import {
   CompleteBasicInfoUseCase,
   CompleteOnboardingUseCase,
+  DismissClosureExplainerUseCase,
   SetAvatarUseCase,
   UpdateProfileUseCase,
   type ICityRepository,
@@ -28,6 +29,7 @@ let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
 let _completeOnboarding: CompleteOnboardingUseCase | null = null;
 let _setAvatar: SetAvatarUseCase | null = null;
 let _updateProfile: UpdateProfileUseCase | null = null;
+let _dismissClosureExplainer: DismissClosureExplainerUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -37,7 +39,7 @@ function pickStorage(): SupabaseAuthStorage | undefined {
   return AsyncStorage;
 }
 
-function getUserRepo(): IUserRepository {
+export function getUserRepo(): IUserRepository {
   if (_userRepo) return _userRepo;
   _userRepo = new SupabaseUserRepository(getSupabaseClient({ storage: pickStorage() }));
   return _userRepo;
@@ -98,4 +100,12 @@ export function setOnboardingStateDirect(
 /** Lists every Israeli city from `public.cities` ordered by Hebrew name. */
 export function listCities(): Promise<City[]> {
   return getCityRepo().listAll();
+}
+
+/** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */
+export function getDismissClosureExplainerUseCase(): DismissClosureExplainerUseCase {
+  if (!_dismissClosureExplainer) {
+    _dismissClosureExplainer = new DismissClosureExplainerUseCase(getUserRepo());
+  }
+  return _dismissClosureExplainer;
 }
