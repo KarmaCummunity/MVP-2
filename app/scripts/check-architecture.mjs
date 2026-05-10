@@ -29,11 +29,11 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 234 }],
-  ['apps/mobile/app/(tabs)/profile.tsx', { td: 'TD-29', max: 204 }],
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 212 }],
   ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 248 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
-  ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 215 }],
+  // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
+  ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
   ['apps/mobile/src/store/chatStore.ts', { td: 'TD-118', max: 232 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
   // Pre-existing before FR-ADMIN-009; tracked as TD-128 for the split work.

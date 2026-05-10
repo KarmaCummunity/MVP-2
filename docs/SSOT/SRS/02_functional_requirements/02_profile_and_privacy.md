@@ -62,7 +62,7 @@ Viewing the profile of another user whose `privacy_mode = Public` shows their id
 
 **Acceptance Criteria.**
 - AC1. Header parity with `FR-PROFILE-001` minus edit/share; replaces them with "Follow / Following" and "Send Message" CTAs and a `⋮` menu (`Report`, `Block`).
-- AC2. The "Closed Posts" tab is **never** shown for other users (privacy decision, PRD §3.2.2).
+- AC2. The "Closed Posts" tab **is** shown for other users when the profile is `Public` (or `Private` and the viewer is an approved follower). Recipient identity ("נמסר ל-X") is included per the same rules as on My Profile (`FR-PROFILE-001`). Posts at `Only-me` visibility remain non-visible to non-owners. *(Reverses the prior privacy decision; see EXEC-7 in the decision log, 2026-05-11.)*
 - AC3. Counters reflect the **public** active-posts count, which excludes posts at visibility `Only me` (see `FR-PROFILE-013`).
 - AC4. The "Active Posts" tab lists `Public` posts; if I am an approved follower, `Followers only` posts also appear. Posts at `Only me` are never visible to non-owners.
 
@@ -101,7 +101,7 @@ Viewing a `Private` profile when I am an approved follower behaves like the `Pub
 - AC1. Lists, tabs, and counters behave exactly as in `FR-PROFILE-002`.
 - AC2. `Followers-only` posts of the profile owner are **included** in the "Active Posts" tab.
 - AC3. `Only-me` posts of the profile owner are **never** included, even for approved followers.
-- AC4. The "Closed Posts" tab is still hidden (privacy decision applies regardless of follow state).
+- AC4. The "Closed Posts" tab is included; behaves as in `FR-PROFILE-002` AC2.
 
 **Related.** Screens: 3.3.
 
@@ -323,3 +323,4 @@ At sign-up via Google or Apple, if the SSO provides a profile photo URL, the sys
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.2, §3.5, and Decisions D-10. |
+| 0.2 | 2026-05-11 | FR-PROFILE-002 AC2 + FR-PROFILE-004 AC4 updated: closed posts now shown on other-user profiles (Public / Private-approved-follower). Reverses prior PRD §3.2.2 carveout; see EXEC-7. |

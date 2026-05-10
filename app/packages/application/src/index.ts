@@ -69,6 +69,22 @@ export { RemoveDonationLinkUseCase } from './donations/RemoveDonationLinkUseCase
 export { DonationLinkError } from './donations/errors';
 export type { DonationLinkErrorCode } from './donations/errors';
 
+// Follow use cases (P1.1)
+export * from './follow/errors';
+export * from './follow/types';
+export * from './follow/FollowUserUseCase';
+export * from './follow/UnfollowUserUseCase';
+export * from './follow/SendFollowRequestUseCase';
+export * from './follow/CancelFollowRequestUseCase';
+export * from './follow/AcceptFollowRequestUseCase';
+export * from './follow/RejectFollowRequestUseCase';
+export * from './follow/RemoveFollowerUseCase';
+export * from './follow/ListFollowersUseCase';
+export * from './follow/ListFollowingUseCase';
+export * from './follow/ListPendingFollowRequestsUseCase';
+export * from './follow/GetFollowStateUseCase';
+export * from './follow/UpdatePrivacyModeUseCase';
+
 // Search use cases
 export type { ISearchRepository, UniversalSearchResults } from './ports/ISearchRepository';
 export { UniversalSearchUseCase } from './search/UniversalSearchUseCase';

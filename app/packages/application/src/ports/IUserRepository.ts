@@ -4,6 +4,16 @@ import type { User, AuthIdentity, FollowEdge, FollowRequest, Block, OnboardingSt
 // Port (interface) for user persistence.
 // Implementations live in infrastructure-supabase.
 
+/** Raw signals from DB used to derive FR-FOLLOW-011 state. */
+export interface FollowStateRaw {
+  /** target.privacy_mode + target.account_status. null if target not visible / does not exist. */
+  target: { userId: string; privacyMode: 'Public' | 'Private'; accountStatus: 'active' | 'suspended' | 'deleted' } | null;
+  followingExists: boolean;
+  pendingRequestExists: boolean;
+  cooldownUntil: string | null;
+  blocked: boolean;
+}
+
 export interface IUserRepository {
   findById(userId: string): Promise<User | null>;
   findByHandle(handle: string): Promise<User | null>;
@@ -36,6 +46,13 @@ export interface IUserRepository {
    * the DB still applies the length CHECK as defence in depth.
    */
   setBiography(userId: string, biography: string | null): Promise<void>;
+
+  /**
+   * FR-PROFILE-005, 006 — flips users.privacy_mode and stamps privacy_changed_at.
+   * Returns the updated User. Idempotent at the DB layer; the use case prevents
+   * pointless writes when the mode is unchanged.
+   */
+  setPrivacyMode(userId: string, mode: import('@kc/domain').PrivacyMode): Promise<User>;
 
   /**
    * FR-PROFILE-007: read the four editable fields for the Edit Profile form.
@@ -73,6 +90,23 @@ export interface IUserRepository {
   rejectFollowRequest(requesterId: string, targetId: string): Promise<void>;
   cancelFollowRequest(requesterId: string, targetId: string): Promise<void>;
   getPendingFollowRequests(userId: string): Promise<FollowRequest[]>;
+
+  /**
+   * FR-FOLLOW-007 AC2 — pending requests joined with the requester's User row.
+   * Used to render avatar+name+city without a second round-trip per row.
+   */
+  getPendingFollowRequestsWithUsers(
+    userId: string,
+    limit: number,
+    cursor?: string,
+  ): Promise<import('../follow/types').PaginatedRequests>;
+
+  /**
+   * FR-FOLLOW-011 — single round-trip probe. Returns raw signals the
+   * GetFollowStateUseCase needs to derive a FollowState. Avoids 4 separate
+   * round-trips on every profile load.
+   */
+  getFollowStateRaw(viewerId: string, targetUserId: string): Promise<FollowStateRaw>;
 
   // Blocks
   block(blockerId: string, blockedId: string): Promise<Block>;

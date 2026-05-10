@@ -35,7 +35,6 @@ export default function SettingsScreen() {
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
   const [notificationsOn, setNotificationsOn] = React.useState(true);
-  const [privateProfile, setPrivateProfile] = React.useState(false);
   const [signingOut, setSigningOut] = React.useState(false);
   const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
 
@@ -123,15 +122,9 @@ export default function SettingsScreen() {
           <SettingsRow
             label={t('settings.privateProfileToggle')}
             icon="lock-closed-outline"
-            rightElement={
-              <Switch
-                value={privateProfile}
-                onValueChange={setPrivateProfile}
-                trackColor={{ true: colors.primary }}
-              />
-            }
+            onPress={() => router.push('/settings/privacy' as never)}
           />
-          <SettingsRow label={t('settings.followRequests')} icon="people-outline" onPress={() => {}} />
+          <SettingsRow label={t('settings.followRequests')} icon="people-outline" onPress={() => router.push('/settings/follow-requests' as never)} />
           <SettingsRow label={t('settings.blockedUsers')} icon="ban-outline" onPress={() => {}} />
         </View>
 

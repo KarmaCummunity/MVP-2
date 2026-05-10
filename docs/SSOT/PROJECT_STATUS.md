@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-10 (FR-ADMIN-009 post-detail ⋮ menu + FR-CHAT-002 web defect repair + closure UX polish + FR-PROFILE-001 AC1; 114 vitest passing; DB schema applied through 0020.) |
+| **Last Updated** | 2026-05-11 (P1.1 — following + other-user profile shipped: FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013. 35 new vitest, 12 use cases.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -26,17 +26,17 @@ This document is the **single source of truth for project execution state**. It 
 
 ---
 
-## 1. Snapshot — Current State (2026-05-10)
+## 1. Snapshot — Current State (2026-05-11)
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~50%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + admin remove-post; DB schema applied through 0020) |
-| Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + FR-ADMIN-009) |
+| MVP completion (rough) | **~58%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile**; DB schema applied through 0020) |
+| Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + P1.1) |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` — **114 vitest passing** + posts.adminRemove + reports.post |
-| Open tech-debt items | **42 active** (3 partial), **19 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **148 vitest passing** |
+| Open tech-debt items | **40 active** (3 partial), **21 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -44,6 +44,7 @@ This document is the **single source of truth for project execution state**. It 
 - Native dev builds on iOS 26 + Android API-36 + Web — all three platforms run correctly with Expo SDK 54 + expo-router 6
 - **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing. Post detail now exposes a role-aware ⋮ overflow menu (FR-POST-014 AC4 + FR-POST-015 AC1 partial): viewer → דווח/חסום משתמש; owner → מחק; super-admin viewing someone else's post → דווח/חסום + הסר כאדמין (FR-ADMIN-009 via the new admin_remove_post RPC).
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
+- **Following + Other-User Profile** — full follow mechanism (instant for Public, request/accept/reject/14d-cooldown for Private), remove-follower, follow-state machine, Followers + Following lists with search, /settings/privacy toggle + /settings/follow-requests inbox. Other-user profile rebuilt to feature-parity with My Profile (closed posts visible too — per EXEC-7).
 
 ### What is in flight
 
@@ -51,7 +52,6 @@ This document is the **single source of truth for project execution state**. It 
 
 ### What is fake / stubbed
 
-- Other-user profile (`/user/[handle]`) has minimal real data (avatar, name, handle, bio, Send-message + Block CTAs) via `findByHandle`; counters still render `0` there (TD-14 — separate from My Profile)
 - My Profile (`(tabs)/profile.tsx`) now renders real biography + real followers/following counters via `findById` (closed TD-42 + TD-10, 2026-05-10); items_given/items_received remain 0 there because the layout doesn't surface them
 - No closure flow / reports / notifications / community stats
 - Apple / Phone-OTP sign-in routes still call email sign-in screen as placeholder (Google SSO is real)
@@ -79,7 +79,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
-| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…007 | ⏳ Planned | Needed for `FollowersOnly` post visibility |
+| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). |
 | P1.2 | Search + filters + sort + cold-start fallback | FR-FEED-006…014 | ⏳ Planned | Drives discoverability |
 | P1.3 | Reports + auto-removal + false-report sanctions | FR-MOD-001…008 | ⏳ Planned | Safety floor |
 | P1.4 | Block / unblock + visibility restoration | FR-MOD-009, 010 | ⏳ Planned | |
@@ -121,9 +121,9 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
 | In progress | (none) | — | — | — |
-| Up next | P1.x — pick next per §2 (likely P1.1 Following or P1.2 Search/filters) | — | — | — |
+| Up next | P1.x — pick next per §2 (likely P1.2 Search/filters) | — | — | — |
 
-Most recently shipped: **FR-ADMIN-009** — post-detail ⋮ overflow menu (Report + Block + Owner-Delete + Admin-Remove) — 0020_admin_remove_post.sql RPC, 5 new mobile components, useIsSuperAdmin hook, 114 vitest passing — 2026-05-10. Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013; 12 use cases + 35 vitest, 6 shared profile components, full follow state machine, /settings/privacy + /settings/follow-requests, other-user profile rebuilt to feature-parity — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 
@@ -140,6 +140,7 @@ Mirror of [`SRS/appendices/C_decisions_log.md`](./SRS/appendices/C_decisions_log
 | EXEC-5 | Doc structure: `PROJECT_STATUS.md` is the live execution dashboard (≤120 lines); `HISTORY.md` is append-only feature log; `TECH_DEBT.md` is the active debt register grouped by area. CLAUDE.md points to all three | Doc cleanup | 2026-05-08 |
 | D-16 | Reintroduce dedicated **Donations** and **Search** tabs in the bottom bar (5 tabs total). Search ships as a placeholder (`FR-FEED-016`); universal-search engine deferred to P2.6. Donations Hub ships fully (`FR-DONATE-001..005`); Time + Money are coming-soon screens with external partner links + volunteer-message composer wired to `FR-CHAT-007`. | Product | 2026-05-09 |
 | EXEC-6 | P0.5 chat: two-port split (`IChatRepository` + `IChatRealtime`). Subscriptions stay out of use cases — managed by Zustand `chatStore` directly. Use cases remain pure (input → `Promise<output>`). | P0.5 design | 2026-05-10 |
+| EXEC-7 | פוסטים סגורים מוצגים בפרופיל של יוזר אחר (ציבורי או פרטי-עוקב-מאושר), כולל זהות המקבל. מהפכת את החלטת ה-PRD §3.2.2. | P1.1 | 2026-05-11 |
 
 ---
 

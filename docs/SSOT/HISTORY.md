@@ -6,6 +6,31 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P1.1 Following + Other-User Profile
+
+**SRS:** FR-FOLLOW-001..009, 011, 012; FR-PROFILE-002..006, 009, 010, 013.
+**Branch / PR:** `claude/loving-varahamihira-01cd6d` (single-branch, single-PR).
+**Tests:** 109 → 144 vitest passing (+35 follow tests across 12 files).
+**TD deltas:** Closed TD-14, TD-40 (partial). Opened TD-124..TD-128.
+**Open gaps:**
+- Push notifications for follow events deferred to P1.5 (TD-124).
+- Optimistic updates not yet wired on Follow button (TD-125).
+- Cooldown error toast lacks N-days remaining text (TD-126).
+- Report action absent from Other-Profile ⋮ menu (TD-127, P1.3 scope).
+
+Highlights:
+- 12 new follow use cases under `packages/application/src/follow/` (one file each, all TDD with vitest).
+- `IUserRepository` now declares 14 follow-related methods (incl. `getFollowStateRaw`, `getPendingFollowRequestsWithUsers`, `setPrivacyMode`) — all NOT_IMPL stubs in `SupabaseUserRepository` replaced with real implementations.
+- Five Postgres-error codes mapped via `mapFollowError` (self-follow, blocked, already-following, cooldown, pending-exists).
+- Six shared profile subcomponents under `apps/mobile/src/components/profile/` (Header, StatsRow, Tabs, PostsGrid, LockedPanel, FollowButton).
+- My Profile refactored to use shared components — no visual change, dropped from 204 → 137 LOC.
+- `/user/[handle]` rebuilt as a full profile (3 modes: Public / Private-approved / Private-not-approved).
+- `/user/[handle]/followers` + `/following` list screens with search.
+- `/settings/privacy` (Public↔Private toggle + auto-approve on Private→Public via DB trigger) + `/settings/follow-requests` (approve/reject inbox).
+- Closed posts now visible on other-user profile (EXEC-7 reverses prior PRD carveout).
+
+---
+
 - **2026-05-10 — FR-ADMIN-009 + post-detail ⋮ menu (FR-POST-010 · FR-POST-014 AC4 · FR-POST-015 AC1 · FR-MOD-001 · FR-MOD-007 · FR-ADMIN-009)** — Branch `claude/unruffled-black-7d25c9` · 114 vitest (109 + 2 `AdminRemovePostUseCase` + 3 `ReportPostUseCase`). Migration `0020_admin_remove_post.sql` adds the `SECURITY DEFINER` RPC gated on `is_admin(auth.uid())` (writes `manual_remove_target` audit event, idempotent, no schema change). New use cases: `AdminRemovePostUseCase`, `ReportPostUseCase`. New mobile components: `PostMenuButton`, `PostMenuSheet`, `ReportPostModal`, `ConfirmActionModal` + `useIsSuperAdmin` + `usePostMenuActions` hook. Owner sees Delete; viewer sees Report + Block; super admin viewing someone else's post additionally sees Remove-as-admin. Mounted as a floating overlay on the post image (not the Stack header — `setOptions({headerRight})` did not propagate to react-native-web's navigator). Defers: TD-52 (admin restore RPC), TD-124 (feed-card ⋮ menu), TD-125 (Edit owner action), TD-126 (surface `removed_admin` to owner with banner).
 
 ---
@@ -39,6 +64,7 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 - **Open gaps**: none.
 
 ---
+
 
 ### 🟢 P0.6 — Closure flow (FR-CLOSURE-001..005, 008, 009 verified)
 - **SRS**: FR-CLOSURE-001 (initiate from PostDetail) · FR-CLOSURE-002 (Step 1 confirm) · FR-CLOSURE-003 (Step 2 recipient picker — with chat partners + empty state) · FR-CLOSURE-004 (Step 3 one-time educational explainer + dismiss-forever flag) · FR-CLOSURE-005 (reopen `closed_delivered` and in-grace `deleted_no_recipient`) · FR-CLOSURE-008 (daily `pg_cron` cleanup of expired unmarked closures) · FR-CLOSURE-009 (stat projection — pre-existing 0006 triggers verified to fire on every transition).

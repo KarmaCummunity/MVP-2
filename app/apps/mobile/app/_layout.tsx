@@ -136,7 +136,8 @@ export default function RootLayout() {
                     <Stack.Screen name="settings" />
                     <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
                     <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
-                    <Stack.Screen name="user/[handle]" options={{ ...detailHeader, headerTitle: 'פרופיל' }} />
+                    {/* user/[handle]/* owns its own header via the nested _layout */}
+                    <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
                     <Stack.Screen name="chat/[id]" options={detailHeader} />
                     {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
                     <Stack.Screen name="chat/index" options={{ headerShown: false }} />

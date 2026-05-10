@@ -47,6 +47,9 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     getPendingFollowRequests: notImpl(
       'getPendingFollowRequests',
     ) as IUserRepository['getPendingFollowRequests'],
+    getPendingFollowRequestsWithUsers: notImpl(
+      'getPendingFollowRequestsWithUsers',
+    ) as IUserRepository['getPendingFollowRequestsWithUsers'],
     block: notImpl('block') as IUserRepository['block'],
     unblock: notImpl('unblock') as IUserRepository['unblock'],
     getBlockedUsers: notImpl('getBlockedUsers') as IUserRepository['getBlockedUsers'],
@@ -114,5 +117,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
       rows.set(userId, { ...row, closureExplainerDismissed: true });
     },
     searchUsers: notImpl('searchUsers') as IUserRepository['searchUsers'],
+    setPrivacyMode: notImpl('setPrivacyMode') as IUserRepository['setPrivacyMode'],
+    getFollowStateRaw: notImpl('getFollowStateRaw') as IUserRepository['getFollowStateRaw'],
   };
 }

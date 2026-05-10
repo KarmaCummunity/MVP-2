@@ -4,29 +4,26 @@
 //   FR-POST-016 (caller's own posts list).
 // Closes TD-42 (followers/following counters now read from User via IUserRepository.findById).
 import React, { useState } from 'react';
-import {
-  ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
-} from 'react-native';
+import { ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
-import { AvatarInitials } from '../../src/components/AvatarInitials';
-import { EmptyState } from '../../src/components/EmptyState';
-import { PostCardProfile } from '../../src/components/PostCardProfile';
 import { TopBar } from '../../src/components/TopBar';
+import { ProfileHeader } from '../../src/components/profile/ProfileHeader';
+import { ProfileStatsRow } from '../../src/components/profile/ProfileStatsRow';
+import { ProfileTabs, type ProfileTab } from '../../src/components/profile/ProfileTabs';
+import { ProfilePostsGrid } from '../../src/components/profile/ProfilePostsGrid';
 import { useAuthStore } from '../../src/store/authStore';
 import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
 import { getUserRepo } from '../../src/services/userComposition';
-
-type Tab = 'open' | 'closed';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId;
-  const [activeTab, setActiveTab] = useState<Tab>('open');
+  const [activeTab, setActiveTab] = useState<ProfileTab>('open');
 
   const userQuery = useQuery({
     queryKey: ['user-profile', userId],
@@ -64,26 +61,29 @@ export default function ProfileScreen() {
         </View>
 
         <View style={styles.profileCard}>
-          <View style={styles.profileHeader}>
-            <AvatarInitials
-              name={displayName}
-              avatarUrl={avatarUrl}
-              size={72}
-            />
-            <View style={styles.profileInfo}>
-              <Text style={styles.displayName}>{displayName}</Text>
-              {session?.email ? <Text style={styles.email}>{session.email}</Text> : null}
-              {biography ? <Text style={styles.biography}>{biography}</Text> : null}
-            </View>
-          </View>
+          <ProfileHeader
+            displayName={displayName}
+            avatarUrl={avatarUrl}
+            biography={biography}
+            privacyMode={user?.privacyMode ?? 'Public'}
+            onLockPress={() => router.push('/settings/privacy' as never)}
+            size={72}
+          />
 
-          <View style={styles.statsRow}>
-            <StatItem count={user?.followersCount ?? 0} label="עוקבים" />
-            <View style={styles.statDivider} />
-            <StatItem count={user?.followingCount ?? 0} label="נעקבים" />
-            <View style={styles.statDivider} />
-            <StatItem count={openCountQuery.data ?? 0} label="פוסטים" />
-          </View>
+          <ProfileStatsRow
+            followersCount={user?.followersCount ?? 0}
+            followingCount={user?.followingCount ?? 0}
+            postsCount={openCountQuery.data ?? 0}
+            enabled
+            onPressFollowers={() => router.push({
+              pathname: '/user/[handle]/followers' as never,
+              params: { handle: user?.shareHandle ?? '' },
+            })}
+            onPressFollowing={() => router.push({
+              pathname: '/user/[handle]/following' as never,
+              params: { handle: user?.shareHandle ?? '' },
+            })}
+          />
 
           <View style={styles.actionRow}>
             <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
@@ -95,42 +95,13 @@ export default function ProfileScreen() {
           </View>
         </View>
 
-        <View style={styles.tabs}>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'open' && styles.tabActive]}
-            onPress={() => setActiveTab('open')}
-          >
-            <Text style={[styles.tabText, activeTab === 'open' && styles.tabTextActive]}>
-              פוסטים פתוחים
-            </Text>
-          </TouchableOpacity>
-          <TouchableOpacity
-            style={[styles.tab, activeTab === 'closed' && styles.tabActive]}
-            onPress={() => setActiveTab('closed')}
-          >
-            <Text style={[styles.tabText, activeTab === 'closed' && styles.tabTextActive]}>
-              פוסטים סגורים
-            </Text>
-          </TouchableOpacity>
-        </View>
+        <ProfileTabs active={activeTab} onChange={setActiveTab} />
 
-        {myPostsQuery.isLoading ? (
-          <View style={styles.loadingWrap}>
-            <ActivityIndicator color={colors.primary} />
-          </View>
-        ) : (myPostsQuery.data?.posts.length ?? 0) === 0 ? (
-          activeTab === 'open' ? (
-            <EmptyState icon="mail-open-outline" title="אין פוסטים פתוחים" subtitle="פרסם את הפוסט הראשון שלך!" />
-          ) : (
-            <EmptyState icon="archive-outline" title="אין פוסטים סגורים עדיין" subtitle="פוסטים שסגרת כ-נמסר יופיעו כאן." />
-          )
-        ) : (
-          <View style={styles.grid}>
-            {(myPostsQuery.data?.posts ?? []).map((p) => (
-              <PostCardProfile key={p.postId} post={p} />
-            ))}
-          </View>
-        )}
+        <ProfilePostsGrid
+          posts={myPostsQuery.data?.posts ?? []}
+          isLoading={myPostsQuery.isLoading}
+          empty={activeTab === 'open' ? 'self_open' : 'self_closed'}
+        />
       </ScrollView>
     </SafeAreaView>
   );
@@ -145,21 +116,6 @@ function resolveDisplayName(session: ReturnType<typeof useAuthStore.getState>['s
   return 'משתמש';
 }
 
-function StatItem({ count, label }: { count: number; label: string }) {
-  return (
-    <View style={statStyles.container}>
-      <Text style={statStyles.count}>{count}</Text>
-      <Text style={statStyles.label}>{label}</Text>
-    </View>
-  );
-}
-
-const statStyles = StyleSheet.create({
-  container: { flex: 1, alignItems: 'center', gap: 2 },
-  count: { ...typography.h2, color: colors.textPrimary },
-  label: { ...typography.caption, color: colors.textSecondary },
-});
-
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
   sectionHeader: { paddingHorizontal: spacing.base, paddingTop: spacing.base, paddingBottom: spacing.sm },
@@ -168,16 +124,6 @@ const styles = StyleSheet.create({
     margin: spacing.base, backgroundColor: colors.surface, borderRadius: radius.lg,
     padding: spacing.base, ...shadow.card, gap: spacing.base,
   },
-  profileHeader: { flexDirection: 'row', gap: spacing.base, alignItems: 'flex-start' },
-  profileInfo: { flex: 1, gap: spacing.xs },
-  displayName: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
-  email: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  biography: { ...typography.body, color: colors.textPrimary, textAlign: 'right', marginTop: spacing.xs },
-  statsRow: {
-    flexDirection: 'row', alignItems: 'center', paddingVertical: spacing.sm,
-    borderTopWidth: 1, borderTopColor: colors.border,
-  },
-  statDivider: { width: 1, height: 32, backgroundColor: colors.border },
   actionRow: { flexDirection: 'row', gap: spacing.sm },
   editBtn: {
     flex: 1, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
@@ -188,17 +134,4 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
-  tabs: {
-    flexDirection: 'row', backgroundColor: colors.surface,
-    borderBottomWidth: 1, borderBottomColor: colors.border, marginBottom: spacing.sm,
-  },
-  tab: {
-    flex: 1, paddingVertical: spacing.md, alignItems: 'center',
-    borderBottomWidth: 2, borderBottomColor: 'transparent',
-  },
-  tabActive: { borderBottomColor: colors.primary },
-  tabText: { ...typography.button, color: colors.textSecondary },
-  tabTextActive: { color: colors.primary },
-  loadingWrap: { padding: spacing.xl, alignItems: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
 });
