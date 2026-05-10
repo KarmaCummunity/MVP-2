@@ -4,7 +4,7 @@ import React from 'react';
 import {
   ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
-import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -77,11 +77,6 @@ export default function PostDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen
-        options={{
-          headerRight: () => <PostMenuButton post={post} />,
-        }}
-      />
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.imageWrap}>
           <PostImageCarousel
@@ -90,6 +85,13 @@ export default function PostDetailScreen() {
           />
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
             <Text style={styles.typeTagText}>{isGive ? 'לתת' : 'לבקש'}</Text>
+          </View>
+          {/* FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009 — floating ⋮ menu.
+              Rendered as an overlay on the image (not via the Stack header) so
+              it works consistently on native + react-native-web without
+              depending on navigator.setOptions plumbing. */}
+          <View style={styles.menuOverlay} pointerEvents="box-none">
+            <PostMenuButton post={post} />
           </View>
         </View>
 
@@ -162,6 +164,11 @@ const styles = StyleSheet.create({
   typeTagOverlay: {
     position: 'absolute', bottom: spacing.base, right: spacing.base,
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
+  },
+  menuOverlay: {
+    position: 'absolute', top: spacing.sm, start: spacing.sm,
+    backgroundColor: 'rgba(255,255,255,0.9)',
+    borderRadius: radius.full,
   },
   giveTag: { backgroundColor: colors.giveTagBg },
   requestTag: { backgroundColor: colors.requestTagBg },
