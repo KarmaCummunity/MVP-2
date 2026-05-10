@@ -56,14 +56,19 @@ async function checkReachable(url: string): Promise<boolean> {
         method,
         redirect: 'follow',
         signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        // Identify ourselves so hosts that block default fetch UA still respond.
-        headers: { 'User-Agent': 'KarmaCommunityLinkValidator/1.0' },
+        headers: { 
+          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+          'Accept-Language': 'en-US,en;q=0.5'
+        },
       });
-      if (resp.status >= 200 && resp.status < 400) return true;
-      if (method === 'HEAD' && (resp.status === 405 || resp.status >= 400)) continue;
+      // We accept any response except 404 (Not Found). 
+      // Cloudflare/anti-bot might return 403, 503, 401, etc. which means the server exists and is reachable.
+      if (resp.status !== 404) return true;
+      if (method === 'HEAD') continue;
       return false;
     } catch {
-      // Network error or timeout — try next method (or return false after the GET).
+      // Network error, DNS resolution failed, or timeout — try next method.
       if (method === 'GET') return false;
     }
   }
@@ -80,7 +85,7 @@ serve(async (req) => {
 
   const authHeader = req.headers.get('Authorization');
   if (!authHeader || !authHeader.startsWith('Bearer ')) {
-    return jsonResponse({ ok: false, code: 'unauthorized' }, 401);
+    return jsonResponse({ ok: false, code: 'unauthorized' }, 200);
   }
 
   const userClient = createClient(SUPABASE_URL, SUPABASE_ANON_KEY, {
@@ -89,7 +94,7 @@ serve(async (req) => {
   });
   const { data: userData, error: userErr } = await userClient.auth.getUser();
   if (userErr || !userData?.user) {
-    return jsonResponse({ ok: false, code: 'unauthorized' }, 401);
+    return jsonResponse({ ok: false, code: 'unauthorized' }, 200);
   }
   const userId = userData.user.id;
 
@@ -97,19 +102,19 @@ serve(async (req) => {
   try {
     body = await req.json();
   } catch {
-    return jsonResponse({ ok: false, code: 'invalid_input' }, 400);
+    return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
   }
 
   const slug = body.category_slug;
   const displayName = (body.display_name ?? '').trim();
   const description = body.description == null ? null : String(body.description).trim();
 
-  if (!slug || !ALLOWED_SLUGS.has(slug)) return jsonResponse({ ok: false, code: 'invalid_input' }, 400);
-  if (displayName.length < 2 || displayName.length > 80) return jsonResponse({ ok: false, code: 'invalid_input' }, 400);
-  if (description !== null && description.length > 280) return jsonResponse({ ok: false, code: 'invalid_input' }, 400);
+  if (!slug || !ALLOWED_SLUGS.has(slug)) return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
+  if (displayName.length < 2 || displayName.length > 80) return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
+  if (description !== null && description.length > 280) return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
 
   const parsed = parseUrl(body.url);
-  if (!parsed) return jsonResponse({ ok: false, code: 'invalid_url' }, 400);
+  if (!parsed) return jsonResponse({ ok: false, code: 'invalid_url' }, 200);
 
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
@@ -123,15 +128,15 @@ serve(async (req) => {
     .eq('submitted_by', userId)
     .gte('created_at', oneHourAgo);
   if (countErr) {
-    return jsonResponse({ ok: false, code: 'server_error' }, 500);
+    return jsonResponse({ ok: false, code: 'server_error' }, 200);
   }
   if ((count ?? 0) >= MAX_LINKS_PER_HOUR) {
-    return jsonResponse({ ok: false, code: 'rate_limited' }, 429);
+    return jsonResponse({ ok: false, code: 'rate_limited' }, 200);
   }
 
   const reachable = await checkReachable(parsed.toString());
   if (!reachable) {
-    return jsonResponse({ ok: false, code: 'unreachable' }, 400);
+    return jsonResponse({ ok: false, code: 'unreachable' }, 200);
   }
 
   const { data: inserted, error: insertErr } = await adminClient
@@ -148,7 +153,7 @@ serve(async (req) => {
     .single();
 
   if (insertErr || !inserted) {
-    return jsonResponse({ ok: false, code: 'server_error' }, 500);
+    return jsonResponse({ ok: false, code: 'server_error' }, 200);
   }
 
   return jsonResponse({ ok: true, link: inserted }, 200);

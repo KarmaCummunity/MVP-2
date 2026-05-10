@@ -11,3 +11,4 @@ export { SupabaseChatRealtime } from './chat/SupabaseChatRealtime';
 export { SupabaseBlockRepository } from './block/SupabaseBlockRepository';
 export { SupabaseReportRepository } from './reports/SupabaseReportRepository';
 export { SupabaseDonationLinksRepository } from './donations/SupabaseDonationLinksRepository';
+export { SupabaseSearchRepository } from './search/SupabaseSearchRepository';
