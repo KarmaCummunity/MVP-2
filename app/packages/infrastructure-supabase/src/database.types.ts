@@ -870,6 +870,18 @@ export type Database = {
         }
       }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
+      // P0.6 closure RPCs (0015) — manually added until next typegen run.
+      close_post_with_recipient: {
+        Args: { p_post_id: string; p_recipient_user_id: string }
+        Returns: Database["public"]["Tables"]["posts"]["Row"]
+      }
+      reopen_post_marked: {
+        Args: { p_post_id: string }
+        Returns: Database["public"]["Tables"]["posts"]["Row"]
+      }
+      // P0.6 cleanup cron (0016) — manually added until next typegen run.
+      closure_cleanup_expired: { Args: Record<string, never>; Returns: number }
+      closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }
     }
     Enums: {
       [_ in never]: never

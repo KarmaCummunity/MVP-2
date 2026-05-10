@@ -57,15 +57,15 @@ begin
   end if;
 
   -- Recipient must be a chat partner anchored to this post.
-  -- The chat schema (0004) stores user_a + user_b; the recipient is whichever
-  -- side is NOT the owner.
+  -- The chat schema (0004) stores participant_a + participant_b; the recipient
+  -- is whichever side is NOT the owner.
   select exists (
     select 1
       from public.chats c
      where c.anchor_post_id = p_post_id
        and (
-         (c.user_a = v_owner and c.user_b = p_recipient_user_id) or
-         (c.user_b = v_owner and c.user_a = p_recipient_user_id)
+         (c.participant_a = v_owner and c.participant_b = p_recipient_user_id) or
+         (c.participant_b = v_owner and c.participant_a = p_recipient_user_id)
        )
   ) into v_chat_ok;
 
