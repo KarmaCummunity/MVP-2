@@ -6,6 +6,26 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P1.2.y Realtime rejoin fix
+
+**SRS:** FR-FEED-009 (defect in shipped feature — no AC change); FR-CHAT-003/011/012 latent same-class defect prevented.
+**Branch / PR:** `fix/FR-FEED-009-realtime-rejoin`.
+**Tests:** 168 vitest passing · tsc clean (5 packages) · `pnpm lint:arch` 301 files passing. Manual browser verification: 3 round-trips Home↔Profile and 3 round-trips Home↔Chat with zero console errors (pre-fix the very first return to Home threw).
+**TD deltas:** None opened. Latent same-class defect in `SupabaseChatRealtime` closed defensively in the same change.
+
+Why: user QA report — "almost every time I navigate to Home the app shows 'משהו השתבש'; 'נסה שוב' recovers it." Stack trace: `Error: cannot add postgres_changes callbacks for realtime:posts:public-feed after subscribe()`.
+
+Root cause: the Supabase Realtime client caches channels by topic in `client.channels`. `channel.unsubscribe()` does NOT clear the cache synchronously (the entry is removed only after the server acks LEAVE via `_onClose`). On Home re-mount, `client.channel('posts:public-feed')` returned the **same** instance with `joinedOnce=true`, and the next `.on('postgres_changes', ...)` was rejected by realtime-js's internal guard. The error was screen-fatal because it threw inside the `useEffect` body. Pressing "נסה שוב" reloaded the page → fresh client → masked the bug.
+
+Fixes (3 surgical edits, no API/contract changes):
+* `packages/infrastructure-supabase/src/feed/SupabaseFeedRealtime.ts` — topic is now `posts:public-feed:<nonce>` per subscribe call; cleanup uses `client.removeChannel(channel)` so the cache entry is freed once the server acks.
+* `packages/infrastructure-supabase/src/chat/SupabaseChatRealtime.ts` — same treatment for `subscribeToChat` (`chat:<id>:<nonce>`) and `subscribeToInbox` (`inbox:<userId>:<nonce>`). Latent today (per-chat / per-user topics happen to be unique most of the time) but the cache reuse path was identical.
+* `apps/mobile/src/hooks/useFeedRealtime.ts` — the AppState handler now resubscribes + invokes `onResume` **only if** the 60s background timer actually tore down the subscription. RN-Web fires `inactive`→`active` on every browser tab focus; the previous code unconditionally re-called `subscribeToPublicInserts` and `onResume` on every focus, which (a) would also have hit the cached-channel bug, and (b) leaked subscriptions plus triggered unnecessary refetches.
+
+Out of scope: rest of the realtime surface has no other `.channel(stableName)` callers. Refactor logged: NA.
+
+---
+
 ## 2026-05-11 — P1.1.2 Follow-mechanism web hotfix
 
 **SRS:** FR-FOLLOW-002 AC1 / FR-FOLLOW-004 AC1 / FR-FOLLOW-006 AC3 / FR-FOLLOW-009 AC2 / FR-PROFILE-005 AC2 / FR-PROFILE-006 AC1 (all confirm-dialog ACs) — no AC change, implementation only.

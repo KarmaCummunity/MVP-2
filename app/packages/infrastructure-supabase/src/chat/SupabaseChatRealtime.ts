@@ -23,8 +23,11 @@ export class SupabaseChatRealtime implements IChatRealtime {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   subscribeToChat(chatId: string, cb: ChatStreamCallbacks): Unsubscribe {
+    // Unique topic suffix avoids cached-channel reuse (`joinedOnce=true` on
+    // re-mount would otherwise reject `.on('postgres_changes', ...)`).
+    const topic = `chat:${chatId}:${Math.random().toString(36).slice(2, 10)}`;
     const channel = this.client
-      .channel(`chat:${chatId}`)
+      .channel(topic)
       .on(
         'postgres_changes',
         {
@@ -73,7 +76,7 @@ export class SupabaseChatRealtime implements IChatRealtime {
         }
       });
     return () => {
-      void channel.unsubscribe();
+      void this.client.removeChannel(channel);
     };
   }
 
@@ -87,8 +90,9 @@ export class SupabaseChatRealtime implements IChatRealtime {
       }, UNREAD_DEBOUNCE_MS);
     };
 
+    const inboxTopic = `inbox:${userId}:${Math.random().toString(36).slice(2, 10)}`;
     const channel = this.client
-      .channel(`inbox:${userId}`)
+      .channel(inboxTopic)
       // RLS filters server-side: only events on visible chats reach the client.
       .on(
         'postgres_changes',
@@ -109,7 +113,7 @@ export class SupabaseChatRealtime implements IChatRealtime {
 
     return () => {
       if (unreadTimer) clearTimeout(unreadTimer);
-      void channel.unsubscribe();
+      void this.client.removeChannel(channel);
     };
   }
 }
