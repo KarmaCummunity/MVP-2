@@ -154,7 +154,7 @@ The Super Admin retrieves global statistics directly via the database for produc
 
 **Acceptance Criteria.**
 - AC1. No in-app UI for global statistics in MVP; queries are run via the backend admin SQL console (Supabase Studio or psql).
-- AC2. Read-only queries are allowed against all tables; mutating queries require an explicit confirmation procedure documented in `CODE_QUALITY.md`.
+- AC2. Read-only queries are allowed against all tables; mutating queries require an explicit confirmation procedure (typing a free-text confirmation string per `CLAUDE.md` §7 hard-prohibitions).
 
 ---
 
