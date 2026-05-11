@@ -33,6 +33,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
   const closureStep = useClosureStore((s) => s.step);
+  const closureInitiator = useClosureStore((s) => s.initiator);
   const closureBusy = useClosureStore((s) => s.isBusy);
   const resetClosure = useClosureStore((s) => s.reset);
   const [reopenOpen, setReopenOpen] = useState(false);
@@ -45,15 +46,17 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
   // Invalidate post-list caches so the profile grid (open/closed tabs) and
   // header counter reflect the new status without a manual refresh — same
   // keys create.tsx invalidates after publishing a new post.
+  // Only handle done-state for closures initiated from the post-detail screen.
+  // Chat-initiated closures are handled by AnchoredPostCard's own done-handler.
   useEffect(() => {
-    if (closureStep === 'done') {
+    if (closureStep === 'done' && closureInitiator !== 'chat') {
       resetClosure();
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
       void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       void queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
       onClosed();
     }
-  }, [closureStep, resetClosure, onClosed, queryClient]);
+  }, [closureStep, closureInitiator, resetClosure, onClosed, queryClient]);
 
   const isOpen = post.status === 'open';
   const isReopenable =
@@ -95,7 +98,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
           <Pressable
             style={[styles.btnPrimary, (closureBusy || closureStep !== 'idle') && styles.btnDisabled]}
             disabled={closureBusy || closureStep !== 'idle'}
-            onPress={() => startClosure(post.postId, ownerId, post.type)}
+            onPress={() => startClosure(post.postId, ownerId, post.type, { initiator: 'post-detail' })}
             accessibilityLabel={markCtaText}
           >
             <Text style={styles.btnPrimaryText}>{markCtaText}</Text>
