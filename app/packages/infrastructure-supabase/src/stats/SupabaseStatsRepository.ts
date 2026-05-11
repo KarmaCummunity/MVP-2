@@ -46,6 +46,18 @@ function mapSnapshotRow(data: {
   };
 }
 
+/** PostgREST: function missing from schema (migration not applied). */
+function isActivityRpcMissing(error: { code?: string; message: string }): boolean {
+  const msg = error.message.toLowerCase();
+  const code = error.code ?? '';
+  if (code === 'PGRST202') return true;
+  if (code === '42883') return true;
+  if (msg.trim() === 'not found') return true;
+  if (msg.includes('rpc_my_activity_timeline') && msg.includes('could not find')) return true;
+  if (msg.includes('rpc_my_activity_timeline') && msg.includes('does not exist')) return true;
+  return false;
+}
+
 export class SupabaseStatsRepository implements IStatsRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
@@ -69,7 +81,18 @@ export class SupabaseStatsRepository implements IStatsRepository {
       p_limit: limit,
     });
 
-    if (error) throw new Error(`listMyActivityTimeline: ${error.message}`);
+    if (error) {
+      if (isActivityRpcMissing(error)) {
+        const g = globalThis as { __DEV__?: boolean };
+        if (g.__DEV__) {
+          console.warn(
+            '[SupabaseStatsRepository] rpc_my_activity_timeline missing; apply supabase/migrations/0030_personal_activity_timeline_rpc.sql',
+          );
+        }
+        return [];
+      }
+      throw new Error(`listMyActivityTimeline: ${error.message}`);
+    }
     const rows = (data ?? []) as ActivityRpcRow[];
     return rows.map((r) => ({
       occurredAt: r.occurred_at,
