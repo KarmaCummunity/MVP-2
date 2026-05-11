@@ -14,6 +14,23 @@
 -- richer metadata (reporter_id, target_type, target_id, reason) than these
 -- RPCs would. Same lesson the BEFORE trigger taught us for resolved_at /
 -- resolved_by.
+--
+-- DESIGN NOTES (post-review clarifications, do not "fix"):
+--   1. admin_dismiss_report cascade restores ONLY when the target is in its
+--      auto-removal terminal state ('removed_admin' for posts,
+--      'suspended_admin' for users, removed_at IS NOT NULL for chats). It
+--      intentionally does NOT lift 'suspended_for_false_reports' — that is a
+--      sanction on the REPORTER imposed by 0039_sanction_trigger after 5
+--      dismissed reports in 30 days, not an auto-removal of the user as a
+--      target. Lifting it on a single dismiss would defeat the sanction.
+--   2. The existing reports_after_status_change_apply_effects trigger (0005)
+--      bumps users.false_reports_count for every dismissed report. With the
+--      cascade enabled, one admin click can bump N reporters at once. This
+--      is intentional: per FR-MOD-010 v0.3 the column is informational only;
+--      the sanction trigger in 0039 uses a sliding-window count over
+--      reports.sanction_consumed_at IS NULL, NOT this column. So bumping it
+--      does NOT trigger sanctions. The column is kept for backward-compatible
+--      denormalised reads only.
 
 -- ── 1. admin_dismiss_report ─────────────────────────────────────────────────
 
@@ -48,7 +65,7 @@ begin
   -- Serialize concurrent dismissals against the same target so the cascade
   -- count(*) below sees a consistent view (mirrors the trigger lock pattern
   -- from 0039_sanction_trigger).
-  if v_target_id is not null then
+  if v_target_id is not null and v_target_type <> 'none' then
     perform pg_advisory_xact_lock(
       hashtext('mod_target_' || v_target_type || '_' || v_target_id::text)::bigint);
   end if;
