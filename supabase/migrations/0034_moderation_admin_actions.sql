@@ -1,13 +1,17 @@
--- 0034_moderation_admin_actions | P1.3 + P2.2
+-- 0034_moderation_admin_actions | P1.3 + P2.2 — schema scaffold
 -- FR-MOD-007, FR-MOD-010, FR-ADMIN-002..005, FR-ADMIN-007.
 --
--- Adds: reports.sanction_consumed_at column, audit_events action enum
--- additions ('ban_user','delete_message'), six admin RPCs, sign-in gate RPC,
--- statement-level sanction trigger, owner-notification side-effect on the
--- existing reports_after_insert_apply_effects trigger.
+-- Adds:
+--   - reports.sanction_consumed_at column + supporting partial index
+--   - audit_events action enum additions ('ban_user','delete_message')
 --
--- All admin RPCs run SECURITY DEFINER, set search_path, re-check is_admin()
--- inside the body, and grant EXECUTE only to the authenticated role.
+-- Subsequent migrations in this slice (separate files for re-apply safety):
+--   0035 — admin_restore_target RPC
+--   0036 — admin_dismiss_report + admin_confirm_report RPCs
+--   0037 — admin_ban_user + admin_delete_message RPCs
+--   0038 — admin_audit_lookup + auth_check_account_gate RPCs
+--   0039 — statement-level sanction trigger
+--   0040 — owner-notification side-effect + find_or_create_support_chat hardening
 
 -- ── 1. Schema additions ────────────────────────────────────────────────────
 
@@ -15,7 +19,7 @@ alter table public.reports
   add column if not exists sanction_consumed_at timestamptz;
 
 create index if not exists reports_reporter_window_idx
-  on public.reports (reporter_id, status, resolved_at)
+  on public.reports (reporter_id, resolved_at)
   where status = 'dismissed_no_violation' and sanction_consumed_at is null;
 
 -- Replace the audit_events action CHECK using NOT VALID + VALIDATE pattern to
