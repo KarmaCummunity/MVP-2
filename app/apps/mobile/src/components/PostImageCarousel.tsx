@@ -4,12 +4,13 @@
 import React, { useState } from 'react';
 import {
   Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent,
-  StyleSheet, Text, View,
+  Pressable, StyleSheet, Text, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { MediaAsset } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
+import { PostImageViewerModal } from './PostImageViewerModal';
 
 const STORAGE_BUCKET = 'post-images';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -22,6 +23,7 @@ interface Props {
 
 export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
   const [activeIndex, setActiveIndex] = useState(0);
+  const [viewerOpen, setViewerOpen] = useState(false);
 
   if (mediaAssets.length === 0) {
     return (
@@ -37,9 +39,22 @@ export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
 
   if (urls.length === 1) {
     return (
-      <View style={styles.frame}>
-        <Image source={{ uri: urls[0] }} style={styles.image} resizeMode="cover" />
-      </View>
+      <>
+        <Pressable
+          style={styles.frame}
+          onPress={() => setViewerOpen(true)}
+          accessibilityRole="image"
+          accessibilityLabel="הגדל תמונה"
+        >
+          <Image source={{ uri: urls[0] }} style={styles.image} resizeMode="cover" />
+        </Pressable>
+        <PostImageViewerModal
+          visible={viewerOpen}
+          urls={urls}
+          initialIndex={0}
+          onClose={() => setViewerOpen(false)}
+        />
+      </>
     );
   }
 
@@ -49,28 +64,42 @@ export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
   };
 
   return (
-    <View style={styles.frame}>
-      <FlatList
-        horizontal
-        pagingEnabled
-        showsHorizontalScrollIndicator={false}
-        data={urls}
-        keyExtractor={(url, i) => `${i}-${url}`}
-        renderItem={({ item }) => (
-          <Image source={{ uri: item }} style={styles.pageImage} resizeMode="cover" />
-        )}
-        onScroll={onScroll}
-        scrollEventThrottle={16}
+    <>
+      <View style={styles.frame}>
+        <FlatList
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          data={urls}
+          keyExtractor={(url, i) => `${i}-${url}`}
+          renderItem={({ item, index }) => (
+            <Pressable
+              onPress={() => setViewerOpen(true)}
+              accessibilityRole="image"
+              accessibilityLabel={`הגדל תמונה ${index + 1} מתוך ${urls.length}`}
+            >
+              <Image source={{ uri: item }} style={styles.pageImage} resizeMode="cover" />
+            </Pressable>
+          )}
+          onScroll={onScroll}
+          scrollEventThrottle={16}
+        />
+        <View style={styles.counter} pointerEvents="none">
+          <Text style={styles.counterText}>{activeIndex + 1} / {urls.length}</Text>
+        </View>
+        <View style={styles.dots} pointerEvents="none">
+          {urls.map((_, i) => (
+            <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
+          ))}
+        </View>
+      </View>
+      <PostImageViewerModal
+        visible={viewerOpen}
+        urls={urls}
+        initialIndex={activeIndex}
+        onClose={() => setViewerOpen(false)}
       />
-      <View style={styles.counter} pointerEvents="none">
-        <Text style={styles.counterText}>{activeIndex + 1} / {urls.length}</Text>
-      </View>
-      <View style={styles.dots} pointerEvents="none">
-        {urls.map((_, i) => (
-          <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
-        ))}
-      </View>
-    </View>
+    </>
   );
 }
 

@@ -8,7 +8,7 @@ import { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import type { GestureResponderEvent } from 'react-native';
 import type { PostType } from '@kc/domain';
 import { getPostByIdUseCase } from '../../services/postsComposition';
@@ -16,6 +16,7 @@ import { useChatStore } from '../../store/chatStore';
 import { useClosureStore } from '../../store/closureStore';
 import { ClosureSheet } from '../closure/ClosureSheet';
 import { ClosureExplainerSheet } from '../closure/ClosureExplainerSheet';
+import { AnchoredPostCardPreview } from './AnchoredPostCardPreview';
 
 interface Props {
   chatId: string;
@@ -91,6 +92,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
   if (!showCard && !isActiveChatClosure) return null;
 
   const typeLabel = post ? TYPE_LABEL[post.type] : '';
+  const isGive = post?.type === 'Give';
   const ctaText = post?.type === 'Give' ? 'סמן כנמסר ✓' : 'סמן שקיבלתי ✓';
 
   const openPost = () => {
@@ -117,9 +119,18 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
           accessibilityRole="button"
           accessibilityLabel="פתח את הפוסט"
         >
+          <AnchoredPostCardPreview type={post!.type} mediaPaths={post!.mediaAssets} />
           <View style={styles.body}>
-            <Text style={styles.typeTag}>{typeLabel}</Text>
-            <Text style={styles.title} numberOfLines={1}>{post!.title}</Text>
+            <View style={styles.typeTagRow}>
+              <View style={[styles.typeTag, isGive ? styles.typeTagGive : styles.typeTagReq]}>
+                <Text style={[styles.typeTagText, isGive ? styles.typeTagTextGive : styles.typeTagTextReq]}>
+                  {typeLabel}
+                </Text>
+              </View>
+            </View>
+            <Text style={styles.title} numberOfLines={1}>
+              {post!.title}
+            </Text>
           </View>
           {isOwner ? (
             <Pressable
@@ -147,23 +158,29 @@ const styles = StyleSheet.create({
   card: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
+    gap: spacing.md,
+    marginHorizontal: spacing.base,
+    marginVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.md,
     backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.border,
+    ...shadow.card,
   },
-  body: { flex: 1, gap: 4 },
+  body: { flex: 1, gap: 6, minWidth: 0 },
+  typeTagRow: { flexDirection: 'row', justifyContent: 'flex-end', width: '100%' },
   typeTag: {
-    ...typography.caption,
-    alignSelf: 'flex-end',
-    color: colors.textSecondary,
-    backgroundColor: colors.skeleton,
     paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
+    paddingVertical: 3,
     borderRadius: radius.full,
   },
+  typeTagGive: { backgroundColor: colors.giveTagBg },
+  typeTagReq: { backgroundColor: colors.requestTagBg },
+  typeTagText: { ...typography.caption, fontWeight: '600' },
+  typeTagTextGive: { color: colors.giveTag },
+  typeTagTextReq: { color: colors.requestTag },
   title: {
     ...typography.body,
     color: colors.textPrimary,
@@ -175,6 +192,7 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
     borderRadius: radius.md,
     backgroundColor: colors.primary,
+    flexShrink: 0,
   },
   ctaText: { ...typography.button, color: colors.textInverse, fontSize: 14 },
 });
