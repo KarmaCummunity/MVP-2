@@ -1,58 +1,25 @@
--- 0040_owner_notification_helper_hardening | P2.2 / FR-MOD-005 AC5 + FR-CHAT helper fix
--- Two changes wrapped in one migration because both touch the report-trigger pipeline:
---   1. Harden find_or_create_support_chat to filter by is_support_thread = true.
---      Required because 0033_chat_inbox_personal_hide removed the unique
---      constraint on (participant_a, participant_b) and replaced it with a
---      partial unique index keyed on is_support_thread = true. The existing
---      helper's SELECT INTO can now hit TOO_MANY_ROWS when a pair has both a
---      support thread and a DM, aborting every report insert.
---   2. Replace reports_after_insert_apply_effects with a body that:
---        - serialises threshold counting via pg_advisory_xact_lock per target
---        - captures threshold-hit into a local var
---        - on threshold hit, sends owner an 'owner_auto_removed' system message
---          in their own support thread (best-effort, RAISE WARNING on failure)
---      Also tightens the admin-side message block so failures emit RAISE
---      WARNING instead of silently swallowing.
+-- 0040_owner_notification | P2.2 / FR-MOD-005 AC5 — owner-side auto-removal alert
+--
+-- Replaces reports_after_insert_apply_effects (originally defined in 0005)
+-- with a body that:
+--   - serialises threshold counting via pg_advisory_xact_lock per target,
+--     so two concurrent reports racing into the third slot both compute
+--     the correct count;
+--   - captures the threshold-hit decision into a local boolean;
+--   - on threshold hit, best-effort sends an 'owner_auto_removed' system
+--     message to the post/user owner's support thread (FR-MOD-005 AC5
+--     in-app fallback until P1.5 push notifications land);
+--   - both best-effort blocks (admin-side report_received and the new
+--     owner-side owner_auto_removed) RAISE WARNING on failure rather than
+--     silently swallowing the exception, so silent breakage is visible
+--     in Postgres logs / Supabase dashboard.
+--
+-- The helper find_or_create_support_chat was already hardened in
+-- 0033_chat_inbox_personal_hide (it gained the is_support_thread = true
+-- filter required after the chats unique-constraint replacement). No
+-- further helper change is needed here.
 
--- ── 1. find_or_create_support_chat — filter by is_support_thread = true ────
-
-create or replace function public.find_or_create_support_chat(p_user uuid)
-returns uuid
-language plpgsql
-security definer
-set search_path = public
-as $$
-declare
-  v_admin uuid;
-  v_chat  uuid;
-  v_a     uuid;
-  v_b     uuid;
-begin
-  select user_id into v_admin from public.users where is_super_admin = true limit 1;
-  if v_admin is null then return null; end if;
-  if v_admin = p_user then return null; end if;
-
-  -- Canonical pair ordering matches chats CHECK constraint.
-  if p_user < v_admin then v_a := p_user; v_b := v_admin;
-                      else v_a := v_admin; v_b := p_user; end if;
-
-  select chat_id into v_chat
-    from public.chats
-   where participant_a = v_a
-     and participant_b = v_b
-     and is_support_thread = true
-   limit 1;
-
-  if v_chat is null then
-    insert into public.chats (participant_a, participant_b, is_support_thread)
-    values (v_a, v_b, true)
-    returning chat_id into v_chat;
-  end if;
-  return v_chat;
-end;
-$$;
-
--- ── 2. reports_after_insert_apply_effects — owner notification + lock + warn ─
+-- ── 1. reports_after_insert_apply_effects — owner notification + lock + warn ─
 
 create or replace function public.reports_after_insert_apply_effects()
 returns trigger
