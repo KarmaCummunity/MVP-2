@@ -3,7 +3,7 @@
 //
 // Subscribes to INSERTs of Public, open posts so the UI can increment its
 // new-posts counter without re-fetching the full feed. RLS gates rows on the
-// server side, so followers-only / blocked posts never reach this channel.
+// server side, so followers-only posts never reach this channel.
 //
 // Lifecycle: the store calls subscribe on feed mount and the returned
 // unsubscribe on unmount / 60-second background (FR-FEED-009 AC3). Reconnects

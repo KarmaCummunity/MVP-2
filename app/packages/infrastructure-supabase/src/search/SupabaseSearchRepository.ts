@@ -165,13 +165,8 @@ export class SupabaseSearchRepository implements ISearchRepository {
     const { data, error } = await q;
     if (error) throw new Error(`exploreUsers: ${error.message}`);
 
-    // Filter out blocked users only — do NOT filter out the viewer (they may
-    // want to see their own profile in results)
-    const blockedIds = viewerId ? await this.fetchBlockedIds(viewerId) : new Set<string>();
-
-    return ((data ?? []) as SearchUserRow[])
-      .filter((u) => !blockedIds.has(u.user_id))
-      .map(mapUserSearchResult);
+    void viewerId;
+    return ((data ?? []) as SearchUserRow[]).map(mapUserSearchResult);
   }
 
   /** Returns recent non-hidden donation links. Used for discovery. */
@@ -232,7 +227,7 @@ export class SupabaseSearchRepository implements ISearchRepository {
 
   /**
    * Search users by ILIKE on display_name, biography, and share_handle.
-   * RLS policies handle visibility (public/private/blocked); we do NOT add
+   * RLS policies handle visibility (public/private); we do NOT add
    * a redundant `account_status = 'active'` filter — RLS already enforces it.
    * The viewer is NOT excluded from results (they may search for themselves).
    */
@@ -276,12 +271,8 @@ export class SupabaseSearchRepository implements ISearchRepository {
     const { data, error } = await q;
     if (error) throw new Error(`searchUsers: ${error.message}`);
 
-    // Exclude blocked users only — NOT the viewer
-    const blockedIds = viewerId ? await this.fetchBlockedIds(viewerId) : new Set<string>();
-
-    return ((data ?? []) as SearchUserRow[])
-      .filter((u) => !blockedIds.has(u.user_id))
-      .map(mapUserSearchResult);
+    void viewerId;
+    return ((data ?? []) as SearchUserRow[]).map(mapUserSearchResult);
   }
 
   /**
@@ -333,26 +324,6 @@ export class SupabaseSearchRepository implements ISearchRepository {
     return ((data ?? []) as unknown as LinkRow[]).map(mapLinkSearchResult);
   }
 
-  // ── Helpers ────────────────────────────────────────────────────────────
-
-  /**
-   * Fetches IDs of users blocked by the given user. Returns an empty set on
-   * error (fail-open for search — better to show a blocked user than to crash).
-   */
-  private async fetchBlockedIds(userId: string): Promise<Set<string>> {
-    try {
-      const { data, error } = await this.client
-        .from('blocks')
-        .select('blocked_id')
-        .eq('blocker_id', userId);
-      if (error) return new Set();
-      return new Set(
-        ((data ?? []) as { blocked_id: string }[]).map((r) => r.blocked_id),
-      );
-    } catch {
-      return new Set();
-    }
-  }
 }
 
 // ── Row → domain mappers ──────────────────────────────────────────────────

@@ -6,6 +6,24 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — Scope-trim: block / unblock out of MVP (`EXEC-9`)
+
+**SRS:** `FR-MOD-003`, `FR-MOD-004`, `FR-MOD-009`, `NFR-PRIV-009`, `INV-M1`, `FR-SETTINGS-005` marked `DEPRECATED — post-MVP`; `D-11` (Unblock restores visibility) superseded. `FR-MOD-007 AC2` no longer requires the explicit-Block follow-up; `FR-MOD-012 AC1` audit list drops `block_user` / `unblock_user` from MVP-required emitters (they remain reserved values in the audit schema). `FR-POST-014 AC4` drops "Block User" from the post `⋮` menu; `FR-POST-018 AC3` no longer gates on block state. `FR-FEED-001` and `FR-FEED-016` (Universal Search) visibility predicates note the `is_blocked()` predicate is a structural no-op in MVP. `FR-MOD-010` (false-report sanctions) relocated from the deleted P1.4 row into P1.3 ("Reports + auto-removal + false-report sanctions"), where it logically belongs. New decision `EXEC-9` added to `C_decisions_log.md`.
+
+**Branch / PR:** `chore/remove-block-from-mvp`.
+
+**Tests:** 163 vitest passing (down from 168 — 2 BlockUseCase tests + 2 closure block-filter tests + 1 `blocked`-state follow-state test removed with the feature). `tsc` clean across 5 packages; `pnpm lint:arch` 293 files passing.
+
+**Code surface deleted.** `packages/application/src/block/*` (entire dir), `packages/application/src/ports/IBlockRepository.ts`, the `Block` domain entity, `packages/infrastructure-supabase/src/block/*` (entire dir), the `'blocked'` branch and the `FollowStateRaw.blocked` field in the follow state machine, the `is_blocked` RPC call in `fetchFollowStateRaw`, the `getBlockedUsers` / `block` / `unblock` / `isBlocked` methods on `IUserRepository` + their SupabaseUserRepository impls, the block list filter in `GetClosureCandidatesUseCase` (the use case no longer needs an `IUserRepository`), the `he.posts.block` / `he.chat.block` / `he.settings.blockedUsers` i18n strings, the `blockUser` / `unblockUser` wiring in `apps/mobile/src/lib/container.ts`, and the `state === 'blocked'` short-circuit in `FollowButton.tsx`. The `Block` export from `@kc/domain` and `BlockUserUseCase` / `UnblockUserUseCase` / `BlockError` / `IBlockRepository` exports from `@kc/application` are gone.
+
+**DB schema retained.** Migrations `0003_init_following_blocking.sql`, `0004_init_chat_messaging.sql` (chat-visibility uses `has_blocked()`), and `0005_init_moderation.sql` (audit triggers reference `block_user` / `unblock_user`) are **not modified**. The `public.blocks` table stays empty (no UI to write to it); `is_blocked()` / `has_blocked()` continue to return `false` for every viewer. Restoring block post-MVP becomes "re-add the code surface over the existing schema" rather than a fresh migration.
+
+**TD deltas.** TD-18 closed (block portion out of scope; the remaining "Reports + auto-removal + false-report sanctions UI" remains owned by P1.3 under the same TD ID). TD-41 block-predicate-probe portion marked N/A (still tracks `is_following()` probe). TD-127 rewritten — only Report wire-up remains for P1.3 (the profile `⋮` menu surface was removed with the Block item; restore as Report-only when P1.3 ships). No new TD opened.
+
+**Why.** PM scope-trim during P1 planning. The MVP already has a complete report-driven safety floor (`FR-MOD-001/005/007/008` + the auto-removal trigger pipeline in P1.3); a parallel per-user block surface is duplicative work for marginal additional safety. Defer until real-world feedback shows demand. The cheap option (delete code, keep schema) preserves the option to restore without a forward-then-backward migration cycle.
+
+---
+
 ## 2026-05-11 — P1.2.y Realtime rejoin fix
 
 **SRS:** FR-FEED-009 (defect in shipped feature — no AC change); FR-CHAT-003/011/012 latent same-class defect prevented.

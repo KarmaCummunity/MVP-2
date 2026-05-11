@@ -1,6 +1,6 @@
 // app/apps/mobile/src/components/profile/FollowButton.tsx
-// Five-state follow button per FR-FOLLOW-011. Hidden in self/blocked states —
-// caller must check that itself; this component renders nothing for those.
+// Five-state follow button per FR-FOLLOW-011. Hidden in the self state — the
+// caller must check that itself; this component renders nothing for it.
 // Confirm dialogs render via <ConfirmActionModal /> so they work on web (where
 // react-native-web@0.21.2 makes Alert.alert a no-op).
 // Mapped to: FR-FOLLOW-011, FR-FOLLOW-002 AC1, FR-FOLLOW-004 AC1.
@@ -30,7 +30,7 @@ interface ButtonCfg {
 export function FollowButton({ state, cooldownUntil, onPress, busy }: FollowButtonProps) {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
-  if (state === 'self' || state === 'blocked') return null;
+  if (state === 'self') return null;
 
   const cfg = config(state, cooldownUntil);
   const disabled = busy || cfg.disabled;

@@ -298,7 +298,7 @@ The screen rendered when any non-owner viewer opens a post they are allowed to s
 - AC1. Renders: image carousel (or large category icon if a request without images), type badge `🎁`/`🔍`, title, category, owner row (avatar + name + city, tap → profile), full description, type-specific fields, computed location string per `location_display_level`, relative timestamp.
 - AC2. Primary CTA: "💬 Send Message to Poster" — opens chat with the contextual auto-message (`FR-CHAT-005`).
 - AC3. Secondary CTA: dynamic follow button per `FR-FOLLOW-011`.
-- AC4. `⋮` menu: "Report" (`FR-MOD-001`), "Block User" (`FR-MOD-007`).
+- AC4. `⋮` menu: "Report" (`FR-MOD-001`). (Per `EXEC-9`, the "Block User" item is removed from MVP scope.)
 - AC5. If the post is no longer visible to the viewer (e.g., follower removed, post auto-removed) the screen renders an empty state: *"This post is no longer available. It may have been removed or limited to followers only."*
 
 **Related.** Screens: 2.3 · Domain: `Post`, `LocationDisplayLevel`.
@@ -370,7 +370,7 @@ A small message icon on each feed card opens the chat for that post directly fro
 **Acceptance Criteria.**
 - AC1. Tapping the icon is equivalent to opening the post and tapping the primary CTA, but skips the post detail screen.
 - AC2. The icon is hidden on the user's own posts.
-- AC3. The icon respects block state (`FR-MOD-009`).
+- AC3. ~~The icon respects block state (`FR-MOD-009`).~~ Deferred — `FR-MOD-009` is deprecated per `EXEC-9`; no block state exists in MVP.
 
 **Related.** Screens: 2.1.
 

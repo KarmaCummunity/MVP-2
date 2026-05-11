@@ -37,13 +37,12 @@ The Home Feed shows public posts that the viewer is allowed to see, sorted in re
 **Acceptance Criteria.**
 - AC1. The query selects posts where:
    - `Post.status = open`, **and**
-   - the viewer's visibility predicate from `FR-FOLLOW-012` permits read access, **and**
-   - the post's owner is **not** blocked by the viewer and **does not** block the viewer (`FR-MOD-009`).
+   - the viewer's visibility predicate from `FR-FOLLOW-012` permits read access. (`FR-MOD-009`'s bilateral-block filter is deferred per `EXEC-9`; the predicate still SELECTs from `is_blocked()`, which always returns `false` in MVP because `public.blocks` stays unpopulated, so the filter is a structural no-op.)
 - AC2. Default ordering: `created_at DESC`.
 - AC3. There is **no** algorithmic boost based on follow relationships, popularity, or category in MVP.
 - AC4. Pagination: 20 posts per page; infinite scroll on mobile, "Load more" button on Web.
 
-**Related.** Screens: 2.1 · Domain: `Post`, `FollowEdge`, `Block`.
+**Related.** Screens: 2.1 · Domain: `Post`, `FollowEdge`.
 
 ---
 
@@ -365,8 +364,9 @@ under this FR ID).
 - AC3. Result sections are independently expandable from a 5-result preview
    to a 50-result list.
 - AC4. The search remains visibility-aware: it respects the same
-   `is_post_visible_to` predicate as the Home Feed, plus the user-blocking
-   contract.
+   `is_post_visible_to` predicate as the Home Feed. (User-blocking is
+   deferred per `EXEC-9`; the predicate still references `is_blocked()` but
+   that always returns `false` in MVP.)
 - AC5. Recent searches are persisted to local storage (up to 10 entries) and
    are clearable from the UI.
 - AC6. The Universal Search tab carries its own filter sheet that exposes,

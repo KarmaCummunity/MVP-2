@@ -154,14 +154,6 @@ export interface Message {
   readAt: string | null;
 }
 
-// ── Block ─────────────────────────────────────
-
-export interface Block {
-  readonly blockerId: string;
-  readonly blockedId: string;
-  readonly createdAt: string;
-}
-
 // ── Report ────────────────────────────────────
 
 export interface Report {

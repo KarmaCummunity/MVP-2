@@ -22,6 +22,7 @@ actor_id          uuid | null   (null when system-originated)
 actor_kind        enum: user | system | super_admin
 action            text          (one of the values in 6.6.2)
 target_type       enum: user | post | chat | message | follow_request | follow_edge | block | report | recipient | feature_flag | none
+                  -- `block` is reserved (no MVP emitter) per EXEC-9
 target_id         uuid | null
 metadata          jsonb         (action-specific payload)
 ip_hash           text | null   (sha256 truncated of source IP, for abuse forensics)
@@ -91,8 +92,8 @@ The complete enum of audit actions in MVP. Adding a new action requires updating
 
 - `report_submitted` — `metadata: { target_type, target_id, reason }`.
 - `report_resolved` — `metadata: { result: 'confirmed_violation' | 'dismissed_no_violation' }`.
-- `block_user` — `metadata: { blocked_id, surface }`.
-- `unblock_user` — `metadata: { blocked_id }`.
+- ~~`block_user` — `metadata: { blocked_id, surface }`.~~ Reserved — not emitted in MVP per `EXEC-9`.
+- ~~`unblock_user` — `metadata: { blocked_id }`.~~ Reserved — not emitted in MVP per `EXEC-9`.
 - `false_report_sanction_applied` — `metadata: { tier: 1|2|3, duration_days }`.
 - `user_suspended` — `metadata: { reason, until_date }`.
 - `user_unsuspended` — *no extras*.

@@ -112,7 +112,6 @@ const he = {
     sendMessage: '💬 שלח הודעה למפרסם',
     followAuthor: 'עקוב אחרי המפרסם',
     report: 'דווח',
-    block: 'חסום משתמש',
     markDelivered: 'סמן כ-נמסר',
     edit: 'ערוך',
     delete: 'מחק',
@@ -152,7 +151,6 @@ const he = {
     read: 'נקרא',
     defaultFirstMessage: 'היי! ראיתי את הפוסט שלך על {{title}}. מעוניין/ת לדעת עוד.',
     report: 'דווח על שיחה',
-    block: 'חסום',
   },
 
   // Settings
@@ -174,7 +172,6 @@ const he = {
     deleteAccount: 'מחק חשבון',
     privateProfileToggle: '🔒 פרופיל פרטי',
     followRequests: 'בקשות עקיבה',
-    blockedUsers: 'משתמשים חסומים',
     reportIssue: 'דווח על בעיה',
     devTools: 'כלי פיתוח',
     resetOnboarding: 'איפוס אונבורדינג (דיבוג)',

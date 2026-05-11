@@ -37,7 +37,7 @@ Every requirement and decision in this SRS has a stable, machine-grep-able ident
 | Closure & Reopen | `FR-CLOSURE-` | `FR-CLOSURE-003` |
 | Feed, Search, Filters | `FR-FEED-` | `FR-FEED-011` |
 | Chat | `FR-CHAT-` | `FR-CHAT-005` |
-| Moderation | `FR-MOD-` | `FR-MOD-009` |
+| Moderation | `FR-MOD-` | `FR-MOD-005` |
 | Notifications | `FR-NOTIF-` | `FR-NOTIF-002` |
 | Statistics | `FR-STATS-` | `FR-STATS-004` |
 | Settings | `FR-SETTINGS-` | `FR-SETTINGS-006` |

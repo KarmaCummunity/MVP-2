@@ -1,4 +1,4 @@
-import type { User, AuthIdentity, FollowEdge, FollowRequest, Block, OnboardingState } from '@kc/domain';
+import type { User, AuthIdentity, FollowEdge, FollowRequest, OnboardingState } from '@kc/domain';
 
 // ── IUserRepository ───────────────────────────
 // Port (interface) for user persistence.
@@ -11,7 +11,6 @@ export interface FollowStateRaw {
   followingExists: boolean;
   pendingRequestExists: boolean;
   cooldownUntil: string | null;
-  blocked: boolean;
 }
 
 export interface IUserRepository {
@@ -73,7 +72,7 @@ export interface IUserRepository {
    * Lightweight user search by display name or share handle (case-insensitive
    * substring). Used by the closure flow's "pick from any user" mode (option 4)
    * when the recipient isn't in the owner's chat list. Excludes the caller
-   * themselves and any users they have blocked.
+   * themselves.
    */
   searchUsers(query: string, opts: { excludeUserId: string; limit: number }): Promise<User[]>;
 
@@ -107,12 +106,6 @@ export interface IUserRepository {
    * round-trips on every profile load.
    */
   getFollowStateRaw(viewerId: string, targetUserId: string): Promise<FollowStateRaw>;
-
-  // Blocks
-  block(blockerId: string, blockedId: string): Promise<Block>;
-  unblock(blockerId: string, blockedId: string): Promise<void>;
-  getBlockedUsers(userId: string): Promise<User[]>;
-  isBlocked(blockerId: string, blockedId: string): Promise<boolean>;
 
   // Auth identities
   findByAuthIdentity(provider: string, subject: string): Promise<User | null>;

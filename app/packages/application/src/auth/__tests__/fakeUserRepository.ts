@@ -50,10 +50,6 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     getPendingFollowRequestsWithUsers: notImpl(
       'getPendingFollowRequestsWithUsers',
     ) as IUserRepository['getPendingFollowRequestsWithUsers'],
-    block: notImpl('block') as IUserRepository['block'],
-    unblock: notImpl('unblock') as IUserRepository['unblock'],
-    getBlockedUsers: notImpl('getBlockedUsers') as IUserRepository['getBlockedUsers'],
-    isBlocked: notImpl('isBlocked') as IUserRepository['isBlocked'],
     findByAuthIdentity: notImpl('findByAuthIdentity') as IUserRepository['findByAuthIdentity'],
     createAuthIdentity: notImpl('createAuthIdentity') as IUserRepository['createAuthIdentity'],
     async getOnboardingState(userId) {
