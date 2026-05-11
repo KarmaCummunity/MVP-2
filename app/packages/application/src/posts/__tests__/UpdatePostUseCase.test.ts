@@ -77,4 +77,33 @@ describe('UpdatePostUseCase', () => {
     ).rejects.toMatchObject({ code: 'post_not_open' });
     expect(repo.lastUpdateArgs).toBeNull();
   });
+
+  it('rejects clearing all images on a Give post (FR-POST-008 AC1)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ type: 'Give' });
+    const uc = new UpdatePostUseCase(repo);
+    await expect(
+      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { mediaAssets: [] } }),
+    ).rejects.toMatchObject({ code: 'image_required_for_give' });
+    expect(repo.lastUpdateArgs).toBeNull();
+  });
+
+  it('allows replacing images on a Give post when at least one remains', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ type: 'Give' });
+    repo.updateResult = makePostWithOwner({ type: 'Give' });
+    const uc = new UpdatePostUseCase(repo);
+    const mediaAssets = [{ path: 'u/b/0.jpg', mimeType: 'image/jpeg', sizeBytes: 100 }];
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { mediaAssets } });
+    expect(repo.lastUpdateArgs?.patch.mediaAssets).toEqual(mediaAssets);
+  });
+
+  it('allows clearing all images on a Request post', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ type: 'Request' });
+    repo.updateResult = makePostWithOwner({ type: 'Request', mediaAssets: [] });
+    const uc = new UpdatePostUseCase(repo);
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { mediaAssets: [] } });
+    expect(repo.lastUpdateArgs?.patch.mediaAssets).toEqual([]);
+  });
 });
