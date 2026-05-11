@@ -31,6 +31,7 @@ describe('CompleteBasicInfoUseCase', () => {
       city: '4000',
       cityName: 'חיפה',
       onboardingState: 'pending_avatar',
+      basicInfoSkipped: false,
     });
   });
 

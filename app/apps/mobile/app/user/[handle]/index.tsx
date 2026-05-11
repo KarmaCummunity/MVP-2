@@ -17,6 +17,7 @@ import { LockedPanel } from '../../../src/components/profile/LockedPanel';
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
+import { consumePreferNewThread } from '../../../src/lib/chatNavigationPrefs';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
@@ -97,7 +98,12 @@ export default function OtherProfileScreen() {
 
   const startChat = async () => {
     if (!me) return;
-    const chat = await container.openOrCreateChat.execute({ viewerId: me, otherUserId: u.userId });
+    const preferNewThread = consumePreferNewThread(u.userId);
+    const chat = await container.openOrCreateChat.execute({
+      viewerId: me,
+      otherUserId: u.userId,
+      preferNewThread,
+    });
     router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
   };
 

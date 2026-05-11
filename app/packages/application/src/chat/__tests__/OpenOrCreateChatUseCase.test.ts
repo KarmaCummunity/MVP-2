@@ -35,10 +35,15 @@ describe('OpenOrCreateChatUseCase', () => {
     expect(chat.anchorPostId).toBeNull();
   });
 
-  it('is a no-op UPDATE when called with the same anchor twice', async () => {
+  it('creates a second chat when preferNewThread is true', async () => {
     const first = await uc.execute({ viewerId: 'a', otherUserId: 'b', anchorPostId: 'p1' });
-    const second = await uc.execute({ viewerId: 'a', otherUserId: 'b', anchorPostId: 'p1' });
-    expect(second.anchorPostId).toBe('p1');
-    expect(second).toEqual(first);
+    const second = await uc.execute({
+      viewerId: 'a',
+      otherUserId: 'b',
+      anchorPostId: 'p2',
+      preferNewThread: true,
+    });
+    expect(repo.chats).toHaveLength(2);
+    expect(second.chatId).not.toBe(first.chatId);
   });
 });

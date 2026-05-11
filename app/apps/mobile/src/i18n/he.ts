@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────
 
 import { donations, search } from './donations';
+import { chatHe } from './partials/chatHe';
 import { stats } from './stats';
 
 const he = {
@@ -76,6 +77,8 @@ const he = {
     firstPostNudge: 'פרסם את הפוסט הראשון שלך! 🎁',
     closedTag: '🔒 נמסר',
     followersTag: '👥 לעוקבים בלבד',
+    refreshSuccess: 'הפיד עודכן',
+    refreshFailed: 'הרענון נכשל — נסה שוב',
   },
 
   // Post
@@ -142,17 +145,8 @@ const he = {
     privateProfile: '🔒 הפרופיל פרטי. שלח בקשת עקיבה כדי לראות פוסטים.',
   },
 
-  // Chat
-  chat: {
-    title: 'שיחות',
-    noChats: 'אין שיחות עדיין',
-    noChatsDesc: 'פנה למפרסמים ישירות מתוך הפוסטים.',
-    inputPlaceholder: 'כתוב הודעה...',
-    send: 'שלח',
-    read: 'נקרא',
-    defaultFirstMessage: 'היי! ראיתי את הפוסט שלך על {{title}}. מעוניין/ת לדעת עוד.',
-    report: 'דווח על שיחה',
-  },
+  // Chat — see partials/chatHe.ts (FR-CHAT-016)
+  chat: chatHe,
 
   // Settings
   settings: {

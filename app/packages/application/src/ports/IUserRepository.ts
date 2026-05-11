@@ -11,6 +11,13 @@ import type {
 // Port (interface) for user persistence.
 // Implementations live in infrastructure-supabase.
 
+/** FR-AUTH-007 AC2 + FR-AUTH-010 — post-auth cold-start routing inputs. */
+export interface OnboardingBootstrap {
+  readonly state: OnboardingState;
+  /** True after the user used Skip on step 1; client routes to feed, not the wizard. */
+  readonly basicInfoSkipped: boolean;
+}
+
 /** Raw signals from DB used to derive FR-FOLLOW-011 state. */
 export interface FollowStateRaw {
   /** target.privacy_mode + target.account_status. null if target not visible / does not exist. */
@@ -44,8 +51,14 @@ export interface IUserRepository {
   deleteAccountViaEdgeFunction(): Promise<void>;
 
   // ── Onboarding (P0.3) ─────────────────────────
-  /** FR-AUTH-007 AC2: read state to decide where to land on cold-start. */
-  getOnboardingState(userId: string): Promise<OnboardingState>;
+  /** FR-AUTH-007 AC2: read onboarding_state + basic_info_skipped for cold-start routing. */
+  getOnboardingBootstrap(userId: string): Promise<OnboardingBootstrap>;
+
+  /** FR-AUTH-010 AC3: user skipped step 1 — persist so the full wizard does not reopen on relaunch. */
+  markBasicInfoSkipped(userId: string): Promise<void>;
+
+  /** Clear the skip flag (e.g. dev reset onboarding, or after saving real basic info in setBasicInfo). */
+  clearBasicInfoSkipped(userId: string): Promise<void>;
 
   /** FR-AUTH-010: persist step-1 fields. `cityName` must mirror the matching `cities.name_he` row. */
   setBasicInfo(

@@ -17,5 +17,11 @@ export function mapChatError(err: { code?: string; message?: string }): Error {
   if (err.message?.includes('super_admin_not_found')) {
     return new ChatError('super_admin_not_found', err.message, err);
   }
+  if (err.message?.includes('support_thread_not_hideable')) {
+    return new ChatError('support_thread_not_hideable', err.message, err);
+  }
+  if (err.message?.includes('chat_not_found')) {
+    return new ChatError('chat_not_found', err.message, err);
+  }
   return new ChatError('unknown', err.message ?? 'unknown', err);
 }

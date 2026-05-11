@@ -10,13 +10,36 @@ interface Props {
   readonly visible: boolean;
   readonly onClose: () => void;
   readonly onReport: () => void;
+  readonly deleteLabel?: string;
+  readonly onDeleteFromInbox?: () => void;
 }
 
-export function ChatActionMenu({ visible, onClose, onReport }: Props) {
+export function ChatActionMenu({
+  visible,
+  onClose,
+  onReport,
+  deleteLabel,
+  onDeleteFromInbox,
+}: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
+          {onDeleteFromInbox && deleteLabel ? (
+            <>
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() => {
+                  onClose();
+                  onDeleteFromInbox();
+                }}
+                accessibilityRole="button"
+              >
+                <Text style={[styles.itemText, styles.itemDestructive]}>{deleteLabel}</Text>
+              </TouchableOpacity>
+              <View style={styles.divider} />
+            </>
+          ) : null}
           <TouchableOpacity style={styles.item} onPress={onReport} accessibilityRole="button">
             <Text style={styles.itemText}>דווח על השיחה</Text>
           </TouchableOpacity>

@@ -88,17 +88,25 @@ export function getEditableProfile(userId: string) {
   return getUserRepo().getEditableProfile(userId);
 }
 
-/** Read state directly through the repo — used by AuthGate before routing. */
-export function getOnboardingState(userId: string): Promise<OnboardingState> {
-  return getUserRepo().getOnboardingState(userId);
+/** FR-AUTH-007 — used by AuthGate before routing (single round-trip). */
+export function getOnboardingBootstrap(userId: string) {
+  return getUserRepo().getOnboardingBootstrap(userId);
+}
+
+/** FR-AUTH-010 AC3 — persist Skip on step 1 so relaunch does not reopen the full wizard. */
+export function markBasicInfoSkipped(userId: string): Promise<void> {
+  return getUserRepo().markBasicInfoSkipped(userId);
 }
 
 /** Direct setter used by the dev reset button (Settings). No validation — dev tool. */
-export function setOnboardingStateDirect(
+export async function setOnboardingStateDirect(
   userId: string,
   state: OnboardingState,
 ): Promise<void> {
-  return getUserRepo().setOnboardingState(userId, state);
+  await getUserRepo().setOnboardingState(userId, state);
+  if (state === 'pending_basic_info') {
+    await getUserRepo().clearBasicInfoSkipped(userId);
+  }
 }
 
 /** Lists every Israeli city from `public.cities` ordered by Hebrew name. */

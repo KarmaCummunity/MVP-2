@@ -1,4 +1,4 @@
--- 0021_post_closure_emit_system_messages | P1.2 — FR-CHAT-015 / FR-CLOSURE-001 ext.
+-- 0031_post_closure_emit_system_messages | P1.2 — FR-CHAT-015 / FR-CLOSURE-001 ext.
 --
 -- AFTER UPDATE OF status ON posts: for transitions open → closed_delivered or
 -- open → deleted_no_recipient, find every chat anchored to this post and
@@ -113,4 +113,4 @@ create trigger posts_after_update_emit_closure_messages
   after update of status on public.posts
   for each row execute function public.posts_emit_closure_system_messages();
 
--- end of 0021_post_closure_emit_system_messages
+-- end of 0031_post_closure_emit_system_messages

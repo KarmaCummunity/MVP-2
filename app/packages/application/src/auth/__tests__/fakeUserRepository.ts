@@ -4,7 +4,7 @@
 // reach-through during tests.
 // ─────────────────────────────────────────────
 
-import type { IUserRepository } from '../../ports/IUserRepository';
+import type { IUserRepository, OnboardingBootstrap } from '../../ports/IUserRepository';
 import type { OnboardingState } from '@kc/domain';
 
 interface Row {
@@ -12,6 +12,7 @@ interface Row {
   city: string;
   cityName: string;
   onboardingState: OnboardingState;
+  basicInfoSkipped?: boolean;
   avatarUrl?: string | null;
   biography?: string | null;
   closureExplainerDismissed?: boolean;
@@ -53,10 +54,31 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     ) as IUserRepository['getPendingFollowRequestsWithUsers'],
     findByAuthIdentity: notImpl('findByAuthIdentity') as IUserRepository['findByAuthIdentity'],
     createAuthIdentity: notImpl('createAuthIdentity') as IUserRepository['createAuthIdentity'],
-    async getOnboardingState(userId) {
+    async getOnboardingBootstrap(userId): Promise<OnboardingBootstrap> {
       const row = rows.get(userId);
       if (!row) throw new Error(`fakeUserRepo: no row for userId=${userId}`);
-      return row.onboardingState;
+      return {
+        state: row.onboardingState,
+        basicInfoSkipped: row.basicInfoSkipped === true,
+      };
+    },
+    async markBasicInfoSkipped(userId: string): Promise<void> {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, basicInfoSkipped: true });
+    },
+    async clearBasicInfoSkipped(userId: string): Promise<void> {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, basicInfoSkipped: false });
     },
     async setBasicInfo(userId, { displayName, city, cityName }) {
       const row = rows.get(userId) ?? {
@@ -65,7 +87,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         cityName: '',
         onboardingState: 'pending_basic_info' as OnboardingState,
       };
-      rows.set(userId, { ...row, displayName, city, cityName });
+      rows.set(userId, { ...row, displayName, city, cityName, basicInfoSkipped: false });
     },
     async setOnboardingState(userId, state) {
       const row = rows.get(userId) ?? {

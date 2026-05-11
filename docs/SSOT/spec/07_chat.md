@@ -1,6 +1,6 @@
 # 2.7 Direct Messaging
 
-> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only).
+> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat, **personal inbox hide (FR-CHAT-016)** shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only).
 
 
 
@@ -40,6 +40,7 @@ The list of all of my conversations, sorted by latest activity.
 - AC3. Search by counterpart name (case-insensitive prefix match) is provided in the top bar.
 - AC4. Pagination: 30 conversations per page; infinite scroll.
 - AC5. The Super Admin support thread (when present) is **not** pinned; it appears in the same chronological list as any other thread.
+- AC6. When multiple non-support `Chat` rows exist for the same human counterpart (`FR-CHAT-016`), the inbox shows **one** row per counterpart (latest `last_message_at` among rows not inbox-hidden for me).
 
 **Edge Cases.**
 - A counterpart deleted their account: the row shows a "Deleted user" placeholder; the thread remains accessible (`D-14`).
@@ -100,7 +101,7 @@ Conversations may be anchored to a specific post for purposes of recipient-picke
 - Constraints: `R-MVP-Chat-3`.
 
 **Acceptance Criteria.**
-- AC1. A `Chat` between two users may have an `anchor_post_id`. Multiple anchors per user pair are not allowed in MVP — the same conversation is reused regardless of which post was the entry trigger; the first anchor wins, but newer anchors are tracked as `Chat.anchor_history` for analytics.
+- AC1. A `Chat` between two users may have an `anchor_post_id`. By default the same conversation is reused regardless of which post was the entry trigger; the first anchor wins on that `chat_id`, but newer anchors are tracked as `Chat.anchor_history` for analytics. **Exception (`FR-CHAT-016`):** after a user performs personal inbox hide and opens a new DM with the same counterpart with `preferNewThread`, a **new** `Chat` row is created; anchor rules apply per `chat_id`.
 - AC2. The conversation can also be opened directly from the counterpart's profile (`FR-CHAT-006`); in that case `anchor_post_id` is null.
 - AC3. The Super Admin support thread (`FR-CHAT-007`) sets `is_support_thread = true` to mark it for special UI treatment in the future, even if it does not differ functionally in MVP.
 
@@ -246,6 +247,7 @@ The chat icon in the top bar carries a badge with the unread-message count.
 - AC1. The badge shows the total unread message count across all conversations, capped visually at "9+".
 - AC2. The count updates within `NFR-PERF-005` of new messages arriving via Realtime.
 - AC3. Opening a thread updates the count immediately on the local client (optimistic) and reconciles with server upon ack.
+- AC4. Chats the viewer has inbox-hidden (`FR-CHAT-016`) do not contribute unread to the badge until the hide flags are cleared.
 
 **Related.** Domain: `Chat`, `Message`.
 
@@ -282,7 +284,7 @@ A sticky card at the top of the conversation surfaces the anchored post for both
 - Spec: `docs/superpowers/specs/2026-05-11-close-post-from-chat-design.md`.
 
 **Acceptance Criteria.**
-- AC1. When `Chat.anchor_post_id` is set and the referenced `Post` is in status `open`, a sticky card is shown beneath the chat header with: post-type tag, single-line title, and a right-aligned action area.
+- AC1. When `Chat.anchor_post_id` is set and the referenced `Post` is in status `open`, a sticky card is shown beneath the chat header with: a square preview of the first post image (public Storage URL) when `media_assets` is non-empty, otherwise a type icon placeholder (Give / Request); post-type tag; single-line title; and a right-aligned action area. The card uses elevated surface styling (rounded corners, light shadow, inset horizontal margin) so it reads as a compact preview strip rather than a full-width divider bar.
 - AC2. The owner sees a "סמן כנמסר ✓" / "סמן שקיבלתי ✓" CTA in the action area (label flips by `post.type`, matching `OwnerActionsBar`). The counterpart sees the whole card as a tap-to-open-post surface routing to `/post/[id]`.
 - AC3. The card is hidden entirely when the post is in any non-`open` status (`closed_delivered`, `deleted_no_recipient`, `removed_admin`, `expired`) — replacing the prior "banner when deleted" behaviour from FR-CHAT-004.
 - AC4. The card is hidden when `anchor_post_id` is null (chat opened from Other Profile, support thread, etc.).
@@ -319,7 +321,29 @@ The post owner can mark the anchored post as delivered (or close without a recip
 
 ---
 
+## FR-CHAT-016 — Personal inbox hide (“delete for me”)
+
+**Description.**
+The user can remove a conversation from **their own** inbox without deleting it for the counterpart. Not available for the Super Admin support thread (`FR-CHAT-007`).
+
+**Source.**
+- Design: `docs/superpowers/specs/2026-05-11-chat-personal-delete-design.md`
+- Plan: `docs/superpowers/plans/2026-05-11-chat-personal-delete.md`
+
+**Acceptance Criteria.**
+- AC1. Entry points: inbox row overflow and conversation `⋮` menu (support thread excluded).
+- AC2. Confirmation modal before hide; copy explains counterpart retention and that a new message in the same thread can restore the row to the inbox.
+- AC3. After hide, opening a new DM with the same user from profile/post CTA creates a **new** `Chat` row (empty for the opener); multiple non-support rows per ordered pair are allowed; support pair remains unique (`is_support_thread = true`).
+- AC4. Inbox shows **at most one row per human counterpart**, choosing the chat with greatest `last_message_at` among rows not hidden for the viewer.
+- AC5. Any new `messages` row on a chat clears both participants’ inbox-hide flags for that chat (thread can reappear).
+- AC6. Unread badge (`FR-CHAT-012`) excludes messages in chats inbox-hidden for the viewer.
+
+**Related.** Screens: 4.1, 4.2 · Domain: `Chat`, `Message`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.4 and Decisions D-11, D-14. |
 | 0.2 | 2026-05-09 | Extended `FR-CHAT-008 AC1` with 4th entry-point (Donations · Time) per `D-16` / `FR-DONATE-004`. |
+| 0.3 | 2026-05-11 | Added `FR-CHAT-016` personal inbox hide + inbox dedupe / `preferNewThread` semantics. |

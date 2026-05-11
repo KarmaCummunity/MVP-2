@@ -14,7 +14,7 @@ import {
 } from '../services/authComposition';
 import { tryDevAutoSignIn } from '../services/devAutoSignIn';
 import { getDevGhostSession, isDevGhostSessionEnabled } from '../services/devGhostSession';
-import { getOnboardingState } from '../services/userComposition';
+import { getOnboardingBootstrap } from '../services/userComposition';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { container } from '../lib/container';
@@ -27,8 +27,10 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     isAuthenticated,
     isLoading,
     onboardingState,
+    basicInfoSkipped,
     setSession,
     setOnboardingState,
+    setBasicInfoSkipped,
   } = useAuthStore();
 
   // FR-AUTH-013: cold-start session restore.
@@ -80,23 +82,30 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     if (!isAuthenticated || !session) return;
     if (isDevGhostSessionEnabled()) {
       setOnboardingState('completed');
+      setBasicInfoSkipped(false);
       return;
     }
     let cancelled = false;
     (async () => {
       try {
-        const state = await getOnboardingState(session.userId);
-        if (!cancelled) setOnboardingState(state);
+        const boot = await getOnboardingBootstrap(session.userId);
+        if (!cancelled) {
+          setOnboardingState(boot.state);
+          setBasicInfoSkipped(boot.basicInfoSkipped);
+        }
       } catch {
         // Network/permission failure: assume completed to avoid trapping a real
         // user in an onboarding loop. Re-queried next session start.
-        if (!cancelled) setOnboardingState('completed');
+        if (!cancelled) {
+          setOnboardingState('completed');
+          setBasicInfoSkipped(false);
+        }
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [isAuthenticated, session, setOnboardingState]);
+  }, [isAuthenticated, session, setOnboardingState, setBasicInfoSkipped]);
 
   // FR-CHAT-001: start inbox subscription on sign-in; tear it down on sign-out.
   // This effect mirrors the session effect above — it runs whenever `session`
@@ -136,14 +145,16 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     if (!inAuthGroup && !inGuestGroup && !isOAuthCallback) return;
     if (onboardingState === null) return;
 
-    if (onboardingState === 'pending_basic_info') {
+    if (onboardingState === 'pending_basic_info' && basicInfoSkipped === true) {
+      router.replace('/(tabs)');
+    } else if (onboardingState === 'pending_basic_info') {
       router.replace('/(onboarding)/basic-info');
     } else if (onboardingState === 'pending_avatar') {
       router.replace('/(onboarding)/photo');
     } else {
       router.replace('/(tabs)');
     }
-  }, [isLoading, isAuthenticated, onboardingState, segments, router]);
+  }, [isLoading, isAuthenticated, onboardingState, basicInfoSkipped, segments, router]);
 
   if (isLoading) {
     return (

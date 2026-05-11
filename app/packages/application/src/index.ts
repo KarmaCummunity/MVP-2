@@ -44,6 +44,8 @@ export * from './auth/DismissClosureExplainerUseCase';
 export { BuildAutoMessageUseCase } from './chat/BuildAutoMessageUseCase';
 export { SendMessageUseCase } from './chat/SendMessageUseCase';
 export type { SendMessageInput } from './chat/SendMessageUseCase';
+export { HideChatFromInboxUseCase } from './chat/HideChatFromInboxUseCase';
+export type { HideChatFromInboxInput } from './chat/HideChatFromInboxUseCase';
 export { OpenOrCreateChatUseCase } from './chat/OpenOrCreateChatUseCase';
 export type { OpenOrCreateChatInput } from './chat/OpenOrCreateChatUseCase';
 export { ListChatsUseCase } from './chat/ListChatsUseCase';

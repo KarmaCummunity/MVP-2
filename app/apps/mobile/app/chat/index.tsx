@@ -1,21 +1,31 @@
-// Chat list (Inbox) — FR-CHAT-001.
+// Chat list (Inbox) — FR-CHAT-001, FR-CHAT-016.
 import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { ChatError } from '@kc/application';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { useChatStore } from '../../src/store/chatStore';
-import { AvatarInitials } from '../../src/components/AvatarInitials';
+import { useAuthStore } from '../../src/store/authStore';
+import { container } from '../../src/lib/container';
+import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { EmptyState } from '../../src/components/EmptyState';
+import { HideChatConfirmModal } from '../../src/components/HideChatConfirmModal';
+import { InboxChatRow, InboxChatRowSeparator } from '../../src/components/chat/InboxChatRow';
 
 const PAGE = 30;
 
 export default function ChatListScreen() {
   const router = useRouter();
+  const userId = useAuthStore((s) => s.session?.userId);
   const inbox = useChatStore((s) => s.inbox);
   const [q, setQ] = useState('');
   const [visible, setVisible] = useState(PAGE);
+  const [hideTarget, setHideTarget] = useState<{ chatId: string; otherUserId: string | null } | null>(
+    null,
+  );
+  const [hideBusy, setHideBusy] = useState(false);
 
   const filtered = useMemo(() => {
     if (!inbox) return [];
@@ -53,36 +63,15 @@ export default function ChatListScreen() {
         onEndReached={() => setVisible((v) => v + PAGE)}
         onEndReachedThreshold={0.6}
         renderItem={({ item }) => (
-          <TouchableOpacity
-            style={styles.chatRow}
-            onPress={() => router.push(`/chat/${item.chatId}`)}
-          >
-            <AvatarInitials
-              name={item.otherParticipant.displayName}
-              avatarUrl={item.otherParticipant.avatarUrl}
-              size={48}
-            />
-            <View style={styles.chatInfo}>
-              <View style={styles.chatHeader}>
-                <Text style={styles.chatTime}>
-                  {relativeTime(item.lastMessage?.createdAt ?? item.lastMessageAt)}
-                </Text>
-                <Text style={styles.chatName}>{item.otherParticipant.displayName}</Text>
-              </View>
-              <Text style={styles.chatPreview} numberOfLines={1}>
-                {item.lastMessage?.body ?? ''}
-              </Text>
-            </View>
-            {item.unreadCount > 0 && (
-              <View style={styles.badge}>
-                <Text style={styles.badgeText}>
-                  {item.unreadCount > 9 ? '9+' : String(item.unreadCount)}
-                </Text>
-              </View>
-            )}
-          </TouchableOpacity>
+          <InboxChatRow
+            item={item}
+            onOpen={() => router.push(`/chat/${item.chatId}`)}
+            onRequestHide={() =>
+              setHideTarget({ chatId: item.chatId, otherUserId: item.otherParticipant.userId })
+            }
+          />
         )}
-        ItemSeparatorComponent={() => <View style={styles.separator} />}
+        ItemSeparatorComponent={InboxChatRowSeparator}
         ListEmptyComponent={
           <EmptyState
             icon="chatbubbles-outline"
@@ -91,19 +80,33 @@ export default function ChatListScreen() {
           />
         }
       />
+
+      <HideChatConfirmModal
+        visible={hideTarget != null}
+        loading={hideBusy}
+        onCancel={() => setHideTarget(null)}
+        onConfirm={async () => {
+          const target = hideTarget;
+          if (!target || !userId) return;
+          setHideBusy(true);
+          try {
+            await container.hideChatFromInbox.execute({ chatId: target.chatId });
+            if (target.otherUserId) markNeedFreshThreadWith(target.otherUserId);
+            await useChatStore.getState().refreshInbox(userId, container.chatRepo);
+            setHideTarget(null);
+          } catch (err) {
+            const msg =
+              err instanceof ChatError && err.code === 'support_thread_not_hideable'
+                ? 'לא ניתן להסיר את שיחת התמיכה.'
+                : 'לא הצלחנו להסיר את השיחה. נסה שוב.';
+            Alert.alert('שגיאה', msg);
+          } finally {
+            setHideBusy(false);
+          }
+        }}
+      />
     </SafeAreaView>
   );
-}
-
-function relativeTime(iso: string | null | undefined): string {
-  if (!iso) return '';
-  const diffMin = Math.max(0, Math.round((Date.now() - Date.parse(iso)) / 60000));
-  if (diffMin < 1) return 'עכשיו';
-  if (diffMin < 60) return `לפני ${diffMin} דק'`;
-  const hours = Math.round(diffMin / 60);
-  if (hours < 24) return `לפני ${hours} שעות`;
-  const days = Math.round(hours / 24);
-  return `לפני ${days} ימים`;
 }
 
 const styles = StyleSheet.create({
@@ -129,31 +132,4 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
   },
-  chatRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: spacing.base,
-    gap: spacing.md,
-    backgroundColor: colors.surface,
-  },
-  chatInfo: { flex: 1, gap: 4 },
-  chatHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  chatName: {
-    ...typography.body,
-    fontWeight: '600' as const,
-    color: colors.textPrimary,
-    textAlign: 'right',
-  },
-  chatTime: { ...typography.caption, color: colors.textSecondary },
-  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
-  badge: {
-    width: 22,
-    height: 22,
-    borderRadius: 11,
-    backgroundColor: colors.primary,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  badgeText: { ...typography.caption, color: colors.textInverse, fontWeight: '700' as const },
-  separator: { height: 1, backgroundColor: colors.border, marginRight: spacing.base },
 });

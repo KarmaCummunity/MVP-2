@@ -10,7 +10,7 @@ import type { Database } from '../database.types';
 import { rowToChat, rowToMessage } from './rowMappers';
 import { mapChatError } from './mapChatError';
 import { getMyChats } from './getMyChats';
-import { performFindOrCreateChat } from './performFindOrCreateChat';
+import { findOrCreateDmChat, hideDmChatFromInbox } from './supabaseDmChat';
 
 type Counterpart = {
   userId: string | null;
@@ -37,13 +37,19 @@ export class SupabaseChatRepository implements IChatRepository {
     userId: string,
     otherUserId: string,
     anchorPostId?: string,
+    options?: { preferNewThread?: boolean },
   ): Promise<Chat> {
-    return performFindOrCreateChat(
+    return findOrCreateDmChat(
       this.client,
       userId,
       otherUserId,
       anchorPostId,
+      options,
     );
+  }
+
+  async hideChatFromInbox(chatId: string): Promise<void> {
+    return hideDmChatFromInbox(this.client, chatId);
   }
 
   async getMessages(
