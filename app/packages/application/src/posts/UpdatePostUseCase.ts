@@ -1,7 +1,12 @@
 /** FR-POST-008 + FR-POST-009: edit an existing post; visibility upgrade-only. */
 import type { IPostRepository, UpdatePostInput } from '../ports/IPostRepository';
 import type { Post } from '@kc/domain';
-import { canUpgradeVisibility, TITLE_MAX_CHARS, DESCRIPTION_MAX_CHARS } from '@kc/domain';
+import {
+  canUpgradeVisibility,
+  TITLE_MAX_CHARS,
+  DESCRIPTION_MAX_CHARS,
+  MAX_MEDIA_ASSETS,
+} from '@kc/domain';
 import { PostError } from './errors';
 
 export interface UpdatePostUseCaseInput {
@@ -25,12 +30,12 @@ export class UpdatePostUseCase {
       throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
     }
 
-    const patch = this.validate(input.patch, current.visibility);
+    const patch = this.validate(input.patch, current);
     const post = await this.repo.update(input.postId, patch);
     return { post };
   }
 
-  private validate(raw: UpdatePostInput, currentVisibility: Post['visibility']): UpdatePostInput {
+  private validate(raw: UpdatePostInput, current: Post): UpdatePostInput {
     const patch: UpdatePostInput = { ...raw };
 
     if (typeof patch.title === 'string') {
@@ -58,9 +63,16 @@ export class UpdatePostUseCase {
         throw new PostError('address_required', 'address_required');
     }
 
-    if (patch.visibility && patch.visibility !== currentVisibility) {
-      if (!canUpgradeVisibility(currentVisibility, patch.visibility))
+    if (patch.visibility && patch.visibility !== current.visibility) {
+      if (!canUpgradeVisibility(current.visibility, patch.visibility))
         throw new PostError('visibility_downgrade_forbidden', 'visibility_downgrade_forbidden');
+    }
+
+    if (patch.mediaAssets !== undefined) {
+      if (patch.mediaAssets.length > MAX_MEDIA_ASSETS)
+        throw new PostError('too_many_media_assets', `too_many_media_assets (>${MAX_MEDIA_ASSETS})`);
+      if (current.type === 'Give' && patch.mediaAssets.length === 0)
+        throw new PostError('image_required_for_give', 'image_required_for_give');
     }
 
     return patch;
