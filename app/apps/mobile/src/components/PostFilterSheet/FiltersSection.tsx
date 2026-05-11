@@ -16,10 +16,12 @@ interface FiltersSectionProps {
   categories: Category[];
   itemConditions: ItemCondition[];
   statusFilter: FeedStatusFilter;
+  followersOnly: boolean;
   onTypeChange: (t: PostType | null) => void;
   onCategoriesChange: (c: Category[]) => void;
   onItemConditionsChange: (i: ItemCondition[]) => void;
   onStatusFilterChange: (s: FeedStatusFilter) => void;
+  onFollowersOnlyChange: (v: boolean) => void;
 }
 
 const TYPE_LABELS: Record<'all' | PostType, string> = {
@@ -36,9 +38,9 @@ const ITEM_CONDITION_LABELS: Record<ItemCondition, string> = {
 };
 
 const STATUS_LABELS: Record<FeedStatusFilter, string> = {
+  all: 'הכל',
   open: 'רק פתוחים',
   closed: 'רק סגורים',
-  all: 'הכל',
 };
 
 const ITEM_CONDITIONS: ItemCondition[] = ['New', 'LikeNew', 'Good', 'Fair'];
@@ -52,10 +54,12 @@ export function FiltersSection({
   categories,
   itemConditions,
   statusFilter,
+  followersOnly,
   onTypeChange,
   onCategoriesChange,
   onItemConditionsChange,
   onStatusFilterChange,
+  onFollowersOnlyChange,
 }: FiltersSectionProps) {
   return (
     <>
@@ -71,6 +75,11 @@ export function FiltersSection({
       <View style={styles.section}>
         <Text style={styles.title}>קטגוריה</Text>
         <View style={styles.row}>
+          <Chip
+            label="הכל"
+            active={categories.length === 0}
+            onPress={() => onCategoriesChange([])}
+          />
           {ALL_CATEGORIES.map((c) => (
             <Chip
               key={c}
@@ -86,6 +95,11 @@ export function FiltersSection({
         <View style={styles.section}>
           <Text style={styles.title}>מצב המוצר</Text>
           <View style={styles.row}>
+            <Chip
+              label="הכל"
+              active={itemConditions.length === 0}
+              onPress={() => onItemConditionsChange([])}
+            />
             {ITEM_CONDITIONS.map((i) => (
               <Chip
                 key={i}
@@ -101,7 +115,7 @@ export function FiltersSection({
       <View style={styles.section}>
         <Text style={styles.title}>סטטוס פוסט</Text>
         <View style={styles.row}>
-          {(['open', 'closed', 'all'] as FeedStatusFilter[]).map((s) => (
+          {(['all', 'open', 'closed'] as FeedStatusFilter[]).map((s) => (
             <Chip
               key={s}
               label={STATUS_LABELS[s]}
@@ -109,6 +123,22 @@ export function FiltersSection({
               onPress={() => onStatusFilterChange(s)}
             />
           ))}
+        </View>
+      </View>
+
+      <View style={styles.section}>
+        <Text style={styles.title}>מקור הפוסטים</Text>
+        <View style={styles.row}>
+          <Chip
+            label="הכל"
+            active={!followersOnly}
+            onPress={() => onFollowersOnlyChange(false)}
+          />
+          <Chip
+            label="👥 רק ממי שאני עוקב"
+            active={followersOnly}
+            onPress={() => onFollowersOnlyChange(true)}
+          />
         </View>
       </View>
     </>

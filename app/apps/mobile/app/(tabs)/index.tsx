@@ -62,6 +62,7 @@ export default function HomeFeedScreen() {
       statusFilter: filter.statusFilter,
       sortOrder: filter.sortOrder,
       proximitySortCity: filter.proximitySortCity ?? undefined,
+      followersOnly: filter.followersOnly,
     }),
     [
       filter.type,
@@ -71,6 +72,7 @@ export default function HomeFeedScreen() {
       filter.statusFilter,
       filter.sortOrder,
       filter.proximitySortCity,
+      filter.followersOnly,
     ],
   );
 
@@ -95,11 +97,11 @@ export default function HomeFeedScreen() {
     categories: filter.categories,
     itemConditions: filter.itemConditions,
     locationFilter: filter.locationFilter,
-    locationFilterCityName: null,
     statusFilter: filter.statusFilter,
     sortOrder: filter.sortOrder,
     proximitySortCity: filter.proximitySortCity,
-    proximitySortCityName: null,
+    proximitySortCityName: filter.proximitySortCityName,
+    followersOnly: filter.followersOnly,
   };
   const handleApply = (next: PostFilterValue) => {
     filter.setType(next.type);
@@ -108,14 +110,15 @@ export default function HomeFeedScreen() {
     filter.setLocationFilter(next.locationFilter);
     filter.setStatusFilter(next.statusFilter);
     filter.setSortOrder(next.sortOrder);
-    filter.setProximitySortCity(next.proximitySortCity);
+    filter.setProximitySortCity(next.proximitySortCity, next.proximitySortCityName);
+    filter.setFollowersOnly(next.followersOnly);
   };
 
   const header = (
     <View>
       {nudge.show && (
         <FirstPostNudge
-          onShare={() => router.push('/post/create')}
+          onShare={() => router.push('/(tabs)/create')}
           onRemindLater={nudge.dismissForSession}
           onDismissForever={nudge.dismissForever}
         />
@@ -156,7 +159,7 @@ export default function HomeFeedScreen() {
           <FeedEmptyState
             hasActiveFilters={activeCount > 0}
             onClearFilters={() => filter.clearAll()}
-            onShare={() => router.push('/post/create')}
+            onShare={() => router.push('/(tabs)/create')}
           />
         }
       />

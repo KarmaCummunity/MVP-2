@@ -14,7 +14,7 @@ describe('GetFeedUseCase', () => {
         type: 'Give',
         categories: ['Furniture', 'Toys'],
         itemConditions: ['New', 'LikeNew'],
-        locationFilter: { centerCity: 'tel-aviv', radiusKm: 25 },
+        locationFilter: { centerCity: 'tel-aviv', centerCityName: 'תל אביב', radiusKm: 25 },
         statusFilter: 'all',
         sortOrder: 'distance',
         proximitySortCity: 'tel-aviv',
@@ -31,7 +31,7 @@ describe('GetFeedUseCase', () => {
         type: 'Give',
         categories: ['Furniture', 'Toys'],
         itemConditions: ['New', 'LikeNew'],
-        locationFilter: { centerCity: 'tel-aviv', radiusKm: 25 },
+        locationFilter: { centerCity: 'tel-aviv', centerCityName: 'תל אביב', radiusKm: 25 },
         statusFilter: 'all',
         sortOrder: 'distance',
         proximitySortCity: 'tel-aviv',
@@ -88,21 +88,21 @@ describe('GetFeedUseCase', () => {
 
     await uc.execute({
       viewerId: null,
-      filter: { locationFilter: { centerCity: '', radiusKm: 25 } },
+      filter: { locationFilter: { centerCity: '', centerCityName: '', radiusKm: 25 } },
       limit: 20,
     });
     expect(repo.lastGetFeedArgs?.filter.locationFilter).toBeUndefined();
 
     await uc.execute({
       viewerId: null,
-      filter: { locationFilter: { centerCity: 'tel-aviv', radiusKm: 0 } },
+      filter: { locationFilter: { centerCity: 'tel-aviv', centerCityName: 'תל אביב', radiusKm: 0 } },
       limit: 20,
     });
     expect(repo.lastGetFeedArgs?.filter.locationFilter).toBeUndefined();
 
     await uc.execute({
       viewerId: null,
-      filter: { locationFilter: { centerCity: 'tel-aviv', radiusKm: -5 } },
+      filter: { locationFilter: { centerCity: 'tel-aviv', centerCityName: 'תל אביב', radiusKm: -5 } },
       limit: 20,
     });
     expect(repo.lastGetFeedArgs?.filter.locationFilter).toBeUndefined();

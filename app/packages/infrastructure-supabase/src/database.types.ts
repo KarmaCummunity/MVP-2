@@ -904,6 +904,7 @@ export type Database = {
           p_cursor_distance?: number | null
           p_cursor_created_at?: string | null
           p_cursor_post_id?: string | null
+          p_followers_only?: boolean
         }
         Returns: { post_id: string; distance_km: number | null }[]
       }
