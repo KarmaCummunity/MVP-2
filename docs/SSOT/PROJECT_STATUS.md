@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-11 (P1.1 — following + other-user profile shipped: FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013. 35 new vitest, 12 use cases.) |
+| **Last Updated** | 2026-05-11 (P1.1.1 — follow-mechanism end-to-end audit + polish: migration 0021 closes FR-PROFILE-006 AC2 gap (auto-approve pending on Private→Public via DB trigger); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining) closed.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -30,13 +30,13 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~58%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile**; DB schema applied through 0020) |
+| MVP completion (rough) | **~58%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile**; DB schema applied through 0021) |
 | Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + P1.1) |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **148 vitest passing** |
-| Open tech-debt items | **40 active** (3 partial), **21 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **153 vitest passing** |
+| Open tech-debt items | **38 active** (3 partial), **23 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -44,7 +44,7 @@ This document is the **single source of truth for project execution state**. It 
 - Native dev builds on iOS 26 + Android API-36 + Web — all three platforms run correctly with Expo SDK 54 + expo-router 6
 - **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing. Post detail now exposes a role-aware ⋮ overflow menu (FR-POST-014 AC4 + FR-POST-015 AC1 partial): viewer → דווח/חסום משתמש; owner → מחק; super-admin viewing someone else's post → דווח/חסום + הסר כאדמין (FR-ADMIN-009 via the new admin_remove_post RPC).
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
-- **Following + Other-User Profile** — full follow mechanism (instant for Public, request/accept/reject/14d-cooldown for Private), remove-follower, follow-state machine, Followers + Following lists with search, /settings/privacy toggle + /settings/follow-requests inbox. Other-user profile rebuilt to feature-parity with My Profile (closed posts visible too — per EXEC-7).
+- **Following + Other-User Profile** — full follow mechanism (instant for Public, request/accept/reject/14d-cooldown for Private), remove-follower, follow-state machine, Followers + Following lists with search, /settings/privacy toggle + /settings/follow-requests inbox. Other-user profile rebuilt to feature-parity with My Profile (closed posts visible too — per EXEC-7). **P1.1.1 polish (2026-05-11)**: end-to-end audit + three closures — (1) migration 0021 adds `users_after_privacy_mode_change` trigger that batch-transitions every pending follow_request → `accepted` when its target toggles `Private → Public`, closing FR-PROFILE-006 AC2 (existing `follow_requests_after_accept` trigger then fan-outs each into `follow_edges` rows, counters update via 0006); (2) Follow button is now optimistic (TD-125) — `qc.setQueryData` snapshots+predicts `follow-state` and `profile-other.followersCount` before the await, rollback in `catch`; (3) cooldown error toast now shows remaining days (TD-126).
 
 ### What is in flight
 
@@ -79,7 +79,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
-| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). |
+| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). **Polish 2026-05-11 (P1.1.1)**: migration 0021 closes FR-PROFILE-006 AC2 (auto-approve pending requests on Private→Public via DB trigger — UI promised this from day one but no trigger existed); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining toast) closed in `app/apps/mobile/app/user/[handle]/index.tsx`. TD-124 (push) + TD-127 (Report) remain deferred to P1.5 / P1.3. |
 | P1.2 | Search + filters + sort + cold-start fallback | FR-FEED-006…014 | ⏳ Planned | Drives discoverability |
 | P1.3 | Reports + auto-removal + false-report sanctions | FR-MOD-001…008 | ⏳ Planned | Safety floor |
 | P1.4 | Block / unblock + visibility restoration | FR-MOD-009, 010 | ⏳ Planned | |
@@ -123,7 +123,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | In progress | (none) | — | — | — |
 | Up next | P1.x — pick next per §2 (likely P1.2 Search/filters) | — | — | — |
 
-Most recently shipped: **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013; 12 use cases + 35 vitest, 6 shared profile components, full follow state machine, /settings/privacy + /settings/follow-requests, other-user profile rebuilt to feature-parity — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P1.1.1** — follow-mechanism end-to-end audit + polish (migration 0021 closes FR-PROFILE-006 AC2 auto-approve gap; TD-125 optimistic Follow button + TD-126 cooldown days-remaining closed — 2026-05-11). Preceded by **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013; 12 use cases + 35 vitest, 6 shared profile components, full follow state machine, /settings/privacy + /settings/follow-requests, other-user profile rebuilt to feature-parity — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 

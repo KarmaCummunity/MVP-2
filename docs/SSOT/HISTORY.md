@@ -6,6 +6,28 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P1.1.1 Follow-mechanism end-to-end audit + polish
+
+**SRS:** FR-PROFILE-006 AC2 (closure of implementation gap); FR-FOLLOW-001 AC4 + FR-FOLLOW-006 AC3 (toast parity).
+**Branch / PR:** `claude/crazy-proskuriakova-7bb22d`.
+**Tests:** 148 → 153 vitest passing (no new tests; pre-existing follow tests cover both touched paths).
+**TD deltas:** Closed TD-125 + TD-126. No new TD opened.
+
+Why this slice exists: end-to-end audit of the P1.1 follow mechanism revealed that the Private→Public toggle in `/settings/privacy` promises "כל הבקשות הממתינות יאושרו אוטומטית" (per FR-PROFILE-006 AC2), and `UpdatePrivacyModeUseCase` claimed in a comment that a DB trigger handled the fan-out — but no such trigger existed. Pending requests would silently linger after the toggle, and the requesters would remain unable to see Followers-only posts despite the now-Public target.
+
+Fixes:
+- **Migration 0021** — `users_after_privacy_mode_change` trigger fires `AFTER UPDATE OF privacy_mode` on `users` (with `WHEN old IS DISTINCT FROM new`). On a `Private → Public` transition, it batch-updates every pending row in `follow_requests` (targeting the user) to `status = 'accepted'`. The existing `follow_requests_after_accept` trigger then creates the matching `follow_edges` row per request (SECURITY DEFINER), and `follow_edges_after_insert_counters` (0006) keeps counters consistent. Blocked-counterpart requests were already cancelled by `blocks_apply_side_effects` (0003 §14) on block, so the `status='pending'` filter excludes them automatically — FR-PROFILE-006 edge case satisfied without special-casing.
+- **TD-125 (optimistic Follow button)** — `app/apps/mobile/app/user/[handle]/index.tsx` `handleAction` now snapshots `follow-state` + `profile-other.followersCount`, predicts the next `FollowState` (privacy-aware unfollow target → `not_following_public` or `not_following_private_no_request`; counter delta ±1 only for `follow`/`unfollow`), applies optimistically via `qc.setQueryData` before the `await`, and rolls both snapshots back on error. `user-profile` of the viewer is invalidated on success so following_count reconciles when navigating to My Profile.
+- **TD-126 (cooldown days-remaining)** — the `cooldown_active` branch now computes `Math.ceil((cooldownUntil − now) / 24h)` and surfaces "ניתן לשלוח שוב בעוד N ימים" — same formula as the disabled-button subtitle in `FollowButton.tsx`, so the two surfaces agree.
+- **`UpdatePrivacyModeUseCase` comment corrected** — now references migration 0021 by name instead of claiming an unspecified DB trigger.
+
+Open gaps (deferred per dependency):
+- TD-124 (push delivery for `follow_started` / `follow_request_received` / `follow_approved`) — DB triggers fire today; push infrastructure waits on P1.5.
+- TD-127 (Report from Other-Profile ⋮ menu) — waits on FR-MOD-* / P1.3.
+- FR-FOLLOW-010 (mutual-follow flag) — analytics-only, no UI; ships with the analytics pipeline.
+
+---
+
 ## 2026-05-11 — P1.1 Following + Other-User Profile
 
 **SRS:** FR-FOLLOW-001..009, 011, 012; FR-PROFILE-002..006, 009, 010, 013.

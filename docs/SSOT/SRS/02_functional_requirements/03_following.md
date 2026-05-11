@@ -264,3 +264,4 @@ The set of posts a viewer can see depends on whether the viewer is an approved f
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.2.4 and Flows 8, 13, 14. |
+| 0.2 | 2026-05-11 | Implementation notes (no AC change): FR-FOLLOW-001 AC4 optimistic transition + rollback shipped in `app/apps/mobile/app/user/[handle]/index.tsx` (TD-125); FR-FOLLOW-006 AC3 toast parity — days-remaining surfaced on `cooldown_active` errors (TD-126). |

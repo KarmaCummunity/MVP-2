@@ -3,13 +3,12 @@
 // Mapped to SRS: FR-PROFILE-002, 003, 004; FR-FOLLOW-001..006, 011, 012.
 
 import React from 'react';
-import { ActivityIndicator, Alert, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
-import { isFollowError } from '@kc/application';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
 import { ProfileTabs, type ProfileTab } from '../../../src/components/profile/ProfileTabs';
@@ -20,13 +19,13 @@ import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
-import { getFollowUserUseCase, getUnfollowUserUseCase, getSendFollowRequestUseCase, getCancelFollowRequestUseCase, getGetFollowStateUseCase } from '../../../src/services/followComposition';
+import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
+import { useOptimisticFollowAction } from '../../../src/hooks/useOptimisticFollowAction';
 
 export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
-  const qc = useQueryClient();
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('open');
 
   const userQuery = useQuery({
@@ -75,27 +74,13 @@ export default function OtherProfileScreen() {
     </SafeAreaView>
   );
 
-  const handleAction = async (action: 'follow' | 'unfollow' | 'send' | 'cancel') => {
-    if (!me) return;
-    try {
-      if (action === 'follow') await getFollowUserUseCase().execute({ viewerId: me, targetUserId: u.userId });
-      else if (action === 'unfollow') await getUnfollowUserUseCase().execute({ viewerId: me, targetUserId: u.userId });
-      else if (action === 'send') await getSendFollowRequestUseCase().execute({ viewerId: me, targetUserId: u.userId });
-      else await getCancelFollowRequestUseCase().execute({ viewerId: me, targetUserId: u.userId });
-      qc.invalidateQueries({ queryKey: ['follow-state', me, u.userId] });
-      qc.invalidateQueries({ queryKey: ['profile-other', handle] });
-    } catch (err) {
-      if (isFollowError(err) && err.code === 'cooldown_active') Alert.alert('לא ניתן לשלוח כרגע', 'נסה שוב כשהקירור יסתיים.');
-      else Alert.alert('שגיאה', 'הפעולה נכשלה. נסו שוב.');
-    }
-  };
-
+  const dispatchFollowAction = useOptimisticFollowAction({ viewerId: me, target: u, handle: handle! });
   const onFollowPress = () => {
     const s = followInfo?.state;
-    if (s === 'not_following_public') handleAction('follow');
-    else if (s === 'following') handleAction('unfollow');
-    else if (s === 'not_following_private_no_request') handleAction('send');
-    else if (s === 'request_pending') handleAction('cancel');
+    if (s === 'not_following_public') dispatchFollowAction('follow');
+    else if (s === 'following') dispatchFollowAction('unfollow');
+    else if (s === 'not_following_private_no_request') dispatchFollowAction('send');
+    else if (s === 'request_pending') dispatchFollowAction('cancel');
   };
 
   const startChat = async () => {
