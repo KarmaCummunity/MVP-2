@@ -91,3 +91,7 @@ export * from './follow/UpdatePrivacyModeUseCase';
 export type { ISearchRepository, UniversalSearchResults } from './ports/ISearchRepository';
 export { UniversalSearchUseCase } from './search/UniversalSearchUseCase';
 export type { UniversalSearchInput } from './search/UniversalSearchUseCase';
+
+export * from './ports/IModerationAdminRepository';
+export * from './ports/IAccountGateRepository';
+export * from './moderation/errors';
