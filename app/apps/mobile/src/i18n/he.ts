@@ -6,6 +6,7 @@
 
 import { donations, search } from './donations';
 import { chatHe } from './partials/chatHe';
+import { stats } from './stats';
 
 const he = {
   // App
@@ -209,19 +210,8 @@ const he = {
     version: 'קארמה קהילה',
   },
 
-  // Stats
-  stats: {
-    title: 'הסטטיסטיקות שלי',
-    given: '🎁 חפצים שמסרתי',
-    received: '🔍 חפצים שקיבלתי',
-    activePosts: '📊 פוסטים פעילים',
-    followers: '👥 עוקבים',
-    communityTitle: 'מה קורה בקהילה',
-    communityUsers: 'משתמשים רשומים',
-    communityPosts: 'פוסטים פעילים',
-    communityDelivered: 'חפצים שנמסרו',
-    recentActivity: 'פעילות אחרונה',
-  },
+  // Stats (FR-STATS-001..004) — see stats.ts
+  stats,
 
   // Legal
   legalContent: {

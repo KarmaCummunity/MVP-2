@@ -1,9 +1,21 @@
-// IStatsRepository — port for community-wide stats reads (FR-FEED-014, FR-STATS-004).
+// IStatsRepository — port for community-wide stats reads (FR-FEED-014, FR-STATS-004)
+// and personal activity timeline (FR-STATS-003).
 //
 // Adapter reads from the `community_stats` view created in migration 0006.
-// The counter is refreshed by the caller (typically every 60s via TanStack
-// Query's refetchInterval). Edge-cached endpoint per FR-FEED-014 AC3 is
-// deferred to P2.x; for MVP a direct view read is sufficient.
+// Community numbers are always fresh at read time; FR-STATS-004 AC2 expects
+// ~60s client-side refresh (TanStack Query refetchInterval).
+//
+// Activity timeline is served by `rpc_my_activity_timeline` (migration 0030).
+
+import type { PersonalActivityItem } from '@kc/domain';
+
+export interface CommunityStatsSnapshot {
+  readonly registeredUsers: number;
+  readonly activePublicPosts: number;
+  readonly itemsDeliveredTotal: number;
+  /** Server clock at read time (ISO), when the view exposes it. */
+  readonly asOf: string | null;
+}
 
 export interface IStatsRepository {
   /**
@@ -11,4 +23,10 @@ export interface IStatsRepository {
    * Used by the guest banner and the warm empty state.
    */
   getActivePublicPostsCount(): Promise<number>;
+
+  /** Full community_stats row (FR-STATS-004 AC1). */
+  getCommunityStatsSnapshot(): Promise<CommunityStatsSnapshot>;
+
+  /** Personal activity for the signed-in user (FR-STATS-003). */
+  listMyActivityTimeline(limit: number): Promise<PersonalActivityItem[]>;
 }

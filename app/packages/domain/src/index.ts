@@ -5,3 +5,4 @@ export * from './value-objects';
 export * from './invariants';
 export * from './searchTypes';
 export * from './geo';
+export * from './personalActivity';

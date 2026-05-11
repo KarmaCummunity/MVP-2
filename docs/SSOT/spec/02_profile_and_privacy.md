@@ -45,7 +45,7 @@ The signed-in user's own profile, displaying identity, three headline counters, 
    - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): lists all `open` posts authored by the user, including those at visibility `Public`, `Followers only`, and `Only me`. Each card carries a visual badge showing its visibility.
    - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts in `closed_delivered` status only (PRD §3.3.5). The Hebrew label is intentionally generic (סגורים) rather than delivery-specific (שנמסרו) so it remains accurate if the tab is later extended to other terminal states; in MVP only `closed_delivered` is shown.
 - AC5. Tapping a post opens Post Detail in "owner mode" (see `FR-POST-016`).
-- AC6. **Counters fallback (MVP, pre-DB-schema)**: until `Profile` and follow/post tables exist (see `PROJECT_STATUS.md` P0.2), the three headline counters render as `0` rather than mock values. They begin reflecting reality from `FR-FOLLOW-*` and `FR-POST-*` onward.
+- AC6. **Counters fallback (MVP, pre-DB-schema)**: until `FR-FOLLOW-*` and `FR-POST-*` ship (see `spec/03_following.md` + `spec/04_posts.md`), the three headline counters render as `0` rather than mock values. They begin reflecting reality from `FR-FOLLOW-*` and `FR-POST-*` onward.
 
 **Edge Cases.**
 - A user with zero posts sees a warm empty state on each tab (per `D-15`): "No active posts yet — share your first item or browse the community feed".

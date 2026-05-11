@@ -105,6 +105,8 @@ export interface UpdatePostInput {
   itemCondition?: ItemCondition | null;
   urgency?: string | null;
   visibility?: PostVisibility;
+  /** When set, replaces all `media_assets` rows for the post (FR-POST-008 AC1). */
+  mediaAssets?: MediaAssetInput[];
 }
 
 export interface IPostRepository {

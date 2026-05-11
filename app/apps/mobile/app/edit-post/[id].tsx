@@ -1,25 +1,31 @@
 // FR-POST-008, FR-POST-009, FR-POST-015 AC1. Edit form for open posts (owner only).
+// FR-POST-005 — images: same picker + upload pipeline as create.
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, Platform, ScrollView,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import { ALL_CATEGORIES, CATEGORY_LABELS, canUpgradeVisibility } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase, getUpdatePostUseCase } from '../../src/services/postsComposition';
+import {
+  newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
+} from '../../src/services/imageUpload';
 import { CityPicker } from '../../src/components/CityPicker';
 import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
+import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
+import { styles } from './editPostScreen.styles';
 
 const POST_IMAGES_BUCKET = 'post-images';
 function assetUrl(path: string): string {
@@ -51,8 +57,15 @@ export default function EditPostScreen() {
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
   const [visibility, setVisibility] = useState<PostVisibility>('Public');
+  const [uploads, setUploads] = useState<UploadedAsset[]>([]);
+  const [uploadingCount, setUploadingCount] = useState(0);
+  const [batchId] = useState(() => newUploadBatchId());
 
   const post = query.data?.post;
+
+  useEffect(() => {
+    setSeeded(false);
+  }, [id]);
 
   useEffect(() => {
     if (!post || seeded) return;
@@ -66,8 +79,41 @@ export default function EditPostScreen() {
     setStreetNumber(post.address.streetNumber);
     setLocationDisplayLevel(post.locationDisplayLevel);
     setVisibility(post.visibility);
+    setUploads(
+      post.mediaAssets.map((a) => ({
+        path: a.path,
+        mimeType: a.mimeType,
+        sizeBytes: a.sizeBytes,
+        previewUri: assetUrl(a.path),
+      })),
+    );
     setSeeded(true);
   }, [post, seeded]);
+
+  const handlePickImages = async () => {
+    if (!viewerId) {
+      Alert.alert('שגיאה', 'יש להתחבר מחדש לפני שמירת פוסט.');
+      return;
+    }
+    const picked = await pickPostImages(uploads.length + uploadingCount);
+    if (picked.length === 0) return;
+
+    setUploadingCount((n) => n + picked.length);
+    try {
+      const startOrdinal = uploads.length;
+      const results = await Promise.all(
+        picked.map((p, i) => resizeAndUploadImage(p, viewerId, batchId, startOrdinal + i)),
+      );
+      setUploads((prev) => [...prev, ...results]);
+    } catch (err) {
+      Alert.alert('העלאת התמונה נכשלה', err instanceof Error ? err.message : 'נסה שוב.');
+    } finally {
+      setUploadingCount((n) => Math.max(0, n - picked.length));
+    }
+  };
+
+  const handleRemoveImage = (path: string) =>
+    setUploads((prev) => prev.filter((u) => u.path !== path));
 
   const save = useMutation({
     mutationFn: async () => {
@@ -85,6 +131,11 @@ export default function EditPostScreen() {
           itemCondition: post?.type === 'Give' ? condition : null,
           urgency: post?.type !== 'Give' && urgency.trim() ? urgency.trim() : null,
           visibility,
+          mediaAssets: uploads.map((u) => ({
+            path: u.path,
+            mimeType: u.mimeType,
+            sizeBytes: u.sizeBytes,
+          })),
         },
       });
     },
@@ -154,13 +205,14 @@ export default function EditPostScreen() {
   }
 
   const isGive = post.type === 'Give';
-  const isSaving = save.isPending;
+  const isSaving = save.isPending || uploadingCount > 0;
 
   const isFormValid =
     title.trim().length > 0 &&
     city !== null &&
     street.trim().length > 0 &&
-    streetNumber.trim().length > 0;
+    streetNumber.trim().length > 0 &&
+    (!isGive || uploads.length > 0);
 
   // FR-POST-009: visibility upgrade-only.
   function handleVisibilityChange(next: PostVisibility) {
@@ -199,22 +251,14 @@ export default function EditPostScreen() {
           <Text style={styles.typeBadgeSub}>לא ניתן לשנות את סוג הפוסט לאחר פרסום</Text>
         </View>
 
-        {/* Existing images — read-only */}
-        {post.mediaAssets.length > 0 && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>תמונות</Text>
-            <View style={styles.imagesRow}>
-              {post.mediaAssets.map((a, i) => (
-                <Image
-                  key={a.path ?? i}
-                  source={{ uri: assetUrl(a.path) }}
-                  style={styles.thumbnail}
-                />
-              ))}
-            </View>
-            <Text style={styles.imagesNote}>לא ניתן לערוך תמונות בגרסה זו</Text>
-          </View>
-        )}
+        <PhotoPicker
+          uploads={uploads}
+          isUploading={uploadingCount > 0}
+          uploadingCount={uploadingCount}
+          required={isGive}
+          onAdd={handlePickImages}
+          onRemove={handleRemoveImage}
+        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>כותרת <Text style={styles.required}>*</Text></Text>
@@ -354,62 +398,3 @@ export default function EditPostScreen() {
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.base },
-  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
-  retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: colors.primary, borderRadius: 999 },
-  retryText: { ...typography.button, color: colors.textInverse },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
-  headerClose: { padding: spacing.xs },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
-  saveBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderRadius: radius.md, minWidth: 60, alignItems: 'center' },
-  saveBtnText: { ...typography.button, color: colors.textInverse },
-  scroll: { flex: 1 },
-  scrollContent: { padding: spacing.base, gap: spacing.base, paddingBottom: spacing['3xl'] },
-  typeBadge: { paddingVertical: spacing.sm, paddingHorizontal: spacing.base, borderRadius: radius.md, alignItems: 'center', gap: 4 },
-  typeBadgeGive: { backgroundColor: colors.giveTagBg },
-  typeBadgeRequest: { backgroundColor: colors.requestTagBg },
-  typeBadgeText: { ...typography.button, color: colors.textPrimary },
-  typeBadgeSub: { ...typography.caption, color: colors.textSecondary },
-  section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  required: { color: colors.error },
-  input: {
-    backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    ...typography.body, color: colors.textPrimary, minHeight: 48,
-  },
-  textarea: { minHeight: 100, textAlignVertical: 'top', paddingTop: spacing.md },
-  charCount: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
-  streetRow: { flexDirection: 'row', gap: spacing.sm },
-  chips: { flexDirection: 'row' },
-  chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, marginLeft: spacing.sm, backgroundColor: colors.surface },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { ...typography.label, color: colors.textSecondary },
-  chipTextActive: { color: colors.textInverse },
-  conditionRow: { flexDirection: 'row', gap: spacing.sm },
-  conditionBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', backgroundColor: colors.surface },
-  conditionBtnActive: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
-  conditionText: { ...typography.label, color: colors.textSecondary },
-  conditionTextActive: { color: colors.primary },
-  imagesRow: { flexDirection: 'row', gap: spacing.sm, flexWrap: 'wrap' },
-  thumbnail: { width: 72, height: 72, borderRadius: radius.md },
-  imagesNote: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
-  visRow: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
-    borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, backgroundColor: colors.surface,
-  },
-  visRowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-  visRowDisabled: { opacity: 0.5 },
-  radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border },
-  radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  visLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  visSub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-});

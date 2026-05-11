@@ -3,7 +3,17 @@ import { GetActivePostsCountUseCase } from '../GetActivePostsCountUseCase';
 import type { IStatsRepository } from '../../ports/IStatsRepository';
 
 function makeStats(value: number): IStatsRepository {
-  return { getActivePublicPostsCount: async () => value };
+  const snap = {
+    registeredUsers: 0,
+    activePublicPosts: value,
+    itemsDeliveredTotal: 0,
+    asOf: null,
+  };
+  return {
+    getActivePublicPostsCount: async () => value,
+    getCommunityStatsSnapshot: async () => snap,
+    listMyActivityTimeline: async () => [],
+  };
 }
 
 describe('GetActivePostsCountUseCase', () => {

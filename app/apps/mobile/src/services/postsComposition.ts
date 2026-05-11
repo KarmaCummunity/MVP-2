@@ -1,6 +1,6 @@
 // ─────────────────────────────────────────────
 // Composition root for IPostRepository — mirrors authComposition.ts.
-// Mapped to SRS: FR-POST-001..010, FR-POST-014, FR-POST-016, FR-FEED-001..005.
+// Mapped to SRS: FR-POST-001..010, FR-POST-014, FR-POST-016, FR-FEED-001..005, FR-STATS-003..004.
 // ─────────────────────────────────────────────
 
 import { Platform } from 'react-native';
@@ -18,9 +18,11 @@ import {
   DismissFirstPostNudgeUseCase,
   GetActivePostsCountUseCase,
   GetClosureCandidatesUseCase,
+  GetCommunityStatsSnapshotUseCase,
   GetFeedUseCase,
   GetMyPostsUseCase,
   GetPostByIdUseCase,
+  ListMyActivityTimelineUseCase,
   MarkAsDeliveredUseCase,
   ReopenPostUseCase,
   UpdatePostUseCase,
@@ -43,6 +45,8 @@ let _markDelivered: MarkAsDeliveredUseCase | null = null;
 let _reopen: ReopenPostUseCase | null = null;
 let _getClosureCandidates: GetClosureCandidatesUseCase | null = null;
 let _getActivePostsCount: GetActivePostsCountUseCase | null = null;
+let _communityStatsSnapshot: GetCommunityStatsSnapshotUseCase | null = null;
+let _listMyActivityTimeline: ListMyActivityTimelineUseCase | null = null;
 let _dismissFirstPostNudge: DismissFirstPostNudgeUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
@@ -130,6 +134,20 @@ export function getStatsRepo(): IStatsRepository {
 export function getActivePostsCountUseCase(): GetActivePostsCountUseCase {
   if (!_getActivePostsCount) _getActivePostsCount = new GetActivePostsCountUseCase(getStatsRepo());
   return _getActivePostsCount;
+}
+
+export function getCommunityStatsSnapshotUseCase(): GetCommunityStatsSnapshotUseCase {
+  if (!_communityStatsSnapshot) {
+    _communityStatsSnapshot = new GetCommunityStatsSnapshotUseCase(getStatsRepo());
+  }
+  return _communityStatsSnapshot;
+}
+
+export function getListMyActivityTimelineUseCase(): ListMyActivityTimelineUseCase {
+  if (!_listMyActivityTimeline) {
+    _listMyActivityTimeline = new ListMyActivityTimelineUseCase(getStatsRepo());
+  }
+  return _listMyActivityTimeline;
 }
 
 export function getDismissFirstPostNudgeUseCase(): DismissFirstPostNudgeUseCase {

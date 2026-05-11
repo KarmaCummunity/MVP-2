@@ -1,6 +1,6 @@
 # Appendix C — Decisions Log
 
-[← back to SRS index](../../SRS.md)
+[← back to CLAUDE.md](../../CLAUDE.md)
 
 ---
 
@@ -17,6 +17,8 @@ A decision should be re-opened only when one of the following triggers fires:
 ---
 
 ## D-1 — Three-platform single codebase via React Native + RNW
+
+> **Note (2026-05-11):** `CODE_QUALITY.md` was never authored; its content lives in `CLAUDE.md` §5–§8. References to it below are historical.
 
 **Decision.** Build iOS, Android, and Web from a single codebase using React Native 0.74+ and React Native Web. Web is a **first-class** target (parity with mobile per `R-MVP-Core-7`).
 
@@ -53,6 +55,8 @@ A decision should be re-opened only when one of the following triggers fires:
 ---
 
 ## D-3 — Clean Architecture monorepo with Turborepo
+
+> **Note (2026-05-11):** `CODE_QUALITY.md` was never authored; its content lives in `CLAUDE.md` §5–§8. References to it below are historical.
 
 **Decision.** Organize source as a Turborepo monorepo with these top-level packages:
 
@@ -349,7 +353,7 @@ Three reinforcing reworks of the feed-and-search surface:
 **Decision.**
 הסרת היכולת "חסום / ביטול חסימה" מהיקף ה-MVP. `FR-MOD-003`, `FR-MOD-004` ו-`FR-MOD-009` מסומנים `DEPRECATED — post-MVP` עד שיוחזרו פורמלית. נגזרות מיידיות:
 
-1. **Backlog.** P1.4 ("Block / unblock + visibility restoration") נמחק מ-`PROJECT_STATUS.md §2`. `FR-MOD-010` (סנקציות על דיווחי שווא) — שמופיע היה משויך ל-P1.4 — עובר ל-P1.3 ("Reports + auto-removal + false-report sanctions") שאליו הוא משתייך לוגית.
+1. **Backlog.** P1.4 ("Block / unblock + visibility restoration") נמחק מ-`BACKLOG.md`. `FR-MOD-010` (סנקציות על דיווחי שווא) — שמופיע היה משויך ל-P1.4 — עובר ל-P1.3 ("Reports + auto-removal + false-report sanctions") שאליו הוא משתייך לוגית.
 2. **Cross-references.**
    - `FR-MOD-007 AC2` כבר לא מחייב כפתור "חסום" בתפריט הפרופיל.
    - `FR-MOD-012 AC1` יורד את `block_user` / `unblock_user` מרשימת ה-`AuditEvent` הנדרשים.
@@ -377,7 +381,7 @@ Three reinforcing reworks of the feed-and-search surface:
 - `NFR-PRIV-009` (block opacity) deferred — אין surface שמייצר את ה-signal הזה ב-MVP.
 
 **Affected docs.**
-`FR-MOD-003, 004, 009` (DEPRECATED — post-MVP), `FR-MOD-007, 012` (cross-ref scrub), `FR-POST-014 AC4`, `FR-POST-018 AC3`, `FR-FEED-006`, `FR-SETTINGS-005` (deferred), `INV-M1`, `D-11` (superseded), `NFR-PRIV-009` (deferred), `06_audit_trail.md`, `01_analytics_and_events.md` (block events deferred), `B_glossary.md` (`Block` entry annotated), `A_traceability_matrix.md` (rows annotated), `PROJECT_STATUS.md §2` (P1.4 removed; FR-MOD-010 moves to P1.3), `TECH_DEBT.md` (TD-18 closed; TD-41 block-portion N/A).
+`FR-MOD-003, 004, 009` (DEPRECATED — post-MVP), `FR-MOD-007, 012` (cross-ref scrub), `FR-POST-014 AC4`, `FR-POST-018 AC3`, `FR-FEED-006`, `FR-SETTINGS-005` (deferred), `INV-M1`, `D-11` (superseded), `NFR-PRIV-009` (deferred), `06_audit_trail.md`, `01_analytics_and_events.md` (block events deferred), `B_glossary.md` (`Block` entry annotated), `A_traceability_matrix.md` (rows annotated), `BACKLOG.md` (P1.4 removed; FR-MOD-010 moves to P1.3), `TECH_DEBT.md` (TD-18 closed; TD-41 block-portion N/A).
 
 ---
 

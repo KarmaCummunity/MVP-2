@@ -6,7 +6,7 @@
 | **Last Updated** | 2026-05-12 (FR-CHAT-016 architecture splits; removed duplicate FE TD-118 chat-size row; TD-35 partial — `chatHe` partial) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
-> Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
+> Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
 
 **Severity**: 🔴 High · 🟠 Med · 🟢 Low
 **ID lanes**: BE = `TD-50..99` · FE = `TD-100..149` (legacy IDs `TD-1..43` predate the lane split — keep as-is)
@@ -24,7 +24,7 @@
 | TD-15 | 🔴 | No `IChatRepository` Supabase adapter; chat list + thread use `MOCK_MESSAGES` | P0.5 |
 | TD-17 | 🔴 | Closure flow (mark delivered / un-mark / reopen / educational popup) entirely absent — North Star metric unmeasurable | P0.6 |
 | TD-19 | 🔴 | Push notifications: no device lifecycle, no fan-out, no preferences table | P1.5 |
-| TD-20 | 🔴 | Statistics: counters render `0`; no `bg-job-stats-recompute`; no community-stats endpoint; no activity timeline | P1.6 |
+| TD-20 | 🟠 | Statistics: ~~counters render `0`~~ **P2.1 partial (2026-05-11)** — mobile stats screen reads live `users` counters + `community_stats` + `rpc_my_activity_timeline`. Still missing: `bg-job-stats-recompute` / drift automation (`FR-STATS-005`); timeline lacks durable history for reopen + recipient un-mark (needs event log or expanded triggers). | P2.x |
 | TD-23 | 🟠 | Server-side EXIF strip Edge Function pending (client-side strip via re-encode shipped in P0.4-FE). Author Edge Function under `supabase/functions/` | Follow-up to P0.4-FE |
 | TD-38 | 🟠 | FR-MOD-010 sanction escalation (7d→30d→permanent) is schema-only in P0.2.e; escalation logic should live with `FR-ADMIN-*` flow code (30-day sliding-window count, tier transitions, stamping `account_status_until`). Reserved columns: `false_reports_count`, `false_report_sanction_count`, `account_status_until` | P2.5 (super-admin) |
 | TD-39 | 🟠 | **Internal counter columns leak to non-owner viewers of Public profiles.** RLS allows authenticated clients to read `active_posts_count_internal`, `items_given_count`, `items_received_count`, `posts_created_total`, `false_reports_count` on Public+active profiles. A non-owner can compute `internal − public_open − followers_only_open` to infer `OnlyMe` post existence, violating FR-PROFILE-013 AC4 and FR-STATS-006 AC1. Schema-level fix is awkward (Postgres column-grants apply per role *before* RLS). **Application-layer fix**: `IUserRepository` Supabase adapter MUST call `active_posts_count_for_viewer(owner, viewer)` for non-self reads and never project raw `_internal` into Other-Profile responses. Add lint/test on adapter. | P2.4 (or P0.4-FE follow-up) |
@@ -32,6 +32,8 @@
 | TD-41 | 🟠 | `is_following()` is a `SECURITY DEFINER` function that bypasses RLS (intentional — visibility predicates need to read both directions). A predicate defect would silently break the privacy contract with no RLS error. **Mitigation**: SQL probes (vitest under `@kc/infrastructure-supabase`) covering: (a) ~~`is_blocked(A,B)` true when A blocks B~~ (N/A per `EXEC-9` — block deferred post-MVP, predicate always returns false in MVP); (b) `is_following(A,B)` honors `accepted` follows but not `pending`; (c) `is_post_visible_to()` correctly applies the follower-only branch. | When P1.1 first exercises FollowersOnly paths |
 | TD-50 | 🟠 | `SupabasePostRepository` and `SupabaseAuthService` have no adapter-level tests (only `pnpm typecheck` + downstream use-case fakes guard them). Pure helpers (`mapPostRow`, `cursor.ts`, `mapAuthError`) deserve unit tests. Adding vitest to `@kc/infrastructure-supabase` is a small focused slice | Opportunistic |
 | TD-52 | 🟠 | **`admin_restore_post` RPC + UI for FR-ADMIN-002 (partial).** The admin remove flow (FR-ADMIN-009, migration 0020) flips status to `removed_admin` and writes a `manual_remove_target` audit row. There is no symmetric restore yet — the only path to restore is a manual SQL `UPDATE posts SET status = 'open' WHERE post_id = ...`. Build a `SECURITY DEFINER` RPC that flips `removed_admin → open`, writes `restore_target` to `audit_events`, and surfaces it from a future audit-log UI (FR-ADMIN-007). | P2.5 |
+| TD-53 | 🔴 | **No CI step to deploy Edge Functions — deployments are manual and silently diverge from `main`.** `delete-account` was merged in PR #68 but never deployed; the function returned 404 that the browser reported as a CORS error. Add a `supabase functions deploy` step to `ci.yml` triggered on pushes to `main` that change `supabase/functions/**`. Requires `SUPABASE_ACCESS_TOKEN` secret in GH Actions. | Next CI maintenance slot |
+| TD-54 | 🟠 | **Duplicate migration version numbers (0021, 0023) — orphaned migrations can never be recorded in `schema_migrations` (PK=version).** PRs #55 and #57 claimed 0021; PRs #55 and #58 claimed 0023 in parallel. The orphaned files (`0021_post_closure_emit_system_messages`, `0023_followrequests_auto_approve_on_public`) were applied manually via Management API (2026-05-11) and made idempotent (PR #71) but cannot be recorded. Future migration pushes via CLI will always list them as pending. Permanent fix: renumber the orphans to 0030/0031, insert the new version rows in `schema_migrations`, and update `supabase migration list`. | Next maintenance slot |
 | TD-116 | 🔴 | **Full report processing pipeline absent.** 24h dedup trigger on `reports`, auto-removal trigger, false-report sanctions counter — required by FR-MOD-001 AC5/AC7, FR-MOD-004, FR-MOD-008. The report-issue screen exists (P0.5) but inserts a raw `reports` row only; no downstream automation fires. | P1.3 |
 | TD-117 | 🔴 | **Report-summary system message on support thread not injected.** Required by FR-CHAT-007 AC3 (the inject) and FR-MOD-002 (the formatting). Currently the support thread opens cleanly via `GetSupportThreadUseCase` but the report-issue flow does NOT inject any system message describing the reported issue. | P1.3 |
 | TD-118 | 🟠 | **Delete Account V1 deferred polish — orphan storage + cooldown + email + recovery window.** P2.2 V1 shipped immediate hard-delete. Remaining items for V1.1: (1) orphan `post-images` cleanup cron — Edge Function logs storage delete failures but does not retry; orphan media in this public-read bucket remains world-readable until cleaned. (2) `DeletedIdentifier` cooldown table (FR-AUTH-016) — 30-day reuse lockout for email/Google identity. (3) Confirmation email (FR-NOTIF-012) — requires email infra. (4) Recovery/undo window — current V1 is irreversible; industry baseline is 30 days. | V1.1 |
@@ -86,13 +88,11 @@
 
 | ID | Sev | Item | Closing slice |
 | -- | -- | ---- | ------- |
-| TD-4 | 🔴 | `docs/SSOT/CODE_QUALITY.md` referenced from SRS.md but does not exist. Author with: layer responsibilities, file-size cap policy, error mapping table, testing strategy, ADR template | Opportunistic — partly served by `srs-architecture.mdc` + this file |
 | TD-9 | 🟢 | `android/` is gitignored (CNG workflow). Must run `expo run:android` with `JAVA_HOME=.../temurin-17.jdk`. Pinned in `package.json android` script. If CI added, set `JAVA_HOME` env var there too | When CI lands |
 | TD-11 | 🟢 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (post row hidden by RLS, image paths not enumerable). Replace with per-object signed URLs (or private bucket + sign-on-fetch) at scale | Pre-launch hardening |
 | TD-30 | 🟠 | No JSDoc / TSDoc on most public exports across `domain`, `application`, `infrastructure`, mobile components | Opportunistic |
 | TD-31 | 🟠 | Test coverage limited; no tests for repos, components, infra adapters, or invariants beyond use-cases | Opportunistic |
 | TD-36 | 🟢 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit | Opportunistic |
-| TD-43 | 🟢 | `docs/SSOT/SRS.md` Last-Updated header still shows `2026-05-05`, but ACs were added on 2026-05-07 (FR-AUTH-003 AC5 — Google identity on AuthSession; FR-PROFILE-001 AC4 + AC6 — avatar/displayName fallback). One-minute fix | Opportunistic |
 
 ---
 
@@ -100,6 +100,8 @@
 
 | ID | Item | Resolved |
 | -- | -- | -- |
+| TD-4 | Missing engineering-quality reference doc — content folded into `CLAUDE.md` §5–§8 instead of authoring a separate file. | 2026-05-11 (SSOT cleanup PR) |
+| TD-43 | Stale Last-Updated header on the archived monolithic SRS file. Spec is canonical in `docs/SSOT/spec/*.md` with per-file status headers; no central SRS file remains active. | 2026-05-11 (SSOT cleanup PR) |
 | TD-1 | `database.types.ts` was a stub — Audit confirmed it's 325 LOC of real generated types | 2026-05-07 |
 | TD-7 | `apps/mobile/app/(auth)/index.tsx` and `apps/mobile/app/(tabs)/create.tsx` used `'/(tabs)/'` (trailing slash) violating `expo-router` typed-routes mode | 2026-05-06 (lint cleanup) |
 | TD-12 | Audit baseline 2026-05-07 — 49 findings → all tracked as TD-13..TD-44 | 2026-05-08 (every finding has a live owner) |
@@ -133,5 +135,5 @@
 
 1. Pick the next free ID in your lane (BE: `TD-50..99`, FE: `TD-100..149`).
 2. Add a row under the right Active section with severity, item, and closing slice.
-3. If the TD is blocking the current feature, also link it from the §4 entry in [`HISTORY.md`](./HISTORY.md) when the feature ships.
+3. If the TD is blocking the current feature, also link it from the relevant `spec/{domain}.md` AC when the feature ships.
 4. When closing: move the row to "Resolved" with a one-line resolution + date. Don't delete — the cross-reference is useful.

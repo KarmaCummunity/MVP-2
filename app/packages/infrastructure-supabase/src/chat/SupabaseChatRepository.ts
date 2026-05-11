@@ -110,6 +110,8 @@ export class SupabaseChatRepository implements IChatRepository {
     if (!data) {
       throw new ChatError('super_admin_not_found', 'super_admin_not_found');
     }
+    // RPC is declared with SetofOptions to "chats" — supabase-js may surface
+    // this as either a single row or a one-element array depending on version.
     const row = (Array.isArray(data) ? data[0] : data) as
       | Database['public']['Tables']['chats']['Row']
       | undefined;
@@ -128,6 +130,7 @@ export class SupabaseChatRepository implements IChatRepository {
       chat.participantIds[0] === viewerId
         ? chat.participantIds[1]
         : chat.participantIds[0];
+    // After migration 0028, otherId may be null (counterpart deleted account).
     if (otherId == null) {
       return {
         userId: null,

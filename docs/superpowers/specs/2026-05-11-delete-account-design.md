@@ -1,3 +1,5 @@
+> ⚠️ **Frozen historical plan** — written under the pre-2026-05-11 SSOT scheme. References to `PROJECT_STATUS.md` / `HISTORY.md` in the body below are obsolete; see [`CLAUDE.md`](../../../CLAUDE.md) for the current convention.
+
 # P2.2 — Delete Account (V1 פרגמטי) Design Spec
 
 > תאריך: 2026-05-11 · אחראי: agent יחיד (single-branch single-PR) · סטטוס: ממתין לאישור משתמש (אחרי revision לפי council review) · FR refs: FR-SETTINGS-012 (יישום חלקי — V1 פרגמטי), FR-AUTH-016 (לא מיושם — נדחה ל-V1.1)

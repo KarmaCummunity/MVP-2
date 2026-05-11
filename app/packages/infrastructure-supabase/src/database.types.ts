@@ -922,6 +922,17 @@ export type Database = {
         }
         Returns: { post_id: string; distance_km: number | null }[]
       }
+      // FR-STATS-003 (0030) — manually added until next typegen run.
+      rpc_my_activity_timeline: {
+        Args: { p_limit?: number }
+        Returns: {
+          occurred_at: string
+          kind: string
+          post_id: string
+          post_title: string
+          actor_display_name: string | null
+        }[]
+      }
     }
     Enums: {
       [_ in never]: never

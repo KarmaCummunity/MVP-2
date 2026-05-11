@@ -31,6 +31,7 @@ import {
   reopenPost as reopenPostHelper,
   getClosureCandidates as getClosureCandidatesHelper,
 } from './closureMethods';
+import { executePostUpdate } from './executePostUpdate';
 
 const FEED_HARD_MAX = 100;
 
@@ -129,38 +130,7 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   async update(postId: string, patch: UpdatePostInput): Promise<Post> {
-    const updateRow: Database['public']['Tables']['posts']['Update'] = {};
-    if (patch.title !== undefined) updateRow.title = patch.title;
-    if (patch.description !== undefined) updateRow.description = patch.description;
-    if (patch.category !== undefined) updateRow.category = patch.category;
-    if (patch.locationDisplayLevel !== undefined)
-      updateRow.location_display_level = patch.locationDisplayLevel;
-    if (patch.itemCondition !== undefined) updateRow.item_condition = patch.itemCondition;
-    if (patch.urgency !== undefined) updateRow.urgency = patch.urgency;
-    if (patch.visibility !== undefined) updateRow.visibility = patch.visibility;
-    if (patch.address) {
-      updateRow.city = patch.address.city;
-      updateRow.street = patch.address.street;
-      updateRow.street_number = patch.address.streetNumber;
-    }
-
-    if (Object.keys(updateRow).length === 0) {
-      const current = await this.fetchPostById(postId);
-      if (!current) throw new Error(`update: post ${postId} not found`);
-      return current;
-    }
-
-    const { error } = await this.client.from('posts').update(updateRow).eq('post_id', postId);
-    if (error) {
-      if (error.message?.includes('visibility_downgrade_forbidden')) {
-        throw new PostError('visibility_downgrade_forbidden', error.message);
-      }
-      throw new Error(`update: ${error.message}`);
-    }
-
-    const updated = await this.fetchPostById(postId);
-    if (!updated) throw new Error(`update: post ${postId} not found after update`);
-    return updated;
+    return executePostUpdate(this.client, postId, patch, (pid) => this.fetchPostById(pid));
   }
 
   async delete(postId: string): Promise<void> {

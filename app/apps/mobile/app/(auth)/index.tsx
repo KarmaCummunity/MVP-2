@@ -1,7 +1,7 @@
 // Splash + Welcome / Auth-method picker.
 // Mapped to SRS: FR-AUTH-001 (splash), FR-AUTH-002 (auth entry, all methods),
 // FR-AUTH-014 (guest preview entry point).
-// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
+// docs/SSOT/spec/01_auth_and_onboarding.md
 import React, { useState } from 'react';
 import {
   View,

@@ -1,5 +1,6 @@
 // DM-only Supabase helpers — keeps SupabaseChatRepository under file cap (TD-118).
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { ChatError } from '@kc/application';
 import type { Chat } from '@kc/domain';
 import type { Database } from '../database.types';
 import { rowToChat } from './rowMappers';
@@ -12,6 +13,16 @@ export async function findOrCreateDmChat(
   anchorPostId?: string,
   options?: { preferNewThread?: boolean },
 ): Promise<Chat> {
+  const { data: otherRow, error: otherErr } = await client
+    .from('users')
+    .select('user_id')
+    .eq('user_id', otherUserId)
+    .maybeSingle();
+  if (otherErr) throw mapChatError(otherErr);
+  if (!otherRow) {
+    throw new ChatError('send_to_deleted_user', 'counterpart_not_found');
+  }
+
   const [a, b] =
     userId < otherUserId ? [userId, otherUserId] : [otherUserId, userId];
 

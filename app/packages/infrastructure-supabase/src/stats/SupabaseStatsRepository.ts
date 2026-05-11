@@ -1,24 +1,105 @@
 // SupabaseStatsRepository — adapter for IStatsRepository.
-// Mapped to SRS: FR-FEED-014 (active-community counter), FR-STATS-004.
+// Mapped to SRS: FR-FEED-014, FR-STATS-003, FR-STATS-004.
 //
-// Reads from the `community_stats` view created in migration 0006. The view
-// is materialized server-side and updated by triggers; the read here is a
-// single-row SELECT with no joins and stays under 5ms even at scale.
+// Reads from `community_stats` (0006) and `rpc_my_activity_timeline` (0030).
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { IStatsRepository } from '@kc/application';
+import type { CommunityStatsSnapshot, IStatsRepository } from '@kc/application';
+import type { PersonalActivityItem, PersonalActivityKind } from '@kc/domain';
 import type { Database } from '../database.types';
+
+const ACTIVITY_KINDS = new Set<string>([
+  'post_created',
+  'post_closed_delivered',
+  'post_closed_no_recipient',
+  'post_reopened',
+  'marked_as_recipient',
+  'unmarked_as_recipient',
+  'post_expired',
+  'post_removed_admin',
+]);
+
+type ActivityRpcRow = {
+  occurred_at: string;
+  kind: string;
+  post_id: string;
+  post_title: string;
+  actor_display_name: string | null;
+};
+
+function mapActivityKind(kind: string): PersonalActivityKind {
+  if (ACTIVITY_KINDS.has(kind)) return kind as PersonalActivityKind;
+  return 'post_created';
+}
+
+function mapSnapshotRow(data: {
+  registered_users?: number | null;
+  active_public_posts?: number | null;
+  items_delivered_total?: number | null;
+  as_of?: string | null;
+} | null): CommunityStatsSnapshot {
+  return {
+    registeredUsers: Number(data?.registered_users ?? 0),
+    activePublicPosts: Number(data?.active_public_posts ?? 0),
+    itemsDeliveredTotal: Number(data?.items_delivered_total ?? 0),
+    asOf: data?.as_of ?? null,
+  };
+}
+
+/** PostgREST: function missing from schema (migration not applied). */
+function isActivityRpcMissing(error: { code?: string; message: string }): boolean {
+  const msg = error.message.toLowerCase();
+  const code = error.code ?? '';
+  if (code === 'PGRST202') return true;
+  if (code === '42883') return true;
+  if (msg.trim() === 'not found') return true;
+  if (msg.includes('rpc_my_activity_timeline') && msg.includes('could not find')) return true;
+  if (msg.includes('rpc_my_activity_timeline') && msg.includes('does not exist')) return true;
+  return false;
+}
 
 export class SupabaseStatsRepository implements IStatsRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
-  async getActivePublicPostsCount(): Promise<number> {
+  async getCommunityStatsSnapshot(): Promise<CommunityStatsSnapshot> {
     const { data, error } = await this.client
       .from('community_stats')
-      .select('active_public_posts')
+      .select('registered_users, active_public_posts, items_delivered_total, as_of')
       .maybeSingle();
 
-    if (error) throw new Error(`getActivePublicPostsCount: ${error.message}`);
-    return Number(data?.active_public_posts ?? 0);
+    if (error) throw new Error(`getCommunityStatsSnapshot: ${error.message}`);
+    return mapSnapshotRow(data);
+  }
+
+  async getActivePublicPostsCount(): Promise<number> {
+    const s = await this.getCommunityStatsSnapshot();
+    return s.activePublicPosts;
+  }
+
+  async listMyActivityTimeline(limit: number): Promise<PersonalActivityItem[]> {
+    const { data, error } = await this.client.rpc('rpc_my_activity_timeline', {
+      p_limit: limit,
+    });
+
+    if (error) {
+      if (isActivityRpcMissing(error)) {
+        const g = globalThis as { __DEV__?: boolean };
+        if (g.__DEV__) {
+          console.warn(
+            '[SupabaseStatsRepository] rpc_my_activity_timeline missing; apply supabase/migrations/0030_personal_activity_timeline_rpc.sql',
+          );
+        }
+        return [];
+      }
+      throw new Error(`listMyActivityTimeline: ${error.message}`);
+    }
+    const rows = (data ?? []) as ActivityRpcRow[];
+    return rows.map((r) => ({
+      occurredAt: r.occurred_at,
+      kind: mapActivityKind(r.kind),
+      postId: r.post_id,
+      postTitle: r.post_title,
+      actorDisplayName: r.actor_display_name,
+    }));
   }
 }

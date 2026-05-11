@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Enforces architecture invariants declared in `.cursor/rules/srs-architecture.mdc`.
+// Enforces architecture invariants declared in `CLAUDE.md` §5.
 // Run from `app/`: `node scripts/check-architecture.mjs`. Wired into `pnpm lint`.
 // Exits non-zero on any violation.
 //
@@ -34,7 +34,7 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
   // Bumped 249→282 (P1.1/P1.2 follow surface + delete-account strings). Remove once TD-35 splits the file.
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 276 }],
+  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 266 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],

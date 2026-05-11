@@ -1,6 +1,6 @@
 # Operator Runbook — Karma Community
 
-> Verification steps extracted from PROJECT_STATUS.md §4 to avoid per-entry repetition.
+> Migration verification steps for each numbered migration (0001–0009, P0.6).
 
 **Status**: Migrations 0001–0009 all applied to the live Supabase project (0009 applied 2026-05-08).
 
