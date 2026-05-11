@@ -111,6 +111,7 @@ export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner 
       ownerHandle: '',
       ownerPrivacyMode: 'Public',
       recipientUser,
+      distanceKm: null,
     };
   }
   return {
@@ -120,6 +121,7 @@ export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner 
     ownerHandle: row.owner.share_handle,
     ownerPrivacyMode: row.owner.privacy_mode as 'Public' | 'Private',
     recipientUser,
+    distanceKm: null,
   };
 }
 

@@ -7,12 +7,16 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getSupabaseClient,
+  SupabaseFeedRealtime,
   SupabasePostRepository,
+  SupabaseStatsRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
   CreatePostUseCase,
   DeletePostUseCase,
+  DismissFirstPostNudgeUseCase,
+  GetActivePostsCountUseCase,
   GetClosureCandidatesUseCase,
   GetFeedUseCase,
   GetMyPostsUseCase,
@@ -20,11 +24,15 @@ import {
   MarkAsDeliveredUseCase,
   ReopenPostUseCase,
   UpdatePostUseCase,
+  type IFeedRealtime,
   type IPostRepository,
+  type IStatsRepository,
 } from '@kc/application';
 import { getUserRepo } from './userComposition';
 
 let _repo: IPostRepository | null = null;
+let _realtime: IFeedRealtime | null = null;
+let _stats: IStatsRepository | null = null;
 let _create: CreatePostUseCase | null = null;
 let _update: UpdatePostUseCase | null = null;
 let _del: DeletePostUseCase | null = null;
@@ -34,6 +42,8 @@ let _myPosts: GetMyPostsUseCase | null = null;
 let _markDelivered: MarkAsDeliveredUseCase | null = null;
 let _reopen: ReopenPostUseCase | null = null;
 let _getClosureCandidates: GetClosureCandidatesUseCase | null = null;
+let _getActivePostsCount: GetActivePostsCountUseCase | null = null;
+let _dismissFirstPostNudge: DismissFirstPostNudgeUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -100,4 +110,31 @@ export function getGetClosureCandidatesUseCase(): GetClosureCandidatesUseCase {
     _getClosureCandidates = new GetClosureCandidatesUseCase(getRepo(), getUserRepo());
   }
   return _getClosureCandidates;
+}
+
+// ── P1.2 — feed discovery (FR-FEED-009, 014, 015) ─────────────────────────
+export function getFeedRealtime(): IFeedRealtime {
+  if (!_realtime) {
+    _realtime = new SupabaseFeedRealtime(getSupabaseClient({ storage: pickStorage() }));
+  }
+  return _realtime;
+}
+
+export function getStatsRepo(): IStatsRepository {
+  if (!_stats) {
+    _stats = new SupabaseStatsRepository(getSupabaseClient({ storage: pickStorage() }));
+  }
+  return _stats;
+}
+
+export function getActivePostsCountUseCase(): GetActivePostsCountUseCase {
+  if (!_getActivePostsCount) _getActivePostsCount = new GetActivePostsCountUseCase(getStatsRepo());
+  return _getActivePostsCount;
+}
+
+export function getDismissFirstPostNudgeUseCase(): DismissFirstPostNudgeUseCase {
+  if (!_dismissFirstPostNudge) {
+    _dismissFirstPostNudge = new DismissFirstPostNudgeUseCase(getUserRepo());
+  }
+  return _dismissFirstPostNudge;
 }

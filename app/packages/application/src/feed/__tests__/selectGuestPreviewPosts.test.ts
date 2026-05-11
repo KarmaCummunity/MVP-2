@@ -21,6 +21,7 @@ const base = (id: string, createdAt: string, visibility: 'Public' | 'FollowersOn
   mediaAssets: [],
   recipient: null,
   recipientUser: null,
+  distanceKm: null,
   reopenCount: 0,
   deleteAfter: null,
   createdAt,

@@ -10,11 +10,11 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 **SRS:** FR-FOLLOW-002 AC1 / FR-FOLLOW-004 AC1 / FR-FOLLOW-006 AC3 / FR-FOLLOW-009 AC2 / FR-PROFILE-005 AC2 / FR-PROFILE-006 AC1 (all confirm-dialog ACs) — no AC change, implementation only.
 **Branch / PR:** `claude/crazy-proskuriakova-7bb22d`.
-**Tests:** 153 vitest — unchanged (the hotfix is in render-layer code; existing use-case tests already covered the dispatchers).
-**TD deltas:** TD-134 opened (sweep remaining `Alert.alert` call sites in the rest of the codebase).
+**Tests:** 166 vitest (153 before merge with P1.2 + 13 new from P1.2) — unchanged by this slice (the hotfix is in render-layer code; existing use-case tests already covered the dispatchers).
+**TD deltas:** TD-138 opened (sweep remaining `Alert.alert` call sites in the rest of the codebase).
 
 Why this slice exists: user QA on web preview revealed three symptoms that traced to two root causes.
-* **Cause A — `react-native-web@0.21.2` ships `Alert.alert` as a no-op** (`class Alert { static alert() {} }`). Every confirm dialog and toast in the follow flow silently died on web: unfollow confirm ("עוקב ✓" tap did nothing — user's Bug 2), cancel-request confirm, remove-follower confirm, privacy-toggle confirm (so `UpdatePrivacyModeUseCase` was never reachable on web — silently degraded the auto-approve trigger from 0021 since the toggle itself never fired), cooldown-days toast. User's Bug 3 ("יוזר אחר שהכפתור מעקב חיוור כאילו לא עובד") was the same symptom on the secondary-style "עוקב ✓" button.
+* **Cause A — `react-native-web@0.21.2` ships `Alert.alert` as a no-op** (`class Alert { static alert() {} }`). Every confirm dialog and toast in the follow flow silently died on web: unfollow confirm ("עוקב ✓" tap did nothing — user's Bug 2), cancel-request confirm, remove-follower confirm, privacy-toggle confirm (so `UpdatePrivacyModeUseCase` was never reachable on web — silently degraded the auto-approve trigger from 0023 since the toggle itself never fired), cooldown-days toast. User's Bug 3 ("יוזר אחר שהכפתור מעקב חיוור כאילו לא עובד") was the same symptom on the secondary-style "עוקב ✓" button.
 * **Cause B — viewer's `following_count` was not optimistically updated.** `useOptimisticFollowAction` predicted `profile-other.followersCount` but not `user-profile.followingCount`, so a follow done from `/user/[handle]` left My Profile's counter at the pre-follow value until the post-invalidate refetch returned (user's Bug 1).
 
 Fixes:
@@ -23,10 +23,39 @@ Fixes:
 * `apps/mobile/src/hooks/useOptimisticFollowAction.ts` — optimistic surface extended to `['user-profile', viewerId].followingCount`; lists `['following', viewerId]` and `['followers', target.userId]` are invalidated after success; errors are surfaced via an `onError({ title, message })` callback so the caller renders our cross-platform notify (no more dead `Alert.alert` toast inside the hook).
 * `apps/mobile/app/user/[handle]/index.tsx` — mounts `<NotifyModal />`, wires `onError`, and hides the follow button when `stateQuery.isError` (e.g., target suspended) so the user never sees a perpetually-disabled `busy` fallback.
 * `apps/mobile/app/user/[handle]/followers.tsx` — remove-follower confirm migrated to `<ConfirmActionModal />`.
-* `apps/mobile/app/settings/privacy.tsx` — privacy-toggle confirm migrated to `<ConfirmActionModal />`. This is the one that mattered most for correctness: on web the toggle was previously visually flipping without calling `UpdatePrivacyModeUseCase` — migration 0021's `users_after_privacy_mode_change` trigger never fired because the use case was never reached.
+* `apps/mobile/app/settings/privacy.tsx` — privacy-toggle confirm migrated to `<ConfirmActionModal />`. This is the one that mattered most for correctness: on web the toggle was previously visually flipping without calling `UpdatePrivacyModeUseCase` — migration 0023's `users_after_privacy_mode_change` trigger never fired because the use case was never reached.
 * `apps/mobile/app/settings/follow-requests.tsx` — error toast migrated to `<NotifyModal />`.
 
-Out of scope: every other `Alert.alert` call in chat, post detail, edit profile, settings, etc. They share the same defect and are tracked under TD-134 for an opportunistic sweep.
+Out of scope: every other `Alert.alert` call in chat, post detail, edit profile, settings, etc. They share the same defect and are tracked under TD-138 for an opportunistic sweep.
+
+---
+
+## 2026-05-11 — P1.2 Feed discovery experience
+
+**SRS:** FR-FEED-004, 005, 006, 008, 009, 010, 014, 015 (reworked / extended); FR-FEED-018, 019 (new); FR-FEED-003, 007, 013 (deprecated); FR-FEED-016 (superseded).
+**Branch / PR:** `feat/FR-FEED-006-feed-discovery-and-filters` (single-branch, 4-commit PR).
+**Tests:** 148 → 166 vitest passing (+18 across geo, GetFeedUseCase shape, GetActivePostsCountUseCase, DismissFirstPostNudgeUseCase).
+**TD deltas:** Closed TD-26, TD-102. Opened TD-134..TD-137 (analytics spine, edge-cached counter, search-tab filter parity, RPC N+1).
+**Open gaps:**
+- Universal Search tab still uses its legacy filter shape — shared `<PostFilterSheet>` deferred to TD-136 (depends on TD-133 LOC split).
+- Cold-start fallback (FR-FEED-007) is deprecated; if low-supply UX patterns prove needed later, file a new FR.
+- Analytics events for filter changes / nudge dismissals / new-posts pill clicks deferred to P1.6 (TD-134).
+
+Highlights:
+- **2 migrations:** `0021_cities_geo` adds lat/lon to `public.cities` for the 20 canonical Israeli cities + a pure-SQL `haversine_km(...)` helper; `0022_feed_ranked_ids` adds an RPC that returns ordered post_ids + computed distance under server-side filters and visibility predicate.
+- **3 new domain types:** `FeedSortOrder`, `FeedStatusFilter`, `LocationFilter` in `value-objects.ts`; pure `distanceKm` in `geo.ts`.
+- **2 new application ports:** `IFeedRealtime` (mirror of `IChatRealtime`) and `IStatsRepository`; both adapted by `SupabaseFeedRealtime` and `SupabaseStatsRepository`.
+- **2 new use cases:** `GetActivePostsCountUseCase` (community counter), `DismissFirstPostNudgeUseCase` (permanent nudge dismissal). Soft session dismissal stays in the UI's `feedSessionStore`.
+- **Reshaped `PostFeedFilter` contract:** `categories[]`, `itemConditions[]`, `locationFilter`, `statusFilter`, `sortOrder`, `proximitySortCity`. `searchQuery`/`city`/`includeClosed`/`sortBy` dropped. `PostWithOwner.distanceKm` added.
+- **`SupabasePostRepository.getFeed`** now splits between a simple PostgREST path (newest/oldest) and a ranked RPC path (distance sort or radius filter). Extracted `buildFeedQuery` keeps the repo under TD-50's cap.
+- **`<PostFilterSheet>`** under `apps/mobile/src/components/PostFilterSheet/` (4 files, each ≤200 LOC): Sort / Filters / LocationFilter sections + a shared Chip primitive.
+- **`<FeedFilterIcon>`** mounted on the TopBar via a new `extraIcon` slot — visible only on the feed, with a red active-count badge.
+- **`<NewPostsBanner>`** sticky pill at the top of the list; bumps from realtime INSERTs via `useFeedRealtime` hook (60-second background disconnect; reconnect + refetch on resume).
+- **`<FirstPostNudge>`** with 3-tier dismiss; eligibility via `useFirstPostNudge` hook.
+- **`<FeedEmptyState>`** adapts copy + CTAs to filter state; surfaces the live community counter.
+- **`<WebRefreshButton>`** + global `R` keyboard shortcut on web.
+- **Guest banner** now reads the live community counter through `<FeedCommunityCounter>` (closes TD-102).
+- Comprehensive SRS rewrite under `06_feed_and_search.md`; new decision log entry EXEC-8.
 
 ---
 
@@ -40,10 +69,10 @@ Out of scope: every other `Alert.alert` call in chat, post detail, edit profile,
 Why this slice exists: end-to-end audit of the P1.1 follow mechanism revealed that the Private→Public toggle in `/settings/privacy` promises "כל הבקשות הממתינות יאושרו אוטומטית" (per FR-PROFILE-006 AC2), and `UpdatePrivacyModeUseCase` claimed in a comment that a DB trigger handled the fan-out — but no such trigger existed. Pending requests would silently linger after the toggle, and the requesters would remain unable to see Followers-only posts despite the now-Public target.
 
 Fixes:
-- **Migration 0021** — `users_after_privacy_mode_change` trigger fires `AFTER UPDATE OF privacy_mode` on `users` (with `WHEN old IS DISTINCT FROM new`). On a `Private → Public` transition, it batch-updates every pending row in `follow_requests` (targeting the user) to `status = 'accepted'`. The existing `follow_requests_after_accept` trigger then creates the matching `follow_edges` row per request (SECURITY DEFINER), and `follow_edges_after_insert_counters` (0006) keeps counters consistent. Blocked-counterpart requests were already cancelled by `blocks_apply_side_effects` (0003 §14) on block, so the `status='pending'` filter excludes them automatically — FR-PROFILE-006 edge case satisfied without special-casing.
+- **Migration 0023** (originally numbered 0021 — renumbered after merge with P1.2 which took 0021 + 0022) — `users_after_privacy_mode_change` trigger fires `AFTER UPDATE OF privacy_mode` on `users` (with `WHEN old IS DISTINCT FROM new`). On a `Private → Public` transition, it batch-updates every pending row in `follow_requests` (targeting the user) to `status = 'accepted'`. The existing `follow_requests_after_accept` trigger then creates the matching `follow_edges` row per request (SECURITY DEFINER), and `follow_edges_after_insert_counters` (0006) keeps counters consistent. Blocked-counterpart requests were already cancelled by `blocks_apply_side_effects` (0003 §14) on block, so the `status='pending'` filter excludes them automatically — FR-PROFILE-006 edge case satisfied without special-casing.
 - **TD-125 (optimistic Follow button)** — `app/apps/mobile/app/user/[handle]/index.tsx` `handleAction` now snapshots `follow-state` + `profile-other.followersCount`, predicts the next `FollowState` (privacy-aware unfollow target → `not_following_public` or `not_following_private_no_request`; counter delta ±1 only for `follow`/`unfollow`), applies optimistically via `qc.setQueryData` before the `await`, and rolls both snapshots back on error. `user-profile` of the viewer is invalidated on success so following_count reconciles when navigating to My Profile.
 - **TD-126 (cooldown days-remaining)** — the `cooldown_active` branch now computes `Math.ceil((cooldownUntil − now) / 24h)` and surfaces "ניתן לשלוח שוב בעוד N ימים" — same formula as the disabled-button subtitle in `FollowButton.tsx`, so the two surfaces agree.
-- **`UpdatePrivacyModeUseCase` comment corrected** — now references migration 0021 by name instead of claiming an unspecified DB trigger.
+- **`UpdatePrivacyModeUseCase` comment corrected** — now references migration 0023 by name instead of claiming an unspecified DB trigger.
 
 Open gaps (deferred per dependency):
 - TD-124 (push delivery for `follow_started` / `follow_request_received` / `follow_approved`) — DB triggers fire today; push infrastructure waits on P1.5.

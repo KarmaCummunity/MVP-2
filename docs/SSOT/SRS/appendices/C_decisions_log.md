@@ -311,6 +311,34 @@ A decision should be re-opened only when one of the following triggers fires:
 
 ---
 
+## EXEC-8 — Distance-aware feed via cities-geo Haversine + shared filter vocabulary (P1.2)
+
+**Date.** 2026-05-11
+**Origin.** P1.2 brainstorming / design phase.
+
+**Decision.**
+Three reinforcing reworks of the feed-and-search surface:
+
+1. **Distance ranking.** Replace `FR-FEED-006`'s string-equality-with-recency sort with great-circle distance computed via a new pure-SQL `public.haversine_km` helper over `public.cities.{lat,lon}` (seeded for the 20 canonical Israeli cities in migration 0021). The center of the ranking is either an explicit `FeedFilter.proximitySortCity` or the viewer's own `User.city`; cities lacking coordinates degrade to `NULL distance_km` and sink to the tail. Overturns the original `FR-FEED-006 AC2` ban on geocoding — the static lookup is reference data, not a runtime geocoding service.
+2. **Removed search bar from the Home Feed.** The dedicated Universal Search tab (formerly the `FR-FEED-016` placeholder, now superseded) already covers free-text search; surfacing it again on the Home Feed duplicates the affordance and splits canonical responsibility across two surfaces. Home Feed keeps only the filter/sort sheet.
+3. **Removed in-feed active-filters chip.** The active-count badge on the TopBar filter icon satisfies the discovery contract `FR-FEED-013` introduced; a second in-feed chip was redundant.
+
+**Alternatives rejected.**
+
+- *Keep `FR-FEED-006` as string-equality + recency.* The user explicitly rejected city-bucket-then-banner UX during brainstorming ("באנרים באמצע הפוסטים זה גרוע"). Continuous distance ordering replaces the city-bucket + cold-start-fallback combination entirely (so `FR-FEED-007` is deprecated rather than patched).
+- *Keep the Home Feed search bar as a "quick filter".* Overlaps confusingly with the Universal Search tab and pushes users to mix two surfaces for the same task.
+- *Build a generic `<PostFilterSheet>` in `@kc/ui` shared by Home Feed and Universal Search.* The UI layer's strict no-domain-imports rule made this awkward, and the two surfaces have meaningfully different state stores. Instead, the shared component lives under `apps/mobile/src/components/PostFilterSheet/` and the two surfaces consume it through their own state controllers (`FR-FEED-018`). Search-tab adoption deferred to TD-136.
+
+**Trade-offs accepted.**
+
+- A second round-trip on the distance path (RPC for IDs + REST `IN(...)` for full rows) is acceptable at MVP scale; TD-137 tracks the long-term collapse into a single RPC return shape.
+- City-centroid accuracy (±1–2 km) is good enough for 5–100 km radius filtering; street-level geocoding is deferred to P2.x.
+- Coordinates for any newly-seeded city must be supplied in the same migration; otherwise posts referencing it land at the tail of distance-sorted feeds.
+
+**Affected docs.** `FR-FEED-003, 004, 005, 006, 007, 008, 013, 014, 015, 016` (deprecated / reworked / extended / superseded); `FR-FEED-018, 019` (new); migrations 0021, 0022; `02.6` SRS file version `0.3`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
@@ -318,3 +346,4 @@ A decision should be re-opened only when one of the following triggers fires:
 | 0.1 | 2026-05-05 | Initial decisions log; D-1..D-15. |
 | 0.2 | 2026-05-09 | Added `D-16` (Reintroduce Donations and Search tabs in MVP). |
 | 0.3 | 2026-05-11 | Added `EXEC-7` (closed posts visible on other-user profile — reverses PRD §3.2.2). |
+| 0.4 | 2026-05-11 | Added `EXEC-8` (P1.2 — distance-aware feed via cities-geo Haversine + Home Feed loses its search bar + active-filter chip; Universal Search tab supersedes `FR-FEED-016` placeholder). |

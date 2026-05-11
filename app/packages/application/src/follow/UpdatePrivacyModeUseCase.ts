@@ -1,7 +1,7 @@
 /** FR-PROFILE-005 / FR-PROFILE-006 — toggle privacy mode.
  *  Side-effects on Private→Public (auto-approve every pending follow_request
  *  → fan-out to follow_edges + counters) run transactionally inside the DB
- *  trigger `users_after_privacy_mode_change` (migration 0021). */
+ *  trigger `users_after_privacy_mode_change` (migration 0023). */
 import type { PrivacyMode, User } from '@kc/domain';
 import type { IUserRepository } from '../ports/IUserRepository';
 import { FollowError } from './errors';

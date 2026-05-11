@@ -1,4 +1,12 @@
-/** FR-FEED-001..005 + FR-FEED-013: orchestrates a feed page read against IPostRepository. */
+/**
+ * GetFeedUseCase — orchestrates a feed page read against IPostRepository.
+ * Mapped to FR-FEED-001, 002, 004, 005, 006.
+ *
+ * The use case is pure orchestration: clamps the page limit and normalizes
+ * the filter shape (drops empty arrays and blank strings so the adapter sees
+ * `undefined` for "no filter" rather than meaningless empties).
+ */
+
 import type {
   FeedPage,
   IPostRepository,
@@ -31,10 +39,33 @@ function clamp(n: number, lo: number, hi: number): number {
 
 function normalizeFilter(raw: PostFeedFilter): PostFeedFilter {
   const out: PostFeedFilter = { ...raw };
-  if (typeof out.searchQuery === 'string') {
-    const trimmed = out.searchQuery.trim();
-    if (trimmed.length === 0) delete out.searchQuery;
-    else out.searchQuery = trimmed;
+
+  // Drop empty array filters — they mean "no filter" and confuse downstream.
+  if (Array.isArray(out.categories) && out.categories.length === 0) {
+    delete out.categories;
   }
+  if (Array.isArray(out.itemConditions) && out.itemConditions.length === 0) {
+    delete out.itemConditions;
+  }
+
+  // Item condition is only meaningful for Give posts.
+  if (out.itemConditions && out.type !== 'Give') {
+    delete out.itemConditions;
+  }
+
+  // Drop blank explicit proximity city — let the adapter fall back to the
+  // viewer's own city.
+  if (typeof out.proximitySortCity === 'string' && out.proximitySortCity.trim() === '') {
+    delete out.proximitySortCity;
+  }
+
+  // Drop incoherent location filters (missing center or non-positive radius).
+  if (out.locationFilter) {
+    const { centerCity, radiusKm } = out.locationFilter;
+    if (!centerCity || typeof centerCity !== 'string' || !(radiusKm > 0)) {
+      delete out.locationFilter;
+    }
+  }
+
   return out;
 }

@@ -24,6 +24,8 @@ import {
 } from './mapPostRow';
 import { mapInsertError } from './mapInsertError';
 import { decodeCursor, encodeCursor } from './cursor';
+import { buildFeedQuery } from './feedQuery';
+import { fetchRankedFeedPage, needsRankedPath } from './feedQueryRanked';
 import {
   closePost as closePostHelper,
   reopenPost as reopenPostHelper,
@@ -36,43 +38,25 @@ export class SupabasePostRepository implements IPostRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   // ── Feed ────────────────────────────────────────────────────────────────
+  // Two paths:
+  //   - Ranked (distance sort OR radius filter): server RPC `feed_ranked_ids`
+  //     returns ordered post_ids + distance_km; adapter fetches full rows by
+  //     IN(...) and preserves order.
+  //   - Simple (newest/oldest, equality filters only): PostgREST select-builder
+  //     with a single-field createdAt cursor.
   async getFeed(
-    _viewerId: string | null,
+    viewerId: string | null,
     filter: PostFeedFilter,
     limit: number,
     cursor?: string,
   ): Promise<FeedPage> {
     const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
-    const decoded = decodeCursor(cursor);
 
-    let q = this.client.from('posts').select(POST_SELECT_OWNER);
-
-    // RLS already hides removed_admin / expired / deleted_no_recipient from
-    // non-owners. Default: open-only. closed_delivered surfaces for the
-    // recipient view (FR-POST-017) and owner closed view (FR-POST-016).
-    q = filter.includeClosed
-      ? q.in('status', ['open', 'closed_delivered'])
-      : q.eq('status', 'open');
-
-    if (filter.type) q = q.eq('type', filter.type);
-    if (filter.category) q = q.eq('category', filter.category);
-    if (filter.city) q = q.eq('city', filter.city);
-
-    if (filter.searchQuery && filter.searchQuery.trim().length > 0) {
-      const escaped = filter.searchQuery.trim().replace(/[%_]/g, '\\$&');
-      q = q.ilike('title', `%${escaped}%`);
+    if (needsRankedPath(filter)) {
+      return fetchRankedFeedPage(this.client, viewerId, filter, cursor, safeLimit);
     }
 
-    if (decoded) q = q.lt('created_at', decoded.createdAt);
-
-    if (filter.sortBy === 'city') {
-      q = q.order('city', { ascending: true }).order('created_at', { ascending: false });
-    } else {
-      q = q.order('created_at', { ascending: false });
-    }
-
-    q = q.limit(safeLimit + 1);
-
+    const q = buildFeedQuery(this.client, filter, cursor, safeLimit);
     const { data, error } = await q;
     if (error) throw new Error(`getFeed: ${error.message}`);
 

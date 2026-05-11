@@ -6,6 +6,8 @@ export * from './ports/ICityRepository';
 export type { IChatRealtime, InboxStreamCallbacks, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
 export type { IBlockRepository } from './ports/IBlockRepository';
 export type { IReportRepository } from './ports/IReportRepository';
+export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
+export type { IStatsRepository } from './ports/IStatsRepository';
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
@@ -19,6 +21,8 @@ export * from './auth/SetAvatarUseCase';
 export * from './auth/UpdateProfileUseCase';
 export * from './feed/selectGuestPreviewPosts';
 export * from './feed/GetFeedUseCase';
+export * from './feed/GetActivePostsCountUseCase';
+export * from './feed/DismissFirstPostNudgeUseCase';
 
 export * from './posts/errors';
 export * from './posts/CreatePostUseCase';

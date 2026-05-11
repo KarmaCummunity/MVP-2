@@ -3,14 +3,22 @@ import { GetFeedUseCase } from '../GetFeedUseCase';
 import { FakePostRepository, makePostWithOwner } from '../../posts/__tests__/fakePostRepository';
 
 describe('GetFeedUseCase', () => {
-  it('forwards filter / limit / cursor to the repo', async () => {
+  it('forwards filter / limit / cursor to the repo (new shape)', async () => {
     const repo = new FakePostRepository();
     repo.posts = [makePostWithOwner({ postId: 'p_1' })];
     const uc = new GetFeedUseCase(repo);
 
     const out = await uc.execute({
       viewerId: 'viewer_1',
-      filter: { type: 'Give', city: 'tel-aviv' },
+      filter: {
+        type: 'Give',
+        categories: ['Furniture', 'Toys'],
+        itemConditions: ['New', 'LikeNew'],
+        locationFilter: { centerCity: 'tel-aviv', radiusKm: 25 },
+        statusFilter: 'all',
+        sortOrder: 'distance',
+        proximitySortCity: 'tel-aviv',
+      },
       limit: 15,
       cursor: 'cursor_x',
     });
@@ -19,21 +27,85 @@ describe('GetFeedUseCase', () => {
     expect(out.posts[0]!.postId).toBe('p_1');
     expect(repo.lastGetFeedArgs).toEqual({
       viewerId: 'viewer_1',
-      filter: { type: 'Give', city: 'tel-aviv' },
+      filter: {
+        type: 'Give',
+        categories: ['Furniture', 'Toys'],
+        itemConditions: ['New', 'LikeNew'],
+        locationFilter: { centerCity: 'tel-aviv', radiusKm: 25 },
+        statusFilter: 'all',
+        sortOrder: 'distance',
+        proximitySortCity: 'tel-aviv',
+      },
       limit: 15,
       cursor: 'cursor_x',
     });
   });
 
-  it('trims a non-empty searchQuery and drops empty / whitespace-only queries', async () => {
+  it('drops empty array filters (categories, itemConditions)', async () => {
     const repo = new FakePostRepository();
     const uc = new GetFeedUseCase(repo);
 
-    await uc.execute({ viewerId: null, filter: { searchQuery: '   ' }, limit: 20 });
-    expect(repo.lastGetFeedArgs?.filter.searchQuery).toBeUndefined();
+    await uc.execute({
+      viewerId: null,
+      filter: { categories: [], itemConditions: [], type: 'Give' },
+      limit: 20,
+    });
 
-    await uc.execute({ viewerId: null, filter: { searchQuery: '  ספה  ' }, limit: 20 });
-    expect(repo.lastGetFeedArgs?.filter.searchQuery).toBe('ספה');
+    expect(repo.lastGetFeedArgs?.filter.categories).toBeUndefined();
+    expect(repo.lastGetFeedArgs?.filter.itemConditions).toBeUndefined();
+  });
+
+  it('drops itemConditions when type is not Give', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetFeedUseCase(repo);
+
+    await uc.execute({
+      viewerId: null,
+      filter: { type: 'Request', itemConditions: ['New'] },
+      limit: 20,
+    });
+
+    expect(repo.lastGetFeedArgs?.filter.itemConditions).toBeUndefined();
+  });
+
+  it('drops blank proximitySortCity (falls back to viewer city in adapter)', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetFeedUseCase(repo);
+
+    await uc.execute({
+      viewerId: 'viewer_1',
+      filter: { sortOrder: 'distance', proximitySortCity: '   ' },
+      limit: 20,
+    });
+
+    expect(repo.lastGetFeedArgs?.filter.proximitySortCity).toBeUndefined();
+    expect(repo.lastGetFeedArgs?.filter.sortOrder).toBe('distance');
+  });
+
+  it('drops incoherent locationFilter (missing city or non-positive radius)', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetFeedUseCase(repo);
+
+    await uc.execute({
+      viewerId: null,
+      filter: { locationFilter: { centerCity: '', radiusKm: 25 } },
+      limit: 20,
+    });
+    expect(repo.lastGetFeedArgs?.filter.locationFilter).toBeUndefined();
+
+    await uc.execute({
+      viewerId: null,
+      filter: { locationFilter: { centerCity: 'tel-aviv', radiusKm: 0 } },
+      limit: 20,
+    });
+    expect(repo.lastGetFeedArgs?.filter.locationFilter).toBeUndefined();
+
+    await uc.execute({
+      viewerId: null,
+      filter: { locationFilter: { centerCity: 'tel-aviv', radiusKm: -5 } },
+      limit: 20,
+    });
+    expect(repo.lastGetFeedArgs?.filter.locationFilter).toBeUndefined();
   });
 
   it('clamps limit to [1, 100]', async () => {
@@ -47,7 +119,7 @@ describe('GetFeedUseCase', () => {
     expect(repo.lastGetFeedArgs?.limit).toBe(100);
   });
 
-  it('uses sensible defaults when caller omits limit', async () => {
+  it('defaults limit to 20 when omitted', async () => {
     const repo = new FakePostRepository();
     const uc = new GetFeedUseCase(repo);
 

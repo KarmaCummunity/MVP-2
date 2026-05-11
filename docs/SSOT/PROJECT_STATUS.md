@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-11 (P1.1.2 hotfix — Alert.alert no-op on react-native-web broke unfollow/cancel-request confirms, cooldown toast, remove-follower confirm, privacy toggle on web; replaced with ConfirmActionModal + new NotifyModal across the follow surface. Bug 1 (stale My Profile follower count) closed by extending optimistic surface to viewer's user-profile + list invalidations.) |
+| **Last Updated** | 2026-05-11 (P1.2 + P1.1.2 hotfix — P1.2 ships feed discovery (TopBar filter sheet + Haversine sort + realtime banner + first-post nudge + live community counter; 2 migrations, 2 ports, 2 use cases, 18 new vitest; closes TD-26 + TD-102). P1.1.2 fixes web-only `Alert.alert` no-op across the follow surface — replaces with ConfirmActionModal + new NotifyModal; also closes Bug 1 (stale My Profile follower count) by extending optimistic surface + list invalidations.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -30,21 +30,22 @@ This document is the **single source of truth for project execution state**. It 
 
 | Metric | Value |
 | ------ | ----- |
-| MVP completion (rough) | **~58%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile**; DB schema applied through 0021) |
-| Features 🟢 done | 9 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + P1.1) |
+| MVP completion (rough) | **~62%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile** + **Feed discovery experience**; DB schema applied through 0023) |
+| Features 🟢 done | 10 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + P1.1 + P1.2) |
 | Features 🟡 in progress | 0 |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
-| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **153 vitest passing** |
+| Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` (incl. geo + active counter + nudge) + `chat.*` + `closure.*` + `follow.*` — **166 vitest passing** |
 | Open tech-debt items | **39 active** (3 partial), **23 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
 - Monorepo build (`pnpm typecheck` passes); `pnpm lint:arch` enforces ≤200-LOC + domain-error rules
+- **Home Feed discovery (P1.2)** — TopBar filter/sort icon opens a bottom-sheet with sort (חדש/ישן/לפי מיקום), type, multi-category, item conditions (when Give), location filter (city + 5/10/25/50/100 km radius), and 3-mode status (פתוח/סגור/הכל). Distance ranking via the new `feed_ranked_ids` RPC (Haversine over `cities_geo`). Realtime "↑ N פוסטים חדשים" pill bumps on new public-post INSERTs, refetches on tap. First-post nudge with three-tier dismiss (CTA / session / permanent). Warm empty state with adaptive CTAs and live community counter. Pull-to-refresh on native; web refresh button + `R` shortcut.
 - Native dev builds on iOS 26 + Android API-36 + Web — all three platforms run correctly with Expo SDK 54 + expo-router 6
 - **Posts CRUD** — feed list (grid cards now render the first uploaded image; filters via `filterStore`), post detail (paged image carousel for multi-image posts via `PostImageCarousel`), create form (canonical `<CityPicker>`, regex-validated street number, location-display-level chooser, optional images for Request, disabled-until-valid Publish), image upload (gallery → resize 2048px → JPEG re-encode → Storage), My Profile My Posts list, guest feed — all consuming `SupabasePostRepository` via the 6 use cases in `@kc/application/posts/*`. Adapter maps Postgres FK/CHECK/RLS errors to typed `PostError` codes for Hebrew surfacing. Post detail now exposes a role-aware ⋮ overflow menu (FR-POST-014 AC4 + FR-POST-015 AC1 partial): viewer → דווח/חסום משתמש; owner → מחק; super-admin viewing someone else's post → דווח/חסום + הסר כאדמין (FR-ADMIN-009 via the new admin_remove_post RPC).
 - **Guest preview** — unauthenticated users open `(guest)/feed` with up to 3 live public posts, join modal on card tap (FR-AUTH-014)
-- **Following + Other-User Profile** — full follow mechanism (instant for Public, request/accept/reject/14d-cooldown for Private), remove-follower, follow-state machine, Followers + Following lists with search, /settings/privacy toggle + /settings/follow-requests inbox. Other-user profile rebuilt to feature-parity with My Profile (closed posts visible too — per EXEC-7). **P1.1.1 polish (2026-05-11)**: end-to-end audit + three closures — (1) migration 0021 adds `users_after_privacy_mode_change` trigger that batch-transitions every pending follow_request → `accepted` when its target toggles `Private → Public`, closing FR-PROFILE-006 AC2 (existing `follow_requests_after_accept` trigger then fan-outs each into `follow_edges` rows, counters update via 0006); (2) Follow button is now optimistic (TD-125) — `qc.setQueryData` snapshots+predicts `follow-state` and `profile-other.followersCount` before the await, rollback in `catch`; (3) cooldown error toast now shows remaining days (TD-126).
+- **Following + Other-User Profile** — full follow mechanism (instant for Public, request/accept/reject/14d-cooldown for Private), remove-follower, follow-state machine, Followers + Following lists with search, /settings/privacy toggle + /settings/follow-requests inbox. Other-user profile rebuilt to feature-parity with My Profile (closed posts visible too — per EXEC-7). **P1.1.1 polish (2026-05-11)**: end-to-end audit + three closures — (1) migration 0023 adds `users_after_privacy_mode_change` trigger that batch-transitions every pending follow_request → `accepted` when its target toggles `Private → Public`, closing FR-PROFILE-006 AC2 (existing `follow_requests_after_accept` trigger then fan-outs each into `follow_edges` rows, counters update via 0006); (2) Follow button is now optimistic (TD-125) — `qc.setQueryData` snapshots+predicts `follow-state` and `profile-other.followersCount` before the await, rollback in `catch`; (3) cooldown error toast now shows remaining days (TD-126).
 
 ### What is in flight
 
@@ -79,8 +80,8 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
-| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). **Polish 2026-05-11 (P1.1.1)**: migration 0021 closes FR-PROFILE-006 AC2 (auto-approve pending requests on Private→Public via DB trigger); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining toast) closed. **Hotfix 2026-05-11 (P1.1.2)**: cross-platform `Alert.alert` replacement (TD-134 opened for the sweep) + optimistic My Profile follower-count. TD-124 (push) + TD-127 (Report) remain deferred to P1.5 / P1.3. |
-| P1.2 | Search + filters + sort + cold-start fallback | FR-FEED-006…014 | ⏳ Planned | Drives discoverability |
+| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). **Polish 2026-05-11 (P1.1.1)**: migration 0023 closes FR-PROFILE-006 AC2 (auto-approve pending requests on Private→Public via DB trigger); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining toast) closed. **Hotfix 2026-05-11 (P1.1.2)**: cross-platform `Alert.alert` replacement (TD-138 opened for the sweep) + optimistic My Profile follower-count. TD-124 (push) + TD-127 (Report) remain deferred to P1.5 / P1.3. |
+| P1.2 | Feed discovery — filter sheet + Haversine sort + realtime + warm empty + first-post nudge + community counter | FR-FEED-004, 005, 006, 008, 009, 010, 014, 015, 018, 019 (new); deprecates 003, 007, 013; supersedes 016 | 🟢 Done (2026-05-11) | Branch `feat/FR-FEED-006-feed-discovery-and-filters`. 4 commits, 18 vitest. Closes TD-26 + TD-102; opens TD-134..TD-137 for deferred analytics, edge-cached counter, search-tab filter parity, and SearchFilterSheet split (legacy TD-133 evolves). |
 | P1.3 | Reports + auto-removal + false-report sanctions | FR-MOD-001…008 | ⏳ Planned | Safety floor |
 | P1.4 | Block / unblock + visibility restoration | FR-MOD-009, 010 | ⏳ Planned | |
 | P1.5 | Push notifications (Critical + Social) | FR-NOTIF-001…006 | ⏳ Planned | |
@@ -121,9 +122,9 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
 | In progress | (none) | — | — | — |
-| Up next | P1.x — pick next per §2 (likely P1.2 Search/filters) | — | — | — |
+| Up next | P1.3 — Reports + auto-removal + false-report sanctions | — | — | — |
 
-Most recently shipped: **P1.1.2** — follow-mechanism web hotfix (Alert.alert no-op replaced with ConfirmActionModal + NotifyModal across the follow surface; My Profile follower-count now optimistic — 2026-05-11). Preceded by **P1.1.1** (follow-mechanism end-to-end audit + polish — migration 0021 + TD-125 + TD-126). Preceded by **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013; 12 use cases + 35 vitest, 6 shared profile components, full follow state machine, /settings/privacy + /settings/follow-requests, other-user profile rebuilt to feature-parity — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P1.1.2** — follow-mechanism web hotfix (Alert.alert no-op replaced with ConfirmActionModal + NotifyModal across the follow surface; My Profile follower-count now optimistic — 2026-05-11). Preceded by **P1.1.1** (follow-mechanism end-to-end audit + polish — migration 0023 + TD-125 + TD-126). Preceded by **P1.2** (Feed discovery experience — FR-FEED-004/005/006/008/009/010/014/015/018/019; TopBar filter sheet + Haversine sort + realtime banner + first-post nudge + live community counter — 2026-05-11). Preceded by **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013 — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 
@@ -141,6 +142,7 @@ Mirror of [`SRS/appendices/C_decisions_log.md`](./SRS/appendices/C_decisions_log
 | D-16 | Reintroduce dedicated **Donations** and **Search** tabs in the bottom bar (5 tabs total). Search ships as a placeholder (`FR-FEED-016`); universal-search engine deferred to P2.6. Donations Hub ships fully (`FR-DONATE-001..005`); Time + Money are coming-soon screens with external partner links + volunteer-message composer wired to `FR-CHAT-007`. | Product | 2026-05-09 |
 | EXEC-6 | P0.5 chat: two-port split (`IChatRepository` + `IChatRealtime`). Subscriptions stay out of use cases — managed by Zustand `chatStore` directly. Use cases remain pure (input → `Promise<output>`). | P0.5 design | 2026-05-10 |
 | EXEC-7 | פוסטים סגורים מוצגים בפרופיל של יוזר אחר (ציבורי או פרטי-עוקב-מאושר), כולל זהות המקבל. מהפכת את החלטת ה-PRD §3.2.2. | P1.1 | 2026-05-11 |
+| EXEC-8 | מיון פיד "לפי מיקום" עובר ל-Haversine מ-centroid של עיר (lat/lon ב-`public.cities`, פונקציה `haversine_km`), מבטל את האיסור המקורי על geocoding ב-FR-FEED-006 AC2. הסרת חיפוש החופשי מהפיד הראשי (FR-FEED-003 deprecated); FR-FEED-016 משופץ לתאר את מנגנון החיפוש האוניברסלי הקיים בפועל בלשונית. שבב הפילטרים הפעילים בפיד מוחלף בתג ספירה אדום על אייקון הפילטר ב-TopBar (FR-FEED-013 deprecated). Cold-start fallback (FR-FEED-007) מבוטל — המיון לפי מרחק מטפל בעיר דלילה. First-post nudge מקבל שלוש רמות-dismiss (CTA / sesssion / permanent). | P1.2 | 2026-05-11 |
 
 ---
 
