@@ -11,7 +11,6 @@ import { useEffect, useState } from 'react';
 import type { Chat } from '@kc/domain';
 import { useChatStore } from '../store/chatStore';
 import { container } from '../lib/container';
-import { getPostByIdUseCase } from '../services/postsComposition';
 
 export interface ChatCounterpart {
   displayName: string;
@@ -61,23 +60,4 @@ export function useChatInit(chatId: string, userId: string) {
   }, [chatId, userId]);
 
   return { chat, counterpart };
-}
-
-// FR-CHAT-004 edge: anchored post may have been deleted while the chat lived on.
-export function useAnchorMissing(anchorPostId: string | null | undefined, viewerId: string) {
-  const [missing, setMissing] = useState(false);
-  useEffect(() => {
-    if (!anchorPostId) { setMissing(false); return; }
-    let cancelled = false;
-    void (async () => {
-      try {
-        const { post } = await getPostByIdUseCase().execute({ postId: anchorPostId, viewerId });
-        if (!cancelled) setMissing(post === null);
-      } catch {
-        if (!cancelled) setMissing(true);
-      }
-    })();
-    return () => { cancelled = true; };
-  }, [anchorPostId, viewerId]);
-  return missing;
 }
