@@ -148,6 +148,7 @@ export default function OtherProfileScreen() {
                     cooldownUntil={followInfo?.cooldownUntil}
                     onPress={onFollowPress}
                     busy={followBusy}
+                    interactionDisabled={followInfo?.followInteractionDisabled}
                   />
                 </View>
               ) : null}

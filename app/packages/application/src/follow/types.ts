@@ -17,6 +17,12 @@ export interface FollowStateInfo {
   state: FollowState;
   /** ISO-8601, present only when state === 'cooldown_after_reject'. */
   cooldownUntil?: string;
+  /**
+   * True when the profile is visible (e.g. chat counterpart) but the account is
+   * not `active`, so starting a follow / new follow-request must stay disabled
+   * (FR-FOLLOW-001 edge case — UserUnavailable on action).
+   */
+  followInteractionDisabled?: boolean;
 }
 
 /** Pending-request row joined with the requester's User profile (FR-FOLLOW-007 AC2). */

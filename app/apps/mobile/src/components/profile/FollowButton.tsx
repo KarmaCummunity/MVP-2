@@ -11,12 +11,14 @@ import { colors, radius, spacing, typography } from '@kc/ui';
 import type { FollowState } from '@kc/application';
 import { ConfirmActionModal } from '../post/ConfirmActionModal';
 
-export interface FollowButtonProps {
+export type FollowButtonProps = Readonly<{
   state: FollowState;
   cooldownUntil?: string;
   onPress: () => void;
   busy?: boolean;
-}
+  /** True when account is not active — primary follow/request CTA stays disabled. */
+  interactionDisabled?: boolean;
+}>;
 
 interface ButtonCfg {
   label: string;
@@ -27,15 +29,18 @@ interface ButtonCfg {
   confirm?: { title: string; body: string; cta: string; destructive?: boolean };
 }
 
-export function FollowButton({ state, cooldownUntil, onPress, busy }: FollowButtonProps) {
+export function FollowButton({
+  state, cooldownUntil, onPress, busy, interactionDisabled,
+}: FollowButtonProps) {
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   if (state === 'self') return null;
 
   const cfg = config(state, cooldownUntil);
-  const disabled = busy || cfg.disabled;
+  const disabled = busy || cfg.disabled || Boolean(interactionDisabled);
 
   const handlePress = () => {
+    if (disabled) return;
     if (cfg.confirm) setConfirmOpen(true);
     else onPress();
   };
@@ -53,6 +58,9 @@ export function FollowButton({ state, cooldownUntil, onPress, busy }: FollowButt
       >
         <Text style={[styles.text, cfg.textStyle]}>{cfg.label}</Text>
         {cfg.subtitle ? <Text style={styles.subtitle}>{cfg.subtitle}</Text> : null}
+        {interactionDisabled && !cfg.subtitle ? (
+          <Text style={styles.subtitle}>המשתמש לא זמין למעקב כרגע</Text>
+        ) : null}
       </TouchableOpacity>
       {cfg.confirm ? (
         <ConfirmActionModal

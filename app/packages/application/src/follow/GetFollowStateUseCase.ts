@@ -17,14 +17,19 @@ export class GetFollowStateUseCase {
     }
     const raw = await this.users.getFollowStateRaw(input.viewerId, input.targetUserId);
 
-    if (!raw.target || raw.target.accountStatus !== 'active') {
+    if (!raw.target) {
       throw new FollowError('user_not_found', 'user_not_found');
     }
 
     if (raw.followingExists) return { state: 'following' };
 
+    const canStartFollowOrRequest = raw.target.accountStatus === 'active';
+    const off: Pick<FollowStateInfo, 'followInteractionDisabled'> = canStartFollowOrRequest
+      ? {}
+      : { followInteractionDisabled: true };
+
     if (raw.target.privacyMode === 'Public') {
-      return { state: 'not_following_public' };
+      return { state: 'not_following_public', ...off };
     }
 
     // Private from here on
@@ -32,6 +37,6 @@ export class GetFollowStateUseCase {
     if (raw.cooldownUntil) {
       return { state: 'cooldown_after_reject', cooldownUntil: raw.cooldownUntil };
     }
-    return { state: 'not_following_private_no_request' };
+    return { state: 'not_following_private_no_request', ...off };
   }
 }
