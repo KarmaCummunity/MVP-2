@@ -15,6 +15,10 @@ export interface ChatStreamCallbacks {
       readAt: string | null;
     },
   ) => void;
+  // Fires when the chat row itself changes (e.g. anchor_post_id flips, or
+  // last_message_at advances). Optional — consumers that only care about
+  // messages can omit it.
+  onChatChanged?: (chat: Chat) => void;
   onError: (err: Error) => void;
 }
 

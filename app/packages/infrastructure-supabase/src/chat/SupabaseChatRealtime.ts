@@ -53,6 +53,20 @@ export class SupabaseChatRealtime implements IChatRealtime {
           });
         },
       )
+      .on(
+        'postgres_changes',
+        {
+          event: 'UPDATE',
+          schema: 'public',
+          table: 'chats',
+          filter: `chat_id=eq.${chatId}`,
+        },
+        (payload) => {
+          if (cb.onChatChanged) {
+            cb.onChatChanged(rowToChat(payload.new as never));
+          }
+        },
+      )
       .subscribe((status) => {
         if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
           cb.onError(new Error(`chat channel ${status.toLowerCase()}`));
