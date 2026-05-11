@@ -31,8 +31,11 @@ export default function WelcomeScreen() {
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
 
+  const isExecutingRef = React.useRef(false);
+
   const handleGoogle = async () => {
-    if (googleLoading) return;
+    if (isExecutingRef.current) return;
+    isExecutingRef.current = true;
     setGoogleLoading(true);
     try {
       const { session } = await getSignInWithGoogleUseCase().execute({
@@ -48,9 +51,12 @@ export default function WelcomeScreen() {
           : isAuthError(err)
             ? mapAuthErrorToHebrew(code)
             : 'שגיאת רשת. נסה שוב.';
-      if (message) Alert.alert('כניסה עם Google נכשלה', message);
+      if (message && !useAuthStore.getState().isAuthenticated) {
+        Alert.alert('כניסה עם Google נכשלה', `${message} (${isAuthError(err) ? err.message : String(err)})`);
+      }
     } finally {
       setGoogleLoading(false);
+      isExecutingRef.current = false;
     }
   };
 

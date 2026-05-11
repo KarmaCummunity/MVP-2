@@ -49,13 +49,13 @@ export default function EditProfileScreen() {
         setDisplayName(p.displayName);
         setCity({ id: p.city, name: p.cityName });
         setBiography(p.biography ?? '');
-        setAvatarUrl(session.avatarUrl ?? null);
+        setAvatarUrl(p.avatarUrl ?? session.avatarUrl ?? null);
         setInitial({
           displayName: p.displayName,
           cityId: p.city,
           cityName: p.cityName,
           biography: p.biography,
-          avatarUrl: session.avatarUrl ?? null,
+          avatarUrl: p.avatarUrl ?? session.avatarUrl ?? null,
         });
       } catch (err) {
         Alert.alert('טעינה נכשלה', err instanceof Error ? err.message : 'שגיאה לא ידועה');

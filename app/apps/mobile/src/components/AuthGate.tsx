@@ -133,7 +133,7 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       return;
     }
 
-    if (!inAuthGroup && !inGuestGroup) return;
+    if (!inAuthGroup && !inGuestGroup && !isOAuthCallback) return;
     if (onboardingState === null) return;
 
     if (onboardingState === 'pending_basic_info') {

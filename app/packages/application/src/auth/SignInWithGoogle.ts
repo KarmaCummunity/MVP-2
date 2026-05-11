@@ -56,7 +56,11 @@ export class SignInWithGoogleUseCase {
 function extractCode(redirectUrl: string): string | null {
   const qIdx = redirectUrl.indexOf('?');
   if (qIdx === -1) return null;
-  const search = redirectUrl.slice(qIdx + 1);
+  let search = redirectUrl.slice(qIdx + 1);
+  const hashIdx = search.indexOf('#');
+  if (hashIdx !== -1) {
+    search = search.slice(0, hashIdx);
+  }
   for (const part of search.split('&')) {
     const [k, v] = part.split('=');
     if (k === 'code' && v) return decodeURIComponent(v);

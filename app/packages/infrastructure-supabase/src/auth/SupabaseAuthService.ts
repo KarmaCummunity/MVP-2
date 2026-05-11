@@ -9,6 +9,9 @@ import type { SupabaseClient, AuthError as SbAuthError, Session as SbSession } f
 import { AuthError, type AuthSession, type IAuthService } from '@kc/application';
 
 export class SupabaseAuthService implements IAuthService {
+  private activeExchangeCode: string | null = null;
+  private activeExchangePromise: Promise<AuthSession> | null = null;
+
   constructor(private readonly client: SupabaseClient) {}
 
   async signUpWithEmail(email: string, password: string): Promise<AuthSession | null> {
@@ -47,7 +50,13 @@ export class SupabaseAuthService implements IAuthService {
   async getGoogleAuthUrl(redirectTo: string): Promise<string> {
     const { data, error } = await this.client.auth.signInWithOAuth({
       provider: 'google',
-      options: { redirectTo, skipBrowserRedirect: true },
+      options: { 
+        redirectTo, 
+        skipBrowserRedirect: true,
+        queryParams: {
+          prompt: 'select_account',
+        },
+      },
     });
     if (error) throw mapAuthError(error);
     if (!data.url) throw new AuthError('unknown', 'oauth_no_url');
@@ -55,10 +64,24 @@ export class SupabaseAuthService implements IAuthService {
   }
 
   async exchangeCodeForSession(code: string): Promise<AuthSession> {
-    const { data, error } = await this.client.auth.exchangeCodeForSession(code);
-    if (error) throw mapAuthError(error);
-    if (!data.session) throw new AuthError('unknown', 'oauth_no_session');
-    return toSession(data.session);
+    if (this.activeExchangeCode === code && this.activeExchangePromise) {
+      return this.activeExchangePromise;
+    }
+    
+    this.activeExchangeCode = code;
+    this.activeExchangePromise = (async () => {
+      const { data, error } = await this.client.auth.exchangeCodeForSession(code);
+      if (error) throw mapAuthError(error);
+      if (!data.session) throw new AuthError('unknown', 'oauth_no_session');
+      return toSession(data.session);
+    })().finally(() => {
+      if (this.activeExchangeCode === code) {
+        this.activeExchangePromise = null;
+        this.activeExchangeCode = null;
+      }
+    });
+    
+    return this.activeExchangePromise;
   }
 }
 

@@ -79,6 +79,7 @@ export interface IUserRepository {
     city: string;
     cityName: string;
     biography: string | null;
+    avatarUrl: string | null;
   }>;
 
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */

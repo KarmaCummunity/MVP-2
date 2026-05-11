@@ -28,6 +28,8 @@ export default function OtherProfileScreen() {
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
   const [activeTab, setActiveTab] = React.useState<ProfileTab>('open');
+  // ✅ RULES OF HOOKS: must be declared here, before any early return.
+  const [error, setError] = React.useState<FollowActionError | null>(null);
 
   const userQuery = useQuery({
     queryKey: ['profile-other', handle],
@@ -52,6 +54,15 @@ export default function OtherProfileScreen() {
   const isMe = me === u?.userId;
   const allowed = isMe || followInfo?.state === 'following' || u?.privacyMode === 'Public';
 
+  // ✅ RULES OF HOOKS: useOptimisticFollowAction must be called here, before any early return.
+  // When `u` is null (still loading), we pass a safe fallback so the hook is always called.
+  const dispatchFollowAction = useOptimisticFollowAction({
+    viewerId: me,
+    target: u ?? { userId: '', shareHandle: '', privacyMode: 'Public' } as any,
+    handle: handle ?? '',
+    onError: setError,
+  });
+
   // /user/[my-handle] redirects to the My Profile tab.
   React.useEffect(() => { if (isMe) router.replace('/(tabs)/profile'); }, [isMe, router]);
 
@@ -75,10 +86,7 @@ export default function OtherProfileScreen() {
     </SafeAreaView>
   );
 
-  const [error, setError] = React.useState<FollowActionError | null>(null);
-  const dispatchFollowAction = useOptimisticFollowAction({
-    viewerId: me, target: u, handle: handle!, onError: setError,
-  });
+  // (hooks moved above — see top of component)
   const onFollowPress = () => {
     const s = followInfo?.state;
     if (s === 'not_following_public') dispatchFollowAction('follow');
@@ -96,9 +104,12 @@ export default function OtherProfileScreen() {
   const showLocked = u.privacyMode === 'Private' && followInfo?.state !== 'following' && !isMe;
   // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
   const followState = followInfo?.state ?? 'not_following_public';
-  // Hide the button if we couldn't derive a state (target suspended/deleted,
-  // network failure). Beats the perpetually-disabled 'busy' fallback.
-  const showFollowButton = Boolean(me) && !isMe && !stateQuery.isError;
+  // Show the button for any non-self authenticated user.
+  // If the query errored, we keep the button visible but in busy/disabled state
+  // — hiding it entirely is confusing UX.
+  const showFollowButton = Boolean(me) && !isMe;
+  // Busy = loading OR error (prevent double-tap on transient failure).
+  const followBusy = stateQuery.isLoading || stateQuery.isError;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -130,7 +141,7 @@ export default function OtherProfileScreen() {
                     state={followState}
                     cooldownUntil={followInfo?.cooldownUntil}
                     onPress={onFollowPress}
-                    busy={!followInfo}
+                    busy={followBusy}
                   />
                 </View>
               ) : null}

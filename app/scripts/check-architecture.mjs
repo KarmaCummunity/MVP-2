@@ -25,13 +25,16 @@ const FILE_SIZE_CAP = 200;
 // below the cap triggers a STALE-ALLOWLIST error, prompting removal from this list.
 const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 386 }],
-  ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 266 }],
+  // Bumped 266→272 (P1.1 follow surface + delete-account flow). Remove once TD-29 splits the file.
+  ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 272 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
-  ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 234 }],
-  ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 212 }],
-  // Bumped 248→249 (P1.2 added feed.guestBannerWithCount). Remove once TD-35 splits the file.
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 249 }],
+  // Bumped 234→256 (P1.2 delete-account + about screen). Remove once TD-29 splits the file.
+  ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 256 }],
+  // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
+  ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
+  // Bumped 249→282 (P1.1/P1.2 follow surface + delete-account strings). Remove once TD-35 splits the file.
+  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 282 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
@@ -45,8 +48,10 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-128 splits the file.
   ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 308 }],
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
-  // Edit-post screen — large form, acceptable as single screen. Closes TD-130.
-  ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 404 }],
+  // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
+  ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
+  // Chat repository bumped past cap (202 lines). Split into sub-services once P2.x chat work begins.
+  ['packages/infrastructure-supabase/src/chat/SupabaseChatRepository.ts', { td: 'TD-118', max: 202 }],
 ]);
 
 const LAYER_RULES = [

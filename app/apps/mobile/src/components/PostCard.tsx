@@ -11,7 +11,6 @@ import { AvatarInitials } from './AvatarInitials';
 const isRTL = I18nManager.isRTL;
 const isWeb = Platform.OS === 'web';
 const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
-
 interface PostCardProps {
   post: PostWithOwner;
   onMessagePress?: () => void;
