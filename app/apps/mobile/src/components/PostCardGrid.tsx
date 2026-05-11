@@ -21,8 +21,11 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.sm) / 2;
 
 const isRTL = I18nManager.isRTL;
 const isWeb = Platform.OS === 'web';
-const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
-const tagPosition = (isRTL && !isWeb) ? { left: spacing.xs } : { right: spacing.xs };
+
+// The original alignStart was perfectly calibrated for React Native's RTL mirroring quirks:
+// On Web RTL, we explicitly need 'right'. On Native RTL, 'left' is mirrored to visual right.
+const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : (isRTL ? 'left' : 'right');
+const tagPosition = { right: spacing.xs };
 
 interface PostCardGridProps {
   post: PostWithOwner;
@@ -79,12 +82,14 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
             </Text>
           </View>
         </View>
-        <View style={styles.metaContainer}>
-          <Text style={[styles.meta, { flexShrink: 1 }]} numberOfLines={1}>{post.ownerName}</Text>
+        <Text style={styles.metaContainerText} numberOfLines={1}>
+          <Text style={styles.meta}>{post.ownerName}</Text>
           <Text style={styles.metaDot}> · </Text>
-          <Text style={[styles.meta, { flexShrink: 1 }]} numberOfLines={1}>{timeAgo}</Text>
-        </View>
-        <Text style={styles.location} numberOfLines={1}>📍 {locationText}</Text>
+          <Text style={styles.meta}>{timeAgo}</Text>
+        </Text>
+        <Text style={styles.location} numberOfLines={1}>
+          {isRTL ? `${locationText}` : `${locationText}`}
+        </Text>
       </View>
     </TouchableOpacity>
   );
@@ -131,8 +136,9 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   titleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: isRTL ? 'row' : 'row-reverse',
+    justifyContent: 'space-between',
+    alignItems: 'flex-start',
     gap: spacing.xs,
   },
   title: {
@@ -155,15 +161,13 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.primary,
   },
-  metaContainer: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-start',
+  metaContainerText: {
+    textAlign: alignStart,
+    marginTop: 2,
   },
   meta: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: alignStart,
   },
   metaDot: {
     ...typography.caption,
