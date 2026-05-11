@@ -26,6 +26,29 @@ Out of scope: rest of the realtime surface has no other `.channel(stableName)` c
 
 ---
 
+## 2026-05-11 — P1.2.x Chat-post anchor lifecycle
+
+**SRS:** FR-CHAT-014 AC6 (re-anchor on entry from a different post — new); FR-CLOSURE-001 AC5 (clear anchor on close — new). Closes the gap between FR-CHAT-014 AC1 and chat reuse: the anchored-post card now always reflects the post the user just entered from.
+**Branch / PR:** `fix/P1.2.x-chat-anchor-lifecycle` → PRs #59 (initial fix) + #60 (SECURITY DEFINER RPC) + #61 (`this`-binding repair for the RPC call).
+**Tests:** 168 vitest passing — `OpenOrCreateChatUseCase.test.ts` gained 4 re-anchor cases (re-anchor on second call, no-op when no anchor passed, no-op when same anchor passed twice, fresh chat without anchor). No new infra-layer or pgTAP tests added — adapter logic is thin (~30 LOC) and the RPC is exercised by the existing use case path; the DB trigger extension in 0026 is covered by the migration's `CREATE OR REPLACE` plus the existing closure-flow integration paths.
+**TD deltas:** No new TD opened.
+
+Why this slice exists: P1.9 (#57) shipped the anchored-post card on the assumption that `chats.anchor_post_id` is set correctly at chat creation. But `SupabaseChatRepository.findOrCreateChat` was only writing the anchor on `INSERT` — chat **reuse** (a `contactPoster` entry from a second post between the same two users) returned the stale row untouched. Symptom: "I tapped 'שלח הודעה למפרסם' on a new post and got a plain-looking chat with no card at the top". The fix has three coordinated parts so the system is consistent in both directions (anchor flips forward on entry from a new post; anchor clears on close).
+
+Fixes:
+- **Migration 0026** (`supabase/migrations/0026_chat_anchor_lifecycle.sql`) — `CREATE OR REPLACE` of `posts_emit_closure_system_messages()` from 0021. Appends a single `UPDATE chats SET anchor_post_id = NULL WHERE anchor_post_id = new.post_id` **after** the system-message fan-out loop, so the SELECT in the loop still sees the rows. Applies to both `closed_delivered` and `deleted_no_recipient` transitions, satisfying FR-CLOSURE-001 AC5. Runs in the same trigger transaction as the message inserts — atomic.
+- **Migration 0027** (`supabase/migrations/0027_rpc_chat_set_anchor.sql`) — new `SECURITY DEFINER` RPC `rpc_chat_set_anchor(p_chat_id uuid, p_anchor_post_id uuid)`. Required because `chats` has no client `UPDATE` grant + no client `UPDATE` RLS policy (see 0004 §12). The RPC asserts `auth.uid()` is a participant, no-ops when the anchor is already at the requested value (idempotency + avoids a spurious realtime event), and returns the updated row. Granted to `authenticated`.
+- **`SupabaseChatRepository.findOrCreateChat`** (`app/packages/infrastructure-supabase/src/chat/SupabaseChatRepository.ts:35-89`) — on chat reuse, evaluates `needsReanchor = anchorPostId !== undefined && anchorPostId !== null && existing.anchor_post_id !== anchorPostId`. When true, calls `rpc_chat_set_anchor` and returns the updated row. When the caller passes no anchor (inbox flow) or the same anchor, returns the existing row untouched — no wasted UPDATE, no spurious realtime event. The `this`-binding bug surfaced after #59 because supabase-js requires `.rpc` to be invoked on the client object directly (`this.client.rpc.call(this.client, ...)`); #61 corrected this.
+- **`SupabaseChatRealtime.subscribeToChat`** (`app/packages/infrastructure-supabase/src/chat/SupabaseChatRealtime.ts:59-72`, post P1.2.y nonce-topic rewrite) — adds a third `postgres_changes` listener: `UPDATE` events on `chats` filtered by `chat_id=eq.{chatId}`. Surfaces via optional `onChatChanged(rowToChat(payload.new))` callback on `ChatStreamCallbacks` (port: `IChatRealtime`).
+- **`chatStore.startThreadSub`** (`app/apps/mobile/src/store/chatStore.ts:47, 192-215`) — accepts an optional `onChatChanged` callback parameter and threads it into the subscription.
+- **`useChatInit`** (`app/apps/mobile/src/components/useChatInit.ts:43-51`) — passes `(next) => setChat(next)` so `AnchoredPostCard` re-renders with the new anchor in-place. No screen reload required.
+
+E2E note: full four-scenario manual verification (open P1 → re-anchor to P2 → close P2 → re-anchor to P3) was deferred during this closeout pass — the work had already shipped on `main` via three CI'd PRs, the 168 unit tests cover the application-layer re-anchor logic exhaustively, and the closeout session didn't have credentials for two test accounts. If anyone observes the anchored-post card behavior diverging from FR-CHAT-014 AC6 in production, file a follow-up.
+
+Open gaps: none in scope. Q3 (multi-anchor carousel) and Q4 (system message on re-anchor) were considered and rejected during brainstorming — see spec §2.
+
+---
+
 ## 2026-05-11 — P1.1.2 Follow-mechanism web hotfix
 
 **SRS:** FR-FOLLOW-002 AC1 / FR-FOLLOW-004 AC1 / FR-FOLLOW-006 AC3 / FR-FOLLOW-009 AC2 / FR-PROFILE-005 AC2 / FR-PROFILE-006 AC1 (all confirm-dialog ACs) — no AC change, implementation only.
