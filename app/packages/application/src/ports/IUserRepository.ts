@@ -1,4 +1,11 @@
-import type { User, AuthIdentity, FollowEdge, FollowRequest, OnboardingState } from '@kc/domain';
+import type {
+  User,
+  AuthIdentity,
+  FollowEdge,
+  FollowRequest,
+  OnboardingState,
+  AccountStatus,
+} from '@kc/domain';
 
 // ── IUserRepository ───────────────────────────
 // Port (interface) for user persistence.
@@ -7,7 +14,7 @@ import type { User, AuthIdentity, FollowEdge, FollowRequest, OnboardingState } f
 /** Raw signals from DB used to derive FR-FOLLOW-011 state. */
 export interface FollowStateRaw {
   /** target.privacy_mode + target.account_status. null if target not visible / does not exist. */
-  target: { userId: string; privacyMode: 'Public' | 'Private'; accountStatus: 'active' | 'suspended' | 'deleted' } | null;
+  target: { userId: string; privacyMode: 'Public' | 'Private'; accountStatus: AccountStatus } | null;
   followingExists: boolean;
   pendingRequestExists: boolean;
   cooldownUntil: string | null;

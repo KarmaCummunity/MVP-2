@@ -4,6 +4,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FollowStateRaw } from '@kc/application';
+import type { AccountStatus } from '@kc/domain';
 
 export async function fetchFollowStateRaw(
   client: SupabaseClient,
@@ -46,8 +47,7 @@ export async function fetchFollowStateRaw(
       ? {
           userId: (targetRes.data as { user_id: string }).user_id,
           privacyMode: (targetRes.data as { privacy_mode: 'Public' | 'Private' }).privacy_mode,
-          accountStatus: (targetRes.data as { account_status: 'active' | 'suspended' | 'deleted' })
-            .account_status,
+          accountStatus: (targetRes.data as { account_status: AccountStatus }).account_status,
         }
       : null,
     followingExists: edgeRes.data !== null,
