@@ -176,13 +176,24 @@ export class SupabaseUserRepository implements IUserRepository {
     }>('delete-account', { method: 'POST' });
 
     if (error) {
-      const status = (error as { context?: { status?: number } }).context?.status;
+      // FunctionsHttpError: error.context is the raw Response (data is null on
+      // non-2xx, so we must parse the body ourselves to recover the typed
+      // error code). FunctionsFetchError: error.context is undefined → network.
+      const ctx = (error as { context?: Response }).context;
+      const status = ctx?.status;
+      if (status == null) throw new DeleteAccountError('network', error.message, error);
       if (status === 401) throw new DeleteAccountError('unauthenticated', 'no valid session', error);
       if (status === 403) throw new DeleteAccountError('suspended', 'account is suspended', error);
-      if (status === 500 && data?.error === 'auth_delete_failed') {
+      // Read the body for the auth_delete_failed signal (critical zombie state).
+      let body: { error?: string } | null = null;
+      try {
+        body = await ctx!.clone().json();
+      } catch {
+        body = null;
+      }
+      if (status === 500 && body?.error === 'auth_delete_failed') {
         throw new DeleteAccountError('auth_delete_failed', 'DB cleaned but auth survived', error);
       }
-      if (status == null) throw new DeleteAccountError('network', error.message, error);
       throw new DeleteAccountError('server_error', error.message, error);
     }
     if (data?.ok === true) return;

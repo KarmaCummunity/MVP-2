@@ -95,11 +95,14 @@ begin
     where (participant_a = v_user_id and participant_b is null)
        or (participant_b = v_user_id and participant_a is null);
 
+  -- Count the unique chats that will be anonymized in a single query before
+  -- updating; this is more accurate than summing GET DIAGNOSTICS across the
+  -- two UPDATEs (a chat only has the deletee on one side, but we want one
+  -- count for the audit metadata regardless of which side).
+  select count(*) into v_chats_a from public.chats
+    where participant_a = v_user_id or participant_b = v_user_id;
   update public.chats set participant_a = null where participant_a = v_user_id;
-  get diagnostics v_chats_a = row_count;
   update public.chats set participant_b = null where participant_b = v_user_id;
-  -- (row_count of the second update is not added to v_chats_a — each chat
-  --  only has the deletee on one side; the union counts unique rows.)
 
   -- 6. Delete public.users. FK cascade to auth.users does NOT fire (FK is
   --    public->auth, not auth->public). The Edge Function calls
