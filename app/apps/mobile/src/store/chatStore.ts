@@ -44,7 +44,12 @@ interface ChatState {
   ): void;
 
   startInboxSub(userId: string, repo: IChatRepository, realtime: IChatRealtime): Promise<void>;
-  startThreadSub(chatId: string, repo: IChatRepository, realtime: IChatRealtime): Promise<void>;
+  startThreadSub(
+    chatId: string,
+    repo: IChatRepository,
+    realtime: IChatRealtime,
+    onChatChanged?: (chat: Chat) => void,
+  ): Promise<void>;
   stopThreadSub(chatId: string): void;
   resetOnSignOut(): void;
 }
@@ -189,7 +194,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
   },
 
-  startThreadSub: async (chatId, repo, realtime) => {
+  startThreadSub: async (chatId, repo, realtime, onChatChanged) => {
     if (get().threadSubs[chatId]) return;
     const noopUnsub: Unsubscribe = () => {};
     set((s) => ({ threadSubs: { ...s.threadSubs, [chatId]: noopUnsub } }));
@@ -200,6 +205,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const unsub = realtime.subscribeToChat(chatId, {
         onMessage: (m) => get().applyIncomingMessage(chatId, m),
         onMessageStatusChanged: (p) => get().applyStatusChange(chatId, p),
+        onChatChanged,
         onError: () => {
           /* deferred: surface to screen via ChatChannelStatus hook later */
         },
