@@ -9,7 +9,6 @@
 3. **`docs/SSOT/SRS.md`** + the relevant `FR-*` file under `docs/SSOT/SRS/02_functional_requirements/` for the feature you're touching.
 4. **`docs/SSOT/PRD_MVP_CORE_SSOT/`** — product intent (Hebrew).
 
-> Historical feature log lives in `docs/SSOT/HISTORY.md` — read on demand, not every session.
 
 ## You MUST follow these rules
 

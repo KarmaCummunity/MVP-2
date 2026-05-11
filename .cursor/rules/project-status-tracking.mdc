@@ -23,17 +23,9 @@ alwaysApply: true
 You MUST update SSOT docs in the same change-set as your code:
 
 1. **PROJECT_STATUS §2 Backlog**: flip the status to `🟢 Done` (or `🟡 In progress` if partial).
-2. **`docs/SSOT/HISTORY.md`**: append a new entry at the **top** with:
-   - SRS IDs covered + PRD anchor
-   - Completed date (ISO)
-   - Branch / PR ref
-   - Tests run + result
-   - Tech-debt deltas (closed, partial, new)
-   - AC checklist verified
-   - Known gaps deferred (with backlog priority band)
-3. **PROJECT_STATUS §1 Snapshot**: bump `Last Updated`, completion %, counters, "What works"/"What is stubbed" if behavior changed.
-4. **`docs/SSOT/TECH_DEBT.md`**: close resolved TDs (move to Resolved) and add new ones.
-5. **PROJECT_STATUS §3 Sprint Board**: clear the in-progress slot, set "Up next" to the new highest-priority pending item.
+2. **PROJECT_STATUS §1 Snapshot**: bump `Last Updated`, completion %, counters, "What works"/"What is stubbed" if behavior changed.
+3. **`docs/SSOT/TECH_DEBT.md`**: close resolved TDs (move to Resolved) and add new ones.
+4. **PROJECT_STATUS §3 Sprint Board**: clear the in-progress slot, set "Up next" to the new highest-priority pending item.
 
 ## Verification gate (already enforced by user rules)
 
@@ -49,7 +41,6 @@ Any of:
 - Creating new domain/application/infrastructure code that maps to an `FR-*`.
 - Editing a screen, hook, or store tied to an `FR-*`.
 - Replacing mock data with real repository calls.
-- Fixing a defect in a feature already listed in `HISTORY.md`.
 - Adding tests that change the AC-verified set for a feature.
 
 ## What does NOT need a status update
@@ -57,18 +48,6 @@ Any of:
 - Pure tooling changes (CI config, linter rules, dependency bumps with no behavior change).
 - Documentation-only edits to `SRS/`, `PRD_MVP_SSOT_/`, or this rule.
 - Hotfixes that don't change any AC of an `FR-*`.
-
-## Quick template for HISTORY.md entry
-
-```markdown
-### 🟢 <Slice> — <short title>
-- **SRS**: FR-XXX-NNN, ...
-- **Branch**: `<branch>` · YYYY-MM-DD · PR #N
-- **Tests**: <count> vitest passing · tsc clean (N packages) · `pnpm lint:arch` <count> files passing
-- **Tech debt closed**: TD-N (full / context)
-- **Tech debt partially closed**: TD-N (what shipped / what remains)
-- **Open gaps**: FR-XXX-NNN <gap> · TD-N <gap>
-```
 
 ## If you cannot update PROJECT_STATUS.md
 
