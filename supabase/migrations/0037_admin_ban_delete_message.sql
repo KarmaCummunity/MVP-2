@@ -38,7 +38,12 @@ begin
     raise exception 'invalid_ban_reason' using errcode = 'P0015';
   end if;
 
-  update public.users set account_status = 'banned'
+  -- Clear account_status_until: a permanent ban supersedes any prior
+  -- suspension timer. Otherwise a banned row keeps misleading until-data
+  -- visible to audit/admin views.
+  update public.users
+     set account_status       = 'banned',
+         account_status_until = null
    where user_id = p_target_user_id and account_status <> 'banned';
   if not found then
     return;  -- already banned, no audit (idempotent re-ban)
