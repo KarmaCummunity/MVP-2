@@ -1,7 +1,7 @@
-// Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013.
+// Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
 import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
-  View, Text, FlatList, TextInput, TouchableOpacity, StyleSheet,
+  View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, Alert,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -10,19 +10,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { randomUUID } from 'expo-crypto';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { colors } from '@kc/ui';
 import { useChatStore, type OptimisticMessage } from '../../src/store/chatStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
-import { ReportChatModal } from '../../src/components/ReportChatModal';
-import { ChatActionMenu } from '../../src/components/ChatActionMenu';
+import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { MessageBubble } from '../../src/components/MessageBubble';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
+import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
+import { chatConversationStyles as styles } from './chatScreenStyles';
 
-// Stable empty fallback — must NOT be inlined inside the selector. useSyncExternalStore
-// compares snapshots via Object.is; a fresh `[]` per call would trip an infinite re-render
-// loop while threads[chatId] is undefined (i.e. before startThreadSub resolves).
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
 
 export default function ChatScreen() {
@@ -37,6 +35,8 @@ export default function ChatScreen() {
   const [input, setInput] = useState(prefill ?? '');
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [hideConfirmOpen, setHideConfirmOpen] = useState(false);
+  const [hideBusy, setHideBusy] = useState(false);
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -50,7 +50,7 @@ export default function ChatScreen() {
     })();
   }, [unreadIncoming, chatId, userId]);
 
-useLayoutEffect(() => {
+  useLayoutEffect(() => {
     const title = counterpart.isDeleted ? 'משתמש שנמחק' : counterpart.displayName;
     const canOpenProfile = !counterpart.isDeleted && !!counterpart.shareHandle && !chat?.isSupportThread;
     navigation.setOptions({
@@ -65,9 +65,6 @@ useLayoutEffect(() => {
         </TouchableOpacity>
       ),
       headerRight: () => chat?.isSupportThread ? null : (
-        // Custom modal-driven menu instead of Alert.alert — RN-Web's Alert
-        // collapses the buttons[] into a plain window.alert, so the chat
-        // ⋮ menu was effectively unreachable on web.
         <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel="פעולות">
           <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
@@ -102,10 +99,27 @@ useLayoutEffect(() => {
   const counter = input.length;
   const showCounter = counter >= 1900;
   const sendDisabled = counter === 0 || counter > MESSAGE_MAX_CHARS;
-
-  // Store stays asc (other consumers depend on it); FlatList inverts to put
-  // the newest message at the visual bottom on entry.
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
+
+  const confirmHideFromInbox = async () => {
+    setHideBusy(true);
+    try {
+      await container.hideChatFromInbox.execute({ chatId });
+      if (counterpart.userId) markNeedFreshThreadWith(counterpart.userId);
+      useChatStore.getState().stopThreadSub(chatId);
+      await useChatStore.getState().refreshInbox(userId, container.chatRepo);
+      setHideConfirmOpen(false);
+      setHideBusy(false);
+      router.back();
+    } catch (err) {
+      setHideBusy(false);
+      const msg =
+        err instanceof ChatError && err.code === 'support_thread_not_hideable'
+          ? 'לא ניתן להסיר את שיחת התמיכה.'
+          : 'לא הצלחנו להסיר את השיחה. נסה שוב.';
+      Alert.alert('שגיאה', msg);
+    }
+  };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -156,32 +170,20 @@ useLayoutEffect(() => {
         </View>
       </KeyboardAvoidingView>
 
-      <ReportChatModal chatId={chatId} visible={reportOpen} onClose={() => setReportOpen(false)} />
-
-      <ChatActionMenu
-        visible={menuOpen}
-        onClose={() => setMenuOpen(false)}
-        onReport={() => { setMenuOpen(false); setReportOpen(true); }}
+      <ChatScreenOverlays
+        chatId={chatId}
+        isSupportThread={chat?.isSupportThread}
+        reportOpen={reportOpen}
+        onReportClose={() => setReportOpen(false)}
+        menuOpen={menuOpen}
+        onMenuClose={() => setMenuOpen(false)}
+        onReportFromMenu={() => { setMenuOpen(false); setReportOpen(true); }}
+        hideConfirmOpen={hideConfirmOpen}
+        hideBusy={hideBusy}
+        onHideCancel={() => setHideConfirmOpen(false)}
+        onOpenHideConfirm={() => setHideConfirmOpen(true)}
+        onHideConfirm={confirmHideFromInbox}
       />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
-  messageList: { padding: spacing.base, gap: spacing.sm },
-  inputBar: {
-    flexDirection: 'row', alignItems: 'flex-end',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border, gap: spacing.sm,
-  },
-  input: {
-    minHeight: 40, maxHeight: 100, backgroundColor: colors.background, borderRadius: radius.lg,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.sm, ...typography.body, color: colors.textPrimary,
-    borderWidth: 1.5, borderColor: colors.border,
-  },
-  counter: { ...typography.caption, color: colors.textSecondary, alignSelf: 'flex-start', paddingHorizontal: spacing.sm },
-  sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
-  sendBtnDisabled: { opacity: 0.5 },
-});

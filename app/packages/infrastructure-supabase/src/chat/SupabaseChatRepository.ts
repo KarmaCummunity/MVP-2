@@ -10,6 +10,7 @@ import type { Database } from '../database.types';
 import { rowToChat, rowToMessage } from './rowMappers';
 import { mapChatError } from './mapChatError';
 import { getMyChats } from './getMyChats';
+import { findOrCreateDmChat, hideDmChatFromInbox } from './supabaseDmChat';
 
 type Counterpart = {
   userId: string | null;
@@ -36,56 +37,19 @@ export class SupabaseChatRepository implements IChatRepository {
     userId: string,
     otherUserId: string,
     anchorPostId?: string,
+    options?: { preferNewThread?: boolean },
   ): Promise<Chat> {
-    const [a, b] =
-      userId < otherUserId ? [userId, otherUserId] : [otherUserId, userId];
+    return findOrCreateDmChat(
+      this.client,
+      userId,
+      otherUserId,
+      anchorPostId,
+      options,
+    );
+  }
 
-    const existing = await this.client
-      .from('chats')
-      .select('*')
-      .eq('participant_a', a)
-      .eq('participant_b', b)
-      .maybeSingle();
-    if (existing.error) throw mapChatError(existing.error);
-
-    if (existing.data) {
-      // Re-anchor when caller supplied a non-null anchor that differs from the
-      // current value. When caller passes no anchor (inbox flow) or the same
-      // anchor, return as-is to avoid a wasted UPDATE and a spurious realtime
-      // event.
-      const needsReanchor =
-        anchorPostId !== undefined &&
-        anchorPostId !== null &&
-        existing.data.anchor_post_id !== anchorPostId;
-
-      if (!needsReanchor) return rowToChat(existing.data);
-
-      // chats has no client UPDATE grant / policy (see 0004 §12) — go through
-      // the SECURITY DEFINER RPC added in 0027. The RPC name is not yet in
-      // database.types.ts (regen pending), so we cast via unknown. We MUST
-      // call .rpc on the client directly (not via an extracted variable),
-      // otherwise `this` is lost inside supabase-js and `this.rest` is undefined.
-      type ChatRow = Database['public']['Tables']['chats']['Row'];
-      type RpcCall = (fn: string, args: Record<string, unknown>) => Promise<{ data: ChatRow | ChatRow[] | null; error: unknown }>;
-      const { data, error } = await (this.client.rpc as unknown as RpcCall).call(this.client, 'rpc_chat_set_anchor', { p_chat_id: existing.data.chat_id, p_anchor_post_id: anchorPostId });
-      if (error) throw mapChatError(error as never);
-      const row = Array.isArray(data) ? data[0] : data;
-      // Defensive — RPC raises on auth/visibility errors; a null row means
-      // the chat was deleted between SELECT and the RPC call.
-      return rowToChat(row ?? existing.data);
-    }
-
-    const insert = await this.client
-      .from('chats')
-      .insert({
-        participant_a: a,
-        participant_b: b,
-        anchor_post_id: anchorPostId ?? null,
-      })
-      .select('*')
-      .single();
-    if (insert.error) throw mapChatError(insert.error);
-    return rowToChat(insert.data);
+  async hideChatFromInbox(chatId: string): Promise<void> {
+    return hideDmChatFromInbox(this.client, chatId);
   }
 
   async getMessages(
@@ -146,8 +110,6 @@ export class SupabaseChatRepository implements IChatRepository {
     if (!data) {
       throw new ChatError('super_admin_not_found', 'super_admin_not_found');
     }
-    // RPC is declared with SetofOptions to "chats" — supabase-js may surface
-    // this as either a single row or a one-element array depending on version.
     const row = (Array.isArray(data) ? data[0] : data) as
       | Database['public']['Tables']['chats']['Row']
       | undefined;
@@ -166,7 +128,6 @@ export class SupabaseChatRepository implements IChatRepository {
       chat.participantIds[0] === viewerId
         ? chat.participantIds[1]
         : chat.participantIds[0];
-    // After migration 0028, otherId may be null (counterpart deleted account).
     if (otherId == null) {
       return {
         userId: null,

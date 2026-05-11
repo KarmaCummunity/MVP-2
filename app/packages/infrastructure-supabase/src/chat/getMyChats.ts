@@ -1,7 +1,7 @@
 // Conversations list with last-message preview + unread counts.
 // Three queries (chats + messages + users) reconciled in TS — simpler against
 // generated types than a LATERAL join, and adequate for MVP load.
-// Mapped to SRS: FR-CHAT-001 (conversation list), FR-CHAT-006 (unread counters).
+// Mapped to SRS: FR-CHAT-001 (conversation list), FR-CHAT-006, FR-CHAT-016.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { ChatWithPreview } from '@kc/application';
@@ -9,6 +9,35 @@ import type { Message } from '@kc/domain';
 import type { Database } from '../database.types';
 import { rowToChat, rowToMessage } from './rowMappers';
 import { mapChatError } from './mapChatError';
+
+type ChatRow = Database['public']['Tables']['chats']['Row'];
+
+function isVisibleInInboxForViewer(r: ChatRow, userId: string): boolean {
+  if (r.participant_a === userId) return r.inbox_hidden_at_a == null;
+  if (r.participant_b === userId) return r.inbox_hidden_at_b == null;
+  return false;
+}
+
+function counterpartId(r: ChatRow, userId: string): string | null {
+  return r.participant_a === userId ? r.participant_b : r.participant_a;
+}
+
+/** One row per human counterpart — highest last_message_at wins (FR-CHAT-016). */
+function dedupeRowsByCounterpart(userId: string, rows: ChatRow[]): ChatRow[] {
+  const best = new Map<string, ChatRow>();
+  for (const r of rows) {
+    const other = counterpartId(r, userId) ?? '__deleted__';
+    const prev = best.get(other);
+    if (!prev) {
+      best.set(other, r);
+      continue;
+    }
+    const ts = Date.parse(r.last_message_at);
+    const pts = Date.parse(prev.last_message_at);
+    if (ts > pts || (ts === pts && r.chat_id > prev.chat_id)) best.set(other, r);
+  }
+  return [...best.values()];
+}
 
 export async function getMyChats(
   client: SupabaseClient<Database>,
@@ -20,7 +49,12 @@ export async function getMyChats(
     .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
     .order('last_message_at', { ascending: false });
   if (chatsRes.error) throw mapChatError(chatsRes.error);
-  const chats = (chatsRes.data ?? []).map(rowToChat);
+
+  const raw = (chatsRes.data ?? []) as ChatRow[];
+  const visible = raw.filter((r) => isVisibleInInboxForViewer(r, userId));
+  const rows = dedupeRowsByCounterpart(userId, visible);
+
+  const chats = rows.map(rowToChat);
   if (chats.length === 0) return [];
 
   const chatIds = chats.map((c) => c.chatId);
@@ -48,9 +82,6 @@ export async function getMyChats(
     }
   }
 
-  // otherIds can include null when the counterpart has been deleted (chats
-  // participants are ON DELETE SET NULL since migration 0028). Filter nulls
-  // for the .in() query; the fallback below renders "משתמש שנמחק" for them.
   const otherIds = chats
     .map((c) => (c.participantIds[0] === userId ? c.participantIds[1] : c.participantIds[0]))
     .filter((id): id is string => id != null);
@@ -71,29 +102,35 @@ export async function getMyChats(
     });
   }
 
-  return chats.map((c) => {
+  const list = chats.map((c) => {
     const otherId =
       c.participantIds[0] === userId ? c.participantIds[1] : c.participantIds[0];
     const found = otherId != null ? userMap.get(otherId) : null;
     return {
       ...c,
-      otherParticipant: found && otherId != null
-        ? {
-            userId: otherId,
-            displayName: found.displayName,
-            avatarUrl: found.avatarUrl,
-            shareHandle: found.shareHandle,
-            isDeleted: false,
-          }
-        : {
-            userId: null,
-            displayName: 'משתמש שנמחק',
-            avatarUrl: null,
-            shareHandle: null,
-            isDeleted: true,
-          },
+      otherParticipant:
+        found && otherId != null
+          ? {
+              userId: otherId,
+              displayName: found.displayName,
+              avatarUrl: found.avatarUrl,
+              shareHandle: found.shareHandle,
+              isDeleted: false,
+            }
+          : {
+              userId: null,
+              displayName: 'משתמש שנמחק',
+              avatarUrl: null,
+              shareHandle: null,
+              isDeleted: true,
+            },
       lastMessage: lastMessageByChat.get(c.chatId) ?? null,
       unreadCount: unreadByChat[c.chatId] ?? 0,
     };
+  });
+  return list.sort((a, b) => {
+    const ta = a.lastMessageAt ? Date.parse(a.lastMessageAt) : 0;
+    const tb = b.lastMessageAt ? Date.parse(b.lastMessageAt) : 0;
+    return tb - ta;
   });
 }

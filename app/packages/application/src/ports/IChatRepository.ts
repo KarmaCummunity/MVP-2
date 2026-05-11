@@ -19,7 +19,10 @@ export interface IChatRepository {
     userId: string,
     otherUserId: string,
     anchorPostId?: string,
+    options?: { preferNewThread?: boolean },
   ): Promise<Chat>;
+  /** FR-CHAT-016 — hides chat from viewer inbox only (RPC). */
+  hideChatFromInbox(chatId: string): Promise<void>;
   findById(chatId: string): Promise<Chat | null>;
 
   // Messages

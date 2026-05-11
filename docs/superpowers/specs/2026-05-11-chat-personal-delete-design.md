@@ -1,6 +1,6 @@
 # Chat — Personal delete / hide from inbox
 
-> Date: 2026-05-11 · Status: Approved for implementation planning (brainstorming sign-off) · SRS: new `FR-CHAT-016`; amendments to `FR-CHAT-004`, `FR-CHAT-006`, `FR-CHAT-001`, `FR-CHAT-012`
+> Date: 2026-05-11 · Status: **Shipped** (code + migration + SSOT 2026-05-12) · SRS: `FR-CHAT-016`; amendments to `FR-CHAT-004`, `FR-CHAT-006`, `FR-CHAT-001`, `FR-CHAT-012`
 
 ## 1 — Problem and goal
 
@@ -125,3 +125,4 @@ Add join predicate: exclude chats where viewer’s `inbox_hidden_at_*` is not nu
 | Version | Date | Summary |
 | --- | --- | --- |
 | 0.1 | 2026-05-11 | Initial design from approved brainstorming. |
+| 0.4 | 2026-05-12 | Marked **Shipped** — architecture file splits completed (`pnpm lint:arch` green). |

@@ -34,15 +34,12 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
   // Bumped 249→282 (P1.1/P1.2 follow surface + delete-account strings). Remove once TD-35 splits the file.
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 282 }],
+  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 276 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
-  ['apps/mobile/src/store/chatStore.ts', { td: 'TD-118', max: 232 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
   // Pre-existing before FR-ADMIN-009; tracked as TD-128 for the split work.
-  // (main also allowlisted these but mis-pointed TD-52/TD-124 — those IDs
-  // belong to admin-restore RPC and feed-card menu, not search files.)
   ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-128', max: 418 }],
   ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-128', max: 646 }],
   // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-128 splits the file.
@@ -50,8 +47,6 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
-  // Chat repository bumped past cap (202 lines). Split into sub-services once P2.x chat work begins.
-  ['packages/infrastructure-supabase/src/chat/SupabaseChatRepository.ts', { td: 'TD-118', max: 202 }],
 ]);
 
 const LAYER_RULES = [

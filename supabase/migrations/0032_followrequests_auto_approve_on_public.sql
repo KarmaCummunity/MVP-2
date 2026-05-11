@@ -1,4 +1,4 @@
--- 0023_followrequests_auto_approve_on_public
+-- 0032_followrequests_auto_approve_on_public
 -- FR-PROFILE-006 AC2: when a user toggles privacy_mode from 'Private' to 'Public',
 -- every currently-pending follow_request targeting them transitions atomically
 -- to 'accepted'. The existing follow_requests_after_accept trigger then creates
@@ -30,6 +30,7 @@ begin
 end;
 $$;
 
+drop trigger if exists users_after_privacy_mode_change on public.users;
 create trigger users_after_privacy_mode_change
   after update of privacy_mode on public.users
   for each row

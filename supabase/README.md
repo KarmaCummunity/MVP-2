@@ -15,6 +15,23 @@ supabase/
 └── README.md
 ```
 
+## Migration numbering (mandatory)
+
+Each file under `migrations/` must use a **unique** leading version token (the
+digits before the first `_`). Supabase records that token in
+`supabase_migrations.schema_migrations`; two files such as `0021_foo.sql` and
+`0021_bar.sql` both map to version `0021` and will break `db push` with a
+duplicate-key error.
+
+Rules:
+
+1. **Never reuse the same numeric prefix** for two different migration files.
+2. **Add new work only** with the next free integer prefix after the current
+   maximum in `supabase/migrations/` (run `ls supabase/migrations` and bump the
+   highest `NNNN_*.sql` by one).
+3. **Do not renumber** migrations that may already be applied on hosted
+   projects unless you coordinate a repair baseline with the team.
+
 ## Apply a migration to the live project
 
 Two options:

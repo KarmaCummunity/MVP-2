@@ -15,6 +15,7 @@ import {
 import {
   ListChatsUseCase,
   OpenOrCreateChatUseCase,
+  HideChatFromInboxUseCase,
   SendMessageUseCase,
   MarkChatReadUseCase,
   GetUnreadTotalUseCase,
@@ -45,6 +46,8 @@ const reportRepo = new SupabaseReportRepository(supabase);
 const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
 const postRepo = new SupabasePostRepository(supabase);
 
+const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
+
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
   chatRepo,
@@ -53,6 +56,7 @@ export const container = {
   // Chat use cases
   listChats: new ListChatsUseCase(chatRepo),
   openOrCreateChat: new OpenOrCreateChatUseCase(chatRepo),
+  hideChatFromInbox,
   sendMessage: new SendMessageUseCase(chatRepo),
   markChatRead: new MarkChatReadUseCase(chatRepo),
   getUnreadTotal: new GetUnreadTotalUseCase(chatRepo),

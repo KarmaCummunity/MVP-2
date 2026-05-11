@@ -228,7 +228,7 @@ Captures `display_name` and `city` as the first onboarding step.
 **Acceptance Criteria.**
 - AC1. `display_name` accepts up to 50 characters; whitespace-only is rejected.
 - AC2. `city` is a dropdown of the canonical Israeli city list seeded by the system. No free-text city.
-- AC3. A "Skip" option exists. Skipping advances to step 2 but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`).
+- AC3. A "Skip" option exists. Skipping advances to step 2 but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`). The system also persists `users.basic_info_skipped = true` on Skip so returning sessions (cold start, app update, re-auth) **land on the Home Feed** instead of forcing the full-screen wizard again; the deferred fields are still collected only via `FR-AUTH-015` until saved.
 - AC4. SSO-prefilled values are editable and persisted upon "Continue".
 
 **Edge Cases.**

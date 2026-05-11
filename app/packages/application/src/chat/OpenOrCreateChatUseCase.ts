@@ -6,16 +6,16 @@ export interface OpenOrCreateChatInput {
   viewerId: string;
   otherUserId: string;
   anchorPostId?: string;
+  /** When true, always insert a new non-support chat row (after personal hide). */
+  preferNewThread?: boolean;
 }
 
 export class OpenOrCreateChatUseCase {
   constructor(private readonly repo: IChatRepository) {}
 
   async execute(input: OpenOrCreateChatInput): Promise<Chat> {
-    return this.repo.findOrCreateChat(
-      input.viewerId,
-      input.otherUserId,
-      input.anchorPostId,
-    );
+    return this.repo.findOrCreateChat(input.viewerId, input.otherUserId, input.anchorPostId, {
+      preferNewThread: input.preferNewThread,
+    });
   }
 }

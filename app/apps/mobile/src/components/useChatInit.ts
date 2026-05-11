@@ -13,12 +13,18 @@ import { useChatStore } from '../store/chatStore';
 import { container } from '../lib/container';
 
 export interface ChatCounterpart {
+  userId: string | null;
   displayName: string;
   shareHandle: string | null;
   isDeleted: boolean;
 }
 
-const EMPTY_COUNTERPART: ChatCounterpart = { displayName: '', shareHandle: null, isDeleted: false };
+const EMPTY_COUNTERPART: ChatCounterpart = {
+  userId: null,
+  displayName: '',
+  shareHandle: null,
+  isDeleted: false,
+};
 
 export function useChatInit(chatId: string, userId: string) {
   const [chat, setChat] = useState<Chat | null>(null);
@@ -34,6 +40,7 @@ export function useChatInit(chatId: string, userId: string) {
       if (cancelled) return;
       setChat(c);
       setCounterpart({
+        userId: cp.userId,
         displayName: cp.displayName,
         shareHandle: cp.shareHandle,
         isDeleted: cp.isDeleted,

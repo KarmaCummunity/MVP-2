@@ -122,6 +122,8 @@ export type Database = {
           anchor_post_id: string | null
           chat_id: string
           created_at: string
+          inbox_hidden_at_a: string | null
+          inbox_hidden_at_b: string | null
           is_support_thread: boolean
           last_message_at: string
           participant_a: string
@@ -132,6 +134,8 @@ export type Database = {
           anchor_post_id?: string | null
           chat_id?: string
           created_at?: string
+          inbox_hidden_at_a?: string | null
+          inbox_hidden_at_b?: string | null
           is_support_thread?: boolean
           last_message_at?: string
           participant_a: string
@@ -142,6 +146,8 @@ export type Database = {
           anchor_post_id?: string | null
           chat_id?: string
           created_at?: string
+          inbox_hidden_at_a?: string | null
+          inbox_hidden_at_b?: string | null
           is_support_thread?: boolean
           last_message_at?: string
           participant_a?: string
@@ -852,6 +858,11 @@ export type Database = {
         Returns: boolean
       }
       rpc_chat_mark_read: { Args: { p_chat_id: string }; Returns: undefined }
+      rpc_chat_hide_for_viewer: { Args: { p_chat_id: string }; Returns: undefined }
+      rpc_chat_set_anchor: {
+        Args: { p_anchor_post_id: string; p_chat_id: string }
+        Returns: Database['public']['Tables']['chats']['Row']
+      }
       rpc_chat_unread_total: { Args: never; Returns: number }
       rpc_get_or_create_support_thread: {
         Args: never
