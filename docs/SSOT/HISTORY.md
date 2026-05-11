@@ -6,6 +6,35 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P1.2 Feed discovery experience
+
+**SRS:** FR-FEED-004, 005, 006, 008, 009, 010, 014, 015 (reworked / extended); FR-FEED-018, 019 (new); FR-FEED-003, 007, 013 (deprecated); FR-FEED-016 (superseded).
+**Branch / PR:** `feat/FR-FEED-006-feed-discovery-and-filters` (single-branch, 4-commit PR).
+**Tests:** 148 → 166 vitest passing (+18 across geo, GetFeedUseCase shape, GetActivePostsCountUseCase, DismissFirstPostNudgeUseCase).
+**TD deltas:** Closed TD-26, TD-102. Opened TD-134..TD-137 (analytics spine, edge-cached counter, search-tab filter parity, RPC N+1).
+**Open gaps:**
+- Universal Search tab still uses its legacy filter shape — shared `<PostFilterSheet>` deferred to TD-136 (depends on TD-133 LOC split).
+- Cold-start fallback (FR-FEED-007) is deprecated; if low-supply UX patterns prove needed later, file a new FR.
+- Analytics events for filter changes / nudge dismissals / new-posts pill clicks deferred to P1.6 (TD-134).
+
+Highlights:
+- **2 migrations:** `0021_cities_geo` adds lat/lon to `public.cities` for the 20 canonical Israeli cities + a pure-SQL `haversine_km(...)` helper; `0022_feed_ranked_ids` adds an RPC that returns ordered post_ids + computed distance under server-side filters and visibility predicate.
+- **3 new domain types:** `FeedSortOrder`, `FeedStatusFilter`, `LocationFilter` in `value-objects.ts`; pure `distanceKm` in `geo.ts`.
+- **2 new application ports:** `IFeedRealtime` (mirror of `IChatRealtime`) and `IStatsRepository`; both adapted by `SupabaseFeedRealtime` and `SupabaseStatsRepository`.
+- **2 new use cases:** `GetActivePostsCountUseCase` (community counter), `DismissFirstPostNudgeUseCase` (permanent nudge dismissal). Soft session dismissal stays in the UI's `feedSessionStore`.
+- **Reshaped `PostFeedFilter` contract:** `categories[]`, `itemConditions[]`, `locationFilter`, `statusFilter`, `sortOrder`, `proximitySortCity`. `searchQuery`/`city`/`includeClosed`/`sortBy` dropped. `PostWithOwner.distanceKm` added.
+- **`SupabasePostRepository.getFeed`** now splits between a simple PostgREST path (newest/oldest) and a ranked RPC path (distance sort or radius filter). Extracted `buildFeedQuery` keeps the repo under TD-50's cap.
+- **`<PostFilterSheet>`** under `apps/mobile/src/components/PostFilterSheet/` (4 files, each ≤200 LOC): Sort / Filters / LocationFilter sections + a shared Chip primitive.
+- **`<FeedFilterIcon>`** mounted on the TopBar via a new `extraIcon` slot — visible only on the feed, with a red active-count badge.
+- **`<NewPostsBanner>`** sticky pill at the top of the list; bumps from realtime INSERTs via `useFeedRealtime` hook (60-second background disconnect; reconnect + refetch on resume).
+- **`<FirstPostNudge>`** with 3-tier dismiss; eligibility via `useFirstPostNudge` hook.
+- **`<FeedEmptyState>`** adapts copy + CTAs to filter state; surfaces the live community counter.
+- **`<WebRefreshButton>`** + global `R` keyboard shortcut on web.
+- **Guest banner** now reads the live community counter through `<FeedCommunityCounter>` (closes TD-102).
+- Comprehensive SRS rewrite under `06_feed_and_search.md`; new decision log entry EXEC-8.
+
+---
+
 ## 2026-05-11 — P1.1 Following + Other-User Profile
 
 **SRS:** FR-FOLLOW-001..009, 011, 012; FR-PROFILE-002..006, 009, 010, 013.
