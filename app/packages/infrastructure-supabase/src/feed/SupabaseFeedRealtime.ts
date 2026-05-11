@@ -18,8 +18,16 @@ export class SupabaseFeedRealtime implements IFeedRealtime {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   subscribeToPublicInserts(cb: FeedRealtimeCallbacks): () => void {
+    // Unique topic per call: the realtime client caches channels by topic in
+    // `client.channels`. `channel.unsubscribe()` does NOT remove the cache
+    // entry synchronously, so a remount (navigation, StrictMode, AppState
+    // resume) would otherwise reuse a stale channel with `joinedOnce=true` —
+    // and `.on('postgres_changes', ...)` would throw
+    // "cannot add postgres_changes callbacks after subscribe()".
+    const topic = `posts:public-feed:${Math.random().toString(36).slice(2, 10)}`;
+
     const channel = this.client
-      .channel('posts:public-feed')
+      .channel(topic)
       .on(
         'postgres_changes',
         {
@@ -37,7 +45,7 @@ export class SupabaseFeedRealtime implements IFeedRealtime {
       });
 
     return () => {
-      void channel.unsubscribe();
+      void this.client.removeChannel(channel);
     };
   }
 }
