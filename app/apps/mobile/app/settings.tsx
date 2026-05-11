@@ -8,8 +8,10 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
 import { getSignOutUseCase } from '../src/services/authComposition';
-import { setOnboardingStateDirect } from '../src/services/userComposition';
+import { getDeleteAccountUseCase, setOnboardingStateDirect } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
+import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
+import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 
 interface SettingsRowProps {
   label: string; icon: string;
@@ -37,6 +39,26 @@ export default function SettingsScreen() {
   const [notificationsOn, setNotificationsOn] = React.useState(true);
   const [signingOut, setSigningOut] = React.useState(false);
   const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
+  const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
+  const [deleteSuccessVisible, setDeleteSuccessVisible] = React.useState(false);
+
+  const handleDeleteConfirm = async () => {
+    // Throws DeleteAccountError on failure — the modal catches and transitions
+    // its internal state. On success we hide the modal, show the overlay 1.5s,
+    // then signOut + replace to (auth).
+    await getDeleteAccountUseCase().execute();
+    setDeleteModalVisible(false);
+    setDeleteSuccessVisible(true);
+    setTimeout(async () => {
+      try {
+        await getSignOutUseCase().execute();
+      } finally {
+        signOutLocal();
+        setDeleteSuccessVisible(false);
+        router.replace('/(auth)');
+      }
+    }, 1500);
+  };
 
   const performReset = async () => {
     if (!session) return;
@@ -170,12 +192,20 @@ export default function SettingsScreen() {
             label={t('settings.deleteAccount')}
             icon="trash-outline"
             destructive
-            onPress={() => {}}
+            onPress={() => setDeleteModalVisible(true)}
           />
         </View>
 
         <Text style={styles.version}>{t('settings.version')} v0.1.0</Text>
       </ScrollView>
+
+      <DeleteAccountConfirmModal
+        visible={deleteModalVisible}
+        accountStatus={null}
+        onCancel={() => setDeleteModalVisible(false)}
+        onConfirm={handleDeleteConfirm}
+      />
+      <DeleteAccountSuccessOverlay visible={deleteSuccessVisible} />
     </SafeAreaView>
   );
 }

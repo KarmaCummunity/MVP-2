@@ -2,6 +2,7 @@
 import React from 'react';
 import {
   View, Text, TouchableOpacity, StyleSheet, Dimensions, Image,
+  I18nManager, Platform
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -17,6 +18,11 @@ const STORAGE_BUCKET = 'post-images';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 2 columns, spacing.base (16) padding on each side, spacing.sm (8) gap between columns
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.sm) / 2;
+
+const isRTL = I18nManager.isRTL;
+const isWeb = Platform.OS === 'web';
+const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
+const tagPosition = (isRTL && !isWeb) ? { left: spacing.xs } : { right: spacing.xs };
 
 interface PostCardGridProps {
   post: PostWithOwner;
@@ -73,9 +79,11 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
             </Text>
           </View>
         </View>
-        <Text style={styles.meta} numberOfLines={1}>
-          {post.ownerName} · {timeAgo}
-        </Text>
+        <View style={styles.metaContainer}>
+          <Text style={[styles.meta, { flexShrink: 1 }]} numberOfLines={1}>{post.ownerName}</Text>
+          <Text style={styles.metaDot}> · </Text>
+          <Text style={[styles.meta, { flexShrink: 1 }]} numberOfLines={1}>{timeAgo}</Text>
+        </View>
         <Text style={styles.location} numberOfLines={1}>📍 {locationText}</Text>
       </View>
     </TouchableOpacity>
@@ -105,7 +113,7 @@ const styles = StyleSheet.create({
   typeTag: {
     position: 'absolute',
     top: spacing.xs,
-    right: spacing.xs,
+    ...tagPosition,
     paddingHorizontal: spacing.xs,
     paddingVertical: 2,
     borderRadius: radius.sm,
@@ -123,7 +131,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   titleRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.xs,
   },
@@ -131,7 +139,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600',
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: alignStart,
     fontSize: 13,
     flex: 1,
   },
@@ -147,14 +155,23 @@ const styles = StyleSheet.create({
     fontSize: 10,
     color: colors.primary,
   },
+  metaContainer: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'flex-start',
+  },
   meta: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: alignStart,
+  },
+  metaDot: {
+    ...typography.caption,
+    color: colors.textSecondary,
   },
   location: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: alignStart,
   },
 });

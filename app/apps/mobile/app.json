@@ -1,6 +1,7 @@
 {
   "expo": {
     "name": "קארמה קהילה",
+    "shortName": "KC",
     "slug": "karma-community",
     "version": "0.1.0",
     "orientation": "portrait",
@@ -18,6 +19,7 @@
       "supportsTablet": false,
       "bundleIdentifier": "com.karmacommunity.app",
       "infoPlist": {
+        "CFBundleDisplayName": "KC",
         "NSCameraUsageDescription": "נדרש לצלם תמונות לפוסטים",
         "NSPhotoLibraryUsageDescription": "נדרש לבחור תמונות לפוסטים"
       }

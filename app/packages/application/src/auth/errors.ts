@@ -30,3 +30,32 @@ export class AuthError extends Error {
 export function isAuthError(value: unknown): value is AuthError {
   return value instanceof AuthError;
 }
+
+// ─────────────────────────────────────────────
+// Delete-account domain error
+// Mapped to SRS: FR-SETTINGS-012 V1
+// ─────────────────────────────────────────────
+
+export type DeleteAccountErrorCode =
+  | 'unauthenticated'
+  | 'suspended'
+  | 'auth_delete_failed'
+  | 'network'
+  | 'server_error';
+
+export class DeleteAccountError extends Error {
+  readonly code: DeleteAccountErrorCode;
+  readonly cause?: unknown;
+
+  constructor(code: DeleteAccountErrorCode, message: string, cause?: unknown) {
+    super(message);
+    this.name = 'DeleteAccountError';
+    this.code = code;
+    this.cause = cause;
+    Object.setPrototypeOf(this, DeleteAccountError.prototype);
+  }
+}
+
+export function isDeleteAccountError(value: unknown): value is DeleteAccountError {
+  return value instanceof DeleteAccountError;
+}
