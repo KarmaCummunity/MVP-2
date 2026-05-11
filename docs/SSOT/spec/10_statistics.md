@@ -1,6 +1,6 @@
 # 2.10 Personal & Community Statistics
 
-> **Status:** ⏳ Planned — Stats screen not yet built. Counter logic exists in DB triggers.
+> **Status:** 🟡 In progress — Live personal counters + community snapshot + activity timeline (derived from posts/recipients via `rpc_my_activity_timeline`, migration 0030). Full event fidelity (`post_reopened`, `unmarked_as_recipient`) and nightly drift recompute (`FR-STATS-005`) still open.
 
 
 
