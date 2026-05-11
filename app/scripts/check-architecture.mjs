@@ -30,7 +30,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 234 }],
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 212 }],
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 248 }],
+  // Bumped 248→249 (P1.2 added feed.guestBannerWithCount). Remove once TD-35 splits the file.
+  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 249 }],
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 214 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],

@@ -2,6 +2,9 @@
 // Mirrors the pattern that lived inline in (tabs)/index.tsx; extracted so Profile,
 // Donations, and Search can reuse it. The native Tabs header is hidden globally
 // (see (tabs)/_layout.tsx) so each tab renders this once inside its own SafeAreaView.
+//
+// `extraIcon` slot: the feed renders the filter/sort icon there so it's visible
+// only on the feed and disappears when navigating to another tab (FR-FEED-004).
 import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -9,7 +12,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '@kc/ui';
 import { useChatStore } from '../store/chatStore';
 
-export function TopBar() {
+interface TopBarProps {
+  /** Optional icon rendered between the logo and the settings icon. */
+  extraIcon?: React.ReactNode;
+}
+
+export function TopBar({ extraIcon }: TopBarProps = {}) {
   const router = useRouter();
   const total = useChatStore((s) => s.unreadTotal);
   const display = total > 9 ? '9+' : String(total);
@@ -25,9 +33,12 @@ export function TopBar() {
         )}
       </TouchableOpacity>
       <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
-      <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings')} accessibilityLabel="הגדרות">
-        <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
-      </TouchableOpacity>
+      <View style={styles.rightGroup}>
+        {extraIcon}
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings')} accessibilityLabel="הגדרות">
+          <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
+        </TouchableOpacity>
+      </View>
     </View>
   );
 }
@@ -44,6 +55,7 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   iconBtn: { padding: spacing.xs, position: 'relative' },
+  rightGroup: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
   logo: { height: 32, width: 80 },
   badge: {
     position: 'absolute',

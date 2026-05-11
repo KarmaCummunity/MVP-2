@@ -10,6 +10,7 @@ import { selectGuestPreviewPosts } from '@kc/application';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { PostCard } from '../../src/components/PostCard';
 import { GuestJoinModal } from '../../src/components/GuestJoinModal';
+import { FeedCommunityCounter } from '../../src/components/FeedCommunityCounter';
 import { useAuthStore } from '../../src/store/authStore';
 import { getFeedUseCase } from '../../src/services/postsComposition';
 
@@ -79,7 +80,10 @@ export default function GuestPreviewFeedScreen() {
       )}
 
       <View style={[styles.bottomBar, { paddingBottom: spacing.lg + insets.bottom }]}>
-        <Text style={styles.bottomHint}>{t('feed.guestBanner')}</Text>
+        <FeedCommunityCounter
+          template={(n) => t('feed.guestBannerWithCount', { count: n })}
+          style={styles.bottomHint}
+        />
         <TouchableOpacity style={styles.bottomCta} onPress={goAuth} activeOpacity={0.9}>
           <Text style={styles.bottomCtaText}>{t('feed.joinNow')}</Text>
         </TouchableOpacity>
