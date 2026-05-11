@@ -17,6 +17,8 @@ interface Props {
   isSuperAdmin: boolean;
   /** Called after a successful destructive action so parent can route away. */
   onAfterRemoval: () => void;
+  /** Called when the owner taps "Edit" — caller handles navigation. */
+  onEdit: () => void;
 }
 
 type ActiveModal = null | 'delete-owner' | 'admin-remove' | 'report';
@@ -28,6 +30,7 @@ export function PostMenuSheet({
   viewerId,
   isSuperAdmin,
   onAfterRemoval,
+  onEdit,
 }: Props) {
   const [active, setActive] = useState<ActiveModal>(null);
   const { busy, error, clearError, handleOwnerDelete, handleAdminRemove } =
@@ -58,12 +61,21 @@ export function PostMenuSheet({
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             {isOwner ? (
-              <MenuItem
-                icon="🗑️"
-                label="מחק את הפוסט"
-                destructive
-                onPress={() => openModal('delete-owner')}
-              />
+              <>
+                {post.status === 'open' && (
+                  <MenuItem
+                    icon="✏️"
+                    label="ערוך פוסט"
+                    onPress={() => { onClose(); onEdit(); }}
+                  />
+                )}
+                <MenuItem
+                  icon="🗑️"
+                  label="מחק את הפוסט"
+                  destructive
+                  onPress={() => openModal('delete-owner')}
+                />
+              </>
             ) : (
               <>
                 <MenuItem icon="🚩" label="דווח" onPress={() => openModal('report')} />
