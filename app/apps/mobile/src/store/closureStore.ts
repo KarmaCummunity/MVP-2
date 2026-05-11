@@ -18,6 +18,7 @@ import {
 
 export type ClosureStep = 'idle' | 'confirm' | 'pick' | 'explainer' | 'done' | 'error';
 export type PickMode = 'chats' | 'search';
+export type ClosureInitiator = 'post-detail' | 'chat' | null;
 
 interface ClosureState {
   postId: string | null;
@@ -25,6 +26,9 @@ interface ClosureState {
    *  language ("מסרת ל" vs "קיבלת מ") and the Step-1 question. */
   postType: PostType | null;
   step: ClosureStep;
+  /** Tracks where the closure flow was initiated so each entry-point's
+   *  done-handler only fires for its own closures. */
+  initiator: ClosureInitiator;
   pickMode: PickMode;
   /** Chat partners (loaded once on start). */
   candidates: ClosureCandidate[];
@@ -42,7 +46,7 @@ interface ClosureActions {
     postId: string,
     ownerId: string,
     postType: PostType,
-    options?: { preselectedRecipientId?: string | null }
+    options?: { preselectedRecipientId?: string | null; initiator?: ClosureInitiator }
   ): Promise<void>;
   selectRecipient(userId: string | null): void;
   setPickMode(mode: PickMode): void;
@@ -61,6 +65,7 @@ const INITIAL: ClosureState = {
   postId: null,
   postType: null,
   step: 'idle',
+  initiator: null,
   pickMode: 'chats',
   candidates: [],
   searchResults: [],
@@ -92,6 +97,7 @@ export const useClosureStore = create<ClosureState & ClosureActions>((set, get) 
       step: preselect ? 'pick' : 'confirm',
       selectedRecipientId: preselect,
       isBusy: true,
+      initiator: options?.initiator ?? null,
     });
     try {
       const candidates = await getGetClosureCandidatesUseCase().execute({ postId, ownerId });
