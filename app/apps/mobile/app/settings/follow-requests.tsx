@@ -2,13 +2,14 @@
 // FR-FOLLOW-007: pending follow-request inbox. Reachable only when Private.
 
 import React from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { FollowRequestWithUser } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
+import { NotifyModal } from '../../src/components/NotifyModal';
 import { useAuthStore } from '../../src/store/authStore';
 import { getUserRepo } from '../../src/services/userComposition';
 import {
@@ -21,6 +22,7 @@ export default function FollowRequestsScreen() {
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
+  const [errorOpen, setErrorOpen] = React.useState(false);
 
   const userQuery = useQuery({
     queryKey: ['user-profile', me],
@@ -58,7 +60,7 @@ export default function FollowRequestsScreen() {
       qc.invalidateQueries({ queryKey: ['pending-requests-count', me] });
       qc.invalidateQueries({ queryKey: ['user-profile', me] });
     } catch {
-      Alert.alert('שגיאה', 'הפעולה נכשלה. נסו שוב.');
+      setErrorOpen(true);
     }
   };
 
@@ -112,6 +114,12 @@ export default function FollowRequestsScreen() {
           ))}
         </View>
       )}
+      <NotifyModal
+        visible={errorOpen}
+        title="שגיאה"
+        message="הפעולה נכשלה. נסו שוב."
+        onDismiss={() => setErrorOpen(false)}
+      />
     </SafeAreaView>
   );
 }
