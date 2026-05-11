@@ -123,7 +123,9 @@ export class FakeUserRepository implements IUserRepository {
   }
 
   // ── Unused — throw to keep tests honest ───────────────────────────────
-  getOnboardingState = N('getOnboardingState') as IUserRepository['getOnboardingState'];
+  getOnboardingBootstrap = N('getOnboardingBootstrap') as IUserRepository['getOnboardingBootstrap'];
+  markBasicInfoSkipped = N('markBasicInfoSkipped') as IUserRepository['markBasicInfoSkipped'];
+  clearBasicInfoSkipped = N('clearBasicInfoSkipped') as IUserRepository['clearBasicInfoSkipped'];
   setBasicInfo = N('setBasicInfo') as IUserRepository['setBasicInfo'];
   setOnboardingState = N('setOnboardingState') as IUserRepository['setOnboardingState'];
   setAvatar = N('setAvatar') as IUserRepository['setAvatar'];

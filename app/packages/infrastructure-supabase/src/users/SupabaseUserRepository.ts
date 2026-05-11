@@ -6,9 +6,15 @@
 // ─────────────────────────────────────────────
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { IUserRepository } from '@kc/application';
+import type { IUserRepository, OnboardingBootstrap } from '@kc/application';
 import { DeleteAccountError } from '@kc/application';
 import type { OnboardingState, User } from '@kc/domain';
+import {
+  supabaseClearBasicInfoSkipped,
+  supabaseGetOnboardingBootstrap,
+  supabaseMarkBasicInfoSkipped,
+  supabaseSetBasicInfo,
+} from './onboardingSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { searchUsers } from './searchUsers';
 import {
@@ -36,31 +42,23 @@ export class SupabaseUserRepository implements IUserRepository {
 
   // ── Onboarding (P0.3 slice A) ────────────────────────────────────────────
 
-  async getOnboardingState(userId: string): Promise<OnboardingState> {
-    const { data, error } = await this.client
-      .from('users')
-      .select('onboarding_state')
-      .eq('user_id', userId)
-      .single();
-    if (error) throw new Error(`getOnboardingState: ${error.message}`);
-    const state = (data as { onboarding_state: OnboardingState } | null)?.onboarding_state;
-    if (!state) throw new Error('getOnboardingState: no row');
-    return state;
+  getOnboardingBootstrap(userId: string): Promise<OnboardingBootstrap> {
+    return supabaseGetOnboardingBootstrap(this.client, userId);
   }
 
-  async setBasicInfo(
+  markBasicInfoSkipped(userId: string): Promise<void> {
+    return supabaseMarkBasicInfoSkipped(this.client, userId);
+  }
+
+  clearBasicInfoSkipped(userId: string): Promise<void> {
+    return supabaseClearBasicInfoSkipped(this.client, userId);
+  }
+
+  setBasicInfo(
     userId: string,
     params: { displayName: string; city: string; cityName: string },
   ): Promise<void> {
-    const { error } = await this.client
-      .from('users')
-      .update({
-        display_name: params.displayName,
-        city: params.city,
-        city_name: params.cityName,
-      })
-      .eq('user_id', userId);
-    if (error) throw new Error(`setBasicInfo: ${error.message}`);
+    return supabaseSetBasicInfo(this.client, userId, params);
   }
 
   async setOnboardingState(userId: string, state: OnboardingState): Promise<void> {

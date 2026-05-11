@@ -24,7 +24,7 @@ const isWeb = Platform.OS === 'web';
 
 // The original alignStart was perfectly calibrated for React Native's RTL mirroring quirks:
 // On Web RTL, we explicitly need 'right'. On Native RTL, 'left' is mirrored to visual right.
-const alignStart: any = isWeb ? (isRTL ? 'left' : 'right') : (isRTL ? 'left' : 'right');
+const alignStart: any = (isRTL ? 'left' : 'right')
 const tagPosition = { right: spacing.xs };
 
 interface PostCardGridProps {
@@ -136,7 +136,7 @@ const styles = StyleSheet.create({
     gap: 2,
   },
   titleRow: {
-    flexDirection: isRTL ? 'row' : 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: spacing.xs,

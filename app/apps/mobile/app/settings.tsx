@@ -1,5 +1,4 @@
-// Settings screen stub
-// Mapped to: SRS §3.5, FR-AUTH-017 (logout)
+// Settings screen stub — SRS §3.5, FR-AUTH-017 (logout)
 import React from 'react';
 import { Alert, Platform, View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -66,6 +65,7 @@ export default function SettingsScreen() {
     try {
       await setOnboardingStateDirect(session.userId, 'pending_basic_info');
       setOnboardingStateLocal('pending_basic_info');
+      useAuthStore.getState().setBasicInfoSkipped(false);
       router.replace('/(onboarding)/basic-info');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';

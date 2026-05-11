@@ -9,7 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { CityPicker } from '../../src/components/CityPicker';
 import { useAuthStore } from '../../src/store/authStore';
-import { getCompleteBasicInfoUseCase } from '../../src/services/userComposition';
+import { getCompleteBasicInfoUseCase, markBasicInfoSkipped } from '../../src/services/userComposition';
 
 export default function OnboardingBasicInfoScreen() {
   const router = useRouter();
@@ -45,11 +45,22 @@ export default function OnboardingBasicInfoScreen() {
     }
   };
 
-  // FR-AUTH-010 AC3: Skip advances to step 2 but leaves onboarding_state at
-  // pending_basic_info. FR-AUTH-015 (slice C) will catch the user the next
-  // time they attempt a meaningful action and re-prompt for these fields.
-  const handleSkip = () => {
-    router.replace('/(onboarding)/photo');
+  // FR-AUTH-010 AC3: Skip advances to step 2; onboarding_state stays pending_basic_info
+  // for FR-AUTH-015 soft gate. basic_info_skipped (server) prevents AuthGate from
+  // reopening the full wizard on every cold start / app update.
+  const handleSkip = async () => {
+    if (!session) return;
+    setLoading(true);
+    try {
+      await markBasicInfoSkipped(session.userId);
+      useAuthStore.getState().setBasicInfoSkipped(true);
+      router.replace('/(onboarding)/photo');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      Alert.alert('שמירה נכשלה', msg);
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (

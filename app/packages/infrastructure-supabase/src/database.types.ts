@@ -707,6 +707,7 @@ export type Database = {
           active_posts_count_public_open: number
           auth_provider: string
           avatar_url: string | null
+          basic_info_skipped: boolean
           biography: string | null
           city: string
           city_name: string
@@ -738,6 +739,7 @@ export type Database = {
           active_posts_count_public_open?: number
           auth_provider: string
           avatar_url?: string | null
+          basic_info_skipped?: boolean
           biography?: string | null
           city: string
           city_name: string
@@ -769,6 +771,7 @@ export type Database = {
           active_posts_count_public_open?: number
           auth_provider?: string
           avatar_url?: string | null
+          basic_info_skipped?: boolean
           biography?: string | null
           city?: string
           city_name?: string
