@@ -24,6 +24,7 @@ export type PostErrorCode =
   | 'closure_wrong_status'
   | 'closure_recipient_not_in_chat'
   | 'reopen_window_expired'
+  | 'post_not_open'
   | 'unknown';
 
 export class PostError extends Error {

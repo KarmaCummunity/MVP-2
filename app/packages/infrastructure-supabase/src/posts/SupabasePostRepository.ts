@@ -151,7 +151,12 @@ export class SupabasePostRepository implements IPostRepository {
     }
 
     const { error } = await this.client.from('posts').update(updateRow).eq('post_id', postId);
-    if (error) throw new Error(`update: ${error.message}`);
+    if (error) {
+      if (error.message?.includes('visibility_downgrade_forbidden')) {
+        throw new PostError('visibility_downgrade_forbidden', error.message);
+      }
+      throw new Error(`update: ${error.message}`);
+    }
 
     const updated = await this.fetchPostById(postId);
     if (!updated) throw new Error(`update: post ${postId} not found after update`);

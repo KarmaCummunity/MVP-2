@@ -45,6 +45,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-128 splits the file.
   ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 308 }],
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
+  // Edit-post screen — large form, acceptable as single screen. Closes TD-130.
+  ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 404 }],
 ]);
 
 const LAYER_RULES = [

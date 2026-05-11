@@ -42,6 +42,8 @@ export function PostMenuButton({ post }: Props) {
         viewerId={viewerId}
         isSuperAdmin={isSuperAdmin}
         onAfterRemoval={() => router.back()}
+        // eslint-disable-next-line @typescript-eslint/no-explicit-any
+        onEdit={() => router.push(`/edit-post/${post.postId}` as any)}
       />
     </>
   );
