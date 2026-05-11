@@ -1,9 +1,12 @@
 // app/apps/mobile/src/hooks/useOptimisticFollowAction.ts
 // FR-FOLLOW-001 AC4 / FR-FOLLOW-006 AC3 — optimistic follow-state dispatcher
-// with snapshot+rollback on error and days-remaining toast for cooldown.
-// Extracted from /user/[handle]/index.tsx (TD-125 + TD-126).
+// with snapshot+rollback on error. Updates four caches optimistically
+// (follow-state, profile-other.followersCount, user-profile.followingCount,
+// list-invalidations) so every counter the viewer can see reconciles
+// without a refetch round-trip. Surface errors via onError callback (caller
+// renders the cross-platform NotifyModal — Alert.alert is a no-op on
+// react-native-web 0.21.2).
 
-import { Alert } from 'react-native';
 import { useQueryClient } from '@tanstack/react-query';
 import { isFollowError, type FollowState, type FollowStateInfo } from '@kc/application';
 import type { User } from '@kc/domain';
@@ -16,36 +19,58 @@ import {
 
 export type FollowAction = 'follow' | 'unfollow' | 'send' | 'cancel';
 
+export interface FollowActionError {
+  title: string;
+  message: string;
+}
+
 export interface UseOptimisticFollowActionParams {
   viewerId: string | undefined;
   target: User;
-  /** The `handle` route param used as the cache key of `['profile-other', handle]`. */
+  /** Route param `handle`, used as the cache key of `['profile-other', handle]`. */
   handle: string;
+  /** Called when the action fails after rollback. Receives a localized title+message. */
+  onError?: (err: FollowActionError) => void;
 }
 
-export function useOptimisticFollowAction({ viewerId, target, handle }: UseOptimisticFollowActionParams) {
+export function useOptimisticFollowAction({
+  viewerId, target, handle, onError,
+}: UseOptimisticFollowActionParams) {
   const qc = useQueryClient();
 
   return async (action: FollowAction): Promise<void> => {
     if (!viewerId) return;
     const followStateKey = ['follow-state', viewerId, target.userId] as const;
     const profileOtherKey = ['profile-other', handle] as const;
+    const userProfileKey = ['user-profile', viewerId] as const;
+
     const prevFollowState = qc.getQueryData<FollowStateInfo>(followStateKey);
-    const prevUser = qc.getQueryData<User | null>(profileOtherKey);
+    const prevTarget = qc.getQueryData<User | null>(profileOtherKey);
+    const prevViewer = qc.getQueryData<User | null>(userProfileKey);
 
     const nextState: FollowState =
       action === 'follow' ? 'following'
       : action === 'unfollow' ? (target.privacyMode === 'Private' ? 'not_following_private_no_request' : 'not_following_public')
       : action === 'send' ? 'request_pending'
       : 'not_following_private_no_request';
+    // Counter delta: only follow/unfollow change the edge graph. send/cancel
+    // touch follow_requests, not follow_edges — counters unaffected.
     const countDelta = action === 'follow' ? 1 : action === 'unfollow' ? -1 : 0;
 
     qc.setQueryData<FollowStateInfo>(followStateKey, { state: nextState });
-    if (countDelta !== 0 && prevUser) {
-      qc.setQueryData<User | null>(profileOtherKey, {
-        ...prevUser,
-        followersCount: Math.max(0, prevUser.followersCount + countDelta),
-      });
+    if (countDelta !== 0) {
+      if (prevTarget) {
+        qc.setQueryData<User | null>(profileOtherKey, {
+          ...prevTarget,
+          followersCount: Math.max(0, prevTarget.followersCount + countDelta),
+        });
+      }
+      if (prevViewer) {
+        qc.setQueryData<User | null>(userProfileKey, {
+          ...prevViewer,
+          followingCount: Math.max(0, prevViewer.followingCount + countDelta),
+        });
+      }
     }
 
     try {
@@ -53,19 +78,25 @@ export function useOptimisticFollowAction({ viewerId, target, handle }: UseOptim
       else if (action === 'unfollow') await getUnfollowUserUseCase().execute({ viewerId, targetUserId: target.userId });
       else if (action === 'send') await getSendFollowRequestUseCase().execute({ viewerId, targetUserId: target.userId });
       else await getCancelFollowRequestUseCase().execute({ viewerId, targetUserId: target.userId });
+
+      // Reconcile every cache that depends on this edge.
       qc.invalidateQueries({ queryKey: followStateKey });
       qc.invalidateQueries({ queryKey: profileOtherKey });
-      qc.invalidateQueries({ queryKey: ['user-profile', viewerId] });
+      qc.invalidateQueries({ queryKey: userProfileKey });
+      qc.invalidateQueries({ queryKey: ['following', viewerId] });
+      qc.invalidateQueries({ queryKey: ['followers', target.userId] });
     } catch (err) {
       qc.setQueryData(followStateKey, prevFollowState);
-      qc.setQueryData(profileOtherKey, prevUser);
+      qc.setQueryData(profileOtherKey, prevTarget);
+      qc.setQueryData(userProfileKey, prevViewer);
+      if (!onError) return;
       if (isFollowError(err) && err.code === 'cooldown_active') {
         const days = err.cooldownUntil ? Math.max(0, Math.ceil(
           (new Date(err.cooldownUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
         )) : 0;
-        Alert.alert('לא ניתן לשלוח כרגע', `ניתן לשלוח שוב בעוד ${days} ימים.`);
+        onError({ title: 'לא ניתן לשלוח כרגע', message: `ניתן לשלוח שוב בעוד ${days} ימים.` });
       } else {
-        Alert.alert('שגיאה', 'הפעולה נכשלה. נסו שוב.');
+        onError({ title: 'שגיאה', message: 'הפעולה נכשלה. נסו שוב.' });
       }
     }
   };
