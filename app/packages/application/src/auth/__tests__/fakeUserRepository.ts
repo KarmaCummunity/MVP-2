@@ -35,6 +35,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     create: notImpl('create') as IUserRepository['create'],
     update: notImpl('update') as IUserRepository['update'],
     delete: notImpl('delete') as IUserRepository['delete'],
+    deleteAccountViaEdgeFunction: notImpl('deleteAccountViaEdgeFunction') as IUserRepository['deleteAccountViaEdgeFunction'],
     follow: notImpl('follow') as IUserRepository['follow'],
     unfollow: notImpl('unfollow') as IUserRepository['unfollow'],
     isFollowing: notImpl('isFollowing') as IUserRepository['isFollowing'],
