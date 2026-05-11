@@ -166,6 +166,16 @@ export class SupabaseChatRepository implements IChatRepository {
       chat.participantIds[0] === viewerId
         ? chat.participantIds[1]
         : chat.participantIds[0];
+    // After migration 0028, otherId may be null (counterpart deleted account).
+    if (otherId == null) {
+      return {
+        userId: null,
+        displayName: 'משתמש שנמחק',
+        avatarUrl: null,
+        shareHandle: null,
+        isDeleted: true,
+      };
+    }
     const { data, error } = await this.client
       .from('users')
       .select('user_id, display_name, avatar_url, share_handle')

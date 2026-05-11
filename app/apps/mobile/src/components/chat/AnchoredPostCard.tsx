@@ -21,7 +21,8 @@ interface Props {
   chatId: string;
   anchorPostId: string | null;
   viewerId: string;
-  counterpartId: string;
+  /** Null when the counterpart has deleted their account (FK SET NULL since migration 0028). */
+  counterpartId: string | null;
 }
 
 const TYPE_LABEL: Record<PostType, string> = {
@@ -101,7 +102,8 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     e.stopPropagation();
     if (!post) return;
     void startClosure(post.postId, viewerId, post.type, {
-      preselectedRecipientId: counterpartId,
+      // Skip preselection when counterpart was deleted — closure picker stays empty.
+      ...(counterpartId != null ? { preselectedRecipientId: counterpartId } : {}),
       initiator: 'chat',
     });
   };
