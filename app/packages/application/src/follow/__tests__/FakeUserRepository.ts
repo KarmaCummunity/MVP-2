@@ -134,6 +134,7 @@ export class FakeUserRepository implements IUserRepository {
   create = N('create') as IUserRepository['create'];
   update = N('update') as IUserRepository['update'];
   delete = N('delete') as IUserRepository['delete'];
+  deleteAccountViaEdgeFunction = N('deleteAccountViaEdgeFunction') as IUserRepository['deleteAccountViaEdgeFunction'];
   findByAuthIdentity = N('findByAuthIdentity') as IUserRepository['findByAuthIdentity'];
   createAuthIdentity = N('createAuthIdentity') as IUserRepository['createAuthIdentity'];
 }

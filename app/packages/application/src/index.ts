@@ -18,6 +18,7 @@ export * from './auth/CompleteBasicInfoUseCase';
 export * from './auth/CompleteOnboardingUseCase';
 export * from './auth/SetAvatarUseCase';
 export * from './auth/UpdateProfileUseCase';
+export * from './auth/DeleteAccountUseCase';
 export * from './feed/selectGuestPreviewPosts';
 export * from './feed/GetFeedUseCase';
 export * from './feed/GetActivePostsCountUseCase';

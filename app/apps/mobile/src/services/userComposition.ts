@@ -15,6 +15,7 @@ import {
 import {
   CompleteBasicInfoUseCase,
   CompleteOnboardingUseCase,
+  DeleteAccountUseCase,
   DismissClosureExplainerUseCase,
   SearchUsersForClosureUseCase,
   SetAvatarUseCase,
@@ -32,6 +33,7 @@ let _setAvatar: SetAvatarUseCase | null = null;
 let _updateProfile: UpdateProfileUseCase | null = null;
 let _dismissClosureExplainer: DismissClosureExplainerUseCase | null = null;
 let _searchUsersForClosure: SearchUsersForClosureUseCase | null = null;
+let _deleteAccount: DeleteAccountUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -118,4 +120,12 @@ export function getSearchUsersForClosureUseCase(): SearchUsersForClosureUseCase 
     _searchUsersForClosure = new SearchUsersForClosureUseCase(getUserRepo());
   }
   return _searchUsersForClosure;
+}
+
+/** FR-SETTINGS-012 V1 — self-delete the currently authenticated user. */
+export function getDeleteAccountUseCase(): DeleteAccountUseCase {
+  if (!_deleteAccount) {
+    _deleteAccount = new DeleteAccountUseCase(getUserRepo());
+  }
+  return _deleteAccount;
 }

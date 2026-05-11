@@ -48,9 +48,12 @@ export async function getMyChats(
     }
   }
 
-  const otherIds = chats.map((c) =>
-    c.participantIds[0] === userId ? c.participantIds[1] : c.participantIds[0],
-  );
+  // otherIds can include null when the counterpart has been deleted (chats
+  // participants are ON DELETE SET NULL since migration 0028). Filter nulls
+  // for the .in() query; the fallback below renders "משתמש שנמחק" for them.
+  const otherIds = chats
+    .map((c) => (c.participantIds[0] === userId ? c.participantIds[1] : c.participantIds[0]))
+    .filter((id): id is string => id != null);
   const usersRes = await client
     .from('users')
     .select('user_id, display_name, avatar_url, share_handle')
@@ -71,10 +74,10 @@ export async function getMyChats(
   return chats.map((c) => {
     const otherId =
       c.participantIds[0] === userId ? c.participantIds[1] : c.participantIds[0];
-    const found = userMap.get(otherId);
+    const found = otherId != null ? userMap.get(otherId) : null;
     return {
       ...c,
-      otherParticipant: found
+      otherParticipant: found && otherId != null
         ? {
             userId: otherId,
             displayName: found.displayName,

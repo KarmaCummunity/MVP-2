@@ -18,7 +18,23 @@ export interface IUserRepository {
   findByHandle(handle: string): Promise<User | null>;
   create(user: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User>;
   update(userId: string, patch: Partial<User>): Promise<User>;
+  /**
+   * @deprecated V1 uses `deleteAccountViaEdgeFunction()` (no arg, identity from JWT).
+   * The original arg-taking shape was a stub; keep the method on the port for
+   * potential future admin-driven delete (mirrors IPostRepository.delete vs adminRemove).
+   */
   delete(userId: string): Promise<void>;
+
+  /**
+   * FR-SETTINGS-012 V1 — Self-delete the currently authenticated user. Identity
+   * is read from the JWT server-side; no client-supplied userId. Throws
+   * `DeleteAccountError` with one of the documented codes:
+   * - `unauthenticated` — no valid session
+   * - `suspended` — account_status blocks self-deletion
+   * - `auth_delete_failed` — DB is already cleaned but auth.users survived
+   * - `network` / `server_error` — generic failures
+   */
+  deleteAccountViaEdgeFunction(): Promise<void>;
 
   // ── Onboarding (P0.3) ─────────────────────────
   /** FR-AUTH-007 AC2: read state to decide where to land on cold-start. */

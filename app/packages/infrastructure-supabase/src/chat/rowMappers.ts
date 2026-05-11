@@ -10,7 +10,7 @@ type MessageRow = Database['public']['Tables']['messages']['Row'];
 export function rowToChat(r: ChatRow): Chat {
   return {
     chatId: r.chat_id,
-    participantIds: [r.participant_a, r.participant_b] as [string, string],
+    participantIds: [r.participant_a ?? null, r.participant_b ?? null],
     anchorPostId: r.anchor_post_id,
     isSupportThread: r.is_support_thread,
     // Domain allows null; DB column is non-null but treat empty as null defensively.
