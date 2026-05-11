@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-11 (P1.1.1 — follow-mechanism end-to-end audit + polish: migration 0021 closes FR-PROFILE-006 AC2 gap (auto-approve pending on Private→Public via DB trigger); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining) closed.) |
+| **Last Updated** | 2026-05-11 (P1.1.2 hotfix — Alert.alert no-op on react-native-web broke unfollow/cancel-request confirms, cooldown toast, remove-follower confirm, privacy toggle on web; replaced with ConfirmActionModal + new NotifyModal across the follow surface. Bug 1 (stale My Profile follower count) closed by extending optimistic surface to viewer's user-profile + list invalidations.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -36,7 +36,7 @@ This document is the **single source of truth for project execution state**. It 
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
 | Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` + `chat.*` + `closure.*` + `follow.*` — **153 vitest passing** |
-| Open tech-debt items | **38 active** (3 partial), **23 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Open tech-debt items | **39 active** (3 partial), **23 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -79,7 +79,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | # | Feature | SRS IDs | Status | Notes |
 | - | ------- | ------- | ------ | ----- |
-| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). **Polish 2026-05-11 (P1.1.1)**: migration 0021 closes FR-PROFILE-006 AC2 (auto-approve pending requests on Private→Public via DB trigger — UI promised this from day one but no trigger existed); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining toast) closed in `app/apps/mobile/app/user/[handle]/index.tsx`. TD-124 (push) + TD-127 (Report) remain deferred to P1.5 / P1.3. |
+| P1.1 | Following + follow-requests (private profiles) | FR-FOLLOW-001…009, 011, 012; FR-PROFILE-002…006, 009, 010, 013 | 🟢 Done (2026-05-11) | Branch `claude/loving-varahamihira-01cd6d`. 25 commits, 35 vitest. Closes TD-14, TD-40 (partial); opens TD-124..TD-127 (push deferred + optimistic updates + cooldown UX + Report from ⋮ menu). **Polish 2026-05-11 (P1.1.1)**: migration 0021 closes FR-PROFILE-006 AC2 (auto-approve pending requests on Private→Public via DB trigger); TD-125 (optimistic Follow button) + TD-126 (cooldown days-remaining toast) closed. **Hotfix 2026-05-11 (P1.1.2)**: cross-platform `Alert.alert` replacement (TD-134 opened for the sweep) + optimistic My Profile follower-count. TD-124 (push) + TD-127 (Report) remain deferred to P1.5 / P1.3. |
 | P1.2 | Search + filters + sort + cold-start fallback | FR-FEED-006…014 | ⏳ Planned | Drives discoverability |
 | P1.3 | Reports + auto-removal + false-report sanctions | FR-MOD-001…008 | ⏳ Planned | Safety floor |
 | P1.4 | Block / unblock + visibility restoration | FR-MOD-009, 010 | ⏳ Planned | |
@@ -123,7 +123,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | In progress | (none) | — | — | — |
 | Up next | P1.x — pick next per §2 (likely P1.2 Search/filters) | — | — | — |
 
-Most recently shipped: **P1.1.1** — follow-mechanism end-to-end audit + polish (migration 0021 closes FR-PROFILE-006 AC2 auto-approve gap; TD-125 optimistic Follow button + TD-126 cooldown days-remaining closed — 2026-05-11). Preceded by **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013; 12 use cases + 35 vitest, 6 shared profile components, full follow state machine, /settings/privacy + /settings/follow-requests, other-user profile rebuilt to feature-parity — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
+Most recently shipped: **P1.1.2** — follow-mechanism web hotfix (Alert.alert no-op replaced with ConfirmActionModal + NotifyModal across the follow surface; My Profile follower-count now optimistic — 2026-05-11). Preceded by **P1.1.1** (follow-mechanism end-to-end audit + polish — migration 0021 + TD-125 + TD-126). Preceded by **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013; 12 use cases + 35 vitest, 6 shared profile components, full follow state machine, /settings/privacy + /settings/follow-requests, other-user profile rebuilt to feature-parity — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).
 
 ---
 

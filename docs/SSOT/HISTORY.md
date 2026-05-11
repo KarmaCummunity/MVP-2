@@ -6,6 +6,30 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P1.1.2 Follow-mechanism web hotfix
+
+**SRS:** FR-FOLLOW-002 AC1 / FR-FOLLOW-004 AC1 / FR-FOLLOW-006 AC3 / FR-FOLLOW-009 AC2 / FR-PROFILE-005 AC2 / FR-PROFILE-006 AC1 (all confirm-dialog ACs) — no AC change, implementation only.
+**Branch / PR:** `claude/crazy-proskuriakova-7bb22d`.
+**Tests:** 153 vitest — unchanged (the hotfix is in render-layer code; existing use-case tests already covered the dispatchers).
+**TD deltas:** TD-134 opened (sweep remaining `Alert.alert` call sites in the rest of the codebase).
+
+Why this slice exists: user QA on web preview revealed three symptoms that traced to two root causes.
+* **Cause A — `react-native-web@0.21.2` ships `Alert.alert` as a no-op** (`class Alert { static alert() {} }`). Every confirm dialog and toast in the follow flow silently died on web: unfollow confirm ("עוקב ✓" tap did nothing — user's Bug 2), cancel-request confirm, remove-follower confirm, privacy-toggle confirm (so `UpdatePrivacyModeUseCase` was never reachable on web — silently degraded the auto-approve trigger from 0021 since the toggle itself never fired), cooldown-days toast. User's Bug 3 ("יוזר אחר שהכפתור מעקב חיוור כאילו לא עובד") was the same symptom on the secondary-style "עוקב ✓" button.
+* **Cause B — viewer's `following_count` was not optimistically updated.** `useOptimisticFollowAction` predicted `profile-other.followersCount` but not `user-profile.followingCount`, so a follow done from `/user/[handle]` left My Profile's counter at the pre-follow value until the post-invalidate refetch returned (user's Bug 1).
+
+Fixes:
+* New `apps/mobile/src/components/NotifyModal.tsx` — cross-platform single-button info modal, mirrors `ConfirmActionModal`'s look. Used for cooldown-days + generic error surfaces.
+* `apps/mobile/src/components/profile/FollowButton.tsx` — confirm dialog now lives in local `useState` + `<ConfirmActionModal />` instead of firing `Alert.alert` from `onPress`. The 5-state config table is unchanged.
+* `apps/mobile/src/hooks/useOptimisticFollowAction.ts` — optimistic surface extended to `['user-profile', viewerId].followingCount`; lists `['following', viewerId]` and `['followers', target.userId]` are invalidated after success; errors are surfaced via an `onError({ title, message })` callback so the caller renders our cross-platform notify (no more dead `Alert.alert` toast inside the hook).
+* `apps/mobile/app/user/[handle]/index.tsx` — mounts `<NotifyModal />`, wires `onError`, and hides the follow button when `stateQuery.isError` (e.g., target suspended) so the user never sees a perpetually-disabled `busy` fallback.
+* `apps/mobile/app/user/[handle]/followers.tsx` — remove-follower confirm migrated to `<ConfirmActionModal />`.
+* `apps/mobile/app/settings/privacy.tsx` — privacy-toggle confirm migrated to `<ConfirmActionModal />`. This is the one that mattered most for correctness: on web the toggle was previously visually flipping without calling `UpdatePrivacyModeUseCase` — migration 0021's `users_after_privacy_mode_change` trigger never fired because the use case was never reached.
+* `apps/mobile/app/settings/follow-requests.tsx` — error toast migrated to `<NotifyModal />`.
+
+Out of scope: every other `Alert.alert` call in chat, post detail, edit profile, settings, etc. They share the same defect and are tracked under TD-134 for an opportunistic sweep.
+
+---
+
 ## 2026-05-11 — P1.1.1 Follow-mechanism end-to-end audit + polish
 
 **SRS:** FR-PROFILE-006 AC2 (closure of implementation gap); FR-FOLLOW-001 AC4 + FR-FOLLOW-006 AC3 (toast parity).

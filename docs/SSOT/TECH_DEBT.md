@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-11 (P1.1.1 polish — TD-125 + TD-126 closed; FR-PROFILE-006 AC2 auto-approve gap closed via migration 0021; UpdatePrivacyModeUseCase comment corrected.) |
+| **Last Updated** | 2026-05-11 (P1.1.2 hotfix — cross-platform confirm/notify in follow surface; TD-134 opened to sweep remaining Alert.alert call sites.) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
@@ -75,6 +75,7 @@
 | TD-131 | 🟠 | **`removed_admin` posts invisible to their owner.** When the super admin removes a post via FR-ADMIN-009, RLS hides it from all viewers including the owner. The owner sees the post simply vanish with no explanation. Add `removed_admin` to a third tab in My Posts ("הוסרו") with a "removed by admin" banner per FR-POST-008 edge case. | When admin moderation lands |
 | TD-132 | 🟠 | **Parallel `getDeletePostUseCase()` in `postsComposition.ts` is now unused.** FR-ADMIN-009 added `container.deletePost` (consumed by `PostMenuSheet`). The earlier `getDeletePostUseCase()` factory in `app/apps/mobile/src/services/postsComposition.ts` has no remaining callers. Remove the factory + composition state. | Opportunistic |
 | TD-133 | 🟠 | **Search-mechanism files exceed 200-LOC cap.** `packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts` (418), `apps/mobile/app/(tabs)/search.tsx` (646), `apps/mobile/src/components/SearchFilterSheet.tsx` (306), `apps/mobile/src/components/SearchResultCard.tsx` (354). Allow-listed in `app/scripts/check-architecture.mjs`. Split each file into smaller focused modules (data layer / filters / row components) and remove the allowlist entries. | Opportunistic (FR-FEED-006..014 / P1.2) |
+| TD-134 | 🟠 | **`Alert.alert` is a no-op in `react-native-web@0.21.2`.** P1.1.2 replaces every call site inside the follow surface (`FollowButton`, `useOptimisticFollowAction`, `/user/[handle]/followers`, `/settings/privacy`, `/settings/follow-requests`). Other call sites still exist in chat, post detail, edit profile, settings, etc. — they too break silently on web. Sweep: grep `Alert.alert` across `apps/mobile/` and replace with `ConfirmActionModal` (confirms) or `NotifyModal` (notifications). | Opportunistic |
 
 ### Process · docs · tooling
 
