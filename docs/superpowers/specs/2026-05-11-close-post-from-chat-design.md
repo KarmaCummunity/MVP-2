@@ -24,26 +24,33 @@
 
 הכל קיים: `Chat.anchorPostId`, `PostStatus`, `Message` (כולל אפשרות להודעות-מערכת אם תוסף `kind`/`system` — ראו 3.2).
 
-### 3.2 שכבת Application (`packages/application`)
+### 3.2 שכבת Application (`packages/application`) — ללא use cases חדשים
 
-**Use case חדש:**
-
-| קובץ | תפקיד | מקור FR |
-|------|-------|---------|
-| `chat/GetAnchoredPostUseCase.ts` | קלט: `anchorPostId \| null`. החזרה: `Post \| null`. משמש את `useAnchoredPost` ב-UI. | FR-CHAT-014 AC1 |
-
-**`MarkAsDeliveredUseCase` — ללא שינוי בחתימה.** הוא ממשיך לקרוא ל-`postRepo.close(postId, recipientUserId)`. ההזרקה של הודעות-המערכת קורית בתוך ה-RPC ברמת הדאטה בייס (ראו §3.3), כך שה-use case לא נטען עם תלות חדשה ב-`IChatRepository`. אטומיות מובטחת כי הזרקת ההודעות מתבצעת באותה טרנזקציה כמו ה-close.
+- `GetPostByIdUseCase` הקיים מספיק לטעינת הפוסט המעוגן. הקריאה ב-UI: `getPostByIdUseCase().execute({ postId: anchorPostId, viewerId })`.
+- `MarkAsDeliveredUseCase` — ללא שינוי בחתימה ובלוגיקה. ההזרקה של הודעות-המערכת קורית ברמת הדאטה בייס ב-trigger (§3.3), כך שה-use case לא נטען עם תלות חדשה.
 
 ### 3.3 שכבת Infrastructure (`packages/infrastructure-supabase`)
 
-**מיגרציה חדשה:** `0017_post_closed_system_messages.sql`
+**הקיים בסכמה:**
+- `messages.kind text check (kind in ('user','system'))` — כבר קיים מאז `0004_init_chat_messaging.sql`.
+- `messages.system_payload jsonb` — כבר קיים. אילוץ: system message חייב לכלול `system_payload`.
+- RLS חוסם הכנסת `kind='system'` ע"י משתמשי קצה (`messages_insert_user` policy מתנה `kind = 'user'`). לכן ההזרקה חייבת לקרות מתוך `SECURITY DEFINER` function.
+- דפוס קיים: `reports_emit_admin_system_message` ב-`0013_reports_emit_admin_message.sql` — `SECURITY DEFINER` trigger function שמזריקה `kind='system', sender_id=null, status='delivered', delivered_at=now()`.
 
-- שדה `kind` ל-`messages` (אם לא קיים): `enum {'user', 'system'}`, ברירת מחדל `'user'`. RLS: system messages נראים לכל המשתתפים של הצ'אט (כמו הודעות רגילות) אבל בלוק כתיבה/עריכה למשתמשי קצה (רק `service_role` או RPC חתום יוצרים אותן).
-- פונקציית helper פנימית: `inject_system_messages_for_post_close(p_post_id uuid, p_recipient_user_id uuid)` — מאתרת את כל הצ'אטים עם `anchor_post_id = p_post_id`, ומזריקה לכל אחד `messages` row עם `kind = 'system'` ו-body מתאים (טקסט שונה לצ'אט של הנמען לעומת "אחי", או טקסט אחיד למסלול "לא נמסר" שבו `p_recipient_user_id IS NULL`).
-- ה-helper נקרא **בתוך** ה-RPCs הקיימים `close_post_with_recipient` *וגם* `close_post_without_recipient` (או הווריאנט המקביל המטפל ב-`recipient = null`). אטומיות: אם הזרקת ההודעות נכשלת, הסגירה מתבטלת.
-- אם בקוד הקיים קיימת רק RPC אחת עם פרמטר `recipient nullable`, ה-helper נקרא תמיד בסוף אותו blok.
+**מיגרציה חדשה:** `0021_post_closure_emit_system_messages.sql`
 
-**אדפטר:** אין שינוי ב-`SupabaseChatRepository` — ה-fan-out הוא ברמת ה-DB.
+- פונקציית trigger: `posts_emit_closure_system_messages()` — `SECURITY DEFINER`, מופעלת `AFTER UPDATE OF status ON posts`.
+- היא רצה רק עבור two transitions: `old.status='open' AND new.status='closed_delivered'`, או `old.status='open' AND new.status='deleted_no_recipient'`. כל מעבר אחר (כולל `removed_admin`, `expired`, או reopen) — `RETURN NEW;` בלי פעולה.
+- במסלול `closed_delivered`: שולפת את `recipient_user_id` מטבלת `recipients` (שכבר הוכנסה ע"י ה-RPC לפני שינוי הסטטוס). לכל chat עם `anchor_post_id = NEW.post_id`: אם המשתתף שאינו ה-owner שווה ל-`recipient_user_id` → טקסט "הפוסט סומן כנמסר ✓ · תודה!"; אחרת → טקסט "הפוסט נמסר למשתמש אחר".
+- במסלול `deleted_no_recipient`: לכל chat עם `anchor_post_id = NEW.post_id` → טקסט "המפרסם סגר את הפוסט — הפריט לא נמסר".
+- `system_payload jsonb` כולל: `{kind: 'post_closed', post_id, status, recipient_user_id}` (recipient_user_id רק במסלול delivered, ורק עבור הצ'אט של הנמען עצמו — שאר ה-payloads מקבלים `recipient_user_id: null` כדי לא להדליף זהות).
+
+**יתרונות הגישה ב-trigger:**
+- אטומיות מלאה — קורית באותה טרנזקציה כמו ה-UPDATE.
+- מקור-בלתי-תלוי — תקף גם כש-FE עושה plain UPDATE (`deleted_no_recipient`), גם כש-FE קורא ל-RPC (`closed_delivered`), וגם בכל מקור עתידי שיעדכן את הסטטוס.
+- אפס שינויים ב-RPCs הקיימים (`close_post_with_recipient`, וכו').
+
+**אדפטר:** אין שינוי ב-`SupabaseChatRepository`. אין שינוי ב-`SupabasePostRepository`.
 
 ### 3.4 שכבת UI (`packages/ui` + `apps/mobile`)
 
@@ -57,10 +64,7 @@
   - **בעלים** (`post.ownerId === viewerId`): כפתור ראשי "סמן כנמסר ✓" → מפעיל `startClosure(post.postId, ownerId, post.type, { preselectedRecipientId: counterpartId })`.
   - **צד שני**: כל הכרטיס לחיץ ופותח את `/post/[id]`.
 
-**Hook חדש:** `apps/mobile/src/hooks/useAnchoredPost.ts`
-
-- realtime subscribe לעדכוני `posts` שמסוננים לפי `id = anchorPostId` (משתמש בקיים `useSupabaseRealtime` או דומה).
-- כך הכרטיס נעלם מיד גם בצ'אטים האחיים כשהבעלים סוגר ממקום אחר.
+**Reactivity ללא hook נפרד:** `AnchoredPostCard` משתמש ב-`useQuery({ queryKey: ['post', anchorPostId, viewerId] })` (אותו key שב-`app/post/[id].tsx`). כשנכנסת system message חדשה מסוג `post_closed` ל-thread של הצ'אט (זוהה דרך `useChatStore`), הרכיב קורא ל-`queryClient.invalidateQueries` על אותו key — והכרטיס נעלם מיד. אין צורך ב-realtime subscription נפרד לטבלת `posts`, כי ה-trigger כבר מבטיח שהסגירה מלווה תמיד ב-system message שה-chat realtime ממילא מספק.
 
 **הרחבת `OwnerActionsBar` / `startClosure`:**
 
@@ -82,13 +86,9 @@
 
 **הסרת `useAnchorMissing`:** ה-hook הקיים שמציג באנר "הפוסט המעוגן אינו זמין עוד" (FR-CHAT-004 edge case) מוחלף בלוגיקה החדשה — כש-anchor חסר, פשוט אין כרטיס. ה-banner מוסר. *תיעוד:* יש לעדכן את ה-AC ב-`07_chat.md` (ראו §5).
 
-### 3.5 הודעות-מערכת ב-UI
+### 3.5 הודעות-מערכת ב-UI — ללא רכיב חדש
 
-**רכיב חדש:** `apps/mobile/src/components/chat/SystemMessageBubble.tsx`
-
-- מוצג כשורה ממורכזת, רקע אפור בהיר, טקסט קטן יותר. ללא avatar, ללא timestamp בולט.
-- מופעל כש-`message.kind === 'system'`.
-- הטיפול ברינדור ב-`MessageList` הקיים: בודק `kind` ומחזיר `SystemMessageBubble` במקום `MessageBubble` הרגיל.
+`MessageBubble.tsx` הקיים (שורות 16-25) כבר מטפל ב-`m.kind === 'system'` ומציג כדור-מידע ממורכז עם אייקון `information-circle-outline`. ההודעות שלנו ייכנסו לאותו pill. אין שינוי ברנדרר.
 
 ## 4 — מיפוי דרישות
 
@@ -136,23 +136,15 @@
 
 ## 6 — בדיקות
 
-**Vitest (Application — `packages/application/__tests__`):**
+**Vitest (Application):** ללא טסטים חדשים. `MarkAsDeliveredUseCase.test.ts` ממשיך לכסות את חוזה ה-use case. `GetPostByIdUseCase.test.ts` הקיים מכסה את טעינת הפוסט.
 
-- `GetAnchoredPostUseCase`: input `null` → output `null`; input `postId` תקין → output `Post`; pass-through ל-`postRepo.getById`.
-- `MarkAsDeliveredUseCase`: ללא שינוי בטסטים הקיימים (אין התנהגות חדשה ברמת ה-application).
+**Mobile app:** אין תשתית בדיקות אוטומטית (typecheck בלבד). אימות ידני דרך ה-preview (ראו Plan, Task 7).
 
-**Vitest (UI — מטריקס החלטות של `AnchoredPostCard`):**
+**Database (Supabase):** אין תשתית pgTAP בפרויקט. אימות ידני דרך SQL editor (ראו Plan, Task 1 Step 5):
 
-- מטריקס `(post.status, viewer === owner) → rendered output`. 10 תאים (5 סטטוסים × 2 viewers). 8 מחזירים `null`. 1 מחזיר card עם close button (owner + open). 1 מחזיר card לחיץ ללא close button (non-owner + open).
-- Edge: `anchorPostId === null` → `null`.
-- Edge: `post === null` (לא נטען / נמחק לחלוטין) → `null`.
-
-**Integration (Supabase — `packages/infrastructure-supabase/__tests__`):**
-
-- ה-RPC `close_post_with_recipient` עם 2 צ'אטים אחים מעוגנים לפוסט: אחרי קריאה עם `recipient = userA`, צ'אט A מקבל system message "הפוסט סומן כנמסר ✓ · תודה!", וצ'אט B מקבל "הפוסט נמסר למשתמש אחר".
-- ה-RPC במסלול "לא נמסר" (recipient = null): שני הצ'אטים מקבלים "המפרסם סגר את הפוסט — הפריט לא נמסר".
-- אטומיות: אם הזרקת ההודעות נכשלת (סימולציה), `posts.status` לא משתנה.
-- RLS: משתמש שאינו משתתף בצ'אט לא רואה את ה-system messages; משתתפים רואים אותן ב-`SELECT` רגיל.
+- שני צ'אטים אחים מעוגנים לפוסט; קריאה ל-`close_post_with_recipient` עם recipient=A → צ'אט A מקבל "הפוסט סומן כנמסר ✓ · תודה!", צ'אט B מקבל "הפוסט נמסר למשתמש אחר".
+- Plain UPDATE ל-`deleted_no_recipient` → שני הצ'אטים מקבלים "המפרסם סגר את הפוסט — הפריט לא נמסר".
+- Reopen / removed_admin / expired → אין הודעות חדשות.
 
 **UI (manual + preview):**
 
@@ -171,9 +163,9 @@
 
 ## 8 — סיכונים והנחות
 
-- **הנחה:** ל-`messages` table יש שדה `kind` או יוסף כעת. אם השדה לא קיים, המיגרציה תוסיף אותו + default `'user'` לרשומות קיימות.
+- **קליטה (לא הנחה):** `messages.kind` ו-`messages.system_payload jsonb` כבר קיימים בסכמה (`0004_init_chat_messaging.sql`). לכן אין מיגרציה לסכמת העמודות.
 - **סיכון:** Realtime subscriptions לעדכוני post status יכולים להתפספס במקרי קצה (איבוד חיבור). **מיטיגציה:** `useAnchoredPost` עושה גם re-fetch on focus + on app foreground.
-- **סיכון:** Fan-out להזרקת system messages לפוסט עם הרבה צ'אטים אחים (>50) יכול להאט את ה-`close` RPC. **מיטיגציה:** ב-MVP זה לא צפוי. אם יקרה — להעביר ל-async edge function.
+- **סיכון:** Fan-out להזרקת system messages לפוסט עם הרבה צ'אטים אחים (>50) יכול להאט את הסגירה. **מיטיגציה:** ב-MVP זה לא צפוי. אם יקרה — להעביר ל-async (NOTIFY/LISTEN או edge function).
 - **הנחה:** התרגום של "הפוסט נמסר למשתמש אחר" שומר על פרטיות הנמען (לא חושף שם). הסכמנו על זה במפורש.
 
 ## 9 — מה לא בסקופ
