@@ -1,35 +1,47 @@
 import { create } from 'zustand';
 import { persist, createJSONStorage } from 'zustand/middleware';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import type { Category, PostType } from '@kc/domain';
+import type {
+  Category,
+  FeedSortOrder,
+  FeedStatusFilter,
+  ItemCondition,
+  LocationFilter,
+  PostType,
+} from '@kc/domain';
 
-// Mapped to: R-MVP-Privacy-8 (save last filter)
+// Mapped to: FR-FEED-004 (filter modal), FR-FEED-005 (persisted state).
+// State is saved per signed-in user via AsyncStorage so reopening the app
+// restores their last filter set.
 
 interface FilterState {
-  searchQuery: string;
   type: PostType | null;
-  category: Category | null;
-  city: string | null;
-  includeClosed: boolean;
-  sortBy: 'newest' | 'city';
+  categories: Category[];                 // empty = no category filter
+  itemConditions: ItemCondition[];        // empty = no condition filter; only meaningful for Give
+  locationFilter: LocationFilter | null;  // null = no location filter
+  statusFilter: FeedStatusFilter;
+  sortOrder: FeedSortOrder;
+  proximitySortCity: string | null;       // null = use viewer's city
 
-  setSearchQuery: (q: string) => void;
   setType: (t: PostType | null) => void;
-  setCategory: (c: Category | null) => void;
-  setCity: (city: string | null) => void;
-  setIncludeClosed: (v: boolean) => void;
-  setSortBy: (s: 'newest' | 'city') => void;
+  setCategories: (c: Category[]) => void;
+  setItemConditions: (i: ItemCondition[]) => void;
+  setLocationFilter: (f: LocationFilter | null) => void;
+  setStatusFilter: (s: FeedStatusFilter) => void;
+  setSortOrder: (s: FeedSortOrder) => void;
+  setProximitySortCity: (city: string | null) => void;
   clearAll: () => void;
   activeCount: () => number;
 }
 
 const DEFAULT_STATE = {
-  searchQuery: '',
   type: null as PostType | null,
-  category: null as Category | null,
-  city: null as string | null,
-  includeClosed: false,
-  sortBy: 'newest' as const,
+  categories: [] as Category[],
+  itemConditions: [] as ItemCondition[],
+  locationFilter: null as LocationFilter | null,
+  statusFilter: 'open' as FeedStatusFilter,
+  sortOrder: 'newest' as FeedSortOrder,
+  proximitySortCity: null as string | null,
 };
 
 export const useFilterStore = create<FilterState>()(
@@ -37,37 +49,45 @@ export const useFilterStore = create<FilterState>()(
     (set, get) => ({
       ...DEFAULT_STATE,
 
-      setSearchQuery: (searchQuery) => set({ searchQuery }),
       setType: (type) => set({ type }),
-      setCategory: (category) => set({ category }),
-      setCity: (city) => set({ city }),
-      setIncludeClosed: (includeClosed) => set({ includeClosed }),
-      setSortBy: (sortBy) => set({ sortBy }),
+      setCategories: (categories) => set({ categories }),
+      setItemConditions: (itemConditions) => set({ itemConditions }),
+      setLocationFilter: (locationFilter) => set({ locationFilter }),
+      setStatusFilter: (statusFilter) => set({ statusFilter }),
+      setSortOrder: (sortOrder) => set({ sortOrder }),
+      setProximitySortCity: (proximitySortCity) => set({ proximitySortCity }),
 
       clearAll: () => set(DEFAULT_STATE),
 
       activeCount: () => {
         const s = get();
         let count = 0;
-        if (s.searchQuery) count++;
         if (s.type) count++;
-        if (s.category) count++;
-        if (s.city) count++;
-        if (s.includeClosed) count++;
-        if (s.sortBy !== 'newest') count++;
+        if (s.categories.length > 0) count++;
+        if (s.itemConditions.length > 0) count++;
+        if (s.locationFilter) count++;
+        if (s.statusFilter !== 'open') count++;
+        if (s.sortOrder !== 'newest') count++;
+        if (s.proximitySortCity) count++;
         return count;
       },
     }),
     {
       name: 'kc-filters',
       storage: createJSONStorage(() => AsyncStorage),
+      version: 2,
+      // Drop legacy v1 state (old field names like `searchQuery`, `city`,
+      // `includeClosed`, `sortBy`). Anyone who upgrades just lands on
+      // defaults.
+      migrate: () => ({ ...DEFAULT_STATE }),
       partialize: (state) => ({
-        searchQuery: state.searchQuery,
         type: state.type,
-        category: state.category,
-        city: state.city,
-        includeClosed: state.includeClosed,
-        sortBy: state.sortBy,
+        categories: state.categories,
+        itemConditions: state.itemConditions,
+        locationFilter: state.locationFilter,
+        statusFilter: state.statusFilter,
+        sortOrder: state.sortOrder,
+        proximitySortCity: state.proximitySortCity,
       }),
     }
   )

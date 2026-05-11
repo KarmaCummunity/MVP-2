@@ -24,6 +24,12 @@ interface Props {
   hasMore?: boolean;
   /** Override card-tap handler (used by guest feed for the join modal). */
   onCardPress?: (post: PostWithOwner) => void;
+  /** Optional override for the empty state — Home Feed passes the warm empty state. */
+  emptyComponent?: React.ReactNode;
+  /** Optional sticky/scrollable banner rendered above the list. */
+  ListHeaderComponent?: React.ReactNode;
+  /** Forwarded to the underlying FlatList — used by the feed for scroll-to-top. */
+  listRef?: React.Ref<FlatList<PostWithOwner>>;
 }
 
 export function PostFeedList({
@@ -36,6 +42,9 @@ export function PostFeedList({
   onEndReached,
   hasMore,
   onCardPress,
+  emptyComponent,
+  ListHeaderComponent,
+  listRef,
 }: Props) {
   if (isLoading && !data) {
     return (
@@ -56,6 +65,7 @@ export function PostFeedList({
   }
   return (
     <FlatList
+      ref={listRef}
       data={data ?? []}
       keyExtractor={(p) => p.postId}
       numColumns={2}
@@ -67,12 +77,15 @@ export function PostFeedList({
         />
       )}
       contentContainerStyle={styles.listContent}
+      ListHeaderComponent={ListHeaderComponent as React.ComponentType | null | undefined}
       ListEmptyComponent={
-        <EmptyState
-          icon="search-outline"
-          title="לא נמצאו פוסטים"
-          subtitle="נסה לשנות את הסינון או חפש בכל הערים."
-        />
+        (emptyComponent as React.ReactElement) ?? (
+          <EmptyState
+            icon="search-outline"
+            title="לא נמצאו פוסטים"
+            subtitle="נסה לשנות את הסינון או חפש בכל הערים."
+          />
+        )
       }
       ListFooterComponent={
         hasMore && data && data.length > 0 ? (
