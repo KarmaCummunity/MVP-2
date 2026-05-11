@@ -293,6 +293,7 @@ const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     overflow: 'hidden',
+    flexShrink: 0,
   },
 
   // Post thumbnail — resolved from Supabase Storage
