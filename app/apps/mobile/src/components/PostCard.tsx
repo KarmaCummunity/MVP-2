@@ -205,12 +205,6 @@ const styles = StyleSheet.create({
   messageBtnText: {
     fontSize: 16,
   },
-  visibilityBadge: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-end',
-  },
-  visibilityText: {
-    ...typography.caption,
-    color: colors.followersOnlyBadge,
-  },
+  visibilityBadge: { marginTop: spacing.sm, alignSelf: 'flex-end' },
+  visibilityText: { ...typography.caption, color: colors.followersOnlyBadge },
 });

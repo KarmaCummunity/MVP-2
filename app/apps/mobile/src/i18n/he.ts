@@ -105,7 +105,7 @@ const he = {
     visibilityOnlyMe: '🔒 רק אני',
     publish: 'פרסם',
     draft: 'שמור טיוטה',
-    publishSuccess: '✅ הפוסט שלך פורסם!',
+    publishSuccess: 'הפוסט שלך פורסם!',
     draftRestored: 'יש לך טיוטה שלא פורסמה',
     continueDraft: 'המשך לערוך',
     discardDraft: 'התחל מחדש',

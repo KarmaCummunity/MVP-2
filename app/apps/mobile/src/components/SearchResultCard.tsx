@@ -287,7 +287,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // Avatar (user card)
   avatarWrap: {
     width: 48,
     height: 48,

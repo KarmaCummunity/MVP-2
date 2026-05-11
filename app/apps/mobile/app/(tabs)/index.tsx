@@ -6,14 +6,13 @@
 // `feedSessionStore` (in-memory). Realtime INSERTs of public posts bump the
 // counter; tapping the pill refetches + scrolls to top.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, Text, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, StyleSheet, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
-import { colors, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { TopBar } from '../../src/components/TopBar';
 import { FeedFilterIcon } from '../../src/components/FeedFilterIcon';
@@ -31,7 +30,6 @@ import { getFeedUseCase } from '../../src/services/postsComposition';
 
 export default function HomeFeedScreen() {
   const router = useRouter();
-  const params = useLocalSearchParams<{ published?: string }>();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
@@ -42,16 +40,6 @@ export default function HomeFeedScreen() {
 
   const [sheetOpen, setSheetOpen] = useState(false);
   const listRef = useRef<FlatList<PostWithOwner>>(null);
-
-  // Brief success toast after publish (web — Alert.alert is unreliable on RN-Web).
-  const [publishedToast, setPublishedToast] = useState(false);
-  useEffect(() => {
-    if (params.published !== '1') return;
-    setPublishedToast(true);
-    const t = setTimeout(() => setPublishedToast(false), 2200);
-    router.setParams({ published: undefined });
-    return () => clearTimeout(t);
-  }, [params.published, router]);
 
   const feedFilter = useMemo(
     () => ({
@@ -138,13 +126,6 @@ export default function HomeFeedScreen() {
         }
       />
 
-      {publishedToast && (
-        <View style={styles.toast}>
-          <Ionicons name="checkmark-circle" size={18} color={colors.textInverse} />
-          <Text style={styles.toastText}>הפוסט שלך פורסם!</Text>
-        </View>
-      )}
-
       <PostFeedList
         listRef={listRef}
         data={feedQuery.data?.posts}
@@ -177,14 +158,4 @@ export default function HomeFeedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  toast: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.base,
-  },
-  toastText: { ...typography.body, color: colors.textInverse, fontWeight: '600' as const },
 });
