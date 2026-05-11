@@ -264,26 +264,6 @@ export default function CreatePostScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="פרטים נוספים על החפץ..."
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            multiline
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{description.length}/500</Text>
-        </View>
-
-        <LocationDisplayLevelChooser
-          value={locationDisplayLevel}
-          onChange={setLocationDisplayLevel}
-          disabled={isPublishing}
-        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>קטגוריה</Text>
@@ -321,6 +301,27 @@ export default function CreatePostScreen() {
             </View>
           </View>
         )}
+
+
+<View style={styles.section}>
+          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
+          <TextInput
+            style={[styles.input, styles.textarea]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="פרטים נוספים על החפץ..."
+            placeholderTextColor={colors.textDisabled}
+            textAlign="right"
+            multiline
+            maxLength={500}
+          />
+          <Text style={styles.charCount}>{description.length}/500</Text>
+        </View>
+        <LocationDisplayLevelChooser
+          value={locationDisplayLevel}
+          onChange={setLocationDisplayLevel}
+          disabled={isPublishing}
+        />
 
         {!isGive && (
           <View style={styles.section}>

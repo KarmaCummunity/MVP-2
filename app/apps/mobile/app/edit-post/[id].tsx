@@ -268,12 +268,6 @@ export default function EditPostScreen() {
           <Text style={styles.charCount}>{description.length}/500</Text>
         </View>
 
-        <LocationDisplayLevelChooser
-          value={locationDisplayLevel}
-          onChange={setLocationDisplayLevel}
-          disabled={isSaving}
-        />
-
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>קטגוריה</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
@@ -310,6 +304,12 @@ export default function EditPostScreen() {
             </View>
           </View>
         )}
+
+        <LocationDisplayLevelChooser
+          value={locationDisplayLevel}
+          onChange={setLocationDisplayLevel}
+          disabled={isSaving}
+        />
 
         {!isGive && (
           <View style={styles.section}>
