@@ -30,6 +30,7 @@ begin
 end;
 $$;
 
+drop trigger if exists users_after_privacy_mode_change on public.users;
 create trigger users_after_privacy_mode_change
   after update of privacy_mode on public.users
   for each row
