@@ -287,12 +287,12 @@ const styles = StyleSheet.create({
     fontSize: 11,
   },
 
-  // Avatar (user card)
   avatarWrap: {
     width: 48,
     height: 48,
     borderRadius: 24,
     overflow: 'hidden',
+    flexShrink: 0,
   },
 
   // Post thumbnail — resolved from Supabase Storage

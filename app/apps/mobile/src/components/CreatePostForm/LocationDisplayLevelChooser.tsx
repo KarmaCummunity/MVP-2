@@ -20,7 +20,7 @@ const OPTIONS: { value: LocationDisplayLevel; label: string; hint: string }[] = 
 export function LocationDisplayLevelChooser({ value, onChange, disabled }: Props) {
   return (
     <View style={styles.section}>
-      <Text style={styles.label}>תצוגת מיקום בפוסט</Text>
+      <Text style={styles.label}>תצוגת הכתובת</Text>
       <View style={styles.row}>
         {OPTIONS.map((opt) => {
           const active = value === opt.value;

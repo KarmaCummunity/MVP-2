@@ -1,10 +1,13 @@
-// FR-DONATE-009 — row-menu action handler for DonationLinksList.
-// Extracted to keep DonationLinksList.tsx under the 200-LOC cap.
+// FR-DONATE-009 — row-menu action handler for DonationLinksList (native; web uses DonationLinkRowMenu).
 import { useCallback } from 'react';
-import { ActionSheetIOS, Alert, Linking, Platform } from 'react-native';
+import { ActionSheetIOS, Alert, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { DonationLink } from '@kc/domain';
-import { container } from '../lib/container';
+import {
+  confirmRemoveDonationLink,
+  openDonationLinkUrl,
+  reportDonationLink,
+} from './donationLinkRowHandlers';
 
 interface Args {
   me: string | null;
@@ -16,6 +19,8 @@ export function useDonationLinkActions({ me, onRemoved }: Args) {
 
   return useCallback(
     (link: DonationLink) => {
+      if (Platform.OS === 'web') return;
+
       const canRemove = link.submittedBy === me;
       const labels = [
         t('donations.links.rowMenu.open'),
@@ -26,46 +31,10 @@ export function useDonationLinkActions({ me, onRemoved }: Args) {
       const removeIdx = canRemove ? 2 : -1;
       const cancelIdx = labels.length - 1;
 
-      const reportLink = async () => {
-        if (!me) return;
-        try {
-          const thread = await container.getSupportThread.execute({ userId: me });
-          await container.sendMessage.execute({
-            chatId: thread.chatId,
-            senderId: me,
-            body: `דיווח על קישור (donation_link:${link.id}) — ${link.url}`,
-          });
-          Alert.alert(t('donations.links.reportSent'));
-        } catch {
-          Alert.alert(t('donations.addLinkModal.errors.network'));
-        }
-      };
-
-      const confirmRemove = () =>
-        Alert.alert(
-          t('donations.links.confirmRemoveTitle'),
-          t('donations.links.confirmRemoveBody'),
-          [
-            { text: t('donations.links.confirmRemoveCancel'), style: 'cancel' },
-            {
-              text: t('donations.links.confirmRemoveOk'),
-              style: 'destructive',
-              onPress: async () => {
-                try {
-                  await container.removeDonationLink.execute(link.id);
-                  onRemoved(link.id);
-                } catch {
-                  Alert.alert(t('donations.addLinkModal.errors.network'));
-                }
-              },
-            },
-          ],
-        );
-
       const performAction = (idx: number) => {
-        if (idx === 0) Linking.openURL(link.url).catch(() => {});
-        else if (idx === 1) void reportLink();
-        else if (idx === removeIdx && canRemove) confirmRemove();
+        if (idx === 0) openDonationLinkUrl(link);
+        else if (idx === 1) void reportDonationLink(me, link, t);
+        else if (idx === removeIdx && canRemove) confirmRemoveDonationLink(link, onRemoved, t);
       };
 
       if (Platform.OS === 'ios') {

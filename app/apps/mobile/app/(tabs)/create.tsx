@@ -3,11 +3,12 @@
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
 import React, { useEffect, useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Platform, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
@@ -15,6 +16,7 @@ import { ALL_CATEGORIES, CATEGORY_LABELS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
+import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { useLastAddressStore } from '../../src/store/lastAddressStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
 import { getCreatePostUseCase } from '../../src/services/postsComposition';
@@ -28,6 +30,7 @@ import { VisibilityChooser } from '../../src/components/CreatePostForm/Visibilit
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 
 export default function CreatePostScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
@@ -139,23 +142,13 @@ export default function CreatePostScreen() {
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
-      // Web: Alert.alert renders as window.confirm in RN-Web and is often
-      // invisible inside iframe previews. Navigate immediately and surface
-      // success via a query param the feed reads to flash a toast banner.
-      if (Platform.OS === 'web') {
-        router.replace('/(tabs)?published=1');
-      } else {
-        Alert.alert('✅ הפוסט שלך פורסם!', '', [{ text: 'אוקיי', onPress: () => router.replace('/(tabs)') }]);
-      }
+      await queryClient.invalidateQueries({ queryKey: ['openPostsCount'] });
+      useFeedSessionStore.getState().showEphemeralToast(t('post.publishSuccess'), 'success');
+      router.replace('/(tabs)');
     },
     onError: (err) => {
       const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(`פרסום נכשל: ${message}`);
-      } else {
-        Alert.alert('פרסום נכשל', message);
-      }
+      useFeedSessionStore.getState().showEphemeralToast(`פרסום נכשל: ${message}`, 'error');
     },
   });
 
@@ -264,26 +257,6 @@ export default function CreatePostScreen() {
           </View>
         </View>
 
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder="פרטים נוספים על החפץ..."
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            multiline
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{description.length}/500</Text>
-        </View>
-
-        <LocationDisplayLevelChooser
-          value={locationDisplayLevel}
-          onChange={setLocationDisplayLevel}
-          disabled={isPublishing}
-        />
 
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>קטגוריה</Text>
@@ -321,6 +294,27 @@ export default function CreatePostScreen() {
             </View>
           </View>
         )}
+
+
+<View style={styles.section}>
+          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
+          <TextInput
+            style={[styles.input, styles.textarea]}
+            value={description}
+            onChangeText={setDescription}
+            placeholder="פרטים נוספים על החפץ..."
+            placeholderTextColor={colors.textDisabled}
+            textAlign="right"
+            multiline
+            maxLength={500}
+          />
+          <Text style={styles.charCount}>{description.length}/500</Text>
+        </View>
+        <LocationDisplayLevelChooser
+          value={locationDisplayLevel}
+          onChange={setLocationDisplayLevel}
+          disabled={isPublishing}
+        />
 
         {!isGive && (
           <View style={styles.section}>
