@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Image } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Image, I18nManager, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
@@ -7,6 +7,10 @@ import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { CATEGORY_LABELS } from '@kc/domain';
 import { AvatarInitials } from './AvatarInitials';
+
+const isRTL = I18nManager.isRTL;
+const isWeb = Platform.OS === 'web';
+const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
 
 interface PostCardProps {
   post: PostWithOwner;
@@ -126,12 +130,12 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600',
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: alignStart,
   },
   timeText: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: alignStart,
   },
   typeTag: {
     paddingHorizontal: spacing.sm,
@@ -158,13 +162,13 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: colors.textPrimary,
     marginBottom: spacing.xs,
-    textAlign: 'right',
+    textAlign: alignStart,
   },
   description: {
     ...typography.body,
     color: colors.textSecondary,
     marginBottom: spacing.sm,
-    textAlign: 'right',
+    textAlign: alignStart,
   },
   footer: {
     flexDirection: 'row',

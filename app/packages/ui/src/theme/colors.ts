@@ -45,8 +45,8 @@ export const colors = {
   // Post type tags — aligned with brand palette (orange primary / neutral gray)
   giveTag: '#F97316',
   giveTagBg: '#FFF7ED',
-  requestTag: '#4B5563',
-  requestTagBg: '#E5E7EB',
+  requestTag: '#FFF7ED',
+  requestTagBg: '#F97316',
 
   // Visibility badges
   publicBadge: '#6B7280',
