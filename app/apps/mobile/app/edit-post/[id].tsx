@@ -107,7 +107,7 @@ export default function EditPostScreen() {
   });
 
   // Loading / error / not-found guards.
-  if (query.isLoading || !seeded) {
+  if (query.isLoading || (!seeded && post != null)) {
     return (
       <View style={styles.center}>
         <ActivityIndicator size="large" color={colors.primary} />
