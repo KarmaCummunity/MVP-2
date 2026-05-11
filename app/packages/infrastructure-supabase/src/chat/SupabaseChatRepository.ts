@@ -60,14 +60,30 @@ export class SupabaseChatRepository implements IChatRepository {
 
       if (!needsReanchor) return rowToChat(existing.data);
 
-      const updated = await this.client
-        .from('chats')
-        .update({ anchor_post_id: anchorPostId })
-        .eq('chat_id', existing.data.chat_id)
-        .select('*')
-        .single();
-      if (updated.error) throw mapChatError(updated.error);
-      return rowToChat(updated.data);
+      // chats has no client UPDATE grant / policy (see 0004 §12) — go through
+      // the SECURITY DEFINER RPC added in 0027 which validates participation
+      // and returns the updated row. The RPC name is not in database.types.ts
+      // yet (regen pending); cast through unknown to bypass the strict union.
+      const rpcResult = await (
+        this.client.rpc as unknown as (
+          fn: string,
+          args: Record<string, unknown>,
+        ) => Promise<{
+          data: Database['public']['Tables']['chats']['Row'] | Database['public']['Tables']['chats']['Row'][] | null;
+          error: unknown;
+        }>
+      )('rpc_chat_set_anchor', {
+        p_chat_id: existing.data.chat_id,
+        p_anchor_post_id: anchorPostId,
+      });
+      if (rpcResult.error) throw mapChatError(rpcResult.error as never);
+      const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
+      if (!row) {
+        // Defensive — the RPC raises on auth/visibility errors, so a null row
+        // here means the chat was deleted between SELECT and the RPC call.
+        return rowToChat(existing.data);
+      }
+      return rowToChat(row);
     }
 
     const insert = await this.client
