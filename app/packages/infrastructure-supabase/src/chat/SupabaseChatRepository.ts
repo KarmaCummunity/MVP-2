@@ -61,11 +61,13 @@ export class SupabaseChatRepository implements IChatRepository {
       if (!needsReanchor) return rowToChat(existing.data);
 
       // chats has no client UPDATE grant / policy (see 0004 §12) — go through
-      // the SECURITY DEFINER RPC added in 0027. Cast via unknown because the
-      // RPC name is not yet in database.types.ts (regen pending).
+      // the SECURITY DEFINER RPC added in 0027. The RPC name is not yet in
+      // database.types.ts (regen pending), so we cast via unknown. We MUST
+      // call .rpc on the client directly (not via an extracted variable),
+      // otherwise `this` is lost inside supabase-js and `this.rest` is undefined.
       type ChatRow = Database['public']['Tables']['chats']['Row'];
-      const rpcFn = this.client.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: ChatRow | ChatRow[] | null; error: unknown }>;
-      const { data, error } = await rpcFn('rpc_chat_set_anchor', { p_chat_id: existing.data.chat_id, p_anchor_post_id: anchorPostId });
+      type RpcCall = (fn: string, args: Record<string, unknown>) => Promise<{ data: ChatRow | ChatRow[] | null; error: unknown }>;
+      const { data, error } = await (this.client.rpc as unknown as RpcCall).call(this.client, 'rpc_chat_set_anchor', { p_chat_id: existing.data.chat_id, p_anchor_post_id: anchorPostId });
       if (error) throw mapChatError(error as never);
       const row = Array.isArray(data) ? data[0] : data;
       // Defensive — RPC raises on auth/visibility errors; a null row means
