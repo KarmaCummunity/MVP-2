@@ -1,0 +1,16 @@
+-- Manual verification after a reported "deleted user still visible" bug.
+-- Run in Supabase SQL Editor (service role or privileged) with :target replaced.
+-- Apply pending local migrations to the linked project: `supabase db push` (from repo root).
+--
+-- 1) public.users — expect NO row after successful FR-SETTINGS-012 flow.
+-- select user_id, share_handle, account_status, created_at
+-- from public.users
+-- where user_id = :target::uuid or share_handle ilike :handle;
+--
+-- 2) chats still pointing at that user — expect NONE (or only NULL slots after 0028+0029).
+-- select chat_id, participant_a, participant_b, removed_at
+-- from public.chats
+-- where participant_a = :target::uuid or participant_b = :target::uuid;
+--
+-- 3) auth identity — expect NO row after auth.admin.deleteUser.
+-- select id, email, deleted_at from auth.users where id = :target::uuid;

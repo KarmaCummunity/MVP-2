@@ -1,6 +1,6 @@
 # 2.7 Direct Messaging
 
-> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat shipped.
+> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only).
 
 
 

@@ -50,8 +50,6 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
-  // Chat repository bumped past cap (202 lines). Split into sub-services once P2.x chat work begins.
-  ['packages/infrastructure-supabase/src/chat/SupabaseChatRepository.ts', { td: 'TD-118', max: 202 }],
 ]);
 
 const LAYER_RULES = [

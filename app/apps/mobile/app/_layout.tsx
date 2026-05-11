@@ -53,6 +53,7 @@ import { AuthGate } from '../src/components/AuthGate';
 import { BackButton } from '../src/components/BackButton';
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar } from '../src/components/TabBar';
+import { EphemeralToast } from '../src/components/EphemeralToast';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -108,6 +109,7 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
       <View style={{ flex: 1, paddingBottom: showTabBar ? TAB_BAR_HEIGHT : 0 }}>
         {children}
       </View>
+      <EphemeralToast />
       {showTabBar && (
         <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
           <TabBar />

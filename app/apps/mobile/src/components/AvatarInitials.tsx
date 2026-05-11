@@ -35,6 +35,7 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
       <Image
         source={{ uri: avatarUrl }}
         style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
+        resizeMode="cover"
       />
     );
   }
@@ -57,10 +58,10 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
 }
 
 const styles = StyleSheet.create({
+  /** No outer margin — parents use `gap` / padding so fixed-size clips (e.g. search cards) stay circular on iOS. */
   avatar: {
     justifyContent: 'center',
     alignItems: 'center',
-    marginLeft: 8,
   },
   initials: {
     color: colors.textInverse,

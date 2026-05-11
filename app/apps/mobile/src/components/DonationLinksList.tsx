@@ -4,8 +4,8 @@ import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   Pressable,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -14,9 +14,11 @@ import { Ionicons } from '@expo/vector-icons';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
 import { container } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import { AddDonationLinkModal } from './AddDonationLinkModal';
+import { donationLinksListStyles as styles } from './DonationLinksList.styles';
 import { DonationLinkRow } from './DonationLinkRow';
+import { DonationLinkRowMenu } from './DonationLinkRowMenu';
 import { useDonationLinkActions } from './useDonationLinkActions';
 
 interface Props {
@@ -34,6 +36,7 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [webMenuLink, setWebMenuLink] = useState<DonationLink | null>(null);
 
   const load = useCallback(async () => {
     setLoading(true);
@@ -56,7 +59,14 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
     (id: string) => setLinks((prev) => prev.filter((l) => l.id !== id)),
     [],
   );
-  const onMenuPress = useDonationLinkActions({ me, onRemoved });
+  const runNativeMenu = useDonationLinkActions({ me, onRemoved });
+  const onMenuPress = useCallback(
+    (link: DonationLink) => {
+      if (Platform.OS === 'web') setWebMenuLink(link);
+      else runNativeMenu(link);
+    },
+    [runNativeMenu],
+  );
   const onAdded = (link: DonationLink) => setLinks((prev) => [link, ...prev]);
 
   const Header = useMemo(
@@ -139,6 +149,19 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
     );
   };
 
+  const webMenu = Platform.OS === 'web' && (
+    <DonationLinkRowMenu
+      visible={webMenuLink !== null}
+      link={webMenuLink}
+      me={me}
+      onClose={() => setWebMenuLink(null)}
+      onRemoved={(id) => {
+        onRemoved(id);
+        setWebMenuLink(null);
+      }}
+    />
+  );
+
   return (
     <View style={styles.container}>
       {Header}
@@ -149,50 +172,7 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
         onClose={() => setModalOpen(false)}
         onAdded={onAdded}
       />
+      {webMenu}
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { gap: spacing.md },
-  header: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    marginBottom: spacing.sm,
-  },
-  headerTitle: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
-  plusBtn: {
-    width: 32,
-    height: 32,
-    borderRadius: 16,
-    backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  plusBtnPressed: { opacity: 0.85 },
-  list: { gap: spacing.md, paddingBottom: spacing.lg },
-  loading: { paddingVertical: spacing.xl, alignItems: 'center' },
-  empty: {
-    paddingVertical: spacing.xl,
-    paddingHorizontal: spacing.lg,
-    alignItems: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    borderStyle: 'dashed',
-  },
-  emptyTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
-  emptyBody: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
-  emptyCta: {
-    marginTop: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.lg,
-  },
-  emptyCtaPressed: { opacity: 0.85 },
-  emptyCtaText: { ...typography.button, color: colors.textInverse },
-});

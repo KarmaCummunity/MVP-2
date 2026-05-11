@@ -120,6 +120,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     flex: 1,
+    gap: spacing.sm,
   },
   authorInfo: {
     marginRight: spacing.sm,
@@ -204,12 +205,6 @@ const styles = StyleSheet.create({
   messageBtnText: {
     fontSize: 16,
   },
-  visibilityBadge: {
-    marginTop: spacing.sm,
-    alignSelf: 'flex-end',
-  },
-  visibilityText: {
-    ...typography.caption,
-    color: colors.followersOnlyBadge,
-  },
+  visibilityBadge: { marginTop: spacing.sm, alignSelf: 'flex-end' },
+  visibilityText: { ...typography.caption, color: colors.followersOnlyBadge },
 });

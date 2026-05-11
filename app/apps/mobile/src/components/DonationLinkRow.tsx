@@ -29,31 +29,33 @@ export function DonationLinkRow({ link, canRemove, onMenuPress }: Props) {
   };
 
   return (
-    <Pressable
-      onPress={open}
-      accessibilityRole="link"
-      accessibilityLabel={`${link.displayName} — ${host}`}
-      style={({ pressed }) => [styles.row, pressed && styles.rowPressed]}
-    >
-      <View style={styles.iconWrap}>
-        {iconError ? (
-          <Ionicons name="link-outline" size={22} color={colors.primary} />
-        ) : (
-          <Image
-            source={{ uri: faviconUrl }}
-            style={styles.favicon}
-            onError={() => setIconError(true)}
-          />
-        )}
-      </View>
+    <View style={styles.row}>
+      <Pressable
+        onPress={open}
+        accessibilityRole="link"
+        accessibilityLabel={`${link.displayName} — ${host}`}
+        style={({ pressed }) => [styles.rowMain, pressed && styles.rowPressed]}
+      >
+        <View style={styles.iconWrap}>
+          {iconError ? (
+            <Ionicons name="link-outline" size={22} color={colors.primary} />
+          ) : (
+            <Image
+              source={{ uri: faviconUrl }}
+              style={styles.favicon}
+              onError={() => setIconError(true)}
+            />
+          )}
+        </View>
 
-      <View style={styles.body}>
-        <Text style={styles.title} numberOfLines={1}>{link.displayName}</Text>
-        {link.description ? (
-          <Text style={styles.description} numberOfLines={2}>{link.description}</Text>
-        ) : null}
-        <Text style={styles.host} numberOfLines={1}>{host}</Text>
-      </View>
+        <View style={styles.body}>
+          <Text style={styles.title} numberOfLines={1}>{link.displayName}</Text>
+          {link.description ? (
+            <Text style={styles.description} numberOfLines={2}>{link.description}</Text>
+          ) : null}
+          <Text style={styles.host} numberOfLines={1}>{host}</Text>
+        </View>
+      </Pressable>
 
       <Pressable
         onPress={() => onMenuPress(link)}
@@ -64,7 +66,7 @@ export function DonationLinkRow({ link, canRemove, onMenuPress }: Props) {
       >
         <Ionicons name="ellipsis-horizontal" size={20} color={colors.textSecondary} />
       </Pressable>
-    </Pressable>
+    </View>
   );
 }
 
@@ -81,6 +83,13 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     gap: spacing.md,
     ...shadow.card,
+  },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: spacing.md,
+    minWidth: 0,
   },
   rowPressed: {
     backgroundColor: colors.background,
