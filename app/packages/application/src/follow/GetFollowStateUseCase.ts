@@ -17,9 +17,6 @@ export class GetFollowStateUseCase {
     }
     const raw = await this.users.getFollowStateRaw(input.viewerId, input.targetUserId);
 
-    // Block short-circuit beats every other branch.
-    if (raw.blocked) return { state: 'blocked' };
-
     if (!raw.target || raw.target.accountStatus !== 'active') {
       throw new FollowError('user_not_found', 'user_not_found');
     }

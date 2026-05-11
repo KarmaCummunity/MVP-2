@@ -1,4 +1,4 @@
-// Row → domain User mapper. Shared by findById / findByHandle / getBlockedUsers.
+// Row → domain User mapper. Shared by findById / findByHandle.
 // The shape mirrors the columns from `users` (see 0001_init_users.sql).
 import type { User } from '@kc/domain';
 

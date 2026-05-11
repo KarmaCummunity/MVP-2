@@ -18,7 +18,7 @@ Prefixes: `NFR-SEC-*`, `NFR-PRIV-*`
 
 **Statement.** Every read and write to the database is gated by Postgres Row-Level Security (RLS) policies that mirror the SRS visibility/ownership rules. The application layer is **never** the sole guardian; bypassing the UI must not leak protected data.
 **Measurement.** A "policy fuzzer" CI job runs with three synthetic personas (owner, follower, stranger) and asserts forbidden reads/writes return zero rows.
-**Source.** `INV-V1`, `INV-V2`, `INV-V4`, `FR-MOD-009`.
+**Source.** `INV-V1`, `INV-V2`, `INV-V4`. (`FR-MOD-009` is deprecated per `EXEC-9`; the RLS predicates still reference `is_blocked()` defensively, which returns `false` for all viewers in MVP.)
 
 ### NFR-SEC-003 — Authentication token storage
 
@@ -130,7 +130,9 @@ Prefixes: `NFR-SEC-*`, `NFR-PRIV-*`
 **Measurement.** Schema review of `Message.system_payload`.
 **Source.** `FR-MOD-002`, `NFR-SEC-013`.
 
-### NFR-PRIV-009 — Block opacity
+### NFR-PRIV-009 — Block opacity — **DEPRECATED (post-MVP)**
+
+**Status.** ⚠️ Deferred per `EXEC-9` (2026-05-11). No surface produces or surfaces a block signal in MVP — the contract is moot until block is reintroduced.
 
 **Statement.** A blocked user receives **zero** signal that they were blocked. Their messages appear sent locally, follows fail with neutral errors, and reports are accepted normally without feedback.
 **Measurement.** Behavioral test cases per surface.

@@ -7,7 +7,6 @@ import {
   getSupabaseClient,
   SupabaseChatRepository,
   SupabaseChatRealtime,
-  SupabaseBlockRepository,
   SupabaseReportRepository,
   SupabaseDonationLinksRepository,
   SupabasePostRepository,
@@ -21,8 +20,6 @@ import {
   GetUnreadTotalUseCase,
   GetSupportThreadUseCase,
   BuildAutoMessageUseCase,
-  BlockUserUseCase,
-  UnblockUserUseCase,
   ReportChatUseCase,
   ReportPostUseCase,
   DeletePostUseCase,
@@ -44,7 +41,6 @@ export const supabase = getSupabaseClient({ storage: pickStorage() });
 
 const chatRepo = new SupabaseChatRepository(supabase);
 const chatRealtime = new SupabaseChatRealtime(supabase);
-const blockRepo = new SupabaseBlockRepository(supabase);
 const reportRepo = new SupabaseReportRepository(supabase);
 const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
 const postRepo = new SupabasePostRepository(supabase);
@@ -63,9 +59,7 @@ export const container = {
   getSupportThread: new GetSupportThreadUseCase(chatRepo),
   buildAutoMessage: new BuildAutoMessageUseCase(),
 
-  // Block / Report
-  blockUser: new BlockUserUseCase(blockRepo),
-  unblockUser: new UnblockUserUseCase(blockRepo),
+  // Reports
   reportChat: new ReportChatUseCase(reportRepo),
   reportPost: new ReportPostUseCase(reportRepo),
 

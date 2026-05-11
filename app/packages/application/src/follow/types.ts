@@ -4,15 +4,14 @@
 
 import type { FollowRequest, User } from '@kc/domain';
 
-/** Five UI states from FR-FOLLOW-011 + viewer-is-self + blocked. */
+/** Five UI states from FR-FOLLOW-011 + viewer-is-self. */
 export type FollowState =
   | 'self'
   | 'not_following_public'
   | 'following'
   | 'not_following_private_no_request'
   | 'request_pending'
-  | 'cooldown_after_reject'
-  | 'blocked';
+  | 'cooldown_after_reject';
 
 export interface FollowStateInfo {
   state: FollowState;

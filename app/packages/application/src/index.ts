@@ -4,7 +4,6 @@ export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
 export type { IChatRealtime, InboxStreamCallbacks, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
-export type { IBlockRepository } from './ports/IBlockRepository';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
 export type { IStatsRepository } from './ports/IStatsRepository';
@@ -50,12 +49,6 @@ export { GetUnreadTotalUseCase } from './chat/GetUnreadTotalUseCase';
 export { GetSupportThreadUseCase } from './chat/GetSupportThreadUseCase';
 export { ChatError } from './chat/errors';
 export type { ChatErrorCode } from './chat/errors';
-
-// Block use cases
-export { BlockUserUseCase } from './block/BlockUserUseCase';
-export { UnblockUserUseCase } from './block/UnblockUserUseCase';
-export { BlockError } from './block/errors';
-export type { BlockErrorCode } from './block/errors';
 
 // Report use cases
 export { ReportChatUseCase } from './reports/ReportChatUseCase';

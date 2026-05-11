@@ -4,7 +4,6 @@
 
 import type {
   AuthIdentity,
-  Block,
   FollowEdge,
   FollowRequest,
   OnboardingState,
@@ -103,7 +102,6 @@ export class FakeUserRepository implements IUserRepository {
     followingExists: false,
     pendingRequestExists: false,
     cooldownUntil: null,
-    blocked: false,
   };
 
   async getFollowStateRaw(): Promise<FollowStateRaw> {
@@ -136,10 +134,6 @@ export class FakeUserRepository implements IUserRepository {
   create = N('create') as IUserRepository['create'];
   update = N('update') as IUserRepository['update'];
   delete = N('delete') as IUserRepository['delete'];
-  block = N('block') as IUserRepository['block'];
-  unblock = N('unblock') as IUserRepository['unblock'];
-  getBlockedUsers = N('getBlockedUsers') as IUserRepository['getBlockedUsers'];
-  isBlocked = N('isBlocked') as IUserRepository['isBlocked'];
   findByAuthIdentity = N('findByAuthIdentity') as IUserRepository['findByAuthIdentity'];
   createAuthIdentity = N('createAuthIdentity') as IUserRepository['createAuthIdentity'];
 }

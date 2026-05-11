@@ -201,19 +201,7 @@ export class SupabaseUserRepository implements IUserRepository {
   async getFollowStateRaw(viewerId: string, targetUserId: string) {
     return fetchFollowStateRaw(this.client, viewerId, targetUserId);
   }
-  async block(): Promise<never> {
-    throw NOT_IMPL('block', 'P1.4');
-  }
-  async unblock(_blockerId: string, _blockedId: string): Promise<void> {
-    throw NOT_IMPL('unblock', 'P1.4');
-  }
-  /**
-   * Returns the users this caller has blocked. RLS on `public.blocks` is
-   * `auth.uid() = blocker_id` for SELECT, which matches our query (no need
-   * for SECURITY DEFINER). Used by FR-CLOSURE-003 to filter the recipient
-   * picker, by future FR-FEED-* visibility helpers, and the Blocked Users
-   * settings screen (P1.4 — read path is here, the toggle lives in P1.4).
-   */
+
   searchUsers(
     query: string,
     opts: { excludeUserId: string; limit: number },
@@ -221,20 +209,6 @@ export class SupabaseUserRepository implements IUserRepository {
     return searchUsers(this.client, query, opts);
   }
 
-  async getBlockedUsers(userId: string): Promise<User[]> {
-    const { data, error } = await this.client
-      .from('blocks')
-      .select('blocked:blocked_id(*)')
-      .eq('blocker_id', userId);
-    if (error) throw new Error(`getBlockedUsers: ${error.message}`);
-    return ((data ?? []) as unknown as { blocked: UserRow | null }[])
-      .map((r) => r.blocked)
-      .filter((u): u is UserRow => u !== null)
-      .map(mapUserRow);
-  }
-  async isBlocked(_blockerId: string, _blockedId: string): Promise<boolean> {
-    throw NOT_IMPL('isBlocked', 'P1.4');
-  }
   async findByAuthIdentity(_provider: string, _subject: string): Promise<never> {
     throw NOT_IMPL('findByAuthIdentity', 'P0.4');
   }

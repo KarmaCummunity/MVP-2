@@ -12,7 +12,7 @@ The Settings screen and its sub-pages:
 
 - Account info (read-only in MVP except where noted).
 - Notification preferences (`Critical` / `Social` toggles).
-- Privacy controls (profile mode, follow requests entry, blocked users entry).
+- Privacy controls (profile mode, follow requests entry; blocked-users entry deferred per `EXEC-9`).
 - Stats shortcut.
 - Support & legal.
 - Logout.
@@ -88,7 +88,9 @@ A row entry leading to the Follow Requests screen, visible only when the profile
 
 ---
 
-## FR-SETTINGS-005 — Privacy section: blocked users entry
+## FR-SETTINGS-005 — Privacy section: blocked users entry — **DEPRECATED (post-MVP)**
+
+**Status.** ⚠️ Out of MVP scope per `EXEC-9` (2026-05-11). No row is rendered in Settings → Privacy because `FR-MOD-004` (Unblock a user) is deferred post-MVP.
 
 **Description.**
 A row entry leading to the Blocked Users screen.
@@ -98,7 +100,7 @@ A row entry leading to the Blocked Users screen.
 
 **Acceptance Criteria.**
 - AC1. Row label: "Blocked users".
-- AC2. Tapping navigates to a list (`FR-MOD-004`).
+- AC2. Tapping navigates to a list (`FR-MOD-004` — deferred).
 - AC3. The row is always shown regardless of privacy mode.
 
 **Related.** Screens: 5.3.

@@ -7,7 +7,6 @@ const baseRaw = {
   followingExists: false,
   pendingRequestExists: false,
   cooldownUntil: null,
-  blocked: false,
 };
 
 describe('GetFollowStateUseCase', () => {
@@ -16,14 +15,6 @@ describe('GetFollowStateUseCase', () => {
     const uc = new GetFollowStateUseCase(repo);
     const out = await uc.execute({ viewerId: 'u_a', targetUserId: 'u_a' });
     expect(out.state).toBe('self');
-  });
-
-  it('returns "blocked" when bilateral block exists', async () => {
-    const repo = new FakeUserRepository();
-    repo.followStateRaw = { ...baseRaw, blocked: true };
-    const uc = new GetFollowStateUseCase(repo);
-    const out = await uc.execute({ viewerId: 'u_a', targetUserId: 'u_b' });
-    expect(out.state).toBe('blocked');
   });
 
   it('returns "not_following_public" for a public target with no edge', async () => {

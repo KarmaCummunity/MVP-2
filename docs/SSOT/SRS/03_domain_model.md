@@ -21,7 +21,7 @@ The MVP recognizes the following **aggregate roots** (in DDD sense):
 | `FollowEdge` | `(follower_id, followed_id)` | created → deleted (no states beyond existence) | — |
 | `FollowRequest` | `(requester_id, target_id, created_at)` | pending → accepted / rejected / cancelled | — |
 | `Chat` | `chat_id` | active → archived (V1.5+) | `Message[]` |
-| `Block` | `(blocker_id, blocked_id)` | created → deleted | — |
+| `Block` | `(blocker_id, blocked_id)` | created → deleted | — _(schema retained; no writer in MVP per `EXEC-9`)_ |
 | `Report` | `report_id` | open → confirmed_violation / dismissed_no_violation | — |
 | `AuditEvent` | `event_id` | append-only | — |
 
@@ -143,10 +143,12 @@ A directed relationship.
 - `status ∈ MessageStatus` — `pending` | `delivered` | `read` (transitions per `FR-CHAT-011`).
 - `created_at`, `delivered_at`, `read_at`.
 
-### 3.2.11 `Block`
+### 3.2.11 `Block` — deferred per `EXEC-9`
 
 - `(blocker_id, blocked_id)` — composite key.
 - `created_at`.
+
+> Table exists in the DB schema (`public.blocks`) and the `is_blocked()` / `has_blocked()` predicates are referenced from chat / feed visibility queries. No domain entity, port, or adapter ships in MVP — see `EXEC-9` (2026-05-11). The fields above describe the post-MVP shape that the schema is already prepared for.
 
 ### 3.2.12 `Report`
 
@@ -327,9 +329,9 @@ These are the formal expressions of `R-MVP-*` rules at the domain layer. They ar
 - **INV-C2.** `User.active_posts_count_internal` equals the count of `Post` where `owner = user` and `status = open`. *(FR-PROFILE-013, FR-STATS-002)*
 - **INV-C3.** `Post.reopen_count >= 5` ⇒ a `ModerationQueueEntry` with `reason = excessive_reopens` exists for that post. *(R-MVP-Items-7)*
 
-### Block & moderation invariants
+### Moderation invariants
 
-- **INV-M1.** If `Block { A, B }` exists, no `FollowEdge` involving both A and B exists, and no `FollowRequest` between them is `pending`. *(FR-MOD-003)*
+- **INV-M1.** ~~If `Block { A, B }` exists, no `FollowEdge` involving both A and B exists, and no `FollowRequest` between them is `pending`. *(FR-MOD-003)*~~ Deferred per `EXEC-9` — no `Block` rows are produced in MVP.
 - **INV-M2.** A `Report` with `status = open` has been resolved within 30 days, otherwise an SRE alert fires. *(operational, NFR-RELI-005)*
 - **INV-M3.** A user in `banned` or `suspended_for_false_reports` cannot create new `Report`s. *(FR-MOD-010)*
 
@@ -353,7 +355,7 @@ Operations that span aggregates execute within a single transaction at the appli
 
 - **Closure (with recipient)**: writes to `Post`, `Recipient`, `User.items_given_count`, `User.items_received_count`, `Notification` (queued), `AuditEvent`.
 - **Reopen**: writes to `Post`, deletes `Recipient` if any, decrements counters, `AuditEvent`.
-- **Block**: writes to `Block`, deletes `FollowEdge` (both directions), drops pending `FollowRequest`, `AuditEvent`.
+- **Block** _(deferred per `EXEC-9` — listed for post-MVP restoration)_: writes to `Block`, deletes `FollowEdge` (both directions), drops pending `FollowRequest`, `AuditEvent`.
 - **Privacy → Public**: writes to `User.privacy_mode`, batch-updates `FollowRequest.status` to `accepted`, queues a fan-out of `Notification`s, `AuditEvent`.
 - **Account deletion**: writes `User.account_status = deleted`, hard-deletes owned `Post`/`MediaAsset`s, retains `Message`s with placeholder, hard-deletes `FollowEdge`/`FollowRequest`, creates `DeletedIdentifier`, `AuditEvent`.
 

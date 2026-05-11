@@ -1,5 +1,5 @@
 // app/packages/infrastructure-supabase/src/users/follow/getFollowState.ts
-// Single-round-trip probe for FR-FOLLOW-011 state derivation. Runs five
+// Single-round-trip probe for FR-FOLLOW-011 state derivation. Runs four
 // targeted queries in parallel; each query reads at most a single row.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
@@ -10,7 +10,7 @@ export async function fetchFollowStateRaw(
   viewerId: string,
   targetUserId: string,
 ): Promise<FollowStateRaw> {
-  const [targetRes, edgeRes, pendingRes, cooldownRes, blockRes] = await Promise.all([
+  const [targetRes, edgeRes, pendingRes, cooldownRes] = await Promise.all([
     client
       .from('users')
       .select('user_id, privacy_mode, account_status')
@@ -39,7 +39,6 @@ export async function fetchFollowStateRaw(
       .order('cooldown_until', { ascending: false })
       .limit(1)
       .maybeSingle(),
-    client.rpc('is_blocked', { a: viewerId, b: targetUserId }),
   ]);
 
   return {
@@ -55,6 +54,5 @@ export async function fetchFollowStateRaw(
     pendingRequestExists: pendingRes.data !== null,
     cooldownUntil:
       (cooldownRes.data as { cooldown_until: string | null } | null)?.cooldown_until ?? null,
-    blocked: Boolean(blockRes.data),
   };
 }
