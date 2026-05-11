@@ -1,45 +1,21 @@
 // app/apps/mobile/src/components/profile/FollowButton.tsx
 // Five-state follow button per FR-FOLLOW-011. Hidden in self/blocked states —
 // caller must check that itself; this component renders nothing for those.
-// Mapped to: FR-FOLLOW-011.
+// Confirm dialogs render via <ConfirmActionModal /> so they work on web (where
+// react-native-web@0.21.2 makes Alert.alert a no-op).
+// Mapped to: FR-FOLLOW-011, FR-FOLLOW-002 AC1, FR-FOLLOW-004 AC1.
 
 import React from 'react';
-import { Alert, StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { FollowState } from '@kc/application';
+import { ConfirmActionModal } from '../post/ConfirmActionModal';
 
 export interface FollowButtonProps {
   state: FollowState;
   cooldownUntil?: string;
   onPress: () => void;
   busy?: boolean;
-}
-
-export function FollowButton({ state, cooldownUntil, onPress, busy }: FollowButtonProps) {
-  if (state === 'self' || state === 'blocked') return null;
-
-  const cfg = config(state, cooldownUntil);
-  const disabled = busy || cfg.disabled;
-
-  return (
-    <TouchableOpacity
-      style={[styles.btn, cfg.style, disabled && styles.btnDisabled]}
-      disabled={disabled}
-      onPress={() => {
-        if (cfg.confirm) {
-          Alert.alert(cfg.confirm.title, cfg.confirm.body, [
-            { text: 'ביטול', style: 'cancel' },
-            { text: cfg.confirm.cta, style: cfg.confirm.destructive ? 'destructive' : 'default', onPress },
-          ]);
-        } else {
-          onPress();
-        }
-      }}
-    >
-      <Text style={[styles.text, cfg.textStyle]}>{cfg.label}</Text>
-      {cfg.subtitle ? <Text style={styles.subtitle}>{cfg.subtitle}</Text> : null}
-    </TouchableOpacity>
-  );
 }
 
 interface ButtonCfg {
@@ -49,6 +25,48 @@ interface ButtonCfg {
   disabled?: boolean;
   subtitle?: string;
   confirm?: { title: string; body: string; cta: string; destructive?: boolean };
+}
+
+export function FollowButton({ state, cooldownUntil, onPress, busy }: FollowButtonProps) {
+  const [confirmOpen, setConfirmOpen] = React.useState(false);
+
+  if (state === 'self' || state === 'blocked') return null;
+
+  const cfg = config(state, cooldownUntil);
+  const disabled = busy || cfg.disabled;
+
+  const handlePress = () => {
+    if (cfg.confirm) setConfirmOpen(true);
+    else onPress();
+  };
+  const handleConfirm = () => {
+    setConfirmOpen(false);
+    onPress();
+  };
+
+  return (
+    <>
+      <TouchableOpacity
+        style={[styles.btn, cfg.style, disabled && styles.btnDisabled]}
+        disabled={disabled}
+        onPress={handlePress}
+      >
+        <Text style={[styles.text, cfg.textStyle]}>{cfg.label}</Text>
+        {cfg.subtitle ? <Text style={styles.subtitle}>{cfg.subtitle}</Text> : null}
+      </TouchableOpacity>
+      {cfg.confirm ? (
+        <ConfirmActionModal
+          visible={confirmOpen}
+          title={cfg.confirm.title}
+          message={cfg.confirm.body}
+          confirmLabel={cfg.confirm.cta}
+          destructive={Boolean(cfg.confirm.destructive)}
+          onCancel={() => setConfirmOpen(false)}
+          onConfirm={handleConfirm}
+        />
+      ) : null}
+    </>
+  );
 }
 
 function config(state: FollowState, cooldownUntil?: string): ButtonCfg {
