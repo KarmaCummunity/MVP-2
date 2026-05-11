@@ -31,7 +31,7 @@
 
 | ID | Task | Owner | Status | Spec |
 |----|------|-------|--------|------|
-| P2.1 | Personal & community statistics screen | agent-fe | ⏳ Planned | `spec/10_statistics.md` |
+| P2.1 | Personal & community statistics screen | agent-fe | ✅ Done | `spec/10_statistics.md` |
 | P2.2 | Full super-admin moderation queue | agent-be | ⏳ Planned | `spec/12_super_admin.md` |
 | P2.3 | Guest preview polish | agent-fe | ⏳ Planned | `spec/01_auth_and_onboarding.md` FR-AUTH-014 |
 
