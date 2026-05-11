@@ -6,7 +6,7 @@
 | **Last Updated** | 2026-05-11 (scope-trim — `EXEC-9` removes per-user block / unblock from MVP. TD-18 closed (block portion out of scope; report portion moves to a dedicated TD); TD-41 block-predicate-probe portion marked N/A; TD-127 rewritten — Report stays P1.3, block UI no longer exists.) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
-> Live execution state lives in [`PROJECT_STATUS.md`](./PROJECT_STATUS.md). Historical feature log lives in [`HISTORY.md`](./HISTORY.md). This file is the active debt register.
+> Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
 
 **Severity**: 🔴 High · 🟠 Med · 🟢 Low
 **ID lanes**: BE = `TD-50..99` · FE = `TD-100..149` (legacy IDs `TD-1..43` predate the lane split — keep as-is)
@@ -89,13 +89,11 @@
 
 | ID | Sev | Item | Closing slice |
 | -- | -- | ---- | ------- |
-| TD-4 | 🔴 | `docs/SSOT/CODE_QUALITY.md` referenced from SRS.md but does not exist. Author with: layer responsibilities, file-size cap policy, error mapping table, testing strategy, ADR template | Opportunistic — partly served by `srs-architecture.mdc` + this file |
 | TD-9 | 🟢 | `android/` is gitignored (CNG workflow). Must run `expo run:android` with `JAVA_HOME=.../temurin-17.jdk`. Pinned in `package.json android` script. If CI added, set `JAVA_HOME` env var there too | When CI lands |
 | TD-11 | 🟢 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (post row hidden by RLS, image paths not enumerable). Replace with per-object signed URLs (or private bucket + sign-on-fetch) at scale | Pre-launch hardening |
 | TD-30 | 🟠 | No JSDoc / TSDoc on most public exports across `domain`, `application`, `infrastructure`, mobile components | Opportunistic |
 | TD-31 | 🟠 | Test coverage limited; no tests for repos, components, infra adapters, or invariants beyond use-cases | Opportunistic |
 | TD-36 | 🟢 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit | Opportunistic |
-| TD-43 | 🟢 | `docs/SSOT/SRS.md` Last-Updated header still shows `2026-05-05`, but ACs were added on 2026-05-07 (FR-AUTH-003 AC5 — Google identity on AuthSession; FR-PROFILE-001 AC4 + AC6 — avatar/displayName fallback). One-minute fix | Opportunistic |
 
 ---
 
@@ -103,6 +101,8 @@
 
 | ID | Item | Resolved |
 | -- | -- | -- |
+| TD-4 | Missing engineering-quality reference doc — content folded into `CLAUDE.md` §5–§8 instead of authoring a separate file. | 2026-05-11 (SSOT cleanup PR) |
+| TD-43 | Stale Last-Updated header on the archived monolithic SRS file. Spec is canonical in `docs/SSOT/spec/*.md` with per-file status headers; no central SRS file remains active. | 2026-05-11 (SSOT cleanup PR) |
 | TD-1 | `database.types.ts` was a stub — Audit confirmed it's 325 LOC of real generated types | 2026-05-07 |
 | TD-7 | `apps/mobile/app/(auth)/index.tsx` and `apps/mobile/app/(tabs)/create.tsx` used `'/(tabs)/'` (trailing slash) violating `expo-router` typed-routes mode | 2026-05-06 (lint cleanup) |
 | TD-12 | Audit baseline 2026-05-07 — 49 findings → all tracked as TD-13..TD-44 | 2026-05-08 (every finding has a live owner) |
@@ -135,5 +135,5 @@
 
 1. Pick the next free ID in your lane (BE: `TD-50..99`, FE: `TD-100..149`).
 2. Add a row under the right Active section with severity, item, and closing slice.
-3. If the TD is blocking the current feature, also link it from the §4 entry in [`HISTORY.md`](./HISTORY.md) when the feature ships.
+3. If the TD is blocking the current feature, also link it from the relevant `spec/{domain}.md` AC when the feature ships.
 4. When closing: move the row to "Resolved" with a one-line resolution + date. Don't delete — the cross-reference is useful.

@@ -1,5 +1,5 @@
 #!/usr/bin/env node
-// Enforces architecture invariants declared in `.cursor/rules/srs-architecture.mdc`.
+// Enforces architecture invariants declared in `CLAUDE.md` §5.
 // Run from `app/`: `node scripts/check-architecture.mjs`. Wired into `pnpm lint`.
 // Exits non-zero on any violation.
 //
