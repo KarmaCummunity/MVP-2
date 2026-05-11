@@ -141,6 +141,18 @@ export default function EditPostScreen() {
     );
   }
 
+  if (post.status !== 'open') {
+    return (
+      <SafeAreaView style={styles.container}>
+        <EmptyState
+          icon="lock-closed-outline"
+          title="לא ניתן לערוך"
+          subtitle={post.status === 'expired' ? 'הפוסט פג תוקף. פרסם אותו מחדש כדי לערוך.' : 'הפוסט הוסר על ידי מנהל ולא ניתן לעריכה.'}
+        />
+      </SafeAreaView>
+    );
+  }
+
   const isGive = post.type === 'Give';
   const isSaving = save.isPending;
 

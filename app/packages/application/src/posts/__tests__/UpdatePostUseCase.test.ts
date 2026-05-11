@@ -57,4 +57,24 @@ describe('UpdatePostUseCase', () => {
       uc.execute({ postId: 'missing', viewerId: 'u_1', patch: { title: 'x' } }),
     ).rejects.toThrow(/not found/);
   });
+
+  it('rejects editing a non-open post (expired)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ status: 'expired' });
+    const uc = new UpdatePostUseCase(repo);
+    await expect(
+      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { title: 'שינוי' } }),
+    ).rejects.toMatchObject({ code: 'post_not_open' });
+    expect(repo.lastUpdateArgs).toBeNull();
+  });
+
+  it('rejects editing a non-open post (removed_admin)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ status: 'removed_admin' });
+    const uc = new UpdatePostUseCase(repo);
+    await expect(
+      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { title: 'שינוי' } }),
+    ).rejects.toMatchObject({ code: 'post_not_open' });
+    expect(repo.lastUpdateArgs).toBeNull();
+  });
 });

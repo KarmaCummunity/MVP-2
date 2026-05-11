@@ -21,6 +21,10 @@ export class UpdatePostUseCase {
     const current = await this.repo.findById(input.postId, input.viewerId);
     if (!current) throw new Error(`UpdatePostUseCase: post ${input.postId} not found`);
 
+    if (current.status !== 'open') {
+      throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+    }
+
     const patch = this.validate(input.patch, current.visibility);
     const post = await this.repo.update(input.postId, patch);
     return { post };
