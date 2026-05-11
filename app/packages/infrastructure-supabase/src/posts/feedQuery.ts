@@ -31,11 +31,9 @@ export function buildFeedQuery(
   if (filter.type) q = q.eq('type', filter.type);
   if (filter.categories?.length) q = q.in('category', filter.categories);
   if (filter.itemConditions?.length) q = q.in('item_condition', filter.itemConditions);
-  // Equality fallback for location filter when no radius search is needed
-  // (radius search requires the RPC path — landing in Commit 2).
-  if (filter.locationFilter) {
-    q = q.eq('city', filter.locationFilter.centerCity);
-  }
+  // locationFilter is intentionally not handled here — any valid radius
+  // request reaches us through the ranked RPC path. GetFeedUseCase already
+  // drops incoherent locationFilters (missing city / radius<=0).
 
   const decoded = decodeCursor(cursor);
   const oldestFirst = filter.sortOrder === 'oldest';

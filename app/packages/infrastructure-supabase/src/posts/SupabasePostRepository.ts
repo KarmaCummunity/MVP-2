@@ -25,6 +25,7 @@ import {
 import { mapInsertError } from './mapInsertError';
 import { decodeCursor, encodeCursor } from './cursor';
 import { buildFeedQuery } from './feedQuery';
+import { fetchRankedFeedPage, needsRankedPath } from './feedQueryRanked';
 import {
   closePost as closePostHelper,
   reopenPost as reopenPostHelper,
@@ -37,19 +38,25 @@ export class SupabasePostRepository implements IPostRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   // ── Feed ────────────────────────────────────────────────────────────────
-  // Distance-aware path (sortOrder='distance' OR locationFilter set) is wired
-  // through the `feed_ranked_ids` RPC in Commit 2 of P1.2. Until then this
-  // path handles the newest/oldest sort orders and equality filters; distance
-  // mode silently falls back to 'newest'.
+  // Two paths:
+  //   - Ranked (distance sort OR radius filter): server RPC `feed_ranked_ids`
+  //     returns ordered post_ids + distance_km; adapter fetches full rows by
+  //     IN(...) and preserves order.
+  //   - Simple (newest/oldest, equality filters only): PostgREST select-builder
+  //     with a single-field createdAt cursor.
   async getFeed(
-    _viewerId: string | null,
+    viewerId: string | null,
     filter: PostFeedFilter,
     limit: number,
     cursor?: string,
   ): Promise<FeedPage> {
     const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
-    const q = buildFeedQuery(this.client, filter, cursor, safeLimit);
 
+    if (needsRankedPath(filter)) {
+      return fetchRankedFeedPage(this.client, viewerId, filter, cursor, safeLimit);
+    }
+
+    const q = buildFeedQuery(this.client, filter, cursor, safeLimit);
     const { data, error } = await q;
     if (error) throw new Error(`getFeed: ${error.message}`);
 

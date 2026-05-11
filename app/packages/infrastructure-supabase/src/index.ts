@@ -8,6 +8,8 @@ export { SupabaseCityRepository } from './cities/SupabaseCityRepository';
 export { SupabasePostRepository } from './posts/SupabasePostRepository';
 export { SupabaseChatRepository } from './chat/SupabaseChatRepository';
 export { SupabaseChatRealtime } from './chat/SupabaseChatRealtime';
+export { SupabaseFeedRealtime } from './feed/SupabaseFeedRealtime';
+export { SupabaseStatsRepository } from './stats/SupabaseStatsRepository';
 export { SupabaseBlockRepository } from './block/SupabaseBlockRepository';
 export { SupabaseReportRepository } from './reports/SupabaseReportRepository';
 export { SupabaseDonationLinksRepository } from './donations/SupabaseDonationLinksRepository';

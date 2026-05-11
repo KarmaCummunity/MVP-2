@@ -884,6 +884,29 @@ export type Database = {
       closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }
       // FR-ADMIN-009 (0017) — manually added until next typegen run.
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
+      // P1.2 (0021, 0022) — manually added until next typegen run.
+      haversine_km: {
+        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
+        Returns: number
+      }
+      feed_ranked_ids: {
+        Args: {
+          p_viewer_id: string
+          p_filter_type?: string | null
+          p_filter_categories?: string[] | null
+          p_filter_item_conditions?: string[] | null
+          p_filter_status?: string
+          p_filter_center_city?: string | null
+          p_filter_radius_km?: number | null
+          p_sort_order?: string
+          p_proximity_sort_city?: string | null
+          p_page_limit?: number
+          p_cursor_distance?: number | null
+          p_cursor_created_at?: string | null
+          p_cursor_post_id?: string | null
+        }
+        Returns: { post_id: string; distance_km: number | null }[]
+      }
     }
     Enums: {
       [_ in never]: never
