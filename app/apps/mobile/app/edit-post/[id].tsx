@@ -2,7 +2,7 @@
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Image, Platform, ScrollView, StyleSheet,
+  ActivityIndicator, Alert, Image, Platform, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -101,8 +101,7 @@ export default function EditPostScreen() {
         // eslint-disable-next-line no-alert
         window.alert(`שמירה נכשלה: ${message}`);
       } else {
-        // eslint-disable-next-line no-alert
-        alert(`שמירה נכשלה: ${message}`);
+        Alert.alert('שמירה נכשלה', message);
       }
     },
   });
