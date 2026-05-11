@@ -32,6 +32,7 @@ export interface PostFeedFilter {
   statusFilter?: FeedStatusFilter;  // 'open' (default) | 'closed' | 'all'
   sortOrder?: FeedSortOrder;        // 'newest' (default) | 'oldest' | 'distance'
   proximitySortCity?: string;       // city_id of center for distance sort; undefined = viewer's city
+  followersOnly?: boolean;          // true = restrict to posts whose owner the viewer follows (FR-FEED-020)
 }
 
 export interface FeedPage {

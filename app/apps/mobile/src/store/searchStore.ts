@@ -28,6 +28,7 @@ interface SearchState {
   category: Category | null;
   donationCategory: DonationCategorySlug | null;
   city: string | null;
+  cityName: string | null; // display name for the city — UI-only
   sortBy: SearchSortBy;
   minFollowers: number | null;
 
@@ -35,7 +36,7 @@ interface SearchState {
   setPostType: (t: PostType | null) => void;
   setCategory: (c: Category | null) => void;
   setDonationCategory: (c: DonationCategorySlug | null) => void;
-  setCity: (c: string | null) => void;
+  setCity: (id: string | null, name: string | null) => void;
   setSortBy: (s: SearchSortBy) => void;
   setMinFollowers: (n: number | null) => void;
   clearFilters: () => void;
@@ -48,6 +49,7 @@ const DEFAULT_FILTERS = {
   category: null as Category | null,
   donationCategory: null as DonationCategorySlug | null,
   city: null as string | null,
+  cityName: null as string | null,
   sortBy: 'relevance' as SearchSortBy,
   minFollowers: null as number | null,
 };
@@ -72,7 +74,7 @@ export const useSearchStore = create<SearchState>()(
       setPostType: (postType) => set({ postType }),
       setCategory: (category) => set({ category }),
       setDonationCategory: (donationCategory) => set({ donationCategory }),
-      setCity: (city) => set({ city }),
+      setCity: (city, cityName) => set({ city, cityName }),
       setSortBy: (sortBy) => set({ sortBy }),
       setMinFollowers: (minFollowers) => set({ minFollowers }),
 

@@ -1,6 +1,7 @@
 // PostFilterSheet — bottom-sheet for the Home Feed's sort + filter affordances.
 // Mapped to SRS: FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
-// FR-FEED-006 (distance sort), FR-FEED-018 (shared component).
+// FR-FEED-006 (distance sort), FR-FEED-018 (shared component),
+// FR-FEED-020 (followers-only scope).
 //
 // State pattern: the sheet keeps a local snapshot of the store so the user
 // can preview changes; "החל" commits, "נקה" resets. This mirrors the
@@ -33,13 +34,13 @@ export interface PostFilterValue {
   type: PostType | null;
   categories: Category[];
   itemConditions: ItemCondition[];
+  /** Includes its own display name (`centerCityName`) so the picker re-hydrates correctly across reopens. */
   locationFilter: LocationFilter | null;
-  /** Display name of the location filter's center city — UI-only, never sent to the repo. */
-  locationFilterCityName: string | null;
   statusFilter: FeedStatusFilter;
   sortOrder: FeedSortOrder;
   proximitySortCity: string | null;
   proximitySortCityName: string | null;
+  followersOnly: boolean;
 }
 
 interface PostFilterSheetProps {
@@ -57,10 +58,9 @@ export function PostFilterSheet({
   onClear,
   onClose,
 }: PostFilterSheetProps) {
-  // Local snapshot — Modal stays mounted, so we re-seed via `key` from caller.
+  // Local snapshot — Modal stays mounted, so re-seed each time it opens.
   const [draft, setDraft] = useState<PostFilterValue>(initial);
 
-  // Re-seed when the modal is reopened with new external state.
   React.useEffect(() => {
     if (visible) setDraft(initial);
   }, [visible, initial]);
@@ -114,17 +114,16 @@ export function PostFilterSheet({
               categories={draft.categories}
               itemConditions={draft.itemConditions}
               statusFilter={draft.statusFilter}
+              followersOnly={draft.followersOnly}
               onTypeChange={(t) => patch('type', t)}
               onCategoriesChange={(c) => patch('categories', c)}
               onItemConditionsChange={(i) => patch('itemConditions', i)}
               onStatusFilterChange={(s) => patch('statusFilter', s)}
+              onFollowersOnlyChange={(v) => patch('followersOnly', v)}
             />
             <LocationFilterSection
               value={draft.locationFilter}
-              centerCityName={draft.locationFilterCityName}
-              onChange={(next, name) =>
-                setDraft((d) => ({ ...d, locationFilter: next, locationFilterCityName: name }))
-              }
+              onChange={(next) => patch('locationFilter', next)}
             />
           </ScrollView>
 

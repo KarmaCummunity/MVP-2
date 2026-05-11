@@ -40,14 +40,16 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
   const [donationCategory, setDonationCategory] = useState<DonationCategorySlug | null>(
     store.donationCategory,
   );
-  const [city, setCity] = useState<string | null>(store.city);
+  const [city, setCity] = useState<{ id: string; name: string } | null>(
+    store.city ? { id: store.city, name: store.cityName ?? '' } : null,
+  );
   const [sortBy, setSortBy] = useState<SearchSortBy>(store.sortBy);
 
   const handleApply = () => {
     store.setPostType(postType);
     store.setCategory(category);
     store.setDonationCategory(donationCategory);
-    store.setCity(city);
+    store.setCity(city?.id ?? null, city?.name ?? null);
     store.setSortBy(sortBy);
     onClose();
   };
@@ -165,8 +167,8 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
             {/* City */}
             <Text style={styles.sectionTitle}>{t.filterCity}</Text>
             <CityPicker
-              value={city ? { id: city, name: '' } : null}
-              onChange={(selection: { id: string; name: string }) => setCity(selection.id)}
+              value={city}
+              onChange={(selection: { id: string; name: string }) => setCity(selection)}
             />
           </ScrollView>
 

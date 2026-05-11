@@ -42,7 +42,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // belong to admin-restore RPC and feed-card menu, not search files.)
   ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-128', max: 418 }],
   ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-128', max: 646 }],
-  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 306 }],
+  // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-128 splits the file.
+  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 308 }],
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
 ]);
 

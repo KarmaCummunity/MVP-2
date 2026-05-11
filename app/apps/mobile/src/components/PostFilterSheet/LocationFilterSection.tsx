@@ -6,35 +6,33 @@ import { CityPicker } from '../CityPicker';
 
 interface LocationFilterSectionProps {
   value: LocationFilter | null;
-  centerCityName: string | null;
-  onChange: (next: LocationFilter | null, centerCityName: string | null) => void;
+  onChange: (next: LocationFilter | null) => void;
 }
 
 const DEFAULT_RADIUS_KM = 5;
 
-export function LocationFilterSection({
-  value,
-  centerCityName,
-  onChange,
-}: LocationFilterSectionProps) {
-  const cityValue =
-    value && centerCityName ? { id: value.centerCity, name: centerCityName } : null;
+export function LocationFilterSection({ value, onChange }: LocationFilterSectionProps) {
+  const cityValue = value ? { id: value.centerCity, name: value.centerCityName } : null;
   const radiusKm = value?.radiusKm ?? DEFAULT_RADIUS_KM;
 
   const handleCity = (selection: { id: string; name: string } | null) => {
     if (!selection) {
-      onChange(null, null);
+      onChange(null);
       return;
     }
-    onChange({ centerCity: selection.id, radiusKm }, selection.name);
+    onChange({
+      centerCity: selection.id,
+      centerCityName: selection.name,
+      radiusKm,
+    });
   };
 
   const handleRadius = (km: number) => {
     if (!value) return;
-    onChange({ ...value, radiusKm: km }, centerCityName);
+    onChange({ ...value, radiusKm: km });
   };
 
-  const handleClearAllCities = () => onChange(null, null);
+  const handleClearAllCities = () => onChange(null);
 
   return (
     <View style={styles.section}>

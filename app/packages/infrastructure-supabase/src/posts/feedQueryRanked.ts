@@ -51,6 +51,7 @@ export function decodeRankedCursor(raw: string | undefined): RankedCursor | null
 export function needsRankedPath(filter: PostFeedFilter): boolean {
   if (filter.sortOrder === 'distance') return true;
   if (filter.locationFilter && filter.locationFilter.radiusKm > 0) return true;
+  if (filter.followersOnly) return true;
   return false;
 }
 
@@ -77,6 +78,7 @@ export async function fetchRankedFeedPage(
     p_cursor_distance: cursorParsed?.distanceKm ?? null,
     p_cursor_created_at: cursorParsed?.createdAt ?? null,
     p_cursor_post_id: cursorParsed?.postId ?? null,
+    p_followers_only: filter.followersOnly ?? false,
   });
   if (rpcError) throw new Error(`feed_ranked_ids: ${rpcError.message}`);
 

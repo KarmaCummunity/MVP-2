@@ -103,7 +103,8 @@ export type FeedSortOrder = 'newest' | 'oldest' | 'distance';
 export type FeedStatusFilter = 'open' | 'closed' | 'all';
 
 export interface LocationFilter {
-  readonly centerCity: string;        // city_id slug
+  readonly centerCity: string;        // city_id (CBS code or slug)
+  readonly centerCityName: string;    // display name; UI-only — never sent to repo
   readonly radiusKm: number;          // > 0
 }
 
