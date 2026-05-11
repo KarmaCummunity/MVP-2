@@ -1,14 +1,14 @@
 <!--
 PR description template — keep all sections.
-The agent (or a human) fills these in. CI will block merge if "Mapped to SRS" is missing.
+The agent (or a human) fills these in. CI will block merge if "Mapped to spec" is missing.
 -->
 
 ## Summary
 <!-- 2-4 sentences: what changed and why. -->
 
-## Mapped to SRS
+## Mapped to spec
 <!-- Required. List FR-* IDs touched, or write "N/A — tooling/docs only".
-     Link to docs/SSOT/SRS/02_functional_requirements/<file>.md when applicable. -->
+     Link to docs/SSOT/spec/<file>.md when applicable. -->
 - FR-XXX-NNN — <title>
 
 ## Changes
@@ -23,15 +23,14 @@ The agent (or a human) fills these in. CI will block merge if "Mapped to SRS" is
 - [ ] Manual smoke (describe) or N/A
 
 ## Refactor logged
-<!-- Yes / No / NA. If Yes, link the PROJECT_STATUS.md §6 entry. -->
+<!-- Yes / No / NA. If Yes, link to the TECH_DEBT.md row. -->
 - NA
 
-## PROJECT_STATUS.md updated
-<!-- Required when an FR-* is touched. Tick when §2 / §3 / §4 / §1 are in sync in this PR. -->
-- [ ] §2 Backlog status flipped
-- [ ] §4 Completed Features Log entry added (if Done)
-- [ ] §1 Snapshot bumped
-- [ ] §3 Sprint Board updated
+## SSOT updated
+<!-- Required when an FR-* is touched. Tick when each is in sync in this PR. -->
+- [ ] `docs/SSOT/BACKLOG.md` status flipped
+- [ ] `docs/SSOT/spec/{domain}.md` status updated (if all ACs done)
+- [ ] `docs/SSOT/TECH_DEBT.md` — closed resolved TDs / added new ones
 
 ## Risk / rollout notes
 <!-- DB migrations, RLS changes, feature flag, breaking change? Otherwise "Low risk." -->
