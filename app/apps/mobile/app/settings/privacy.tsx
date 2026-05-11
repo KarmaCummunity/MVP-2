@@ -2,13 +2,14 @@
 // FR-PROFILE-005 / FR-PROFILE-006: Public ↔ Private toggle + follow-requests entry.
 
 import React from 'react';
-import { Alert, StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { useAuthStore } from '../../src/store/authStore';
+import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { getUserRepo } from '../../src/services/userComposition';
 import {
   getUpdatePrivacyModeUseCase,
@@ -35,31 +36,29 @@ export default function PrivacyScreen() {
   });
   const pendingCount = pendingQuery.data?.requests.length ?? 0;
 
+  const [pendingTarget, setPendingTarget] = React.useState<'Private' | 'Public' | null>(null);
+  const [busyToggle, setBusyToggle] = React.useState(false);
+
   const onToggle = (next: boolean) => {
     if (!me || !user) return;
-    const goingPrivate = next === true;
-    const title = goingPrivate ? 'להפוך את הפרופיל לפרטי?' : 'להפוך את הפרופיל לציבורי?';
-    const body = goingPrivate
-      ? 'בקשות עקיבה חדשות ידרשו אישור. עוקבים קיימים יישארו (אפשר להסיר אותם ידנית). פוסטים פתוחים יישארו פתוחים. תוכלי לפרסם פוסטים חדשים לעוקבים בלבד.'
-      : 'כל הבקשות הממתינות יאושרו אוטומטית. פוסטים שפורסמו לעוקבים בלבד יישארו גלויים לכל עוקב חדש מעכשיו.';
-    Alert.alert(title, body, [
-      { text: 'ביטול', style: 'cancel' },
-      {
-        text: goingPrivate ? 'הפוך לפרטי' : 'הפוך לציבורי',
-        onPress: async () => {
-          try {
-            await getUpdatePrivacyModeUseCase().execute({
-              userId: me,
-              mode: goingPrivate ? 'Private' : 'Public',
-            });
-            qc.invalidateQueries({ queryKey: ['user-profile', me] });
-            qc.invalidateQueries({ queryKey: ['pending-requests-count', me] });
-          } catch {
-            Alert.alert('שגיאה', 'ניסיון לעדכן את מצב הפרטיות נכשל. נסו שוב.');
-          }
-        },
-      },
-    ]);
+    setPendingTarget(next ? 'Private' : 'Public');
+  };
+
+  const confirmToggle = async () => {
+    if (!me || !pendingTarget) return;
+    setBusyToggle(true);
+    try {
+      await getUpdatePrivacyModeUseCase().execute({ userId: me, mode: pendingTarget });
+      qc.invalidateQueries({ queryKey: ['user-profile', me] });
+      qc.invalidateQueries({ queryKey: ['pending-requests-count', me] });
+      setPendingTarget(null);
+    } catch {
+      // Best-effort: close the modal and let the user retry. We don't have a
+      // notify surface mounted here in MVP scope.
+      setPendingTarget(null);
+    } finally {
+      setBusyToggle(false);
+    }
   };
 
   return (
@@ -88,6 +87,17 @@ export default function PrivacyScreen() {
           </TouchableOpacity>
         ) : null}
       </View>
+      <ConfirmActionModal
+        visible={pendingTarget !== null}
+        title={pendingTarget === 'Private' ? 'להפוך את הפרופיל לפרטי?' : 'להפוך את הפרופיל לציבורי?'}
+        message={pendingTarget === 'Private'
+          ? 'בקשות עקיבה חדשות ידרשו אישור. עוקבים קיימים יישארו (אפשר להסיר אותם ידנית). פוסטים פתוחים יישארו פתוחים. תוכלי לפרסם פוסטים חדשים לעוקבים בלבד.'
+          : 'כל הבקשות הממתינות יאושרו אוטומטית. פוסטים שפורסמו לעוקבים בלבד יישארו גלויים לכל עוקב חדש מעכשיו.'}
+        confirmLabel={pendingTarget === 'Private' ? 'הפוך לפרטי' : 'הפוך לציבורי'}
+        isBusy={busyToggle}
+        onCancel={() => (busyToggle ? null : setPendingTarget(null))}
+        onConfirm={confirmToggle}
+      />
     </SafeAreaView>
   );
 }
