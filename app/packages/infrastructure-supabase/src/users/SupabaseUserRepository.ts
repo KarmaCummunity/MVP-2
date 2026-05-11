@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IUserRepository } from '@kc/application';
+import { DeleteAccountError } from '@kc/application';
 import type { OnboardingState, User } from '@kc/domain';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { searchUsers } from './searchUsers';
@@ -163,7 +164,32 @@ export class SupabaseUserRepository implements IUserRepository {
     throw NOT_IMPL('update', 'P2.4');
   }
   async delete(_userId: string): Promise<void> {
-    throw NOT_IMPL('delete', 'P2.2');
+    // Deprecated in V1 — see deleteAccountViaEdgeFunction.
+    throw NOT_IMPL('delete', 'reserved for future admin-driven delete');
+  }
+
+  async deleteAccountViaEdgeFunction(): Promise<void> {
+    const { data, error } = await this.client.functions.invoke<{
+      ok: boolean;
+      error?: 'unauthenticated' | 'suspended' | 'auth_delete_failed' | 'db_failed';
+      counts?: { posts: number; chats_anonymized: number; chats_dropped: number };
+    }>('delete-account', { method: 'POST' });
+
+    if (error) {
+      const status = (error as { context?: { status?: number } }).context?.status;
+      if (status === 401) throw new DeleteAccountError('unauthenticated', 'no valid session', error);
+      if (status === 403) throw new DeleteAccountError('suspended', 'account is suspended', error);
+      if (status === 500 && data?.error === 'auth_delete_failed') {
+        throw new DeleteAccountError('auth_delete_failed', 'DB cleaned but auth survived', error);
+      }
+      if (status == null) throw new DeleteAccountError('network', error.message, error);
+      throw new DeleteAccountError('server_error', error.message, error);
+    }
+    if (data?.ok === true) return;
+    if (data?.error === 'auth_delete_failed') {
+      throw new DeleteAccountError('auth_delete_failed', 'DB cleaned but auth survived');
+    }
+    throw new DeleteAccountError('server_error', `unexpected response: ${JSON.stringify(data)}`);
   }
   async follow(followerId: string, followedId: string) {
     return followEdge(this.client, followerId, followedId);
