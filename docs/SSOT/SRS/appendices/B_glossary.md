@@ -26,7 +26,7 @@ This appendix is paired with [`03_domain_model.md`](../03_domain_model.md), whic
 
 **Auto-removal.** The automatic transition of a content target to a hidden state once it accumulates 3 distinct reports (`FR-MOD-005`).
 
-**Block.** A directed relationship that bilaterally hides two users from each other across all surfaces (`FR-MOD-003`).
+**Block.** _(Deferred post-MVP per `EXEC-9`.)_ A directed relationship that bilaterally hides two users from each other across all surfaces (`FR-MOD-003`). The DB schema (`public.blocks` + `is_blocked()`) is in place but unpopulated in MVP.
 
 **Closed (delivered).** The terminal state of a `Post` after a successful closure with a recipient marked (`closed_delivered`).
 
@@ -261,7 +261,9 @@ This section formalizes every persistent field of the MVP. Lengths and types are
 | `delivered_at` | timestamptz? |  |
 | `read_at` | timestamptz? |  |
 
-### B.2.11 `Block`
+### B.2.11 `Block` — deferred per `EXEC-9`
+
+> Schema retained in `0003_init_following_blocking.sql`; no writer in MVP. Fields documented for post-MVP restoration.
 
 | Field | Type | Notes |
 | ----- | ---- | ----- |

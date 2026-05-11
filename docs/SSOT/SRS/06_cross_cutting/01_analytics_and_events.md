@@ -182,10 +182,12 @@ Each event lists `Properties` and `KPIs supported`.
 #### `auto_remove_triggered`
 - **Properties.** `target_type`, `target_id_hash`, `report_count: int`. *(Server-emitted.)*
 
-#### `block_user`
+#### ~~`block_user`~~ — deferred per `EXEC-9`
+Not emitted in MVP. Restored when block is reintroduced post-MVP.
 - **Properties.** `from_surface ∈ {profile, post, chat}`.
 
-#### `unblock_user`
+#### ~~`unblock_user`~~ — deferred per `EXEC-9`
+Not emitted in MVP. Restored when block is reintroduced post-MVP.
 - **Properties.** *(no extras)*.
 
 ### Stats

@@ -12,10 +12,11 @@ The user-facing safety mechanisms:
 
 - Reporting a post, profile, comment, or chat conversation.
 - Reporting a general issue from Settings (support thread to Super Admin).
-- Blocking and unblocking users.
 - Auto-removal after 3 reports on the same target.
 - False-report sanctions (graduated suspensions).
 - Suspect-flag pipeline that surfaces problematic content for admin review.
+
+> **Out of MVP scope (per `EXEC-9`, 2026-05-11).** Per-user blocking / unblocking and bilateral block-based visibility filtering are deferred post-MVP. The specs for `FR-MOD-003`, `FR-MOD-004`, and `FR-MOD-009` below are retained for reference and carry a `DEPRECATED — post-MVP` banner.
 
 The Super Admin's actions on reports (restore, manual ban, manual delete) are documented in [`12_super_admin.md`](./12_super_admin.md).
 
@@ -63,7 +64,9 @@ A user files a support / bug / feedback report from Settings, which becomes a ch
 
 ---
 
-## FR-MOD-003 — Block a user
+## FR-MOD-003 — Block a user — **DEPRECATED (post-MVP)**
+
+**Status.** ⚠️ Out of MVP scope per `EXEC-9` (2026-05-11). No UI, use case, port, or adapter ships in MVP. The DB schema (`public.blocks` table, `is_blocked()` / `has_blocked()` predicates) remains in migrations `0003`/`0004`/`0005` but stays unpopulated. Restored when post-MVP block work is greenlit.
 
 **Description.**
 A user blocks another user.
@@ -88,14 +91,16 @@ A user blocks another user.
 
 ---
 
-## FR-MOD-004 — Unblock a user
+## FR-MOD-004 — Unblock a user — **DEPRECATED (post-MVP)**
+
+**Status.** ⚠️ Out of MVP scope per `EXEC-9` (2026-05-11). `D-11` (Unblock restores visibility) is superseded.
 
 **Description.**
 A user removes a block via the Blocked Users screen.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.5, `05_Screen_UI_Mapping.md` §5.3.
-- Decisions: `D-11`.
+- Decisions: `D-11` (superseded by `EXEC-9`).
 
 **Acceptance Criteria.**
 - AC1. The Blocked Users screen lists every active `Block` with avatar, name, and an "Unblock" button.
@@ -155,7 +160,7 @@ The "Report" entry in the profile `⋮` menu opens the Report modal with `target
 
 **Acceptance Criteria.**
 - AC1. Same modal as `FR-MOD-001`.
-- AC2. Reporting a user does not automatically block them; the user must explicitly tap "Block".
+- AC2. Reporting a user does not perform any other action; submission is a no-op outside the report row + auto-removal counter (`FR-MOD-005`). (`EXEC-9` removed the "must explicitly tap Block" follow-up from MVP scope.)
 
 ---
 
@@ -176,7 +181,9 @@ A virtual queue surfaces posts that need attention before reaching the auto-remo
 
 ---
 
-## FR-MOD-009 — Mutual filtering of blocked users
+## FR-MOD-009 — Mutual filtering of blocked users — **DEPRECATED (post-MVP)**
+
+**Status.** ⚠️ Out of MVP scope per `EXEC-9` (2026-05-11). The DB-level `is_blocked()` / `has_blocked()` predicates remain in place but always return `false` because no UI populates `public.blocks`; visibility filters that reference them stay correct (no rows ⇒ no exclusions).
 
 **Description.**
 The system enforces full bilateral invisibility between blocked pairs across all surfaces.
@@ -242,7 +249,7 @@ Every moderation-relevant event is recorded.
 - Constraints: `R-MVP-Safety-3`.
 
 **Acceptance Criteria.**
-- AC1. Audited operations include: `block_user`, `unblock_user`, `report_target`, `auto_remove_target`, `manual_remove_target`, `restore_target`, `suspend_user`, `unsuspend_user`, `false_report_sanction_applied`.
+- AC1. Audited operations include: `report_target`, `auto_remove_target`, `manual_remove_target`, `restore_target`, `suspend_user`, `unsuspend_user`, `false_report_sanction_applied`. (`block_user` / `unblock_user` are reserved values in the audit schema for post-MVP block restoration — see `EXEC-9`.)
 - AC2. The audit log has columns `actor_id`, `action`, `target_type`, `target_id`, `metadata jsonb`, `created_at`.
 - AC3. Logs are append-only (no updates/deletes) and retained for 24 months.
 
@@ -255,3 +262,4 @@ Every moderation-relevant event is recorded.
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.5, Flow 9, and Decisions D-11, D-13. |
+| 0.2 | 2026-05-11 | `EXEC-9` — `FR-MOD-003`, `FR-MOD-004`, `FR-MOD-009` marked `DEPRECATED — post-MVP`. `FR-MOD-007 AC2` no longer references "Block". `FR-MOD-012 AC1` audit list drops `block_user` / `unblock_user` from MVP-required emitters. |

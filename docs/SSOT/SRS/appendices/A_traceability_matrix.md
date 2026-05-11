@@ -53,7 +53,7 @@ This matrix is the **proof of completeness**. Acceptance gate §7.2.1 requires 1
 | ---- | --------- | ------------ |
 | R-MVP-Profile-1 | Edit profile fields | `FR-PROFILE-007` |
 | R-MVP-Profile-2 | Follow / follow request semantics | `FR-FOLLOW-001`..`FR-FOLLOW-006` |
-| R-MVP-Profile-3 | Follow blocked when blocked relationship | `FR-FOLLOW-001` (edge case), `FR-MOD-009` |
+| R-MVP-Profile-3 | Follow blocked when blocked relationship | `FR-FOLLOW-001` (edge case); `FR-MOD-009` deferred per `EXEC-9` |
 | R-MVP-Profile-6 | Bio URL filter | `FR-PROFILE-014` |
 | R-MVP-Profile-7 | No algorithmic feed | `FR-FEED-001` (AC3) |
 | R-MVP-Profile-8 | No friends-only toggle | (excluded; see PRD §8) |
@@ -65,7 +65,7 @@ This matrix is the **proof of completeness**. Acceptance gate §7.2.1 requires 1
 | Rule | Statement | Satisfied by |
 | ---- | --------- | ------------ |
 | R-MVP-Privacy-1 | Address visibility per `LocationDisplayLevel` | `FR-POST-019`, `NFR-PRIV-011` |
-| R-MVP-Privacy-3 | Block bilateral invisibility & opacity | `FR-MOD-003`, `FR-MOD-009`, `NFR-PRIV-009` |
+| R-MVP-Privacy-3 | Block bilateral invisibility & opacity | `FR-MOD-003`, `FR-MOD-009`, `NFR-PRIV-009` — **all deferred post-MVP per `EXEC-9`** |
 | R-MVP-Privacy-4 | Reports are private to admin | `FR-MOD-001`, `NFR-PRIV-008` |
 | R-MVP-Privacy-4a | Issue reports do not auto-remove | `FR-MOD-002` (AC5) |
 | R-MVP-Privacy-5 | 3-report auto-remove | `FR-MOD-005` |
@@ -111,7 +111,8 @@ This matrix is the **proof of completeness**. Acceptance gate §7.2.1 requires 1
 | D-8 | Cold-start nationwide fallback | `FR-FEED-007` |
 | D-9 | First-post nudge as dismissible card | `FR-FEED-015` |
 | D-10 | Soft gate after skipped onboarding | `FR-AUTH-015` |
-| D-11 | Unblock restores visibility | `FR-MOD-004` |
+| D-11 | Unblock restores visibility | `FR-MOD-004` — superseded by `EXEC-9` |
+| EXEC-9 | Block / unblock removed from MVP | `FR-MOD-003`, `FR-MOD-004`, `FR-MOD-009`, `NFR-PRIV-009`, `INV-M1`, `FR-SETTINGS-005` (all deferred); `FR-MOD-010` relocated to P1.3 |
 | D-12 | Two-step delete confirmation | `FR-SETTINGS-012` (AC1) |
 | D-13 | Graduated false-report sanctions | `FR-MOD-010` |
 | D-14 | Deleted user → "Deleted user" placeholder | `FR-CHAT-013` |

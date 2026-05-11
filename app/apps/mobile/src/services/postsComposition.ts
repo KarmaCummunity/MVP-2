@@ -107,7 +107,7 @@ export function getReopenPostUseCase(): ReopenPostUseCase {
 
 export function getGetClosureCandidatesUseCase(): GetClosureCandidatesUseCase {
   if (!_getClosureCandidates) {
-    _getClosureCandidates = new GetClosureCandidatesUseCase(getRepo(), getUserRepo());
+    _getClosureCandidates = new GetClosureCandidatesUseCase(getRepo());
   }
   return _getClosureCandidates;
 }
