@@ -61,29 +61,16 @@ export class SupabaseChatRepository implements IChatRepository {
       if (!needsReanchor) return rowToChat(existing.data);
 
       // chats has no client UPDATE grant / policy (see 0004 §12) — go through
-      // the SECURITY DEFINER RPC added in 0027 which validates participation
-      // and returns the updated row. The RPC name is not in database.types.ts
-      // yet (regen pending); cast through unknown to bypass the strict union.
-      const rpcResult = await (
-        this.client.rpc as unknown as (
-          fn: string,
-          args: Record<string, unknown>,
-        ) => Promise<{
-          data: Database['public']['Tables']['chats']['Row'] | Database['public']['Tables']['chats']['Row'][] | null;
-          error: unknown;
-        }>
-      )('rpc_chat_set_anchor', {
-        p_chat_id: existing.data.chat_id,
-        p_anchor_post_id: anchorPostId,
-      });
-      if (rpcResult.error) throw mapChatError(rpcResult.error as never);
-      const row = Array.isArray(rpcResult.data) ? rpcResult.data[0] : rpcResult.data;
-      if (!row) {
-        // Defensive — the RPC raises on auth/visibility errors, so a null row
-        // here means the chat was deleted between SELECT and the RPC call.
-        return rowToChat(existing.data);
-      }
-      return rowToChat(row);
+      // the SECURITY DEFINER RPC added in 0027. Cast via unknown because the
+      // RPC name is not yet in database.types.ts (regen pending).
+      type ChatRow = Database['public']['Tables']['chats']['Row'];
+      const rpcFn = this.client.rpc as unknown as (fn: string, args: Record<string, unknown>) => Promise<{ data: ChatRow | ChatRow[] | null; error: unknown }>;
+      const { data, error } = await rpcFn('rpc_chat_set_anchor', { p_chat_id: existing.data.chat_id, p_anchor_post_id: anchorPostId });
+      if (error) throw mapChatError(error as never);
+      const row = Array.isArray(data) ? data[0] : data;
+      // Defensive — RPC raises on auth/visibility errors; a null row means
+      // the chat was deleted between SELECT and the RPC call.
+      return rowToChat(row ?? existing.data);
     }
 
     const insert = await this.client
