@@ -20,7 +20,8 @@ import { container } from '../../../src/lib/container';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
-import { useOptimisticFollowAction } from '../../../src/hooks/useOptimisticFollowAction';
+import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
+import { NotifyModal } from '../../../src/components/NotifyModal';
 
 export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
@@ -74,7 +75,10 @@ export default function OtherProfileScreen() {
     </SafeAreaView>
   );
 
-  const dispatchFollowAction = useOptimisticFollowAction({ viewerId: me, target: u, handle: handle! });
+  const [error, setError] = React.useState<FollowActionError | null>(null);
+  const dispatchFollowAction = useOptimisticFollowAction({
+    viewerId: me, target: u, handle: handle!, onError: setError,
+  });
   const onFollowPress = () => {
     const s = followInfo?.state;
     if (s === 'not_following_public') dispatchFollowAction('follow');
@@ -92,7 +96,9 @@ export default function OtherProfileScreen() {
   const showLocked = u.privacyMode === 'Private' && followInfo?.state !== 'following' && !isMe;
   // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
   const followState = followInfo?.state ?? 'not_following_public';
-  const showFollowButton = Boolean(me) && !isMe;
+  // Hide the button if we couldn't derive a state (target suspended/deleted,
+  // network failure). Beats the perpetually-disabled 'busy' fallback.
+  const showFollowButton = Boolean(me) && !isMe && !stateQuery.isError;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -149,6 +155,12 @@ export default function OtherProfileScreen() {
           </>
         )}
       </ScrollView>
+      <NotifyModal
+        visible={error !== null}
+        title={error?.title ?? ''}
+        message={error?.message ?? ''}
+        onDismiss={() => setError(null)}
+      />
     </SafeAreaView>
   );
 }
