@@ -96,6 +96,21 @@ export type ReportStatus = 'open' | 'confirmed_violation' | 'dismissed_no_violat
 
 export type QueueReason = 'excessive_reopens' | 'forbidden_keyword' | 'manual_flag';
 
+// ── Feed (FR-FEED-004, 006) ──────────────────
+
+export type FeedSortOrder = 'newest' | 'oldest' | 'distance';
+
+export type FeedStatusFilter = 'open' | 'closed' | 'all';
+
+export interface LocationFilter {
+  readonly centerCity: string;        // city_id slug
+  readonly radiusKm: number;          // > 0
+}
+
+// Canonical radius options surfaced in the FilterSheet UI (FR-FEED-004).
+// Kept here as the source of truth; UI imports for the slider/picker.
+export const RADIUS_OPTIONS_KM: readonly number[] = [5, 10, 25, 50, 100] as const;
+
 // ── Address value object ──────────────────────
 
 export interface Address {

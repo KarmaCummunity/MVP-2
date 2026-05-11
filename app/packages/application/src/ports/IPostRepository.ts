@@ -2,20 +2,36 @@ import type { Post } from '@kc/domain';
 import type {
   Address,
   Category,
+  FeedSortOrder,
+  FeedStatusFilter,
   ItemCondition,
   LocationDisplayLevel,
+  LocationFilter,
   PostStatus,
   PostType,
   PostVisibility,
 } from '@kc/domain';
 
+/**
+ * Filter shape consumed by IPostRepository.getFeed.
+ * Mapped to FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
+ * FR-FEED-006 (distance sort).
+ *
+ * `searchQuery` and `city` (single-string equality) and `includeClosed` and
+ * `sortBy: 'newest'|'city'` from the prior shape were dropped:
+ *   - search bar moved off the Home Feed (the Universal Search tab owns it).
+ *   - `city` equality replaced by `locationFilter` (city + radius).
+ *   - `includeClosed` boolean expanded to `statusFilter` 3-mode.
+ *   - `sortBy: 'city'` replaced by `sortOrder: 'distance'` with Haversine.
+ */
 export interface PostFeedFilter {
   type?: PostType;
-  category?: Category;
-  city?: string;
-  includeClosed?: boolean;
-  searchQuery?: string;
-  sortBy?: 'newest' | 'city';
+  categories?: Category[];          // empty/undefined = no category filter
+  itemConditions?: ItemCondition[]; // empty/undefined = no condition filter; ignored unless type === 'Give'
+  locationFilter?: LocationFilter;  // city + radius (km); undefined = no spatial filter
+  statusFilter?: FeedStatusFilter;  // 'open' (default) | 'closed' | 'all'
+  sortOrder?: FeedSortOrder;        // 'newest' (default) | 'oldest' | 'distance'
+  proximitySortCity?: string;       // city_id of center for distance sort; undefined = viewer's city
 }
 
 export interface FeedPage {
@@ -41,6 +57,12 @@ export interface PostWithOwner extends Post {
     shareHandle: string;
     avatarUrl: string | null;
   } | null;
+  /**
+   * Great-circle distance from the proximity-sort center to this post's city.
+   * Populated only when the feed query ran with `sortOrder === 'distance'`;
+   * `null` otherwise (or when either side lacks coordinates).
+   */
+  distanceKm: number | null;
 }
 
 /** FR-CLOSURE-003 AC1/AC2 — chat-partner candidate for the recipient picker. */

@@ -24,6 +24,7 @@ import {
 } from './mapPostRow';
 import { mapInsertError } from './mapInsertError';
 import { decodeCursor, encodeCursor } from './cursor';
+import { buildFeedQuery } from './feedQuery';
 import {
   closePost as closePostHelper,
   reopenPost as reopenPostHelper,
@@ -36,6 +37,10 @@ export class SupabasePostRepository implements IPostRepository {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
   // ── Feed ────────────────────────────────────────────────────────────────
+  // Distance-aware path (sortOrder='distance' OR locationFilter set) is wired
+  // through the `feed_ranked_ids` RPC in Commit 2 of P1.2. Until then this
+  // path handles the newest/oldest sort orders and equality filters; distance
+  // mode silently falls back to 'newest'.
   async getFeed(
     _viewerId: string | null,
     filter: PostFeedFilter,
@@ -43,35 +48,7 @@ export class SupabasePostRepository implements IPostRepository {
     cursor?: string,
   ): Promise<FeedPage> {
     const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
-    const decoded = decodeCursor(cursor);
-
-    let q = this.client.from('posts').select(POST_SELECT_OWNER);
-
-    // RLS already hides removed_admin / expired / deleted_no_recipient from
-    // non-owners. Default: open-only. closed_delivered surfaces for the
-    // recipient view (FR-POST-017) and owner closed view (FR-POST-016).
-    q = filter.includeClosed
-      ? q.in('status', ['open', 'closed_delivered'])
-      : q.eq('status', 'open');
-
-    if (filter.type) q = q.eq('type', filter.type);
-    if (filter.category) q = q.eq('category', filter.category);
-    if (filter.city) q = q.eq('city', filter.city);
-
-    if (filter.searchQuery && filter.searchQuery.trim().length > 0) {
-      const escaped = filter.searchQuery.trim().replace(/[%_]/g, '\\$&');
-      q = q.ilike('title', `%${escaped}%`);
-    }
-
-    if (decoded) q = q.lt('created_at', decoded.createdAt);
-
-    if (filter.sortBy === 'city') {
-      q = q.order('city', { ascending: true }).order('created_at', { ascending: false });
-    } else {
-      q = q.order('created_at', { ascending: false });
-    }
-
-    q = q.limit(safeLimit + 1);
+    const q = buildFeedQuery(this.client, filter, cursor, safeLimit);
 
     const { data, error } = await q;
     if (error) throw new Error(`getFeed: ${error.message}`);
