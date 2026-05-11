@@ -29,7 +29,17 @@ export class FakeChatRepository implements IChatRepository {
     const existing = this.chats.find(
       (c) => c.participantIds[0] === ids[0] && c.participantIds[1] === ids[1],
     );
-    if (existing) return existing;
+    if (existing) {
+      // Re-anchor on reuse if a non-null anchor is supplied AND it differs.
+      // No-op when caller passes no anchor (e.g. inbox flow) or same anchor.
+      if (anchorPostId !== undefined && existing.anchorPostId !== anchorPostId) {
+        const idx = this.chats.indexOf(existing);
+        const updated: Chat = { ...existing, anchorPostId };
+        this.chats[idx] = updated;
+        return updated;
+      }
+      return existing;
+    }
     const chat: Chat = {
       chatId: `chat-${this.chats.length + 1}`,
       participantIds: ids,

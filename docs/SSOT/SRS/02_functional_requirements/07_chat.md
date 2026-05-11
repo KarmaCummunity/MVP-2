@@ -285,8 +285,9 @@ A sticky card at the top of the conversation surfaces the anchored post for both
 - AC3. The card is hidden entirely when the post is in any non-`open` status (`closed_delivered`, `deleted_no_recipient`, `removed_admin`, `expired`) — replacing the prior "banner when deleted" behaviour from FR-CHAT-004.
 - AC4. The card is hidden when `anchor_post_id` is null (chat opened from Other Profile, support thread, etc.).
 - AC5. Status changes propagate to the card without a manual refresh: when a `post_closed` system message (FR-CHAT-015) lands in the thread, the post query is invalidated and the card hides immediately.
+- AC6. (P1.2.x) Re-anchor on entry from a different post: when a user opens an existing chat through "💬 שלח הודעה למפרסם" from a post `Y` whose ID differs from the chat's current `anchor_post_id`, `chats.anchor_post_id` is updated to `Y` and the card reflects `Y` on the next render. When the call carries no anchor (inbox/profile flow), the existing `anchor_post_id` is left unchanged. When the anchored post is closed, `chats.anchor_post_id` is cleared by the closure trigger (see FR-CLOSURE-001 AC-NEW) so the next entry from a different post re-anchors cleanly. Realtime propagates the new row to both participants — the card swaps without a screen reload.
 
-**Related.** Screens: 4.2 · Domain: `Chat`, `Post`.
+**Related.** Screens: 4.2 · Domain: `Chat`, `Post` · Spec: `docs/superpowers/specs/2026-05-11-chat-post-anchor-lifecycle-design.md`.
 
 ---
 

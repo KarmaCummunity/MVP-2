@@ -42,7 +42,13 @@ export function useChatInit(chatId: string, userId: string) {
 
     void useChatStore
       .getState()
-      .startThreadSub(chatId, container.chatRepo, container.chatRealtime);
+      .startThreadSub(chatId, container.chatRepo, container.chatRealtime, (next) => {
+        // Chat row changed in realtime (e.g. anchor_post_id flipped because the
+        // counterpart entered from a new post, or the post anchored here just
+        // closed — see migration 0026). Refresh local state so AnchoredPostCard
+        // reflects the new anchor without requiring a screen reload.
+        if (!cancelled) setChat(next);
+      });
 
     void (async () => {
       try {
