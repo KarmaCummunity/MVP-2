@@ -2,7 +2,7 @@
 // ICityRepository — port for the Israeli-cities reference table.
 // Mapped to SRS: FR-AUTH-010 AC2 (canonical city list, no free-text).
 // Adapter lives in @kc/infrastructure-supabase.
-// docs/SSOT/SRS/02_functional_requirements/01_auth_and_onboarding.md
+// docs/SSOT/spec/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
 import type { City } from '@kc/domain';
