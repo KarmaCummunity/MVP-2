@@ -6,7 +6,7 @@
 // To add a new dead ref: extend DEAD_REFS. To allow a path to keep a ref
 // (e.g., archive content), extend EXCLUDE.
 
-import { execSync } from 'node:child_process';
+import { execFileSync } from 'node:child_process';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
@@ -34,12 +34,10 @@ const EXCLUDE = [
 ];
 
 const pattern = `(${DEAD_REFS.join('|')})`;
+const args = ['-C', REPO_ROOT, 'grep', '-nE', pattern, '--', ...EXCLUDE];
 
 try {
-  const out = execSync(
-    `git -C "${REPO_ROOT}" grep -nE '${pattern}' -- ${EXCLUDE.join(' ')}`,
-    { encoding: 'utf8' }
-  );
+  const out = execFileSync('git', args, { encoding: 'utf8' });
   if (out.trim()) {
     console.error('❌ Dead doc references found in active docs:\n');
     console.error(out);
@@ -47,6 +45,7 @@ try {
     process.exit(1);
   }
 } catch (e) {
+  // git grep exits 1 when there are no matches — that's the success path here.
   if (e.status === 1) {
     console.log('✅ No dead SSOT references');
     process.exit(0);
