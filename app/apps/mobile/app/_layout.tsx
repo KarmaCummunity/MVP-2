@@ -22,6 +22,23 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     link.href = '/favicon.ico';
     document.head.appendChild(link);
   }
+  // iOS Safari (and WebKit-based mobile browsers) zoom the viewport when a
+  // focused text control's font-size is under 16px. RN-Web maps TextInput to
+  // <input>/<textarea>; cap only on narrow viewports so desktop web typography
+  // stays unchanged. Native apps never execute this branch.
+  const mwebInputFontId = 'kc-mweb-form-16px-floor';
+  if (!document.getElementById(mwebInputFontId)) {
+    const style = document.createElement('style');
+    style.id = mwebInputFontId;
+    style.textContent = `@media (max-width: 767.98px) {
+  input:not([type="checkbox"]):not([type="radio"]):not([type="range"]):not([type="hidden"]),
+  textarea,
+  select {
+    font-size: 16px !important;
+  }
+}`;
+    document.head.appendChild(style);
+  }
 }
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
