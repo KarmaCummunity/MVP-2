@@ -24,6 +24,37 @@ Append-only history. **Newest at top.** Compact bullet format: SRS IDs · branch
 
 ---
 
+## 2026-05-11 — P2.2 Delete Account V1 (FR-SETTINGS-012 partial)
+
+**SRS:** FR-SETTINGS-012 partial (V1: immediate hard-delete + chat retention; AC2.c soft-delete / AC2.d cooldown / AC3 purge / AC4 email → V1.1). New AC8: suspended/banned users cannot self-delete (moderation-evasion gate).
+**Branch / PR:** `claude/priceless-nightingale-bc8397`.
+**Tests:** 171 vitest passing (3 new — `DeleteAccountUseCase` covering success, suspended propagation, no-retry on `auth_delete_failed`) · tsc clean across all 5 packages · browser preview verified: modal opens, typed-confirm gate works (delete button disabled until "מחק" matches), cancel closes cleanly, console errors clean after the `direction` → `writingDirection` RN-Web fix.
+**TD deltas:** TD opened for V1.1 — orphan storage cleanup for `post-images` (public-read bucket → privacy concern until cron lands), confirmation email infra, cooldown table, soft-delete recovery window.
+
+Why: existing "מחק חשבון" button in settings had an empty stub onPress; users could not actually delete their accounts. Council-reviewed spec across 4 dimensions (security/RLS/UX/architecture) before implementation.
+
+Architecture: two-migration backend (chat FK + RLS NULL-safe rewrites; SECURITY DEFINER RPC) + Edge Function orchestrator + Clean-Architecture-aligned application use case + 6-state modal.
+
+Backend (immediate-delete with chat retention via FK SET NULL):
+- Migration 0028 — `chats.participant_a/b` → `ON DELETE SET NULL`, allow NULL, add `chats_at_least_one_participant` CHECK, NULL-tolerant `chats_canonical_order`, rewrite `is_chat_visible_to` with `IS DISTINCT FROM` (NULL-safe), rewrite `messages_insert_user` / `messages_update_status_recipient` / `chats_insert_self` from `auth.uid() IN (a,b)` to `OR`-of-equalities. Surviving participant retains chat access; deleted side renders as "משתמש שנמחק".
+- Migration 0029 — `delete_account_data()` SECURITY DEFINER RPC with no parameter (uses `auth.uid()` only). Explicit `revoke execute from public` + `grant to authenticated` (closes the council-flagged anon-callable hole). `auth.uid() is null` check + `account_status in ('suspended_for_false_reports','suspended_admin','banned')` block. Cleans: devices, follow_edges, follow_requests, blocks, reports, donation_links (submitted_by + hidden_by NULL-out), auth_identities, posts (cascade → recipients/media_assets), then NULLs participants in chats (orphan chats deleted first via the CHECK constraint). Audit row written with `metadata.actor_id_snapshot` to preserve traceability after the `actor_id` FK cascade-nulls it. Idempotent early-return for retries. Extends `audit_events.action` CHECK with `'delete_account'`.
+
+Edge Function `delete-account`:
+- Verifies JWT server-side via `userClient.auth.getUser()` (not raw claim parsing — council-flagged). Order: RPC → storage cleanup (`post-images` + `avatars` buckets — fixed from spec's wrong `media` name) → `auth.admin.deleteUser()`. Distinguishes `auth_delete_failed` status code so the client knows DB is clean but auth survived. Split into `cors.ts` + `auth.ts` + `index.ts` (80 lines) to stay under the 200-line cap.
+
+Application + UI:
+- `DeleteAccountUseCase` at `packages/application/src/auth/` (project convention — feature folders, throw `DeleteAccountError`, no `Result<>`).
+- `IUserRepository.deleteAccountViaEdgeFunction()` new port method (old `delete(userId)` kept as `@deprecated` for a future admin-driven delete pattern, mirroring `IPostRepository.delete` vs `adminRemove`).
+- `DeleteAccountConfirmModal` with 6 states: idle / ready / submitting / error_recoverable (dismissible) / **error_critical (non-dismissible, no tap-outside, no Android back)** / blocked_suspended. Typed-confirm field requires "מחק" before the delete button enables. Copy emphasizes that chats remain visible to counterparts ("ההודעות שכתבת" not just "the messages"), avoiding the "betrayal" framing.
+- `DeleteAccountSuccessOverlay` — 1.5s fullscreen "חשבונך נמחק. תודה שהיית חלק מקארמה." before `signOut` + `router.replace('/(auth)')`.
+- `Chat.participantIds` widened to `[string | null, string | null]` in `@kc/domain`; downstream consumers (`rowMappers`, `getMyChats`, `SupabaseChatRepository.getCounterpart`, `AnchoredPostCard`) handle null gracefully.
+
+Council-flagged issues all fixed before code: (1) anon-callable RPC closed via `revoke from public`. (2) `target_user_id` param removed — uses `auth.uid()` only. (3) JWT properly verified server-side. (4) `'post-images'` bucket name (not `'media'`) + avatar cleanup added. (5) `actor_id_snapshot` in metadata (the FK cascade-nulls `actor_id` mid-RPC). (6) `donation_links.submitted_by` typo fixed + `hidden_by` NULL-out (otherwise super-admin self-delete blocked by FK violation). (7) Suspended/banned moderation-evasion gate. (8) RLS NULL-poisoning fixed by rewriting all four policies + `is_chat_visible_to`. (9) UseCase location matches project convention (`auth/` not `use-cases/`). (10) `Promise<void>` + throw, not `Result<>`. (11) Modal `error_critical` non-dismissible. (12) Component flat in `components/` (no `settings/` subfolder).
+
+Local supabase probe + Edge Function smoke test skipped (no Docker on dev machine); the migrations + Edge Function will be applied via supabase deploy on merge.
+
+---
+
 ## 2026-05-11 — P1.2.y Realtime rejoin fix
 
 **SRS:** FR-FEED-009 (defect in shipped feature — no AC change); FR-CHAT-003/011/012 latent same-class defect prevented.

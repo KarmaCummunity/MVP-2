@@ -224,6 +224,18 @@ The user permanently deletes their own account.
 
 **Related.** Domain: `User`, `Post`, `Chat`, `FollowEdge`, `DeletedIdentifier`.
 
+**V1 implementation note (P1.x portion of P2.2):**
+V1 ships as **immediate hard-deletion** rather than soft-delete + cooldown. The user's `auth.users` row is removed so the email / Google identity is freed for re-signup as a **new** account. Chats are retained on the counterpart side via `chats.participant_a/b` → `on delete set null` (migration 0028), with the deleted side rendered as "משתמש שנמחק". A typed confirmation step ("מחק") satisfies the spirit of AC1 without forcing display-name entry on RTL mobile.
+
+The following AC items are **deferred to V1.1**:
+- AC2.c (soft-delete + anonymization of `User` row)
+- AC2.d (`DeletedIdentifier` cooldown — FR-AUTH-016)
+- AC3 (30-day hard-purge cron)
+- AC4 (deletion confirmation email — FR-NOTIF-012)
+
+**New AC8 — Suspended/banned users cannot self-delete.**
+If `account_status in ('suspended_for_false_reports','suspended_admin','banned')` the RPC returns `suspended` and the modal shows a blocked-state with copy directing the user to dispute through reports. Prevents moderation evasion until FR-AUTH-016 cooldown lands.
+
 ---
 
 ## FR-SETTINGS-013 — Read-only contact change
@@ -245,3 +257,4 @@ The MVP does not allow self-service phone/email changes; the Settings screen exp
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.5 and Decisions D-5, D-12, D-14. |
+| 0.3 | 2026-05-11 | FR-SETTINGS-012: V1 note + AC8 (suspended block). |

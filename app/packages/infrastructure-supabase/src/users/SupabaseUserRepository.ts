@@ -7,6 +7,7 @@
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { IUserRepository } from '@kc/application';
+import { DeleteAccountError } from '@kc/application';
 import type { OnboardingState, User } from '@kc/domain';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { searchUsers } from './searchUsers';
@@ -163,7 +164,43 @@ export class SupabaseUserRepository implements IUserRepository {
     throw NOT_IMPL('update', 'P2.4');
   }
   async delete(_userId: string): Promise<void> {
-    throw NOT_IMPL('delete', 'P2.2');
+    // Deprecated in V1 — see deleteAccountViaEdgeFunction.
+    throw NOT_IMPL('delete', 'reserved for future admin-driven delete');
+  }
+
+  async deleteAccountViaEdgeFunction(): Promise<void> {
+    const { data, error } = await this.client.functions.invoke<{
+      ok: boolean;
+      error?: 'unauthenticated' | 'suspended' | 'auth_delete_failed' | 'db_failed';
+      counts?: { posts: number; chats_anonymized: number; chats_dropped: number };
+    }>('delete-account', { method: 'POST' });
+
+    if (error) {
+      // FunctionsHttpError: error.context is the raw Response (data is null on
+      // non-2xx, so we must parse the body ourselves to recover the typed
+      // error code). FunctionsFetchError: error.context is undefined → network.
+      const ctx = (error as { context?: Response }).context;
+      const status = ctx?.status;
+      if (status == null) throw new DeleteAccountError('network', error.message, error);
+      if (status === 401) throw new DeleteAccountError('unauthenticated', 'no valid session', error);
+      if (status === 403) throw new DeleteAccountError('suspended', 'account is suspended', error);
+      // Read the body for the auth_delete_failed signal (critical zombie state).
+      let body: { error?: string } | null = null;
+      try {
+        body = await ctx!.clone().json();
+      } catch {
+        body = null;
+      }
+      if (status === 500 && body?.error === 'auth_delete_failed') {
+        throw new DeleteAccountError('auth_delete_failed', 'DB cleaned but auth survived', error);
+      }
+      throw new DeleteAccountError('server_error', error.message, error);
+    }
+    if (data?.ok === true) return;
+    if (data?.error === 'auth_delete_failed') {
+      throw new DeleteAccountError('auth_delete_failed', 'DB cleaned but auth survived');
+    }
+    throw new DeleteAccountError('server_error', `unexpected response: ${JSON.stringify(data)}`);
   }
   async follow(followerId: string, followedId: string) {
     return followEdge(this.client, followerId, followedId);
