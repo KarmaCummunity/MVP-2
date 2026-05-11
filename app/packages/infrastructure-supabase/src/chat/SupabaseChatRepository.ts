@@ -47,7 +47,28 @@ export class SupabaseChatRepository implements IChatRepository {
       .eq('participant_b', b)
       .maybeSingle();
     if (existing.error) throw mapChatError(existing.error);
-    if (existing.data) return rowToChat(existing.data);
+
+    if (existing.data) {
+      // Re-anchor when caller supplied a non-null anchor that differs from the
+      // current value. When caller passes no anchor (inbox flow) or the same
+      // anchor, return as-is to avoid a wasted UPDATE and a spurious realtime
+      // event.
+      const needsReanchor =
+        anchorPostId !== undefined &&
+        anchorPostId !== null &&
+        existing.data.anchor_post_id !== anchorPostId;
+
+      if (!needsReanchor) return rowToChat(existing.data);
+
+      const updated = await this.client
+        .from('chats')
+        .update({ anchor_post_id: anchorPostId })
+        .eq('chat_id', existing.data.chat_id)
+        .select('*')
+        .single();
+      if (updated.error) throw mapChatError(updated.error);
+      return rowToChat(updated.data);
+    }
 
     const insert = await this.client
       .from('chats')
