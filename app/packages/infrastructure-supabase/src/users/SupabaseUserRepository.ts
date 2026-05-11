@@ -111,10 +111,11 @@ export class SupabaseUserRepository implements IUserRepository {
     city: string;
     cityName: string;
     biography: string | null;
+    avatarUrl: string | null;
   }> {
     const { data, error } = await this.client
       .from('users')
-      .select('display_name, city, city_name, biography')
+      .select('display_name, city, city_name, biography, avatar_url')
       .eq('user_id', userId)
       .single();
     if (error) throw new Error(`getEditableProfile: ${error.message}`);
@@ -124,12 +125,14 @@ export class SupabaseUserRepository implements IUserRepository {
       city: string;
       city_name: string;
       biography: string | null;
+      avatar_url: string | null;
     };
     return {
       displayName: row.display_name,
       city: row.city,
       cityName: row.city_name,
       biography: row.biography,
+      avatarUrl: row.avatar_url,
     };
   }
 

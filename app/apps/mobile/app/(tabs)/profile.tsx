@@ -56,9 +56,7 @@ export default function ProfileScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <TopBar />
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.sectionHeader}>
-          <Text style={styles.topBarTitle}>הפרופיל שלי</Text>
-        </View>
+
 
         <View style={styles.profileCard}>
           <ProfileHeader

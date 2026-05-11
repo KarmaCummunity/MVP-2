@@ -11,7 +11,7 @@ import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { PickedImage } from './imageUpload';
 import { base64ToUint8Array } from './mediaEncoding';
 
-const AVATAR_RESIZE_EDGE = 1024;
+const AVATAR_RESIZE_EDGE = 512;
 const COMPRESS = 0.85;
 const AVATAR_BUCKET = 'avatars';
 
