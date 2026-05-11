@@ -3,7 +3,7 @@
 // FR-PROFILE-009 / FR-PROFILE-010. Each row carries dynamic Follow + ⋮ "Remove follower" if self.
 
 import React from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -12,6 +12,7 @@ import { colors, radius, spacing, typography } from '@kc/ui';
 import type { User } from '@kc/domain';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { LockedPanel } from '../../../src/components/profile/LockedPanel';
+import { ConfirmActionModal } from '../../../src/components/post/ConfirmActionModal';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getUserRepo } from '../../../src/services/userComposition';
 import {
@@ -26,6 +27,8 @@ export default function FollowersListScreen() {
   const me = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
   const [search, setSearch] = React.useState('');
+  const [pendingRemove, setPendingRemove] = React.useState<User | null>(null);
+  const [busyRemove, setBusyRemove] = React.useState(false);
 
   const userQuery = useQuery({
     queryKey: ['profile-other', handle],
@@ -64,24 +67,17 @@ export default function FollowersListScreen() {
     !search || u.displayName.toLowerCase().startsWith(search.toLowerCase()),
   );
 
-  const onRemove = (follower: User) => {
-    if (!me || !isMe) return;
-    Alert.alert(
-      'להסיר עוקב?',
-      `${follower.displayName} לא יראה יותר פוסטים שיועדו לעוקבים בלבד, ולא יקבל על כך הודעה. אם הפרופיל שלך פתוח הם יוכלו לעקוב מחדש מיד; אם הוא פרטי — יצטרכו לשלוח בקשה.`,
-      [
-        { text: 'ביטול', style: 'cancel' },
-        {
-          text: 'הסר',
-          style: 'destructive',
-          onPress: async () => {
-            await getRemoveFollowerUseCase().execute({ ownerId: me, followerId: follower.userId });
-            qc.invalidateQueries({ queryKey: ['followers', me] });
-            qc.invalidateQueries({ queryKey: ['user-profile', me] });
-          },
-        },
-      ],
-    );
+  const confirmRemove = async () => {
+    if (!me || !isMe || !pendingRemove) return;
+    setBusyRemove(true);
+    try {
+      await getRemoveFollowerUseCase().execute({ ownerId: me, followerId: pendingRemove.userId });
+      qc.invalidateQueries({ queryKey: ['followers', me] });
+      qc.invalidateQueries({ queryKey: ['user-profile', me] });
+      setPendingRemove(null);
+    } finally {
+      setBusyRemove(false);
+    }
   };
 
   return (
@@ -114,13 +110,25 @@ export default function FollowersListScreen() {
               <Text style={styles.city}>{u.cityName}</Text>
             </View>
             {isMe ? (
-              <TouchableOpacity onPress={() => onRemove(u)} style={styles.menuBtn}>
+              <TouchableOpacity onPress={() => setPendingRemove(u)} style={styles.menuBtn}>
                 <Ionicons name="ellipsis-horizontal" size={18} color={colors.textSecondary} />
               </TouchableOpacity>
             ) : null}
           </TouchableOpacity>
         ))
       )}
+      <ConfirmActionModal
+        visible={pendingRemove !== null}
+        title="להסיר עוקב?"
+        message={pendingRemove
+          ? `${pendingRemove.displayName} לא יראה יותר פוסטים שיועדו לעוקבים בלבד, ולא יקבל על כך הודעה. אם הפרופיל שלך פתוח הם יוכלו לעקוב מחדש מיד; אם הוא פרטי — יצטרכו לשלוח בקשה.`
+          : ''}
+        confirmLabel="הסר"
+        destructive
+        isBusy={busyRemove}
+        onCancel={() => (busyRemove ? null : setPendingRemove(null))}
+        onConfirm={confirmRemove}
+      />
     </SafeAreaView>
   );
 }
