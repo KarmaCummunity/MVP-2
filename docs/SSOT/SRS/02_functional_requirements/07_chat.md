@@ -103,7 +103,7 @@ Conversations may be anchored to a specific post for purposes of recipient-picke
 - AC3. The Super Admin support thread (`FR-CHAT-007`) sets `is_support_thread = true` to mark it for special UI treatment in the future, even if it does not differ functionally in MVP.
 
 **Edge Cases.**
-- The anchored post is later deleted: existing messages remain, but a banner appears at the top of the thread: *"The original post is no longer available."*
+- The anchored post is later deleted, closed, removed, or expired: the anchored-post card (FR-CHAT-014) is hidden. Existing messages remain — including the system message emitted by the closure trigger (FR-CHAT-015 AC4-AC6) when the transition was a delivery-related close.
 
 **Related.** Domain: `Chat`, `Post`.
 
@@ -267,6 +267,52 @@ When one party deletes their account, the other party retains the thread with a 
 - The counterpart re-registers with the same identifier after the 30-day cooldown (`FR-AUTH-016`): they get a fresh account; the old thread does not link to them.
 
 **Related.** Domain: `Chat`, `Message`, `User`.
+
+---
+
+## FR-CHAT-014 — Anchored-post card in chat
+
+**Description.**
+A sticky card at the top of the conversation surfaces the anchored post for both participants while the post is still `open`.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.4.
+- Spec: `docs/superpowers/specs/2026-05-11-close-post-from-chat-design.md`.
+
+**Acceptance Criteria.**
+- AC1. When `Chat.anchor_post_id` is set and the referenced `Post` is in status `open`, a sticky card is shown beneath the chat header with: post-type tag, single-line title, and a right-aligned action area.
+- AC2. The owner sees a "סמן כנמסר ✓" / "סמן שקיבלתי ✓" CTA in the action area (label flips by `post.type`, matching `OwnerActionsBar`). The counterpart sees the whole card as a tap-to-open-post surface routing to `/post/[id]`.
+- AC3. The card is hidden entirely when the post is in any non-`open` status (`closed_delivered`, `deleted_no_recipient`, `removed_admin`, `expired`) — replacing the prior "banner when deleted" behaviour from FR-CHAT-004.
+- AC4. The card is hidden when `anchor_post_id` is null (chat opened from Other Profile, support thread, etc.).
+- AC5. Status changes propagate to the card without a manual refresh: when a `post_closed` system message (FR-CHAT-015) lands in the thread, the post query is invalidated and the card hides immediately.
+
+**Related.** Screens: 4.2 · Domain: `Chat`, `Post`.
+
+---
+
+## FR-CHAT-015 — Close post from chat
+
+**Description.**
+The post owner can mark the anchored post as delivered (or close without a recipient) directly from the chat, without navigating back to post detail. The chat counterpart is pre-filled as the recipient.
+
+**Source.**
+- PRD: `03_Core_Features.md` §3.4.4.
+- Spec: `docs/superpowers/specs/2026-05-11-close-post-from-chat-design.md`.
+
+**Acceptance Criteria.**
+- AC1. Tapping the CTA on the anchored-post card (FR-CHAT-014 AC2) opens the existing closure sheet (`ClosureSheet`) directly on step 2 (recipient picker) with the chat counterpart pre-selected.
+- AC2. The owner can confirm with one tap ("סמן וסגור ✓"), pick a different recipient from the candidates list, or take the no-recipient branch via "סגור בלי לסמן" — same UI as the post-screen entry point.
+- AC3. On successful close, the post transitions to `closed_delivered` (with recipient) or `deleted_no_recipient` (without); the card hides in every anchored chat; a system message is emitted to every anchored chat (AC4-AC6).
+- AC4. In the chat used for the close, delivered path: system message body is "הפוסט סומן כנמסר ✓ · תודה!".
+- AC5. In sibling chats (anchored to the same post), delivered path: system message body is "הפוסט נמסר למשתמש אחר".
+- AC6. In all anchored chats, no-recipient path: system message body is "המפרסם סגר את הפוסט — הפריט לא נמסר".
+- AC7. The fan-out in AC4-AC6 fires regardless of where the close was triggered (post detail screen, chat, or any future entry point) — implemented by an `AFTER UPDATE OF status ON posts` trigger.
+
+**Edge Cases.**
+- The owner's chat list contains chats with users who never messaged about THIS post (per the 0017 RPC relaxation). The pre-fill picks the counterpart of THIS chat, not the post's recipient-candidate list.
+- The owner reopens the post later: the card reappears (it only depends on `post.status === 'open'`). Past system messages are preserved.
+
+**Related.** Screens: 4.2 · Domain: `Chat`, `Message`, `Post`.
 
 ---
 

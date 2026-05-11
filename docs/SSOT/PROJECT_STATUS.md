@@ -4,7 +4,7 @@
 | ----- | ----- |
 | **Document Status** | SSOT — actively maintained, **mandatory update** by every agent on every feature change |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-11 (P1.2 + P1.1.2 hotfix — P1.2 ships feed discovery (TopBar filter sheet + Haversine sort + realtime banner + first-post nudge + live community counter; 2 migrations, 2 ports, 2 use cases, 18 new vitest; closes TD-26 + TD-102). P1.1.2 fixes web-only `Alert.alert` no-op across the follow surface — replaces with ConfirmActionModal + new NotifyModal; also closes Bug 1 (stale My Profile follower count) by extending optimistic surface + list invalidations.) |
+| **Last Updated** | 2026-05-11 (P1.9 — close post from chat in progress: FR-CHAT-014, FR-CHAT-015, FR-CLOSURE-001 ext.; P1.2 + P1.1.2 hotfix — P1.2 ships feed discovery (TopBar filter sheet + Haversine sort + realtime banner + first-post nudge + live community counter; 2 migrations, 2 ports, 2 use cases, 18 new vitest; closes TD-26 + TD-102). P1.1.2 fixes web-only `Alert.alert` no-op across the follow surface — replaces with ConfirmActionModal + new NotifyModal; also closes Bug 1 (stale My Profile follower count) by extending optimistic surface + list invalidations.) |
 | **Source of Truth (Requirements)** | [`SRS.md`](./SRS.md) → [`SRS/02_functional_requirements/`](./SRS/02_functional_requirements/) |
 | **Source of Truth (Product)** | [`PRD_MVP_CORE_SSOT/`](./PRD_MVP_CORE_SSOT/00_Index.md) |
 | **Active tech debt** | [`TECH_DEBT.md`](./TECH_DEBT.md) — scan before opening a PR |
@@ -32,11 +32,11 @@ This document is the **single source of truth for project execution state**. It 
 | ------ | ----- |
 | MVP completion (rough) | **~62%** (UI scaffolding + 2 auth paths + guest preview + **full onboarding** + Posts CRUD + Chat + **closure flow** + **Following + Other-User Profile** + **Feed discovery experience**; DB schema applied through 0023) |
 | Features 🟢 done | 10 (P0.1..0.6 + P3.1 + P3.4 + P4.1 + P1.8 + P1.1 + P1.2) |
-| Features 🟡 in progress | 0 |
+| Features 🟡 in progress | 1 (P1.9 — Close post from chat) |
 | Features 🔴 blocked | 0 |
 | P0 critical features remaining | 0 — all P0 shipped |
 | Test coverage | use-case tests for `auth.*` + `posts.*` + `feed.*` (incl. geo + active counter + nudge) + `chat.*` + `closure.*` + `follow.*` — **166 vitest passing** |
-| Open tech-debt items | **39 active** (3 partial), **23 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
+| Open tech-debt items | **40 active** (3 partial), **23 resolved** — see [`TECH_DEBT.md`](./TECH_DEBT.md) |
 
 ### What works end-to-end today
 
@@ -49,7 +49,7 @@ This document is the **single source of truth for project execution state**. It 
 
 ### What is in flight
 
-- (none — all P0 shipped; next priority is P1.x per §2)
+- **P1.9 — Close post from chat** (FR-CHAT-014, FR-CHAT-015, FR-CLOSURE-001 ext.) — anchored-post card in chat header + close-post-from-chat entry point + system messages on close/reopen. Spec: `docs/superpowers/specs/2026-05-11-close-post-from-chat-design.md`. Branch `claude/trusting-borg-0c25fe`.
 
 ### What is fake / stubbed
 
@@ -88,6 +88,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 | P1.6 | Personal & community stats | FR-STATS-001…004 | ⏳ Planned | |
 | P1.7 | Donations Hub + Search tab placeholder + 5-tab bottom bar | FR-DONATE-001…005, FR-FEED-016, FR-CHAT-008 (extended) | ⏳ Planned (parked pending TD-114) | Per `D-16` (2026-05-09). Wire-up of volunteer-composer → support thread deferred to a separate post-P0.5 PR once `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` are merged. |
 | P1.8 | Donation categories + community NGO link lists | FR-DONATE-006…009 | 🟢 Done (2026-05-10) | 6 new tiles (אוכל, דיור, תחבורה, ידע, חיות, רפואה) + community-curated link list per category (auto-publish + Edge-Function URL reachability). DB-backed; lists also added to existing Time/Money screens. |
+| P1.9 | Close post from chat | FR-CHAT-014, FR-CHAT-015, FR-CLOSURE-001 ext. | 🟡 In progress | Spec: [`2026-05-11-close-post-from-chat-design.md`](../superpowers/specs/2026-05-11-close-post-from-chat-design.md). Anchored-post card in chat header + close-post-from-chat entry point + system messages on close/reopen. Branch `claude/trusting-borg-0c25fe`. |
 
 ### 📊 P2 — Polish
 
@@ -121,7 +122,7 @@ Priority bands are **strict**: P0 must finish before P1 starts in earnest.
 
 | Slot | Feature | Owner | Started | Target |
 | ---- | ------- | ----- | ------- | ------ |
-| In progress | (none) | — | — | — |
+| In progress | P1.9 — Close post from chat (FR-CHAT-014, FR-CHAT-015, FR-CLOSURE-001 ext.) | agent | 2026-05-11 | 2026-05-11 |
 | Up next | P1.3 — Reports + auto-removal + false-report sanctions | — | — | — |
 
 Most recently shipped: **P1.1.2** — follow-mechanism web hotfix (Alert.alert no-op replaced with ConfirmActionModal + NotifyModal across the follow surface; My Profile follower-count now optimistic — 2026-05-11). Preceded by **P1.1.1** (follow-mechanism end-to-end audit + polish — migration 0023 + TD-125 + TD-126). Preceded by **P1.2** (Feed discovery experience — FR-FEED-004/005/006/008/009/010/014/015/018/019; TopBar filter sheet + Haversine sort + realtime banner + first-post nudge + live community counter — 2026-05-11). Preceded by **P1.1** (Following + Other-User Profile — FR-FOLLOW-001..009, 011, 012 + FR-PROFILE-002..006, 009, 010, 013 — 2026-05-11). Full log in [`HISTORY.md`](./HISTORY.md).

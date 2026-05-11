@@ -17,8 +17,8 @@ import { container } from '../../src/lib/container';
 import { ReportChatModal } from '../../src/components/ReportChatModal';
 import { ChatActionMenu } from '../../src/components/ChatActionMenu';
 import { MessageBubble } from '../../src/components/MessageBubble';
-import { AnchorDeletedBanner } from '../../src/components/AnchorDeletedBanner';
-import { useChatInit, useAnchorMissing } from '../../src/components/useChatInit';
+import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
+import { useChatInit } from '../../src/components/useChatInit';
 
 // Stable empty fallback — must NOT be inlined inside the selector. useSyncExternalStore
 // compares snapshots via Object.is; a fresh `[]` per call would trip an infinite re-render
@@ -37,7 +37,6 @@ export default function ChatScreen() {
   const [input, setInput] = useState(prefill ?? '');
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
-  const anchorMissing = useAnchorMissing(chat?.anchorPostId, userId);
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -115,7 +114,14 @@ useLayoutEffect(() => {
         style={{ flex: 1 }}
         keyboardVerticalOffset={88}
       >
-        {anchorMissing && <AnchorDeletedBanner />}
+        {chat ? (
+          <AnchoredPostCard
+            chatId={chatId}
+            anchorPostId={chat.anchorPostId}
+            viewerId={userId}
+            counterpartId={chat.participantIds[0] === userId ? chat.participantIds[1] : chat.participantIds[0]}
+          />
+        ) : null}
         <FlatList
           data={reversedMessages}
           inverted

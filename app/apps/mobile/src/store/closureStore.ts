@@ -38,7 +38,12 @@ interface ClosureState {
 }
 
 interface ClosureActions {
-  start(postId: string, ownerId: string, postType: PostType): Promise<void>;
+  start(
+    postId: string,
+    ownerId: string,
+    postType: PostType,
+    options?: { preselectedRecipientId?: string | null }
+  ): Promise<void>;
   selectRecipient(userId: string | null): void;
   setPickMode(mode: PickMode): void;
   setSearchQuery(query: string, ownerId: string): void;
@@ -73,8 +78,21 @@ let searchDebounceTimer: ReturnType<typeof setTimeout> | null = null;
 export const useClosureStore = create<ClosureState & ClosureActions>((set, get) => ({
   ...INITIAL,
 
-  async start(postId, ownerId, postType) {
-    set({ ...INITIAL, postId, postType, step: 'confirm', isBusy: true });
+  async start(postId, ownerId, postType, options) {
+    const preselect = options?.preselectedRecipientId ?? null;
+    // When the entry-point already knows the recipient (e.g. the chat anchored
+    // to this post), pre-select them AND jump straight to the picker step so
+    // the user confirms with a single tap. They can still pick a different
+    // recipient from the chat list, or hit "סגור בלי לסמן" to take the no-
+    // recipient branch.
+    set({
+      ...INITIAL,
+      postId,
+      postType,
+      step: preselect ? 'pick' : 'confirm',
+      selectedRecipientId: preselect,
+      isBusy: true,
+    });
     try {
       const candidates = await getGetClosureCandidatesUseCase().execute({ postId, ownerId });
       set({ candidates, isBusy: false });

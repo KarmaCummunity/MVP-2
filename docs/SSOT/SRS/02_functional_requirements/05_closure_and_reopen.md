@@ -26,6 +26,7 @@ The owner of an `open` post taps "Mark as Delivered" from Post Detail.
 - AC1. The action is visible only on the owner's view of an `open` post.
 - AC2. Tapping it opens **Closure Step 1** (`FR-CLOSURE-002`); no state change occurs until the user confirms.
 - AC3. Cancellation at any closure step leaves the post unchanged in `open`.
+- AC4. On successful close (regardless of trigger location — post detail screen or chat anchor card per FR-CHAT-015), the database fans out to every `Chat` with `anchor_post_id = postId` and inserts a `kind='system'` message describing the outcome. See FR-CHAT-015 AC4-AC6 for the bodies and `system_payload` schema.
 
 **Related.** Screens: 2.3, 6.4.1.
 
