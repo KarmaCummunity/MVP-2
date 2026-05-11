@@ -102,6 +102,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         city: row.city,
         cityName: row.cityName,
         biography: row.biography ?? null,
+        avatarUrl: row.avatarUrl ?? null,
       };
     },
     async dismissClosureExplainer(userId) {
