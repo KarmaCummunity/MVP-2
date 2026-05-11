@@ -15,7 +15,7 @@ export const styles = StyleSheet.create({
     padding: 20,
     maxWidth: 480,
     width: '100%',
-    direction: 'rtl',
+    writingDirection: 'rtl',
   },
   title: {
     fontSize: 22,
