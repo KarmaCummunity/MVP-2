@@ -83,14 +83,14 @@ jobs:
             The PR title subject must start with a lowercase letter
             (Conventional Commits style).
 
-      - name: Require "Mapped to SRS" line in PR body
+      - name: Require "Mapped to spec" line in PR body
         uses: actions/github-script@v7
         with:
           script: |
             const body = context.payload.pull_request.body || '';
-            if (!/Mapped to SRS/i.test(body)) {
+            if (!/Mapped to spec/i.test(body)) {
               core.setFailed(
-                'PR body is missing a "Mapped to SRS" section. ' +
+                'PR body is missing a "Mapped to spec" section. ' +
                 'See .github/PULL_REQUEST_TEMPLATE.md.'
               );
             }
