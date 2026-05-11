@@ -46,12 +46,17 @@ begin
   end if;
 
   -- For the delivered path, the recipients row was inserted earlier in the
-  -- same transaction by close_post_with_recipient (see 0015 line 77-78).
+  -- same transaction by close_post_with_recipient in 0015_closure_rpcs.sql —
+  -- the INSERT runs before the UPDATE, so the row is visible to this AFTER trigger.
   if new.status = 'closed_delivered' then
-    select recipient_user_id into v_recipient
+    -- recipients.post_id is the PK (0002 L162) — exactly one row guaranteed by
+    -- the time this AFTER trigger fires (close_post_with_recipient INSERTs the
+    -- row before the UPDATE in the same transaction). STRICT fails loudly if
+    -- that invariant is ever broken, rather than silently mislabeling all
+    -- anchored chats as siblings.
+    select recipient_user_id into strict v_recipient
     from public.recipients
-    where post_id = new.post_id
-    limit 1;
+    where post_id = new.post_id;
   else
     v_recipient := null;
   end if;
@@ -61,6 +66,13 @@ begin
     from public.chats
     where anchor_post_id = new.post_id
   loop
+    if v_chat.participant_a <> new.owner_id and v_chat.participant_b <> new.owner_id then
+      -- Defensive: posts.owner_id is immutable today and chats anchored to a post
+      -- always include the owner as one participant. Skip if data drift ever
+      -- breaks that invariant rather than emit a misdirected message.
+      continue;
+    end if;
+
     v_other := case
       when v_chat.participant_a = new.owner_id then v_chat.participant_b
       else v_chat.participant_a
