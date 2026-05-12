@@ -104,6 +104,11 @@ export class SupabaseDonationLinksRepository implements IDonationLinksRepository
     if (error) throw new DonationLinkError('network', error.message, error);
   }
 
+  async deleteById(linkId: string): Promise<void> {
+    const { error } = await this.client.from('donation_links').delete().eq('id', linkId);
+    if (error) throw new DonationLinkError('network', error.message, error);
+  }
+
   async report(linkId: string): Promise<void> {
     const { error } = await this.client.rpc('report_donation_link', { p_link_id: linkId });
     if (error) throw new DonationLinkError('network', error.message, error);

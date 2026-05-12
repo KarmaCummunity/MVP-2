@@ -1,8 +1,8 @@
-// FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009.
+// FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-006 + FR-ADMIN-009.
 // Bottom-sheet menu opened from PostMenuButton on PostDetail.
 // Items shown depend on viewer role (see spec §3).
 import { useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, Text, Pressable, StyleSheet } from 'react-native';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
 import { ConfirmActionModal } from './ConfirmActionModal';
@@ -41,7 +41,7 @@ export function PostMenuSheet({
     });
 
   const isOwner = viewerId !== null && post.ownerId === viewerId;
-  const isAdminViewingOther = isSuperAdmin && !isOwner;
+  const canEditPost = (isOwner || isSuperAdmin) && post.status === 'open';
 
   function openModal(name: Exclude<ActiveModal, null>) {
     clearError();
@@ -60,35 +60,35 @@ export function PostMenuSheet({
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-            {isOwner ? (
-              <>
-                {post.status === 'open' && (
-                  <MenuItem
-                    icon="✏️"
-                    label="ערוך פוסט"
-                    onPress={() => { onClose(); onEdit(); }}
-                  />
-                )}
-                <MenuItem
-                  icon="🗑️"
-                  label="מחק את הפוסט"
-                  destructive
-                  onPress={() => openModal('delete-owner')}
-                />
-              </>
-            ) : (
-              <>
-                <MenuItem icon="🚩" label="דווח" onPress={() => openModal('report')} />
-                {isAdminViewingOther ? (
-                  <MenuItem
-                    icon="🛡️"
-                    label="הסר כאדמין"
-                    destructive
-                    onPress={() => openModal('admin-remove')}
-                  />
-                ) : null}
-              </>
+            {isOwner ? null : (
+              <MenuItem icon="🚩" label="דווח" onPress={() => openModal('report')} />
             )}
+            {canEditPost ? (
+              <MenuItem
+                icon="✏️"
+                label="ערוך פוסט"
+                onPress={() => {
+                  onClose();
+                  onEdit();
+                }}
+              />
+            ) : null}
+            {isOwner ? (
+              <MenuItem
+                icon="🗑️"
+                label="מחק את הפוסט"
+                destructive
+                onPress={() => openModal('delete-owner')}
+              />
+            ) : null}
+            {isSuperAdmin ? (
+              <MenuItem
+                icon="🛡️"
+                label="הסר כאדמין"
+                destructive
+                onPress={() => openModal('admin-remove')}
+              />
+            ) : null}
             <MenuItem icon="✕" label="ביטול" onPress={onClose} muted />
           </Pressable>
         </Pressable>

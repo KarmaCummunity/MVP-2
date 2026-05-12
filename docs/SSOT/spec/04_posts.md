@@ -55,7 +55,7 @@ The set of required fields depends on `Post.type`.
 - AC1. For `type = Give`: `title` (≤80 chars) and at least one image are required.
 - AC2. For `type = Request`: only `title` (≤80 chars) is required.
 - AC3. For both types: `address` (city + street + number) is required (`R-MVP-Items-13`).
-- AC4. The "Publish" button is disabled until all required fields validate; disabled state surfaces inline error markers on the offending fields.
+- AC4. The "Publish" control stays tappable while required fields are incomplete; tapping it shows a short Hebrew toast listing what is still missing (instead of a disabled-looking control). When all required fields validate, publish proceeds as usual. A second "Publish" control appears at the bottom of the create form for users who scroll past the header action.
 
 **Related.** Screens: 2.4 · Domain: `Post`, `Address`.
 
@@ -162,13 +162,14 @@ The form persists its state to local storage to survive accidental closure.
 ## FR-POST-008 — Edit an existing post
 
 **Description.**
-The owner can re-open the form to edit fields of an `open` post.
+The post owner **or** the Super Admin (`users.is_super_admin = true`) can re-open the form to edit fields of an `open` post. The Super Admin uses the same screen and update path; `posts.owner_id` stays immutable on the server.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.3.5, `04_User_Flows.md` Flow 10.
 - Constraints: `R-MVP-Items-3`, `R-MVP-Privacy-9`.
 
 **Acceptance Criteria.**
+- AC0. **Authorization:** editing is allowed when `auth.uid()` is the post `owner_id` **or** `users.is_super_admin = true` for that session (re-checked by RLS on `posts` / `media_assets` updates; migration `0049_admin_post_edit_rls.sql`).
 - AC1. Editable fields: title, description, category, address, location-display level, item condition (give-only), urgency (request-only), images, **and** visibility (subject to the upgrade-only rule, `FR-POST-009`).
 - AC2. The post `type` (Give vs Request) is **not** editable in MVP; the user must delete and recreate.
 - AC3. Edits do **not** bump the post to the top of the feed; `created_at` is immutable while `updated_at` advances.
@@ -420,3 +421,4 @@ At publish time, an advisory check warns users against posting forbidden categor
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
+| 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |

@@ -1,5 +1,5 @@
 // Form state + submit for AddDonationLinkModal (FR-DONATE-008/009).
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useState } from 'react';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
 import {
   DONATION_LINK_DESCRIPTION_MAX,
@@ -31,7 +31,6 @@ export function useAddOrEditDonationLinkModal({
   const [desc, setDesc] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
-  const editIdRef = useRef<string | null>(null);
 
   const valid = useMemo(() => {
     if (!DONATION_LINK_URL_PATTERN.test(url.trim())) return false;
@@ -44,11 +43,7 @@ export function useAddOrEditDonationLinkModal({
   const isEdit = editingLink !== null;
 
   useEffect(() => {
-    if (!visible) {
-      editIdRef.current = null;
-      return;
-    }
-    editIdRef.current = editingLink?.id ?? null;
+    if (!visible) return;
     if (editingLink) {
       setUrl(editingLink.url);
       setName(editingLink.displayName);
@@ -79,11 +74,10 @@ export function useAddOrEditDonationLinkModal({
     if (!valid || submitting) return;
     setSubmitting(true);
     setErrorKey(null);
-    const editId = editIdRef.current;
     try {
-      if (editId) {
+      if (editingLink) {
         const link = await container.updateDonationLink.execute({
-          linkId: editId,
+          linkId: editingLink.id,
           categorySlug,
           url: url.trim(),
           displayName: name.trim(),
@@ -113,6 +107,7 @@ export function useAddOrEditDonationLinkModal({
     url,
     name,
     desc,
+    editingLink,
     onAdded,
     onUpdated,
     reset,

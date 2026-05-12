@@ -25,6 +25,7 @@ export function useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit }: 
 
       const isOwner = link.submittedBy === me;
       const canEditLink = isOwner || isSuperAdmin;
+      const canRemoveLink = isOwner || isSuperAdmin;
 
       if (Platform.OS === 'ios') {
         const actions: { label: string; run: () => void }[] = [
@@ -34,7 +35,7 @@ export function useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit }: 
         if (canEditLink) {
           actions.push({ label: t('donations.links.rowMenu.edit'), run: () => onEdit(link) });
         }
-        if (isOwner) {
+        if (canRemoveLink) {
           actions.push({
             label: t('donations.links.rowMenu.remove'),
             run: () => confirmRemoveDonationLink(link, onRemoved, t),
@@ -43,7 +44,7 @@ export function useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit }: 
         const cancelLabel = t('donations.addLinkModal.cancel');
         const options = [...actions.map((a) => a.label), cancelLabel];
         const cancelButtonIndex = options.length - 1;
-        const destructiveButtonIndex = isOwner ? cancelButtonIndex - 1 : undefined;
+        const destructiveButtonIndex = canRemoveLink ? cancelButtonIndex - 1 : undefined;
 
         ActionSheetIOS.showActionSheetWithOptions(
           { options, cancelButtonIndex, destructiveButtonIndex },
@@ -66,7 +67,7 @@ export function useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit }: 
       if (canEditLink) {
         buttons.push({ text: t('donations.links.rowMenu.edit'), onPress: () => onEdit(link) });
       }
-      if (isOwner) {
+      if (canRemoveLink) {
         buttons.push({
           text: t('donations.links.rowMenu.remove'),
           onPress: () => confirmRemoveDonationLink(link, onRemoved, t),

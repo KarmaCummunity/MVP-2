@@ -1,4 +1,4 @@
-// FR-POST-008, FR-POST-009, FR-POST-015 AC1. Edit form for open posts (owner only).
+// FR-POST-008, FR-POST-009, FR-POST-015 AC1, FR-ADMIN-006. Edit form for open posts (owner or super-admin).
 // FR-POST-005 — images: same picker + upload pipeline as create.
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
@@ -16,6 +16,7 @@ import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } fr
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { useAuthStore } from '../../src/store/authStore';
+import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
 import { getPostByIdUseCase, getUpdatePostUseCase } from '../../src/services/postsComposition';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
@@ -37,6 +38,7 @@ export default function EditPostScreen() {
   const router = useRouter();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
+  const isSuperAdmin = useIsSuperAdmin();
 
   const query = useQuery({
     queryKey: ['post', id, viewerId],
@@ -184,10 +186,15 @@ export default function EditPostScreen() {
   }
 
   const isOwner = viewerId !== null && post.ownerId === viewerId;
-  if (!isOwner) {
+  const canEdit = isOwner || isSuperAdmin;
+  if (!canEdit) {
     return (
       <SafeAreaView style={styles.container}>
-        <EmptyState icon="lock-closed-outline" title="אין הרשאה" subtitle="רק בעל הפוסט יכול לערוך אותו." />
+        <EmptyState
+          icon="lock-closed-outline"
+          title="אין הרשאה"
+          subtitle="רק בעל הפוסט או מנהל על יכולים לערוך אותו."
+        />
       </SafeAreaView>
     );
   }
@@ -279,7 +286,7 @@ export default function EditPostScreen() {
           <CityPicker value={city} onChange={setCity} disabled={isSaving} />
           <View style={styles.streetRow}>
             <TextInput
-              style={[styles.input, { flex: 2 }]}
+              style={[styles.input, styles.streetInputStreet]}
               value={street}
               onChangeText={setStreet}
               placeholder="רחוב"
@@ -287,7 +294,7 @@ export default function EditPostScreen() {
               textAlign="right"
             />
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={[styles.input, styles.streetInputHouse]}
               value={streetNumber}
               onChangeText={setStreetNumber}
               placeholder="מס׳"

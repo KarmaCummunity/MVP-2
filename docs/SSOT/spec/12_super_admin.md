@@ -167,7 +167,7 @@ While signed in as the Super Admin, the post detail screen exposes an "Remove as
 - This document, §10 of `docs/superpowers/specs/2026-05-10-admin-delete-post-and-post-menu-design.md`.
 
 **Acceptance Criteria.**
-- AC1. The action is hidden for non-admin sessions and for posts the admin owns (the admin sees their owner-mode menu instead).
+- AC1. The action is hidden for non-admin sessions. Super Admin also sees it on **their own** posts (alongside owner delete), so moderation is never blocked by ownership.
 - AC2. Confirms with a modal, then sets `Post.status = 'removed_admin'`. Hard delete is **not** performed.
 - AC3. Authorization is re-checked server-side via `is_admin(auth.uid())` inside a `SECURITY DEFINER` RPC; client gating is convenience only.
 - AC4. An `audit_events` row is written with `action = 'manual_remove_target'`, `actor_id`, `target_type = 'post'`, `target_id = postId`.
@@ -181,3 +181,4 @@ While signed in as the Super Admin, the post detail screen exposes an "Remove as
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
 | 0.2 | 2026-05-10 | Added FR-ADMIN-009 (manual delete from post screen). |
+| 0.3 | 2026-05-12 | `FR-ADMIN-009 AC1` — Super Admin sees *Remove as admin* on own posts too; `FR-POST-008` alignment: admin may edit any open post (RLS `0049_admin_post_edit_rls.sql`). |

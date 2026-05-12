@@ -255,3 +255,40 @@ select * from public.stats_recompute_runs order by run_id desc limit 3;
 Drift rows are visible to super-admins via RLS on `stats_drift_events` / `stats_recompute_runs`. For **NFR-RELI-005** (>0.1% drift/night), wire alerts from database logs or export `stats_drift_events` to your metrics stack.
 
 Regenerate `database.types.ts` after applying (or merge the manually added table + function stubs from `main`).
+
+---
+
+## Edge Functions — CI deploy + prod smoke (2026-05-12)
+
+**Workflow:** `.github/workflows/supabase-functions-deploy.yml`  
+**Triggers:** `push` to `main` when `supabase/functions/**` or the workflow file changes; manual **Run workflow** (`workflow_dispatch`).
+
+**GitHub:** Repository → Settings → Environments → `supabase-prod` must expose the same secrets as DB deploy:
+
+| Secret | Purpose |
+| ------ | ------- |
+| `SUPABASE_ACCESS_TOKEN` | Supabase account access token (dashboard → Account → Access tokens). |
+| `SUPABASE_PROJECT_REF` | Project ref from the dashboard URL (not `project_id` from local `config.toml`). |
+
+`SUPABASE_DB_PASSWORD` is **not** required for function deploy.
+
+**After merge:** open Actions → latest **Supabase Functions deploy** run → confirm **Deploy all Edge Functions** succeeded. If it failed: fix secrets/permissions, re-run the job or use **Run workflow**.
+
+**One-time catch-up (if prod was behind `main`):** from a machine with the CLI logged in, at repo root:
+
+```bash
+supabase link --project-ref "<SUPABASE_PROJECT_REF>"
+supabase functions deploy
+```
+
+**Smoke — donation link edit (guards against stale `validate-donation-link`):**
+
+1. As an authenticated user, open an existing donation link and change only display name; save.
+2. In SQL editor: `select id, display_name, validated_at, created_at from public.donation_links where submitted_by = '<user_id>' order by created_at desc limit 5;`  
+   Expect **one** row per logical link: the same `id` as before the edit, updated `display_name` / `validated_at` — not a second row with the same URL/category from the same edit session.
+
+### Optional — duplicate `donation_links` rows from pre-fix prod
+
+If historical bad data exists (same contributor intent, two live rows), identification is **manual** and needs product/operator judgment — do **not** bulk-delete blindly.
+
+Heuristic: same `submitted_by`, same `category_slug`, same `url`, two rows with different `created_at` (often the “edit” created an unintended INSERT). Keep the row you want to show (typically the older canonical row or the one referenced by UI); remove or soft-hide the duplicate per your data policy. Migration `0050_donation_links_purge_soft_deleted.sql` only addresses `hidden_at` / soft-delete hygiene, not this class of duplicate.

@@ -1,6 +1,6 @@
 // FR-DONATE-007/008/009 — community-curated NGO link list for a donation category.
 // Used both on the new dynamic category screen and below Time/Money screens.
-import React, { useCallback, useEffect, useMemo, useState } from 'react';
+import React, { useCallback, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
@@ -11,7 +11,6 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
-import { container } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
 import { colors } from '@kc/ui';
 import { AddDonationLinkModal } from './AddDonationLinkModal';
@@ -20,7 +19,7 @@ import { DonationLinkRow } from './DonationLinkRow';
 import { DonationLinkRowMenu } from './DonationLinkRowMenu';
 import { useDonationLinkActions } from './useDonationLinkActions';
 import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
-import { dedupeDonationLinksById } from './donationLinksListMerge';
+import { useDonationLinksListState } from './useDonationLinksListState';
 
 interface Props {
   readonly categorySlug: DonationCategorySlug;
@@ -31,34 +30,13 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
   const me = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
 
-  const [links, setLinks] = useState<DonationLink[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [errored, setErrored] = useState(false);
+  const { links, loading, errored, load, onAdded, onUpdated, onRemoved } =
+    useDonationLinksListState(categorySlug);
+
   const [modalOpen, setModalOpen] = useState(false);
   const [editingLink, setEditingLink] = useState<DonationLink | null>(null);
   const [webMenuLink, setWebMenuLink] = useState<DonationLink | null>(null);
 
-  const load = useCallback(async () => {
-    setLoading(true);
-    setErrored(false);
-    try {
-      const rows = await container.listDonationLinks.execute(categorySlug);
-      setLinks(dedupeDonationLinksById(rows));
-    } catch {
-      setErrored(true);
-    } finally {
-      setLoading(false);
-    }
-  }, [categorySlug]);
-
-  useEffect(() => {
-    load();
-  }, [load]);
-
-  const onRemoved = useCallback(
-    (id: string) => setLinks((prev) => prev.filter((l) => l.id !== id)),
-    [],
-  );
   const onEditLink = useCallback((link: DonationLink) => {
     setEditingLink(link);
     setModalOpen(true);
@@ -75,8 +53,6 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
     },
     [runNativeMenu],
   );
-  const onAdded = (link: DonationLink) =>
-    setLinks((prev) => dedupeDonationLinksById([link, ...prev.filter((l) => l.id !== link.id)]));
 
   const Header = useMemo(
     () => (
@@ -116,7 +92,7 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
       return (
         <View style={styles.empty}>
           <Text style={styles.emptyBody}>{t('donations.links.loadError')}</Text>
-          <Pressable onPress={load} style={({ pressed }) => [styles.emptyCta, pressed && styles.emptyCtaPressed]}>
+          <Pressable onPress={() => void load()} style={({ pressed }) => [styles.emptyCta, pressed && styles.emptyCtaPressed]}>
             <Text style={styles.emptyCtaText}>{t('donations.links.retry')}</Text>
           </Pressable>
         </View>
@@ -178,11 +154,7 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
           setEditingLink(null);
         }}
         onAdded={onAdded}
-        onUpdated={(link) =>
-          setLinks((prev) =>
-            dedupeDonationLinksById(prev.map((l) => (l.id === link.id ? link : l))),
-          )
-        }
+        onUpdated={onUpdated}
       />
       {webMenu}
     </View>

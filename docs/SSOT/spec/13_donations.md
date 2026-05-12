@@ -1,8 +1,8 @@
 # 2.13 Donations Hub
 
 > **Status:** ✅ Core Complete — Hub, 6 categories, donation links, Edge Function shipped.
-
-
+>
+> **Behavior update (2026-05-12)** — Donation link **remove** is a hard **`DELETE`** on `donation_links` (authorized by RLS policy `donation_links_delete_own_or_admin`); the app no longer sets `hidden_at` / `hidden_by` on remove. **Edit** must always invoke `validate-donation-link` with body field **`link_id`** set to the UUID of the row being edited so the Edge Function performs an **UPDATE**, never a second INSERT. One-time DB cleanup: migration `0050_donation_links_purge_soft_deleted.sql` deletes rows that were previously soft-hidden (`hidden_at IS NOT NULL`). עברית: מחיקה = מחיקת שורה מהטבלה; עריכה = עדכון אותה שורה ב־UUID שנבחר, לא יצירת קישור חדש.
 
 Prefix: `FR-DONATE-*`
 
@@ -152,12 +152,13 @@ The Donations Hub is extended with 6 community-driven category tiles below the e
 A reusable component renders the community-curated NGO link list for any category slug in `('time','money','food','housing','transport','knowledge','animals','medical')`. Used both on the new dynamic category screen and embedded below the existing Time and Money screens.
 
 **Acceptance Criteria.**
-- AC1. Lists rows where `donation_links.category_slug = slug AND hidden_at IS NULL`, newest first.
+- AC1. Lists rows for the slug where the row still exists and is visible: `donation_links.category_slug = slug AND hidden_at IS NULL`, newest first. (Hard-deleted rows are gone from the table; `hidden_at` remains in the schema only for legacy rows until purged.)
 - AC2. Header row shows the section title (*"עמותות וקישורים"*) and a small *"+"* icon button (32×32, primary color) on the leading RTL edge.
 - AC3. Each row shows: site favicon (with `link-outline` Ionicon fallback on image error), display name (h3), description (body, 2-line clamp), and tiny domain chip. Tap → `Linking.openURL(url)`.
 - AC4. Empty state shows a friendly message + centered *"הוספת קישור ראשון"* CTA that opens the add-link modal.
 - AC5. Loading state shows an `ActivityIndicator`; transient load failure shows an inline error + *"נסה שוב"* retry button.
 - AC6. Rows render in a non-scrolling block (`View`); the **host screen** must wrap the hub section in a vertical `ScrollView` (or equivalent) so long category lists scroll reliably on web and native. Virtualized `FlatList` for this block alone is deferred (nested scroll + unbounded height issues on RN Web).
+- AC7. After a successful **add**, **edit**, or **remove** for this category, the component **re-fetches** the list from Postgres (silent refresh: no full-screen loading swap) so the UI matches the database without manual navigation or pull-to-refresh.
 
 ---
 
@@ -175,6 +176,7 @@ Any signed-in user can submit a new donation link via a modal sheet, or **edit t
   - Performs `fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) })`. On 4xx/5xx or `405`, retries once with `GET`. Treats status `200..399` as reachable.
   - On reachability success, inserts a row with `validated_at = now()` using the service-role client and returns the inserted row.
 - AC3b. On submit (**edit**), the client calls the same Edge Function with `link_id` set to the row UUID and the same field payload; the function verifies the caller is `submitted_by` **or** `users.is_super_admin = true` for that session user, the row is visible (`hidden_at IS NULL`), `category_slug` matches the stored row, then re-checks reachability (same `checkReachable` rules as insert) and **updates** `url`, `display_name`, `description`, `validated_at` (no insert rate-limit).
+- AC3c. **Client contract (edit vs add).** While the modal is bound to an existing list row (edit mode), every successful save **must** use the update path (non-empty `link_id` in the Edge Function body). The client **must not** call the insert-only path in that mode; doing so would create a duplicate row. Implementation: submit handler derives `link_id` from the bound row’s primary key (`editingLink.id`), not from auxiliary state that can lag behind `visible`.
 - AC4. UI feedback during submit: button shows a spinner with the label *"מאמת קישור..."*; on success the modal closes and the list reflects the change; on failure an inline localized error message is shown keyed off the returned `code` (`invalid_url`, `unreachable`, `rate_limited`, `unauthorized`, `forbidden`, `network`, `unknown`).
 - AC5. Auto-publish: a successfully inserted or updated row is visible to all signed-in users immediately (no admin approval queue).
 
@@ -183,14 +185,16 @@ Any signed-in user can submit a new donation link via a modal sheet, or **edit t
 ## FR-DONATE-009 — Reporting, edit, and removal
 
 **Description.**
-Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דווח על קישור"*, and (only for the submitter) *"ערוך"* and *"מחק"*.
+Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דווח על קישור"*, *"ערוך"* (submitter **or** super-admin), and *"מחק"* (submitter **or** super-admin).
+
+**Persistence.** *"מחק"* removes the row from Postgres via **`DELETE`** (see AC4–AC5). The authenticated app uses the Supabase client `delete` on `donation_links.id`; the Edge Function is **not** involved in remove. *"ערוך"* continues to use the Edge Function update path per `FR-DONATE-008`.
 
 **Acceptance Criteria.**
 - AC1. *"פתח"* → `Linking.openURL(url)`.
 - AC2. *"דווח על קישור"* → reuses the existing get-or-create support thread (`FR-CHAT-007`) and sends a system-style message: `דיווח על קישור (donation_link:<id>) — <url>`. A success alert is shown.
-- AC3. *"ערוך"* is shown when `donation_links.submitted_by = auth.uid()` **or** the session user is super-admin (`users.is_super_admin = true`). It opens the same modal as add with fields prefilled; saving calls the Edge Function update path (`link_id`) per `FR-DONATE-008 AC3b`. On success the row updates in the list in place (no duplicate row).
-- AC4. *"מחק"* is shown only when `donation_links.submitted_by = auth.uid()`. On confirm, soft-hides the row by setting `hidden_at = now(), hidden_by = auth.uid()`. The row is removed from the local list immediately.
-- AC5. Soft-hide authorization is enforced by the `donation_links_update_own_or_admin` RLS policy (own row OR `users.is_super_admin = true`).
+- AC3. *"ערוך"* is shown when `donation_links.submitted_by = auth.uid()` **or** the session user is super-admin (`users.is_super_admin = true`). It opens the same modal as add with fields prefilled; saving calls the Edge Function update path (`link_id`) per `FR-DONATE-008 AC3b` and the client contract `FR-DONATE-008 AC3c`. On success the row updates in the list in place (no duplicate row).
+- AC4. *"מחק"* is shown when `donation_links.submitted_by = auth.uid()` **or** the session user is super-admin (`users.is_super_admin = true`). On confirm, **permanently deletes** the row (`DELETE`); the row is removed from the local list immediately. Legacy soft-hidden rows (`hidden_at IS NOT NULL`) are purged by migration `0050_donation_links_purge_soft_deleted.sql` so the table stays aligned with the UI.
+- AC5. Delete authorization is enforced by the `donation_links_delete_own_or_admin` RLS policy (own row OR `users.is_super_admin = true`). Columns `hidden_at` / `hidden_by` remain on the table for backward compatibility but are no longer written by the app remove path.
 
 ---
 
@@ -198,3 +202,7 @@ Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דו�
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-09 | Initial draft. Reintroduces Donations tab into MVP per `D-16`. Defines `FR-DONATE-001..005`. |
 | 0.4 | 2026-05-12 | `FR-DONATE-007 AC6` — list rows are always a non-virtualized block; host screens use outer `ScrollView`. `FR-DONATE-008/009` — super-admin may **edit** any donation link via Edge Function + overflow menu. |
+| 0.5 | 2026-05-12 | `FR-DONATE-009 AC4` — super-admin **remove** in row menu (native + web); matches existing `donation_links_delete_own_or_admin` RLS. |
+| 0.6 | 2026-05-12 | `FR-DONATE-009 AC4–AC5` — remove path uses hard `DELETE` (not soft-hide); migration purges historical soft-hidden rows. |
+| 0.7 | 2026-05-12 | Status banner + `FR-DONATE-008 AC3c` (client edit vs add contract); `FR-DONATE-007 AC1` + `FR-DONATE-009` description clarify DELETE vs Edge update; Hebrew summary in status. |
+| 0.8 | 2026-05-12 | `FR-DONATE-007 AC7` — silent server refetch after add/edit/remove so the list re-renders without manual reload. |

@@ -34,7 +34,7 @@ export function DonationLinkRowMenu({
 
   const isOwner = link.submittedBy === me;
   const showEdit = isOwner || isSuperAdmin;
-  const showRemove = isOwner;
+  const showRemove = isOwner || isSuperAdmin;
 
   const closeThen = (fn: () => void) => {
     onClose();

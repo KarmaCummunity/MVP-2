@@ -1,0 +1,45 @@
+name: Supabase Functions deploy
+
+# Deploys every Edge Function under supabase/functions/ so prod cannot drift
+# behind main (see TD-53 — stale validate-donation-link caused duplicate rows on edit).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'supabase/functions/**'
+      - '.github/workflows/supabase-functions-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: supabase-functions-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: supabase functions deploy
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    environment:
+      name: supabase-prod
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to remote project
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: Deploy all Edge Functions
+        run: supabase functions deploy

@@ -1,7 +1,7 @@
 // Create Post — wired to IPostRepository (P0.4-FE).
 // Mapped to: FR-POST-001..006, FR-POST-010 (delete) lives elsewhere.
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useState } from 'react';
 import {
   ActivityIndicator, Alert, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -20,6 +20,8 @@ import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { useLastAddressStore } from '../../src/store/lastAddressStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
 import { getCreatePostUseCase } from '../../src/services/postsComposition';
+import { buildCreatePostMissingFieldsToastMessage } from '../../src/lib/createPostMissingFieldsToast';
+import { useCreatePostAddressPrefill } from '../../src/hooks/useCreatePostAddressPrefill';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
@@ -38,12 +40,14 @@ export default function CreatePostScreen() {
   const { requestSoftGate } = useSoftGate();
   const ownerId = session?.userId;
 
-  // Pre-fill address from the last successfully published post (persisted via
-  // useLastAddressStore). Lazy init reads whatever's in the store at mount —
-  // for the first post in a fresh session AsyncStorage may still be hydrating;
-  // a useEffect below seeds the fields once hydration finishes (without
-  // overwriting user edits).
-  const lastAddress = useLastAddressStore.getState();
+  const {
+    city,
+    street,
+    streetNumber,
+    setCity,
+    setStreet,
+    setStreetNumber,
+  } = useCreatePostAddressPrefill(ownerId);
 
   const [type, setType] = useState<PostType>('Give');
   const [title, setTitle] = useState('');
@@ -51,34 +55,8 @@ export default function CreatePostScreen() {
   const [category, setCategory] = useState<Category>('Other');
   const [condition, setCondition] = useState<ItemCondition>('Good');
   const [urgency, setUrgency] = useState('');
-  const [city, setCity] = useState<{ id: string; name: string } | null>(
-    lastAddress.cityId && lastAddress.cityName
-      ? { id: lastAddress.cityId, name: lastAddress.cityName }
-      : null,
-  );
-  const [street, setStreet] = useState(lastAddress.street);
-  const [streetNumber, setStreetNumber] = useState(lastAddress.streetNumber);
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
-
-  // Late-hydration seed: if AsyncStorage finished loading after this screen
-  // mounted, populate the address fields from the store — but only if the user
-  // hasn't started editing them yet. The ref always points to the latest
-  // values so the subscription closure can read them when it fires.
-  const fieldsRef = useRef({ city, street, streetNumber });
-  fieldsRef.current = { city, street, streetNumber };
-  useEffect(() => {
-    const unsub = useLastAddressStore.subscribe((s) => {
-      const cur = fieldsRef.current;
-      const userUntouched =
-        cur.city === null && cur.street === '' && cur.streetNumber === '';
-      if (!userUntouched) return;
-      if (s.cityId && s.cityName) setCity({ id: s.cityId, name: s.cityName });
-      if (s.street) setStreet(s.street);
-      if (s.streetNumber) setStreetNumber(s.streetNumber);
-    });
-    return unsub;
-  }, []);
   const [visibility, setVisibility] = useState<'Public' | 'OnlyMe'>('Public');
 
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
@@ -156,21 +134,25 @@ export default function CreatePostScreen() {
 
   const isPublishing = publish.isPending || uploadingCount > 0;
 
-  // FR-POST-002 AC4: Publish stays disabled until required fields are populated.
-  // streetNumber regex is enforced server-side and surfaced via use-case +
-  // adapter mapping; we only block on presence here.
-  const isFormValid =
-    title.trim().length > 0 &&
-    city !== null &&
-    street.trim().length > 0 &&
-    streetNumber.trim().length > 0 &&
-    (!isGive || uploads.length > 0);
+  const tryPublish = () => {
+    if (isPublishing) return;
+    const missingMsg = buildCreatePostMissingFieldsToastMessage({
+      isGive,
+      title,
+      city,
+      street,
+      streetNumber,
+      uploadsLength: uploads.length,
+    });
+    if (missingMsg.length > 0) {
+      useFeedSessionStore.getState().showEphemeralToast(missingMsg, 'error', 2500);
+      return;
+    }
+    requestSoftGate(() => publish.mutate());
+  };
 
   // FR-AUTH-015: gate publish on onboarding_state. requestSoftGate runs publish
   // immediately if state !== pending_basic_info; otherwise opens the modal first.
-  const handlePublish = () => {
-    requestSoftGate(() => publish.mutate());
-  };
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -180,10 +162,10 @@ export default function CreatePostScreen() {
         </TouchableOpacity>
         <Text style={styles.headerTitle}>פוסט חדש</Text>
         <TouchableOpacity
-          style={[styles.publishBtn, (isPublishing || !isFormValid) && { opacity: 0.5 }]}
-          onPress={handlePublish}
-          disabled={isPublishing || !isFormValid}
-          accessibilityState={{ disabled: isPublishing || !isFormValid }}
+          style={styles.publishBtn}
+          onPress={tryPublish}
+          disabled={isPublishing}
+          accessibilityState={{ disabled: isPublishing }}
         >
           {isPublishing ? (
             <ActivityIndicator color={colors.textInverse} size="small" />
@@ -241,7 +223,7 @@ export default function CreatePostScreen() {
           <CityPicker value={city} onChange={setCity} disabled={isPublishing} />
           <View style={styles.streetRow}>
             <TextInput
-              style={[styles.input, { flex: 2 }]}
+              style={[styles.input, styles.streetInputStreet]}
               value={street}
               onChangeText={setStreet}
               placeholder="רחוב"
@@ -249,7 +231,7 @@ export default function CreatePostScreen() {
               textAlign="right"
             />
             <TextInput
-              style={[styles.input, { flex: 1 }]}
+              style={[styles.input, styles.streetInputHouse]}
               value={streetNumber}
               onChangeText={setStreetNumber}
               placeholder="מס׳"
@@ -334,6 +316,19 @@ export default function CreatePostScreen() {
         )}
 
         <VisibilityChooser value={visibility} onChange={setVisibility} />
+
+        <TouchableOpacity
+          style={[styles.publishBtn, styles.publishBtnFooter]}
+          onPress={tryPublish}
+          disabled={isPublishing}
+          accessibilityState={{ disabled: isPublishing }}
+        >
+          {isPublishing ? (
+            <ActivityIndicator color={colors.textInverse} size="small" />
+          ) : (
+            <Text style={styles.publishBtnText}>פרסם</Text>
+          )}
+        </TouchableOpacity>
       </ScrollView>
     </SafeAreaView>
   );
@@ -349,6 +344,7 @@ const styles = StyleSheet.create({
   headerClose: { padding: spacing.xs },
   headerTitle: { ...typography.h3, color: colors.textPrimary },
   publishBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderRadius: radius.md, minWidth: 60, alignItems: 'center' },
+  publishBtnFooter: { alignSelf: 'stretch', marginTop: spacing.md },
   publishBtnText: { ...typography.button, color: colors.textInverse },
   scroll: { flex: 1 },
   scrollContent: { padding: spacing.base, gap: spacing.base, paddingBottom: spacing['3xl'] },
@@ -368,7 +364,9 @@ const styles = StyleSheet.create({
   },
   textarea: { minHeight: 100, textAlignVertical: 'top', paddingTop: spacing.md },
   charCount: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
-  streetRow: { flexDirection: 'row', gap: spacing.sm },
+  streetRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
+  streetInputStreet: { flex: 2, minWidth: 0 },
+  streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120 },
   chips: { flexDirection: 'row' },
   chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, marginLeft: spacing.sm, backgroundColor: colors.surface },
   chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
