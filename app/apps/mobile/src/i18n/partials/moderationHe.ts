@@ -46,6 +46,17 @@ export const moderationHe = {
     ownerAutoRemoved: {
       body: 'הפוסט שלך הוסר אוטומטית בעקבות דיווחים חוזרים. אם זו טעות, ניתן לערער דרך כתובת התמיכה.',
     },
+    targetPreview: {
+      open: 'פתח',
+      postLabel: 'פוסט',
+      profileLabel: 'פרופיל',
+      hasImage: '📷 כולל תמונה',
+      reporterNoteLabel: 'הערת מדווח:',
+      evidenceLabel: 'צילום מצב מרגע הדיווח',
+      chatNote: 'דיווח על שיחה — מוצג הצד השני',
+      a11yOpenPost: 'פתח פוסט מאת ‎@{handle}',
+      a11yOpenProfile: 'פתח פרופיל של ‎@{handle}',
+    },
   },
   actions: {
     restore: '↩ שחזר',
