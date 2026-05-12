@@ -387,7 +387,7 @@ Three reinforcing reworks of the feed-and-search surface:
 
 ## D-17 — Admin report-bubble snapshot privacy floor (2026-05-12)
 
-For `messages.system_payload` snapshots taken by `reports_after_insert_apply_effects` (migration `0046_report_admin_payload_enrichment.sql`), the MVP privacy floor is the UI-layer admin-gate (`useIsSuperAdmin()`) in `ReportReceivedBubble` / `AutoRemovedBubble`. Trigger-level visibility filter (TD-59) and RTBF scrub (TD-60) deferred until: (a) a non-mobile client consumes payloads, or (b) an EU launch is on the roadmap. Council-reviewed; documented to prevent re-litigating the question.
+For `messages.system_payload` snapshots taken by `reports_after_insert_apply_effects` (migration `0047_report_admin_payload_enrichment.sql`), the MVP privacy floor is the UI-layer admin-gate (`useIsSuperAdmin()`) in `ReportReceivedBubble` / `AutoRemovedBubble`. Trigger-level visibility filter (TD-59) and RTBF scrub (TD-60) deferred until: (a) a non-mobile client consumes payloads, or (b) an EU launch is on the roadmap. Council-reviewed; documented to prevent re-litigating the question.
 
 ---
 
