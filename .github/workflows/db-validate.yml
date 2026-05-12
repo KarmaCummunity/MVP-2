@@ -52,13 +52,18 @@ jobs:
       - name: Start Supabase (applies all migrations + seed.sql)
         run: supabase start -x studio,inbucket,imgproxy,edge-runtime,realtime,storage-api
 
-      - name: Run migration-coverage tests
+      - name: Run all DB tests (supabase/tests/*.sql)
         env:
           PGPASSWORD: postgres
         run: |
-          psql -h 127.0.0.1 -p 54322 -U postgres -d postgres \
-            -v ON_ERROR_STOP=1 \
-            -f supabase/tests/migration-coverage.sql
+          set -euo pipefail
+          shopt -s nullglob
+          for f in supabase/tests/*.sql; do
+            echo "── Running $f ──"
+            psql -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+              -v ON_ERROR_STOP=1 \
+              -f "$f"
+          done
 
       - name: Stop Supabase
         if: always()
