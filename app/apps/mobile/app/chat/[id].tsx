@@ -16,6 +16,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
 import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { MessageBubble } from '../../src/components/MessageBubble';
+import { computeHandledIds } from '../../src/components/chat/system/handledIds';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
@@ -101,6 +102,10 @@ export default function ChatScreen() {
   const sendDisabled = counter === 0 || counter > MESSAGE_MAX_CHARS;
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
+  // Precompute O(1) lookup of message ids handled by a later mod_action_taken
+  // bubble (FR-MOD-010). Built once per messages render; O(1) per row.
+  const handledIds = useMemo(() => computeHandledIds(reversedMessages), [reversedMessages]);
+
   const confirmHideFromInbox = async () => {
     setHideBusy(true);
     try {
@@ -146,6 +151,7 @@ export default function ChatScreen() {
               m={item}
               mine={item.senderId === userId}
               onRetry={() => send(item.clientId, item.body)}
+              handledByLaterAction={handledIds.has(item.messageId)}
             />
           )}
         />

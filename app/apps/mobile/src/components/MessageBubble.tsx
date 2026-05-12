@@ -4,16 +4,40 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { OptimisticMessage } from '../store/chatStore';
 import { colors, typography, spacing, radius } from '@kc/ui';
+import { SystemMessageBubble } from './chat/system/SystemMessageBubble';
+
+const KNOWN_MOD_KINDS = [
+  'report_received',
+  'auto_removed',
+  'mod_action_taken',
+  'owner_auto_removed',
+] as const;
 
 export function MessageBubble({
-  m, mine, onRetry,
-}: { m: OptimisticMessage; mine: boolean; onRetry: () => void }) {
+  m, mine, onRetry, handledByLaterAction,
+}: {
+  m: OptimisticMessage;
+  mine: boolean;
+  onRetry: () => void;
+  handledByLaterAction?: boolean;
+}) {
   const [showTime, setShowTime] = useState(false);
 
-  // System messages (FR-CHAT-007 / FR-MOD-002) — neutral pill, centered, no
-  // sender bubble or read-receipt. system_payload carries structured data;
-  // body carries a Hebrew summary the trigger built.
+  // System messages (FR-CHAT-007 / FR-MOD-002) — moderation kinds delegate to
+  // SystemMessageBubble; unknown/legacy kinds keep the existing neutral pill.
   if (m.kind === 'system') {
+    const kind = (m.systemPayload as { kind?: string } | null)?.kind;
+    if (kind && (KNOWN_MOD_KINDS as readonly string[]).includes(kind)) {
+      return (
+        <SystemMessageBubble
+          messageId={m.messageId}
+          payload={m.systemPayload}
+          body={m.body}
+          createdAt={m.createdAt}
+          handledByLaterAction={handledByLaterAction ?? false}
+        />
+      );
+    }
     return (
       <View style={styles.systemWrap}>
         <View style={styles.systemPill}>
