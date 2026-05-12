@@ -1,4 +1,4 @@
-// FR-AUTH-015 modal — display_name + city, "Save and continue".
+// FR-AUTH-015 modal — display_name + city + optional address, "Save and continue".
 import React, { useState } from 'react';
 import {
   Modal,
@@ -14,9 +14,10 @@ import {
   ScrollView,
 } from 'react-native';
 import { colors, typography, spacing, radius, shadow } from '@kc/ui';
-import { CityPicker } from './CityPicker';
+import { EditProfileAddressBlock } from './EditProfileAddressBlock';
 import { useAuthStore } from '../store/authStore';
 import { getCompleteBasicInfoUseCase } from '../services/userComposition';
+import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
 
 interface Props {
   readonly visible: boolean;
@@ -29,6 +30,8 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [displayName, setDisplayName] = useState(session?.displayName ?? '');
   const [city, setCity] = useState<{ id: string; name: string } | null>(null);
+  const [street, setStreet] = useState('');
+  const [streetNumber, setStreetNumber] = useState('');
   const [saving, setSaving] = useState(false);
 
   const canSave = displayName.trim().length > 0 && city !== null && !saving;
@@ -42,12 +45,14 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
         displayName,
         cityId: city.id,
         cityName: city.name,
+        profileStreet: street,
+        profileStreetNumber: streetNumber,
       });
       setOnboardingState('pending_avatar');
       onSaved();
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', msg);
+      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(raw));
     } finally {
       setSaving(false);
     }
@@ -73,7 +78,9 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                   <Text style={styles.cancel}>ביטול</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.subtitle}>כדי להמשיך יש להזין שם ועיר.</Text>
+              <Text style={styles.subtitle}>
+                כדי להמשיך יש להזין שם ועיר. אפשר להוסיף רחוב ומספר בית (אופציונלי).
+              </Text>
 
               <View style={styles.field}>
                 <Text style={styles.label}>שם מלא</Text>
@@ -89,10 +96,15 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                 />
               </View>
 
-              <View style={styles.field}>
-                <Text style={styles.label}>עיר מגורים</Text>
-                <CityPicker value={city} onChange={setCity} disabled={saving} />
-              </View>
+              <EditProfileAddressBlock
+                city={city}
+                onCityChange={setCity}
+                street={street}
+                streetNumber={streetNumber}
+                onStreetChange={setStreet}
+                onStreetNumberChange={setStreetNumber}
+                disabled={saving}
+              />
 
               <TouchableOpacity
                 style={[styles.cta, !canSave && { opacity: 0.4 }]}

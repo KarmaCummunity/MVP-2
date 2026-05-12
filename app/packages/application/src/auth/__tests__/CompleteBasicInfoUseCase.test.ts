@@ -32,6 +32,8 @@ describe('CompleteBasicInfoUseCase', () => {
       cityName: 'חיפה',
       onboardingState: 'pending_avatar',
       basicInfoSkipped: false,
+      profileStreet: null,
+      profileStreetNumber: null,
     });
   });
 
@@ -66,5 +68,58 @@ describe('CompleteBasicInfoUseCase', () => {
     await expect(
       useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: '   ' }),
     ).rejects.toThrowError(/city/);
+  });
+
+  it('persists optional profile street + number (FR-PROFILE-007 shape)', async () => {
+    const repo = seed();
+    const useCase = new CompleteBasicInfoUseCase(repo);
+
+    await useCase.execute({
+      userId,
+      displayName: 'נווה',
+      cityId: '4000',
+      cityName: 'חיפה',
+      profileStreet: '  הרצל ',
+      profileStreetNumber: ' 12 ',
+    });
+
+    expect(repo.rows.get(userId)).toMatchObject({
+      displayName: 'נווה',
+      city: '4000',
+      cityName: 'חיפה',
+      profileStreet: 'הרצל',
+      profileStreetNumber: '12',
+      onboardingState: 'pending_avatar',
+    });
+  });
+
+  it('rejects street without number', async () => {
+    const useCase = new CompleteBasicInfoUseCase(seed());
+
+    await expect(
+      useCase.execute({
+        userId,
+        displayName: 'נווה',
+        cityId: '4000',
+        cityName: 'חיפה',
+        profileStreet: 'הרצל',
+        profileStreetNumber: '',
+      }),
+    ).rejects.toThrow('incomplete_profile_address');
+  });
+
+  it('rejects invalid profile street number', async () => {
+    const useCase = new CompleteBasicInfoUseCase(seed());
+
+    await expect(
+      useCase.execute({
+        userId,
+        displayName: 'נווה',
+        cityId: '4000',
+        cityName: 'חיפה',
+        profileStreet: 'הרצל',
+        profileStreetNumber: '12א',
+      }),
+    ).rejects.toThrow('invalid_profile_street_number');
   });
 });

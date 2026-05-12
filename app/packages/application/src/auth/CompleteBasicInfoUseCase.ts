@@ -1,12 +1,18 @@
-/** FR-AUTH-010: Validate display_name + city; advance onboarding_state pending_basic_info → pending_avatar.
- *  City id+name come from the caller (CityPicker queries public.cities); DB FK is the final guard. */
+/** FR-AUTH-010: Validate display_name + city; optional profile street/number (FR-PROFILE-007 shape);
+ *  advance onboarding_state pending_basic_info → pending_avatar.
+ *  City id+name come from the caller (CityPicker); DB FK is the final guard. */
 import type { IUserRepository } from '../ports/IUserRepository';
+
+const STREET_NUM_RE = /^\d+[A-Za-z]?$/;
 
 export interface CompleteBasicInfoInput {
   readonly userId: string;
   readonly displayName: string;
   readonly cityId: string;
   readonly cityName: string;
+  /** Optional; both trimmed non-empty required to persist (same rules as UpdateProfileUseCase). */
+  readonly profileStreet?: string;
+  readonly profileStreetNumber?: string;
 }
 
 export class CompleteBasicInfoUseCase {
@@ -23,11 +29,26 @@ export class CompleteBasicInfoUseCase {
       throw new Error('invalid_city');
     }
 
+    const st = (input.profileStreet ?? '').trim();
+    const num = (input.profileStreetNumber ?? '').trim();
+    if (st.length > 0 !== num.length > 0) {
+      throw new Error('incomplete_profile_address');
+    }
+    if (st.length > 0) {
+      if (st.length < 1 || st.length > 80) throw new Error('invalid_profile_street');
+      if (!STREET_NUM_RE.test(num)) throw new Error('invalid_profile_street_number');
+    }
+
     await this.users.setBasicInfo(input.userId, {
       displayName: trimmedName,
       city: trimmedCityId,
       cityName: trimmedCityName,
     });
+    if (st.length > 0 && num.length > 0) {
+      await this.users.setProfileAddressLines(input.userId, st, num);
+    } else {
+      await this.users.setProfileAddressLines(input.userId, null, null);
+    }
     await this.users.setOnboardingState(input.userId, 'pending_avatar');
   }
 }

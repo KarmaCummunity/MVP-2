@@ -20,11 +20,10 @@ export function EditProfileAddressBlock({
   return (
     <>
       <View style={styles.field}>
-        <Text style={styles.label}>עיר</Text>
+        <Text style={styles.label}>כתובת</Text>
         <CityPicker value={city} onChange={onCityChange} disabled={disabled} />
       </View>
       <View style={styles.field}>
-        <Text style={styles.label}>רחוב ומספר (אופציונלי)</Text>
         <View style={styles.streetRow}>
           <TextInput
             style={[styles.input, { flex: 2 }]}

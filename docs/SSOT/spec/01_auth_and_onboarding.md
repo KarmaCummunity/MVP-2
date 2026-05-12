@@ -221,7 +221,7 @@ The MVP does not allow linking multiple authentication methods to the same accou
 ## FR-AUTH-010 — Onboarding step 1: Basic Info
 
 **Description.**
-Captures `display_name` and `city` as the first onboarding step.
+Captures `display_name`, `city` (canonical picker), and optionally `profile_street` + `profile_street_number` as the first onboarding step.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.1.2, `05_Screen_UI_Mapping.md` §1.4.
@@ -230,6 +230,7 @@ Captures `display_name` and `city` as the first onboarding step.
 **Acceptance Criteria.**
 - AC1. `display_name` accepts up to 50 characters; whitespace-only is rejected.
 - AC2. `city` is a dropdown of the canonical Israeli city list seeded by the system. No free-text city.
+- AC2.b. **Optional full address (MVP+):** After choosing a city, the user may enter free-text `profile_street` (1–80 chars) and `profile_street_number` (same pattern as posts: digits with optional single Latin letter suffix, e.g. `12` or `12B`). Both must be filled together or both left empty; values persist to `users.profile_street` / `users.profile_street_number` (`FR-PROFILE-007`). Omitting them keeps city-only residence.
 - AC3. A "Skip" option exists. Skipping advances to step 2 but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`). The system also persists `users.basic_info_skipped = true` on Skip so returning sessions (cold start, app update, re-auth) **land on the Home Feed** instead of forcing the full-screen wizard again; the deferred fields are still collected only via `FR-AUTH-015` until saved.
 - AC4. SSO-prefilled values are editable and persisted upon "Continue".
 
@@ -323,14 +324,14 @@ A non-authenticated user may view a sample of the feed (3 posts) before being as
 ## FR-AUTH-015 — Soft gate before first meaningful action
 
 **Description.**
-A user whose `onboarding_state` is `pending_basic_info` and who attempts to create a post, follow another user, or send the first chat message is interrupted by a non-bypassable modal asking for `display_name` and `city`.
+A user whose `onboarding_state` is `pending_basic_info` and who attempts to create a post, follow another user, or send the first chat message is interrupted by a non-bypassable modal asking for `display_name`, `city`, and optionally `profile_street` + `profile_street_number` (same rules as `FR-AUTH-010` AC2.b).
 
 **Source.**
 - Decisions: `D-10`.
 - PRD: `03_Core_Features.md` §3.1.2 (in spirit).
 
 **Acceptance Criteria.**
-- AC1. The modal contains the same fields as Onboarding step 1 and a single "Save and continue" button.
+- AC1. The modal contains the same fields as Onboarding step 1 (`display_name`, city picker, optional street + house number) and a single "Save and continue" button.
 - AC2. Cancelling the modal returns the user to the previous screen with no side effects.
 - AC3. After save, the system continues into the originally attempted action.
 
@@ -384,3 +385,4 @@ The user can log out from the Settings screen, terminating the local session.
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.1, §3.5, and Decisions D-10, D-12. |
 | 0.2 | 2026-05-12 | `auth_check_account_gate` (migration `0046`) must treat `account_status = pending_verification` as gate-allowed so first-time Google sign-in reaches onboarding (`FR-AUTH-003`); client guard + support `mailto` template on account-blocked web. |
+| 0.3 | 2026-05-12 | `FR-AUTH-010` / `FR-AUTH-015`: optional profile street + number on step 1 and soft-gate (city picker unchanged). |

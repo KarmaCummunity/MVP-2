@@ -2,14 +2,15 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform,
+  StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
-import { CityPicker } from '../../src/components/CityPicker';
+import { EditProfileAddressBlock } from '../../src/components/EditProfileAddressBlock';
 import { useAuthStore } from '../../src/store/authStore';
 import { getCompleteBasicInfoUseCase, markBasicInfoSkipped } from '../../src/services/userComposition';
+import { mapEditProfileSaveError } from '../../src/lib/editProfileSaveErrors';
 
 export default function OnboardingBasicInfoScreen() {
   const router = useRouter();
@@ -17,6 +18,8 @@ export default function OnboardingBasicInfoScreen() {
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [displayName, setDisplayName] = useState(session?.displayName ?? '');
   const [city, setCity] = useState<{ id: string; name: string } | null>(null);
+  const [street, setStreet] = useState('');
+  const [streetNumber, setStreetNumber] = useState('');
   const [loading, setLoading] = useState(false);
 
   const canContinue = displayName.trim().length > 0 && city !== null;
@@ -34,12 +37,14 @@ export default function OnboardingBasicInfoScreen() {
         displayName,
         cityId: city.id,
         cityName: city.name,
+        profileStreet: street,
+        profileStreetNumber: streetNumber,
       });
       setOnboardingState('pending_avatar');
       router.replace('/(onboarding)/photo');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', msg);
+      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(raw));
     } finally {
       setLoading(false);
     }
@@ -56,8 +61,8 @@ export default function OnboardingBasicInfoScreen() {
       useAuthStore.getState().setBasicInfoSkipped(true);
       router.replace('/(onboarding)/photo');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', msg);
+      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(raw));
     } finally {
       setLoading(false);
     }
@@ -70,35 +75,46 @@ export default function OnboardingBasicInfoScreen() {
         style={{ flex: 1 }}
       >
         <View style={styles.content}>
-          <View style={styles.headerRow}>
-            <Text style={styles.step}>שלב 1 מתוך 3</Text>
-            <TouchableOpacity onPress={handleSkip} disabled={loading} accessibilityRole="button">
-              <Text style={styles.skip}>דלג</Text>
-            </TouchableOpacity>
-          </View>
-          <Text style={styles.title}>פרטים בסיסיים</Text>
-          <Text style={styles.subtitle}>איך נכיר אותך?</Text>
+          <ScrollView
+            style={styles.scroll}
+            contentContainerStyle={styles.scrollContent}
+            keyboardShouldPersistTaps="handled"
+          >
+            <View style={styles.headerRow}>
+              <Text style={styles.step}>שלב 1 מתוך 3</Text>
+              <TouchableOpacity onPress={handleSkip} disabled={loading} accessibilityRole="button">
+                <Text style={styles.skip}>דלג</Text>
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.title}>פרטים בסיסיים</Text>
+            <Text style={styles.subtitle}>
+              איך נכיר אותך? בחרו עיר מהרשימה; אפשר להוסיף רחוב ומספר בית (אופציונלי).
+            </Text>
 
-          <View style={styles.field}>
-            <Text style={styles.label}>שם מלא</Text>
-            <TextInput
-              style={styles.input}
-              value={displayName}
-              onChangeText={setDisplayName}
-              placeholder="לדוגמה: רינה כהן"
-              placeholderTextColor={colors.textDisabled}
-              maxLength={50}
-              textAlign="right"
-              editable={!loading}
+            <View style={styles.field}>
+              <Text style={styles.label}>שם מלא</Text>
+              <TextInput
+                style={styles.input}
+                value={displayName}
+                onChangeText={setDisplayName}
+                placeholder="לדוגמה: רינה כהן"
+                placeholderTextColor={colors.textDisabled}
+                maxLength={50}
+                textAlign="right"
+                editable={!loading}
+              />
+            </View>
+
+            <EditProfileAddressBlock
+              city={city}
+              onCityChange={setCity}
+              street={street}
+              streetNumber={streetNumber}
+              onStreetChange={setStreet}
+              onStreetNumberChange={setStreetNumber}
+              disabled={loading}
             />
-          </View>
-
-          <View style={styles.field}>
-            <Text style={styles.label}>עיר מגורים</Text>
-            <CityPicker value={city} onChange={setCity} disabled={loading} />
-          </View>
-
-          <View style={{ flex: 1 }} />
+          </ScrollView>
 
           <TouchableOpacity
             style={[styles.cta, !canContinue && { opacity: 0.4 }]}
@@ -124,8 +140,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.base,
     paddingBottom: spacing.base,
-    gap: spacing.base,
   },
+  scroll: { flex: 1 },
+  scrollContent: { gap: spacing.base, paddingBottom: spacing.lg },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   step: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   skip: { ...typography.body, color: colors.primary },
@@ -150,6 +167,7 @@ const styles = StyleSheet.create({
   },
   cta: {
     height: 52,
+    marginTop: spacing.sm,
     backgroundColor: colors.primary,
     borderRadius: radius.md,
     justifyContent: 'center',
