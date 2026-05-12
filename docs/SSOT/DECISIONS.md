@@ -385,6 +385,12 @@ Three reinforcing reworks of the feed-and-search surface:
 
 ---
 
+## D-17 — Admin report-bubble snapshot privacy floor (2026-05-12)
+
+For `messages.system_payload` snapshots taken by `reports_after_insert_apply_effects` (migration `0046_report_admin_payload_enrichment.sql`), the MVP privacy floor is the UI-layer admin-gate (`useIsSuperAdmin()`) in `ReportReceivedBubble` / `AutoRemovedBubble`. Trigger-level visibility filter (TD-59) and RTBF scrub (TD-60) deferred until: (a) a non-mobile client consumes payloads, or (b) an EU launch is on the roadmap. Council-reviewed; documented to prevent re-litigating the question.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
@@ -394,3 +400,4 @@ Three reinforcing reworks of the feed-and-search surface:
 | 0.3 | 2026-05-11 | Added `EXEC-7` (closed posts visible on other-user profile — reverses PRD §3.2.2). |
 | 0.4 | 2026-05-11 | Added `EXEC-8` (P1.2 — distance-aware feed via cities-geo Haversine + Home Feed loses its search bar + active-filter chip; Universal Search tab supersedes `FR-FEED-016` placeholder). |
 | 0.5 | 2026-05-11 | Added `EXEC-9` (Block / unblock removed from MVP scope; supersedes `D-11`; `FR-MOD-003/004/009` deprecated; `FR-MOD-010` relocated to P1.3). |
+| 0.6 | 2026-05-12 | Added `D-17` (admin report-bubble snapshot privacy floor; TD-59 + TD-60 deferred). |

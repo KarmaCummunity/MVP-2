@@ -44,6 +44,8 @@ A user reports a post, another user, a comment (none in MVP UI but reserved), or
 
 **Related.** Screens: 6.1 · Domain: `Report`.
 
+> **Implementation note (2026-05-12):** AC4 satisfied for reports created on/after migration `0046_report_admin_payload_enrichment.sql`. Admin sees a rich preview card with author handle, content snippet, and tap-to-open. Legacy rows (pre-0046) render in degraded mode (title-only).
+
 ---
 
 ## FR-MOD-002 — Report a general issue from Settings
@@ -135,6 +137,8 @@ When a content target accumulates 3 distinct reports from 3 distinct reporters, 
 - AC5. The owner of the removed target receives a notification (`FR-NOTIF-011`) — Critical category — explaining the removal in neutral language.
 
 **Related.** Domain: `Report`, `Post.status`, `User.account_status`, `Chat.hidden`.
+
+> **Implementation note (2026-05-12):** AC3 implemented in migration `0046_report_admin_payload_enrichment.sql`. Threshold breach now emits a `kind='auto_removed'` system message into the 3rd reporter's support thread, with the same enriched payload (link_target + target_preview) as `report_received`.
 
 ---
 
