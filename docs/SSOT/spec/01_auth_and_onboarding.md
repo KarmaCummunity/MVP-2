@@ -383,3 +383,4 @@ The user can log out from the Settings screen, terminating the local session.
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.1, §3.5, and Decisions D-10, D-12. |
+| 0.2 | 2026-05-12 | `auth_check_account_gate` (migration `0046`) must treat `account_status = pending_verification` as gate-allowed so first-time Google sign-in reaches onboarding (`FR-AUTH-003`); client guard + support `mailto` template on account-blocked web. |

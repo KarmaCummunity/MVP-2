@@ -2,12 +2,23 @@
 // Lives at the top level (outside the (auth) group) so a signed-out user can land
 // on it directly after the gate hook signs them out.
 import React from 'react';
-import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { colors, spacing, typography } from '@kc/ui';
 import he from '../src/i18n/he';
 
-const SUPPORT_MAIL = 'mailto:karmacommunity2.0@gmail.com';
+const SUPPORT_EMAIL = 'karmacommunity2.0@gmail.com';
+
+function openSupportMail() {
+  const { subject, body } = he.accountBlocked.supportMail;
+  const q = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
+  const url = `mailto:${SUPPORT_EMAIL}?${q}`;
+  if (Platform.OS === 'web' && globalThis.window !== undefined) {
+    globalThis.window.location.assign(url);
+    return;
+  }
+  void Linking.openURL(url);
+}
 
 type Reason = 'banned' | 'suspended_admin' | 'suspended_for_false_reports';
 
@@ -43,7 +54,7 @@ export default function AccountBlockedScreen() {
       <View style={styles.container}>
         <Text style={styles.title}>{content.title}</Text>
         <Text style={styles.body}>{body}</Text>
-        <Pressable onPress={() => Linking.openURL(SUPPORT_MAIL)}>
+        <Pressable onPress={openSupportMail}>
           <Text style={styles.cta}>{content.cta}</Text>
         </Pressable>
       </View>
