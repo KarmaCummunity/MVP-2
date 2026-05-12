@@ -2,8 +2,6 @@ import '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, useSegments } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
-import { useSingleTabEnforcement } from '../src/hooks/useSingleTabEnforcement';
-
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
 // this at module load (not inside an effect) so the first paint is already RTL.
@@ -128,8 +126,6 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
 }
 
 export default function RootLayout() {
-  useSingleTabEnforcement();
-
   useEffect(() => {
     if (!I18nManager.isRTL) {
       I18nManager.forceRTL(true);

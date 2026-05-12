@@ -11,7 +11,7 @@ import { stats } from './stats';
 
 const he = {
   // App
-  appName: 'קארמה קהילה',
+  appName: 'KC - קהילת קארמה',
 
   // Auth
   auth: {
@@ -213,7 +213,7 @@ const he = {
     devTools: 'כלי פיתוח',
     resetOnboarding: 'איפוס אונבורדינג (דיבוג)',
     resetting: 'מאפס...',
-    version: 'קארמה קהילה',
+    version: 'KC - קהילת קארמה',
   },
 
   // Stats (FR-STATS-001..004) — see stats.ts

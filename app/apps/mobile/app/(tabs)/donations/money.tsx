@@ -19,17 +19,6 @@ export default function DonationsMoneyScreen() {
           <Ionicons name="cash-outline" size={48} color={colors.primary} />
         </View>
         <Text style={styles.body}>{t('donations.moneyScreen.body')}</Text>
-        <Pressable
-          onPress={() => {
-            openExternalUrl('https://jgive.com');
-          }}
-          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-          accessibilityRole="button"
-          accessibilityLabel={t('donations.moneyScreen.openLink')}
-        >
-          <Text style={styles.ctaText}>{t('donations.moneyScreen.openLink')}</Text>
-          <Ionicons name="open-outline" size={18} color={colors.textInverse} />
-        </Pressable>
         <View style={styles.divider} />
         <DonationLinksList categorySlug="money" />
       </ScrollView>
