@@ -1,6 +1,6 @@
 # 2.8 Reports & Moderation
 
-> **Status:** 🟡 Partial — Reports + auto-removal shipped. Block/unblock deferred (EXEC-9).
+> **Status:** ✅ Done (P1.3 slice) — FR-MOD-001/002/005/007/010/011/012 shipped end-to-end. FR-MOD-008 (suspect-queue producers) deferred to TECH_DEBT. Block/unblock deferred per EXEC-9.
 
 
 

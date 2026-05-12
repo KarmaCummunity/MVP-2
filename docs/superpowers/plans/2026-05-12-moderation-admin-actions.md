@@ -137,14 +137,15 @@ git commit -m "feat(infra): begin 0032 — schema additions for moderation slice
 | `P0014` | `cannot_ban_admin` | ban RPC (target is super admin) |
 | `P0015` | `invalid_ban_reason` | ban RPC |
 | `P0016` | `cannot_delete_system_message` | delete-message RPC |
+| `P0017` | `target_not_found` | restore RPC (post/user/chat does not exist) |
 
 The adapter (`SupabaseModerationAdminRepository`) MUST switch on `error.code` exactly — no string matching on `error.message`.
 
 ### Task 2: `admin_restore_target` RPC
 
-**Files:** Append to `supabase/migrations/0034_moderation_admin_actions.sql`
+**Files:** Create `supabase/migrations/0035_admin_restore_target.sql` (one migration per task; the original "append to 0034" approach was rejected because Supabase records migration files by hash and re-applying a modified file fails. Each subsequent task gets its own numbered file.)
 
-- [ ] **Step 1: Append the RPC**
+- [ ] **Step 1: Create the migration**
 
 ```sql
 -- ── 2. admin_restore_target ─────────────────────────────────────────────────
@@ -253,9 +254,9 @@ git commit -m "feat(infra): admin_restore_target RPC with state-narrowed user re
 
 ### Task 3: `admin_dismiss_report` + `admin_confirm_report` RPCs
 
-**Files:** Append to `supabase/migrations/0034_moderation_admin_actions.sql`
+**Files:** Create `supabase/migrations/0036_admin_dismiss_confirm.sql`
 
-- [ ] **Step 1: Append both RPCs**
+- [ ] **Step 1: Create the migration with both RPCs**
 
 ```sql
 -- ── 3. admin_dismiss_report ─────────────────────────────────────────────────
@@ -398,9 +399,9 @@ git commit -m "feat(infra): admin_dismiss_report + admin_confirm_report with cas
 
 ### Task 4: `admin_ban_user` + `admin_delete_message` RPCs
 
-**Files:** Append to `supabase/migrations/0034_moderation_admin_actions.sql`
+**Files:** Create `supabase/migrations/0037_admin_ban_delete_message.sql`
 
-- [ ] **Step 1: Append both RPCs**
+- [ ] **Step 1: Create the migration with both RPCs**
 
 ```sql
 -- ── 5. admin_ban_user ───────────────────────────────────────────────────────
@@ -505,9 +506,9 @@ git commit -m "feat(infra): admin_ban_user + admin_delete_message RPCs"
 
 ### Task 5: `admin_audit_lookup` + `auth_check_account_gate` RPCs
 
-**Files:** Append to `supabase/migrations/0034_moderation_admin_actions.sql`
+**Files:** Create `supabase/migrations/0038_admin_audit_account_gate.sql`
 
-- [ ] **Step 1: Append both RPCs**
+- [ ] **Step 1: Create the migration with both RPCs**
 
 ```sql
 -- ── 7. admin_audit_lookup ───────────────────────────────────────────────────
@@ -648,9 +649,9 @@ git commit -m "feat(infra): audit_lookup + sign-in gate RPCs"
 
 ### Task 6: Statement-level sanction trigger
 
-**Files:** Append to `supabase/migrations/0034_moderation_admin_actions.sql`
+**Files:** Create `supabase/migrations/0039_sanction_trigger.sql`
 
-- [ ] **Step 1: Append the trigger**
+- [ ] **Step 1: Create the migration with the trigger**
 
 ```sql
 -- ── 9. reports_after_status_change_apply_sanctions ──────────────────────────
@@ -770,9 +771,9 @@ git commit -m "feat(infra): statement-level sanction trigger with advisory lock"
 
 ### Task 7: Owner notification side-effect + helper hardening
 
-**Files:** Append to `supabase/migrations/0034_moderation_admin_actions.sql`
+**Files:** Create `supabase/migrations/0040_owner_notification_helper_hardening.sql`
 
-**Why a helper change is in scope:** Migration `0033_chat_inbox_personal_hide.sql` removed the unique constraint `chats_participant_a_participant_b_key`, replacing it with a partial unique index that only enforces uniqueness for `is_support_thread = true`. The existing helper `find_or_create_support_chat` (defined in 0005, line ~268) does `select chat_id into v_chat from chats where participant_a = v_a and participant_b = v_b` WITHOUT filtering by `is_support_thread`. Post-0033 this can return MULTIPLE rows (one support thread + one or more DM rows for the same pair), causing `INTO` to abort every report insert with `TOO_MANY_ROWS`. Migration 0034 hardens the helper.
+**Why a helper change is in scope:** Migration `0033_chat_inbox_personal_hide.sql` removed the unique constraint `chats_participant_a_participant_b_key`, replacing it with a partial unique index that only enforces uniqueness for `is_support_thread = true`. The existing helper `find_or_create_support_chat` (defined in 0005, line ~268) does `select chat_id into v_chat from chats where participant_a = v_a and participant_b = v_b` WITHOUT filtering by `is_support_thread`. Post-0033 this can return MULTIPLE rows (one support thread + one or more DM rows for the same pair), causing `INTO` to abort every report insert with `TOO_MANY_ROWS`. Migration 0040 hardens the helper.
 
 - [ ] **Step 1a: Harden `find_or_create_support_chat` — filter by `is_support_thread = true`**
 
