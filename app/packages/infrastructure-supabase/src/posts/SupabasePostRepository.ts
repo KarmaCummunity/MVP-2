@@ -134,8 +134,20 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   async delete(postId: string): Promise<void> {
-    const { error } = await this.client.from('posts').delete().eq('post_id', postId);
+    const { data, error } = await this.client
+      .from('posts')
+      .delete()
+      .eq('post_id', postId)
+      .select('post_id');
     if (error) throw new Error(`delete: ${error.message}`);
+    // RLS allows DELETE only for owner + open (posts_delete_self_open). No row
+    // matched → PostgREST returns 200 with an empty array — treat as failure.
+    if (!data?.length) {
+      throw new PostError(
+        'post_owner_delete_forbidden',
+        'delete: no row deleted (forbidden status, recipient linked, or not owner)',
+      );
+    }
   }
 
   async adminRemove(postId: string): Promise<void> {

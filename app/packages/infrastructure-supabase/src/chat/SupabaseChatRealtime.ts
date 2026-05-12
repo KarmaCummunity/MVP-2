@@ -11,6 +11,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   IChatRealtime,
   InboxStreamCallbacks,
+  SubscribeInboxOptions,
   ChatStreamCallbacks,
   Unsubscribe,
 } from '@kc/application';
@@ -80,12 +81,15 @@ export class SupabaseChatRealtime implements IChatRealtime {
     };
   }
 
-  subscribeToInbox(userId: string, cb: InboxStreamCallbacks): Unsubscribe {
+  subscribeToInbox(userId: string, cb: InboxStreamCallbacks, options?: SubscribeInboxOptions): Unsubscribe {
     let unreadTimer: ReturnType<typeof setTimeout> | null = null;
     const fireUnreadDebounced = () => {
       if (unreadTimer) clearTimeout(unreadTimer);
       unreadTimer = setTimeout(async () => {
+        const getE = options?.getSnapshotEpoch;
+        const e0 = getE?.() ?? 0;
         const { data, error } = await this.client.rpc('rpc_chat_unread_total');
+        if (getE && getE() !== e0) return;
         if (!error) cb.onUnreadTotalChanged(Number(data ?? 0));
       }, UNREAD_DEBOUNCE_MS);
     };
@@ -97,7 +101,10 @@ export class SupabaseChatRealtime implements IChatRealtime {
       .on(
         'postgres_changes',
         { event: 'INSERT', schema: 'public', table: 'messages' },
-        () => fireUnreadDebounced(),
+        (payload) => {
+          cb.onInboxMessageInsert?.(rowToMessage(payload.new as never));
+          fireUnreadDebounced();
+        },
       )
       .on(
         'postgres_changes',

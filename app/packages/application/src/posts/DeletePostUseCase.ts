@@ -1,4 +1,4 @@
-/** FR-POST-010: owner deletes their own open post. RLS enforces ownership + open-status. */
+/** FR-POST-010: owner deletes their own post when RLS allows (`open` or unlinked `deleted_no_recipient`). */
 import type { IPostRepository } from '../ports/IPostRepository';
 
 export interface DeletePostInput {

@@ -20,6 +20,9 @@ import { PersonalStatsStrip } from '../src/components/stats/PersonalStatsStrip';
 import { CommunityStatsPanel } from '../src/components/stats/CommunityStatsPanel';
 import { ActivityTimelineList } from '../src/components/stats/ActivityTimelineList';
 
+
+
+
 export default function StatsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
@@ -139,7 +142,7 @@ export default function StatsScreen() {
 const styles = StyleSheet.create({
   safe: { flex: 1, backgroundColor: colors.background },
   header: {
-    flexDirection: 'row',
+    flexDirection: 'row-reverse',
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
@@ -147,7 +150,7 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  headerTitles: { flex: 1, alignItems: 'flex-end', marginHorizontal: spacing.sm },
+  headerTitles: { flex: 1, alignItems: 'center', marginHorizontal: spacing.sm },
   headerSpacer: { width: 24 },
   title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
   subtitle: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', marginTop: 2 },

@@ -3,6 +3,14 @@ import type { Chat, Message, MessageStatus } from '@kc/domain';
 export interface InboxStreamCallbacks {
   onChatChanged: (chat: Chat) => void;
   onUnreadTotalChanged: (total: number) => void;
+  /** INSERT on messages — bump per-row unread before debounced total RPC. */
+  onInboxMessageInsert?: (message: Message) => void;
+}
+
+/** Optional tuning for inbox realtime (FR-CHAT-012 race with mark-read). */
+export interface SubscribeInboxOptions {
+  /** When this value changes during `rpc_chat_unread_total`, the RPC result is dropped. */
+  getSnapshotEpoch?: () => number;
 }
 
 export interface ChatStreamCallbacks {
@@ -25,6 +33,10 @@ export interface ChatStreamCallbacks {
 export type Unsubscribe = () => void;
 
 export interface IChatRealtime {
-  subscribeToInbox(userId: string, cb: InboxStreamCallbacks): Unsubscribe;
+  subscribeToInbox(
+    userId: string,
+    cb: InboxStreamCallbacks,
+    options?: SubscribeInboxOptions,
+  ): Unsubscribe;
   subscribeToChat(chatId: string, cb: ChatStreamCallbacks): Unsubscribe;
 }

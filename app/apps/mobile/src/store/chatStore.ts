@@ -1,8 +1,9 @@
 // FR-CHAT-001..013, FR-CHAT-016 — Zustand store owning chat state + realtime subscription lifecycle.
 import { create } from 'zustand';
 import type { Message } from '@kc/domain';
-import type { IChatRepository, IChatRealtime } from '@kc/application';
 import type { ChatState, OptimisticMessage } from './chatStoreTypes';
+import { runRefreshInbox, runStartInboxSub } from './chatStoreInboxLifecycle';
+import { reduceBumpInboxForIncomingInsert } from './chatStoreInboxBump';
 
 export type { OptimisticMessage } from './chatStoreTypes';
 
@@ -14,6 +15,7 @@ const toOptimistic = (m: Message): OptimisticMessage => ({ ...m, clientId: m.mes
 export const useChatStore = create<ChatState>((set, get) => ({
   inbox: null,
   unreadTotal: 0,
+  inboxSnapshotEpoch: 0,
   threads: {},
   inboxSub: null,
   threadSubs: {},
@@ -45,7 +47,17 @@ export const useChatStore = create<ChatState>((set, get) => ({
       const nextInbox = inbox.map((c) =>
         c.chatId === chatId ? { ...c, unreadCount: 0 } : c,
       );
-      return { inbox: nextInbox, unreadTotal: nextTotal };
+      return {
+        inbox: nextInbox,
+        unreadTotal: nextTotal,
+        inboxSnapshotEpoch: s.inboxSnapshotEpoch + 1,
+      };
+    }),
+
+  bumpInboxForIncomingInsert: (viewerId, msg) =>
+    set((s) => {
+      const p = reduceBumpInboxForIncomingInsert(s, viewerId, msg);
+      return p ? { ...s, ...p } : s;
     }),
 
   setThreadMessages: (chatId, msgs) => {
@@ -116,17 +128,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const noopUnsub = () => {};
     set({ inboxSub: noopUnsub });
     try {
-      const [chats, unread] = await Promise.all([
-        repo.getMyChats(userId),
-        repo.getUnreadTotal(userId),
-      ]);
-      if (get().inboxSub !== noopUnsub) return;
-      set({ inbox: chats, unreadTotal: unread });
-      const unsub = realtime.subscribeToInbox(userId, {
-        onChatChanged: (chat) => get().upsertChatPreview(chat),
-        onUnreadTotalChanged: (total) => set({ unreadTotal: total }),
-      });
-      set({ inboxSub: unsub });
+      await runStartInboxSub({ getState: get, setState: set }, noopUnsub, userId, repo, realtime);
     } catch (err) {
       if (get().inboxSub === noopUnsub) set({ inboxSub: null });
       throw err;
@@ -166,18 +168,19 @@ export const useChatStore = create<ChatState>((set, get) => ({
       return { threadSubs: rest };
     }),
 
-  refreshInbox: async (userId, repo) => {
-    const [chats, unread] = await Promise.all([
-      repo.getMyChats(userId),
-      repo.getUnreadTotal(userId),
-    ]);
-    set({ inbox: chats, unreadTotal: unread });
-  },
+  refreshInbox: async (userId, repo) => runRefreshInbox({ getState: get, setState: set }, userId, repo),
 
   resetOnSignOut: () => {
     const s = get();
     if (s.inboxSub) s.inboxSub();
     Object.values(s.threadSubs).forEach((u) => u());
-    set({ inbox: null, unreadTotal: 0, threads: {}, inboxSub: null, threadSubs: {} });
+    set({
+      inbox: null,
+      unreadTotal: 0,
+      inboxSnapshotEpoch: 0,
+      threads: {},
+      inboxSub: null,
+      threadSubs: {},
+    });
   },
 }));

@@ -35,6 +35,7 @@ const ITEM_CONDITION_LABELS: Record<ItemCondition, string> = {
   LikeNew: 'כמו חדש',
   Good: 'טוב',
   Fair: 'סביר',
+  Damaged: 'שבור/תקול',
 };
 
 const STATUS_LABELS: Record<FeedStatusFilter, string> = {
@@ -43,7 +44,7 @@ const STATUS_LABELS: Record<FeedStatusFilter, string> = {
   closed: 'רק סגורים',
 };
 
-const ITEM_CONDITIONS: ItemCondition[] = ['New', 'LikeNew', 'Good', 'Fair'];
+const ITEM_CONDITIONS: ItemCondition[] = ['New', 'LikeNew', 'Good', 'Fair', 'Damaged'];
 
 function toggleInArray<T>(arr: T[], value: T): T[] {
   return arr.includes(value) ? arr.filter((x) => x !== value) : [...arr, value];

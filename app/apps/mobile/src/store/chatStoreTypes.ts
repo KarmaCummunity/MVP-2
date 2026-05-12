@@ -10,6 +10,8 @@ export interface OptimisticMessage extends Message {
 export interface ChatState {
   inbox: ChatWithPreview[] | null;
   unreadTotal: number;
+  /** Bumps when local read clears row unread; stale network snapshots must not overwrite. */
+  inboxSnapshotEpoch: number;
   threads: Record<string, OptimisticMessage[]>;
   inboxSub: Unsubscribe | null;
   threadSubs: Record<string, Unsubscribe>;
@@ -18,6 +20,7 @@ export interface ChatState {
   upsertChatPreview(chat: Chat): void;
   setUnreadTotal(n: number): void;
   markChatLocallyRead(chatId: string): void;
+  bumpInboxForIncomingInsert(viewerId: string, message: Message): void;
 
   setThreadMessages(chatId: string, msgs: Message[]): void;
   appendOptimistic(chatId: string, msg: OptimisticMessage): void;

@@ -36,6 +36,7 @@
 | P2.1 | Personal & community statistics screen | agent-fe | ✅ Done | `spec/10_statistics.md` |
 | P2.2 | Full super-admin moderation queue | agent-be + agent-fe | ✅ Done | `spec/12_super_admin.md` |
 | P2.3 | Guest preview polish | agent-fe | ⏳ Planned | `spec/01_auth_and_onboarding.md` FR-AUTH-014 |
+| P2.4 | Owner delete closed-without-recipient posts (RLS + FR-POST-010) | agent-be + agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-010, `DECISIONS.md` D-18 |
 
 ## P3 — Post-MVP (Deferred)
 

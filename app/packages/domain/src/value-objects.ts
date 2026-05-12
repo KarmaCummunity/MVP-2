@@ -43,7 +43,20 @@ export type PostVisibility = 'Public' | 'FollowersOnly' | 'OnlyMe';
 
 export type LocationDisplayLevel = 'CityOnly' | 'CityAndStreet' | 'FullAddress';
 
-export type ItemCondition = 'New' | 'LikeNew' | 'Good' | 'Fair';
+export type ItemCondition = 'New' | 'LikeNew' | 'Good' | 'Fair' | 'Damaged';
+
+/** Give-post condition picker order (create/edit UI, post detail). */
+export const ITEM_CONDITIONS: ItemCondition[] = [
+  'New', 'LikeNew', 'Good', 'Fair', 'Damaged',
+];
+
+export const ITEM_CONDITION_LABELS_HE: Record<ItemCondition, string> = {
+  New: 'חדש',
+  LikeNew: 'כמו חדש',
+  Good: 'טוב',
+  Fair: 'בינוני',
+  Damaged: 'שבור/תקול',
+};
 
 export type Category =
   | 'Furniture'

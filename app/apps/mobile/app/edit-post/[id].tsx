@@ -11,7 +11,10 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors } from '@kc/ui';
-import { ALL_CATEGORIES, CATEGORY_LABELS, canUpgradeVisibility } from '@kc/domain';
+import {
+  ALL_CATEGORIES, CATEGORY_LABELS, canUpgradeVisibility,
+  ITEM_CONDITIONS, ITEM_CONDITION_LABELS_HE,
+} from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -340,18 +343,17 @@ export default function EditPostScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>מצב החפץ</Text>
             <View style={styles.conditionRow}>
-              {(['New', 'LikeNew', 'Good', 'Fair'] as ItemCondition[]).map((c) => {
-                const labels: Record<ItemCondition, string> = { New: 'חדש', LikeNew: 'כמו חדש', Good: 'טוב', Fair: 'בינוני' };
-                return (
-                  <TouchableOpacity
-                    key={c}
-                    style={[styles.conditionBtn, condition === c && styles.conditionBtnActive]}
-                    onPress={() => setCondition(c)}
-                  >
-                    <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>{labels[c]}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {ITEM_CONDITIONS.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[styles.conditionBtn, condition === c && styles.conditionBtnActive]}
+                  onPress={() => setCondition(c)}
+                >
+                  <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
+                    {ITEM_CONDITION_LABELS_HE[c]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         )}

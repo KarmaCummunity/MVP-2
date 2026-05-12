@@ -24,6 +24,8 @@ const MESSAGES: Record<PostErrorCode, string> = {
   closure_recipient_not_in_chat: 'אי אפשר לסמן את עצמך, ולא משתמש שלא קיים.',
   reopen_window_expired: 'הזמן לפתוח את הפוסט מחדש כבר עבר — הוא נמחק לתמיד.',
   post_not_open: 'לא ניתן לערוך פוסט שאינו פתוח.',
+  post_owner_delete_forbidden:
+    'לא ניתן למחוק: יש מקבל רשום לפוסט, או שהפוסט במצב שאינו מאפשר מחיקה. אפשר למחוק פוסט פתוח או סגור בלי רשומת מקבל.',
   unknown: 'אירעה שגיאה. נסה שוב.',
 };
 

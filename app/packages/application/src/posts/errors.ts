@@ -25,6 +25,7 @@ export type PostErrorCode =
   | 'closure_recipient_not_in_chat'
   | 'reopen_window_expired'
   | 'post_not_open'
+  | 'post_owner_delete_forbidden'
   | 'unknown';
 
 export class PostError extends Error {

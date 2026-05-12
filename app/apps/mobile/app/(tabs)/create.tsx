@@ -12,7 +12,9 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
-import { ALL_CATEGORIES, CATEGORY_LABELS } from '@kc/domain';
+import {
+  ALL_CATEGORIES, CATEGORY_LABELS, ITEM_CONDITIONS, ITEM_CONDITION_LABELS_HE,
+} from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
@@ -263,18 +265,17 @@ export default function CreatePostScreen() {
           <View style={styles.section}>
             <Text style={styles.sectionLabel}>מצב החפץ</Text>
             <View style={styles.conditionRow}>
-              {(['New', 'LikeNew', 'Good', 'Fair'] as ItemCondition[]).map((c) => {
-                const labels: Record<ItemCondition, string> = { New: 'חדש', LikeNew: 'כמו חדש', Good: 'טוב', Fair: 'בינוני' };
-                return (
-                  <TouchableOpacity
-                    key={c}
-                    style={[styles.conditionBtn, condition === c && styles.conditionBtnActive]}
-                    onPress={() => setCondition(c)}
-                  >
-                    <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>{labels[c]}</Text>
-                  </TouchableOpacity>
-                );
-              })}
+              {ITEM_CONDITIONS.map((c) => (
+                <TouchableOpacity
+                  key={c}
+                  style={[styles.conditionBtn, condition === c && styles.conditionBtnActive]}
+                  onPress={() => setCondition(c)}
+                >
+                  <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
+                    {ITEM_CONDITION_LABELS_HE[c]}
+                  </Text>
+                </TouchableOpacity>
+              ))}
             </View>
           </View>
         )}

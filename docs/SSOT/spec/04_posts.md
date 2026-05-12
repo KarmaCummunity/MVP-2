@@ -95,7 +95,7 @@ Fields that exist for one type only.
 - PRD: `03_Core_Features.md` §3.3.3 (sub-sections ג, ד).
 
 **Acceptance Criteria.**
-- AC1. For `Give`: up to 5 images total (the first being required), and an `item_condition ∈ { New, LikeNew, Good, Fair }`.
+- AC1. For `Give`: up to 5 images total (the first being required), and an `item_condition ∈ { New, LikeNew, Good, Fair, Damaged }` (UI: שבור/תקול for `Damaged`).
 - AC2. For `Request`: up to 5 images (all optional); a free-text `urgency` field (≤100 chars, e.g. "Need by Friday").
 - AC3. Switching the toggle clears these fields with a confirmation if any value is present (to avoid accidental loss).
 
@@ -208,22 +208,26 @@ Visibility changes after publish must move strictly toward greater exposure.
 ## FR-POST-010 — Delete a post
 
 **Description.**
-The owner can permanently delete an `open` post.
+The owner can permanently delete their own post when it is **`open`**, or when there is **no row in `public.recipients`** for that post and status is **`deleted_no_recipient`** or orphan **`closed_delivered`** (e.g. recipient user removed — `recipients` cascaded away but status stayed closed). If a **`recipients`** row exists (`closed_delivered` with a live mark), owner delete is rejected; use reopen per `FR-CLOSURE-005` or admin paths.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.3.5.
 - Constraints: `R-MVP-Items-3`.
+- Decision: `D-18` (owner delete when unlinked).
 
 **Acceptance Criteria.**
 - AC1. Deletion is exposed only through the `⋮` menu on the post card and the post-detail screen, not as a primary CTA.
-- AC2. Confirmation modal lists consequences: *"This post will be permanently deleted. Conversations started about this post will remain in the chat list."*
+- AC2. Confirmation modal lists consequences: *"This post will be permanently deleted. Conversations started about this post will remain in the chat list."* and states which cases allow deletion (`open`; closed states only when there is no recipient / `recipients` row).
 - AC3. On confirm, the post is hard-deleted along with its image assets; statistics counters update.
 - AC4. Audit event recorded (`R-MVP-Safety-3`).
+- AC5. After confirm, the user always gets explicit feedback: a short success toast when deletion succeeds, and a toast (plus inline error on the confirm modal when still open) when deletion fails (e.g. `closed_delivered` **with** a recipient row, `removed_admin`, or RLS no-op).
 
 **Edge Cases.**
 - Deleting a post does not delete chat threads that referenced it; those threads carry a "Original post no longer available" banner thereafter.
+- A post with a `Recipient` row is treated as linked; owner delete is rejected even if status were inconsistent (defensive `NOT EXISTS` in RLS).
+- **Orphan `closed_delivered`:** if the marked recipient's `users` row is removed, `recipients` may CASCADE-delete while `posts.status` still reads `closed_delivered`. Owner delete is allowed in that case (no `recipients` row), same as `deleted_no_recipient` without a mark.
 
-**Related.** Screens: 3.1 · Domain: `Post`.
+**Related.** Screens: 3.1 · Domain: `Post` · Closure: `FR-CLOSURE-003`, `FR-CLOSURE-005`.
 
 ---
 

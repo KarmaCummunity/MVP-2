@@ -45,7 +45,12 @@ export function PostMenuButton({ post }: Props) {
         viewerId={viewerId}
         isSuperAdmin={isSuperAdmin}
         onAfterRemoval={() => {
+          void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+          void queryClient.invalidateQueries({ queryKey: ['profile-other-posts'] });
+          void queryClient.invalidateQueries({ queryKey: ['post', post.postId] });
+          void queryClient.invalidateQueries({ queryKey: ['feed'] });
           invalidatePersonalStatsCaches(queryClient, viewerId);
+          invalidatePersonalStatsCaches(queryClient, post.ownerId);
           router.back();
         }}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any

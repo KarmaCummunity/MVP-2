@@ -3,12 +3,12 @@
 // Mapped to SRS: FR-PROFILE-002, 003, 004; FR-FOLLOW-001..006, 011, 012.
 
 import React from 'react';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
 import { ProfileTabs, type ProfileTab } from '../../../src/components/profile/ProfileTabs';
@@ -25,12 +25,16 @@ import { useOptimisticFollowAction, type FollowActionError } from '../../../src/
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
+import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profileTabSession';
+import { otherProfileScreenStyles as styles } from '../../../src/components/profile/otherProfileScreen.styles';
 
 export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
-  const [activeTab, setActiveTab] = React.useState<ProfileTab>('open');
+  const [activeTab, setActiveTab] = React.useState<ProfileTab>(() =>
+    getRestoredProfileTab({ otherHandle: handle ?? '' }),
+  );
   // ✅ RULES OF HOOKS: must be declared here, before any early return.
   const [error, setError] = React.useState<FollowActionError | null>(null);
 
@@ -167,7 +171,13 @@ export default function OtherProfileScreen() {
           <LockedPanel />
         ) : (
           <>
-            <ProfileTabs active={activeTab} onChange={setActiveTab} />
+            <ProfileTabs
+              active={activeTab}
+              onChange={(t) => {
+                if (handle) persistProfileTab({ otherHandle: handle }, t);
+                setActiveTab(t);
+              }}
+            />
             <ProfilePostsGrid
               posts={postsQuery.data?.posts ?? []}
               isLoading={postsQuery.isLoading}
@@ -185,15 +195,3 @@ export default function OtherProfileScreen() {
     </SafeAreaView>
   );
 }
-
-const S = spacing;
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  notFound: { padding: S.xl, alignItems: 'center' },
-  notFoundText: { ...typography.h3, color: colors.textPrimary },
-  card: { margin: S.base, backgroundColor: colors.surface, borderRadius: radius.lg, padding: S.base, ...shadow.card, gap: S.base },
-  actionRow: { flexDirection: 'row', gap: S.sm, alignItems: 'center' },
-  btnFlex: { flex: 1 },
-  msgBtn: { flex: 1, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, paddingHorizontal: S.md, justifyContent: 'center', alignItems: 'center', flexDirection: 'row', gap: S.xs },
-  msgBtnText: { ...typography.button, color: colors.textPrimary },
-});

@@ -11,7 +11,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { colors, radius, spacing, typography } from '@kc/ui';
-import { CATEGORY_LABELS } from '@kc/domain';
+import { CATEGORY_LABELS, ITEM_CONDITION_LABELS_HE } from '@kc/domain';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { EmptyState } from '../../src/components/EmptyState';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
@@ -98,9 +98,7 @@ export default function PostDetailScreen() {
           {isGive && post.itemCondition && (
             <View style={styles.conditionRow}>
               <Text style={styles.conditionLabel}>מצב: </Text>
-              <Text style={styles.conditionValue}>
-                {{ New: 'חדש', LikeNew: 'כמו חדש', Good: 'טוב', Fair: 'בינוני' }[post.itemCondition]}
-              </Text>
+              <Text style={styles.conditionValue}>{ITEM_CONDITION_LABELS_HE[post.itemCondition]}</Text>
             </View>
           )}
           {!isGive && post.urgency && (

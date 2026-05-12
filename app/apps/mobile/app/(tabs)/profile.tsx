@@ -20,13 +20,14 @@ import { useAuthStore } from '../../src/store/authStore';
 import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
 import { getUserRepo } from '../../src/services/userComposition';
 import { formatUserLocationLine } from '../../src/lib/formatUserLocationLine';
+import { getRestoredProfileTab, persistProfileTab } from '../../src/lib/profileTabSession';
 
 export default function ProfileScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId;
-  const [activeTab, setActiveTab] = useState<ProfileTab>('open');
+  const [activeTab, setActiveTab] = useState<ProfileTab>(() => getRestoredProfileTab('self'));
 
   const userQuery = useQuery({
     queryKey: ['user-profile', userId],
@@ -108,7 +109,13 @@ export default function ProfileScreen() {
           </TouchableOpacity>
         </View>
 
-        <ProfileTabs active={activeTab} onChange={setActiveTab} />
+        <ProfileTabs
+          active={activeTab}
+          onChange={(t) => {
+            persistProfileTab('self', t);
+            setActiveTab(t);
+          }}
+        />
 
         <ProfilePostsGrid
           posts={myPostsQuery.data?.posts ?? []}

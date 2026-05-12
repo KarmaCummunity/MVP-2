@@ -249,6 +249,8 @@ The chat icon in the top bar carries a badge with the unread-message count.
 - AC3. Opening a thread updates the count immediately on the local client (optimistic) and reconciles with server upon ack.
 - AC4. Chats the viewer has inbox-hidden (`FR-CHAT-016`) do not contribute unread to the badge until the hide flags are cleared.
 
+**Implementation note (mobile).** The Zustand chat store uses an `inboxSnapshotEpoch` when applying full inbox snapshots from `getMyChats` + `getUnreadTotal` so a slow initial load cannot overwrite counts after `markChatLocallyRead` has already cleared them. Debounced `rpc_chat_unread_total` from inbox Realtime is merged with per-row unread (and dropped if the epoch changed during the RPC); incoming message INSERT bumps the matching inbox row so new unreads are not suppressed by that merge.
+
 **Related.** Domain: `Chat`, `Message`.
 
 ---

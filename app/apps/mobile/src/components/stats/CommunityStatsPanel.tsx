@@ -34,7 +34,6 @@ export function CommunityStatsPanel({
   return (
     <View style={styles.wrap}>
       <View style={styles.headerRow}>
-        <Ionicons name="earth-outline" size={20} color={colors.primary} />
         <Text style={styles.title}>{labels.title}</Text>
       </View>
       <Text style={styles.hint}>{labels.hint}</Text>

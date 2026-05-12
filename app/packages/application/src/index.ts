@@ -3,7 +3,13 @@ export * from './ports/IPostRepository';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
-export type { IChatRealtime, InboxStreamCallbacks, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
+export type {
+  IChatRealtime,
+  InboxStreamCallbacks,
+  SubscribeInboxOptions,
+  ChatStreamCallbacks,
+  Unsubscribe,
+} from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
 export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRepository';

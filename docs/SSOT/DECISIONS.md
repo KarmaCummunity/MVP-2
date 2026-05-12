@@ -391,6 +391,20 @@ For `messages.system_payload` snapshots taken by `reports_after_insert_apply_eff
 
 ---
 
+## D-18 — Owner hard-delete when post has no recipient link (2026-05-12)
+
+**Decision.** Extend `FR-POST-010` so the post owner may `DELETE` their row not only when `status = open`, but also when `status = deleted_no_recipient` **and** there is no row in `public.recipients` for that `post_id` (closed without marking another user). Owner delete remains **forbidden** for `closed_delivered` (recipient exists) and other terminal states unless covered elsewhere (e.g. admin remove).
+
+**Rationale.** Users who closed “without marking” should be able to remove the tombstone before the 7-day cron, without reopening first. Marked deliveries stay tied to another user’s `items_received_count` / social proof — those require reopen or admin paths.
+
+**Follow-up (0053).** If the recipient’s account is deleted, `recipients` can CASCADE away while the post row remains `closed_delivered`. Owner delete must still treat “no `recipients` row” as unlinked and allow hard-delete (same RLS shape as `deleted_no_recipient`).
+
+**Alternatives rejected.** *Allow owner delete for all closed statuses* — would break recipient stats and audit semantics without extra compensation logic.
+
+**Affected docs.** `FR-POST-010`, migrations `0052_posts_owner_delete_deleted_no_recipient.sql`, `0053_posts_owner_delete_orphan_closed.sql`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
@@ -401,3 +415,5 @@ For `messages.system_payload` snapshots taken by `reports_after_insert_apply_eff
 | 0.4 | 2026-05-11 | Added `EXEC-8` (P1.2 — distance-aware feed via cities-geo Haversine + Home Feed loses its search bar + active-filter chip; Universal Search tab supersedes `FR-FEED-016` placeholder). |
 | 0.5 | 2026-05-11 | Added `EXEC-9` (Block / unblock removed from MVP scope; supersedes `D-11`; `FR-MOD-003/004/009` deprecated; `FR-MOD-010` relocated to P1.3). |
 | 0.6 | 2026-05-12 | Added `D-17` (admin report-bubble snapshot privacy floor; TD-59 + TD-60 deferred). |
+| 0.7 | 2026-05-12 | Added `D-18` (owner delete `deleted_no_recipient` when no recipient row). |
+| 0.8 | 2026-05-12 | `D-18` follow-up: orphan `closed_delivered` after recipient user CASCADE (`0053`). |
