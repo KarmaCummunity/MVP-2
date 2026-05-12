@@ -26,6 +26,7 @@
 | P1.2.x | Close-post-from-chat + anchor lifecycle | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` FR-CHAT-014..015 |
 | P1.2.y | Chat personal inbox hide + deduped inbox (`FR-CHAT-016`) | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` |
 | P1.3 | Reports + auto-removal + false-report sanctions | agent-be + agent-fe | ✅ Done | `spec/08_moderation.md` |
+| P1.3.1 | Admin report-bubble deeplink + auto-removed message (FR-MOD-001 AC4 + FR-MOD-005 AC3) | agent-be + agent-fe | 🟡 In progress | `spec/08_moderation.md` |
 | P1.5 | Push notifications | agent-be + agent-fe | ⏳ Planned | `spec/09_notifications.md` |
 
 ## P2 — Stats, Admin & Polish
