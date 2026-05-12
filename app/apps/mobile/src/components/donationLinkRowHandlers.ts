@@ -25,12 +25,7 @@ export async function reportDonationLink(
 ): Promise<void> {
   if (!me) return;
   try {
-    const thread = await container.getSupportThread.execute({ userId: me });
-    await container.sendMessage.execute({
-      chatId: thread.chatId,
-      senderId: me,
-      body: `דיווח על קישור (donation_link:${link.id}) — ${link.url}`,
-    });
+    await container.reportDonationLink.execute({ linkId: link.id });
     alertMessage(t('donations.links.reportSent'));
   } catch {
     alertMessage(t('donations.addLinkModal.errors.network'));

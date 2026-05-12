@@ -46,6 +46,10 @@ export const moderationHe = {
     ownerAutoRemoved: {
       body: 'הפוסט שלך הוסר אוטומטית בעקבות דיווחים חוזרים. אם זו טעות, ניתן לערער דרך כתובת התמיכה.',
     },
+    donationLinkReported: {
+      title: 'דיווח על קישור תרומה',
+      a11yOpen: 'פתח קישור: {name}',
+    },
     targetPreview: {
       open: 'פתח',
       postLabel: 'פוסט',

@@ -24,10 +24,12 @@ export class FakeDonationLinksRepository implements IDonationLinksRepository {
   addResult: DonationLink = makeLink();
   addError: Error | null = null;
   hideError: Error | null = null;
+  reportError: Error | null = null;
 
   lastListSlug: DonationCategorySlug | null = null;
   lastAddInput: AddDonationLinkInput | null = null;
   lastHideId: string | null = null;
+  lastReportedLinkId: string | null = null;
 
   async listByCategory(slug: DonationCategorySlug): Promise<DonationLink[]> {
     this.lastListSlug = slug;
@@ -43,5 +45,10 @@ export class FakeDonationLinksRepository implements IDonationLinksRepository {
   async softHide(linkId: string): Promise<void> {
     this.lastHideId = linkId;
     if (this.hideError) throw this.hideError;
+  }
+
+  async report(linkId: string): Promise<void> {
+    this.lastReportedLinkId = linkId;
+    if (this.reportError) throw this.reportError;
   }
 }
