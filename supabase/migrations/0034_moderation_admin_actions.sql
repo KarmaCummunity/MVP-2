@@ -35,7 +35,8 @@ alter table public.audit_events
     'ban_user',
     'false_report_sanction_applied',
     'dismiss_report','confirm_report',
-    'delete_message'
+    'delete_message',
+    'delete_account'
   )) not valid;
 
 alter table public.audit_events

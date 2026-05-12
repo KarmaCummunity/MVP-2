@@ -81,9 +81,12 @@ begin
 end;
 $$;
 
+-- Transition tables (`referencing new table`) cannot coexist with a column
+-- list (`of status`). The function filters by status internally, so dropping
+-- the column list is safe — non-status updates produce an empty loop.
 drop trigger if exists reports_after_status_change_sanctions on public.reports;
 create trigger reports_after_status_change_sanctions
-  after update of status on public.reports
+  after update on public.reports
   referencing new table as new_rows
   for each statement
   execute function public.reports_after_status_change_apply_sanctions();

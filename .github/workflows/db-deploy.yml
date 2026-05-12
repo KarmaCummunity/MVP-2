@@ -1,0 +1,56 @@
+name: DB deploy
+
+# Manually triggered (Actions → DB deploy → Run workflow). Replaces the local
+# `supabase db push --include-all` dance. Defaults to dry-run; flip the
+# `apply` input to true to actually push.
+#
+# Required GitHub repository secrets:
+#   - SUPABASE_ACCESS_TOKEN    Personal access token (Supabase dashboard → Account → Access tokens).
+#   - SUPABASE_DB_PASSWORD     The remote DB password (project settings → Database).
+#   - SUPABASE_PROJECT_REF     The remote project ref (visible in the dashboard URL — NOT the local project_id from config.toml).
+
+on:
+  workflow_dispatch:
+    inputs:
+      apply:
+        description: 'Apply pending migrations to remote (uncheck = dry-run / list only).'
+        type: boolean
+        default: false
+
+concurrency:
+  group: db-deploy
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  deploy:
+    name: ${{ inputs.apply && 'apply' || 'dry-run' }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    environment:
+      name: supabase-prod
+
+    env:
+      SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
+      SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install Supabase CLI
+        uses: supabase/setup-cli@v1
+        with:
+          version: latest
+
+      - name: Link to remote project
+        run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
+
+      - name: List pending migrations
+        run: supabase migration list --linked
+
+      - name: Push migrations to remote
+        if: ${{ inputs.apply }}
+        run: supabase db push --include-all --linked
