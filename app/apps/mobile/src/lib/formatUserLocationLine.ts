@@ -1,11 +1,10 @@
 import type { User } from '@kc/domain';
 
-/** City, or city + street + number when the user saved a full profile address (FR-PROFILE-007). */
-export function formatUserLocationLine(
-  u: Pick<User, 'cityName' | 'profileStreet' | 'profileStreetNumber'>,
-): string {
-  if (u.profileStreet && u.profileStreetNumber) {
-    return `${u.cityName}, ${u.profileStreet} ${u.profileStreetNumber}`;
-  }
-  return u.cityName;
+/**
+ * Profile location line: **city only**. Saved street/number (`FR-PROFILE-007`) is not shown on
+ * profile headers — it backs post default pickup location and feed proximity, not public display.
+ */
+export function formatUserLocationLine(u: Pick<User, 'cityName'>): string | null {
+  const city = u.cityName?.trim() ?? '';
+  return city.length > 0 ? city : null;
 }

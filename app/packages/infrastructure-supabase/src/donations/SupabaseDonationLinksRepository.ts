@@ -4,6 +4,7 @@ import { DonationLinkError } from '@kc/application';
 import type {
   AddDonationLinkInput,
   IDonationLinksRepository,
+  UpdateDonationLinkInput,
 } from '@kc/application';
 import type { Database } from '../database.types';
 
@@ -58,6 +59,36 @@ export class SupabaseDonationLinksRepository implements IDonationLinksRepository
         | 'unreachable'
         | 'rate_limited'
         | 'unauthorized'
+        | 'forbidden'
+        | 'unknown';
+      throw new DonationLinkError(code, `validate-donation-link returned ${code}`);
+    }
+    return mapRow(data.link);
+  }
+
+  async updateViaEdgeFunction(input: UpdateDonationLinkInput): Promise<DonationLink> {
+    const { data, error } = await this.client.functions.invoke<{
+      ok: boolean;
+      code?: string;
+      link?: LinkRow;
+    }>('validate-donation-link', {
+      body: {
+        link_id: input.linkId,
+        category_slug: input.categorySlug,
+        url: input.url,
+        display_name: input.displayName,
+        description: input.description ?? null,
+      },
+    });
+    if (error) throw new DonationLinkError('network', error.message, error);
+    if (!data || !data.ok || !data.link) {
+      const code = (data?.code ?? 'unknown') as
+        | 'invalid_input'
+        | 'invalid_url'
+        | 'unreachable'
+        | 'rate_limited'
+        | 'unauthorized'
+        | 'forbidden'
         | 'unknown';
       throw new DonationLinkError(code, `validate-donation-link returned ${code}`);
     }

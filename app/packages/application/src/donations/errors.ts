@@ -4,6 +4,7 @@ export type DonationLinkErrorCode =
   | 'unreachable'
   | 'rate_limited'
   | 'unauthorized'
+  | 'forbidden'
   | 'network'
   | 'unknown';
 

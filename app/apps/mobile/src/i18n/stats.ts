@@ -2,7 +2,7 @@
 // Split out of he.ts to keep that file under its TD-35 size budget.
 
 export const stats = {
-  title: 'סיכום פעילות',
+  title: 'הקהילה במספרים',
   subtitle: 'מונים אישיים, פעילות אחרונה, ומצב הקהילה',
   given: 'חפצים שמסרתי',
   received: 'חפצים שקיבלתי',

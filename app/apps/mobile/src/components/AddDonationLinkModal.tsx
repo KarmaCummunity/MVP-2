@@ -1,6 +1,5 @@
-// FR-DONATE-008 — modal for community submission of NGO links.
-// Calls validate-donation-link Edge Function via AddDonationLinkUseCase.
-import React, { useMemo, useState } from 'react';
+// FR-DONATE-008/009 — modal for adding or editing community NGO links.
+import React from 'react';
 import {
   ActivityIndicator,
   Modal,
@@ -12,80 +11,45 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
-import {
-  DONATION_LINK_DESCRIPTION_MAX,
-  DONATION_LINK_DISPLAY_NAME_MAX,
-  DONATION_LINK_URL_PATTERN,
-} from '@kc/domain';
-import { DonationLinkError } from '@kc/application';
-import { container } from '../lib/container';
+import { DONATION_LINK_DESCRIPTION_MAX, DONATION_LINK_DISPLAY_NAME_MAX } from '@kc/domain';
 import { colors } from '@kc/ui';
 import { modalStyles as styles } from './AddDonationLinkModal.styles';
+import { useAddOrEditDonationLinkModal } from './useAddOrEditDonationLinkModal';
 
 interface Props {
-  visible: boolean;
-  categorySlug: DonationCategorySlug;
-  onClose: () => void;
-  onAdded: (link: DonationLink) => void;
+  readonly visible: boolean;
+  readonly categorySlug: DonationCategorySlug;
+  readonly editingLink: DonationLink | null;
+  readonly onClose: () => void;
+  readonly onAdded: (link: DonationLink) => void;
+  readonly onUpdated: (link: DonationLink) => void;
 }
 
-export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }: Props) {
+export function AddDonationLinkModal(props: Readonly<Props>) {
   const { t } = useTranslation();
-  const [url, setUrl] = useState('');
-  const [name, setName] = useState('');
-  const [desc, setDesc] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  const [errorKey, setErrorKey] = useState<string | null>(null);
-
-  const valid = useMemo(() => {
-    if (!DONATION_LINK_URL_PATTERN.test(url.trim())) return false;
-    const n = name.trim();
-    if (n.length < 2 || n.length > DONATION_LINK_DISPLAY_NAME_MAX) return false;
-    if (desc.trim().length > DONATION_LINK_DESCRIPTION_MAX) return false;
-    return true;
-  }, [url, name, desc]);
-
-  const reset = () => {
-    setUrl('');
-    setName('');
-    setDesc('');
-    setErrorKey(null);
-    setSubmitting(false);
-  };
-
-  const handleClose = () => {
-    if (submitting) return;
-    reset();
-    onClose();
-  };
-
-  const submit = async () => {
-    if (!valid || submitting) return;
-    setSubmitting(true);
-    setErrorKey(null);
-    try {
-      const link = await container.addDonationLink.execute({
-        categorySlug,
-        url: url.trim(),
-        displayName: name.trim(),
-        description: desc.trim() || null,
-      });
-      onAdded(link);
-      reset();
-      onClose();
-    } catch (err) {
-      setErrorKey(err instanceof DonationLinkError ? err.code : 'unknown');
-    } finally {
-      setSubmitting(false);
-    }
-  };
+  const {
+    url,
+    setUrl,
+    name,
+    setName,
+    desc,
+    setDesc,
+    valid,
+    isEdit,
+    submitting,
+    errorKey,
+    handleClose,
+    submit,
+  } = useAddOrEditDonationLinkModal(props);
 
   return (
-    <Modal visible={visible} animationType="slide" onRequestClose={handleClose} transparent>
+    <Modal visible={props.visible} animationType="slide" onRequestClose={handleClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
-            <Text style={styles.title}>{t('donations.addLinkModal.title')}</Text>
+            <Text style={styles.title}>
+              {isEdit ? t('donations.addLinkModal.editTitle') : t('donations.addLinkModal.title')}
+            </Text>
 
             <Text style={styles.label}>{t('donations.addLinkModal.urlLabel')}</Text>
             <TextInput
@@ -123,7 +87,9 @@ export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }
               multiline
               editable={!submitting}
             />
-            <Text style={styles.helper}>{t('donations.addLinkModal.helperText')}</Text>
+            <Text style={styles.helper}>
+              {isEdit ? t('donations.addLinkModal.editHelperText') : t('donations.addLinkModal.helperText')}
+            </Text>
 
             {errorKey ? (
               <Text style={styles.errorText}>
@@ -155,7 +121,9 @@ export function AddDonationLinkModal({ visible, categorySlug, onClose, onAdded }
                     <Text style={styles.btnPrimaryText}>{t('donations.addLinkModal.submitting')}</Text>
                   </View>
                 ) : (
-                  <Text style={styles.btnPrimaryText}>{t('donations.addLinkModal.submit')}</Text>
+                  <Text style={styles.btnPrimaryText}>
+                    {isEdit ? t('donations.addLinkModal.save') : t('donations.addLinkModal.submit')}
+                  </Text>
                 )}
               </Pressable>
             </View>

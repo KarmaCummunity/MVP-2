@@ -1,14 +1,15 @@
 // Edge Function: validate-donation-link
-// FR-DONATE-008. Validates URL reachability server-side, then inserts a row
-// into donation_links using the service-role key. Direct INSERT from clients
-// is blocked by RLS.
+// FR-DONATE-008 (insert) + FR-DONATE-009 (update via optional link_id).
+// Validates URL reachability server-side, then inserts or updates donation_links
+// using the service-role key. Direct INSERT from clients is blocked by RLS.
 //
-// POST { category_slug, url, display_name, description? }
+// POST insert: { category_slug, url, display_name, description? }
+// POST update: { link_id, category_slug, url, display_name, description? }
 // → 200 { ok: true, link }
-// → 400 { ok: false, code: 'invalid_input' | 'invalid_url' | 'unreachable' }
-// → 401 { ok: false, code: 'unauthorized' }
-// → 429 { ok: false, code: 'rate_limited' }
-// → 500 { ok: false, code: 'server_error' }
+// → 200 { ok: false, code: 'invalid_input' | 'invalid_url' | 'unreachable' | 'forbidden' }
+// → 200 { ok: false, code: 'unauthorized' }
+// → 200 { ok: false, code: 'rate_limited' } (insert only)
+// → 200 { ok: false, code: 'server_error' }
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
@@ -98,13 +99,20 @@ serve(async (req) => {
   }
   const userId = userData.user.id;
 
-  let body: { category_slug?: string; url?: string; display_name?: string; description?: string | null };
+  let body: {
+    link_id?: string;
+    category_slug?: string;
+    url?: string;
+    display_name?: string;
+    description?: string | null;
+  };
   try {
     body = await req.json();
   } catch {
     return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
   }
 
+  const linkId = typeof body.link_id === 'string' ? body.link_id.trim() : '';
   const slug = body.category_slug;
   const displayName = (body.display_name ?? '').trim();
   const description = body.description == null ? null : String(body.description).trim();
@@ -120,7 +128,55 @@ serve(async (req) => {
     auth: { persistSession: false },
   });
 
-  // Soft rate-limit: count rows by this user in the past hour.
+  const reachable = await checkReachable(parsed.toString());
+  if (!reachable) {
+    return jsonResponse({ ok: false, code: 'unreachable' }, 200);
+  }
+
+  if (linkId) {
+    const { data: existing, error: fetchErr } = await adminClient
+      .from('donation_links')
+      .select('*')
+      .eq('id', linkId)
+      .maybeSingle();
+    if (fetchErr || !existing) {
+      return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
+    }
+    if (existing.hidden_at) {
+      return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
+    }
+    const { data: actorRow } = await adminClient
+      .from('users')
+      .select('is_super_admin')
+      .eq('user_id', userId)
+      .maybeSingle();
+    const isSuperAdmin = actorRow?.is_super_admin === true;
+    if (existing.submitted_by !== userId && !isSuperAdmin) {
+      return jsonResponse({ ok: false, code: 'forbidden' }, 200);
+    }
+    if (existing.category_slug !== slug) {
+      return jsonResponse({ ok: false, code: 'invalid_input' }, 200);
+    }
+
+    const { data: updated, error: updateErr } = await adminClient
+      .from('donation_links')
+      .update({
+        url: parsed.toString(),
+        display_name: displayName,
+        description: description && description.length > 0 ? description : null,
+        validated_at: new Date().toISOString(),
+      })
+      .eq('id', linkId)
+      .select('*')
+      .single();
+
+    if (updateErr || !updated) {
+      return jsonResponse({ ok: false, code: 'server_error' }, 200);
+    }
+    return jsonResponse({ ok: true, link: updated }, 200);
+  }
+
+  // Soft rate-limit: count rows by this user in the past hour (inserts only).
   const oneHourAgo = new Date(Date.now() - 60 * 60 * 1000).toISOString();
   const { count, error: countErr } = await adminClient
     .from('donation_links')
@@ -132,11 +188,6 @@ serve(async (req) => {
   }
   if ((count ?? 0) >= MAX_LINKS_PER_HOUR) {
     return jsonResponse({ ok: false, code: 'rate_limited' }, 200);
-  }
-
-  const reachable = await checkReachable(parsed.toString());
-  if (!reachable) {
-    return jsonResponse({ ok: false, code: 'unreachable' }, 200);
   }
 
   const { data: inserted, error: insertErr } = await adminClient

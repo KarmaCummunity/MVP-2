@@ -1,6 +1,6 @@
 # 2.1 Authentication & Onboarding
 
-> **Status:** ✅ Core Complete — Google + Email + Phone shipped. Apple SSO pending iOS build.
+> **Status:** 🟡 Partial — Google + guest preview shipped; email/password via secondary link on welcome. Full `FR-AUTH-002` picker (Phone OTP, tabbed email, real Apple) deferred — `TD-151` / `TD-24`. Onboarding + sessions + delete: ✅.
 
 
 
@@ -69,6 +69,8 @@ A single screen exposes all available authentication methods. The set of methods
 - A user installing on iOS who previously signed up on Web with email continues to use email; Apple SSO does not auto-link.
 
 **Related.** Screens: 1.2 · Domain: `AuthMethod` enum.
+
+**MVP implementation note (2026-05-12).** The mobile welcome surface (`app/(auth)/index.tsx`) does **not** render the full-width Phone or Email method rows: they were display-only stubs (Phone routed users into the email/password screen without an OTP flow). Current ship: Google SSO, guest preview (`FR-AUTH-014`), an iOS-only Apple **button shell** (still incomplete per `TD-24`), and a tertiary text link to email/password sign-in. Restoring `FR-AUTH-002` AC1–AC2 fidelity is tracked as **`TD-151`** in [`TECH_DEBT.md`](../TECH_DEBT.md).
 
 ---
 

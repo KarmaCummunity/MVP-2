@@ -16,7 +16,7 @@ Includes:
 
 - The "My Profile" screen.
 - The "Other User Profile" screen with all variants (public, private-with-approved-follow, private-without-approved-follow).
-- Profile editing (name, city, optional street + number, biography, avatar).
+- Profile editing (name, city, optional street + number — stored for post defaults / proximity; **not** shown on profile headers), biography, avatar).
 - Profile privacy toggle and its consequences.
 - Public-vs-private counters for active posts.
 
@@ -38,7 +38,7 @@ The signed-in user's own profile, displaying identity, three headline counters, 
 - Constraints: `R-MVP-Profile-1`.
 
 **Acceptance Criteria.**
-- AC1. Header renders avatar, `display_name`, location line (`city`, or `city` + optional saved street/number when set), optional biography (≤200 chars), and a small lock icon when the profile is in `Private` mode.
+- AC1. Header renders avatar, `display_name`, location line (**`city` only**; saved street/number from `FR-PROFILE-007` is **not** shown — used for post defaults and proximity, not profile display), optional biography (≤200 chars), and a small lock icon when the profile is in `Private` mode.
 - AC2. Three counters appear in a single row: `followers_count`, `following_count`, and `active_posts_count_internal` (includes `Only-me` posts; see `FR-PROFILE-013`).
 - AC3. Two action buttons: "Edit Profile" → `FR-PROFILE-007`, "Share Profile" → produces a deep-link URL.
 - AC4. Two tabs:
@@ -82,7 +82,7 @@ Viewing the profile of another user whose `privacy_mode = Private` and to whom I
 - Constraints: `R-MVP-Privacy-11`.
 
 **Acceptance Criteria.**
-- AC1. Visible: avatar, `display_name`, location line (`city`, or full saved address when set), biography, and the three counter numbers (no list expansion).
+- AC1. Visible: avatar, `display_name`, location line (**`city` only**; full saved address is not shown), biography, and the three counter numbers (no list expansion).
 - AC2. The two tabs are replaced by a single locked panel with the message: *"This profile is private. Send a follow request to see posts, followers and following."*
 - AC3. Action buttons: "Send Follow Request" or "Cancel Request" depending on state (see `FR-FOLLOW-006`); "Send Message" remains available (a private profile does not block DMs).
 - AC4. Tapping the counters does **not** open the followers/following lists (which are restricted), but reveals the same locked panel message.

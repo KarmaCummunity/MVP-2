@@ -14,15 +14,27 @@ interface Props {
   readonly visible: boolean;
   readonly link: DonationLink | null;
   readonly me: string | null;
+  readonly isSuperAdmin: boolean;
   readonly onClose: () => void;
   readonly onRemoved: (id: string) => void;
+  readonly onEdit: (link: DonationLink) => void;
 }
 
-export function DonationLinkRowMenu({ visible, link, me, onClose, onRemoved }: Props) {
+export function DonationLinkRowMenu({
+  visible,
+  link,
+  me,
+  isSuperAdmin,
+  onClose,
+  onRemoved,
+  onEdit,
+}: Props) {
   const { t } = useTranslation();
   if (!link) return null;
 
-  const canRemove = link.submittedBy === me;
+  const isOwner = link.submittedBy === me;
+  const showEdit = isOwner || isSuperAdmin;
+  const showRemove = isOwner;
 
   const closeThen = (fn: () => void) => {
     onClose();
@@ -48,7 +60,19 @@ export function DonationLinkRowMenu({ visible, link, me, onClose, onRemoved }: P
           >
             <Text style={styles.itemText}>{t('donations.links.rowMenu.report')}</Text>
           </TouchableOpacity>
-          {canRemove ? (
+          {showEdit ? (
+            <>
+              <View style={styles.divider} />
+              <TouchableOpacity
+                style={styles.item}
+                onPress={() => closeThen(() => onEdit(link))}
+                accessibilityRole="button"
+              >
+                <Text style={styles.itemText}>{t('donations.links.rowMenu.edit')}</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
+          {showRemove ? (
             <>
               <View style={styles.divider} />
               <TouchableOpacity

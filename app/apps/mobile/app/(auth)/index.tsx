@@ -108,7 +108,9 @@ export default function WelcomeScreen() {
             onPress={handleGoogle}
             loading={googleLoading}
           />
-
+          
+          {/* TODO: Add phone and email buttons */}
+{/* 
           <AuthButton
             label="המשך עם מספר טלפון"
             emoji="📱"
@@ -123,7 +125,7 @@ export default function WelcomeScreen() {
             style={styles.emailBtn}
             textStyle={styles.emailBtnText}
             onPress={() => router.push('/(auth)/sign-in')}
-          />
+          /> */}
 
           {/* Guest preview */}
           <TouchableOpacity
@@ -246,7 +248,7 @@ const styles = StyleSheet.create({
   },
   appleBtn: { backgroundColor: '#000000' },
   appleBtnText: { color: '#FFFFFF' },
-  googleBtn: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },
+  googleBtn: { backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.border },
   googleBtnText: { color: colors.textPrimary },
   phoneBtn: { backgroundColor: colors.primary },
   phoneBtnText: { color: colors.textInverse },

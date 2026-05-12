@@ -64,9 +64,14 @@ export { ReportError } from './reports/errors';
 export type { ReportErrorCode } from './reports/errors';
 
 // Donation link use cases
-export type { IDonationLinksRepository, AddDonationLinkInput } from './ports/IDonationLinksRepository';
+export type {
+  IDonationLinksRepository,
+  AddDonationLinkInput,
+  UpdateDonationLinkInput,
+} from './ports/IDonationLinksRepository';
 export { ListDonationLinksUseCase } from './donations/ListDonationLinksUseCase';
 export { AddDonationLinkUseCase } from './donations/AddDonationLinkUseCase';
+export { UpdateDonationLinkUseCase } from './donations/UpdateDonationLinkUseCase';
 export { RemoveDonationLinkUseCase } from './donations/RemoveDonationLinkUseCase';
 export { DonationLinkError } from './donations/errors';
 export type { DonationLinkErrorCode } from './donations/errors';

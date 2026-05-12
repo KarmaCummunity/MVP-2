@@ -12,7 +12,7 @@ import { AvatarInitials } from '../AvatarInitials';
 export interface ProfileHeaderProps {
   displayName: string;
   handle?: string | null;
-  /** City, or full saved profile address (FR-PROFILE-007). */
+  /** City only; profile street/number is not shown on headers. */
   locationLine?: string | null;
   avatarUrl: string | null;
   biography: string | null;

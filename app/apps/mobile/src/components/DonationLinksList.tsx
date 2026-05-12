@@ -3,7 +3,6 @@
 import React, { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
-  FlatList,
   Platform,
   Pressable,
   Text,
@@ -20,22 +19,23 @@ import { donationLinksListStyles as styles } from './DonationLinksList.styles';
 import { DonationLinkRow } from './DonationLinkRow';
 import { DonationLinkRowMenu } from './DonationLinkRowMenu';
 import { useDonationLinkActions } from './useDonationLinkActions';
+import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
+import { dedupeDonationLinksById } from './donationLinksListMerge';
 
 interface Props {
-  categorySlug: DonationCategorySlug;
-  /** When true, uses ScrollView-friendly layout (no internal scroll). Pass true
-   *  when nested inside another ScrollView (e.g. Time/Money screens). */
-  embedded?: boolean;
+  readonly categorySlug: DonationCategorySlug;
 }
 
-export function DonationLinksList({ categorySlug, embedded = false }: Props) {
+export function DonationLinksList({ categorySlug }: Readonly<Props>) {
   const { t } = useTranslation();
   const me = useAuthStore((s) => s.session?.userId ?? null);
+  const isSuperAdmin = useIsSuperAdmin();
 
   const [links, setLinks] = useState<DonationLink[]>([]);
   const [loading, setLoading] = useState(true);
   const [errored, setErrored] = useState(false);
   const [modalOpen, setModalOpen] = useState(false);
+  const [editingLink, setEditingLink] = useState<DonationLink | null>(null);
   const [webMenuLink, setWebMenuLink] = useState<DonationLink | null>(null);
 
   const load = useCallback(async () => {
@@ -43,7 +43,7 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
     setErrored(false);
     try {
       const rows = await container.listDonationLinks.execute(categorySlug);
-      setLinks(rows);
+      setLinks(dedupeDonationLinksById(rows));
     } catch {
       setErrored(true);
     } finally {
@@ -59,7 +59,15 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
     (id: string) => setLinks((prev) => prev.filter((l) => l.id !== id)),
     [],
   );
-  const runNativeMenu = useDonationLinkActions({ me, onRemoved });
+  const onEditLink = useCallback((link: DonationLink) => {
+    setEditingLink(link);
+    setModalOpen(true);
+  }, []);
+  const openAddModal = useCallback(() => {
+    setEditingLink(null);
+    setModalOpen(true);
+  }, []);
+  const runNativeMenu = useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit: onEditLink });
   const onMenuPress = useCallback(
     (link: DonationLink) => {
       if (Platform.OS === 'web') setWebMenuLink(link);
@@ -67,14 +75,15 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
     },
     [runNativeMenu],
   );
-  const onAdded = (link: DonationLink) => setLinks((prev) => [link, ...prev]);
+  const onAdded = (link: DonationLink) =>
+    setLinks((prev) => dedupeDonationLinksById([link, ...prev.filter((l) => l.id !== link.id)]));
 
   const Header = useMemo(
     () => (
       <View style={styles.header}>
         <Text style={styles.headerTitle}>{t('donations.links.sectionTitle')}</Text>
         <Pressable
-          onPress={() => setModalOpen(true)}
+          onPress={openAddModal}
           accessibilityRole="button"
           accessibilityLabel={t('donations.links.addButtonA11y')}
           hitSlop={6}
@@ -84,13 +93,13 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
         </Pressable>
       </View>
     ),
-    [t],
+    [t, openAddModal],
   );
 
-  const renderItem = useCallback(
-    ({ item }: { item: DonationLink }) => {
-      const canRemove = item.submittedBy === me;
-      return <DonationLinkRow link={item} canRemove={canRemove} onMenuPress={onMenuPress} />;
+  const renderRow = useCallback(
+    (link: DonationLink) => {
+      const canRemove = link.submittedBy === me;
+      return <DonationLinkRow link={link} canRemove={canRemove} onMenuPress={onMenuPress} />;
     },
     [me, onMenuPress],
   );
@@ -120,7 +129,7 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
           <Text style={styles.emptyTitle}>{t('donations.links.empty.title')}</Text>
           <Text style={styles.emptyBody}>{t('donations.links.empty.body')}</Text>
           <Pressable
-            onPress={() => setModalOpen(true)}
+            onPress={openAddModal}
             style={({ pressed }) => [styles.emptyCta, pressed && styles.emptyCtaPressed]}
             accessibilityRole="button"
           >
@@ -129,23 +138,12 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
         </View>
       );
     }
-    if (embedded) {
-      return (
-        <View style={styles.list}>
-          {links.map((link) => (
-            <View key={link.id}>{renderItem({ item: link })}</View>
-          ))}
-        </View>
-      );
-    }
     return (
-      <FlatList
-        data={links}
-        keyExtractor={(item) => item.id}
-        renderItem={renderItem}
-        contentContainerStyle={styles.list}
-        showsVerticalScrollIndicator={false}
-      />
+      <View style={styles.list}>
+        {links.map((link) => (
+          <View key={link.id}>{renderRow(link)}</View>
+        ))}
+      </View>
     );
   };
 
@@ -154,10 +152,15 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
       visible={webMenuLink !== null}
       link={webMenuLink}
       me={me}
+      isSuperAdmin={isSuperAdmin}
       onClose={() => setWebMenuLink(null)}
       onRemoved={(id) => {
         onRemoved(id);
         setWebMenuLink(null);
+      }}
+      onEdit={(lnk) => {
+        setWebMenuLink(null);
+        onEditLink(lnk);
       }}
     />
   );
@@ -169,8 +172,17 @@ export function DonationLinksList({ categorySlug, embedded = false }: Props) {
       <AddDonationLinkModal
         visible={modalOpen}
         categorySlug={categorySlug}
-        onClose={() => setModalOpen(false)}
+        editingLink={editingLink}
+        onClose={() => {
+          setModalOpen(false);
+          setEditingLink(null);
+        }}
         onAdded={onAdded}
+        onUpdated={(link) =>
+          setLinks((prev) =>
+            dedupeDonationLinksById(prev.map((l) => (l.id === link.id ? link : l))),
+          )
+        }
       />
       {webMenu}
     </View>

@@ -31,6 +31,7 @@ import {
   ListDonationLinksUseCase,
   AddDonationLinkUseCase,
   RemoveDonationLinkUseCase,
+  UpdateDonationLinkUseCase,
   RestoreTargetUseCase,
   DismissReportUseCase,
   ConfirmReportUseCase,
@@ -99,5 +100,6 @@ export const container = {
   // Donation links
   listDonationLinks: new ListDonationLinksUseCase(donationLinksRepo),
   addDonationLink: new AddDonationLinkUseCase(donationLinksRepo),
+  updateDonationLink: new UpdateDonationLinkUseCase(donationLinksRepo),
   removeDonationLink: new RemoveDonationLinkUseCase(donationLinksRepo),
 } as const;

@@ -17,9 +17,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
-import { openExternalUrl } from '../../../src/utils/openExternalUrl';
 
-const WE_ME_URL = 'https://www.we-me.app/';
+
 const INTENT_LOG_KEY = 'volunteer_intent_log';
 const INTENT_LOG_MAX = 50;
 const COMPOSER_MAX_CHARS = 2000;
@@ -45,7 +44,6 @@ export default function DonationsTimeScreen() {
   const { t } = useTranslation();
   const [text, setText] = useState('');
 
-  const openLink = () => { openExternalUrl(WE_ME_URL); };
 
   const onSend = async () => {
     const body = text.trim();
@@ -59,21 +57,16 @@ export default function DonationsTimeScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+      >
         <View style={styles.iconWrap}>
           <Ionicons name="time-outline" size={48} color={colors.primary} />
         </View>
         <Text style={styles.body}>{t('donations.timeScreen.body')}</Text>
-        <Pressable
-          onPress={openLink}
-          accessibilityRole="link"
-          accessibilityLabel={t('donations.timeScreen.openLink')}
-          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
-        >
-          <Text style={styles.ctaText}>{t('donations.timeScreen.openLink')}</Text>
-          <Ionicons name="open-outline" size={18} color={colors.textInverse} />
-        </Pressable>
-
+        
         <View style={styles.divider} />
 
         <Text style={styles.composerHeading}>{t('donations.timeScreen.composerHeading')}</Text>
@@ -107,7 +100,7 @@ export default function DonationsTimeScreen() {
 
         <View style={styles.divider} />
 
-        <DonationLinksList categorySlug="time" embedded />
+        <DonationLinksList categorySlug="time" />
       </ScrollView>
     </SafeAreaView>
   );
@@ -115,6 +108,7 @@ export default function DonationsTimeScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  scrollView: { flex: 1 },
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
