@@ -1,4 +1,4 @@
--- 0047_donation_link_report_message | FR-DONATE AC2 (alignment with FR-MOD-001 AC4)
+-- 0048_donation_link_report_message | FR-DONATE AC2 (alignment with FR-MOD-001 AC4)
 --
 -- Donation-link reports previously went out as plain user messages
 -- (see donationLinkRowHandlers.ts before this commit). This migration

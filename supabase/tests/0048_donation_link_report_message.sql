@@ -1,4 +1,4 @@
--- supabase/tests/0047_donation_link_report_message.sql
+-- supabase/tests/0048_donation_link_report_message.sql
 -- Verifies report_donation_link() injects a system message with the right payload.
 
 create or replace function pg_temp.assert(p_cond boolean, p_msg text)
@@ -73,4 +73,4 @@ begin
   raise notice '✓ T1 donation-link report message injected';
 end $$;
 
-\echo '✓ 0047 donation-link report message tests passed'
+\echo '✓ 0048 donation-link report message tests passed'

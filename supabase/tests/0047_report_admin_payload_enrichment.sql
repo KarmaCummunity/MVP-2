@@ -1,4 +1,4 @@
--- supabase/tests/0046_report_admin_payload_enrichment.sql
+-- supabase/tests/0047_report_admin_payload_enrichment.sql
 -- Tests for FR-MOD-001 AC4 + FR-MOD-005 AC3.
 -- Verifies:
 --   1. report_received system_payload has link_target + target_preview for post/user/chat.
@@ -284,4 +284,4 @@ begin
   raise notice '✓ T7 no duplicate system messages';
 end $$;
 
-\echo '✓ 0046 report-admin-payload-enrichment tests passed'
+\echo '✓ 0047 report-admin-payload-enrichment tests passed'
