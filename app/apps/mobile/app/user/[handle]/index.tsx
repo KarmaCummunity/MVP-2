@@ -23,6 +23,7 @@ import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsCompo
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { NotifyModal } from '../../../src/components/NotifyModal';
+import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 
 export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
@@ -119,7 +120,7 @@ export default function OtherProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: '' }} />
+      <Stack.Screen options={{ headerTitle: '', headerRight: !isMe ? () => <ProfileOverflowMenu targetUserId={u.userId} /> : undefined }} />
       <ScrollView>
         <View style={styles.card}>
           <ProfileHeader
