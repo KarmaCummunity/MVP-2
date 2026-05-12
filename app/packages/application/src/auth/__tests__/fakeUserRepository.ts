@@ -11,6 +11,8 @@ interface Row {
   displayName: string;
   city: string;
   cityName: string;
+  profileStreet?: string | null;
+  profileStreetNumber?: string | null;
   onboardingState: OnboardingState;
   basicInfoSkipped?: boolean;
   avatarUrl?: string | null;
@@ -123,9 +125,20 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         displayName: row.displayName,
         city: row.city,
         cityName: row.cityName,
+        profileStreet: row.profileStreet ?? null,
+        profileStreetNumber: row.profileStreetNumber ?? null,
         biography: row.biography ?? null,
         avatarUrl: row.avatarUrl ?? null,
       };
+    },
+    async setProfileAddressLines(userId, street, streetNumber) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, profileStreet: street, profileStreetNumber: streetNumber });
     },
     async dismissClosureExplainer(userId) {
       const row = rows.get(userId) ?? {

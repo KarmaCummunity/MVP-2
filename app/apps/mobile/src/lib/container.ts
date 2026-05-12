@@ -60,8 +60,6 @@ const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 
-const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
-
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
   chatRepo,

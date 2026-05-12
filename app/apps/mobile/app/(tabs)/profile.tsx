@@ -18,6 +18,7 @@ import { ProfilePostsGrid } from '../../src/components/profile/ProfilePostsGrid'
 import { useAuthStore } from '../../src/store/authStore';
 import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
 import { getUserRepo } from '../../src/services/userComposition';
+import { formatUserLocationLine } from '../../src/lib/formatUserLocationLine';
 
 export default function ProfileScreen() {
   const router = useRouter();
@@ -61,6 +62,7 @@ export default function ProfileScreen() {
         <View style={styles.profileCard}>
           <ProfileHeader
             displayName={displayName}
+            locationLine={user ? formatUserLocationLine(user) : null}
             avatarUrl={avatarUrl}
             biography={biography}
             privacyMode={user?.privacyMode ?? 'Public'}

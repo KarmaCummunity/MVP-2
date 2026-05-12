@@ -16,7 +16,7 @@ Includes:
 
 - The "My Profile" screen.
 - The "Other User Profile" screen with all variants (public, private-with-approved-follow, private-without-approved-follow).
-- Profile editing (name, city, biography, avatar).
+- Profile editing (name, city, optional street + number, biography, avatar).
 - Profile privacy toggle and its consequences.
 - Public-vs-private counters for active posts.
 
@@ -38,7 +38,7 @@ The signed-in user's own profile, displaying identity, three headline counters, 
 - Constraints: `R-MVP-Profile-1`.
 
 **Acceptance Criteria.**
-- AC1. Header renders avatar, `display_name`, `city`, optional biography (≤200 chars), and a small lock icon when the profile is in `Private` mode.
+- AC1. Header renders avatar, `display_name`, location line (`city`, or `city` + optional saved street/number when set), optional biography (≤200 chars), and a small lock icon when the profile is in `Private` mode.
 - AC2. Three counters appear in a single row: `followers_count`, `following_count`, and `active_posts_count_internal` (includes `Only-me` posts; see `FR-PROFILE-013`).
 - AC3. Two action buttons: "Edit Profile" → `FR-PROFILE-007`, "Share Profile" → produces a deep-link URL.
 - AC4. Two tabs:
@@ -82,7 +82,7 @@ Viewing the profile of another user whose `privacy_mode = Private` and to whom I
 - Constraints: `R-MVP-Privacy-11`.
 
 **Acceptance Criteria.**
-- AC1. Visible: avatar, `display_name`, `city`, biography, and the three counter numbers (no list expansion).
+- AC1. Visible: avatar, `display_name`, location line (`city`, or full saved address when set), biography, and the three counter numbers (no list expansion).
 - AC2. The two tabs are replaced by a single locked panel with the message: *"This profile is private. Send a follow request to see posts, followers and following."*
 - AC3. Action buttons: "Send Follow Request" or "Cancel Request" depending on state (see `FR-FOLLOW-006`); "Send Message" remains available (a private profile does not block DMs).
 - AC4. Tapping the counters does **not** open the followers/following lists (which are restricted), but reveals the same locked panel message.
@@ -159,14 +159,14 @@ The user toggles their profile privacy mode from `Private` to `Public`.
 ## FR-PROFILE-007 — Edit Profile
 
 **Description.**
-The user can change avatar, display name, city, and biography.
+The user can change avatar, display name, city, optional street and building number (full address), and biography.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.2.5, `05_Screen_UI_Mapping.md` §3.2.
 - Constraints: `R-MVP-Profile-1`, `R-MVP-Profile-6`.
 
 **Acceptance Criteria.**
-- AC1. Editable fields: avatar (replace / remove), `display_name` (1–50 chars), `city` (dropdown), `biography` (≤200 chars).
+- AC1. Editable fields: avatar (replace / remove), `display_name` (1–50 chars), `city` (dropdown), optional `street` (1–80 chars) + `street_number` (same pattern as post pickup addresses: digits with optional trailing letter), `biography` (≤200 chars). Street fields are optional as a pair: both empty keeps a city-only profile; when either is filled, both must be valid.
 - AC2. Email/phone/Google ID/Apple ID are **read-only** in MVP; the screen shows them but the controls are disabled with a note pointing to Support.
 - AC3. Biography validation rejects content matching a configurable URL regex (anti-spam, `R-MVP-Profile-6`); the error is shown inline.
 - AC4. Save is atomic: avatar upload completes before the textual fields are persisted; on partial failure, the previous state is preserved.

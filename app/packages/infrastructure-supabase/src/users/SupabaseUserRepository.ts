@@ -15,6 +15,7 @@ import {
   supabaseMarkBasicInfoSkipped,
   supabaseSetBasicInfo,
 } from './onboardingSupabase';
+import { supabaseGetEditableProfile, supabaseSetProfileAddressLines } from './editableProfileSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { searchUsers } from './searchUsers';
 import {
@@ -105,34 +106,16 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`dismissClosureExplainer: ${error.message}`);
   }
 
-  async getEditableProfile(userId: string): Promise<{
-    displayName: string;
-    city: string;
-    cityName: string;
-    biography: string | null;
-    avatarUrl: string | null;
-  }> {
-    const { data, error } = await this.client
-      .from('users')
-      .select('display_name, city, city_name, biography, avatar_url')
-      .eq('user_id', userId)
-      .single();
-    if (error) throw new Error(`getEditableProfile: ${error.message}`);
-    if (!data) throw new Error('getEditableProfile: no row');
-    const row = data as {
-      display_name: string;
-      city: string;
-      city_name: string;
-      biography: string | null;
-      avatar_url: string | null;
-    };
-    return {
-      displayName: row.display_name,
-      city: row.city,
-      cityName: row.city_name,
-      biography: row.biography,
-      avatarUrl: row.avatar_url,
-    };
+  setProfileAddressLines(
+    userId: string,
+    street: string | null,
+    streetNumber: string | null,
+  ): Promise<void> {
+    return supabaseSetProfileAddressLines(this.client, userId, street, streetNumber);
+  }
+
+  getEditableProfile(userId: string) {
+    return supabaseGetEditableProfile(this.client, userId);
   }
 
   // ── Methods deferred to later slices ─────────────────────────────────────

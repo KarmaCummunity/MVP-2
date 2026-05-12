@@ -98,9 +98,21 @@ export interface IUserRepository {
     displayName: string;
     city: string;
     cityName: string;
+    profileStreet: string | null;
+    profileStreetNumber: string | null;
     biography: string | null;
     avatarUrl: string | null;
   }>;
+
+  /**
+   * FR-PROFILE-007 — optional street + number on the user profile (null,null clears).
+   * Same length / number shape as post addresses when non-null.
+   */
+  setProfileAddressLines(
+    userId: string,
+    street: string | null,
+    streetNumber: string | null,
+  ): Promise<void>;
 
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */
   dismissClosureExplainer(userId: string): Promise<void>;

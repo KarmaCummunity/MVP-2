@@ -717,6 +717,8 @@ export type Database = {
           biography: string | null
           city: string
           city_name: string
+          profile_street: string | null
+          profile_street_number: string | null
           closure_explainer_dismissed: boolean
           created_at: string
           display_name: string
@@ -749,6 +751,8 @@ export type Database = {
           biography?: string | null
           city: string
           city_name: string
+          profile_street?: string | null
+          profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
           display_name: string
@@ -781,6 +785,8 @@ export type Database = {
           biography?: string | null
           city?: string
           city_name?: string
+          profile_street?: string | null
+          profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
           display_name?: string

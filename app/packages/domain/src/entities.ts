@@ -35,6 +35,9 @@ export interface User {
   displayName: string;
   city: string;
   cityName: string;
+  /** Optional home address line on profile; null = city-only (FR-PROFILE-007). */
+  profileStreet: string | null;
+  profileStreetNumber: string | null;
   biography: string | null;
   avatarUrl: string | null;
   privacyMode: PrivacyMode;

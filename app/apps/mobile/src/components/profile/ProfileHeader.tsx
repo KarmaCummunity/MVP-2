@@ -12,6 +12,8 @@ import { AvatarInitials } from '../AvatarInitials';
 export interface ProfileHeaderProps {
   displayName: string;
   handle?: string | null;
+  /** City, or full saved profile address (FR-PROFILE-007). */
+  locationLine?: string | null;
   avatarUrl: string | null;
   biography: string | null;
   privacyMode: 'Public' | 'Private';
@@ -20,7 +22,7 @@ export interface ProfileHeaderProps {
 }
 
 export function ProfileHeader({
-  displayName, handle, avatarUrl, biography, privacyMode, onLockPress, size = 96,
+  displayName, handle, locationLine, avatarUrl, biography, privacyMode, onLockPress, size = 96,
 }: ProfileHeaderProps) {
   const showLock = privacyMode === 'Private';
   return (
@@ -40,6 +42,7 @@ export function ProfileHeader({
         ) : null}
       </View>
       {handle ? <Text style={styles.handle}>@{handle}</Text> : null}
+      {locationLine ? <Text style={styles.location}>{locationLine}</Text> : null}
       {biography ? <Text style={styles.bio}>{biography}</Text> : null}
     </View>
   );
@@ -56,5 +59,6 @@ const styles = StyleSheet.create({
   displayName: { ...typography.h2, color: colors.textPrimary, textAlign: 'center' },
   lock: { marginTop: 2 },
   handle: { ...typography.body, color: colors.textSecondary },
+  location: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
   bio: { ...typography.body, color: colors.textPrimary, textAlign: 'center', paddingHorizontal: spacing.md },
 });

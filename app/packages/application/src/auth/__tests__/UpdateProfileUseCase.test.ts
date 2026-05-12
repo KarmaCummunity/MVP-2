@@ -86,4 +86,43 @@ describe('UpdateProfileUseCase', () => {
     expect(repo.rows.get('u-1')?.avatarUrl).toBe('https://example.com/new.jpg');
     expect(repo.rows.get('u-1')?.displayName).toBe('נוה'); // unchanged
   });
+
+  it('updates only profile address lines when given just profileAddress', async () => {
+    const repo = seed();
+    const uc = new UpdateProfileUseCase(repo);
+    await uc.execute({
+      userId: 'u-1',
+      profileAddress: { street: 'רוטשילד', streetNumber: '22' },
+    });
+    expect(repo.rows.get('u-1')?.profileStreet).toBe('רוטשילד');
+    expect(repo.rows.get('u-1')?.profileStreetNumber).toBe('22');
+    expect(repo.rows.get('u-1')?.displayName).toBe('נוה');
+  });
+
+  it('clears profile address when profileAddress is null pair', async () => {
+    const repo = seed();
+    repo.rows.set('u-1', {
+      ...repo.rows.get('u-1')!,
+      profileStreet: 'רחוב',
+      profileStreetNumber: '1',
+    });
+    const uc = new UpdateProfileUseCase(repo);
+    await uc.execute({ userId: 'u-1', profileAddress: { street: null, streetNumber: null } });
+    expect(repo.rows.get('u-1')?.profileStreet).toBeNull();
+    expect(repo.rows.get('u-1')?.profileStreetNumber).toBeNull();
+  });
+
+  it('rejects incomplete profile address (one field empty)', async () => {
+    const uc = new UpdateProfileUseCase(seed());
+    await expect(
+      uc.execute({ userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: null } }),
+    ).rejects.toThrow('incomplete_profile_address');
+  });
+
+  it('rejects invalid profile street number', async () => {
+    const uc = new UpdateProfileUseCase(seed());
+    await expect(
+      uc.execute({ userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: 'abc' } }),
+    ).rejects.toThrow('invalid_profile_street_number');
+  });
 });

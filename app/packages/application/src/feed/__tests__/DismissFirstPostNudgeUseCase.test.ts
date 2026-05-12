@@ -20,6 +20,8 @@ function makeUser(overrides: Partial<User> = {}): User {
     displayName: 'Test',
     city: 'tel-aviv',
     cityName: 'תל אביב',
+    profileStreet: null,
+    profileStreetNumber: null,
     biography: null,
     avatarUrl: null,
     privacyMode: 'Public',
