@@ -1,6 +1,6 @@
 # 2.10 Personal & Community Statistics
 
-> **Status:** 🟡 In progress — Live personal counters + community snapshot + activity timeline (derived from posts/recipients via `rpc_my_activity_timeline`, migration 0030). Full event fidelity (`post_reopened`, `unmarked_as_recipient`) and nightly drift recompute (`FR-STATS-005`) still open.
+> **Status:** ✅ Done — Personal stats screen (`/stats`), counters from `users`, community panel from `community_stats`, activity timeline from `user_personal_activity_log` + `rpc_my_activity_timeline` (migrations `0044_personal_activity_log`, `0045_stats_recompute_nightly`). Nightly `stats_recompute_personal_counters_nightly` + `stats_drift_events` + pg_cron job `stats_recompute_nightly` satisfy **FR-STATS-005** (operator: enable `pg_cron`, see `OPERATOR_RUNBOOK.md`).
 
 
 

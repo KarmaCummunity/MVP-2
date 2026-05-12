@@ -9,6 +9,8 @@ export interface UpdateProfileInput {
   readonly displayName?: string;
   readonly city?: string;
   readonly cityName?: string;
+  /** When present, persists or clears (`{ street: null, streetNumber: null }`) profile address lines. */
+  readonly profileAddress?: { readonly street: string | null; readonly streetNumber: string | null };
   readonly biography?: string | null;
   readonly avatarUrl?: string | null;
 }
@@ -16,6 +18,7 @@ export interface UpdateProfileInput {
 /** FR-PROFILE-007 AC3 — anti-spam URL filter on bio. Conservative pattern
  *  (matches `http(s)://…` and bare-domain shapes containing a dot+TLD). */
 const URL_RE = /(https?:\/\/|www\.|[\w.-]+\.[a-z]{2,})/i;
+const STREET_NUM_RE = /^[0-9]+[A-Za-z]?$/;
 
 export class UpdateProfileUseCase {
   constructor(private readonly users: IUserRepository) {}
@@ -43,6 +46,20 @@ export class UpdateProfileUseCase {
       throw new Error('invalid_city');
     }
 
+    if (input.profileAddress !== undefined) {
+      const { street, streetNumber } = input.profileAddress;
+      if (street === null && streetNumber === null) {
+        /* clear — valid */
+      } else if (!street?.trim() || !streetNumber?.trim()) {
+        throw new Error('incomplete_profile_address');
+      } else {
+        const s = street.trim();
+        const n = streetNumber.trim();
+        if (s.length < 1 || s.length > 80) throw new Error('invalid_profile_street');
+        if (!STREET_NUM_RE.test(n)) throw new Error('invalid_profile_street_number');
+      }
+    }
+
     const writes: Promise<void>[] = [];
     if (
       input.displayName !== undefined &&
@@ -55,6 +72,15 @@ export class UpdateProfileUseCase {
           city: input.city,
           cityName: input.cityName,
         }),
+      );
+    }
+    if (input.profileAddress !== undefined) {
+      writes.push(
+        this.users.setProfileAddressLines(
+          input.userId,
+          input.profileAddress.street === null ? null : input.profileAddress.street.trim(),
+          input.profileAddress.streetNumber === null ? null : input.profileAddress.streetNumber.trim(),
+        ),
       );
     }
     if (input.biography !== undefined) {

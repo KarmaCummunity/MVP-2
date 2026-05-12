@@ -9,6 +9,8 @@ export interface UserRow {
   display_name: string;
   city: string;
   city_name: string;
+  profile_street?: string | null;
+  profile_street_number?: string | null;
   biography: string | null;
   avatar_url: string | null;
   privacy_mode: string;
@@ -36,6 +38,8 @@ export function mapUserRow(row: UserRow): User {
     displayName: row.display_name,
     city: row.city,
     cityName: row.city_name,
+    profileStreet: row.profile_street ?? null,
+    profileStreetNumber: row.profile_street_number ?? null,
     biography: row.biography,
     avatarUrl: row.avatar_url,
     privacyMode: row.privacy_mode as User['privacyMode'],

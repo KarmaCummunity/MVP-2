@@ -13,6 +13,7 @@ import type { Post } from '@kc/domain';
 import { isPostError, type PostErrorCode } from '@kc/application';
 import { useClosureStore } from '../../store/closureStore';
 import { getReopenPostUseCase } from '../../services/postsComposition';
+import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { mapPostErrorToHebrew } from '../../services/postMessages';
 import { ClosureSheet } from './ClosureSheet';
 import { ClosureExplainerSheet } from './ClosureExplainerSheet';
@@ -54,9 +55,10 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
       void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       void queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      invalidatePersonalStatsCaches(queryClient, ownerId);
       onClosed();
     }
-  }, [closureStep, closureInitiator, resetClosure, onClosed, queryClient]);
+  }, [closureStep, closureInitiator, resetClosure, onClosed, queryClient, ownerId]);
 
   const isOpen = post.status === 'open';
   const isReopenable =
@@ -82,6 +84,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      invalidatePersonalStatsCaches(queryClient, ownerId);
       onReopened();
     } catch (e) {
       const code: PostErrorCode = isPostError(e) ? e.code : 'unknown';

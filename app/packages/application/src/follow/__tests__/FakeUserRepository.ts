@@ -130,6 +130,7 @@ export class FakeUserRepository implements IUserRepository {
   setOnboardingState = N('setOnboardingState') as IUserRepository['setOnboardingState'];
   setAvatar = N('setAvatar') as IUserRepository['setAvatar'];
   setBiography = N('setBiography') as IUserRepository['setBiography'];
+  setProfileAddressLines = N('setProfileAddressLines') as IUserRepository['setProfileAddressLines'];
   dismissClosureExplainer = N('dismissClosureExplainer') as IUserRepository['dismissClosureExplainer'];
   getEditableProfile = N('getEditableProfile') as IUserRepository['getEditableProfile'];
   searchUsers = N('searchUsers') as IUserRepository['searchUsers'];
@@ -149,6 +150,8 @@ export function makeUser(overrides: Partial<User> = {}): User {
     displayName: 'Tester',
     city: 'tlv',
     cityName: 'תל אביב',
+    profileStreet: null,
+    profileStreetNumber: null,
     biography: null,
     avatarUrl: null,
     privacyMode: 'Public',

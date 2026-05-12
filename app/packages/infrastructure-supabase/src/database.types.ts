@@ -704,6 +704,110 @@ export type Database = {
           },
         ]
       }
+      stats_drift_events: {
+        Row: {
+          column_name: string
+          detected_at: string
+          drift_id: number
+          new_value: number
+          old_value: number
+          run_id: number
+          user_id: string
+        }
+        Insert: {
+          column_name: string
+          detected_at?: string
+          drift_id?: number
+          new_value: number
+          old_value: number
+          run_id: number
+          user_id: string
+        }
+        Update: {
+          column_name?: string
+          detected_at?: string
+          drift_id?: number
+          new_value?: number
+          old_value?: number
+          run_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "stats_drift_events_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "stats_recompute_runs"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "stats_drift_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      stats_recompute_runs: {
+        Row: {
+          drift_events: number
+          run_at: string
+          run_id: number
+          users_processed: number
+        }
+        Insert: {
+          drift_events: number
+          run_at?: string
+          run_id?: number
+          users_processed: number
+        }
+        Update: {
+          drift_events?: number
+          run_at?: string
+          run_id?: number
+          users_processed?: number
+        }
+        Relationships: []
+      }
+      user_personal_activity_log: {
+        Row: {
+          actor_display_name: string | null
+          kind: string
+          log_id: number
+          occurred_at: string
+          post_id: string
+          post_title: string
+          subject_user_id: string
+        }
+        Insert: {
+          actor_display_name?: string | null
+          kind: string
+          log_id?: number
+          occurred_at: string
+          post_id: string
+          post_title: string
+          subject_user_id: string
+        }
+        Update: {
+          actor_display_name?: string | null
+          kind?: string
+          log_id?: number
+          occurred_at?: string
+          post_id?: string
+          post_title?: string
+          subject_user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_personal_activity_log_subject_user_id_fkey"
+            columns: ["subject_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       users: {
         Row: {
           account_status: string
@@ -717,6 +821,8 @@ export type Database = {
           biography: string | null
           city: string
           city_name: string
+          profile_street: string | null
+          profile_street_number: string | null
           closure_explainer_dismissed: boolean
           created_at: string
           display_name: string
@@ -749,6 +855,8 @@ export type Database = {
           biography?: string | null
           city: string
           city_name: string
+          profile_street?: string | null
+          profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
           display_name: string
@@ -781,6 +889,8 @@ export type Database = {
           biography?: string | null
           city?: string
           city_name?: string
+          profile_street?: string | null
+          profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
           display_name?: string
@@ -963,7 +1073,12 @@ export type Database = {
         }
         Returns: { post_id: string; distance_km: number | null }[]
       }
-      // FR-STATS-003 (0030) — manually added until next typegen run.
+      // FR-STATS-005 (0045) — nightly job; not called from mobile.
+      stats_recompute_personal_counters_nightly: {
+        Args: Record<string, never>
+        Returns: { users_processed: number; drift_events: number }[]
+      }
+      // FR-STATS-003 (0030, 0044) — manually added until next typegen run.
       rpc_my_activity_timeline: {
         Args: { p_limit?: number }
         Returns: {

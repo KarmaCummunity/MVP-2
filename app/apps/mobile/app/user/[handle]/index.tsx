@@ -24,6 +24,7 @@ import { getGetFollowStateUseCase } from '../../../src/services/followCompositio
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
+import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
 
 export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
@@ -126,6 +127,7 @@ export default function OtherProfileScreen() {
           <ProfileHeader
             displayName={u.displayName}
             handle={u.shareHandle}
+            locationLine={formatUserLocationLine(u)}
             avatarUrl={u.avatarUrl}
             biography={u.biography}
             privacyMode={u.privacyMode}

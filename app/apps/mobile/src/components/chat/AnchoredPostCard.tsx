@@ -1,9 +1,4 @@
-// FR-CHAT-014 + FR-CHAT-015 — sticky anchored-post card at the top of an
-// anchored chat. Visible only while post.status === 'open'. Both owner and
-// non-owner can tap the card body to open the post. Owner also sees a CTA
-// button ("סמן כנמסר ✓") that opens the closure flow pre-filled with the
-// chat counterpart. ClosureSheet + ClosureExplainerSheet are rendered here
-// (not in OwnerActionsBar) so they appear in the chat context.
+// FR-CHAT-014 + FR-CHAT-015 — sticky anchored-post card; ClosureSheet + explainer render here for chat-initiated closure.
 import { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -16,6 +11,7 @@ import { useChatStore } from '../../store/chatStore';
 import { useClosureStore } from '../../store/closureStore';
 import { ClosureSheet } from '../closure/ClosureSheet';
 import { ClosureExplainerSheet } from '../closure/ClosureExplainerSheet';
+import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { AnchoredPostCardPreview } from './AnchoredPostCardPreview';
 
 interface Props {
@@ -64,6 +60,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
   useEffect(() => {
     if (sawPostClosedSysMsg && closureStep === 'idle') {
       void queryClient.invalidateQueries({ queryKey: ['post', anchorPostId, viewerId] });
+      invalidatePersonalStatsCaches(queryClient, viewerId);
     }
   }, [sawPostClosedSysMsg, closureStep, anchorPostId, viewerId, queryClient]);
 
@@ -77,6 +74,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
       void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       void queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
       void queryClient.invalidateQueries({ queryKey: ['post', anchorPostId, viewerId] });
+      invalidatePersonalStatsCaches(queryClient, viewerId);
     }
   }, [closureStep, closureInitiator, resetClosure, queryClient, anchorPostId, viewerId]);
 

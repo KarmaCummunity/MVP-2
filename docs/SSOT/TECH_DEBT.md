@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-12 (FR-CHAT-016 architecture splits; removed duplicate FE TD-118 chat-size row; TD-35 partial — `chatHe` partial) |
+| **Last Updated** | 2026-05-12 (FR-STATS E2E: `0044` activity log + `0045` nightly recompute; TD-20 resolved) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -24,7 +24,6 @@
 | TD-15 | 🔴 | No `IChatRepository` Supabase adapter; chat list + thread use `MOCK_MESSAGES` | P0.5 |
 | TD-17 | 🔴 | Closure flow (mark delivered / un-mark / reopen / educational popup) entirely absent — North Star metric unmeasurable | P0.6 |
 | TD-19 | 🔴 | Push notifications: no device lifecycle, no fan-out, no preferences table | P1.5 |
-| TD-20 | 🟠 | Statistics: ~~counters render `0`~~ **P2.1 partial (2026-05-11)** — mobile stats screen reads live `users` counters + `community_stats` + `rpc_my_activity_timeline`. Still missing: `bg-job-stats-recompute` / drift automation (`FR-STATS-005`); timeline lacks durable history for reopen + recipient un-mark (needs event log or expanded triggers). | P2.x |
 | TD-23 | 🟠 | Server-side EXIF strip Edge Function pending (client-side strip via re-encode shipped in P0.4-FE). Author Edge Function under `supabase/functions/` | Follow-up to P0.4-FE |
 | TD-38 | 🟠 | FR-MOD-010 sanction escalation (7d→30d→permanent) is schema-only in P0.2.e; escalation logic should live with `FR-ADMIN-*` flow code (30-day sliding-window count, tier transitions, stamping `account_status_until`). Reserved columns: `false_reports_count`, `false_report_sanction_count`, `account_status_until` | P2.5 (super-admin) |
 | TD-39 | 🟠 | **Internal counter columns leak to non-owner viewers of Public profiles.** RLS allows authenticated clients to read `active_posts_count_internal`, `items_given_count`, `items_received_count`, `posts_created_total`, `false_reports_count` on Public+active profiles. A non-owner can compute `internal − public_open − followers_only_open` to infer `OnlyMe` post existence, violating FR-PROFILE-013 AC4 and FR-STATS-006 AC1. Schema-level fix is awkward (Postgres column-grants apply per role *before* RLS). **Application-layer fix**: `IUserRepository` Supabase adapter MUST call `active_posts_count_for_viewer(owner, viewer)` for non-self reads and never project raw `_internal` into Other-Profile responses. Add lint/test on adapter. | P2.4 (or P0.4-FE follow-up) |
@@ -134,6 +133,7 @@
 | TD-126 | Cooldown toast missing days-remaining (FR-FOLLOW-006 AC3 parity). | Closed 2026-05-11 (P1.1.1) — `handleAction` catch branch for `cooldown_active` computes `Math.ceil((cooldownUntil − now)/24h)` and renders "ניתן לשלוח שוב בעוד N ימים" — same formula as `FollowButton.tsx` subtitle. |
 | Chat-FE-arch | **Duplicate Active row used ID TD-118 for chat file-size debt** (clashed with BE TD-118 delete-account). Chat store + `SupabaseChatRepository` over architecture LOC cap. | Closed 2026-05-12 — `chatStoreTypes.ts`, `supabaseDmChat.ts`, `chatScreenStyles.ts`, `ChatScreenOverlays.tsx`, `partials/chatHe.ts`; removed stale allowlist entries for chat store + chat repository. |
 | TD-116 | **Full report processing pipeline absent** (24h dedup, auto-removal, false-report sanctions). | Closed 2026-05-12 (P1.3) — 24h dedup + auto-removal already shipped in `0005_init_moderation.sql`; false-report sanctions trigger now ships in `0039_sanction_trigger.sql` with statement-level + per-reporter advisory lock + level guard, addressing the council-flagged "instant permaban from one restore" failure mode. Cascade restore on dismiss in `0036_admin_dismiss_confirm.sql`; owner-side notification in `0040_owner_notification.sql`. |
+| TD-20 | Statistics partial — no nightly recompute; timeline missing reopen/unmark events. | Closed 2026-05-12 — `0044_personal_activity_log.sql` (append log + triggers + RPC reads log); `0045_stats_recompute_nightly.sql` (`stats_recompute_personal_counters_nightly`, `stats_drift_events`, cron `stats_recompute_nightly`); mobile invalidates `user-profile` + `my-activity-timeline` after closure/create/delete. **NFR-RELI-005** alert on drift rate (>0.1%/night) still requires external log/metrics wiring beyond Postgres `RAISE NOTICE`. |
 
 ---
 
