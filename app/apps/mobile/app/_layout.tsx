@@ -2,6 +2,7 @@ import '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, useSegments } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
+import { useSingleTabEnforcement } from '../src/hooks/useSingleTabEnforcement';
 
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
@@ -9,6 +10,13 @@ import { I18nManager, Platform, View } from 'react-native';
 // Title + favicon overrides live here too: with `web.output: "single"` Expo
 // builds from a default template that uses `expo.name`, so we can't use a
 // `+html.tsx` (those only apply to `static` output).
+// Register Service Worker so Chrome/Android installs the app as a proper PWA
+// (WebAPK). With a SW present, tapping the home-screen icon activates the
+// already-running instance instead of opening a new browser tab.
+if (Platform.OS === 'web' && typeof navigator !== 'undefined' && 'serviceWorker' in navigator) {
+  navigator.serviceWorker.register('/sw.js').catch(() => {});
+}
+
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   document.documentElement.dir = 'rtl';
   document.documentElement.lang = 'he';
@@ -120,6 +128,8 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
 }
 
 export default function RootLayout() {
+  useSingleTabEnforcement();
+
   useEffect(() => {
     if (!I18nManager.isRTL) {
       I18nManager.forceRTL(true);
@@ -152,6 +162,8 @@ export default function RootLayout() {
                     <Stack.Screen name="(onboarding)" />
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="auth/callback" />
+                    {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
+                    <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
                     <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
                     <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />

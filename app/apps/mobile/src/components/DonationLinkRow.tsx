@@ -1,9 +1,10 @@
 // FR-DONATE-007/009 — single row in the community NGO link list.
 import React, { useState } from 'react';
-import { Image, Linking, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { DonationLink } from '@kc/domain';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { openExternalUrl } from '../utils/openExternalUrl';
 
 interface Props {
   link: DonationLink;
@@ -24,9 +25,7 @@ export function DonationLinkRow({ link, canRemove, onMenuPress }: Props) {
   const [iconError, setIconError] = useState(false);
   const faviconUrl = `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
 
-  const open = () => {
-    Linking.openURL(link.url).catch(() => {});
-  };
+  const open = () => { openExternalUrl(link.url); };
 
   return (
     <View style={styles.row}>

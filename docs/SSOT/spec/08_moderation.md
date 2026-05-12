@@ -1,6 +1,6 @@
 # 2.8 Reports & Moderation
 
-> **Status:** 🟡 Partial — Reports + auto-removal shipped. Block/unblock deferred (EXEC-9).
+> **Status:** ✅ Done (P1.3 slice) — FR-MOD-001/002/005/007/010/011/012 shipped end-to-end. FR-MOD-008 (suspect-queue producers) deferred to TECH_DEBT. Block/unblock deferred per EXEC-9.
 
 
 
@@ -212,7 +212,7 @@ A user who issues many reports that the Super Admin reviews and rejects ("not a 
 - Decisions: `D-13`.
 
 **Acceptance Criteria.**
-- AC1. Each `Report` that the Super Admin marks as `dismissed_no_violation` increments `User.false_reports_count`.
+- AC1. Each `Report` that the Super Admin marks as `dismissed_no_violation` is counted toward the reporter's sanction window. The effective count is computed as `count(Report where reporter_id = X and status = 'dismissed_no_violation' and resolved_at > now() - interval '30 days' and sanction_consumed_at is null)`. (`User.false_reports_count` is retained as a denormalised informational counter only and is NOT the source of truth for sanction decisions.)
 - AC2. Sanctions trigger when 5 dismissed reports accumulate within a 30-day window:
    - **First trigger**: 7-day suspension.
    - **Second trigger** (after the user returns and accumulates 5 more): 30-day suspension.
@@ -263,3 +263,4 @@ Every moderation-relevant event is recorded.
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.5, Flow 9, and Decisions D-11, D-13. |
 | 0.2 | 2026-05-11 | `EXEC-9` — `FR-MOD-003`, `FR-MOD-004`, `FR-MOD-009` marked `DEPRECATED — post-MVP`. `FR-MOD-007 AC2` no longer references "Block". `FR-MOD-012 AC1` audit list drops `block_user` / `unblock_user` from MVP-required emitters. |
+| 0.3 | 2026-05-12 | `FR-MOD-010 AC1` clarified — sanction count is computed via `Report.sanction_consumed_at` (added in migration 0032), not `User.false_reports_count`. The latter is retained as informational only. |

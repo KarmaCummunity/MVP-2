@@ -38,7 +38,11 @@
     "web": {
       "bundler": "metro",
       "output": "single",
-      "favicon": "./assets/logo.png"
+      "favicon": "./assets/icon.png",
+      "themeColor": "#F97316",
+      "backgroundColor": "#ffffff",
+      "display": "standalone",
+      "shortName": "KC"
     },
     "plugins": [
       "expo-dev-client",

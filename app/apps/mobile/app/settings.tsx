@@ -9,6 +9,8 @@ import { colors, typography, spacing } from '@kc/ui';
 import { getSignOutUseCase } from '../src/services/authComposition';
 import { getDeleteAccountUseCase, setOnboardingStateDirect } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
+import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
+import he from '../src/i18n/he';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 
@@ -33,6 +35,7 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
+  const isSuperAdmin = useIsSuperAdmin();
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
   const [notificationsOn, setNotificationsOn] = React.useState(true);
@@ -163,6 +166,13 @@ export default function SettingsScreen() {
             icon="alert-circle-outline"
             onPress={() => router.push('/settings/report-issue')}
           />
+          {isSuperAdmin ? (
+            <SettingsRow
+              label={he.audit.title}
+              icon="document-text-outline"
+              onPress={() => router.push('/settings/audit' as never)}
+            />
+          ) : null}
           <SettingsRow label={t('settings.termsAndPrivacy')} icon="document-text-outline" onPress={() => router.push('/legal')} />
           <SettingsRow label={t('settings.about')} icon="information-circle-outline" onPress={() => router.push('/about')} />
         </View>
@@ -212,45 +222,12 @@ export default function SettingsScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
+  header: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: spacing.base, paddingVertical: spacing.sm, backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border },
   title: { ...typography.h3, color: colors.textPrimary },
-  sectionTitle: {
-    ...typography.label,
-    color: colors.textSecondary,
-    paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
-    paddingBottom: spacing.xs,
-  },
-  section: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderBottomWidth: 1,
-    borderColor: colors.border,
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.md,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    gap: spacing.md,
-  },
+  sectionTitle: { ...typography.label, color: colors.textSecondary, paddingHorizontal: spacing.base, paddingTop: spacing.base, paddingBottom: spacing.xs },
+  section: { backgroundColor: colors.surface, borderTopWidth: 1, borderBottomWidth: 1, borderColor: colors.border },
+  row: { flexDirection: 'row', alignItems: 'center', paddingHorizontal: spacing.base, paddingVertical: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border, gap: spacing.md },
   rowIcon: { width: 24 },
   rowLabel: { ...typography.body, color: colors.textPrimary, flex: 1, textAlign: 'right' },
-  version: {
-    ...typography.caption,
-    color: colors.textDisabled,
-    textAlign: 'center',
-    padding: spacing.xl,
-  },
+  version: { ...typography.caption, color: colors.textDisabled, textAlign: 'center', padding: spacing.xl },
 });

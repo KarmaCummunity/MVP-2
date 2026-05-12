@@ -6,6 +6,7 @@
 
 import { donations, search } from './donations';
 import { chatHe } from './partials/chatHe';
+import { moderationHe, auditHe, accountBlockedHe } from './partials/moderationHe';
 import { stats } from './stats';
 
 const he = {
@@ -147,6 +148,11 @@ const he = {
 
   // Chat — see partials/chatHe.ts (FR-CHAT-016)
   chat: chatHe,
+
+  // Moderation (FR-MOD-007/010 + FR-ADMIN-002..007) — see partials/moderationHe.ts
+  moderation: moderationHe,
+  audit: auditHe,
+  accountBlocked: accountBlockedHe,
 
   // Settings
   settings: {

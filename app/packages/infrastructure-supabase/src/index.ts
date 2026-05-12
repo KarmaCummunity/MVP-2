@@ -11,5 +11,7 @@ export { SupabaseChatRealtime } from './chat/SupabaseChatRealtime';
 export { SupabaseFeedRealtime } from './feed/SupabaseFeedRealtime';
 export { SupabaseStatsRepository } from './stats/SupabaseStatsRepository';
 export { SupabaseReportRepository } from './reports/SupabaseReportRepository';
+export { SupabaseModerationAdminRepository } from './moderation/SupabaseModerationAdminRepository';
+export { SupabaseAccountGateRepository } from './auth/SupabaseAccountGateRepository';
 export { SupabaseDonationLinksRepository } from './donations/SupabaseDonationLinksRepository';
 export { SupabaseSearchRepository } from './search/SupabaseSearchRepository';

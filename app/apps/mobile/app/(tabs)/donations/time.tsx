@@ -4,7 +4,6 @@
 import React, { useState } from 'react';
 import {
   Alert,
-  Linking,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -18,6 +17,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
+import { openExternalUrl } from '../../../src/utils/openExternalUrl';
 
 const WE_ME_URL = 'https://www.we-me.app/';
 const INTENT_LOG_KEY = 'volunteer_intent_log';
@@ -45,15 +45,7 @@ export default function DonationsTimeScreen() {
   const { t } = useTranslation();
   const [text, setText] = useState('');
 
-  const openLink = async () => {
-    try {
-      const supported = await Linking.canOpenURL(WE_ME_URL);
-      if (!supported) return;
-      await Linking.openURL(WE_ME_URL);
-    } catch {
-      // External-link failure is rare and visible in the URL handler; no alert needed.
-    }
-  };
+  const openLink = () => { openExternalUrl(WE_ME_URL); };
 
   const onSend = async () => {
     const body = text.trim();

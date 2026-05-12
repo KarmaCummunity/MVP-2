@@ -1,6 +1,6 @@
 # 2.12 Super Admin (in-chat moderation)
 
-> **Status:** 🟡 Partial — Admin delete-post shipped. Full moderation queue pending.
+> **Status:** ✅ Done (P1.3 + P2.2 slice) — All FR-ADMIN-001..009 shipped. Suspect-queue producers (FR-MOD-008) and 90-day re-registration block (FR-ADMIN-003 AC3) deferred to TECH_DEBT.
 
 
 

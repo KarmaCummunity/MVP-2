@@ -12,12 +12,12 @@
 import React from 'react';
 import {
   Image,
-  Linking,
   Pressable,
   StyleSheet,
   Text,
   View,
 } from 'react-native';
+import { openExternalUrl } from '../utils/openExternalUrl';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '@kc/ui';
@@ -183,13 +183,7 @@ export function LinkResultCard({ link }: { link: DonationLinkSearchResult }) {
    * Opens the link in the device's default browser.
    * Silently catches errors (e.g. malformed URL) — no crash.
    */
-  const handlePress = async () => {
-    try {
-      await Linking.openURL(link.url);
-    } catch {
-      // Fail silently — link may be unreachable or malformed
-    }
-  };
+  const handlePress = () => { openExternalUrl(link.url); };
 
   return (
     <Pressable

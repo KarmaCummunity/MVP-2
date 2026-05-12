@@ -10,9 +10,12 @@ import {
   SupabaseReportRepository,
   SupabaseDonationLinksRepository,
   SupabasePostRepository,
+  SupabaseModerationAdminRepository,
+  SupabaseAccountGateRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
+  CheckAccountGateUseCase,
   ListChatsUseCase,
   OpenOrCreateChatUseCase,
   HideChatFromInboxUseCase,
@@ -28,6 +31,13 @@ import {
   ListDonationLinksUseCase,
   AddDonationLinkUseCase,
   RemoveDonationLinkUseCase,
+  RestoreTargetUseCase,
+  DismissReportUseCase,
+  ConfirmReportUseCase,
+  BanUserUseCase,
+  DeleteMessageUseCase,
+  LookupAuditUseCase,
+  ReportUserUseCase,
 } from '@kc/application';
 
 function pickStorage(): SupabaseAuthStorage | undefined {
@@ -45,6 +55,10 @@ const chatRealtime = new SupabaseChatRealtime(supabase);
 const reportRepo = new SupabaseReportRepository(supabase);
 const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
 const postRepo = new SupabasePostRepository(supabase);
+const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
+const accountGateRepo = new SupabaseAccountGateRepository(supabase);
+
+const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 
@@ -52,6 +66,7 @@ export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
   chatRepo,
   chatRealtime,
+  moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
 
   // Chat use cases
   listChats: new ListChatsUseCase(chatRepo),
@@ -70,6 +85,18 @@ export const container = {
   // Post moderation
   deletePost: new DeletePostUseCase(postRepo),
   adminRemovePost: new AdminRemovePostUseCase(postRepo),
+
+  // Moderation admin actions (FR-MOD-007 + FR-ADMIN-002..007)
+  restoreTarget: new RestoreTargetUseCase(moderationAdminRepo),
+  dismissReport: new DismissReportUseCase(moderationAdminRepo),
+  confirmReport: new ConfirmReportUseCase(moderationAdminRepo),
+  banUser: new BanUserUseCase(moderationAdminRepo),
+  deleteMessage: new DeleteMessageUseCase(moderationAdminRepo),
+  lookupAudit: new LookupAuditUseCase(moderationAdminRepo),
+  reportUser: new ReportUserUseCase(reportRepo),
+
+  // FR-MOD-010 — sign-in + mid-session account gate.
+  checkAccountGate: new CheckAccountGateUseCase(accountGateRepo),
 
   // Donation links
   listDonationLinks: new ListDonationLinksUseCase(donationLinksRepo),
