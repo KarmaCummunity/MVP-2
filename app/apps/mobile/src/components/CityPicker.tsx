@@ -1,11 +1,6 @@
-// ─────────────────────────────────────────────
-// CityPicker — modal selector backed by `public.cities` (1,306 settlements
-// seeded from data.gov.il). FR-AUTH-010 AC2: city is a dropdown of the
-// canonical Israeli city list — no free-text. Searchable because scrolling
-// 1,306 rows blind is unusable.
-// ─────────────────────────────────────────────
+/** CityPicker: `public.cities` modal per FR-AUTH-010 AC2; searchable list. */
 
-import React, { useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
   Text,
@@ -31,6 +26,13 @@ interface Props {
 export function CityPicker({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const t = setTimeout(() => searchInputRef.current?.focus(), 100);
+    return () => clearTimeout(t);
+  }, [open]);
 
   const { data: cities, isLoading, error } = useQuery<City[]>({
     queryKey: ['cities'],
@@ -80,6 +82,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
             <View style={styles.sheet}>
               <Text style={styles.sheetTitle}>בחר עיר</Text>
               <TextInput
+                ref={searchInputRef}
                 style={styles.search}
                 placeholder="חיפוש עיר…"
                 placeholderTextColor={colors.textDisabled}
