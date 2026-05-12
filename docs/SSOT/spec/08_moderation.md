@@ -44,7 +44,7 @@ A user reports a post, another user, a comment (none in MVP UI but reserved), or
 
 **Related.** Screens: 6.1 · Domain: `Report`.
 
-> **Implementation note (2026-05-12):** AC4 satisfied for reports created on/after migration `0046_report_admin_payload_enrichment.sql`. Admin sees a rich preview card with author handle, content snippet, and tap-to-open. Legacy rows (pre-0046) render in degraded mode (title-only).
+> **Implementation note (2026-05-12):** AC4 satisfied for reports created on/after migration `0046_report_admin_payload_enrichment.sql`. Admin sees a rich preview card with author handle, content snippet, and tap-to-open. Legacy rows (pre-0046) render in degraded mode (title-only). The donation-link report flow (FR-DONATE AC2) was aligned with this mechanism in migration `0047_donation_link_report_message.sql`.
 
 ---
 
