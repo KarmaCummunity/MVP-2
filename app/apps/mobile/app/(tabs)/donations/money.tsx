@@ -1,30 +1,20 @@
 // Donations · Money — coming-soon copy + external link to jgive.com + community NGO links list.
 // Mapped to: FR-DONATE-003 (top section) / FR-DONATE-007..009 (list section) / D-16.
 import React from 'react';
-import { Alert, Linking, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
+import { openExternalUrl } from '../../../src/utils/openExternalUrl';
 
 const JGIVE_URL = 'https://jgive.com';
 
 export default function DonationsMoneyScreen() {
   const { t } = useTranslation();
 
-  const openLink = async () => {
-    try {
-      const supported = await Linking.canOpenURL(JGIVE_URL);
-      if (!supported) {
-        Alert.alert(t('donations.moneyScreen.linkErrorTitle'), t('donations.moneyScreen.linkErrorBody'));
-        return;
-      }
-      await Linking.openURL(JGIVE_URL);
-    } catch {
-      Alert.alert(t('donations.moneyScreen.linkErrorTitle'), t('donations.moneyScreen.linkErrorBody'));
-    }
-  };
+  const openLink = () => { openExternalUrl(JGIVE_URL); };
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>

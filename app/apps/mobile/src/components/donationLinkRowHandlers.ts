@@ -1,5 +1,6 @@
 // Shared donation-link row actions for native Alert/ActionSheet and web Modal (FR-DONATE-009).
-import { Alert, Linking, Platform } from 'react-native';
+import { Alert, Platform } from 'react-native';
+import { openExternalUrl } from '../utils/openExternalUrl';
 import type { TFunction } from 'i18next';
 import type { DonationLink } from '@kc/domain';
 import { container } from '../lib/container';
@@ -14,7 +15,7 @@ function alertMessage(message: string): void {
 }
 
 export function openDonationLinkUrl(link: DonationLink): void {
-  Linking.openURL(link.url).catch(() => {});
+  openExternalUrl(link.url);
 }
 
 export async function reportDonationLink(
