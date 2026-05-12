@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import { TopBar } from '../../src/components/TopBar';
 import { ProfileHeader } from '../../src/components/profile/ProfileHeader';
@@ -22,6 +23,7 @@ import { formatUserLocationLine } from '../../src/lib/formatUserLocationLine';
 
 export default function ProfileScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId;
   const [activeTab, setActiveTab] = useState<ProfileTab>('open');
@@ -93,6 +95,17 @@ export default function ProfileScreen() {
               <Ionicons name="share-outline" size={18} color={colors.primary} />
             </TouchableOpacity>
           </View>
+
+          <TouchableOpacity
+            style={styles.statsLink}
+            onPress={() => router.push('/stats')}
+            accessibilityRole="button"
+            accessibilityLabel={t('settings.stats')}
+          >
+            <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
+            <Text style={styles.statsLinkText}>{t('settings.stats')}</Text>
+            <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
+          </TouchableOpacity>
         </View>
 
         <ProfileTabs active={activeTab} onChange={setActiveTab} />
@@ -134,4 +147,14 @@ const styles = StyleSheet.create({
     width: 40, height: 40, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
     justifyContent: 'center', alignItems: 'center',
   },
+  statsLink: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingVertical: spacing.sm,
+    borderTopWidth: StyleSheet.hairlineWidth,
+    borderTopColor: colors.border,
+    gap: spacing.sm,
+  },
+  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
 });

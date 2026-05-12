@@ -229,3 +229,29 @@ select count(*) from public.closure_cleanup_metrics; -- 0 until first run
 - Reopen the same post via "📤 פתח מחדש" → counter -1.
 
 Repeat for staging / prod when promoting.
+
+---
+
+## FR-STATS — Activity log + nightly counter recompute (migrations `0044`, `0045`, 2026-05-12)
+
+Same **`pg_cron` prerequisite** as P0.6 §1. Apply `0044_personal_activity_log.sql` then `0045_stats_recompute_nightly.sql` (or `supabase db push` from repo root).
+
+### Verify
+
+```sql
+-- Timeline RPC still exists (reads `user_personal_activity_log`)
+select proname from pg_proc where proname = 'rpc_my_activity_timeline';
+
+-- Nightly job + drift tables
+select proname from pg_proc where proname = 'stats_recompute_personal_counters_nightly';
+select jobname, schedule from cron.job where jobname = 'stats_recompute_nightly';
+-- → ('stats_recompute_nightly', '15 4 * * *') when pg_cron is enabled
+
+-- Manual smoke (postgres / SQL editor — function is not granted to `authenticated`)
+select * from public.stats_recompute_personal_counters_nightly();
+select * from public.stats_recompute_runs order by run_id desc limit 3;
+```
+
+Drift rows are visible to super-admins via RLS on `stats_drift_events` / `stats_recompute_runs`. For **NFR-RELI-005** (>0.1% drift/night), wire alerts from database logs or export `stats_drift_events` to your metrics stack.
+
+Regenerate `database.types.ts` after applying (or merge the manually added table + function stubs from `main`).

@@ -2,10 +2,12 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useQueryClient } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
+import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { PostMenuSheet } from './PostMenuSheet';
 
 interface Props {
@@ -14,6 +16,7 @@ interface Props {
 
 export function PostMenuButton({ post }: Props) {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
   const [open, setOpen] = useState(false);
@@ -41,7 +44,10 @@ export function PostMenuButton({ post }: Props) {
         post={post}
         viewerId={viewerId}
         isSuperAdmin={isSuperAdmin}
-        onAfterRemoval={() => router.back()}
+        onAfterRemoval={() => {
+          invalidatePersonalStatsCaches(queryClient, viewerId);
+          router.back();
+        }}
         // eslint-disable-next-line @typescript-eslint/no-explicit-any
         onEdit={() => router.push(`/edit-post/${post.postId}` as any)}
       />

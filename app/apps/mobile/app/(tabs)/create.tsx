@@ -28,6 +28,7 @@ import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
+import { invalidatePersonalStatsCaches } from '../../src/lib/invalidatePersonalStatsCaches';
 
 export default function CreatePostScreen() {
   const { t } = useTranslation();
@@ -143,6 +144,7 @@ export default function CreatePostScreen() {
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
       await queryClient.invalidateQueries({ queryKey: ['openPostsCount'] });
+      invalidatePersonalStatsCaches(queryClient, ownerId);
       useFeedSessionStore.getState().showEphemeralToast(t('post.publishSuccess'), 'success');
       router.replace('/(tabs)');
     },
