@@ -1089,6 +1089,11 @@ export type Database = {
           actor_display_name: string | null
         }[]
       }
+      // FR-DONATE AC2 (0047) — manually added until next typegen run.
+      report_donation_link: {
+        Args: { p_link_id: string }
+        Returns: undefined
+      }
     }
     Enums: {
       [_ in never]: never

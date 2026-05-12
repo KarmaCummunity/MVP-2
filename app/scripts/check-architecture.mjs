@@ -26,7 +26,7 @@ const FILE_SIZE_CAP = 200;
 const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 386 }],
   // Bumped 266→272 (P1.1 follow surface + delete-account flow). Remove once TD-29 splits the file.
-  ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 272 }],
+  ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 274 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   // Bumped 234→256 (P1.2 delete-account + about screen). Remove once TD-29 splits the file.

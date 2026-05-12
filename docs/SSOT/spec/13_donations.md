@@ -77,6 +77,8 @@ A coming-soon screen for the Money modality that links out to the partner platfo
 
 **Related.** Screens: 2.7 · External link target: `jgive.com`.
 
+> **Implementation note (2026-05-12):** As of migration `0048_donation_link_report_message.sql`, the message is an actual `kind='donation_link_reported'` system message (not a plain user message). The admin sees a `DonationLinkReportedBubble` with a tap-to-open card. The Hebrew body in the original AC text describes the previous shape — the new payload structure is `{kind, link_id, url, display_name, category_slug}`.
+
 ---
 
 ## FR-DONATE-004 — Time sub-screen

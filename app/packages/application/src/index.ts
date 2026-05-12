@@ -73,6 +73,8 @@ export { ListDonationLinksUseCase } from './donations/ListDonationLinksUseCase';
 export { AddDonationLinkUseCase } from './donations/AddDonationLinkUseCase';
 export { UpdateDonationLinkUseCase } from './donations/UpdateDonationLinkUseCase';
 export { RemoveDonationLinkUseCase } from './donations/RemoveDonationLinkUseCase';
+export { ReportDonationLinkUseCase } from './donations/ReportDonationLinkUseCase';
+export type { ReportDonationLinkInput } from './donations/ReportDonationLinkUseCase';
 export { DonationLinkError } from './donations/errors';
 export type { DonationLinkErrorCode } from './donations/errors';
 

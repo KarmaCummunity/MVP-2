@@ -1,6 +1,7 @@
-// FR-ADMIN-002 / FR-ADMIN-004 — admin-facing bubble for auto-removed targets.
-// Shows restore + (for user targets) ban actions to super admins. Uses
-// useAuthStore at component top to grab adminId — no runtime require().
+// FR-ADMIN-002 / FR-ADMIN-004 / FR-MOD-005 AC3 — admin-facing bubble for
+// auto-removed targets. Shows restore + (for user targets) ban actions to
+// super admins, plus a rich preview card when the enriched payload
+// (link_target + target_preview) is present.
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
@@ -8,6 +9,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { container } from '../../../lib/container';
 import he from '../../../i18n/he';
 import { confirmAndRun, showAdminToast } from './adminActions';
+import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 type TargetType = 'post' | 'user' | 'chat';
@@ -24,10 +26,24 @@ export function AutoRemovedBubble({
   const targetId = payload?.target_id as string | undefined;
   const showActions = isAdmin && !handledByLaterAction && !!targetType && !!targetId;
 
+  const linkTarget = readLinkTarget(payload);
+  const preview = readPreview(payload);
+  const showRichPreview = isAdmin && !!linkTarget && !!preview;
+  const showChatNote = showRichPreview && targetType === 'chat';
+
   return (
     <View style={[styles.bubble, handledByLaterAction && styles.dimmed]}>
       <Text style={styles.title}>{t.bubble.autoRemoved.title}</Text>
+      {showChatNote ? <Text style={styles.note}>{t.bubble.targetPreview.chatNote}</Text> : null}
+
+      {showRichPreview && linkTarget && preview ? (
+        <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor="#dcc88a" />
+      ) : null}
+
+      {showRichPreview ? <Text style={styles.evidence}>{t.bubble.targetPreview.evidenceLabel}</Text> : null}
+
       {body.length > 0 ? <Text style={styles.body}>{body}</Text> : null}
+
       {showActions ? (
         <View style={styles.row}>
           <Pressable
@@ -84,6 +100,8 @@ const styles = StyleSheet.create({
   dimmed: { opacity: 0.5 },
   title: { fontWeight: '600' },
   body: { marginTop: 2, fontSize: 13 },
+  note: { fontSize: 11, color: '#666', fontStyle: 'italic', marginTop: 2 },
+  evidence: { fontSize: 11, color: '#666', fontStyle: 'italic', marginTop: 4 },
   row: { flexDirection: 'row-reverse', gap: 16, marginTop: 8 },
   btn: { color: '#1a3d8f', fontWeight: '600' },
 });

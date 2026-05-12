@@ -31,4 +31,9 @@ export interface IDonationLinksRepository {
    *  super-admin) is enforced by RLS — repository simply UPDATEs and trusts
    *  the policy to reject unauthorized writers. */
   softHide(linkId: string): Promise<void>;
+
+  /** Sends a system message about a donation link to the reporter's support
+   *  thread. Server-side resolves the reporter via auth.uid() and the link
+   *  URL/name from the DB; client must be signed in. FR-DONATE AC2. */
+  report(linkId: string): Promise<void>;
 }
