@@ -1,8 +1,9 @@
-// Opens an external URL without spawning duplicate tabs on web.
-// On web: window.open with a stable name so the browser reuses the existing
-// tab instead of opening a new one on every press.
-// On native: delegates to Linking.openURL as normal.
-import { Linking, Platform } from 'react-native';
+// Opens an external URL without spawning duplicate tabs on any platform.
+// Web: window.open with a stable name reuses the existing browser tab.
+// Native: expo-web-browser opens an in-app sheet (SFSafariViewController /
+//   Chrome Custom Tab) that never lands in the system browser tab bar.
+import { Platform } from 'react-native';
+import * as WebBrowser from 'expo-web-browser';
 
 const WEB_WINDOW_NAME = '_kc_external';
 
@@ -14,5 +15,5 @@ export function openExternalUrl(url: string): void {
       return;
     }
   }
-  void Linking.openURL(url);
+  void WebBrowser.openBrowserAsync(url);
 }
