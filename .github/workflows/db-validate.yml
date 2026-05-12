@@ -2,8 +2,8 @@ name: DB validate
 
 # Runs on every PR or push to main that touches DB-related files.
 # Boots a fresh Supabase local stack, applies every migration + seed.sql,
-# then runs supabase/tests/migration-coverage.sql to catch silent CHECK
-# regressions. Mirrors what `supabase db push` would hit against prod —
+# then runs every supabase/tests/*.sql to catch regressions (CHECKs, etc.)
+# Mirrors what `supabase db push` would hit against prod —
 # without touching prod.
 
 on:
