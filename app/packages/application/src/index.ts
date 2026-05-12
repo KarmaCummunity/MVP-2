@@ -111,3 +111,5 @@ export { LookupAuditUseCase } from './moderation/LookupAuditUseCase';
 export type { LookupAuditInput } from './moderation/LookupAuditUseCase';
 export { ReportUserUseCase } from './moderation/ReportUserUseCase';
 export type { ReportUserInput } from './moderation/ReportUserUseCase';
+export { CheckAccountGateUseCase } from './moderation/CheckAccountGateUseCase';
+export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase';

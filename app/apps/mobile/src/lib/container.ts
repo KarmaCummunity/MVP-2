@@ -11,9 +11,11 @@ import {
   SupabaseDonationLinksRepository,
   SupabasePostRepository,
   SupabaseModerationAdminRepository,
+  SupabaseAccountGateRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
+  CheckAccountGateUseCase,
   ListChatsUseCase,
   OpenOrCreateChatUseCase,
   HideChatFromInboxUseCase,
@@ -54,6 +56,7 @@ const reportRepo = new SupabaseReportRepository(supabase);
 const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
 const postRepo = new SupabasePostRepository(supabase);
 const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
+const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 
@@ -89,6 +92,9 @@ export const container = {
   deleteMessage: new DeleteMessageUseCase(moderationAdminRepo),
   lookupAudit: new LookupAuditUseCase(moderationAdminRepo),
   reportUser: new ReportUserUseCase(reportRepo),
+
+  // FR-MOD-010 — sign-in + mid-session account gate.
+  checkAccountGate: new CheckAccountGateUseCase(accountGateRepo),
 
   // Donation links
   listDonationLinks: new ListDonationLinksUseCase(donationLinksRepo),
