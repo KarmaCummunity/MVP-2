@@ -898,6 +898,47 @@ export type Database = {
       closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }
       // FR-ADMIN-009 (0017) — manually added until next typegen run.
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
+      // FR-MOD-010 / FR-ADMIN-002..007 (0034-0040) — manually added until next typegen run.
+      admin_restore_target: {
+        Args: { p_target_type: string; p_target_id: string }
+        Returns: undefined
+      }
+      admin_dismiss_report: {
+        Args: { p_report_id: string }
+        Returns: undefined
+      }
+      admin_confirm_report: {
+        Args: { p_report_id: string }
+        Returns: undefined
+      }
+      admin_ban_user: {
+        Args: { p_target_user_id: string; p_reason: string; p_note: string }
+        Returns: undefined
+      }
+      admin_delete_message: {
+        Args: { p_message_id: string }
+        Returns: undefined
+      }
+      admin_audit_lookup_guarded: {
+        Args: { p_user_id: string; p_limit?: number }
+        Returns: {
+          event_id: string
+          actor_id: string | null
+          action: string
+          target_type: string | null
+          target_id: string | null
+          metadata: Json
+          created_at: string
+        }[]
+      }
+      auth_check_account_gate: {
+        Args: { p_user_id: string }
+        Returns: {
+          allowed: boolean
+          reason: string | null
+          until_at: string | null
+        }[]
+      }
       // P1.2 (0021, 0022) — manually added until next typegen run.
       haversine_km: {
         Args: { lat1: number; lon1: number; lat2: number; lon2: number }

@@ -91,3 +91,25 @@ export * from './follow/UpdatePrivacyModeUseCase';
 export type { ISearchRepository, UniversalSearchResults } from './ports/ISearchRepository';
 export { UniversalSearchUseCase } from './search/UniversalSearchUseCase';
 export type { UniversalSearchInput } from './search/UniversalSearchUseCase';
+
+export * from './ports/IModerationAdminRepository';
+export * from './ports/IAccountGateRepository';
+export * from './moderation/errors';
+
+// Moderation admin use cases (FR-MOD-007 + FR-ADMIN-002..007)
+export { RestoreTargetUseCase } from './moderation/RestoreTargetUseCase';
+export type { RestoreTargetInput } from './moderation/RestoreTargetUseCase';
+export { DismissReportUseCase } from './moderation/DismissReportUseCase';
+export type { DismissReportInput } from './moderation/DismissReportUseCase';
+export { ConfirmReportUseCase } from './moderation/ConfirmReportUseCase';
+export type { ConfirmReportInput } from './moderation/ConfirmReportUseCase';
+export { BanUserUseCase } from './moderation/BanUserUseCase';
+export type { BanUserInput } from './moderation/BanUserUseCase';
+export { DeleteMessageUseCase } from './moderation/DeleteMessageUseCase';
+export type { DeleteMessageInput } from './moderation/DeleteMessageUseCase';
+export { LookupAuditUseCase } from './moderation/LookupAuditUseCase';
+export type { LookupAuditInput } from './moderation/LookupAuditUseCase';
+export { ReportUserUseCase } from './moderation/ReportUserUseCase';
+export type { ReportUserInput } from './moderation/ReportUserUseCase';
+export { CheckAccountGateUseCase } from './moderation/CheckAccountGateUseCase';
+export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase';

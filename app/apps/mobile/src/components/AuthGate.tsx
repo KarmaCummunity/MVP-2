@@ -18,6 +18,7 @@ import { getOnboardingBootstrap } from '../services/userComposition';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { container } from '../lib/container';
+import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
 
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
@@ -32,6 +33,9 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     setOnboardingState,
     setBasicInfoSkipped,
   } = useAuthStore();
+
+  // FR-MOD-010 AC4 — sign-in + mid-session enforcement of bans / suspensions.
+  useEnforceAccountGate(session?.userId ?? null);
 
   // FR-AUTH-013: cold-start session restore.
   // Dev-only fallbacks (compiled out of production bundles by `__DEV__`):
@@ -134,9 +138,12 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     const inGuestGroup = (segments[0] as string | undefined) === '(guest)';
     const isOAuthCallback =
       (segments[0] as string | undefined) === 'auth' && segments[1] === 'callback';
+    // FR-MOD-010 AC4 — account-blocked is a terminal screen reachable while
+    // signed out; do not bounce the user back to (auth).
+    const isAccountBlocked = (segments[0] as string | undefined) === 'account-blocked';
 
     if (!isAuthenticated) {
-      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback) {
+      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback && !isAccountBlocked) {
         router.replace('/(auth)');
       }
       return;

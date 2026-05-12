@@ -25,7 +25,7 @@
 | P1.2 | Feed discovery (proximity sort, filters, universal search) | agent-fe | ✅ Done | `spec/06_feed_and_search.md` FR-FEED-004..019 |
 | P1.2.x | Close-post-from-chat + anchor lifecycle | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` FR-CHAT-014..015 |
 | P1.2.y | Chat personal inbox hide + deduped inbox (`FR-CHAT-016`) | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` |
-| P1.3 | Reports + auto-removal + false-report sanctions | agent-be | ⏳ Planned | `spec/08_moderation.md` |
+| P1.3 | Reports + auto-removal + false-report sanctions | agent-be + agent-fe | ✅ Done | `spec/08_moderation.md` |
 | P1.5 | Push notifications | agent-be + agent-fe | ⏳ Planned | `spec/09_notifications.md` |
 
 ## P2 — Stats, Admin & Polish
@@ -33,7 +33,7 @@
 | ID | Task | Owner | Status | Spec |
 |----|------|-------|--------|------|
 | P2.1 | Personal & community statistics screen | agent-fe | ✅ Done | `spec/10_statistics.md` |
-| P2.2 | Full super-admin moderation queue | agent-be | ⏳ Planned | `spec/12_super_admin.md` |
+| P2.2 | Full super-admin moderation queue | agent-be + agent-fe | ✅ Done | `spec/12_super_admin.md` |
 | P2.3 | Guest preview polish | agent-fe | ⏳ Planned | `spec/01_auth_and_onboarding.md` FR-AUTH-014 |
 
 ## P3 — Post-MVP (Deferred)

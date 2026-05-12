@@ -162,6 +162,8 @@ export default function RootLayout() {
                     <Stack.Screen name="(onboarding)" />
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="auth/callback" />
+                    {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
+                    <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
                     <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
                     <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
