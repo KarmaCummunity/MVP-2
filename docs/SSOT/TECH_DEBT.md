@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-12 (FR-STATS E2E: `0044` activity log + `0045` nightly recompute; TD-20 resolved) |
+| **Last Updated** | 2026-05-12 (FR-DONATE edit path `TD-152`; FR-AUTH-002 welcome UI honesty + `TD-151`; FR-STATS E2E; TD-20 resolved) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -52,7 +52,9 @@
 | TD-10 | 🟢 | ~~`AuthSession.displayName`/`avatarUrl` are an interim source for "My Profile" header (FR-AUTH-003 AC5).~~ Closed 2026-05-10: `(tabs)/profile.tsx` now reads `User` via `IUserRepository.findById`; session fields are first-render fallback only while the query is in flight. | Closed 2026-05-10 |
 | TD-14 | 🟢 | ~~No `IUserRepository` Supabase adapter usage in profile + user-detail screens; counters still render `0` for other-user profile.~~ Closed 2026-05-11 (P1.1) — other-user profile rebuilt to feature-parity; counters read live from User. See Resolved. |
 | TD-18 | 🔴 | Reports + auto-removal + false-report sanctions UI absent (block/unblock portion removed from MVP per `EXEC-9`, 2026-05-11) | P1.3 |
-| TD-24 | 🔴 | Apple SSO + Phone OTP buttons placeholder — required for iOS App Store + Israeli SMS path | P3.2 / P3.3 |
+| TD-24 | 🔴 | Apple SSO + Phone OTP buttons placeholder — required for iOS App Store + Israeli SMS path. **2026-05-12:** misleading full-width Phone / Email CTAs removed from welcome (`(auth)/index.tsx`); full picker restoration folded into **`TD-151`**. | P3.2 / P3.3 |
+| TD-151 | 🟠 | **`FR-AUTH-002` welcome parity — Phone OTP + primary Email entry + real Apple.** The welcome screen must again expose distinct methods per AC1–AC2: SMS OTP (`FR-AUTH-005`/`007`), first-class email/password + sign-up entry (not only a tertiary link), and native Apple (`FR-AUTH-004`). Today: Google + guest + email link + iOS Apple stub → `/(auth)/sign-in`. | P3.2 / auth hardening |
+| TD-152 | 🟢 | **Donation link edit: URL reachability duplicated in `@kc/infrastructure-supabase`** (`donationLinkUrlReachability.ts`) + **UPDATE via PostgREST** instead of the Edge `link_id` branch. Undeployed/stale `validate-donation-link` was still INSERT-only, producing duplicate rows on “edit”. Revert mobile adapter to Edge-only once **`TD-53`** (CI deploy of `supabase/functions/**`) is closed and verified in prod. | When TD-53 closes |
 | TD-25 | 🔴 | No "Follow Requests" UI (screen 5.4); private profile not functional client-side | P1.1 |
 | TD-26 | 🟢 | **CLOSED (P1.2).** Filter sheet via TopBar icon (sort/type/categories/conditions/location+radius/status); persisted state in filterStore v2 (legacy v1 dropped on migrate); realtime "↑ N new posts" pill via `IFeedRealtime`; first-post nudge with 3-tier dismiss; live community counter (closes TD-102); pull-to-refresh + web `R` shortcut. FR-FEED-007 cold-start fallback formally deprecated in favour of the new Haversine sort. Free-text search consciously removed from the Home Feed (it lives on the Universal Search tab per FR-FEED-016 superseded). Closed 2026-05-11. |
 | TD-27 | 🔴 | Auto-message in chat from post + read-receipt persistence absent | P0.5 |

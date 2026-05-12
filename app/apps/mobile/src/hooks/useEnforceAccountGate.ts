@@ -29,6 +29,9 @@ export function useEnforceAccountGate(userId: string | null) {
       try {
         const result = await container.checkAccountGate.execute({ userId });
         if (cancelled || result.allowed) return;
+        // Stale RPC / pre-migration: gate used to deny `pending_verification` with a
+        // non-UI reason that mapped to the banned screen (FR-AUTH-003).
+        if ((result.reason as string | undefined) === 'pending_verification') return;
         enforcingRef.current = true;
         await supabase.auth.signOut();
         signOut();

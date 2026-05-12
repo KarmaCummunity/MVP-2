@@ -91,28 +91,6 @@ export default function StatsScreen() {
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
-        <View style={styles.hero}>
-          <PersonalStatsStrip
-            given={u?.itemsGivenCount ?? 0}
-            received={u?.itemsReceivedCount ?? 0}
-            active={u?.activePostsCountInternal ?? 0}
-            loading={userQuery.isLoading}
-            labels={counterLabels}
-          />
-        </View>
-
-        <Text style={styles.sectionTitle}>{t('stats.recentActivity')}</Text>
-        <ActivityTimelineList
-          items={activityQuery.data ?? []}
-          loading={activityQuery.isLoading}
-          error={activityQuery.isError}
-          emptyLabel={t('stats.activityEmpty')}
-          retryLabel={t('general.retry')}
-          resolveLabel={resolveActivityLabel}
-          onRetry={() => void activityQuery.refetch()}
-          onPressPost={(id) => router.push({ pathname: '/post/[id]', params: { id } })}
-        />
-
         <CommunityStatsPanel
           users={communityQuery.data?.registeredUsers ?? 0}
           posts={communityQuery.data?.activePublicPosts ?? 0}
@@ -129,6 +107,30 @@ export default function StatsScreen() {
           }}
           onRetry={() => void communityQuery.refetch()}
         />
+
+        <View style={styles.hero}>
+          <PersonalStatsStrip
+            given={u?.itemsGivenCount ?? 0}
+            received={u?.itemsReceivedCount ?? 0}
+            active={u?.activePostsCountInternal ?? 0}
+            loading={userQuery.isLoading}
+            labels={counterLabels}
+          />
+        </View>
+        
+
+<Text style={styles.sectionTitle}>{t('stats.recentActivity')}</Text>
+        <ActivityTimelineList
+          items={activityQuery.data ?? []}
+          loading={activityQuery.isLoading}
+          error={activityQuery.isError}
+          emptyLabel={t('stats.activityEmpty')}
+          retryLabel={t('general.retry')}
+          resolveLabel={resolveActivityLabel}
+          onRetry={() => void activityQuery.refetch()}
+          onPressPost={(id) => router.push({ pathname: '/post/[id]', params: { id } })}
+        />
+
       </ScrollView>
     </SafeAreaView>
   );

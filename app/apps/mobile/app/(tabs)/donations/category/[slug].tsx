@@ -1,7 +1,7 @@
 // FR-DONATE-006/007 — generic donation category screen.
 // Renders DonationLinksList for any of: food, housing, transport, knowledge, animals, medical.
-import React, { useMemo } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import React from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
@@ -51,37 +51,36 @@ export default function DonationCategoryScreen() {
   const titleKey = I18N_KEY_BY_SLUG[slug];
   const title = t(`donations.categories.${titleKey}.title`);
   const subtitle = t(`donations.categories.${titleKey}.subtitle`);
+  const body = t(`donations.categories.${titleKey}.body`);
   const iconName = ICON_BY_SLUG[slug] as keyof typeof Ionicons.glyphMap;
-
-  // The Stack header is set in _layout.tsx via a dynamic title; here we render
-  // a bigger hero that mirrors the Money/Time screens' visual rhythm.
-  const Hero = useMemo(
-    () => (
-      <View style={styles.hero}>
-        <View style={styles.iconWrap}>
-          <Ionicons name={iconName} size={40} color={colors.primary} />
-        </View>
-        <Text style={styles.heroTitle}>{title}</Text>
-        <Text style={styles.heroSubtitle}>{subtitle}</Text>
-      </View>
-    ),
-    [iconName, title, subtitle],
-  );
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <View style={styles.scroll}>
-        {Hero}
+      <ScrollView
+        style={styles.scrollOuter}
+        contentContainerStyle={styles.scroll}
+        keyboardShouldPersistTaps="handled"
+        showsVerticalScrollIndicator
+      >
+        <View style={styles.hero}>
+          <View style={styles.iconWrap}>
+            <Ionicons name={iconName} size={40} color={colors.primary} />
+          </View>
+          <Text style={styles.heroTitle}>{title}</Text>
+          <Text style={styles.heroSubtitle}>{subtitle}</Text>
+        </View>
+        <Text style={styles.body}>{body}</Text>
+        <View style={styles.divider} />
         <DonationLinksList categorySlug={slug} />
-      </View>
+      </ScrollView>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  scrollOuter: { flex: 1 },
   scroll: {
-    flex: 1,
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.xl,
     paddingBottom: spacing['2xl'],
@@ -101,4 +100,17 @@ const styles = StyleSheet.create({
   },
   heroTitle: { ...typography.h1, color: colors.textPrimary, textAlign: 'center' },
   heroSubtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  body: {
+    ...typography.bodyLarge,
+    color: colors.textPrimary,
+    textAlign: 'right',
+    lineHeight: 26,
+    width: '100%',
+  },
+  divider: {
+    height: 1,
+    backgroundColor: colors.border,
+    marginVertical: spacing.md,
+    width: '100%',
+  },
 });

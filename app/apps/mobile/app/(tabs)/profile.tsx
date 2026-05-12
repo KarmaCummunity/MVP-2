@@ -1,5 +1,5 @@
 // My Profile screen — header + tabs + caller's own posts.
-// Mapped to: FR-PROFILE-001 AC1 (avatar + display_name + biography + counters in header),
+// Mapped to: FR-PROFILE-001 AC1 (avatar + display_name + city-only location + biography + counters in header),
 //   FR-AUTH-003 AC5 (session name/avatar used as first-render fallback while findById is in flight),
 //   FR-POST-016 (caller's own posts list).
 // Closes TD-42 (followers/following counters now read from User via IUserRepository.findById).

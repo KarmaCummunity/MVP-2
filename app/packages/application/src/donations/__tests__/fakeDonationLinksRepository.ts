@@ -2,6 +2,7 @@ import type { DonationCategorySlug, DonationLink } from '@kc/domain';
 import type {
   AddDonationLinkInput,
   IDonationLinksRepository,
+  UpdateDonationLinkInput,
 } from '../../ports/IDonationLinksRepository';
 
 export function makeLink(overrides: Partial<DonationLink> = {}): DonationLink {
@@ -22,12 +23,15 @@ export function makeLink(overrides: Partial<DonationLink> = {}): DonationLink {
 export class FakeDonationLinksRepository implements IDonationLinksRepository {
   listResult: DonationLink[] = [];
   addResult: DonationLink = makeLink();
+  updateResult: DonationLink = makeLink();
   addError: Error | null = null;
+  updateError: Error | null = null;
   hideError: Error | null = null;
   reportError: Error | null = null;
 
   lastListSlug: DonationCategorySlug | null = null;
   lastAddInput: AddDonationLinkInput | null = null;
+  lastUpdateInput: UpdateDonationLinkInput | null = null;
   lastHideId: string | null = null;
   lastReportedLinkId: string | null = null;
 
@@ -40,6 +44,12 @@ export class FakeDonationLinksRepository implements IDonationLinksRepository {
     this.lastAddInput = input;
     if (this.addError) throw this.addError;
     return this.addResult;
+  }
+
+  async updateViaEdgeFunction(input: UpdateDonationLinkInput): Promise<DonationLink> {
+    this.lastUpdateInput = input;
+    if (this.updateError) throw this.updateError;
+    return this.updateResult;
   }
 
   async softHide(linkId: string): Promise<void> {

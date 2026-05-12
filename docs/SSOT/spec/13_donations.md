@@ -157,42 +157,44 @@ A reusable component renders the community-curated NGO link list for any categor
 - AC3. Each row shows: site favicon (with `link-outline` Ionicon fallback on image error), display name (h3), description (body, 2-line clamp), and tiny domain chip. Tap → `Linking.openURL(url)`.
 - AC4. Empty state shows a friendly message + centered *"הוספת קישור ראשון"* CTA that opens the add-link modal.
 - AC5. Loading state shows an `ActivityIndicator`; transient load failure shows an inline error + *"נסה שוב"* retry button.
-- AC6. The `embedded` prop renders rows in a non-scrolling `View` (for nesting inside an outer `ScrollView`); without it, rows render in a `FlatList`.
+- AC6. Rows render in a non-scrolling block (`View`); the **host screen** must wrap the hub section in a vertical `ScrollView` (or equivalent) so long category lists scroll reliably on web and native. Virtualized `FlatList` for this block alone is deferred (nested scroll + unbounded height issues on RN Web).
 
 ---
 
-## FR-DONATE-008 — Add link flow + Edge Function validation
+## FR-DONATE-008 — Add / edit link flow + Edge Function validation
 
 **Description.**
-Any signed-in user can submit a new donation link via a modal sheet. The submission is validated server-side by the `validate-donation-link` Edge Function which performs a URL reachability check and inserts the row using the service-role key. Direct `donation_links` INSERT from client roles is blocked by RLS.
+Any signed-in user can submit a new donation link via a modal sheet, or **edit their own** link (same modal; FR-DONATE-009). The submission is validated server-side by the `validate-donation-link` Edge Function which performs a URL reachability check and inserts or updates the row using the service-role key. Direct `donation_links` INSERT from client roles is blocked by RLS.
 
 **Acceptance Criteria.**
 - AC1. The modal collects: URL, display name (2..80 chars), description (optional, ≤280 chars).
-- AC2. The *"הוסף"* primary action is disabled until URL matches `^https?://` and display name length is in range.
-- AC3. On submit, the client calls the `validate-donation-link` Edge Function. The function:
+- AC2. The *"הוסף"* / *"שמור"* primary action is disabled until URL matches `^https?://` and display name length is in range.
+- AC3. On submit (add), the client calls the `validate-donation-link` Edge Function without `link_id`. The function:
   - Validates inputs and confirms `category_slug` is one of the 8 allowed slugs.
   - Enforces a soft rate-limit of 10 inserts per user per hour; over-limit returns `rate_limited`.
   - Performs `fetch(url, { method: 'HEAD', redirect: 'follow', signal: AbortSignal.timeout(5000) })`. On 4xx/5xx or `405`, retries once with `GET`. Treats status `200..399` as reachable.
   - On reachability success, inserts a row with `validated_at = now()` using the service-role client and returns the inserted row.
-- AC4. UI feedback during submit: button shows a spinner with the label *"מאמת קישור..."*; on success the modal closes and the new row is prepended to the list; on failure an inline localized error message is shown keyed off the returned `code` (`invalid_url`, `unreachable`, `rate_limited`, `unauthorized`, `network`, `unknown`).
-- AC5. Auto-publish: a successfully inserted row is visible to all signed-in users immediately (no admin approval queue).
+- AC3b. On submit (**edit**), the client calls the same Edge Function with `link_id` set to the row UUID and the same field payload; the function verifies the caller is `submitted_by` **or** `users.is_super_admin = true` for that session user, the row is visible (`hidden_at IS NULL`), `category_slug` matches the stored row, then re-checks reachability (same `checkReachable` rules as insert) and **updates** `url`, `display_name`, `description`, `validated_at` (no insert rate-limit).
+- AC4. UI feedback during submit: button shows a spinner with the label *"מאמת קישור..."*; on success the modal closes and the list reflects the change; on failure an inline localized error message is shown keyed off the returned `code` (`invalid_url`, `unreachable`, `rate_limited`, `unauthorized`, `forbidden`, `network`, `unknown`).
+- AC5. Auto-publish: a successfully inserted or updated row is visible to all signed-in users immediately (no admin approval queue).
 
 ---
 
-## FR-DONATE-009 — Reporting and removal
+## FR-DONATE-009 — Reporting, edit, and removal
 
 **Description.**
-Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דווח על קישור"*, and (only for the submitter) *"מחק"*.
+Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דווח על קישור"*, and (only for the submitter) *"ערוך"* and *"מחק"*.
 
 **Acceptance Criteria.**
 - AC1. *"פתח"* → `Linking.openURL(url)`.
 - AC2. *"דווח על קישור"* → reuses the existing get-or-create support thread (`FR-CHAT-007`) and sends a system-style message: `דיווח על קישור (donation_link:<id>) — <url>`. A success alert is shown.
-- AC3. *"מחק"* is shown only when `donation_links.submitted_by = auth.uid()`. On confirm, soft-hides the row by setting `hidden_at = now(), hidden_by = auth.uid()`. The row is removed from the local list immediately.
-- AC4. Soft-hide authorization is enforced by the `donation_links_update_own_or_admin` RLS policy (own row OR `users.is_super_admin = true`).
+- AC3. *"ערוך"* is shown when `donation_links.submitted_by = auth.uid()` **or** the session user is super-admin (`users.is_super_admin = true`). It opens the same modal as add with fields prefilled; saving calls the Edge Function update path (`link_id`) per `FR-DONATE-008 AC3b`. On success the row updates in the list in place (no duplicate row).
+- AC4. *"מחק"* is shown only when `donation_links.submitted_by = auth.uid()`. On confirm, soft-hides the row by setting `hidden_at = now(), hidden_by = auth.uid()`. The row is removed from the local list immediately.
+- AC5. Soft-hide authorization is enforced by the `donation_links_update_own_or_admin` RLS policy (own row OR `users.is_super_admin = true`).
 
 ---
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-09 | Initial draft. Reintroduces Donations tab into MVP per `D-16`. Defines `FR-DONATE-001..005`. |
-| 0.2 | 2026-05-10 | Adds `FR-DONATE-006..009` — 6 new category tiles + community-curated NGO link list (auto-publish + Edge-Function URL reachability). Augments `FR-DONATE-003` AC6 and `FR-DONATE-004` AC9 to embed the new list section. |
+| 0.4 | 2026-05-12 | `FR-DONATE-007 AC6` — list rows are always a non-virtualized block; host screens use outer `ScrollView`. `FR-DONATE-008/009` — super-admin may **edit** any donation link via Edge Function + overflow menu. |

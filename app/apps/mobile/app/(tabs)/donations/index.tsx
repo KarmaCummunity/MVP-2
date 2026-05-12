@@ -45,7 +45,6 @@ export default function DonationsHubScreen() {
     <SafeAreaView style={styles.container} edges={['top']}>
       <TopBar />
       <ScrollView contentContainerStyle={styles.scroll}>
-        <Text style={styles.title}>{t('donations.hubTitle')}</Text>
         <View style={styles.grid}>
           {rows.map((pair, rowIdx) => (
             <View key={rowIdx} style={styles.row}>

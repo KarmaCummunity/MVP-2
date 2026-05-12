@@ -11,53 +11,72 @@ import {
 
 interface Args {
   me: string | null;
+  isSuperAdmin: boolean;
   onRemoved: (id: string) => void;
+  onEdit: (link: DonationLink) => void;
 }
 
-export function useDonationLinkActions({ me, onRemoved }: Args) {
+export function useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit }: Args) {
   const { t } = useTranslation();
 
   return useCallback(
     (link: DonationLink) => {
       if (Platform.OS === 'web') return;
 
-      const canRemove = link.submittedBy === me;
-      const labels = [
-        t('donations.links.rowMenu.open'),
-        t('donations.links.rowMenu.report'),
-        ...(canRemove ? [t('donations.links.rowMenu.remove')] : []),
-        t('donations.addLinkModal.cancel'),
-      ];
-      const removeIdx = canRemove ? 2 : -1;
-      const cancelIdx = labels.length - 1;
-
-      const performAction = (idx: number) => {
-        if (idx === 0) openDonationLinkUrl(link);
-        else if (idx === 1) void reportDonationLink(me, link, t);
-        else if (idx === removeIdx && canRemove) confirmRemoveDonationLink(link, onRemoved, t);
-      };
+      const isOwner = link.submittedBy === me;
+      const canEditLink = isOwner || isSuperAdmin;
 
       if (Platform.OS === 'ios') {
+        const actions: { label: string; run: () => void }[] = [
+          { label: t('donations.links.rowMenu.open'), run: () => openDonationLinkUrl(link) },
+          { label: t('donations.links.rowMenu.report'), run: () => void reportDonationLink(me, link, t) },
+        ];
+        if (canEditLink) {
+          actions.push({ label: t('donations.links.rowMenu.edit'), run: () => onEdit(link) });
+        }
+        if (isOwner) {
+          actions.push({
+            label: t('donations.links.rowMenu.remove'),
+            run: () => confirmRemoveDonationLink(link, onRemoved, t),
+          });
+        }
+        const cancelLabel = t('donations.addLinkModal.cancel');
+        const options = [...actions.map((a) => a.label), cancelLabel];
+        const cancelButtonIndex = options.length - 1;
+        const destructiveButtonIndex = isOwner ? cancelButtonIndex - 1 : undefined;
+
         ActionSheetIOS.showActionSheetWithOptions(
-          {
-            options: labels,
-            cancelButtonIndex: cancelIdx,
-            destructiveButtonIndex: removeIdx >= 0 ? removeIdx : undefined,
+          { options, cancelButtonIndex, destructiveButtonIndex },
+          (idx) => {
+            if (idx === cancelButtonIndex) return;
+            actions[idx]?.run();
           },
-          performAction,
         );
         return;
       }
 
-      Alert.alert(link.displayName, undefined, [
-        ...labels.slice(0, cancelIdx).map((label, idx) => ({
-          text: label,
-          onPress: () => performAction(idx),
-          style: idx === removeIdx ? ('destructive' as const) : undefined,
-        })),
-        { text: labels[cancelIdx], style: 'cancel' as const },
-      ]);
+      const buttons: {
+        text: string;
+        onPress?: () => void;
+        style?: 'default' | 'cancel' | 'destructive';
+      }[] = [
+        { text: t('donations.links.rowMenu.open'), onPress: () => openDonationLinkUrl(link) },
+        { text: t('donations.links.rowMenu.report'), onPress: () => void reportDonationLink(me, link, t) },
+      ];
+      if (canEditLink) {
+        buttons.push({ text: t('donations.links.rowMenu.edit'), onPress: () => onEdit(link) });
+      }
+      if (isOwner) {
+        buttons.push({
+          text: t('donations.links.rowMenu.remove'),
+          onPress: () => confirmRemoveDonationLink(link, onRemoved, t),
+          style: 'destructive' as const,
+        });
+      }
+      buttons.push({ text: t('donations.addLinkModal.cancel'), style: 'cancel' as const });
+
+      Alert.alert(link.displayName, undefined, buttons);
     },
-    [me, t, onRemoved],
+    [me, isSuperAdmin, t, onRemoved, onEdit],
   );
 }

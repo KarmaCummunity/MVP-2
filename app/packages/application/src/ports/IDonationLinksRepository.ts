@@ -7,6 +7,14 @@ export interface AddDonationLinkInput {
   readonly description?: string | null;
 }
 
+export interface UpdateDonationLinkInput {
+  readonly linkId: string;
+  readonly categorySlug: DonationCategorySlug;
+  readonly url: string;
+  readonly displayName: string;
+  readonly description?: string | null;
+}
+
 export interface IDonationLinksRepository {
   /** Visible (non-hidden) rows for a category, newest first. */
   listByCategory(slug: DonationCategorySlug): Promise<DonationLink[]>;
@@ -14,6 +22,10 @@ export interface IDonationLinksRepository {
   /** Calls the validate-donation-link Edge Function. The function performs URL
    *  reachability checks and inserts via service-role on success. */
   addViaEdgeFunction(input: AddDonationLinkInput): Promise<DonationLink>;
+
+  /** Same Edge Function with `link_id`: validates URL, then updates the row if
+   *  the caller is the submitter and the row is visible. */
+  updateViaEdgeFunction(input: UpdateDonationLinkInput): Promise<DonationLink>;
 
   /** Soft-hide a link (sets hidden_at + hidden_by). Authorization (own-row or
    *  super-admin) is enforced by RLS — repository simply UPDATEs and trusts
