@@ -213,6 +213,8 @@ const he = {
     devTools: 'כלי פיתוח',
     resetOnboarding: 'איפוס אונבורדינג (דיבוג)',
     resetting: 'מאפס...',
+    simulateHardRefresh: 'סימולציית רענון מלא (דיבוג)',
+    simulatingHardRefresh: 'מרענן...',
     version: 'KC - קהילת קארמה',
   },
 
