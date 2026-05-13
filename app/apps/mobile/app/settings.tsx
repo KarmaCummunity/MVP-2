@@ -6,9 +6,12 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
+import { useQueryClient } from '@tanstack/react-query';
 import { getSignOutUseCase } from '../src/services/authComposition';
 import { getDeleteAccountUseCase, setOnboardingStateDirect } from '../src/services/userComposition';
 import { useAuthStore } from '../src/store/authStore';
+import { useChatStore } from '../src/store/chatStore';
+import { container } from '../src/lib/container';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
 import he from '../src/i18n/he';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
@@ -38,11 +41,33 @@ export default function SettingsScreen() {
   const isSuperAdmin = useIsSuperAdmin();
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
+  const queryClient = useQueryClient();
   const [notificationsOn, setNotificationsOn] = React.useState(true);
   const [signingOut, setSigningOut] = React.useState(false);
   const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
   const [deleteSuccessVisible, setDeleteSuccessVisible] = React.useState(false);
+  const [hardRefreshing, setHardRefreshing] = React.useState(false);
+
+  // Dev-only "simulate hard refresh" (FR-CHAT-012 verification aid).
+  // Mirrors what the OS would do on a cold app start: drop in-memory state
+  // (query cache + chat inbox/threads + realtime subs), then re-arm the inbox
+  // sub so getMyChats + getUnreadTotal run against the current server snapshot.
+  const handleSimulateHardRefresh = async () => {
+    if (!session?.userId || hardRefreshing) return;
+    setHardRefreshing(true);
+    try {
+      useChatStore.getState().resetOnSignOut();
+      queryClient.clear();
+      await useChatStore.getState().startInboxSub(
+        session.userId,
+        container.chatRepo,
+        container.chatRealtime,
+      );
+    } finally {
+      setHardRefreshing(false);
+    }
+  };
 
   const handleDeleteConfirm = async () => {
     // Throws DeleteAccountError on failure — the modal catches and transitions
@@ -177,7 +202,7 @@ export default function SettingsScreen() {
           <SettingsRow label={t('settings.about')} icon="information-circle-outline" onPress={() => router.push('/about')} />
         </View>
 
-        {/* Dev tools — testing onboarding without account deletion */}
+        {/* Dev tools — testing onboarding without account deletion + cold-start simulation */}
         {__DEV__ && (
           <>
             <Text style={styles.sectionTitle}>{t('settings.devTools')}</Text>
@@ -186,6 +211,11 @@ export default function SettingsScreen() {
                 label={resettingOnboarding ? t('settings.resetting') : t('settings.resetOnboarding')}
                 icon="refresh-outline"
                 onPress={handleResetOnboarding}
+              />
+              <SettingsRow
+                label={hardRefreshing ? t('settings.simulatingHardRefresh') : t('settings.simulateHardRefresh')}
+                icon="reload-outline"
+                onPress={handleSimulateHardRefresh}
               />
             </View>
           </>

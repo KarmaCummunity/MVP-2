@@ -230,6 +230,7 @@ A message is marked `read` when the recipient's conversation screen renders it f
 - AC1. The read transition is performed server-side on a "viewed" event from the recipient's client; client-side rendering alone is not sufficient.
 - AC2. Bulk-read API: opening a thread with N unread messages emits a single batch event to mark them all read.
 - AC3. Read receipts cannot be disabled in MVP.
+- AC4. The bulk-read RPC covers **every** unread message in the thread regardless of `kind`. System messages (`kind='system'`, `sender_id IS NULL`) — e.g. "post closed", admin report bubbles, moderation notices — are counted by `rpc_chat_unread_total` and therefore must also be cleared by `rpc_chat_mark_read`. Migration `0054` aligns the two so the inbox-row badge and the topbar badge settle to 0 after a single thread visit.
 
 **Related.** Domain: `Message.status`.
 

@@ -27,6 +27,7 @@
 | P1.2.y | Chat personal inbox hide + deduped inbox (`FR-CHAT-016`) | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` |
 | P1.3 | Reports + auto-removal + false-report sanctions | agent-be + agent-fe | ✅ Done | `spec/08_moderation.md` |
 | P1.3.1 | Admin report-bubble deeplink + auto-removed message (FR-MOD-001 AC4 + FR-MOD-005 AC3) | agent-be + agent-fe | ✅ Done | `spec/08_moderation.md` |
+| P1.3.2 | Chat mark-read covers system messages (FR-CHAT-011 AC4) — migrations `0054` + `0055` (`delivered_at` back-fill + defensive RPC) deployed to prod + dev; pull-to-refresh on inbox + dev-tools "סימולציית רענון מלא" | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` |
 | P1.5 | Push notifications | agent-be + agent-fe | ⏳ Planned | `spec/09_notifications.md` |
 
 ## P2 — Stats, Admin & Polish
