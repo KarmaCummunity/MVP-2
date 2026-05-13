@@ -12,7 +12,7 @@ supabase gen types typescript --project-id <ref> \
   > app/packages/infrastructure-supabase/src/database.types.ts
 ```
 
-**GitHub Actions — DB deploy:** Workflow [`.github/workflows/db-deploy.yml`](../../.github/workflows/db-deploy.yml) is manual (`workflow_dispatch`). Pick **target** `supabase-prod` or `supabase-dev` (each GitHub Environment must define the same three secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`). Run once with **apply** unchecked (dry-run), then with **apply** checked. The workflow passes `--yes` to the CLI so non-interactive runs do not fail on prompts.
+**GitHub Actions — DB deploy:** Workflow [`.github/workflows/db-deploy.yml`](../../.github/workflows/db-deploy.yml) is manual (`workflow_dispatch`). Pick **target** `supabase-prod` or `supabase-dev` (each GitHub Environment must define the same three secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`). `SUPABASE_ACCESS_TOKEN` must be an **account** access token from [Account → Access tokens](https://supabase.com/dashboard/account/tokens) (format `sbp_…`), not the project anon/publishable key. Run once with **apply** unchecked (dry-run), then with **apply** checked. The workflow passes `--yes` to the CLI so non-interactive runs do not fail on prompts.
 
 ---
 
