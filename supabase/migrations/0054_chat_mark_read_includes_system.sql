@@ -7,7 +7,23 @@
 -- the next debounced unread-total RPC.
 -- Design: docs/superpowers/specs/2026-05-13-chat-mark-read-system-messages-design.md
 
+-- ── 0. Pre-fix legacy data inconsistency ────────────────────────────────────
+-- Some system messages were inserted with `status='delivered'` but
+-- `delivered_at IS NULL` (older trigger code paths). The
+-- `messages_timestamps_monotonic` CHECK constraint requires
+-- `delivered_at IS NOT NULL` whenever `read_at IS NOT NULL`, so any subsequent
+-- mark-read on those rows would error. Backfill `delivered_at` from
+-- `created_at` (monotonic by construction) before touching status.
+update public.messages
+   set delivered_at = created_at
+ where delivered_at is null
+   and (status = 'delivered' or status = 'read');
+
 -- ── 1. Replace the RPC: DEFINER + IS DISTINCT FROM + participant guard ──────
+-- `IS DISTINCT FROM` includes system messages (sender_id IS NULL).
+-- `coalesce(delivered_at, now())` is defensive — keeps the monotonic CHECK
+-- happy for any row that slipped through the §0 backfill (e.g. inserted
+-- between this migration and a future trigger fix).
 create or replace function public.rpc_chat_mark_read(p_chat_id uuid)
 returns void
 language plpgsql
@@ -31,10 +47,9 @@ begin
     raise exception 'forbidden' using errcode = '42501';
   end if;
 
-  -- `IS DISTINCT FROM` includes system messages (sender_id IS NULL).
-  -- `status <> 'read'` keeps the operation idempotent.
   update public.messages
-     set status = 'read'
+     set status = 'read',
+         delivered_at = coalesce(delivered_at, now())
    where chat_id = p_chat_id
      and sender_id is distinct from v_uid
      and status <> 'read';

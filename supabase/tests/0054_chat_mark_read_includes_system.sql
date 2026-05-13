@@ -95,6 +95,35 @@ begin
   raise notice '✓ T1 mark_read covers user + system messages';
 end $$;
 
+-- ─── TEST 1b: legacy system row (delivered_at IS NULL) is still markable ───
+-- Regression for the `messages_timestamps_monotonic` failure we hit applying
+-- 0054 to a DB that contained pre-fix system messages (see 0055).
+do $$
+declare
+  v_recipient uuid := pg_temp.mk_user('t1br_' || substr(gen_random_uuid()::text,1,8));
+  v_sender    uuid := pg_temp.mk_user('t1bs_' || substr(gen_random_uuid()::text,1,8));
+  v_chat      uuid := pg_temp.mk_chat(v_recipient, v_sender);
+  v_sys_msg   uuid;
+  v_sys_status text;
+  v_delivered_at timestamptz;
+begin
+  -- Seed: a system message inserted directly at status='delivered' WITHOUT
+  -- delivered_at (the historical inconsistency).
+  insert into public.messages (chat_id, sender_id, kind, body, system_payload, status, delivered_at)
+  values (v_chat, null, 'system', 'legacy', jsonb_build_object('kind','legacy'), 'delivered', null)
+  returning message_id into v_sys_msg;
+
+  perform set_config('request.jwt.claims', jsonb_build_object('sub', v_recipient::text)::text, true);
+  perform public.rpc_chat_mark_read(v_chat);
+
+  select status, delivered_at into v_sys_status, v_delivered_at
+    from public.messages where message_id = v_sys_msg;
+  perform pg_temp.assert(v_sys_status = 'read', 'T1b: legacy system status=' || v_sys_status);
+  perform pg_temp.assert(v_delivered_at is not null, 'T1b: delivered_at should be coalesced by the RPC');
+
+  raise notice '✓ T1b legacy system row (delivered_at IS NULL) is markable';
+end $$;
+
 -- ─── TEST 2: non-participant is rejected ────────────────────────────────────
 do $$
 declare
