@@ -55,7 +55,15 @@
         }
       ],
       "expo-localization",
-      "expo-font"
+      "expo-font",
+      [
+        "expo-notifications",
+        {
+          "icon": "./assets/notification-icon.png",
+          "color": "#0A8754",
+          "sounds": []
+        }
+      ]
     ],
     "newArchEnabled": true,
     "experiments": {
