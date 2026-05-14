@@ -4,6 +4,7 @@ import { colors, typography, spacing, radius } from '@kc/ui';
 import { useTranslation } from 'react-i18next';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import type { AboutSectionId } from './aboutSectionModel';
+import { AboutLiveNumbers } from './AboutLiveNumbers';
 
 const gap = spacing.lg;
 
@@ -42,6 +43,9 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
             <Text style={styles.h}>{t('aboutContent.numbersTitle')}</Text>
             <Text style={styles.lead}>{t('aboutContent.numbersLead')}</Text>
             <Text style={styles.p}>{t('aboutContent.numbersBody')}</Text>
+            <View style={styles.liveStatsWrap}>
+              <AboutLiveNumbers />
+            </View>
           </SectionCard>
         </AnimatedEntry>
       </View>
@@ -116,4 +120,5 @@ const styles = StyleSheet.create({
   h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
   lead: { ...typography.body, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
   p: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
+  liveStatsWrap: { marginTop: spacing.lg },
 });
