@@ -1,15 +1,19 @@
-// Onboarding step 1 — FR-AUTH-010
+// Onboarding step 2 — FR-AUTH-010
 import React from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { EditProfileAddressBlock } from '../../src/components/EditProfileAddressBlock';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { useOnboardingBasicInfoFlow } from '../../src/hooks/useOnboardingBasicInfoFlow';
+import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
+import { PressableScale } from '../../src/components/animations/PressableScale';
+import { staggerDelay } from '../../src/lib/animations/motion';
 
 export default function OnboardingBasicInfoScreen() {
   const { t } = useTranslation();
@@ -29,57 +33,81 @@ export default function OnboardingBasicInfoScreen() {
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
             <OnboardingStepHeader
-              step={1}
+              step={2}
               onSkip={handleSkip}
               onBack={handleBack}
               skipDisabled={loading}
               backDisabled={loading}
             />
-            <Text style={styles.title}>פרטים בסיסיים</Text>
-            <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>שם מלא</Text>
-              <TextInput
-                style={styles.input}
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="לדוגמה: רינה כהן"
-                placeholderTextColor={colors.textDisabled}
-                maxLength={50}
-                textAlign="right"
-                editable={!loading}
+            <AnimatedEntry delay={staggerDelay(0)} style={styles.iconWrap}>
+              <View style={styles.iconHalo}>
+                <Ionicons name="person-outline" size={32} color={colors.primary} />
+              </View>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(1)}>
+              <Text style={styles.title}>פרטים בסיסיים</Text>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(2)}>
+              <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(3)}>
+              <View style={styles.field}>
+                <Text style={styles.label}>שם מלא</Text>
+                <TextInput
+                  style={styles.input}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="לדוגמה: רינה כהן"
+                  placeholderTextColor={colors.textDisabled}
+                  maxLength={50}
+                  textAlign="right"
+                  editable={!loading}
+                />
+              </View>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(4)}>
+              <EditProfileAddressBlock
+                city={city}
+                onCityChange={setCity}
+                street={street}
+                streetNumber={streetNumber}
+                onStreetChange={setStreet}
+                onStreetNumberChange={setStreetNumber}
+                disabled={loading}
               />
-            </View>
-
-            <EditProfileAddressBlock
-              city={city}
-              onCityChange={setCity}
-              street={street}
-              streetNumber={streetNumber}
-              onStreetChange={setStreet}
-              onStreetNumberChange={setStreetNumber}
-              disabled={loading}
-            />
+            </AnimatedEntry>
           </ScrollView>
 
-          <TouchableOpacity
-            style={[
-              styles.cta,
-              !hasRequiredFields && { opacity: 0.4 },
-              hasRequiredFields && !canSubmit && { opacity: 0.85 },
-            ]}
-            disabled={!hasRequiredFields || loading}
-            onPress={handleContinue}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.textInverse} />
-            ) : (
-              <Text style={styles.ctaText}>המשך</Text>
-            )}
-          </TouchableOpacity>
+          <AnimatedEntry delay={staggerDelay(5)}>
+            <PressableScale
+              style={[
+                styles.cta,
+                !hasRequiredFields && { opacity: 0.4 },
+                hasRequiredFields && !canSubmit && { opacity: 0.85 },
+              ]}
+              disabled={!hasRequiredFields || loading}
+              onPress={handleContinue}
+              accessibilityRole="button"
+              accessibilityLabel="המשך"
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.textInverse} />
+              ) : (
+                <>
+                  <Text style={styles.ctaText}>המשך</Text>
+                  <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
+                </>
+              )}
+            </PressableScale>
+          </AnimatedEntry>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -96,32 +124,48 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: { gap: spacing.base, paddingBottom: spacing.lg },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
+  iconWrap: { alignItems: 'center', marginTop: spacing.sm, marginBottom: spacing.xs },
+  iconHalo: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  title: {
+    ...typography.h1,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
   subtitle: {
-    ...typography.body,
+    ...typography.bodyLarge,
     color: colors.textSecondary,
-    textAlign: 'right',
-    marginBottom: spacing.lg,
+    textAlign: 'center',
+    marginBottom: spacing.base,
+    paddingHorizontal: spacing.sm,
   },
   field: { gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   input: {
-    height: 50,
+    height: 54,
     backgroundColor: colors.background,
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
     paddingHorizontal: spacing.base,
-    ...typography.body,
+    ...typography.bodyLarge,
     color: colors.textPrimary,
   },
   cta: {
-    height: 52,
+    height: 56,
     marginTop: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  ctaText: { ...typography.button, color: colors.textInverse },
+  ctaText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
 });
