@@ -24,7 +24,8 @@ const FILE_SIZE_CAP = 200;
 // `max` is the current line count: the file cannot grow past it. Shrinking the file
 // below the cap triggers a STALE-ALLOWLIST error, prompting removal from this list.
 const FILE_SIZE_ALLOWLIST = new Map([
-  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 386 }],
+  // Bumped 386→416 (FR-NOTIF-015 AC1 push-gate wired in). Remove once TD-29 splits the file.
+  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 416 }],
   // Bumped 266→272 (P1.1 follow surface + delete-account flow). Remove once TD-29 splits the file.
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 274 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
