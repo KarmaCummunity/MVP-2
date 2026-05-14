@@ -94,14 +94,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     lineHeight: 20,
   },
-  linkRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: spacing.sm,
-    alignSelf: 'flex-end',
-    marginTop: spacing.sm,
-  },
-  linkText: { ...typography.body, color: colors.primary, fontWeight: '600' },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.base },
   cta: {
     height: 52,
