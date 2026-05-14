@@ -48,6 +48,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
+  // Chat screen bumped 195→220 (FR-NOTIF-015 AC1 push-gate wired in). Split tracked as TD-140.
+  ['apps/mobile/app/chat/[id].tsx', { td: 'TD-140', max: 220 }],
 ]);
 
 const LAYER_RULES = [

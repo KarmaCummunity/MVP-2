@@ -55,4 +55,11 @@ export interface IChatRepository {
 
   // Support thread (FR-CHAT-007)
   getOrCreateSupportThread(userId: string): Promise<Chat>;
+
+  /**
+   * Returns true if the user has ever sent any user-kind message across all
+   * chats. Used to detect the first-message-sent moment for push-prompt gating
+   * (FR-NOTIF-015 AC1).
+   */
+  hasSentAnyMessage(userId: string): Promise<boolean>;
 }

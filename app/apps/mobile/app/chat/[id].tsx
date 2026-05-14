@@ -1,5 +1,5 @@
 // Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform, Alert,
@@ -21,6 +21,8 @@ import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
 import { chatConversationStyles as styles } from './chatScreenStyles';
+import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
+import { EnablePushModal } from '../../src/components/EnablePushModal';
 
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
 
@@ -38,6 +40,8 @@ export default function ChatScreen() {
   const [menuOpen, setMenuOpen] = useState(false);
   const [hideConfirmOpen, setHideConfirmOpen] = useState(false);
   const [hideBusy, setHideBusy] = useState(false);
+  const { modalState, presentPrePrompt, handleAccept, handleDecline } = usePushPermissionGate();
+  const checkedFirstSendRef = useRef(false);
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -76,6 +80,15 @@ export default function ChatScreen() {
   const send = async (overrideClientId?: string, overrideBody?: string) => {
     const body = (overrideBody ?? input).trim();
     if (body.length === 0 || body.length > MESSAGE_MAX_CHARS) return;
+    // FR-NOTIF-015 AC1: capture first-send state before inserting the message.
+    let wasFirstSend = false;
+    if (!checkedFirstSendRef.current && userId) {
+      checkedFirstSendRef.current = true;
+      try {
+        const hasSent = await container.chatRepo.hasSentAnyMessage(userId);
+        if (!hasSent) wasFirstSend = true;
+      } catch { /* non-critical — skip gate on error */ }
+    }
     const clientId = overrideClientId ?? randomUUID();
     const optimistic: OptimisticMessage = {
       messageId: clientId, clientId, chatId, senderId: userId, kind: 'user',
@@ -89,6 +102,7 @@ export default function ChatScreen() {
     try {
       const server = await container.sendMessage.execute({ chatId, senderId: userId, body });
       useChatStore.getState().reconcileSent(chatId, clientId, server);
+      if (wasFirstSend) void presentPrePrompt('first-message-sent');
     } catch (err) {
       useChatStore.getState().markFailed(chatId, clientId);
       if (err instanceof ChatError && err.code === 'send_to_deleted_user') {
@@ -189,6 +203,17 @@ export default function ChatScreen() {
         onHideCancel={() => setHideConfirmOpen(false)}
         onOpenHideConfirm={() => setHideConfirmOpen(true)}
         onHideConfirm={confirmHideFromInbox}
+      />
+      <EnablePushModal
+        visible={modalState.visible}
+        trigger={modalState.trigger}
+        onAccept={async () => {
+          const status = await handleAccept();
+          if (status === 'granted' && userId) {
+            await registerCurrentDeviceIfPermitted(userId, { deviceRepo: container.deviceRepo });
+          }
+        }}
+        onDecline={handleDecline}
       />
     </SafeAreaView>
   );
