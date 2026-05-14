@@ -145,10 +145,12 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
     paddingHorizontal: spacing.sm,
   },
-  field: { 
+  field: {
+    width: '100%',
     maxWidth: 500,
     alignSelf: 'center',
-    gap: spacing.xs },
+    gap: spacing.xs,
+  },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   input: {
     height: 54,
