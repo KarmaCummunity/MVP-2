@@ -5,6 +5,7 @@ import { useTranslation } from 'react-i18next';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import type { AboutSectionId } from './aboutSectionModel';
 import { AboutLiveNumbers } from './AboutLiveNumbers';
+import { AboutValuesGrid } from './AboutValuesGrid';
 
 const gap = spacing.lg;
 
@@ -101,7 +102,8 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
         <AnimatedEntry delay={next()}>
           <SectionCard>
             <Text style={styles.h}>{t('aboutContent.valuesTitle')}</Text>
-            <Text style={styles.p}>{t('aboutContent.valuesText')}</Text>
+            <View style={styles.valuesSpacer} />
+            <AboutValuesGrid />
           </SectionCard>
         </AnimatedEntry>
       </View>
@@ -121,4 +123,5 @@ const styles = StyleSheet.create({
   lead: { ...typography.body, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
   p: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
   liveStatsWrap: { marginTop: spacing.lg },
+  valuesSpacer: { height: spacing.xs },
 });

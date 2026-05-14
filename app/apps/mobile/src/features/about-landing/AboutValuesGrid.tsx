@@ -1,0 +1,53 @@
+// Values grid — visual icon chips (one per value).
+import React from 'react';
+import { View, Text, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { colors, typography, spacing, radius } from '@kc/ui';
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+interface ValueItem {
+  readonly icon: IoniconName;
+  readonly label: string;
+}
+
+export function AboutValuesGrid() {
+  const { t } = useTranslation();
+  const values: ValueItem[] = t('aboutContent.valuesList', { returnObjects: true }) as ValueItem[];
+
+  return (
+    <View style={styles.grid}>
+      {values.map((v) => (
+        <View key={v.label} style={styles.chip}>
+          <Ionicons name={v.icon} size={18} color={colors.primary} />
+          <Text style={styles.label}>{v.label}</Text>
+        </View>
+      ))}
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  grid: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.sm,
+  },
+  chip: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primarySurface,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+  },
+  label: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700',
+  },
+});

@@ -7,6 +7,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import type { AboutSectionId } from './aboutSectionModel';
 import { AboutInstagramEmbed } from './AboutInstagramEmbed';
+import { AboutRoadmapTimeline } from './AboutRoadmapTimeline';
+import { AboutContributionsGrid } from './AboutContributionsGrid';
+import { AboutFaqAccordion } from './AboutFaqAccordion';
 
 function track(
   id: AboutSectionId,
@@ -29,6 +32,7 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
     d += 40;
     return cur;
   };
+  const initials = (t('aboutContent.teamLeadTitle') as string).slice(0, 2);
 
   return (
     <>
@@ -36,17 +40,12 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
             <Text style={styles.h}>{t('aboutContent.roadmapTitle')}</Text>
-            <Text style={styles.sub}>{t('aboutContent.roadmapPhase1Title')}</Text>
-            <Text style={styles.p}>{t('aboutContent.roadmapPhase1Body')}</Text>
-            <Text style={styles.sub}>{t('aboutContent.roadmapPhase2Title')}</Text>
-            <Text style={styles.p}>{t('aboutContent.roadmapPhase2Body')}</Text>
-            <Text style={styles.sub}>{t('aboutContent.roadmapPhase3Title')}</Text>
-            <Text style={styles.p}>{t('aboutContent.roadmapPhase3Body')}</Text>
-            <Text style={styles.sub}>{t('aboutContent.roadmapPhase4Title')}</Text>
-            <Text style={styles.p}>{t('aboutContent.roadmapPhase4Body')}</Text>
+            <View style={styles.spacer} />
+            <AboutRoadmapTimeline />
           </View>
         </AnimatedEntry>
       </View>
+
       <View onLayout={track('goals', onSectionY)} collapsable={false}>
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
@@ -55,23 +54,36 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
           </View>
         </AnimatedEntry>
       </View>
+
       <View onLayout={track('contributions', onSectionY)} collapsable={false}>
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
             <Text style={styles.h}>{t('aboutContent.contributionsTitle')}</Text>
             <Text style={styles.p}>{t('aboutContent.contributionsText')}</Text>
+            <View style={styles.spacer} />
+            <AboutContributionsGrid />
           </View>
         </AnimatedEntry>
       </View>
+
       <View onLayout={track('team', onSectionY)} collapsable={false}>
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
             <Text style={styles.h}>{t('aboutContent.teamTitle')}</Text>
-            <Text style={styles.sub}>{t('aboutContent.teamLeadTitle')}</Text>
+            <View style={styles.teamRow}>
+              <View style={styles.avatar}>
+                <Text style={styles.avatarText}>נ"ס</Text>
+              </View>
+              <View style={styles.teamMeta}>
+                <Text style={styles.teamName}>נוח סרוסי</Text>
+                <Text style={styles.teamRole}>מייסד הפרויקט</Text>
+              </View>
+            </View>
             <Text style={styles.p}>{t('aboutContent.teamLeadBio')}</Text>
           </View>
         </AnimatedEntry>
       </View>
+
       <View onLayout={track('instagram', onSectionY)} collapsable={false}>
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
@@ -84,33 +96,17 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
           </View>
         </AnimatedEntry>
       </View>
+
       <View onLayout={track('faq', onSectionY)} collapsable={false}>
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
             <Text style={styles.h}>{t('aboutContent.navFaq')}</Text>
-            <View style={styles.faqItem}>
-              <Text style={styles.q}>{t('aboutContent.faq1Q')}</Text>
-              <Text style={styles.p}>{t('aboutContent.faq1A')}</Text>
-            </View>
-            <View style={styles.faqItem}>
-              <Text style={styles.q}>{t('aboutContent.faq2Q')}</Text>
-              <Text style={styles.p}>{t('aboutContent.faq2A')}</Text>
-            </View>
-            <View style={styles.faqItem}>
-              <Text style={styles.q}>{t('aboutContent.faq3Q')}</Text>
-              <Text style={styles.p}>{t('aboutContent.faq3A')}</Text>
-            </View>
-            <View style={styles.faqItem}>
-              <Text style={styles.q}>{t('aboutContent.faq4Q')}</Text>
-              <Text style={styles.p}>{t('aboutContent.faq4A')}</Text>
-            </View>
-            <View style={styles.faqItem}>
-              <Text style={styles.q}>{t('aboutContent.faq5Q')}</Text>
-              <Text style={styles.p}>{t('aboutContent.faq5A')}</Text>
-            </View>
+            <View style={styles.spacer} />
+            <AboutFaqAccordion />
           </View>
         </AnimatedEntry>
       </View>
+
       <View onLayout={track('contact', onSectionY)} collapsable={false}>
         <AnimatedEntry delay={next()}>
           <View style={styles.card}>
@@ -130,6 +126,7 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
   );
 }
 
+const AVATAR = 56;
 const styles = StyleSheet.create({
   card: {
     backgroundColor: colors.surface,
@@ -139,16 +136,26 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.md },
-  sub: {
-    ...typography.label,
-    color: colors.primary,
-    textAlign: 'right',
-    marginTop: spacing.sm,
-    marginBottom: spacing.xs,
-  },
   p: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
-  faqItem: { marginBottom: spacing.lg },
-  q: { ...typography.body, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.xs },
+  spacer: { height: spacing.sm },
+  teamRow: {
+    flexDirection: 'row-reverse',
+    gap: spacing.md,
+    alignItems: 'center',
+    marginBottom: spacing.md,
+  },
+  avatar: {
+    width: AVATAR,
+    height: AVATAR,
+    borderRadius: AVATAR / 2,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  avatarText: { ...typography.h4, color: colors.textInverse, fontWeight: '700' },
+  teamMeta: { flex: 1, gap: 2 },
+  teamName: { ...typography.h4, color: colors.textPrimary, textAlign: 'right' },
+  teamRole: { ...typography.body, color: colors.primary, textAlign: 'right', fontWeight: '600' },
   cta: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
