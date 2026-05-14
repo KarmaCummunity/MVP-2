@@ -49,4 +49,18 @@ describe('SignUpWithEmailUseCase', () => {
       uc.execute({ email: 'a@b.co', password: 'abcdefgh' }),
     ).rejects.toMatchObject({ code: 'weak_password' });
   });
+
+  it('forwards emailRedirectTo to the adapter', async () => {
+    const auth = new FakeAuthService();
+    auth.signUpResult = null;
+    const uc = new SignUpWithEmailUseCase(auth);
+
+    await uc.execute({
+      email: 'a@b.co',
+      password: 'pass1word',
+      emailRedirectTo: 'https://karma-community-kc.com/auth/verify',
+    });
+
+    expect(auth.lastSignUpRedirect).toBe('https://karma-community-kc.com/auth/verify');
+  });
 });
