@@ -58,8 +58,8 @@ export const moderationHe = {
       reporterNoteLabel: 'הערת מדווח:',
       evidenceLabel: 'צילום מצב מרגע הדיווח',
       chatNote: 'דיווח על שיחה — מוצג הצד השני',
-      a11yOpenPost: 'פתח פוסט מאת ‎@{handle}',
-      a11yOpenProfile: 'פתח פרופיל של ‎@{handle}',
+      a11yOpenPost: 'פתח פוסט מאת {who}',
+      a11yOpenProfile: 'פתח פרופיל של {who}',
     },
   },
   actions: {
