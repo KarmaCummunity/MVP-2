@@ -26,7 +26,7 @@ export function EditProfileAddressBlock({
       <View style={styles.field}>
         <View style={styles.streetRow}>
           <TextInput
-            style={[styles.input, { flex: 2 }]}
+            style={[styles.input, styles.streetInputStreet]}
             value={street}
             onChangeText={onStreetChange}
             placeholder="רחוב"
@@ -36,7 +36,7 @@ export function EditProfileAddressBlock({
             editable={!disabled}
           />
           <TextInput
-            style={[styles.input, { flex: 1 }]}
+            style={[styles.input, styles.streetInputHouse]}
             value={streetNumber}
             onChangeText={onStreetNumberChange}
             placeholder="מס׳"
@@ -60,7 +60,14 @@ const styles = StyleSheet.create({
     marginVertical: spacing.xs,
      gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  streetRow: { flexDirection: 'row', gap: spacing.sm },
+  streetRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'stretch',
+    width: '100%',
+  },
+  streetInputStreet: { flex: 2, minWidth: 0 },
+  streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120 },
   input: {
     backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5,
     borderColor: colors.border, paddingHorizontal: spacing.base, paddingVertical: spacing.md,
