@@ -1,6 +1,6 @@
 # 2.9 Notifications
 
-> **Status:** 🟡 In progress — PR-1 ships foundation + chat path (FR-NOTIF-001/002/003). PR-2 wires the remaining producers. NOTIF-004 deferred to TD-59; NOTIF-012 remains deferred per R-MVP-Privacy-6.
+> **Status:** ✅ Implemented — All in-scope FRs shipped end-to-end. FR-NOTIF-004 (message_undeliverable) and FR-NOTIF-012 (account-deletion email) remain deferred — see TD-62 and TD-118 respectively. FR-NOTIF-016 (quiet hours) is out of MVP per spec. Web Push parity tracked under TD-65.
 
 
 
