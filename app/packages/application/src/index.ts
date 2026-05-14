@@ -17,6 +17,7 @@ export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRep
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
 export { ResendVerificationEmailUseCase, type ResendVerificationEmailInput } from './auth/ResendVerificationEmail';
+export { VerifyEmailUseCase, type VerifyEmailInput, type VerifyEmailOutput } from './auth/VerifyEmail';
 export * from './auth/SignInWithEmail';
 export * from './auth/SignInWithGoogle';
 export * from './auth/SignOut';
