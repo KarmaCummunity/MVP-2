@@ -66,7 +66,7 @@ export default function AboutScreen() {
 
         <View style={styles.footer}>
           <Text style={styles.footerVersion}>גרסה 0.1.0</Text>
-          <Text style={styles.footerRights}>© 2026 כל הזכויות שמורות לקארמה קהילה</Text>
+          <Text style={styles.footerRights}>© 2026 כל הזכויות שמורות לקהילת קארמה</Text>
         </View>
 
       </ScrollView>

@@ -33,11 +33,7 @@ export function useOnboardingBasicInfoFlow() {
 
   const handleBack = () => {
     if (loading) return;
-    if (router.canGoBack()) {
-      router.back();
-      return;
-    }
-    router.replace('/(auth)');
+    router.replace('/(onboarding)/about-intro');
   };
 
   const handleContinue = async () => {

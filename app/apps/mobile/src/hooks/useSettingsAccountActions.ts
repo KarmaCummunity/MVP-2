@@ -38,7 +38,7 @@ export function useSettingsAccountActions() {
       await setOnboardingStateDirect(session.userId, 'pending_basic_info');
       setOnboardingStateLocal('pending_basic_info');
       useAuthStore.getState().setBasicInfoSkipped(false);
-      router.replace('/(onboarding)/basic-info');
+      router.replace('/(onboarding)/about-intro');
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
       if (Platform.OS === 'web') {

@@ -42,7 +42,7 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   if (result.canAskAgain) return false;
   Alert.alert(
     'גישה לגלריה נדחתה',
-    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קארמה קהילה → תמונות.',
+    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
     [
       { text: 'ביטול', style: 'cancel' },
       { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },

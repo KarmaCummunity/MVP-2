@@ -34,7 +34,7 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   if (result.canAskAgain) return false;
   Alert.alert(
     'גישה לגלריה נדחתה',
-    'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קארמה קהילה → תמונות.',
+    'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
     [
       { text: 'ביטול', style: 'cancel' },
       { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
@@ -49,7 +49,7 @@ async function ensureCameraPermission(): Promise<boolean> {
   if (result.canAskAgain) return false;
   Alert.alert(
     'גישה למצלמה נדחתה',
-    'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קארמה קהילה → מצלמה.',
+    'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קהילת קארמה → מצלמה.',
     [
       { text: 'ביטול', style: 'cancel' },
       { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },

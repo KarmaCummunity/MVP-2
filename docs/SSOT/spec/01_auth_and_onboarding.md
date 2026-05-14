@@ -15,7 +15,7 @@ Everything from app launch through the moment the user lands on the Home Feed fo
 - Splash / Welcome screen
 - Sign-up & sign-in entry points
 - Three core authentication methods (Google SSO, Phone OTP, Email + password) plus Apple SSO on iOS
-- 3-step onboarding wizard (basic info → profile photo → tour)
+- 4-step onboarding wizard (mini about → basic info → profile photo → tour)
 - Returning-user session resumption
 - Guest preview
 - Account deletion & re-registration cooldown
@@ -219,10 +219,25 @@ The MVP does not allow linking multiple authentication methods to the same accou
 
 ---
 
-## FR-AUTH-010 — Onboarding step 1: Basic Info
+## FR-AUTH-018 — Onboarding: Mini About (first screen)
 
 **Description.**
-Captures `display_name`, `city` (canonical picker), and optionally `profile_street` + `profile_street_number` as the first onboarding step.
+Before collecting profile data, the user sees a short “about us” teaser (value proposition + one paragraph). Copy directs users to the full About content under **Settings → About** after signup. Optional link opens the existing full-screen About route (`/about`) and returns via the screen back affordance.
+
+**Acceptance Criteria.**
+- AC1. When `onboarding_state = pending_basic_info`, AuthGate routes to this screen before Basic Info (not directly to `FR-AUTH-010`).
+- AC2. Primary **Continue** and header **Skip** both advance to Basic Info (`FR-AUTH-010`).
+- AC3. Header **Back** returns the user to the auth welcome surface (`FR-AUTH-001` / `FR-AUTH-002` group).
+- AC4. Onboarding step indicator shows **step 1 of 4** on this screen; subsequent wizard screens use 2–4 of 4.
+
+**Related.** Screens: onboarding flow · Settings About: `11_settings.md` (About entry).
+
+---
+
+## FR-AUTH-010 — Onboarding step 2: Basic Info
+
+**Description.**
+Captures `display_name`, `city` (canonical picker), and optionally `profile_street` + `profile_street_number` as the second onboarding step (after `FR-AUTH-018`).
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.1.2, `05_Screen_UI_Mapping.md` §1.4.
@@ -232,7 +247,7 @@ Captures `display_name`, `city` (canonical picker), and optionally `profile_stre
 - AC1. `display_name` accepts up to 50 characters; whitespace-only is rejected.
 - AC2. `city` is a dropdown of the canonical Israeli city list seeded by the system. No free-text city.
 - AC2.b. **Optional full address (MVP+):** After choosing a city, the user may enter free-text `profile_street` (1–80 chars) and `profile_street_number` (same pattern as posts: digits with optional single Latin letter suffix, e.g. `12` or `12B`). Both must be filled together or both left empty; values persist to `users.profile_street` / `users.profile_street_number` (`FR-PROFILE-007`). Omitting them keeps city-only residence.
-- AC3. A "Skip" option exists. Skipping advances to step 2 but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`). The system also persists `users.basic_info_skipped = true` on Skip so returning sessions (cold start, app update, re-auth) **land on the Home Feed** instead of forcing the full-screen wizard again; the deferred fields are still collected only via `FR-AUTH-015` until saved.
+- AC3. A "Skip" option exists. Skipping advances to step 3 (Profile Photo, `FR-AUTH-011`) but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`). The system also persists `users.basic_info_skipped = true` on Skip so returning sessions (cold start, app update, re-auth) **land on the Home Feed** instead of forcing the full-screen wizard again; the deferred fields are still collected only via `FR-AUTH-015` until saved.
 - AC4. SSO-prefilled values are editable and persisted upon "Continue".
 
 **Edge Cases.**
@@ -242,7 +257,7 @@ Captures `display_name`, `city` (canonical picker), and optionally `profile_stre
 
 ---
 
-## FR-AUTH-011 — Onboarding step 2: Profile Photo
+## FR-AUTH-011 — Onboarding step 3: Profile Photo
 
 **Description.**
 Captures an optional profile photo.
@@ -261,7 +276,7 @@ Captures an optional profile photo.
 
 ---
 
-## FR-AUTH-012 — Onboarding step 3: Welcome Tour
+## FR-AUTH-012 — Onboarding step 4: Welcome Tour
 
 **Description.**
 A 3-slide explanation of the core value loop, followed by entry to the Home Feed.
@@ -332,7 +347,7 @@ A user whose `onboarding_state` is `pending_basic_info` and who attempts to crea
 - PRD: `03_Core_Features.md` §3.1.2 (in spirit).
 
 **Acceptance Criteria.**
-- AC1. The modal contains the same fields as Onboarding step 1 (`display_name`, city picker, optional street + house number) and a single "Save and continue" button.
+- AC1. The modal contains the same fields as the Basic Info onboarding step (`display_name`, city picker, optional street + house number) and a single "Save and continue" button.
 - AC2. Cancelling the modal returns the user to the previous screen with no side effects.
 - AC3. After save, the system continues into the originally attempted action.
 

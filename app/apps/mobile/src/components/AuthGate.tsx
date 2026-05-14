@@ -159,7 +159,7 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     if (onboardingState === 'pending_basic_info' && basicInfoSkipped === true) {
       router.replace('/(tabs)');
     } else if (onboardingState === 'pending_basic_info') {
-      router.replace('/(onboarding)/basic-info');
+      router.replace('/(onboarding)/about-intro');
     } else if (onboardingState === 'pending_avatar') {
       router.replace('/(onboarding)/photo');
     } else {
