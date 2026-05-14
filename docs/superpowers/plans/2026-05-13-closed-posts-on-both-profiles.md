@@ -20,8 +20,8 @@
 ## File Structure
 
 **Create:**
-- `supabase/migrations/0056_post_visibility_closed_public.sql` — refresh `is_post_visible_to` so closed_delivered posts respect `visibility` like open posts.
-- `supabase/migrations/0057_profile_closed_posts_rpc.sql` — new SQL function `profile_closed_posts`.
+- `supabase/migrations/0059_post_visibility_closed_public.sql` — refresh `is_post_visible_to` so closed_delivered posts respect `visibility` like open posts.
+- `supabase/migrations/0061_profile_closed_posts_rpc.sql` — new SQL function `profile_closed_posts`.
 - `app/packages/application/src/posts/GetProfileClosedPostsUseCase.ts` — application use case.
 - `app/packages/application/src/posts/__tests__/GetProfileClosedPostsUseCase.test.ts` — unit tests.
 - `app/apps/mobile/src/components/profile/ProfileClosedPostsGrid.tsx` — grid + empty state for closed posts (carries identity role per item).
@@ -46,14 +46,15 @@
 ## Task 1: Migration — refresh `is_post_visible_to` to allow third-party reads of closed_delivered posts per visibility
 
 **Files:**
-- Create: `supabase/migrations/0056_post_visibility_closed_public.sql`
+- Create: `supabase/migrations/0059_post_visibility_closed_public.sql`
 
 - [ ] **Step 1.1: Write the migration**
 
-Create `supabase/migrations/0056_post_visibility_closed_public.sql`:
+Create `supabase/migrations/0059_post_visibility_closed_public.sql`:
 
 ```sql
--- 0056_post_visibility_closed_public.sql
+-- 0059_post_visibility_closed_public.sql (renumbered from 0056 on the
+-- feat/FR-NOTIF-001-foundation branch where 0056..0058 are already taken)
 -- Spec: docs/superpowers/specs/2026-05-13-closed-posts-on-both-profiles-design.md
 -- FR-POST-017 AC1 (revised) — closed_delivered posts are visible to viewers
 -- according to the post's `visibility` setting, mirroring open-post rules:
@@ -133,7 +134,7 @@ select public.is_post_visible_to(
 - [ ] **Step 1.3: Commit**
 
 ```bash
-git add supabase/migrations/0056_post_visibility_closed_public.sql
+git add supabase/migrations/0059_post_visibility_closed_public.sql
 git commit -m "feat(infra): closed_delivered posts honor visibility for third-party viewers
 
 Public closed posts are now visible to everyone (minus block + reporter-hide),
@@ -146,14 +147,14 @@ Recipient and owner branches unchanged. Mapped to FR-POST-017 AC1 (revised)."
 ## Task 2: Migration — `profile_closed_posts` RPC
 
 **Files:**
-- Create: `supabase/migrations/0057_profile_closed_posts_rpc.sql`
+- Create: `supabase/migrations/0061_profile_closed_posts_rpc.sql`
 
 - [ ] **Step 2.1: Write the migration**
 
-Create `supabase/migrations/0057_profile_closed_posts_rpc.sql`:
+Create `supabase/migrations/0061_profile_closed_posts_rpc.sql`:
 
 ```sql
--- 0057_profile_closed_posts_rpc.sql
+-- 0061_profile_closed_posts_rpc.sql (renumbered from 0057 — see 0059 note)
 -- Spec: docs/superpowers/specs/2026-05-13-closed-posts-on-both-profiles-design.md
 -- Returns the set of closed_delivered posts to display on a user's "Closed Posts"
 -- tab — the UNION of posts they published AND posts on which they are the
@@ -285,7 +286,7 @@ For each call: confirm `identity_role` matches expectation and `closed_at` is de
 - [ ] **Step 2.4: Commit**
 
 ```bash
-git add supabase/migrations/0057_profile_closed_posts_rpc.sql
+git add supabase/migrations/0061_profile_closed_posts_rpc.sql
 git commit -m "feat(infra): profile_closed_posts RPC for cross-profile closed-posts tab
 
 Returns (post_id, identity_role, closed_at) for the UNION of posts the
