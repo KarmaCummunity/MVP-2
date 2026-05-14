@@ -1,4 +1,5 @@
 import type { IAuthService, AuthSession } from '../../ports/IAuthService';
+import { AuthError } from '../errors';
 
 export class FakeAuthService implements IAuthService {
   signUpResult: AuthSession | null = null;
@@ -16,10 +17,20 @@ export class FakeAuthService implements IAuthService {
   exchangeError: Error | null = null;
   lastExchangeCode: string | null = null;
 
-  signUpWithEmail = async (_email: string, _password: string): Promise<AuthSession | null> => {
+  public resendCalls: Array<{ email: string; emailRedirectTo?: string }> = [];
+  public verifyEmailResult: AuthSession | null = null;
+  public verifyEmailCalls: string[] = [];
+  public lastSignUpRedirect: string | undefined;
+
+  async signUpWithEmail(
+    _email: string,
+    _password: string,
+    options?: { emailRedirectTo?: string },
+  ): Promise<AuthSession | null> {
     if (this.signUpError) throw this.signUpError;
+    this.lastSignUpRedirect = options?.emailRedirectTo;
     return this.signUpResult;
-  };
+  }
 
   signInWithEmail = async (_email: string, _password: string): Promise<AuthSession> => {
     if (this.signInError) throw this.signInError;
@@ -47,6 +58,21 @@ export class FakeAuthService implements IAuthService {
     if (!this.exchangeResult) throw new Error('no exchangeResult configured');
     return this.exchangeResult;
   };
+
+  async resendVerificationEmail(
+    email: string,
+    options?: { emailRedirectTo?: string },
+  ): Promise<void> {
+    this.resendCalls.push({ email, emailRedirectTo: options?.emailRedirectTo });
+  }
+
+  async verifyEmail(tokenHash: string): Promise<AuthSession> {
+    this.verifyEmailCalls.push(tokenHash);
+    if (!this.verifyEmailResult) {
+      throw new AuthError('unknown', 'fake_no_verify_result');
+    }
+    return this.verifyEmailResult;
+  }
 }
 
 export function makeSession(overrides: Partial<AuthSession> = {}): AuthSession {
