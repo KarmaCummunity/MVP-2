@@ -10,7 +10,7 @@ import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { confirmAndRun, showAdminToast } from '../chat/system/adminActions';
 import { colors } from '@kc/ui';
-import he from '../../i18n/he';
+import he from '../../i18n/locales/he';
 
 type BanReason = 'spam' | 'harassment' | 'policy_violation' | 'other';
 

@@ -32,8 +32,6 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
-  // Bumped 272→280 (FR-NOTIF-001 push modal Hebrew strings + P1.5 notification strings). Remove once TD-35 splits the file.
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 280 }],
   // Bumped 242→259 (FR-NOTIF-001 + ProfileClosedPostsItem domain types). Remove once TD-29 splits the file.
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 259 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.

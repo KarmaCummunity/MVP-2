@@ -1,4 +1,4 @@
-// FR-CHAT-016 — chat strings split from `he.ts` (TD-35 file-size budget).
+// FR-CHAT-016 — chat strings split from main bundle (TD-35 file-size budget).
 export const chatHe = {
   title: 'שיחות',
   noChats: 'אין שיחות עדיין',

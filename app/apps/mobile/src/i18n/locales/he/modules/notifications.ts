@@ -1,4 +1,4 @@
-// FR-NOTIF-001..015 — notifications strings split from `he.ts` (TD-35 file-size budget).
+// FR-NOTIF-001..015 — notifications strings split from main bundle (TD-35 file-size budget).
 export const notificationsHe = {
   settingsTitle: 'התראות',
   criticalLabel: 'קריטיות',

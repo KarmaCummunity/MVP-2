@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/he';
+import he from '../../../i18n/locales/he';
 import { confirmAndRun, showAdminToast } from './adminActions';
 import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';

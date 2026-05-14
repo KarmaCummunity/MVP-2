@@ -10,7 +10,7 @@ import { colors, spacing } from '@kc/ui';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
 import { useSettingsAccountActions } from '../src/hooks/useSettingsAccountActions';
 import { container } from '../src/lib/container';
-import he from '../src/i18n/he';
+import he from '../src/i18n/locales/he';
 import { useAuthStore } from '../src/store/authStore';
 import { useChatStore } from '../src/store/chatStore';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';

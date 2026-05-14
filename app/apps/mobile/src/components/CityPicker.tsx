@@ -22,7 +22,6 @@ interface Props {
   readonly onChange: (selection: { id: string; name: string }) => void;
   readonly disabled?: boolean;
 }
-
 export function CityPicker({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');

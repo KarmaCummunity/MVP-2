@@ -1,5 +1,5 @@
-// Hebrew translations — Statistics dashboard (FR-STATS-001..004).
-// Split out of he.ts to keep that file under its TD-35 size budget.
+// Hebrew — Statistics dashboard (FR-STATS-001..004).
+// Locale file under `locales/he/`; composed into the bundle via `locales/he/index.ts`.
 
 export const stats = {
   title: 'הקהילה במספרים',

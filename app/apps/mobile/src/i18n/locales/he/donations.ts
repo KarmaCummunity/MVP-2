@@ -1,5 +1,5 @@
-// Hebrew translations — Donations Hub + Search tab (D-16, FR-DONATE-001..009, FR-FEED-016).
-// Split out of he.ts to keep that file under its TD-35 size budget.
+// Hebrew — Donations hub + Search tab (D-16, FR-DONATE-001..009, FR-FEED-016).
+// Locale file under `locales/he/`; composed into the bundle via `locales/he/index.ts`.
 
 export const donations = {
   tabLabel: 'תרומות',

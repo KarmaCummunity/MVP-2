@@ -1,13 +1,16 @@
 // ─────────────────────────────────────────────
-// Hebrew translations — Karma Community
+// Hebrew (he) translation bundle — Karma Community
 // Mapped to: R-MVP-Core-4 (עברית בלבד ב-MVP)
-// Domains split into separate files to keep this file under its size budget (TD-35).
+// Composed from `modules/*.ts`, `donations.ts`, and `stats.ts` for the 200-LOC cap.
+// Default export: full Hebrew resource tree for `react-i18next` (`src/i18n/index.ts`).
 // ─────────────────────────────────────────────
 
 import { donations, search } from './donations';
-import { chatHe } from './partials/chatHe';
-import { notificationsHe } from './partials/notificationsHe';
-import { moderationHe, auditHe, accountBlockedHe } from './partials/moderationHe';
+import { chatHe } from './modules/chat';
+import { notificationsHe } from './modules/notifications';
+import { moderationHe, auditHe, accountBlockedHe } from './modules/moderation';
+import { postHe } from './modules/post';
+import { settingsHe } from './modules/settings';
 import { stats } from './stats';
 
 const he = {
@@ -92,53 +95,8 @@ const he = {
     refreshFailed: 'הרענון נכשל — נסה שוב',
   },
 
-  // Post
-  post: {
-    give: 'לתת חפץ',
-    request: 'לבקש חפץ',
-    title: 'כותרת',
-    titlePlaceholder: 'מה אתה נותן/מבקש?',
-    description: 'תיאור (אופציונלי)',
-    descPlaceholder: 'פרטים נוספים על החפץ...',
-    category: 'קטגוריה',
-    condition: 'מצב החפץ',
-    urgency: 'דחיפות (אופציונלי)',
-    urgencyPlaceholder: 'לדוגמה: צריך עד שישי',
-    photos: 'תמונות',
-    addPhoto: 'הוסף תמונה',
-    address: 'כתובת',
-    cityLabel: 'עיר',
-    streetLabel: 'רחוב',
-    streetNumberLabel: 'מספר',
-    locationDisplay: 'מה להציג בפיד',
-    cityOnly: 'עיר בלבד',
-    cityAndStreet: 'עיר + רחוב',
-    fullAddress: 'כתובת מלאה',
-    visibility: 'מי יראה את הפוסט',
-    visibilityPublic: '🌍 כולם',
-    visibilityFollowers: '👥 רק עוקבים שלי',
-    visibilityOnlyMe: '🔒 רק אני',
-    publish: 'פרסם',
-    draft: 'שמור טיוטה',
-    publishSuccess: 'הפוסט שלך פורסם!',
-    draftRestored: 'יש לך טיוטה שלא פורסמה',
-    continueDraft: 'המשך לערוך',
-    discardDraft: 'התחל מחדש',
-    sendMessage: '💬 שלח הודעה למפרסם',
-    followAuthor: 'עקוב אחרי המפרסם',
-    report: 'דווח',
-    markDelivered: 'סמן כ-נמסר',
-    edit: 'ערוך',
-    delete: 'מחק',
-    reopen: '📤 פתח מחדש',
-    conditionNew: 'חדש',
-    conditionLikeNew: 'כמו חדש',
-    conditionGood: 'טוב',
-    conditionFair: 'בינוני',
-    photoRequired: 'תמונה נדרשת עבור פוסט "לתת"',
-    maxPhotos: 'מקסימום 5 תמונות',
-    maxPosts: 'הגעת למקסימום 20 פוסטים פעילים',
-  },
+  // Post — see modules/post.ts
+  post: postHe,
 
   // Profile
   profile: {
@@ -156,80 +114,19 @@ const he = {
     privateProfile: '🔒 הפרופיל פרטי. שלח בקשת עקיבה כדי לראות פוסטים.',
   },
 
-  // Chat — see partials/chatHe.ts (FR-CHAT-016)
+  // Chat — see modules/chat.ts (FR-CHAT-016)
   chat: chatHe,
 
-  // Notifications (FR-NOTIF-001..015) — see partials/notificationsHe.ts
+  // Notifications (FR-NOTIF-001..015) — see modules/notifications.ts
   notifications: notificationsHe,
 
-  // Moderation (FR-MOD-007/010 + FR-ADMIN-002..007) — see partials/moderationHe.ts
+  // Moderation (FR-MOD-007/010 + FR-ADMIN-002..007) — see modules/moderation.ts
   moderation: moderationHe,
   audit: auditHe,
   accountBlocked: accountBlockedHe,
 
-  // Settings
-  settings: {
-    title: 'הגדרות',
-    account: 'חשבון',
-    accountDetails: 'פרטי חשבון',
-    notifications: 'התראות',
-    notificationsOn: 'התראות מופעלות',
-    privacy: 'פרטיות',
-    statsSection: 'סטטיסטיקות',
-    stats: 'סטטיסטיקות',
-    support: 'תמיכה',
-    legal: 'משפטי',
-    termsAndPrivacy: 'תנאי שימוש ומדיניות פרטיות',
-    about: 'אודות',
-    logout: 'התנתקות',
-    loggingOut: 'מתנתק...',
-    deleteAccount: 'מחק חשבון',
-    deleteAccountModal: {
-      title: 'מחיקת חשבון לצמיתות',
-      bullets: {
-        posts: 'כל הפוסטים שלך יימחקו (כולל תמונות)',
-        follows: 'כל העוקבים והנעקבים יוסרו',
-        moderation: 'כל החסימות והדיווחים שהגשת יימחקו',
-        donations: 'קישורי תרומה שהגדרת יימחקו',
-        devices: 'כל המכשירים המחוברים שלך ינותקו',
-      },
-      chatsRetention:
-        'שיחות שניהלת יישארו אצל האנשים שדיברת איתם. הם יראו את ההודעות שכתבת, אבל לא את שמך, התמונה או הפרופיל — רק "משתמש שנמחק".',
-      warning:
-        'הפעולה אינה הפיכה. הפוסטים, ההיסטוריה והקשרים שלך לא ניתנים לשחזור. אין חלון ביטול — המחיקה מיידית.',
-      confirmInputLabel: 'הקלד "מחק" כדי לאשר',
-      confirmInputPlaceholder: 'מחק',
-      confirmKeyword: 'מחק',
-      buttons: {
-        cancel: 'ביטול',
-        delete: 'מחק את החשבון לצמיתות',
-        retry: 'נסה שוב',
-        close: 'סגור',
-      },
-      errors: {
-        recoverable: 'המחיקה נכשלה — נסה שוב',
-        critical:
-          'המחיקה לא הושלמה. הפוסטים והעוקבים שלך כבר נמחקו, אבל סגירת החשבון לא הסתיימה. חובה ללחוץ "נסה שוב" עכשיו — אם תסגור את האפליקציה ייווצר חשבון לא תקין.',
-      },
-      blocked: {
-        title: 'לא ניתן למחוק חשבון מושעה',
-        body: 'פנה לבירור דרך מסך הדיווחים.',
-      },
-      success: {
-        title: 'חשבונך נמחק',
-        subtitle: 'תודה שהיית חלק מקארמה.',
-      },
-    },
-    privateProfileToggle: '🔒 פרופיל פרטי',
-    followRequests: 'בקשות עקיבה',
-    reportIssue: 'דווח על בעיה',
-    devTools: 'כלי פיתוח',
-    resetOnboarding: 'איפוס אונבורדינג (דיבוג)',
-    resetting: 'מאפס...',
-    simulateHardRefresh: 'סימולציית רענון מלא (דיבוג)',
-    simulatingHardRefresh: 'מרענן...',
-    version: 'KC - קהילת קארמה',
-  },
+  // Settings — see modules/settings.ts
+  settings: settingsHe,
 
   // Stats (FR-STATS-001..004) — see stats.ts
   stats,

@@ -332,7 +332,7 @@ The spec-vs-impl agent produced a 162-AC compliance table; the headline is **~43
 
 ### 5.8 [MEDIUM] FR-DONATE-003 AC4 — error message text drift
 
-- Spec text: "לא הצלחנו לפתוח את הקישור. נסו דפדפן אחר." Implementation in `i18n/donations.ts` adds "או הקלידו את הכתובת ידנית". Strict copy compliance matters for screenshots in marketing/press materials; soft fix.
+- Spec text: "לא הצלחנו לפתוח את הקישור. נסו דפדפן אחר." Implementation in `i18n/locales/he/donations.ts` adds "או הקלידו את הכתובת ידנית". Strict copy compliance matters for screenshots in marketing/press materials; soft fix.
 
 ### 5.9 [MEDIUM] FR-SETTINGS-001/003/006 — toggles do not persist
 

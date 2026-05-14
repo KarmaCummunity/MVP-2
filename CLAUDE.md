@@ -252,7 +252,7 @@ git branch -D feat/FR-AUTH-001-otp-login
 ## 8. Documentation language
 
 - Product / requirements docs (`docs/**/*.md`, including `docs/SSOT/spec/*.md`, `BACKLOG.md`, `DECISIONS.md`, `TECH_DEBT.md`): **English only**; FR-IDs and code paths stay English.
-- Code, code comments, commit messages, PR titles/bodies: **English**. User-visible strings belong in locale files (for example `apps/mobile/src/i18n/he.ts` — Hebrew only for MVP, `R-MVP-Core-4`), not inline in general source.
+- Code, code comments, commit messages, PR titles/bodies: **English**. User-visible strings belong in locale files (for example `apps/mobile/src/i18n/locales/he/` — Hebrew only for MVP, `R-MVP-Core-4`), not inline in general source.
 - Agent ↔ PM conversation: Hebrew (per project preference).
 
 ## 9. Parallel-agents protocol

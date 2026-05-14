@@ -10,7 +10,7 @@ import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
 import { container } from '../../src/lib/container';
 import { getUniversalSearchUseCase } from '../../src/services/searchComposition';
 import { useAuthStore } from '../../src/store/authStore';
-import he from '../../src/i18n/he';
+import he from '../../src/i18n/locales/he';
 
 interface UserHit { userId: string; displayName: string; }
 

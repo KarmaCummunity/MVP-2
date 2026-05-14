@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-14 (P1.5 PR-1: TD-115 closed — chat push shipped; TD-62..65 added for NOTIF-004 deferral, notification icon, queue-stuck alert, Web Push parity) |
+| **Last Updated** | 2026-05-15 (arch lint: TD-35 closed — `he.ts` splits + CityPicker cap) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -61,7 +61,6 @@
 | TD-27 | 🔴 | Auto-message in chat from post + read-receipt persistence absent | P0.5 |
 | TD-28 | 🔴 | Bio URL filter, Edit Profile screen, privacy toggle, upgrade-only enforcement on Edit Post all missing | P2.4 |
 | TD-29 | 🟠 | `pnpm lint:arch` enforces `≤ 200 LOC` cap. `(tabs)/index.tsx` (136), `(tabs)/profile.tsx` (214 — allowlisted), `post/[id].tsx` (165), `_layout.tsx` (108 — was 265, dropped from allowlist 2026-05-08 via AuthGate / BackButton / TabBar extraction) under cap. `(tabs)/create.tsx` ~250 — over cap, allowlisted; `useReducer` extraction tracked as future polish. `settings.tsx` 228 (allowlist 232 — onboarding-reset web fix added a few lines). `packages/domain/src/entities.ts` 214 (allowlist 214 — bumped from 205 in P0.5 to make room for `ReportSubmission` interface) | Opportunistic — (tabs)/create.tsx during P0.6 closure work |
-| TD-35 | 🟢 | `i18n/he.ts` still exceeds `≤ 200 LOC` cap (276; allowlisted). **Partial (2026-05-12):** chat strings extracted to `src/i18n/partials/chatHe.ts` (FR-CHAT-016). Further domain splits (settings/legal/general) needed to drop allowlist. | Opportunistic |
 | TD-42 | 🟢 | ~~Counter cards in `apps/mobile/app/(tabs)/profile.tsx` — followers/following/items_given/items_received still render `0`.~~ Closed 2026-05-10: `(tabs)/profile.tsx` now reads the full `User` via `IUserRepository.findById`; followers/following counters wired to `User.{followersCount,followingCount}` and biography rendered in the header per FR-PROFILE-001 AC1. `items_given_count`/`items_received_count` are visible only on the Other-Profile screen (FR-PROFILE-002 / TD-14), not here. **Watch FR-PROFILE-013 / TD-39**: non-owner viewers must read via `active_posts_count_for_viewer()`, never raw `_internal` (still applies to TD-14). | Closed 2026-05-10 |
 | TD-102 | 🟢 | **CLOSED (P1.2).** Hardcoded "50+ פוסטים פעילים" replaced by `<FeedCommunityCounter>` consuming `community_stats` via `GetActivePostsCountUseCase`. Interpolated through `feed.guestBannerWithCount` i18n key. Refreshes every 60s. Closed 2026-05-11. |
 | TD-106 | 🟠 | ~~**FR-PROFILE-001 — Edit Profile + Share buttons dead.**~~ Edit Profile button now navigates to `app/edit-profile.tsx` (FR-PROFILE-007 partial — name + city + biography + avatar editable; persists via `UpdateProfileUseCase`). Share button still no-op (deferred — needs deep-link generator). | Closed 2026-05-09 (Edit Profile portion); Share row remains a P2.4 nit |
@@ -152,6 +151,7 @@
 | TD-119 | Notify recipient on mark — FR-CLOSURE-006. | Closed 2026-05-14 — Migration 0063 enqueues mark_recipient on `recipients` INSERT; dispatcher delivers as Critical with bypass_preferences. |
 | TD-124 | Push notifications for follow events (FR-FOLLOW-001/003/005). | Closed 2026-05-14 — Migration 0065 enqueues follow_request / follow_approved / follow_started on follow_requests + follow_edges. Coalescing in dispatcher handles FR-NOTIF-007 AC3. |
 | TD-154 | **Onboarding motion polish.** Introduced `app/apps/mobile/src/lib/animations/motion.ts` tokens + `motion-easings.ts` (Reanimated `Easing` split out so motion tokens stay testable in Node), `useReducedMotion` hook, four animation primitives (`AnimatedEntry`, `PressableScale`, `OnboardingProgressBar`, `TourSlidePager`), and `HeroHalo` (cream + peach concentric backdrop for hero elements). Onboarding screens (`about-intro`, `basic-info`, `photo`, `tour`) now use staggered entry animations + spring-press CTAs; tour uses a gesture-driven horizontal pager with Ionicon-in-halo slides; basic-info/photo/about-intro all share the same hero-halo + 56px arrow-CTA pattern. Stack transition tightened to `slide_from_right` @ 280ms. All animations honor `AccessibilityInfo.isReduceMotionEnabled()`. Photo screen also extracted to `useOnboardingPhotoFlow` to fit the 200-line cap. | Closed 2026-05-14 (feat(mobile): smart onboarding animations) |
+| TD-35 | **`i18n/he.ts` over 200-LOC cap (allowlisted).** | Closed 2026-05-15 — domain strings split across `locales/he/modules/*`, `locales/he/donations.ts`, `locales/he/stats.ts`; bundle entry `locales/he/index.ts` (imported from `src/i18n/index.ts`); cap compliant; `FILE_SIZE_ALLOWLIST` entry for `he.ts` removed from `check-architecture.mjs`. |
 
 ---
 
