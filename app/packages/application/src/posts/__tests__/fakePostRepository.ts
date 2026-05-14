@@ -7,7 +7,7 @@ import type {
   PostWithOwner,
   UpdatePostInput,
 } from '../../ports/IPostRepository';
-import type { Post, PostStatus } from '@kc/domain';
+import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
 import type { PostError } from '../errors';
 
 /**
@@ -28,6 +28,13 @@ export class FakePostRepository implements IPostRepository {
   lastAdminRemovePostId: string | null = null;
   lastGetMyPostsArgs: { userId: string; status: PostStatus[]; limit: number; cursor?: string } | null = null;
   lastCountOpenUserId: string | null = null;
+  lastGetProfileClosedPostsArgs: {
+    profileUserId: string;
+    viewerUserId: string | null;
+    limit: number;
+    cursor?: string;
+  } | null = null;
+  profileClosedPostsResult: ProfileClosedPostsItem[] = [];
 
   // Stubs / errors
   createResult: Post | null = null;
@@ -123,6 +130,16 @@ export class FakePostRepository implements IPostRepository {
   countOpenByUser = async (userId: string): Promise<number> => {
     this.lastCountOpenUserId = userId;
     return this.countOpenResult;
+  };
+
+  getProfileClosedPosts = async (
+    profileUserId: string,
+    viewerUserId: string | null,
+    limit: number,
+    cursor?: string,
+  ): Promise<ProfileClosedPostsItem[]> => {
+    this.lastGetProfileClosedPostsArgs = { profileUserId, viewerUserId, limit, cursor };
+    return this.profileClosedPostsResult;
   };
 }
 

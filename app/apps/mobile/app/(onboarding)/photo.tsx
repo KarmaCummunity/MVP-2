@@ -7,6 +7,7 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
+import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { PhotoSourceSheet } from '../../src/components/PhotoSourceSheet';
 import { useAuthStore } from '../../src/store/authStore';
 import { getCompleteOnboardingUseCase, getSetAvatarUseCase } from '../../src/services/userComposition';
@@ -76,15 +77,21 @@ export default function OnboardingPhotoScreen() {
     }
   };
 
+  const handleBack = () => {
+    if (busy) return;
+    router.replace('/(onboarding)/basic-info');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
-        <View style={styles.headerRow}>
-          <Text style={styles.step}>שלב 2 מתוך 3</Text>
-          <TouchableOpacity onPress={finalize} disabled={busy} accessibilityRole="button">
-            <Text style={styles.skip}>דלג</Text>
-          </TouchableOpacity>
-        </View>
+        <OnboardingStepHeader
+          step={2}
+          onSkip={finalize}
+          onBack={handleBack}
+          skipDisabled={busy}
+          backDisabled={busy}
+        />
         <Text style={styles.title}>תמונת פרופיל</Text>
         <Text style={styles.subtitle}>אפשר להוסיף עכשיו או בהמשך</Text>
 
@@ -152,9 +159,6 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
     gap: spacing.base,
   },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  step: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  skip: { ...typography.body, color: colors.primary },
   title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
   subtitle: {
     ...typography.body,

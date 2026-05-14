@@ -15,3 +15,4 @@ export { SupabaseModerationAdminRepository } from './moderation/SupabaseModerati
 export { SupabaseAccountGateRepository } from './auth/SupabaseAccountGateRepository';
 export { SupabaseDonationLinksRepository } from './donations/SupabaseDonationLinksRepository';
 export { SupabaseSearchRepository } from './search/SupabaseSearchRepository';
+export { SupabaseDeviceRepository } from './notifications/SupabaseDeviceRepository';

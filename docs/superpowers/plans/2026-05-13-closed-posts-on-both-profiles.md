@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Surface `closed_delivered` posts on **both** the publisher's profile and the respondent's profile, with an economic-role badge (🎁 נתתי / 🎀 קיבלתי) derived from `(post.type, identity-role)`. Visibility to third parties follows the post's original `visibility` setting.
+**Goal:** Surface `closed_delivered` posts on **both** the publisher's profile and the respondent's profile, with an economic-role badge (📤 נתתי / 📥 קיבלתי) derived from `(post.type, identity-role)`. Visibility to third parties follows the post's original `visibility` setting.
 
 **Architecture:**
 - New SQL RPC `profile_closed_posts(profile_user_id, viewer_user_id, p_limit, p_cursor)` returns `(post_id, identity_role, closed_at)` rows.
@@ -20,8 +20,8 @@
 ## File Structure
 
 **Create:**
-- `supabase/migrations/0056_post_visibility_closed_public.sql` — refresh `is_post_visible_to` so closed_delivered posts respect `visibility` like open posts.
-- `supabase/migrations/0057_profile_closed_posts_rpc.sql` — new SQL function `profile_closed_posts`.
+- `supabase/migrations/0059_post_visibility_closed_public.sql` — refresh `is_post_visible_to` so closed_delivered posts respect `visibility` like open posts.
+- `supabase/migrations/0061_profile_closed_posts_rpc.sql` — new SQL function `profile_closed_posts`.
 - `app/packages/application/src/posts/GetProfileClosedPostsUseCase.ts` — application use case.
 - `app/packages/application/src/posts/__tests__/GetProfileClosedPostsUseCase.test.ts` — unit tests.
 - `app/apps/mobile/src/components/profile/ProfileClosedPostsGrid.tsx` — grid + empty state for closed posts (carries identity role per item).
@@ -32,7 +32,7 @@
 - `app/packages/application/src/posts/__tests__/fakePostRepository.ts` — implement the new method on the fake.
 - `app/packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts` — implement `getProfileClosedPosts` (calls RPC + hydrates posts).
 - `app/apps/mobile/src/lib/usecases.ts` (or wherever `getMyPostsUseCase()` is wired — confirm path during Task 7) — wire `getProfileClosedPostsUseCase()`.
-- `app/apps/mobile/src/components/PostCardProfile.tsx` — accept optional `identityRole` prop and render the 🎁/🎀 badge.
+- `app/apps/mobile/src/components/PostCardProfile.tsx` — accept optional `identityRole` prop and render the 📤/📥 badge.
 - `app/apps/mobile/app/(tabs)/profile.tsx` — closed-tab query uses the new use case + grid.
 - `app/apps/mobile/app/user/[handle]/index.tsx` — same.
 - `docs/SSOT/spec/02_profile_and_privacy.md` — revise FR-PROFILE-001 AC4 and FR-PROFILE-002 AC2.
@@ -46,14 +46,15 @@
 ## Task 1: Migration — refresh `is_post_visible_to` to allow third-party reads of closed_delivered posts per visibility
 
 **Files:**
-- Create: `supabase/migrations/0056_post_visibility_closed_public.sql`
+- Create: `supabase/migrations/0059_post_visibility_closed_public.sql`
 
 - [ ] **Step 1.1: Write the migration**
 
-Create `supabase/migrations/0056_post_visibility_closed_public.sql`:
+Create `supabase/migrations/0059_post_visibility_closed_public.sql`:
 
 ```sql
--- 0056_post_visibility_closed_public.sql
+-- 0059_post_visibility_closed_public.sql (renumbered from 0056 on the
+-- feat/FR-NOTIF-001-foundation branch where 0056..0058 are already taken)
 -- Spec: docs/superpowers/specs/2026-05-13-closed-posts-on-both-profiles-design.md
 -- FR-POST-017 AC1 (revised) — closed_delivered posts are visible to viewers
 -- according to the post's `visibility` setting, mirroring open-post rules:
@@ -133,7 +134,7 @@ select public.is_post_visible_to(
 - [ ] **Step 1.3: Commit**
 
 ```bash
-git add supabase/migrations/0056_post_visibility_closed_public.sql
+git add supabase/migrations/0059_post_visibility_closed_public.sql
 git commit -m "feat(infra): closed_delivered posts honor visibility for third-party viewers
 
 Public closed posts are now visible to everyone (minus block + reporter-hide),
@@ -146,14 +147,14 @@ Recipient and owner branches unchanged. Mapped to FR-POST-017 AC1 (revised)."
 ## Task 2: Migration — `profile_closed_posts` RPC
 
 **Files:**
-- Create: `supabase/migrations/0057_profile_closed_posts_rpc.sql`
+- Create: `supabase/migrations/0061_profile_closed_posts_rpc.sql`
 
 - [ ] **Step 2.1: Write the migration**
 
-Create `supabase/migrations/0057_profile_closed_posts_rpc.sql`:
+Create `supabase/migrations/0061_profile_closed_posts_rpc.sql`:
 
 ```sql
--- 0057_profile_closed_posts_rpc.sql
+-- 0061_profile_closed_posts_rpc.sql (renumbered from 0057 — see 0059 note)
 -- Spec: docs/superpowers/specs/2026-05-13-closed-posts-on-both-profiles-design.md
 -- Returns the set of closed_delivered posts to display on a user's "Closed Posts"
 -- tab — the UNION of posts they published AND posts on which they are the
@@ -171,8 +172,14 @@ Create `supabase/migrations/0057_profile_closed_posts_rpc.sql`:
 -- SECURITY: SECURITY DEFINER is required because `recipients` RLS blocks
 -- third-party reads, so the function must bypass it to discover the
 -- "received" side of the UNION. To prevent privilege escalation the function
--- asserts that `p_viewer_user_id` is either NULL or equal to `auth.uid()` —
--- callers cannot probe visibility from another user's perspective.
+-- asserts that `p_viewer_user_id` is either NULL, equal to auth.uid(), or
+-- the caller is the service_role (cron / edge functions / admin).
+--
+-- NOTE: this RPC intentionally does NOT guard on the profile user's
+-- privacy_mode. Per product, every user's profile is publicly visible (header
+-- + identity); only individual posts are filtered by their per-post
+-- `visibility`. FR-PROFILE-003's locked-panel behavior is a FE-level concern
+-- and is enforced in the mobile screens before this RPC is even called.
 
 create or replace function public.profile_closed_posts(
   p_profile_user_id uuid,
@@ -191,10 +198,14 @@ security definer
 set search_path = public
 as $$
 begin
-  -- `is distinct from` handles NULL correctly: an anon caller (auth.uid()=NULL)
-  -- passing a concrete viewer id is rejected. Equality (`<>`) would silently
-  -- pass that case because `x <> NULL` is NULL/falsy.
-  if p_viewer_user_id is not null and p_viewer_user_id is distinct from auth.uid() then
+  -- Service role bypasses the viewer-id check (no auth.uid() context).
+  -- For authenticated/anon callers: `is distinct from` handles NULL correctly,
+  -- so an anon caller (auth.uid()=NULL) passing a concrete viewer id is
+  -- rejected. Equality (`<>`) would silently pass that case.
+  if current_setting('request.jwt.claim.role', true) is distinct from 'service_role'
+     and p_viewer_user_id is not null
+     and p_viewer_user_id is distinct from auth.uid()
+  then
     raise exception 'forbidden_viewer_mismatch' using errcode = '42501';
   end if;
 
@@ -203,7 +214,10 @@ begin
     select greatest(1, least(coalesce(p_limit, 30), 100))::int as n
   ),
   unioned as (
-    -- Posts published by the profile user.
+    -- Publisher side: posts the profile user authored.
+    -- Includes BOTH closed_delivered AND deleted_no_recipient so the publisher
+    -- can still reopen / observe posts they closed without a recipient (within
+    -- the 7-day grace window — FR-CLOSURE-005 AC4, FR-CLOSURE-008).
     select
       p.post_id,
       'publisher'::text as identity_role,
@@ -211,11 +225,12 @@ begin
     from public.posts p
     left join public.recipients r on r.post_id = p.post_id
     where p.owner_id = p_profile_user_id
-      and p.status = 'closed_delivered'
+      and p.status in ('closed_delivered', 'deleted_no_recipient')
 
     union all
 
-    -- Posts where the profile user was picked at closure.
+    -- Respondent side: posts where the profile user was picked at closure.
+    -- Only closed_delivered — deleted_no_recipient has no respondent row.
     select
       p.post_id,
       'respondent'::text as identity_role,
@@ -271,7 +286,7 @@ For each call: confirm `identity_role` matches expectation and `closed_at` is de
 - [ ] **Step 2.4: Commit**
 
 ```bash
-git add supabase/migrations/0057_profile_closed_posts_rpc.sql
+git add supabase/migrations/0061_profile_closed_posts_rpc.sql
 git commit -m "feat(infra): profile_closed_posts RPC for cross-profile closed-posts tab
 
 Returns (post_id, identity_role, closed_at) for the UNION of posts the
@@ -591,67 +606,104 @@ Mapped to FR-PROFILE-001 AC4 (revised)."
 
 ## Task 6: Infrastructure — implement `getProfileClosedPosts`
 
+`SupabasePostRepository.ts` is already at ~225 LOC (over the 200-LOC cap noted in CLAUDE.md §5). To avoid making it worse — and to follow the existing pattern (`reopenPostHelper`, `getClosureCandidatesHelper`) already in this folder — the implementation lives in its own helper file. The class method just delegates.
+
 **Files:**
+- Create: `app/packages/infrastructure-supabase/src/posts/getProfileClosedPostsHelper.ts`
 - Modify: `app/packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts`
 
-- [ ] **Step 6.1: Add the import**
+- [ ] **Step 6.1: Write the helper**
 
-In `SupabasePostRepository.ts`, extend the `@kc/domain` import to include `ProfileClosedPostsItem`. Find the existing import block near the top of the file and append the type to it.
+Create `app/packages/infrastructure-supabase/src/posts/getProfileClosedPostsHelper.ts`:
 
-- [ ] **Step 6.2: Implement the method**
+```typescript
+// Helper for SupabasePostRepository.getProfileClosedPosts — kept in its own
+// file to respect the 200-LOC cap on the repository. Mirrors the existing
+// reopenPostHelper / getClosureCandidatesHelper pattern.
+//
+// Mapped to FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised).
 
-In `SupabasePostRepository.ts`, after the `getMyPosts` method (currently ending around line 201) and before `// ── Stats ──`, add:
+import type { SupabaseClient } from '@supabase/supabase-js';
+import type { Post, ProfileClosedPostsItem } from '@kc/domain';
+import { POST_SELECT_BARE, mapPostRow, type PostJoinedRow } from './mapPostRow';
+
+const HARD_MAX_LIMIT = 100;
+
+export async function getProfileClosedPostsHelper(
+  client: SupabaseClient,
+  profileUserId: string,
+  viewerUserId: string | null,
+  limit: number,
+  cursor?: string,
+): Promise<ProfileClosedPostsItem[]> {
+  const safeLimit = Math.max(1, Math.min(limit, HARD_MAX_LIMIT));
+
+  // Step 1: RPC returns (post_id, identity_role, closed_at) ordered desc.
+  const { data: rows, error: rpcError } = await client.rpc('profile_closed_posts', {
+    p_profile_user_id: profileUserId,
+    p_viewer_user_id: viewerUserId, // RPC accepts NULL for anon viewers.
+    p_limit: safeLimit,
+    p_cursor: cursor ?? null,
+  });
+  if (rpcError) throw new Error(`getProfileClosedPosts: ${rpcError.message}`);
+  const rpcRows = (rows ?? []) as Array<{
+    post_id: string;
+    identity_role: 'publisher' | 'respondent';
+    closed_at: string;
+  }>;
+  if (rpcRows.length === 0) return [];
+
+  // Step 2: hydrate via the standard joined SELECT. RLS applies — and since
+  // migration 0056 aligned `is_post_visible_to` with the RPC's filter, the
+  // verdicts match. (One exception: `deleted_no_recipient` posts on the
+  // publisher's own profile are visible only to the owner per the tomb-state
+  // branch in `is_post_visible_to` — which matches our intent.)
+  const ids = rpcRows.map((r) => r.post_id);
+  const { data: postsData, error: postsError } = await client
+    .from('posts')
+    .select(POST_SELECT_BARE)
+    .in('post_id', ids);
+  if (postsError) throw new Error(`getProfileClosedPosts hydrate: ${postsError.message}`);
+
+  const byId = new Map<string, Post>();
+  for (const row of (postsData ?? []) as unknown as PostJoinedRow[]) {
+    const post = mapPostRow(row);
+    byId.set(post.postId, post);
+  }
+
+  // Step 3: re-assemble in RPC's order, dropping rows lost to RLS edge cases.
+  const items: ProfileClosedPostsItem[] = [];
+  for (const r of rpcRows) {
+    const post = byId.get(r.post_id);
+    if (!post) continue;
+    items.push({ post, identityRole: r.identity_role });
+  }
+  return items;
+}
+```
+
+- [ ] **Step 6.2: Wire the class method to delegate to the helper**
+
+In `SupabasePostRepository.ts`:
+
+- Extend the `@kc/domain` import to include `ProfileClosedPostsItem`.
+- Add the helper import alongside the existing helper imports near the top of the file:
+
+```typescript
+import { getProfileClosedPostsHelper } from './getProfileClosedPostsHelper';
+```
+
+- After the `getMyPosts` method (around line 201) and before `// ── Stats ──`, add the method that just forwards:
 
 ```typescript
   // ── Profile closed posts (publisher ∪ respondent) ────────────────────────
-  async getProfileClosedPosts(
+  getProfileClosedPosts(
     profileUserId: string,
     viewerUserId: string | null,
     limit: number,
     cursor?: string,
   ): Promise<ProfileClosedPostsItem[]> {
-    const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
-
-    // Step 1: RPC returns (post_id, identity_role, closed_at) ordered desc.
-    const { data: rows, error: rpcError } = await this.client.rpc('profile_closed_posts', {
-      p_profile_user_id: profileUserId,
-      p_viewer_user_id: viewerUserId, // RPC accepts NULL for anon viewers.
-      p_limit: safeLimit,
-      p_cursor: cursor ?? null,
-    });
-    if (rpcError) throw new Error(`getProfileClosedPosts: ${rpcError.message}`);
-    const rpcRows = (rows ?? []) as Array<{
-      post_id: string;
-      identity_role: 'publisher' | 'respondent';
-      closed_at: string;
-    }>;
-    if (rpcRows.length === 0) return [];
-
-    // Step 2: hydrate posts via the same SELECT used everywhere else (joins
-    // city_ref, media_assets, recipient). RLS applies — but the RPC already
-    // filtered to visible rows, and our updated is_post_visible_to allows
-    // the same set.
-    const ids = rpcRows.map((r) => r.post_id);
-    const { data: postsData, error: postsError } = await this.client
-      .from('posts')
-      .select(POST_SELECT_BARE)
-      .in('post_id', ids);
-    if (postsError) throw new Error(`getProfileClosedPosts hydrate: ${postsError.message}`);
-
-    const byId = new Map<string, Post>();
-    for (const row of (postsData ?? []) as unknown as PostJoinedRow[]) {
-      const post = mapPostRow(row);
-      byId.set(post.postId, post);
-    }
-
-    // Step 3: re-assemble in the RPC's order, skipping rows lost to RLS edge cases.
-    const items: ProfileClosedPostsItem[] = [];
-    for (const r of rpcRows) {
-      const post = byId.get(r.post_id);
-      if (!post) continue;
-      items.push({ post, identityRole: r.identity_role });
-    }
-    return items;
+    return getProfileClosedPostsHelper(this.client, profileUserId, viewerUserId, limit, cursor);
   }
 ```
 
@@ -669,17 +721,18 @@ Expected: no errors.
 cd app
 pnpm --filter @kc/infrastructure-supabase test
 ```
-Expected: PASS (existing tests should not regress; this method has no unit test — it'll be covered by manual smoke + browser verification later).
+Expected: PASS (no regression; the new path has no unit test — covered by manual smoke + browser verification in Task 13).
 
 - [ ] **Step 6.5: Commit**
 
 ```bash
-git add app/packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts
-git commit -m "feat(infra): SupabasePostRepository.getProfileClosedPosts
+git add app/packages/infrastructure-supabase/src/posts/getProfileClosedPostsHelper.ts \
+        app/packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts
+git commit -m "feat(infra): getProfileClosedPostsHelper + repository delegation
 
-Calls profile_closed_posts RPC then hydrates with POST_SELECT_BARE,
-preserving RPC order and attaching identity role. Mapped to
-FR-PROFILE-001 AC4 (revised)."
+Helper lives in its own file (the repository is already at ~225 LOC, over
+the 200-LOC cap; new code goes via a helper following the existing
+reopen/closure-candidates pattern). Mapped to FR-PROFILE-001 AC4 (revised)."
 ```
 
 ---
@@ -748,12 +801,12 @@ import type { IdentityRoleForViewedProfile } from '@kc/domain';
 interface PostCardProfileProps {
   post: Post;
   /**
-   * When set, an economic-role badge ("🎁 נתתי" / "🎀 קיבלתי") renders on
+   * When set, an economic-role badge ("📤 נתתי" / "📥 קיבלתי") renders on
    * the card. The role is derived from (post.type, identityRole):
-   *   publisher + Give    → giver  → 🎁 נתתי
-   *   publisher + Request → receiver → 🎀 קיבלתי
-   *   respondent + Give   → receiver → 🎀 קיבלתי
-   *   respondent + Request→ giver   → 🎁 נתתי
+   *   publisher + Give    → giver  → 📤 נתתי
+   *   publisher + Request → receiver → 📥 קיבלתי
+   *   respondent + Give   → receiver → 📥 קיבלתי
+   *   respondent + Request→ giver   → 📤 נתתי
    */
   identityRole?: IdentityRoleForViewedProfile;
   onPressOverride?: () => void;
@@ -788,7 +841,7 @@ Then in the JSX, place the badge inside `<View style={styles.imageArea}>` next t
         {economicRole ? (
           <View style={styles.roleBadge}>
             <Text style={styles.roleBadgeText}>
-              {economicRole === 'giver' ? '🎁 נתתי' : '🎀 קיבלתי'}
+              {economicRole === 'giver' ? '📤 נתתי' : '📥 קיבלתי'}
             </Text>
           </View>
         ) : null}
@@ -825,7 +878,7 @@ Expected: no errors.
 
 ```bash
 git add app/apps/mobile/src/components/PostCardProfile.tsx
-git commit -m "feat(mobile): PostCardProfile renders 🎁/🎀 economic-role badge
+git commit -m "feat(mobile): PostCardProfile renders 📤/📥 economic-role badge
 
 Badge appears only when identityRole is set (closed-posts tab). Economic
 role is derived from (post.type, identityRole). Mapped to FR-PROFILE-001
@@ -1014,7 +1067,7 @@ git add app/apps/mobile/app/\(tabs\)/profile.tsx
 git commit -m "feat(mobile): My Profile closed tab uses GetProfileClosedPostsUseCase
 
 Open tab continues with getMyPostsUseCase; closed tab now lists both
-posts I published and posts where I'm the respondent, with 🎁/🎀 badges.
+posts I published and posts where I'm the respondent, with 📤/📥 badges.
 Mapped to FR-PROFILE-001 AC4 (revised)."
 ```
 
@@ -1071,9 +1124,11 @@ And gate it on the open tab:
     enabled: Boolean(allowed && u?.userId) && activeTab === 'open',
 ```
 
-- [ ] **Step 11.4: Conditional grid render**
+- [ ] **Step 11.4: Conditional grid render — inside the existing `allowed` branch only**
 
-Find the existing `<ProfilePostsGrid` for the active tab (around line 181) and wrap with the same conditional pattern as Task 10.3:
+The existing screen already wraps the tabs+grid in an `allowed` guard (line 62 / line 116 `showLocked` → `<LockedPanel />`) per FR-PROFILE-003. The new grid MUST sit inside the same `!showLocked` / `allowed` branch — never reach a non-approved viewer of a Private profile.
+
+Find the existing `<ProfilePostsGrid` for the active tab (around line 181, inside the `!showLocked` JSX block) and wrap with the same conditional pattern as Task 10.3:
 
 ```typescript
             {activeTab === 'open' ? (
@@ -1090,6 +1145,8 @@ Find the existing `<ProfilePostsGrid` for the active tab (around line 181) and w
               />
             )}
 ```
+
+After editing, re-read the file to confirm the new block is inside the `{showLocked ? <LockedPanel /> : (...)}` branch — not at the top level.
 
 - [ ] **Step 11.5: Typecheck + lint**
 
@@ -1175,9 +1232,9 @@ Use the credentials in memory (`super_admin_test_account.md`) to sign into the d
 
 - Navigate to `/(tabs)/profile`.
 - Tap "פוסטים סגורים".
-- Confirm at least one card with 🎁 נתתי badge (if the admin has published a closed post) and at least one with 🎀 קיבלתי (if the admin has been picked as respondent).
-- Tap a 🎀 קיבלתי card: confirm the "Remove my recipient mark" CTA appears (FR-POST-017).
-- Tap a 🎁 נתתי card: confirm the "Reopen" CTA appears (FR-POST-016).
+- Confirm at least one card with 📤 נתתי badge (if the admin has published a closed post) and at least one with 📥 קיבלתי (if the admin has been picked as respondent).
+- Tap a 📥 קיבלתי card: confirm the "Remove my recipient mark" CTA appears (FR-POST-017).
+- Tap a 📤 נתתי card: confirm the "Reopen" CTA appears (FR-POST-016).
 
 If the dev DB has no such posts, seed one by closing an open post with a recipient (use the existing closure flow from chat — FR-CHAT-015).
 
@@ -1226,7 +1283,7 @@ In `docs/SSOT/spec/02_profile_and_privacy.md`, replace the body of AC4 with:
 ```markdown
 - AC4. Two tabs:
    - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): unchanged — lists all `open` posts authored by the user including `Public`, `Followers only`, and `Only me`. Each card carries a visual badge showing its visibility.
-   - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts where the user is **either the publisher or the respondent**, status `closed_delivered`, ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 🎁 נתתי when the profile owner is the giver, 🎀 קיבלתי when the profile owner is the receiver. (Revised 2026-05-13 per D-19.)
+   - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts where the user is **either the publisher or the respondent**. The publisher side covers status `closed_delivered` and (for the user's own view) `deleted_no_recipient` within the 7-day grace window so they can still reopen — FR-CLOSURE-005 AC4, FR-CLOSURE-008. The respondent side covers only `closed_delivered`. Ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 📤 נתתי when the profile owner is the giver, 📥 קיבלתי when the profile owner is the receiver. (Revised 2026-05-13 per D-19.)
 ```
 
 - [ ] **Step 14.2: Revise FR-PROFILE-002 AC2**
@@ -1258,7 +1315,7 @@ Append to `docs/SSOT/DECISIONS.md`:
 ```markdown
 ## D-19 — Closed posts surface on both publisher and respondent profiles (2026-05-13)
 
-Closed-delivered posts appear in the "פוסטים סגורים" tab of both the publisher's and the respondent's profile. Visibility to third parties is governed by the post's original `visibility` field (Public / Followers-only / Only-me) — no automatic upgrade on close. Each card shows an economic-role badge (🎁 נתתי / 🎀 קיבלתי) derived from `(post.type, identity-role)`.
+Closed-delivered posts appear in the "פוסטים סגורים" tab of both the publisher's and the respondent's profile. Visibility to third parties is governed by the post's original `visibility` field (Public / Followers-only / Only-me) — no automatic upgrade on close. Each card shows an economic-role badge (📤 נתתי / 📥 קיבלתי) derived from `(post.type, identity-role)`.
 
 **Reverses** the respondent-privacy carve-out previously stated in D-7 / FR-POST-017 AC1. Rationale: a public karma trail across both sides of a transaction is more important than the implicit privacy of being a respondent on a public post. Users who want privacy can publish posts as Followers-only or Only-me, and the closed visibility inherits accordingly.
 
@@ -1328,7 +1385,7 @@ gh pr create --base dev --head "$(git branch --show-current)" \
   --title "feat(profile): closed posts on both publisher and respondent profiles" \
   --body "$(cat <<'EOF'
 ## Summary
-Closed-delivered posts now appear on both stakeholders' profiles with a 🎁/🎀 economic-role badge derived from (post.type, identity-role). Visibility for third parties follows the post's original setting (Public / Followers-only / Only-me).
+Closed-delivered posts now appear on both stakeholders' profiles with a 📤/📥 economic-role badge derived from (post.type, identity-role). Visibility for third parties follows the post's original setting (Public / Followers-only / Only-me).
 
 ## Mapped to spec
 - FR-PROFILE-001 AC4 (revised) — docs/SSOT/spec/02_profile_and_privacy.md
@@ -1342,7 +1399,7 @@ Design: docs/superpowers/specs/2026-05-13-closed-posts-on-both-profiles-design.m
 - Migrations 0056 (visibility predicate) + 0057 (profile_closed_posts RPC).
 - New application port + use case + tests.
 - Infra adapter implementing the RPC + hydrate flow.
-- New ProfileClosedPostsGrid; PostCardProfile renders the 🎁/🎀 badge.
+- New ProfileClosedPostsGrid; PostCardProfile renders the 📤/📥 badge.
 - Both profile screens swap to the new use case on the closed tab.
 
 ## Tests

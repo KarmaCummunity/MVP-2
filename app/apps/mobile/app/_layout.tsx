@@ -1,6 +1,6 @@
 import '../src/i18n';
 import React, { useEffect } from 'react';
-import { Stack, useSegments } from 'expo-router';
+import { Stack, usePathname, useSegments } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
@@ -53,6 +53,14 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { colors } from '@kc/ui';
 import { useAuthStore } from '../src/store/authStore';
+import { container } from '../src/lib/container';
+import {
+  useActiveScreenStore,
+  installForegroundHandler,
+  installBadgeAutoClear,
+  useNotificationTapRouting,
+  registerCurrentDeviceIfPermitted,
+} from '../src/lib/notifications';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
@@ -79,6 +87,32 @@ const detailHeader = {
   // which under forced RTL pushes the title to the right edge. Center everywhere.
   headerTitleAlign: 'center',
 } as const;
+
+function NotificationsBridge(): null {
+  const userId = useAuthStore((s) => s.session?.userId ?? null);
+  const setRoute = useActiveScreenStore((s) => s.setRoute);
+
+  useNotificationTapRouting();
+
+  useEffect(() => {
+    installForegroundHandler();
+    installBadgeAutoClear();
+  }, []);
+
+  const pathname = usePathname();
+  useEffect(() => {
+    setRoute(pathname ?? null);
+  }, [pathname, setRoute]);
+
+  useEffect(() => {
+    if (!userId) return;
+    registerCurrentDeviceIfPermitted(userId, { deviceRepo: container.deviceRepo }).catch(
+      console.error,
+    );
+  }, [userId]);
+
+  return null;
+}
 
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
   const segments = useSegments() as string[];
@@ -143,6 +177,7 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <StatusBar style="dark" />
             <DevBanner />
+            <NotificationsBridge />
             <AuthGate>
               <SoftGateProvider>
                 <ShellWithTabBar>

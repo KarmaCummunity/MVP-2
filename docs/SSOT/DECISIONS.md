@@ -405,6 +405,55 @@ For `messages.system_payload` snapshots taken by `reports_after_insert_apply_eff
 
 ---
 
+## D-19 — Closed posts surface on both publisher and respondent profiles (2026-05-13)
+
+Closed-delivered posts appear in the "פוסטים סגורים" tab of both the publisher's and the respondent's profile. Visibility to third parties is governed by the post's original `visibility` field (Public / Followers-only / Only-me) — no automatic upgrade on close. Each card shows an economic-role badge (📤 נתתי / 📥 קיבלתי) derived from `(post.type, identity-role)`.
+
+**Reverses** the respondent-privacy carve-out previously stated in D-7 / FR-POST-017 AC1. Rationale: a public karma trail across both sides of a transaction is more important than the implicit privacy of being a respondent on a public post. Users who want privacy can publish posts as Followers-only or Only-me, and the closed visibility inherits accordingly.
+
+**Spec:** `docs/superpowers/specs/2026-05-13-closed-posts-on-both-profiles-design.md`.
+**Touches:** FR-PROFILE-001 AC4, FR-PROFILE-002 AC2, FR-POST-017 AC1 + AC5.
+**Implementation:** migrations `0059_post_visibility_closed_public.sql` + `0061_profile_closed_posts_rpc.sql`; use case `GetProfileClosedPostsUseCase`; mobile components `ProfileClosedPostsGrid` + `PostCardProfile` (identityRole prop).
+
+---
+
+## EXEC-10 — Push notifications use outbox + database-webhook + Edge Function pattern
+
+**Date.** 2026-05-14
+**Origin.** P1.5 brainstorming + design phase (2026-05-13).
+
+**Decision.**
+Push notifications are dispatched via a three-layer pipeline:
+
+1. **DB triggers** on each producer table (`messages`, `recipients`, `posts`, `follow_requests`, `follow_edges`) write a row to the `notifications_outbox` table inside the same transaction as the originating event, using a single `enqueue_notification(...)` helper.
+2. A **Supabase Database Webhook** on `INSERT INTO notifications_outbox` invokes the `dispatch-notification` Edge Function (Deno) in ~1s.
+3. The Edge Function loads recipient preferences + devices, applies coalescing (chat ≤60s, follow_started ≥3-in-60min), and calls the Expo Push HTTP API.
+
+A 1-min pg_cron sweeps any rows that failed webhook delivery; a 24h TTL cron prunes the outbox.
+
+Web Push parity is deferred — only the adapter changes, the pipeline is shared.
+
+**Rationale.**
+- Atomicity: the outbox row is written in the same transaction as the data change, so we never notify on rolled-back state.
+- Sub-5s latency (NFR-PERF-007): webhook fires ~1s after INSERT.
+- Built-in retry: dashboard webhook retries automatically; the cron is a backstop.
+- Observability: every notification is a row in `notifications_outbox` with `dispatched_at`, `attempts`, `last_error` — debuggable from the SQL editor without log mining.
+
+**Alternatives rejected.**
+- *`pg_net.http_post` inside a trigger.* HTTP from inside a DB transaction is fragile (rolls back HTTP attempts; no retry; secrets in DB). Eliminated as anti-pattern.
+- *Pure `pg_cron` polling every minute.* Latency floor is 60s — violates NFR-PERF-007 for chat.
+- *External worker on Railway.* The repo already has a Railway service, but adding a polling worker just for fan-out doubles ops surface. Edge Function is sufficient.
+- *Third-party (OneSignal).* Extra DPA, extra dependency, no clear MVP-scale benefit.
+
+**Trade-offs accepted.**
+- The Edge Function runs on Deno; the canonical `coalesce.ts` helper lives in `@kc/application` and is byte-mirrored under `supabase/functions/dispatch-notification/`. A CI lint (Task 25) prevents drift.
+- The Database Webhook is configured via the Supabase dashboard, not SQL — operator step documented in migration 0058's header.
+- Web Push is deferred to a follow-up TD (TD-65).
+
+**Affected docs.** `docs/SSOT/spec/09_notifications.md`, `docs/SSOT/spec/11_settings.md`, `docs/superpowers/specs/2026-05-13-push-notifications-design.md`, `docs/superpowers/plans/2026-05-13-push-notifications.md`, migrations 0056–0058, 0060, 0062–0066, Edge Function `dispatch-notification`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
@@ -417,3 +466,5 @@ For `messages.system_payload` snapshots taken by `reports_after_insert_apply_eff
 | 0.6 | 2026-05-12 | Added `D-17` (admin report-bubble snapshot privacy floor; TD-59 + TD-60 deferred). |
 | 0.7 | 2026-05-12 | Added `D-18` (owner delete `deleted_no_recipient` when no recipient row). |
 | 0.8 | 2026-05-12 | `D-18` follow-up: orphan `closed_delivered` after recipient user CASCADE (`0053`). |
+| 0.9 | 2026-05-13 | Added `D-19` (closed posts surface on both publisher and respondent profiles; reverses D-7 respondent-privacy carve-out). |
+| 1.0 | 2026-05-14 | Added `EXEC-10` (push notifications outbox + database-webhook + Edge Function pattern; P1.5 complete). |

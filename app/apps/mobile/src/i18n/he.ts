@@ -6,6 +6,7 @@
 
 import { donations, search } from './donations';
 import { chatHe } from './partials/chatHe';
+import { notificationsHe } from './partials/notificationsHe';
 import { moderationHe, auditHe, accountBlockedHe } from './partials/moderationHe';
 import { stats } from './stats';
 
@@ -41,6 +42,8 @@ const he = {
   // Onboarding
   onboarding: {
     stepBasic: 'פרטים בסיסיים',
+    basicInfoSubtitle:
+      'זה שמך האמיתי? נשמח לזהות אותך בשמך המלא.\nמומלץ להוסיף כתובת עכשיו, שנוכל להתאים את הפוסטים במיוחד בשבילך, אבל אפשר להשלים את הפרטים בהמשך 🙂',
     displayName: 'שם מלא',
     city: 'עיר מגורים',
     stepPhoto: 'תמונת פרופיל',
@@ -148,6 +151,9 @@ const he = {
 
   // Chat — see partials/chatHe.ts (FR-CHAT-016)
   chat: chatHe,
+
+  // Notifications (FR-NOTIF-001..015) — see partials/notificationsHe.ts
+  notifications: notificationsHe,
 
   // Moderation (FR-MOD-007/010 + FR-ADMIN-002..007) — see partials/moderationHe.ts
   moderation: moderationHe,

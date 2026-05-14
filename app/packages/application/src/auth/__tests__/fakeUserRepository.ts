@@ -152,5 +152,6 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     searchUsers: notImpl('searchUsers') as IUserRepository['searchUsers'],
     setPrivacyMode: notImpl('setPrivacyMode') as IUserRepository['setPrivacyMode'],
     getFollowStateRaw: notImpl('getFollowStateRaw') as IUserRepository['getFollowStateRaw'],
+    updateNotificationPreferences: notImpl('updateNotificationPreferences') as IUserRepository['updateNotificationPreferences'],
   };
 }

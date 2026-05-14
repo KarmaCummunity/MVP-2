@@ -21,6 +21,7 @@ import {
   GetCommunityStatsSnapshotUseCase,
   GetFeedUseCase,
   GetMyPostsUseCase,
+  GetProfileClosedPostsUseCase,
   GetPostByIdUseCase,
   ListMyActivityTimelineUseCase,
   MarkAsDeliveredUseCase,
@@ -41,6 +42,7 @@ let _del: DeletePostUseCase | null = null;
 let _getFeed: GetFeedUseCase | null = null;
 let _getById: GetPostByIdUseCase | null = null;
 let _myPosts: GetMyPostsUseCase | null = null;
+let _profileClosedPosts: GetProfileClosedPostsUseCase | null = null;
 let _markDelivered: MarkAsDeliveredUseCase | null = null;
 let _reopen: ReopenPostUseCase | null = null;
 let _getClosureCandidates: GetClosureCandidatesUseCase | null = null;
@@ -91,6 +93,11 @@ export function getPostByIdUseCase(): GetPostByIdUseCase {
 export function getMyPostsUseCase(): GetMyPostsUseCase {
   if (!_myPosts) _myPosts = new GetMyPostsUseCase(getRepo());
   return _myPosts;
+}
+
+export function getProfileClosedPostsUseCase(): GetProfileClosedPostsUseCase {
+  if (!_profileClosedPosts) _profileClosedPosts = new GetProfileClosedPostsUseCase(getRepo());
+  return _profileClosedPosts;
 }
 
 /** Re-export for callers that need to issue raw queries (e.g. countOpenByUser). */

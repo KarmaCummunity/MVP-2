@@ -150,6 +150,10 @@ export class FakeChatRepository implements IChatRepository {
     return { userId: other, displayName: 'fake', avatarUrl: null, shareHandle: 'fake', isDeleted: false };
   }
 
+  async hasSentAnyMessage(userId: string): Promise<boolean> {
+    return this.messages.some((m) => m.senderId === userId && m.kind === 'user');
+  }
+
   async getOrCreateSupportThread(userId: string): Promise<Chat> {
     const admin = 'super-admin';
     const ids = [userId, admin].sort() as [string, string];

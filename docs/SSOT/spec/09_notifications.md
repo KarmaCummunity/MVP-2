@@ -1,6 +1,6 @@
 # 2.9 Notifications
 
-> **Status:** ⏳ Planned — Push notifications not yet implemented. Taxonomy defined.
+> **Status:** ✅ Implemented — All in-scope FRs shipped end-to-end. FR-NOTIF-004 (message_undeliverable) and FR-NOTIF-012 (account-deletion email) remain deferred — see TD-62 and TD-118 respectively. FR-NOTIF-016 (quiet hours) is out of MVP per spec. Web Push parity tracked under TD-65.
 
 
 
