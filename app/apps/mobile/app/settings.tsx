@@ -1,6 +1,6 @@
 // Settings screen stub — SRS §3.5, FR-AUTH-017 (logout)
 import React from 'react';
-import { Alert, Platform, View, Text, TouchableOpacity, StyleSheet, ScrollView, Switch } from 'react-native';
+import { Alert, Platform, View, Text, TouchableOpacity, StyleSheet, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -42,7 +42,6 @@ export default function SettingsScreen() {
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
   const queryClient = useQueryClient();
-  const [notificationsOn, setNotificationsOn] = React.useState(true);
   const [signingOut, setSigningOut] = React.useState(false);
   const [resettingOnboarding, setResettingOnboarding] = React.useState(false);
   const [deleteModalVisible, setDeleteModalVisible] = React.useState(false);
@@ -154,15 +153,9 @@ export default function SettingsScreen() {
         <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
         <View style={styles.section}>
           <SettingsRow
-            label={t('settings.notificationsOn')}
+            label={t('settings.notifications')}
             icon="notifications-outline"
-            rightElement={
-              <Switch
-                value={notificationsOn}
-                onValueChange={setNotificationsOn}
-                trackColor={{ true: colors.primary }}
-              />
-            }
+            onPress={() => router.push('/settings/notifications' as never)}
           />
         </View>
 

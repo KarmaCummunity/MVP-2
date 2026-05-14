@@ -131,3 +131,4 @@ export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase
 export type { IDeviceRepository } from './notifications/IDeviceRepository';
 export { RegisterDeviceUseCase } from './notifications/RegisterDeviceUseCase';
 export { DeactivateDeviceUseCase } from './notifications/DeactivateDeviceUseCase';
+export { UpdateNotificationPreferencesUseCase } from './notifications/UpdateNotificationPreferencesUseCase';
