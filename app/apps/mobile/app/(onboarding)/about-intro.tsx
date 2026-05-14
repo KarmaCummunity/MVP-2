@@ -4,103 +4,179 @@ import { View, Text, StyleSheet, ScrollView, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { PressableScale } from '../../src/components/animations/PressableScale';
 import { staggerDelay } from '../../src/lib/animations/motion';
 
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
+
+const PILLARS: ReadonlyArray<{ readonly icon: IoniconName; readonly key: 'pillarFree' | 'pillarNoAds' | 'pillarNonProfit' }> = [
+  { icon: 'heart-outline', key: 'pillarFree' },
+  { icon: 'eye-off-outline', key: 'pillarNoAds' },
+  { icon: 'leaf-outline', key: 'pillarNonProfit' },
+];
+
 export default function OnboardingAboutIntroScreen() {
   const router = useRouter();
   const { t } = useTranslation();
 
-  const goBasicInfo = () => {
-    router.replace('/(onboarding)/basic-info');
-  };
+  const goBasicInfo = () => router.replace('/(onboarding)/basic-info');
 
   return (
     <SafeAreaView style={styles.container}>
+      <View style={styles.headerPad}>
+        <OnboardingStepHeader step={1} onSkip={goBasicInfo} />
+      </View>
+
       <ScrollView
         style={styles.scroll}
         contentContainerStyle={styles.scrollContent}
         keyboardShouldPersistTaps="handled"
       >
-        <OnboardingStepHeader step={1} onSkip={goBasicInfo} />
-        <AnimatedEntry delay={staggerDelay(0)}>
-          <Text style={styles.title}>{t('onboarding.aboutIntroTitle')}</Text>
-        </AnimatedEntry>
-        <AnimatedEntry delay={staggerDelay(1)}>
-          <Text style={styles.lead}>{t('aboutContent.tagline')}</Text>
-        </AnimatedEntry>
-        <AnimatedEntry delay={staggerDelay(2)}>
-          <Text style={styles.body}>{t('onboarding.aboutIntroBody')}</Text>
-        </AnimatedEntry>
-        <AnimatedEntry delay={staggerDelay(3)}>
-          <Text style={styles.hint}>{t('onboarding.aboutIntroSettingsHint')}</Text>
-        </AnimatedEntry>
-        <AnimatedEntry delay={staggerDelay(4)}>
-          <View style={styles.logoWrap}>
-            <Image
-              source={require('../../assets/logo.png')}
-              style={styles.logo}
-              resizeMode="contain"
-              accessibilityIgnoresInvertColors
-            />
+        <AnimatedEntry delay={staggerDelay(0)} style={styles.logoWrap}>
+          <View style={styles.haloOuter}>
+            <View style={styles.haloInner}>
+              <Image
+                source={require('../../assets/logo.png')}
+                style={styles.logo}
+                resizeMode="contain"
+                accessibilityIgnoresInvertColors
+              />
+            </View>
           </View>
         </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(1)}>
+          <Text style={styles.title}>{t('onboarding.aboutIntroTitle')}</Text>
+        </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(2)}>
+          <Text style={styles.tagline}>{t('aboutContent.tagline')}</Text>
+        </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(3)}>
+          <Text style={styles.body}>{t('onboarding.aboutIntroBody')}</Text>
+        </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(4)} style={styles.pillars}>
+          {PILLARS.map((p) => (
+            <View key={p.key} style={styles.pillar}>
+              <View style={styles.pillarIcon}>
+                <Ionicons name={p.icon} size={22} color={colors.primary} />
+              </View>
+              <Text style={styles.pillarLabel}>{t(`onboarding.${p.key}`)}</Text>
+            </View>
+          ))}
+        </AnimatedEntry>
       </ScrollView>
+
       <AnimatedEntry delay={staggerDelay(5)} style={styles.footer}>
         <PressableScale
           style={styles.cta}
           onPress={goBasicInfo}
           accessibilityRole="button"
-          accessibilityLabel={t('onboarding.continue')}
+          accessibilityLabel={t('onboarding.aboutIntroCta')}
         >
-          <Text style={styles.ctaText}>{t('onboarding.continue')}</Text>
+          <Text style={styles.ctaText}>{t('onboarding.aboutIntroCta')}</Text>
+          <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
         </PressableScale>
       </AnimatedEntry>
     </SafeAreaView>
   );
 }
 
+const HALO_OUTER = 220;
+const HALO_INNER = 184;
+const LOGO_SIZE = 148;
+
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
+  headerPad: { paddingHorizontal: spacing.xl, paddingTop: spacing.base },
   scroll: { flex: 1 },
   scrollContent: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.base,
     paddingBottom: spacing.lg,
     gap: spacing.base,
+    alignItems: 'center',
   },
-  logoWrap: { alignItems: 'center', paddingVertical: spacing.sm },
-  logo: { width: 120, height: 120 },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
-  lead: {
-    ...typography.body,
+  logoWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
+  haloOuter: {
+    width: HALO_OUTER,
+    height: HALO_OUTER,
+    borderRadius: HALO_OUTER / 2,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  haloInner: {
+    width: HALO_INNER,
+    height: HALO_INNER,
+    borderRadius: HALO_INNER / 2,
+    backgroundColor: colors.primaryLight,
+    opacity: 0.55,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  logo: { width: LOGO_SIZE, height: LOGO_SIZE },
+  title: {
+    ...typography.h1,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: 'center',
+    marginTop: spacing.sm,
+  },
+  tagline: {
+    fontSize: 18,
     fontWeight: '600',
-    lineHeight: 24,
+    color: colors.primaryDark,
+    textAlign: 'center',
+    lineHeight: 26,
   },
   body: {
-    ...typography.body,
+    ...typography.bodyLarge,
     color: colors.textSecondary,
-    textAlign: 'right',
-    lineHeight: 24,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
   },
-  hint: {
+  pillars: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    width: '100%',
+    marginTop: spacing.base,
+    gap: spacing.sm,
+  },
+  pillar: { flex: 1, alignItems: 'center', gap: spacing.xs },
+  pillarIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  pillarLabel: {
     ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    lineHeight: 20,
+    color: colors.textPrimary,
+    textAlign: 'center',
+    fontWeight: '600',
   },
   footer: { paddingHorizontal: spacing.xl, paddingBottom: spacing.base },
   cta: {
-    height: 52,
+    height: 56,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  ctaText: { ...typography.button, color: colors.textInverse },
+  ctaText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
 });
