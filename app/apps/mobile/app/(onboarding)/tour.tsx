@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
+import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 
 interface Slide {
   readonly emoji: string;
@@ -44,13 +45,18 @@ export default function OnboardingTourScreen() {
     }
   };
 
+  const handleBack = () => {
+    router.replace('/(onboarding)/photo');
+  };
+
   return (
     <SafeAreaView style={styles.container}>
-      <View style={styles.headerRow}>
-        <Text style={styles.step}>שלב 3 מתוך 3</Text>
-        <TouchableOpacity onPress={() => router.replace('/(tabs)')}>
-          <Text style={styles.skip}>דלג</Text>
-        </TouchableOpacity>
+      <View style={styles.headerPad}>
+        <OnboardingStepHeader
+          step={3}
+          onSkip={() => router.replace('/(tabs)')}
+          onBack={handleBack}
+        />
       </View>
 
       <View style={styles.content}>
@@ -79,15 +85,10 @@ export default function OnboardingTourScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.surface },
-  headerRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+  headerPad: {
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.base,
   },
-  step: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  skip: { ...typography.body, color: colors.primary },
   content: {
     flex: 1,
     alignItems: 'center',

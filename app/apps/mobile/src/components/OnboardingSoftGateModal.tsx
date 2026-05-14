@@ -18,6 +18,9 @@ import { EditProfileAddressBlock } from './EditProfileAddressBlock';
 import { useAuthStore } from '../store/authStore';
 import { getCompleteBasicInfoUseCase } from '../services/userComposition';
 import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
+import { getProfileAddressPairIssue } from '../lib/profileAddressFieldGate';
+import { useFeedSessionStore } from '../store/feedSessionStore';
+import { useTranslation } from 'react-i18next';
 
 interface Props {
   readonly visible: boolean;
@@ -26,6 +29,7 @@ interface Props {
 }
 
 export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
+  const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [displayName, setDisplayName] = useState(session?.displayName ?? '');
@@ -34,10 +38,26 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   const [streetNumber, setStreetNumber] = useState('');
   const [saving, setSaving] = useState(false);
 
-  const canSave = displayName.trim().length > 0 && city !== null && !saving;
+  const addressIssue = getProfileAddressPairIssue(street, streetNumber);
+  const hasRequiredFields = displayName.trim().length > 0 && city !== null;
+  const canSubmit = hasRequiredFields && addressIssue === null;
+  const canPressSave = hasRequiredFields && !saving;
+
+  const showAddressToast = () => {
+    if (!addressIssue) return;
+    useFeedSessionStore.getState().showEphemeralToast(
+      mapEditProfileSaveError(addressIssue),
+      'error',
+      2800,
+    );
+  };
 
   const handleSave = async () => {
-    if (!session || !canSave || !city) return;
+    if (!session || !hasRequiredFields || !city) return;
+    if (!canSubmit) {
+      showAddressToast();
+      return;
+    }
     setSaving(true);
     try {
       await getCompleteBasicInfoUseCase().execute({
@@ -52,7 +72,9 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
       onSaved();
     } catch (err) {
       const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(raw));
+      const mapped = mapEditProfileSaveError(raw);
+      useFeedSessionStore.getState().showEphemeralToast(mapped, 'error', 2800);
+      Alert.alert('שמירה נכשלה', mapped);
     } finally {
       setSaving(false);
     }
@@ -78,9 +100,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                   <Text style={styles.cancel}>ביטול</Text>
                 </TouchableOpacity>
               </View>
-              <Text style={styles.subtitle}>
-                כדי להמשיך יש להזין שם ועיר. אפשר להוסיף רחוב ומספר בית (אופציונלי).
-              </Text>
+              <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
 
               <View style={styles.field}>
                 <Text style={styles.label}>שם מלא</Text>
@@ -107,8 +127,12 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
               />
 
               <TouchableOpacity
-                style={[styles.cta, !canSave && { opacity: 0.4 }]}
-                disabled={!canSave}
+                style={[
+                  styles.cta,
+                  !hasRequiredFields && { opacity: 0.4 },
+                  hasRequiredFields && !canSubmit && { opacity: 0.85 },
+                ]}
+                disabled={!canPressSave}
                 onPress={handleSave}
               >
                 {saving ? (
