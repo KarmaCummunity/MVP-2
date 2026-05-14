@@ -1,0 +1,10 @@
+{
+  "applinks": {
+    "details": [
+      {
+        "appID": "REPLACE_WITH_APPLE_TEAM_ID.com.karmacommunity.app",
+        "paths": ["/auth/verify", "/auth/verify*"]
+      }
+    ]
+  }
+}

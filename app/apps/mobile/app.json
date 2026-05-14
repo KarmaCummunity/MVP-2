@@ -18,6 +18,7 @@
     "ios": {
       "supportsTablet": false,
       "bundleIdentifier": "com.karmacommunity.app",
+      "associatedDomains": ["applinks:karma-community-kc.com"],
       "infoPlist": {
         "CFBundleDisplayName": "KC",
         "NSCameraUsageDescription": "נדרש לצלם תמונות לפוסטים",
@@ -33,6 +34,16 @@
       "permissions": [
         "android.permission.CAMERA",
         "android.permission.READ_EXTERNAL_STORAGE"
+      ],
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            { "scheme": "https", "host": "karma-community-kc.com", "pathPrefix": "/auth/verify" }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
       ]
     },
     "web": {
