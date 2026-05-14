@@ -37,6 +37,7 @@ export * from './posts/CreatePostUseCase';
 export * from './posts/UpdatePostUseCase';
 export * from './posts/GetPostByIdUseCase';
 export * from './posts/GetMyPostsUseCase';
+export * from './posts/GetProfileClosedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
@@ -128,3 +129,5 @@ export { CheckAccountGateUseCase } from './moderation/CheckAccountGateUseCase';
 export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase';
 
 export type { IDeviceRepository } from './notifications/IDeviceRepository';
+export { RegisterDeviceUseCase } from './notifications/RegisterDeviceUseCase';
+export { DeactivateDeviceUseCase } from './notifications/DeactivateDeviceUseCase';

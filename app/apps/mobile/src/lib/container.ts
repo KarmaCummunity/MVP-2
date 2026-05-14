@@ -12,6 +12,7 @@ import {
   SupabasePostRepository,
   SupabaseModerationAdminRepository,
   SupabaseAccountGateRepository,
+  SupabaseDeviceRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -59,6 +60,7 @@ const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
 const postRepo = new SupabasePostRepository(supabase);
 const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
+const deviceRepo = new SupabaseDeviceRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 
@@ -67,6 +69,7 @@ export const container = {
   chatRepo,
   chatRealtime,
   moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
+  deviceRepo,
 
   // Chat use cases
   listChats: new ListChatsUseCase(chatRepo),
