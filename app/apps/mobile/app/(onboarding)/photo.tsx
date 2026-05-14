@@ -2,141 +2,112 @@
 // AC1 camera+gallery · AC2 resize 1024 + JPEG q=0.85 · AC3 skip → silhouette ·
 // AC4 SSO-prefilled, replaceable/removable · AC5 errors recoverable.
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { PhotoSourceSheet } from '../../src/components/PhotoSourceSheet';
-import { useAuthStore } from '../../src/store/authStore';
-import { getCompleteOnboardingUseCase, getSetAvatarUseCase } from '../../src/services/userComposition';
-import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../../src/services/avatarUpload';
+import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
+import { PressableScale } from '../../src/components/animations/PressableScale';
+import { staggerDelay } from '../../src/lib/animations/motion';
+import { useOnboardingPhotoFlow } from '../../src/hooks/useOnboardingPhotoFlow';
 
 export default function OnboardingPhotoScreen() {
-  const router = useRouter();
-  const session = useAuthStore((s) => s.session);
-  const onboardingState = useAuthStore((s) => s.onboardingState);
-  const setSession = useAuthStore((s) => s.setSession);
-  const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
+  const {
+    session,
+    avatarUrl,
+    hasAvatar,
+    uploading,
+    finalizing,
+    busy,
+    pick,
+    remove,
+    finalize,
+    goBack,
+  } = useOnboardingPhotoFlow();
 
-  const avatarUrl = session?.avatarUrl ?? null;
-  const hasAvatar = !!avatarUrl;
-  const busy = uploading || finalizing;
-
-  const handlePick = async (source: AvatarSource) => {
+  const handlePick = async (source: Parameters<typeof pick>[0]) => {
     setSheetVisible(false);
-    if (!session) return;
-    setUploading(true);
-    try {
-      const picked = await pickAvatarImage(source);
-      if (!picked) return; // user cancelled or denied permission
-      const url = await resizeAndUploadAvatar(picked, session.userId);
-      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: url });
-      setSession({ ...session, avatarUrl: url });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('העלאת התמונה נכשלה', `אפשר לדלג ולהוסיף תמונה מאוחר יותר.\n${msg}`);
-    } finally {
-      setUploading(false);
-    }
+    await pick(source);
   };
 
   const handleRemove = async () => {
     setSheetVisible(false);
-    if (!session) return;
-    setUploading(true);
-    try {
-      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: null });
-      setSession({ ...session, avatarUrl: null });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('הסרת התמונה נכשלה', msg);
-    } finally {
-      setUploading(false);
-    }
-  };
-
-  const finalize = async () => {
-    if (!session) return;
-    setFinalizing(true);
-    try {
-      if (onboardingState === 'pending_avatar') {
-        await getCompleteOnboardingUseCase().execute({ userId: session.userId });
-        setOnboardingState('completed');
-      }
-      router.replace('/(onboarding)/tour');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', msg);
-    } finally {
-      setFinalizing(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (busy) return;
-    router.replace('/(onboarding)/basic-info');
+    await remove();
   };
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <OnboardingStepHeader
-          step={2}
+          step={3}
           onSkip={finalize}
-          onBack={handleBack}
+          onBack={goBack}
           skipDisabled={busy}
           backDisabled={busy}
         />
-        <Text style={styles.title}>תמונת פרופיל</Text>
-        <Text style={styles.subtitle}>אפשר להוסיף עכשיו או בהמשך</Text>
 
-        <TouchableOpacity
-          style={styles.avatarWrap}
-          onPress={() => !busy && setSheetVisible(true)}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityLabel={hasAvatar ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
-        >
-          <AvatarInitials
-            name={session?.displayName ?? 'משתמש'}
-            avatarUrl={avatarUrl}
-            size={120}
-          />
-          {uploading && (
-            <View style={styles.avatarSpinner}>
-              <ActivityIndicator color={colors.textInverse} size="large" />
-            </View>
-          )}
-        </TouchableOpacity>
+        <AnimatedEntry delay={staggerDelay(0)}>
+          <Text style={styles.title}>תמונת פרופיל</Text>
+          <Text style={styles.subtitle}>אפשר להוסיף עכשיו או בהמשך</Text>
+        </AnimatedEntry>
 
-        <TouchableOpacity
-          style={[styles.changeBtn, busy && { opacity: 0.5 }]}
-          onPress={() => setSheetVisible(true)}
-          disabled={busy}
-        >
-          <Text style={styles.changeBtnText}>
-            {hasAvatar ? 'החלף תמונה' : 'בחר תמונה'}
-          </Text>
-        </TouchableOpacity>
+        <AnimatedEntry delay={staggerDelay(1)}>
+          <PressableScale
+            style={styles.avatarWrap}
+            onPress={() => !busy && setSheetVisible(true)}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={hasAvatar ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
+          >
+            <AvatarInitials
+              name={session?.displayName ?? 'משתמש'}
+              avatarUrl={avatarUrl}
+              size={120}
+            />
+            {uploading && (
+              <View style={styles.avatarSpinner}>
+                <ActivityIndicator color={colors.textInverse} size="large" />
+              </View>
+            )}
+          </PressableScale>
+        </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(2)}>
+          <PressableScale
+            style={[styles.changeBtn, busy && { opacity: 0.5 }]}
+            onPress={() => setSheetVisible(true)}
+            disabled={busy}
+          >
+            <Text style={styles.changeBtnText}>
+              {hasAvatar ? 'החלף תמונה' : 'בחר תמונה'}
+            </Text>
+          </PressableScale>
+        </AnimatedEntry>
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity style={[styles.cta, busy && { opacity: 0.7 }]} onPress={finalize} disabled={busy}>
-          {finalizing ? (
-            <ActivityIndicator color={colors.textInverse} />
-          ) : (
-            <Text style={styles.ctaText}>
-              {hasAvatar ? 'המשך עם התמונה הנוכחית' : 'המשך ללא תמונה'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <AnimatedEntry delay={staggerDelay(3)}>
+          <PressableScale
+            style={[styles.cta, busy && { opacity: 0.7 }]}
+            onPress={finalize}
+            disabled={busy}
+          >
+            {finalizing ? (
+              <ActivityIndicator color={colors.textInverse} />
+            ) : (
+              <Text style={styles.ctaText}>
+                {hasAvatar ? 'המשך עם התמונה הנוכחית' : 'המשך ללא תמונה'}
+              </Text>
+            )}
+          </PressableScale>
+        </AnimatedEntry>
 
-        <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בהגדרות.</Text>
+        <AnimatedEntry delay={staggerDelay(4)}>
+          <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בהגדרות.</Text>
+        </AnimatedEntry>
       </View>
 
       <PhotoSourceSheet
