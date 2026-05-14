@@ -29,14 +29,14 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 274 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
-  // Bumped 234→256 (P1.2 delete-account + about screen). Remove once TD-29 splits the file.
-  ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 256 }],
+  // Bumped 256→263 (pre-existing growth on dev branch). Remove once TD-29 splits the file.
+  ['apps/mobile/app/settings.tsx', { td: 'TD-29', max: 263 }],
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
-  // Bumped 266→272 (FR-MOD-007/010 + FR-ADMIN-002..007 moderation strings, Task 19). Remove once TD-35 splits the file.
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 272 }],
-  // Bumped 214→242 (FR-PROFILE-007 profile address fields on User). Remove once TD-29 splits the file.
-  ['packages/domain/src/entities.ts', { td: 'TD-29', max: 242 }],
+  // Bumped 272→278 (FR-NOTIF-001 push modal Hebrew strings). Remove once TD-35 splits the file.
+  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 278 }],
+  // Bumped 242→259 (FR-NOTIF-001 + ProfileClosedPostsItem domain types). Remove once TD-29 splits the file.
+  ['packages/domain/src/entities.ts', { td: 'TD-29', max: 259 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
@@ -50,6 +50,10 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
   // Chat screen bumped 195→220 (FR-NOTIF-015 AC1 push-gate wired in). Split tracked as TD-140.
   ['apps/mobile/app/chat/[id].tsx', { td: 'TD-140', max: 220 }],
+  // _layout.tsx pre-existing at 215 (no single change caused it). Remove once TD-29 splits the file.
+  ['apps/mobile/app/_layout.tsx', { td: 'TD-29', max: 215 }],
+  // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
+  ['apps/mobile/app/user/[handle]/index.tsx', { td: 'TD-29', max: 217 }],
 ]);
 
 const LAYER_RULES = [

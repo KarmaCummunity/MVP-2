@@ -13,13 +13,14 @@ import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
 import { ProfileTabs, type ProfileTab } from '../../../src/components/profile/ProfileTabs';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
+import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
 import { LockedPanel } from '../../../src/components/profile/LockedPanel';
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
 import { consumePreferNewThread } from '../../../src/lib/chatNavigationPrefs';
 import { getUserRepo } from '../../../src/services/userComposition';
-import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
+import { getPostRepo, getMyPostsUseCase, getProfileClosedPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { NotifyModal } from '../../../src/components/NotifyModal';
@@ -74,13 +75,24 @@ export default function OtherProfileScreen() {
   React.useEffect(() => { if (isMe) router.replace('/(tabs)/profile'); }, [isMe, router]);
 
   const postsQuery = useQuery({
-    queryKey: ['profile-other-posts', u?.userId, activeTab],
+    queryKey: ['profile-other-posts', u?.userId],
     queryFn: () => getMyPostsUseCase().execute({
       userId: u!.userId,
-      status: activeTab === 'open' ? ['open'] : ['closed_delivered'],
+      status: ['open'],
       limit: 30,
     }),
-    enabled: Boolean(allowed && u?.userId),
+    enabled: Boolean(allowed && u?.userId) && activeTab === 'open',
+  });
+
+  const closedPostsQuery = useQuery({
+    queryKey: ['profile-other-closed-posts', u?.userId, me],
+    queryFn: () =>
+      getProfileClosedPostsUseCase().execute({
+        profileUserId: u!.userId,
+        viewerUserId: me ?? null,
+        limit: 30,
+      }),
+    enabled: Boolean(allowed && u?.userId) && activeTab === 'closed',
   });
 
   if (!handle || userQuery.isLoading)
@@ -178,11 +190,19 @@ export default function OtherProfileScreen() {
                 setActiveTab(t);
               }}
             />
-            <ProfilePostsGrid
-              posts={postsQuery.data?.posts ?? []}
-              isLoading={postsQuery.isLoading}
-              empty={activeTab === 'open' ? 'other_open' : 'other_closed'}
-            />
+            {activeTab === 'open' ? (
+              <ProfilePostsGrid
+                posts={postsQuery.data?.posts ?? []}
+                isLoading={postsQuery.isLoading}
+                empty="other_open"
+              />
+            ) : (
+              <ProfileClosedPostsGrid
+                items={closedPostsQuery.data?.items ?? []}
+                isLoading={closedPostsQuery.isLoading}
+                empty="other_closed"
+              />
+            )}
           </>
         )}
       </ScrollView>

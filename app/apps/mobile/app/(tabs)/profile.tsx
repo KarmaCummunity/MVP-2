@@ -16,8 +16,9 @@ import { ProfileHeader } from '../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../src/components/profile/ProfileStatsRow';
 import { ProfileTabs, type ProfileTab } from '../../src/components/profile/ProfileTabs';
 import { ProfilePostsGrid } from '../../src/components/profile/ProfilePostsGrid';
+import { ProfileClosedPostsGrid } from '../../src/components/profile/ProfileClosedPostsGrid';
 import { useAuthStore } from '../../src/store/authStore';
-import { getMyPostsUseCase, getPostRepo } from '../../src/services/postsComposition';
+import { getMyPostsUseCase, getPostRepo, getProfileClosedPostsUseCase } from '../../src/services/postsComposition';
 import { getUserRepo } from '../../src/services/userComposition';
 import { formatUserLocationLine } from '../../src/lib/formatUserLocationLine';
 import { getRestoredProfileTab, persistProfileTab } from '../../src/lib/profileTabSession';
@@ -46,14 +47,25 @@ export default function ProfileScreen() {
   });
 
   const myPostsQuery = useQuery({
-    queryKey: ['my-posts', userId, activeTab],
+    queryKey: ['my-posts', userId],
     queryFn: () =>
       getMyPostsUseCase().execute({
         userId: userId!,
-        status: activeTab === 'open' ? ['open'] : ['closed_delivered', 'deleted_no_recipient'],
+        status: ['open'],
         limit: 30,
       }),
-    enabled: Boolean(userId),
+    enabled: Boolean(userId) && activeTab === 'open',
+  });
+
+  const closedPostsQuery = useQuery({
+    queryKey: ['my-closed-posts', userId],
+    queryFn: () =>
+      getProfileClosedPostsUseCase().execute({
+        profileUserId: userId!,
+        viewerUserId: userId!, // viewer == profile on My Profile.
+        limit: 30,
+      }),
+    enabled: Boolean(userId) && activeTab === 'closed',
   });
 
   return (
@@ -117,11 +129,19 @@ export default function ProfileScreen() {
           }}
         />
 
-        <ProfilePostsGrid
-          posts={myPostsQuery.data?.posts ?? []}
-          isLoading={myPostsQuery.isLoading}
-          empty={activeTab === 'open' ? 'self_open' : 'self_closed'}
-        />
+        {activeTab === 'open' ? (
+          <ProfilePostsGrid
+            posts={myPostsQuery.data?.posts ?? []}
+            isLoading={myPostsQuery.isLoading}
+            empty="self_open"
+          />
+        ) : (
+          <ProfileClosedPostsGrid
+            items={closedPostsQuery.data?.items ?? []}
+            isLoading={closedPostsQuery.isLoading}
+            empty="self_closed"
+          />
+        )}
       </ScrollView>
     </SafeAreaView>
   );
