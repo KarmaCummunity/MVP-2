@@ -140,6 +140,7 @@ export class FakeUserRepository implements IUserRepository {
   deleteAccountViaEdgeFunction = N('deleteAccountViaEdgeFunction') as IUserRepository['deleteAccountViaEdgeFunction'];
   findByAuthIdentity = N('findByAuthIdentity') as IUserRepository['findByAuthIdentity'];
   createAuthIdentity = N('createAuthIdentity') as IUserRepository['createAuthIdentity'];
+  updateNotificationPreferences = N('updateNotificationPreferences') as IUserRepository['updateNotificationPreferences'];
 }
 
 export function makeUser(overrides: Partial<User> = {}): User {

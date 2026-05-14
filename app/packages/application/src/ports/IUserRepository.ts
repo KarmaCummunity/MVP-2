@@ -5,6 +5,7 @@ import type {
   FollowRequest,
   OnboardingState,
   AccountStatus,
+  NotificationPreferences,
 } from '@kc/domain';
 
 // ── IUserRepository ───────────────────────────
@@ -155,6 +156,16 @@ export interface IUserRepository {
    * round-trips on every profile load.
    */
   getFollowStateRaw(viewerId: string, targetUserId: string): Promise<FollowStateRaw>;
+
+  /**
+   * Atomically merges notification preferences. Partial fields only update the
+   * named keys; unspecified keys are preserved.
+   * Mapped to: FR-NOTIF-014.
+   */
+  updateNotificationPreferences(
+    userId: string,
+    partial: { critical?: boolean; social?: boolean },
+  ): Promise<NotificationPreferences>;
 
   // Auth identities
   findByAuthIdentity(provider: string, subject: string): Promise<User | null>;

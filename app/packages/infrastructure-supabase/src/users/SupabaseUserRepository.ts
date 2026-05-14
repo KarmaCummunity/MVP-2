@@ -230,6 +230,21 @@ export class SupabaseUserRepository implements IUserRepository {
     return searchUsers(this.client, query, opts);
   }
 
+  async updateNotificationPreferences(
+    userId: string,
+    partial: { critical?: boolean; social?: boolean },
+  ): Promise<{ critical: boolean; social: boolean }> {
+    const merge: Record<string, boolean> = {};
+    if (partial.critical !== undefined) merge.critical = partial.critical;
+    if (partial.social !== undefined) merge.social = partial.social;
+    const { data, error } = await this.client.rpc(
+      'users_merge_notification_preferences',
+      { p_user_id: userId, p_merge: merge },
+    );
+    if (error) throw new Error(`updateNotificationPreferences: ${error.message}`);
+    return data as { critical: boolean; social: boolean };
+  }
+
   async findByAuthIdentity(_provider: string, _subject: string): Promise<never> {
     throw NOT_IMPL('findByAuthIdentity', 'P0.4');
   }
