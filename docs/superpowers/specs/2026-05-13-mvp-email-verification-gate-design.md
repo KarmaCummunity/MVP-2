@@ -77,7 +77,7 @@ This supersedes FR-AUTH-006 AC2's "user can sign in but cannot create posts / se
 
 ## Components to change
 
-### 1. Database migration — `0057_mvp_email_verification_gate.sql`
+### 1. Database migration — `0067_mvp_email_verification_gate.sql`
 
 Single migration containing four DDL statements:
 
@@ -237,7 +237,7 @@ Same change-set as the code:
 - FR-AUTH-006 AC3 — unchanged (email arrival SLA).
 - FR-AUTH-006 AC4 — unchanged (link is single-use, 24-hour TTL).
 - FR-AUTH-007 — add AC6: "If `signInWithPassword` returns `email_not_confirmed`, the sign-in screen renders the verification-pending state from FR-AUTH-006 AC2."
-- Change log entry: "0.3 / 2026-05-13 / Migration `0057`: `account_status` lifecycle simplified to `active` after any successful auth gate; email/password sign-up blocked at Supabase Auth until verification link clicked; `auth.users UPDATE` trigger syncs `email_confirmed_at` to `account_status`; one-time backfill clears stuck rows. FR-AUTH-006 AC2 rewritten; FR-AUTH-007 AC6 added; supersedes the `pending_verification` middle-state and `0046_auth_gate_allow_pending_verification` gate exception."
+- Change log entry: "0.3 / 2026-05-13 / Migration `0067`: `account_status` lifecycle simplified to `active` after any successful auth gate; email/password sign-up blocked at Supabase Auth until verification link clicked; `auth.users UPDATE` trigger syncs `email_confirmed_at` to `account_status`; one-time backfill clears stuck rows. FR-AUTH-006 AC2 rewritten; FR-AUTH-007 AC6 added; supersedes the `pending_verification` middle-state and `0046_auth_gate_allow_pending_verification` gate exception."
 
 **`docs/SSOT/DECISIONS.md`**
 
@@ -248,11 +248,11 @@ New `D-19`:
 >
 > **Alternatives rejected.** Keep `pending_verification` as a middle state and gate posts/chat/follow on it — adds RLS surface, banner UX, and verified-badge work that is not in MVP scope. Skip email verification entirely — leaves a permanent spam vector and conflicts with the FR-AUTH-006 source PRD.
 >
-> **Affected docs.** `FR-AUTH-006`, `FR-AUTH-007`, `FR-AUTH-003`, migrations `0057_mvp_email_verification_gate.sql` (supersedes `0046_auth_gate_allow_pending_verification.sql`).
+> **Affected docs.** `FR-AUTH-006`, `FR-AUTH-007`, `FR-AUTH-003`, migrations `0067_mvp_email_verification_gate.sql` (supersedes `0046_auth_gate_allow_pending_verification.sql`).
 
 **`docs/SSOT/BACKLOG.md`**
 
-Add a new `🟡 In progress` row in the Auth section: "FR-AUTH-006 / FR-AUTH-007 — MVP email verification gate (migration 0057 + verify route + verify-pending UI)". Flip to `✅ Done` when implementation lands.
+Add a new `🟡 In progress` row in the Auth section: "FR-AUTH-006 / FR-AUTH-007 — MVP email verification gate (migration 0067 + verify route + verify-pending UI)". Flip to `✅ Done` when implementation lands.
 
 **`docs/SSOT/TECH_DEBT.md`**
 
@@ -310,7 +310,7 @@ Add a new `🟡 In progress` row in the Auth section: "FR-AUTH-006 / FR-AUTH-007
 - Universal link config does not break existing users — they continue to sign in through the existing OAuth callback path until they next verify an email.
 
 **Rollout order (single deploy):**
-1. Apply migration `0057` to Supabase.
+1. Apply migration `0067` to Supabase.
 2. Deploy web with `/auth/verify` route and `.well-known/` files.
 3. Verify universal link manifests reachable: `curl -I https://karma-community-kc.com/.well-known/apple-app-site-association` returns 200 with JSON content type.
 4. Push EAS build with new `app.json` deep link config.

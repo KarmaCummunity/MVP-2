@@ -13,7 +13,7 @@
 ## File Structure
 
 **Create:**
-- `supabase/migrations/0057_mvp_email_verification_gate.sql` — trigger + backfill + gate revert.
+- `supabase/migrations/0067_mvp_email_verification_gate.sql` — trigger + backfill + gate revert.
 - `app/packages/application/src/auth/ResendVerificationEmail.ts` — use case.
 - `app/packages/application/src/auth/__tests__/ResendVerificationEmail.test.ts`
 - `app/packages/application/src/auth/VerifyEmail.ts` — use case.
@@ -49,12 +49,12 @@
 ## Task 1: Database migration
 
 **Files:**
-- Create: `supabase/migrations/0057_mvp_email_verification_gate.sql`
+- Create: `supabase/migrations/0067_mvp_email_verification_gate.sql`
 
 - [ ] **Step 1: Create the migration file with full body**
 
 ```sql
--- 0057 — MVP: enforce email verification at the auth boundary, sync
+-- 0067 — MVP: enforce email verification at the auth boundary, sync
 -- auth.users.email_confirmed_at → public.users.account_status, and revert
 -- the pending_verification exception that 0046 added to auth_check_account_gate.
 --
@@ -167,7 +167,7 @@ $$;
 
 - [ ] **Step 2: Apply the migration locally and inspect**
 
-Run via the Supabase MCP `mcp__supabase__apply_migration` with name `0057_mvp_email_verification_gate` and the SQL body from Step 1.
+Run via the Supabase MCP `mcp__supabase__apply_migration` with name `0067_mvp_email_verification_gate` and the SQL body from Step 1.
 
 Expected: success response (no error). Then run a sanity SELECT to confirm trigger exists:
 
@@ -190,7 +190,7 @@ Expected: zero rows in `pending_verification` if all current legacy rows had the
 - [ ] **Step 4: Commit**
 
 ```bash
-git add supabase/migrations/0057_mvp_email_verification_gate.sql
+git add supabase/migrations/0067_mvp_email_verification_gate.sql
 git commit -m "feat(infra): MVP email verification gate trigger + backfill (FR-AUTH-006)
 
 Trigger on auth.users.email_confirmed_at promotes public.users from
@@ -1480,7 +1480,7 @@ Delete lines 32–34 of `useEnforceAccountGate.ts`:
 -        if ((result.reason as string | undefined) === 'pending_verification') return;
 ```
 
-After migration `0057` lands, the gate denies `pending_verification` and we want the enforcer to sign the user out, landing them back at sign-in where Supabase Auth blocks `signInWithPassword` until they verify.
+After migration `0067` lands, the gate denies `pending_verification` and we want the enforcer to sign the user out, landing them back at sign-in where Supabase Auth blocks `signInWithPassword` until they verify.
 
 - [ ] **Step 2: Map `pending_verification` reason to a friendly account-blocked params**
 
@@ -1542,7 +1542,7 @@ Find the FR-AUTH-007 section. Append:
 - [ ] **Step 3: Add a change-log entry at the bottom of the file**
 
 ```markdown
-| 0.3 | 2026-05-14 | Migration `0057`: `account_status` lifecycle simplified — email/password sign-up blocked at Supabase Auth boundary until verification link clicked; Google/Apple/phone are `active` on first INSERT; new `auth.users` trigger syncs `email_confirmed_at` → `account_status`; one-time backfill clears legacy stuck rows. FR-AUTH-006 AC2 rewritten. FR-AUTH-007 AC6 added. Supersedes `0046_auth_gate_allow_pending_verification`. |
+| 0.3 | 2026-05-14 | Migration `0067`: `account_status` lifecycle simplified — email/password sign-up blocked at Supabase Auth boundary until verification link clicked; Google/Apple/phone are `active` on first INSERT; new `auth.users` trigger syncs `email_confirmed_at` → `account_status`; one-time backfill clears legacy stuck rows. FR-AUTH-006 AC2 rewritten. FR-AUTH-007 AC6 added. Supersedes `0046_auth_gate_allow_pending_verification`. |
 ```
 
 - [ ] **Step 4: Add D-19 to DECISIONS.md**
@@ -1554,11 +1554,11 @@ Append before the Change Log table:
 
 **Decision.** Enforce email verification at Supabase Auth, not as an in-app state. Email/password sign-up users cannot sign in until they click the verification link. Google / Apple / phone users are `active` on first INSERT (provider returns `email_confirmed_at` immediately). The `pending_verification` middle state from FR-AUTH-006 AC2 (in-app banner, throttled features) is deferred to v2 with the verified-badge product.
 
-**Rationale.** The throttled-middle-state semantics require a verified-badge product, a non-dismissible banner, and per-feature RLS gates that are not in MVP scope. Enforcing at the door yields a strictly simpler product surface and aligns with what `users_select_public` already assumes (`account_status = 'active'`). The historical bug where Google users were stuck at `pending_verification` is fixed by the same migration (`0057`) via a trigger that syncs `auth.users.email_confirmed_at` to `public.users.account_status` plus a one-time backfill.
+**Rationale.** The throttled-middle-state semantics require a verified-badge product, a non-dismissible banner, and per-feature RLS gates that are not in MVP scope. Enforcing at the door yields a strictly simpler product surface and aligns with what `users_select_public` already assumes (`account_status = 'active'`). The historical bug where Google users were stuck at `pending_verification` is fixed by the same migration (`0067`) via a trigger that syncs `auth.users.email_confirmed_at` to `public.users.account_status` plus a one-time backfill.
 
 **Alternatives rejected.** Keep `pending_verification` as a throttled middle state — adds RLS surface, banner UX, and verified-badge work that is not in MVP scope. Skip email verification entirely — leaves a permanent spam vector and contradicts the FR-AUTH-006 source PRD.
 
-**Affected docs.** FR-AUTH-006 AC2 (rewritten), FR-AUTH-007 AC6 (new), FR-AUTH-003 (no change), migrations `0057_mvp_email_verification_gate.sql` (supersedes `0046_auth_gate_allow_pending_verification.sql`).
+**Affected docs.** FR-AUTH-006 AC2 (rewritten), FR-AUTH-007 AC6 (new), FR-AUTH-003 (no change), migrations `0067_mvp_email_verification_gate.sql` (supersedes `0046_auth_gate_allow_pending_verification.sql`).
 ```
 
 Append a row to the Change Log table:
@@ -1572,7 +1572,7 @@ Append a row to the Change Log table:
 Open `docs/SSOT/BACKLOG.md`. Find or add a row in the Auth section:
 
 ```markdown
-| FR-AUTH-006 / FR-AUTH-007 | MVP email verification gate (migration 0057 + verify route + verify-pending panel) | 🟡 In progress | — |
+| FR-AUTH-006 / FR-AUTH-007 | MVP email verification gate (migration 0067 + verify route + verify-pending panel) | 🟡 In progress | — |
 ```
 
 (Format follows the existing table style — match the columns the file already uses.)
