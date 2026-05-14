@@ -27,31 +27,42 @@ export interface AuthSession {
 }
 
 export interface IAuthService {
-  /** Create a new credentialed user. Returns the active session, or null if email-confirmation is pending. */
-  signUpWithEmail(email: string, password: string): Promise<AuthSession | null>;
+  /**
+   * Create a new credentialed user. Returns the active session, or null if
+   * email-confirmation is pending. Pass `emailRedirectTo` to set the URL
+   * Supabase places into `{{ .ConfirmationURL }}` in the verification email.
+   */
+  signUpWithEmail(
+    email: string,
+    password: string,
+    options?: { emailRedirectTo?: string },
+  ): Promise<AuthSession | null>;
 
-  /** Authenticate an existing user. */
   signInWithEmail(email: string, password: string): Promise<AuthSession>;
 
-  /** Invalidate the local session and revoke server-side tokens. */
   signOut(): Promise<void>;
 
-  /** Restore the persisted session on cold-start. Returns null if no session or expired. */
   getCurrentSession(): Promise<AuthSession | null>;
 
-  /** Subscribe to session changes (login, refresh, signout, server-side revoke). */
   onSessionChange(listener: (session: AuthSession | null) => void): () => void;
 
-  /**
-   * FR-AUTH-003 / FR-AUTH-007 (Google path): begin Google OAuth (PKCE). Returns the
-   * provider URL the caller must open in a browser; the browser redirects to
-   * `redirectTo` with `?code=...` once the user authorises.
-   */
   getGoogleAuthUrl(redirectTo: string): Promise<string>;
 
-  /**
-   * FR-AUTH-003 / FR-AUTH-007 (Google path, completion): exchange the OAuth `code`
-   * returned in the provider redirect for an authenticated session.
-   */
   exchangeCodeForSession(code: string): Promise<AuthSession>;
+
+  /**
+   * FR-AUTH-006 (MVP gate): resend the signup verification email to `email`.
+   * `emailRedirectTo` controls where the link lands after Supabase verifies the
+   * token. Throws AuthError('rate_limited', ...) on too-frequent calls.
+   */
+  resendVerificationEmail(
+    email: string,
+    options?: { emailRedirectTo?: string },
+  ): Promise<void>;
+
+  /**
+   * FR-AUTH-006 (MVP gate): exchange a verification token (from the email
+   * link) for an authenticated session.
+   */
+  verifyEmail(tokenHash: string): Promise<AuthSession>;
 }
