@@ -21,6 +21,8 @@ import {
   SignInWithGoogleUseCase,
   SignOutUseCase,
   SignUpWithEmailUseCase,
+  ResendVerificationEmailUseCase,
+  VerifyEmailUseCase,
   type AuthSession as KcAuthSession,
   type IAuthService,
   type OpenAuthSession,
@@ -32,6 +34,16 @@ let _signIn: SignInWithEmailUseCase | null = null;
 let _signInGoogle: SignInWithGoogleUseCase | null = null;
 let _signOut: SignOutUseCase | null = null;
 let _restore: RestoreSessionUseCase | null = null;
+let _resend: ResendVerificationEmailUseCase | null = null;
+let _verifyEmail: VerifyEmailUseCase | null = null;
+
+/**
+ * Deep link the verification email lands on. Production: web universal link
+ * claimed by AASA + assetlinks. Dev (Expo Go without universal links): a
+ * custom scheme that opens the app directly.
+ */
+export const AUTH_VERIFY_URL =
+  process.env.EXPO_PUBLIC_AUTH_VERIFY_URL ?? 'https://karma-community-kc.com/auth/verify';
 
 /**
  * Web localStorage exposes async-compatible sync methods; AsyncStorage is for native.
@@ -91,6 +103,16 @@ export function getSignOutUseCase(): SignOutUseCase {
 export function getRestoreSessionUseCase(): RestoreSessionUseCase {
   if (!_restore) _restore = new RestoreSessionUseCase(getAuthService());
   return _restore;
+}
+
+export function getResendVerificationEmailUseCase(): ResendVerificationEmailUseCase {
+  if (!_resend) _resend = new ResendVerificationEmailUseCase(getAuthService());
+  return _resend;
+}
+
+export function getVerifyEmailUseCase(): VerifyEmailUseCase {
+  if (!_verifyEmail) _verifyEmail = new VerifyEmailUseCase(getAuthService());
+  return _verifyEmail;
 }
 
 /** Used by the `/auth/callback` route to exchange an OAuth code for a session. */
