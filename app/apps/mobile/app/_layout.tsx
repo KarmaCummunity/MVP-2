@@ -129,14 +129,14 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
   // creates a flicker window where the bar is hidden until the async DB read
   // resolves, even though we're definitely past auth.
   const head = segments[0] as string | undefined;
-  const isOAuthCallback = head === 'auth' && segments[1] === 'callback';
+  const isAuthLanding = head === 'auth' && (segments[1] === 'callback' || segments[1] === 'verify');
   const showTabBar =
     !isLoading &&
     isAuthenticated &&
     head !== '(auth)' &&
     head !== '(guest)' &&
     head !== '(onboarding)' &&
-    !isOAuthCallback;
+    !isAuthLanding;
 
   // RN-Web's flex layout doesn't reliably split height between a flex:1 child
   // and an intrinsic-height sibling — the inner View ends up at full height
@@ -193,6 +193,7 @@ export default function RootLayout() {
                     <Stack.Screen name="(onboarding)" />
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="auth/callback" />
+                    <Stack.Screen name="auth/verify" />
                     {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
                     <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
