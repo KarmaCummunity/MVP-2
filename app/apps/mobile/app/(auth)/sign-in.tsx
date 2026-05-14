@@ -19,6 +19,7 @@ import { isAuthError } from '@kc/application';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { getSignInUseCase } from '../../src/services/authComposition';
 import { useAuthStore } from '../../src/store/authStore';
+import { VerificationPendingPanel } from '../../src/components/auth/VerificationPendingPanel';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -26,6 +27,7 @@ export default function SignInScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -38,6 +40,10 @@ export default function SignInScreen() {
       setSession(session);
       // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
     } catch (err) {
+      if (isAuthError(err) && err.code === 'email_not_verified') {
+        setPendingEmail(email.trim().toLowerCase());
+        return;
+      }
       const message = isAuthError(err)
         ? mapAuthErrorToHebrew(err.code)
         : 'שגיאת רשת. נסה שוב.';
@@ -65,7 +71,14 @@ export default function SignInScreen() {
           />
           <Text style={styles.title}>כניסה לחשבון</Text>
 
-          <View style={styles.form}>
+          {pendingEmail ? (
+            <VerificationPendingPanel
+              email={pendingEmail}
+              onChangeEmail={() => setPendingEmail(null)}
+            />
+          ) : null}
+
+          <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
             <View style={styles.field}>
               <Text style={styles.label}>דוא"ל</Text>
               <TextInput
@@ -112,13 +125,15 @@ export default function SignInScreen() {
             </TouchableOpacity>
           </View>
 
-          <TouchableOpacity
-            style={styles.switchMode}
-            onPress={() => router.replace('/(auth)/sign-up')}
-            disabled={loading}
-          >
-            <Text style={styles.switchModeText}>אין לי חשבון עדיין — הרשמה</Text>
-          </TouchableOpacity>
+          {!pendingEmail ? (
+            <TouchableOpacity
+              style={styles.switchMode}
+              onPress={() => router.replace('/(auth)/sign-up')}
+              disabled={loading}
+            >
+              <Text style={styles.switchModeText}>אין לי חשבון עדיין — הרשמה</Text>
+            </TouchableOpacity>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -134,6 +149,7 @@ const styles = StyleSheet.create({
   logo: { width: 64, height: 64, alignSelf: 'flex-end', marginBottom: spacing.base },
   title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing['2xl'] },
   form: { gap: spacing.base },
+  hidden: { display: 'none' },
   field: { gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   input: {
