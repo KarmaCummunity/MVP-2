@@ -8,6 +8,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import he from '../../../i18n/locales/he';
+import { isOpaqueSystemShareHandle } from '../../../lib/shareHandleDisplay';
 
 export type LinkTarget = { type: 'post' | 'user'; id: string; handle: string };
 export type PostPreview = {
@@ -78,10 +79,19 @@ export function TargetPreviewCard({
     }
   };
 
+  const a11yWho =
+    preview.kind === 'post'
+      ? isOpaqueSystemShareHandle(preview.author_handle)
+        ? preview.author_display_name
+        : `‎@${preview.author_handle}`
+      : isOpaqueSystemShareHandle(preview.handle)
+        ? preview.display_name
+        : `‎@${preview.handle}`;
+
   const a11yLabel =
     preview.kind === 'post'
-      ? t.a11yOpenPost.replace('{handle}', preview.author_handle)
-      : t.a11yOpenProfile.replace('{handle}', preview.handle);
+      ? t.a11yOpenPost.replace('{who}', a11yWho)
+      : t.a11yOpenProfile.replace('{who}', a11yWho);
 
   return (
     <Pressable
@@ -92,7 +102,11 @@ export function TargetPreviewCard({
     >
       {preview.kind === 'post' ? (
         <>
-          <Text style={styles.handle}>{`‎@${preview.author_handle} · ${t.postLabel}`}</Text>
+          <Text style={styles.handle}>
+            {isOpaqueSystemShareHandle(preview.author_handle)
+              ? `${preview.author_display_name} · ${t.postLabel}`
+              : `‎@${preview.author_handle} · ${t.postLabel}`}
+          </Text>
           {preview.body_snippet ? (
             <Text style={styles.snippet} numberOfLines={3}>
               {preview.body_snippet}
@@ -102,8 +116,14 @@ export function TargetPreviewCard({
         </>
       ) : (
         <>
-          <Text style={styles.handle}>{`‎@${preview.handle} · ${t.profileLabel}`}</Text>
-          {preview.display_name ? <Text style={styles.snippet}>{preview.display_name}</Text> : null}
+          <Text style={styles.handle}>
+            {isOpaqueSystemShareHandle(preview.handle)
+              ? `${preview.display_name} · ${t.profileLabel}`
+              : `‎@${preview.handle} · ${t.profileLabel}`}
+          </Text>
+          {preview.display_name && !isOpaqueSystemShareHandle(preview.handle) ? (
+            <Text style={styles.snippet}>{preview.display_name}</Text>
+          ) : null}
           {preview.bio_snippet ? (
             <Text style={styles.snippet} numberOfLines={3}>
               {preview.bio_snippet}

@@ -8,6 +8,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
+import { isOpaqueSystemShareHandle } from '../../lib/shareHandleDisplay';
 
 export interface ProfileHeaderProps {
   displayName: string;
@@ -41,7 +42,9 @@ export function ProfileHeader({
           </TouchableOpacity>
         ) : null}
       </View>
-      {handle ? <Text style={styles.handle}>@{handle}</Text> : null}
+      {handle && !isOpaqueSystemShareHandle(handle) ? (
+        <Text style={styles.handle}>@{handle}</Text>
+      ) : null}
       {locationLine ? <Text style={styles.location}>{locationLine}</Text> : null}
       {biography ? <Text style={styles.bio}>{biography}</Text> : null}
     </View>

@@ -25,6 +25,7 @@ import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { PostWithOwner } from '@kc/application';
 import type { DonationLinkSearchResult, UserSearchResult } from '@kc/domain';
 import { AvatarInitials } from './AvatarInitials';
+import { isOpaqueSystemShareHandle } from '../lib/shareHandleDisplay';
 
 // ── Constants ─────────────────────────────────
 /** Supabase Storage bucket where post images are stored (see imageUpload.ts). */
@@ -45,12 +46,16 @@ function getPostImageUrl(path: string): string {
 
 export function UserResultCard({ user }: { user: UserSearchResult }) {
   const router = useRouter();
+  const showHandle = !isOpaqueSystemShareHandle(user.shareHandle);
+  const a11yLabel = showHandle
+    ? `${user.displayName} — @${user.shareHandle}`
+    : user.displayName;
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
       onPress={() => router.push(`/user/${user.shareHandle}`)}
       accessibilityRole="button"
-      accessibilityLabel={`${user.displayName} — @${user.shareHandle}`}
+      accessibilityLabel={a11yLabel}
     >
       {/* Avatar (image or initials fallback) */}
       <View style={styles.avatarWrap}>
@@ -66,9 +71,11 @@ export function UserResultCard({ user }: { user: UserSearchResult }) {
         <Text style={styles.cardTitle} numberOfLines={1}>
           {user.displayName}
         </Text>
-        <Text style={styles.cardHandle} numberOfLines={1}>
-          @{user.shareHandle}
-        </Text>
+        {showHandle ? (
+          <Text style={styles.cardHandle} numberOfLines={1}>
+            @{user.shareHandle}
+          </Text>
+        ) : null}
         {user.biography ? (
           <Text style={styles.cardSubtitle} numberOfLines={2}>
             {user.biography}
@@ -315,7 +322,6 @@ const styles = StyleSheet.create({
     fontSize: 11,
     fontWeight: '600' as const,
   },
-
   // Link icon circle
   linkIconWrap: {
     width: 48,
