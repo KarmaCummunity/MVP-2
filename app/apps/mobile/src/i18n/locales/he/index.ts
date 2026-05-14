@@ -12,6 +12,7 @@ import { moderationHe, auditHe, accountBlockedHe } from './modules/moderation';
 import { postHe } from './modules/post';
 import { settingsHe } from './modules/settings';
 import { stats } from './stats';
+import { aboutContentMerged } from './modules/aboutContentBundle';
 
 const he = {
   // App
@@ -141,17 +142,8 @@ const he = {
     privacyText: 'פרטיותכם חשובה לנו. אנו אוספים מידע בסיסי כגון שם, עיר ומיקום למטרת הצגת הפוסטים בקהילה בלבד. איננו משתפים מידע זה עם צדדים שלישיים ללא הסכמתכם. הכתובת המלאה תוצג אך ורק בהתאם להגדרת הפרטיות שתבחרו בכל פוסט. האפליקציה משתמשת בשירותי התחברות מאובטחים (Google/Apple) ואינה שומרת סיסמאות שרת. ניתן לבקש מחיקת חשבון וכלל הנתונים דרך הגדרות האפליקציה.',
   },
 
-  // About
-  aboutContent: {
-    title: 'אודות קהילת קארמה',
-    tagline: 'קהילה של נתינה. בלי כסף. בלי תמורה.',
-    visionTitle: 'החזון שלנו',
-    visionText: 'קהילת קארמה הוקמה במטרה לייצר מרחב שיתופי חינמי לחלוטין. מקום שבו חפצים עוברים מיד ליד, לא בגלל כסף, אלא בגלל רצון טוב. אנחנו מאמינים שלכל חפץ יש ערך גם אחרי שסיימנו להשתמש בו, ולכל אדם יש מה לתת ומה לקבל.',
-    howItWorksTitle: 'איך זה עובד?',
-    howItWorksText: 'זה פשוט: מפרסמים חפצים שאין בהם צורך, או מבקשים חפצים שזקוקים להם. המערכת מחברת בין האנשים באזור, והכל נעשה מתוך רצון טוב, ללא תמורה וללא חליפין.',
-    contactTitle: 'יצירת קשר',
-    contactText: 'נשמח לשמוע מכם על כל רעיון, הצעה או בעיה. ניתן לפנות אלינו דרך אפשרות ״דיווח על בעיה״ במסך ההגדרות, או במייל: karmacommunity2.0@gmail.com',
-  },
+  // About — see modules/aboutContentBundle.ts (FR-SETTINGS About narrative)
+  aboutContent: aboutContentMerged,
 
   // Donations (D-16, FR-DONATE-001..005) — see donations.ts
   donations,
