@@ -154,7 +154,7 @@ A user signs up with email and a password, with a verification email containing 
 
 **Acceptance Criteria.**
 - AC1. Password is at least 8 characters, contains at least one letter and one digit, and does not appear in the top-100k breached-passwords list at sign-up time.
-- AC2. The account is created in `pending_verification` state until the email link is clicked. In `pending_verification`, the user can sign in but cannot create posts, send messages, or follow others. The home screen shows a non-dismissible banner explaining what is missing.
+- AC2. Supabase Auth creates the account with `email_confirmed_at = null`. The user **cannot sign in** until they click the verification link in the email — `signInWithPassword` returns `email_not_confirmed`. The sign-up screen transitions in place to a verification-pending state with three actions: "פתח אימייל" (launches the default mail client on native; routes to a known webmail provider on web based on the email domain), "שלח שוב" (resends the verification email; disabled for 60 seconds after each click), and "שנה אימייל" (returns to the form with the previously typed email/password preserved). The same verification-pending state is rendered on the sign-in screen when the user attempts to sign in with an unconfirmed email.
 - AC3. The verification email is sent via the platform's transactional email service and arrives within 60 seconds at p95.
 - AC4. The link is single-use, valid for 24 hours, and expires after consumption.
 - AC5. "Forgot password" sends a single-use reset link valid for 30 minutes.
@@ -180,6 +180,7 @@ A returning user authenticates using the method they originally signed up with.
 - AC2. If onboarding is incomplete (`pending_basic_info` or `pending_avatar`), the wizard resumes at the appropriate step on next session start.
 - AC3. The session token is stored in platform-secure storage (Keychain on iOS, EncryptedSharedPreferences on Android, a secure HTTP-only cookie on Web).
 - AC4. Session expiry is 30 days of inactivity. Active use silently refreshes the token.
+- AC6. When `signInWithPassword` returns `email_not_confirmed`, the sign-in screen renders the verification-pending state defined in FR-AUTH-006 AC2 instead of an error alert. The user can then resend, open mail, or change email.
 
 **Related.** Screens: 1.2, 1.3 · Domain: `Session`.
 
@@ -386,3 +387,4 @@ The user can log out from the Settings screen, terminating the local session.
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.1, §3.5, and Decisions D-10, D-12. |
 | 0.2 | 2026-05-12 | `auth_check_account_gate` (migration `0046`) must treat `account_status = pending_verification` as gate-allowed so first-time Google sign-in reaches onboarding (`FR-AUTH-003`); client guard + support `mailto` template on account-blocked web. |
 | 0.3 | 2026-05-12 | `FR-AUTH-010` / `FR-AUTH-015`: optional profile street + number on step 1 and soft-gate (city picker unchanged). |
+| 0.4 | 2026-05-14 | Migration `0067`: `account_status` lifecycle simplified — email/password sign-up blocked at Supabase Auth boundary until verification link clicked; Google/Apple/phone are `active` on first INSERT; new `auth.users` trigger syncs `email_confirmed_at` → `account_status`; one-time backfill clears legacy stuck rows. FR-AUTH-006 AC2 rewritten. FR-AUTH-007 AC6 added. Supersedes `0046_auth_gate_allow_pending_verification`. |
