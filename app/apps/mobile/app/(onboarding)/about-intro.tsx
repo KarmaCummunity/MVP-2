@@ -7,6 +7,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
+import { HeroHalo } from '../../src/components/animations/HeroHalo';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { PressableScale } from '../../src/components/animations/PressableScale';
 import { staggerDelay } from '../../src/lib/animations/motion';
@@ -37,16 +38,14 @@ export default function OnboardingAboutIntroScreen() {
         keyboardShouldPersistTaps="handled"
       >
         <AnimatedEntry delay={staggerDelay(0)} style={styles.logoWrap}>
-          <View style={styles.haloOuter}>
-            <View style={styles.haloInner}>
-              <Image
-                source={require('../../assets/logo.png')}
-                style={styles.logo}
-                resizeMode="contain"
-                accessibilityIgnoresInvertColors
-              />
-            </View>
-          </View>
+          <HeroHalo size={220}>
+            <Image
+              source={require('../../assets/logo.png')}
+              style={styles.logo}
+              resizeMode="contain"
+              accessibilityIgnoresInvertColors
+            />
+          </HeroHalo>
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(1)}>
@@ -88,8 +87,6 @@ export default function OnboardingAboutIntroScreen() {
   );
 }
 
-const HALO_OUTER = 220;
-const HALO_INNER = 184;
 const LOGO_SIZE = 148;
 
 const styles = StyleSheet.create({
@@ -108,23 +105,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     marginTop: spacing.sm,
     marginBottom: spacing.xs,
-  },
-  haloOuter: {
-    width: HALO_OUTER,
-    height: HALO_OUTER,
-    borderRadius: HALO_OUTER / 2,
-    backgroundColor: colors.primarySurface,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  haloInner: {
-    width: HALO_INNER,
-    height: HALO_INNER,
-    borderRadius: HALO_INNER / 2,
-    backgroundColor: colors.primaryLight,
-    opacity: 0.55,
-    alignItems: 'center',
-    justifyContent: 'center',
   },
   logo: { width: LOGO_SIZE, height: LOGO_SIZE },
   title: {

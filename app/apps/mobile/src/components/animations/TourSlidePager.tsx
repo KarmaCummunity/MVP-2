@@ -8,13 +8,17 @@ import Animated, {
   runOnJS,
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
 import { MOTION } from '../../lib/animations/motion';
 import { EASINGS } from '../../lib/animations/motion-easings';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { HeroHalo } from './HeroHalo';
+
+type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
 export interface TourSlide {
-  readonly emoji: string;
+  readonly icon: IoniconName;
   readonly title: string;
   readonly body: string;
 }
@@ -26,22 +30,24 @@ export interface TourSlidePagerProps {
 }
 
 const SWIPE_THRESHOLD = 60;
+const HALO_SIZE = 144;
+const ICON_SIZE = 56;
 
 export function TourSlidePager({ slides, index, onIndexChange }: TourSlidePagerProps) {
   const { width } = useWindowDimensions();
   const reduced = useReducedMotion();
   const tx = useSharedValue(0);
-  const emojiScale = useSharedValue(1);
+  const iconScale = useSharedValue(1);
   const direction = I18nManager.isRTL ? -1 : 1;
 
   useEffect(() => {
     const d = reduced ? 0 : MOTION.duration.base;
     tx.value = withTiming(0, { duration: d, easing: EASINGS.easeOut });
     if (!reduced) {
-      emojiScale.value = 0.6;
-      emojiScale.value = withSpring(1, MOTION.spring);
+      iconScale.value = 0.7;
+      iconScale.value = withSpring(1, MOTION.spring);
     }
-  }, [index, reduced, tx, emojiScale]);
+  }, [index, reduced, tx, iconScale]);
 
   const commit = (next: number) => {
     if (next < 0 || next >= slides.length) {
@@ -66,8 +72,8 @@ export function TourSlidePager({ slides, index, onIndexChange }: TourSlidePagerP
   const trackStyle = useAnimatedStyle(() => ({
     transform: [{ translateX: tx.value }],
   }));
-  const emojiStyle = useAnimatedStyle(() => ({
-    transform: [{ scale: emojiScale.value }],
+  const iconStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: iconScale.value }],
   }));
 
   const slide = slides[index]!;
@@ -76,7 +82,11 @@ export function TourSlidePager({ slides, index, onIndexChange }: TourSlidePagerP
     <View style={styles.wrap}>
       <GestureDetector gesture={pan}>
         <Animated.View style={[styles.content, trackStyle, { width }]}>
-          <Animated.Text style={[styles.emoji, emojiStyle]}>{slide.emoji}</Animated.Text>
+          <Animated.View style={iconStyle}>
+            <HeroHalo size={HALO_SIZE}>
+              <Ionicons name={slide.icon} size={ICON_SIZE} color={colors.primaryDark} />
+            </HeroHalo>
+          </Animated.View>
           <Text style={styles.title}>{slide.title}</Text>
           <Text style={styles.body}>{slide.body}</Text>
         </Animated.View>
@@ -114,19 +124,18 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     paddingHorizontal: spacing.xl,
+    gap: spacing.lg,
   },
-  emoji: { fontSize: 96, marginBottom: spacing.xl },
   title: {
     ...typography.h1,
     color: colors.textPrimary,
     textAlign: 'center',
-    marginBottom: spacing.base,
   },
   body: {
-    ...typography.body,
+    ...typography.bodyLarge,
     color: colors.textSecondary,
     textAlign: 'center',
-    lineHeight: 24,
+    paddingHorizontal: spacing.sm,
   },
   dots: {
     flexDirection: 'row',
