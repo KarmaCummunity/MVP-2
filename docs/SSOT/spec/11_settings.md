@@ -19,6 +19,7 @@ The Settings screen and its sub-pages:
 - Support & legal.
 - Logout.
 - Account deletion.
+- **About (in-app):** long-form narrative (vision beyond MVP, roadmap, FAQ, team, Instagram embed) with section navigation; marketing alias route `/about-site` and optional `hideTopBar` / `hideBottomBar` query flags for embedded web shells.
 
 ---
 
