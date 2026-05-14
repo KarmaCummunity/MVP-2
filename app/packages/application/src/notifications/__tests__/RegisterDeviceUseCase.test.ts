@@ -11,8 +11,8 @@ describe('RegisterDeviceUseCase', () => {
     await uc.execute({ userId: 'u1', pushToken: 'ExponentPushToken[abc]', platform: 'ios' });
 
     expect(repo.rows).toHaveLength(1);
-    expect(repo.rows[0].userId).toBe('u1');
-    expect(repo.rows[0].pushToken).toBe('ExponentPushToken[abc]');
+    expect(repo.rows[0]!.userId).toBe('u1');
+    expect(repo.rows[0]!.pushToken).toBe('ExponentPushToken[abc]');
   });
 
   it('reassigns a token to a different user', async () => {
@@ -23,7 +23,7 @@ describe('RegisterDeviceUseCase', () => {
     await uc.execute({ userId: 'u2', pushToken: 'ExponentPushToken[abc]', platform: 'ios' });
 
     expect(repo.rows).toHaveLength(1);
-    expect(repo.rows[0].userId).toBe('u2');
+    expect(repo.rows[0]!.userId).toBe('u2');
   });
 
   it('rejects empty userId with ValidationError', async () => {

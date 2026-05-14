@@ -11,7 +11,7 @@ export class FakeDeviceRepository implements IDeviceRepository {
     if (existingIndex !== -1) {
       // Replace the row — userId and platform are readonly so we reconstruct
       const updated: Device = {
-        deviceId: this.rows[existingIndex].deviceId,
+        deviceId: this.rows[existingIndex]!.deviceId,
         userId: input.userId,
         platform: input.platform,
         pushToken: input.pushToken,
