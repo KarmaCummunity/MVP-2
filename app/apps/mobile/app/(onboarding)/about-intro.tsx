@@ -60,6 +60,10 @@ export default function OnboardingAboutIntroScreen() {
           <Text style={styles.body}>{t('onboarding.aboutIntroBody')}</Text>
         </AnimatedEntry>
 
+        <AnimatedEntry delay={staggerDelay(5)}>
+          <Text style={styles.hint}>רוצים לקרוא עוד על החזון, איך זה עובד ויצירת קשר? אחרי ההרשמה תמצאו את כל הפרטים תחת ״הגדרות״ ← ״אודות״.</Text>
+        </AnimatedEntry>
+
         <AnimatedEntry delay={staggerDelay(4)} style={styles.pillars}>
           {PILLARS.map((p) => (
             <View key={p.key} style={styles.pillar}>
@@ -83,6 +87,8 @@ export default function OnboardingAboutIntroScreen() {
           <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
         </PressableScale>
       </AnimatedEntry>
+
+
     </SafeAreaView>
   );
 }
@@ -132,6 +138,11 @@ const styles = StyleSheet.create({
     width: '100%',
     marginTop: spacing.base,
     gap: spacing.sm,
+  },
+  hint: {
+    ...typography.bodySmall,
+    color: colors.textDisabled,
+    textAlign: 'center',
   },
   pillar: { flex: 1, alignItems: 'center', gap: spacing.xs },
   pillarIcon: {

@@ -145,7 +145,10 @@ const styles = StyleSheet.create({
     marginBottom: spacing.base,
     paddingHorizontal: spacing.sm,
   },
-  field: { gap: spacing.xs },
+  field: { 
+    maxWidth: 500,
+    alignSelf: 'center',
+    gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   input: {
     height: 54,

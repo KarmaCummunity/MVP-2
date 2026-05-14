@@ -18,7 +18,7 @@ export function EditProfileAddressBlock({
   city, onCityChange, street, streetNumber, onStreetChange, onStreetNumberChange, disabled,
 }: EditProfileAddressBlockProps) {
   return (
-    <>
+    <View style={styles.container}>
       <View style={styles.field}>
         <Text style={styles.label}>כתובת</Text>
         <CityPicker value={city} onChange={onCityChange} disabled={disabled} />
@@ -46,12 +46,18 @@ export function EditProfileAddressBlock({
           />
         </View>
       </View>
-    </>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  field: { gap: spacing.xs },
+  container: {
+    maxWidth: 500,
+    alignSelf: 'center',
+  },
+  field: {
+    marginVertical: spacing.xs,
+     gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   streetRow: { flexDirection: 'row', gap: spacing.sm },
   input: {
