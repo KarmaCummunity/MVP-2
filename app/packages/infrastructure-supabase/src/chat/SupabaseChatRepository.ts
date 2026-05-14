@@ -121,6 +121,17 @@ export class SupabaseChatRepository implements IChatRepository {
     return rowToChat(row);
   }
 
+  async hasSentAnyMessage(userId: string): Promise<boolean> {
+    const { count, error } = await this.client
+      .from('messages')
+      .select('message_id', { head: true, count: 'exact' })
+      .eq('sender_id', userId)
+      .eq('kind', 'user')
+      .limit(1);
+    if (error) throw mapChatError(error);
+    return (count ?? 0) > 0;
+  }
+
   async getMyChats(userId: string): Promise<ChatWithPreview[]> {
     return getMyChats(this.client, userId);
   }

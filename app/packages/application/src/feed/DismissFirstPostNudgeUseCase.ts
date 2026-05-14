@@ -20,6 +20,6 @@ export class DismissFirstPostNudgeUseCase {
     if (!userId) {
       throw new Error('DismissFirstPostNudgeUseCase: userId is required');
     }
-    await this.users.update(userId, { firstPostNudgeDismissed: true });
+    await this.users.dismissFirstPostNudge(userId);
   }
 }

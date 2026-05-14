@@ -8,6 +8,7 @@ const MIN_PASSWORD_LEN = 8;
 export interface SignUpWithEmailInput {
   email: string;
   password: string;
+  emailRedirectTo?: string;
 }
 
 export interface SignUpWithEmailOutput {
@@ -24,7 +25,9 @@ export class SignUpWithEmailUseCase {
 
     this.validate(email, password);
 
-    const session = await this.auth.signUpWithEmail(email, password);
+    const session = await this.auth.signUpWithEmail(email, password, {
+      emailRedirectTo: input.emailRedirectTo,
+    });
     return {
       session,
       pendingVerification: session === null,

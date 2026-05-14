@@ -1,72 +1,26 @@
-// Onboarding step 1 — FR-AUTH-010
-import React, { useState } from 'react';
+// Onboarding step 2 — FR-AUTH-010
+import React from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
-  StyleSheet, ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, TextInput,
+  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
-import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { EditProfileAddressBlock } from '../../src/components/EditProfileAddressBlock';
-import { useAuthStore } from '../../src/store/authStore';
-import { getCompleteBasicInfoUseCase, markBasicInfoSkipped } from '../../src/services/userComposition';
-import { mapEditProfileSaveError } from '../../src/lib/editProfileSaveErrors';
+import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
+import { useOnboardingBasicInfoFlow } from '../../src/hooks/useOnboardingBasicInfoFlow';
+import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
+import { PressableScale } from '../../src/components/animations/PressableScale';
+import { staggerDelay } from '../../src/lib/animations/motion';
 
 export default function OnboardingBasicInfoScreen() {
-  const router = useRouter();
-  const session = useAuthStore((s) => s.session);
-  const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
-  const [displayName, setDisplayName] = useState(session?.displayName ?? '');
-  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
-  const [street, setStreet] = useState('');
-  const [streetNumber, setStreetNumber] = useState('');
-  const [loading, setLoading] = useState(false);
-
-  const canContinue = displayName.trim().length > 0 && city !== null;
-
-  const handleContinue = async () => {
-    if (!session) return;
-    if (!canContinue || !city) {
-      Alert.alert('שגיאה', 'יש למלא שם ועיר');
-      return;
-    }
-    setLoading(true);
-    try {
-      await getCompleteBasicInfoUseCase().execute({
-        userId: session.userId,
-        displayName,
-        cityId: city.id,
-        cityName: city.name,
-        profileStreet: street,
-        profileStreetNumber: streetNumber,
-      });
-      setOnboardingState('pending_avatar');
-      router.replace('/(onboarding)/photo');
-    } catch (err) {
-      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(raw));
-    } finally {
-      setLoading(false);
-    }
-  };
-
-  // FR-AUTH-010 AC3: Skip advances to step 2; onboarding_state stays pending_basic_info
-  // for FR-AUTH-015 soft gate. basic_info_skipped (server) prevents AuthGate from
-  // reopening the full wizard on every cold start / app update.
-  const handleSkip = async () => {
-    if (!session) return;
-    setLoading(true);
-    try {
-      await markBasicInfoSkipped(session.userId);
-      useAuthStore.getState().setBasicInfoSkipped(true);
-      router.replace('/(onboarding)/photo');
-    } catch (err) {
-      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(raw));
-    } finally {
-      setLoading(false);
-    }
-  };
+  const { t } = useTranslation();
+  const {
+    displayName, setDisplayName, city, setCity, street, setStreet, streetNumber, setStreetNumber,
+    loading, hasRequiredFields, canSubmit, handleBack, handleContinue, handleSkip,
+  } = useOnboardingBasicInfoFlow();
 
   return (
     <SafeAreaView style={styles.container}>
@@ -79,54 +33,81 @@ export default function OnboardingBasicInfoScreen() {
             style={styles.scroll}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
           >
-            <View style={styles.headerRow}>
-              <Text style={styles.step}>שלב 1 מתוך 3</Text>
-              <TouchableOpacity onPress={handleSkip} disabled={loading} accessibilityRole="button">
-                <Text style={styles.skip}>דלג</Text>
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.title}>פרטים בסיסיים</Text>
-            <Text style={styles.subtitle}>
-              איך נכיר אותך? בחרו עיר מהרשימה; אפשר להוסיף רחוב ומספר בית (אופציונלי).
-            </Text>
-
-            <View style={styles.field}>
-              <Text style={styles.label}>שם מלא</Text>
-              <TextInput
-                style={styles.input}
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="לדוגמה: רינה כהן"
-                placeholderTextColor={colors.textDisabled}
-                maxLength={50}
-                textAlign="right"
-                editable={!loading}
-              />
-            </View>
-
-            <EditProfileAddressBlock
-              city={city}
-              onCityChange={setCity}
-              street={street}
-              streetNumber={streetNumber}
-              onStreetChange={setStreet}
-              onStreetNumberChange={setStreetNumber}
-              disabled={loading}
+            <OnboardingStepHeader
+              step={2}
+              onSkip={handleSkip}
+              onBack={handleBack}
+              skipDisabled={loading}
+              backDisabled={loading}
             />
+
+            <AnimatedEntry delay={staggerDelay(0)} style={styles.iconWrap}>
+              <View style={styles.iconHalo}>
+                <Ionicons name="person-outline" size={32} color={colors.primary} />
+              </View>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(1)}>
+              <Text style={styles.title}>פרטים בסיסיים</Text>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(2)}>
+              <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(3)}>
+              <View style={styles.field}>
+                <Text style={styles.label}>שם מלא</Text>
+                <TextInput
+                  style={styles.input}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="לדוגמה: רינה כהן"
+                  placeholderTextColor={colors.textDisabled}
+                  maxLength={50}
+                  textAlign="right"
+                  editable={!loading}
+                />
+              </View>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(4)}>
+              <EditProfileAddressBlock
+                city={city}
+                onCityChange={setCity}
+                street={street}
+                streetNumber={streetNumber}
+                onStreetChange={setStreet}
+                onStreetNumberChange={setStreetNumber}
+                disabled={loading}
+              />
+            </AnimatedEntry>
           </ScrollView>
 
-          <TouchableOpacity
-            style={[styles.cta, !canContinue && { opacity: 0.4 }]}
-            disabled={!canContinue || loading}
-            onPress={handleContinue}
-          >
-            {loading ? (
-              <ActivityIndicator color={colors.textInverse} />
-            ) : (
-              <Text style={styles.ctaText}>המשך</Text>
-            )}
-          </TouchableOpacity>
+          <AnimatedEntry delay={staggerDelay(5)}>
+            <PressableScale
+              style={[
+                styles.cta,
+                !hasRequiredFields && { opacity: 0.4 },
+                hasRequiredFields && !canSubmit && { opacity: 0.85 },
+              ]}
+              disabled={!hasRequiredFields || loading}
+              onPress={handleContinue}
+              accessibilityRole="button"
+              accessibilityLabel="המשך"
+            >
+              {loading ? (
+                <ActivityIndicator color={colors.textInverse} />
+              ) : (
+                <>
+                  <Text style={styles.ctaText}>המשך</Text>
+                  <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
+                </>
+              )}
+            </PressableScale>
+          </AnimatedEntry>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -143,35 +124,51 @@ const styles = StyleSheet.create({
   },
   scroll: { flex: 1 },
   scrollContent: { gap: spacing.base, paddingBottom: spacing.lg },
-  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  step: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  skip: { ...typography.body, color: colors.primary },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    marginBottom: spacing.lg,
+  iconWrap: { alignItems: 'center', marginTop: spacing.sm, marginBottom: spacing.xs },
+  iconHalo: {
+    width: 68,
+    height: 68,
+    borderRadius: 34,
+    backgroundColor: colors.primarySurface,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  field: { gap: spacing.xs },
+  title: {
+    ...typography.h1,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  subtitle: {
+    ...typography.bodyLarge,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.base,
+    paddingHorizontal: spacing.sm,
+  },
+  field: { 
+    maxWidth: 500,
+    alignSelf: 'center',
+    gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   input: {
-    height: 50,
+    height: 54,
     backgroundColor: colors.background,
     borderRadius: radius.md,
     borderWidth: 1.5,
     borderColor: colors.border,
     paddingHorizontal: spacing.base,
-    ...typography.body,
+    ...typography.bodyLarge,
     color: colors.textPrimary,
   },
   cta: {
-    height: 52,
+    height: 56,
     marginTop: spacing.sm,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  ctaText: { ...typography.button, color: colors.textInverse },
+  ctaText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
 });

@@ -16,6 +16,8 @@ export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRep
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
+export { ResendVerificationEmailUseCase, type ResendVerificationEmailInput } from './auth/ResendVerificationEmail';
+export { VerifyEmailUseCase, type VerifyEmailInput, type VerifyEmailOutput } from './auth/VerifyEmail';
 export * from './auth/SignInWithEmail';
 export * from './auth/SignInWithGoogle';
 export * from './auth/SignOut';
@@ -37,6 +39,7 @@ export * from './posts/CreatePostUseCase';
 export * from './posts/UpdatePostUseCase';
 export * from './posts/GetPostByIdUseCase';
 export * from './posts/GetMyPostsUseCase';
+export * from './posts/GetProfileClosedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
@@ -126,3 +129,8 @@ export { ReportUserUseCase } from './moderation/ReportUserUseCase';
 export type { ReportUserInput } from './moderation/ReportUserUseCase';
 export { CheckAccountGateUseCase } from './moderation/CheckAccountGateUseCase';
 export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase';
+
+export type { IDeviceRepository } from './notifications/IDeviceRepository';
+export { RegisterDeviceUseCase } from './notifications/RegisterDeviceUseCase';
+export { DeactivateDeviceUseCase } from './notifications/DeactivateDeviceUseCase';
+export { UpdateNotificationPreferencesUseCase } from './notifications/UpdateNotificationPreferencesUseCase';

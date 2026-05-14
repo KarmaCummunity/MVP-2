@@ -6,7 +6,7 @@ import { Alert, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors } from '@kc/ui';
 import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
-import he from '../../i18n/he';
+import he from '../../i18n/locales/he';
 import { ReportUserModal } from './ReportUserModal';
 import { BanUserModal } from './BanUserModal';
 

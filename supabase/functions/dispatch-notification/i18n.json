@@ -1,0 +1,23 @@
+{
+  "notifications.chatTitle": "{{senderName}}",
+  "notifications.chatBody": "{{messagePreview}}",
+  "notifications.chatBodyCoalesced": "{{count}} הודעות חדשות",
+  "notifications.supportTitle": "תמיכת קהילת קארמה",
+  "notifications.systemTitle": "הודעת מערכת",
+  "notifications.systemBody": "{{messagePreview}}",
+  "notifications.postExpiringTitle": "הפוסט שלך יפוג בעוד 7 ימים",
+  "notifications.postExpiringBody": "{{postTitle}}",
+  "notifications.markRecipientTitle": "{{ownerName}}",
+  "notifications.markRecipientBody": "סימן אותך כמקבל של {{postTitle}}",
+  "notifications.unmarkRecipientTitle": "{{recipientName}}",
+  "notifications.unmarkRecipientBody": "הסיר את הסימון מ-{{postTitle}}",
+  "notifications.autoRemovedTitle": "הפוסט שלך הוסר",
+  "notifications.autoRemovedBody": "הסיבה: דווח על-ידי מספר משתמשים. למידע נוסף — לחץ.",
+  "notifications.followRequestTitle": "{{requesterName}}",
+  "notifications.followRequestBody": "מבקש לעקוב אחריך",
+  "notifications.followStartedTitle": "{{followerName}}",
+  "notifications.followStartedBody": "התחיל לעקוב אחריך",
+  "notifications.followStartedCoalesced": "{{count}} עוקבים חדשים",
+  "notifications.followApprovedTitle": "{{targetName}}",
+  "notifications.followApprovedBody": "אישר את בקשת המעקב שלך"
+}

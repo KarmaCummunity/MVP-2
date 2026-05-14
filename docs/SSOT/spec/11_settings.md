@@ -1,6 +1,6 @@
 # 2.11 Settings
 
-> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped.
+> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1.
 
 
 

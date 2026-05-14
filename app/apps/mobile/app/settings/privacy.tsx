@@ -5,6 +5,7 @@ import React from 'react';
 import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
@@ -15,8 +16,10 @@ import {
   getUpdatePrivacyModeUseCase,
   getListPendingFollowRequestsUseCase,
 } from '../../src/services/followComposition';
+import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 
 export default function PrivacyScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
@@ -62,8 +65,10 @@ export default function PrivacyScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: 'פרטיות' }} />
+    <SafeAreaView style={styles.container} edges={['bottom', 'left', 'right']}>
+      <Stack.Screen
+        options={{ ...detailStackScreenOptions, headerTitle: t('settings.privacy') }}
+      />
       <View style={styles.body}>
         <View style={styles.row}>
           <Ionicons name="lock-closed-outline" size={20} color={colors.textPrimary} />

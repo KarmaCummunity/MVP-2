@@ -70,7 +70,7 @@ export default function WelcomeScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>קארמה קהילה</Text>
+          <Text style={styles.appName}>קהילת קארמה</Text>
           <Text style={styles.tagline}>תן. קבל. חבר קהילה.</Text>
         </View>
 

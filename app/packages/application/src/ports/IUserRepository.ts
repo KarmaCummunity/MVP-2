@@ -5,6 +5,7 @@ import type {
   FollowRequest,
   OnboardingState,
   AccountStatus,
+  NotificationPreferences,
 } from '@kc/domain';
 
 // ── IUserRepository ───────────────────────────
@@ -117,6 +118,9 @@ export interface IUserRepository {
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */
   dismissClosureExplainer(userId: string): Promise<void>;
 
+  /** FR-FEED-015 AC3 — flips users.first_post_nudge_dismissed = true. Idempotent. */
+  dismissFirstPostNudge(userId: string): Promise<void>;
+
   /**
    * Lightweight user search by display name or share handle (case-insensitive
    * substring). Used by the closure flow's "pick from any user" mode (option 4)
@@ -155,6 +159,16 @@ export interface IUserRepository {
    * round-trips on every profile load.
    */
   getFollowStateRaw(viewerId: string, targetUserId: string): Promise<FollowStateRaw>;
+
+  /**
+   * Atomically merges notification preferences. Partial fields only update the
+   * named keys; unspecified keys are preserved.
+   * Mapped to: FR-NOTIF-014.
+   */
+  updateNotificationPreferences(
+    userId: string,
+    partial: { critical?: boolean; social?: boolean },
+  ): Promise<NotificationPreferences>;
 
   // Auth identities
   findByAuthIdentity(provider: string, subject: string): Promise<User | null>;

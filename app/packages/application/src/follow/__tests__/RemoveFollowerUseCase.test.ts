@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { RemoveFollowerUseCase } from '../RemoveFollowerUseCase';
-import { FakeUserRepository } from './FakeUserRepository';
+import { FollowFakeUserRepository } from './followFakeUserRepository';
 
 describe('RemoveFollowerUseCase', () => {
   it('hard-deletes the follow edge (followerId is the one being removed)', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new RemoveFollowerUseCase(repo);
 
     await uc.execute({ ownerId: 'u_owner', followerId: 'u_follower' });
@@ -19,7 +19,7 @@ describe('RemoveFollowerUseCase', () => {
   });
 
   it('rejects when ownerId === followerId', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new RemoveFollowerUseCase(repo);
 
     await expect(

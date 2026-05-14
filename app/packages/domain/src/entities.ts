@@ -117,6 +117,23 @@ export interface Post {
   updatedAt: string;
 }
 
+// ── Profile closed-posts view ─────────────────
+
+/**
+ * Which identity role the profile user occupies on a given closed_delivered post.
+ * - 'publisher' — `Post.ownerId === profileUserId`
+ * - 'respondent' — `Post.recipient?.recipientUserId === profileUserId`
+ *
+ * The economic role (giver / receiver) is derived in the UI from
+ * (post.type, identityRole).
+ */
+export type IdentityRoleForViewedProfile = 'publisher' | 'respondent';
+
+export interface ProfileClosedPostsItem {
+  readonly post: Post;
+  readonly identityRole: IdentityRoleForViewedProfile;
+}
+
 // ── Follow ────────────────────────────────────
 
 export interface FollowEdge {

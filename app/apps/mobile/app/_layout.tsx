@@ -1,6 +1,6 @@
 import '../src/i18n';
 import React, { useEffect } from 'react';
-import { Stack, useSegments } from 'expo-router';
+import { Stack, usePathname, useSegments } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
@@ -53,10 +53,18 @@ import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { colors } from '@kc/ui';
 import { useAuthStore } from '../src/store/authStore';
+import { container } from '../src/lib/container';
+import {
+  useActiveScreenStore,
+  installForegroundHandler,
+  installBadgeAutoClear,
+  useNotificationTapRouting,
+  registerCurrentDeviceIfPermitted,
+} from '../src/lib/notifications';
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
-import { BackButton } from '../src/components/BackButton';
+import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
@@ -69,16 +77,31 @@ const queryClient = new QueryClient({
   },
 });
 
-const detailHeader = {
-  headerShown: true,
-  headerLeft: BackButton,
-  headerBackVisible: false,
-  headerTintColor: colors.primary,
-  headerStyle: { backgroundColor: colors.surface },
-  // Native iOS already centers the title; Android + RN-Web default to start-aligned
-  // which under forced RTL pushes the title to the right edge. Center everywhere.
-  headerTitleAlign: 'center',
-} as const;
+function NotificationsBridge(): null {
+  const userId = useAuthStore((s) => s.session?.userId ?? null);
+  const setRoute = useActiveScreenStore((s) => s.setRoute);
+
+  useNotificationTapRouting();
+
+  useEffect(() => {
+    installForegroundHandler();
+    installBadgeAutoClear();
+  }, []);
+
+  const pathname = usePathname();
+  useEffect(() => {
+    setRoute(pathname ?? null);
+  }, [pathname, setRoute]);
+
+  useEffect(() => {
+    if (!userId) return;
+    registerCurrentDeviceIfPermitted(userId, { deviceRepo: container.deviceRepo }).catch(
+      console.error,
+    );
+  }, [userId]);
+
+  return null;
+}
 
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
   const segments = useSegments() as string[];
@@ -95,14 +118,14 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
   // creates a flicker window where the bar is hidden until the async DB read
   // resolves, even though we're definitely past auth.
   const head = segments[0] as string | undefined;
-  const isOAuthCallback = head === 'auth' && segments[1] === 'callback';
+  const isAuthLanding = head === 'auth' && (segments[1] === 'callback' || segments[1] === 'verify');
   const showTabBar =
     !isLoading &&
     isAuthenticated &&
     head !== '(auth)' &&
     head !== '(guest)' &&
     head !== '(onboarding)' &&
-    !isOAuthCallback;
+    !isAuthLanding;
 
   // RN-Web's flex layout doesn't reliably split height between a flex:1 child
   // and an intrinsic-height sibling — the inner View ends up at full height
@@ -143,6 +166,7 @@ export default function RootLayout() {
           <QueryClientProvider client={queryClient}>
             <StatusBar style="dark" />
             <DevBanner />
+            <NotificationsBridge />
             <AuthGate>
               <SoftGateProvider>
                 <ShellWithTabBar>
@@ -158,14 +182,15 @@ export default function RootLayout() {
                     <Stack.Screen name="(onboarding)" />
                     <Stack.Screen name="(tabs)" />
                     <Stack.Screen name="auth/callback" />
+                    <Stack.Screen name="auth/verify" />
                     {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
                     <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
-                    <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
-                    <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
+                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: 'עריכת פרופיל' }} />
+                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: 'פרטי פוסט' }} />
                     {/* user/[handle]/* owns its own header via the nested _layout */}
                     <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    <Stack.Screen name="chat/[id]" options={detailHeader} />
+                    <Stack.Screen name="chat/[id]" options={detailStackScreenOptions} />
                     {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
                     <Stack.Screen name="chat/index" options={{ headerShown: false }} />
                   </Stack>

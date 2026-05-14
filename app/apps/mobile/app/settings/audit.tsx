@@ -3,13 +3,14 @@ import React, { useState, useCallback } from 'react';
 import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, Redirect } from 'expo-router';
+import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 import { colors, spacing, typography } from '@kc/ui';
 import type { AuditEvent } from '@kc/domain';
 import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
 import { container } from '../../src/lib/container';
 import { getUniversalSearchUseCase } from '../../src/services/searchComposition';
 import { useAuthStore } from '../../src/store/authStore';
-import he from '../../src/i18n/he';
+import he from '../../src/i18n/locales/he';
 
 interface UserHit { userId: string; displayName: string; }
 
@@ -69,7 +70,7 @@ export default function AuditScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: t.title }} />
+      <Stack.Screen options={{ ...detailStackScreenOptions, headerTitle: t.title }} />
       <TextInput
         value={query}
         onChangeText={onSearchChange}

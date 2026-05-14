@@ -12,7 +12,7 @@ import type {
   PostWithOwner,
   UpdatePostInput,
 } from '@kc/application';
-import type { Post, PostStatus } from '@kc/domain';
+import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
 import type { Database } from '../database.types';
 import {
   POST_SELECT_BARE,
@@ -32,6 +32,7 @@ import {
   getClosureCandidates as getClosureCandidatesHelper,
 } from './closureMethods';
 import { executePostUpdate } from './executePostUpdate';
+import { getProfileClosedPostsHelper } from './getProfileClosedPostsHelper';
 
 const FEED_HARD_MAX = 100;
 
@@ -198,6 +199,16 @@ export class SupabasePostRepository implements IPostRepository {
     if (error) throw new Error(`getMyPosts: ${error.message}`);
     const rows = (data ?? []) as unknown as PostJoinedRow[];
     return rows.map(mapPostRow);
+  }
+
+  // ── Profile closed posts (publisher ∪ respondent) ────────────────────────
+  getProfileClosedPosts(
+    profileUserId: string,
+    viewerUserId: string | null,
+    limit: number,
+    cursor?: string,
+  ): Promise<ProfileClosedPostsItem[]> {
+    return getProfileClosedPostsHelper(this.client, profileUserId, viewerUserId, limit, cursor);
   }
 
   // ── Stats ───────────────────────────────────────────────────────────────

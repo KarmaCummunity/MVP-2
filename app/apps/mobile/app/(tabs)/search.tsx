@@ -34,7 +34,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { SearchResultType, SearchSortBy } from '@kc/domain';
-import { search as t } from '../../src/i18n/donations';
+import { search as t } from '../../src/i18n/locales/he/donations';
 
 import { useAuthStore } from '../../src/store/authStore';
 import { useSearchStore } from '../../src/store/searchStore';

@@ -3,7 +3,7 @@
 // and the confirm/toast UX is consistent.
 import { Alert, ToastAndroid, Platform } from 'react-native';
 import { ModerationError } from '@kc/application';
-import he from '../../../i18n/he';
+import he from '../../../i18n/locales/he';
 
 const t = he.moderation.actions;
 

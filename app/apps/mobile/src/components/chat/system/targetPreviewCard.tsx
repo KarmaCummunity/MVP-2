@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import he from '../../../i18n/he';
+import he from '../../../i18n/locales/he';
 
 export type LinkTarget = { type: 'post' | 'user'; id: string; handle: string };
 export type PostPreview = {

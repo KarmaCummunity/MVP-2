@@ -29,9 +29,17 @@ export function useEnforceAccountGate(userId: string | null) {
       try {
         const result = await container.checkAccountGate.execute({ userId });
         if (cancelled || result.allowed) return;
-        // Stale RPC / pre-migration: gate used to deny `pending_verification` with a
-        // non-UI reason that mapped to the banned screen (FR-AUTH-003).
-        if ((result.reason as string | undefined) === 'pending_verification') return;
+        // FR-AUTH-006 / D-19: migration 0067 makes the gate deny `pending_verification`.
+        // The reason isn't in the `AccountGateReason` union (kept narrow for FR-MOD-010 callers),
+        // hence the string cast. Sign the user out so the sign-in screen can re-show the
+        // verify-pending panel on the next attempt.
+        if ((result.reason as string | undefined) === 'pending_verification') {
+          enforcingRef.current = true;
+          await supabase.auth.signOut();
+          signOut();
+          router.replace('/(auth)/sign-in');
+          return;
+        }
         enforcingRef.current = true;
         await supabase.auth.signOut();
         signOut();

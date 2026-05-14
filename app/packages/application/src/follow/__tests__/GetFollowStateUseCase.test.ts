@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { GetFollowStateUseCase } from '../GetFollowStateUseCase';
-import { FakeUserRepository } from './FakeUserRepository';
+import { FollowFakeUserRepository } from './followFakeUserRepository';
 
 const baseRaw = {
   target: { userId: 'u_target', privacyMode: 'Public' as const, accountStatus: 'active' as const },
@@ -11,14 +11,14 @@ const baseRaw = {
 
 describe('GetFollowStateUseCase', () => {
   it('returns "self" when viewer === target', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new GetFollowStateUseCase(repo);
     const out = await uc.execute({ viewerId: 'u_a', targetUserId: 'u_a' });
     expect(out.state).toBe('self');
   });
 
   it('returns "not_following_public" for a public target with no edge', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = { ...baseRaw };
     const uc = new GetFollowStateUseCase(repo);
     const out = await uc.execute({ viewerId: 'u_a', targetUserId: 'u_b' });
@@ -26,7 +26,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns "following" when edge exists (regardless of privacy mode)', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = { ...baseRaw, followingExists: true };
     const uc = new GetFollowStateUseCase(repo);
     const out = await uc.execute({ viewerId: 'u_a', targetUserId: 'u_b' });
@@ -34,7 +34,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns "not_following_private_no_request" for private target with no edge / pending / cooldown', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, privacyMode: 'Private' as const },
@@ -45,7 +45,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns "request_pending" when a pending request exists', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, privacyMode: 'Private' as const },
@@ -57,7 +57,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns "cooldown_after_reject" with cooldownUntil when active', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, privacyMode: 'Private' as const },
@@ -70,7 +70,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('throws user_not_found when target is null', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = { ...baseRaw, target: null };
     const uc = new GetFollowStateUseCase(repo);
     await expect(
@@ -79,7 +79,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns following when edge exists even if account is not active', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, accountStatus: 'suspended_admin' },
@@ -92,7 +92,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns request_pending without followInteractionDisabled when private inactive has pending', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, privacyMode: 'Private', accountStatus: 'pending_verification' },
@@ -105,7 +105,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns not_following_public with followInteractionDisabled when target is not active', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, accountStatus: 'suspended_admin' },
@@ -117,7 +117,7 @@ describe('GetFollowStateUseCase', () => {
   });
 
   it('returns not_following_private_no_request with followInteractionDisabled when private and not active', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.followStateRaw = {
       ...baseRaw,
       target: { ...baseRaw.target!, privacyMode: 'Private', accountStatus: 'pending_verification' },

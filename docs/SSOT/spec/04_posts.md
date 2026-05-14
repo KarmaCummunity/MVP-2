@@ -357,10 +357,11 @@ A user marked as the recipient of a `closed_delivered` post sees a special view 
 - Decisions: `D-7`.
 
 **Acceptance Criteria.**
-- AC1. The post is listed under the recipient's "Closed Posts" tab inside their own profile (only visible to themselves).
+- AC1. A user picked as the respondent of a `closed_delivered` post sees the post in their own profile's "פוסטים סגורים" tab. The post is **also** visible to other viewers of the respondent's profile, subject to the post's original `visibility` setting (Public / Followers-only / Only-me). The "Remove my recipient mark" CTA remains exclusive to the respondent themselves. (Revised 2026-05-13 per D-19 — reverses the respondent-privacy carve-out previously in D-7.)
 - AC2. Detail view renders the post's content read-only with a banner: *"You were marked as the recipient by [owner]."*
 - AC3. CTA: "Remove my recipient mark" (`FR-CLOSURE-007`).
 - AC4. No other actions are available; the recipient cannot reopen or edit the post.
+- AC5. When a third party opens the post via the respondent's profile, the detail screen renders a read-only public view (no Reopen, no Remove-mark, no Edit). The `RecipientCallout` already adapts to post type — "נמסר ל-X" for `Give` posts, "ניתן על-ידי X" for `Request` posts — and is the canonical surfaced banner.
 
 **Related.** Screens: 2.3 · Domain: `Recipient`, `Post`.
 

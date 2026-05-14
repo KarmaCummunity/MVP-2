@@ -1,6 +1,6 @@
 // Chat list (Inbox) — FR-CHAT-001, FR-CHAT-016.
-import React, { useMemo, useState } from 'react';
-import { View, Text, FlatList, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import React, { useCallback, useMemo, useState } from 'react';
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -26,6 +26,17 @@ export default function ChatListScreen() {
     null,
   );
   const [hideBusy, setHideBusy] = useState(false);
+  const [refreshing, setRefreshing] = useState(false);
+
+  const onRefresh = useCallback(async () => {
+    if (!userId) return;
+    setRefreshing(true);
+    try {
+      await useChatStore.getState().refreshInbox(userId, container.chatRepo);
+    } finally {
+      setRefreshing(false);
+    }
+  }, [userId]);
 
   const filtered = useMemo(() => {
     if (!inbox) return [];
@@ -62,6 +73,14 @@ export default function ChatListScreen() {
         keyExtractor={(c) => c.chatId}
         onEndReached={() => setVisible((v) => v + PAGE)}
         onEndReachedThreshold={0.6}
+        refreshControl={
+          <RefreshControl
+            refreshing={refreshing}
+            onRefresh={onRefresh}
+            tintColor={colors.primary}
+            colors={[colors.primary]}
+          />
+        }
         renderItem={({ item }) => (
           <InboxChatRow
             item={item}

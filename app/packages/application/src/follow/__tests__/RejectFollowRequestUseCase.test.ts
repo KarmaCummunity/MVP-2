@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { RejectFollowRequestUseCase } from '../RejectFollowRequestUseCase';
-import { FakeUserRepository } from './FakeUserRepository';
+import { FollowFakeUserRepository } from './followFakeUserRepository';
 
 describe('RejectFollowRequestUseCase', () => {
   it('forwards to repo (target rejects, no notification)', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new RejectFollowRequestUseCase(repo);
 
     await uc.execute({ targetId: 'u_target', requesterId: 'u_requester' });
@@ -16,7 +16,7 @@ describe('RejectFollowRequestUseCase', () => {
   });
 
   it('rejects when target === requester', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new RejectFollowRequestUseCase(repo);
 
     await expect(

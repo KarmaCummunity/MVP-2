@@ -6,3 +6,4 @@ export * from './invariants';
 export * from './searchTypes';
 export * from './geo';
 export * from './personalActivity';
+export * from './notifications';

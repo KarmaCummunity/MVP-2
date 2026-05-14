@@ -1,7 +1,8 @@
 // Create Post — wired to IPostRepository (P0.4-FE).
 // Mapped to: FR-POST-001..006, FR-POST-010 (delete) lives elsewhere.
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
-import React, { useState } from 'react';
+// FR-NOTIF-015 AC1: push pre-prompt fires after first post published.
+import React, { useRef, useState } from 'react';
 import {
   ActivityIndicator, Alert, ScrollView, StyleSheet,
   Text, TextInput, TouchableOpacity, View,
@@ -21,7 +22,10 @@ import { useAuthStore } from '../../src/store/authStore';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { useLastAddressStore } from '../../src/store/lastAddressStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
-import { getCreatePostUseCase } from '../../src/services/postsComposition';
+import { getCreatePostUseCase, getPostRepo } from '../../src/services/postsComposition';
+import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
+import { EnablePushModal } from '../../src/components/EnablePushModal';
+import { container } from '../../src/lib/container';
 import { buildCreatePostMissingFieldsToastMessage } from '../../src/lib/createPostMissingFieldsToast';
 import { useCreatePostAddressPrefill } from '../../src/hooks/useCreatePostAddressPrefill';
 import {
@@ -41,6 +45,8 @@ export default function CreatePostScreen() {
   const session = useAuthStore((s) => s.session);
   const { requestSoftGate } = useSoftGate();
   const ownerId = session?.userId;
+  const { modalState, presentPrePrompt, handleAccept, handleDecline } = usePushPermissionGate();
+  const checkedFirstPostRef = useRef(false);
 
   const {
     city,
@@ -92,10 +98,21 @@ export default function CreatePostScreen() {
   const handleRemove = (path: string) =>
     setUploads((prev) => prev.filter((u) => u.path !== path));
 
+  // Capture open-post count before the publish so we can detect the very first post
+  // without a race. Stored in a ref so it survives across the async publish call.
+  const prePublishOpenCountRef = useRef<number | null>(null);
+
   const publish = useMutation({
     mutationFn: async () => {
       if (!ownerId) throw new Error('not_authenticated');
       if (!city) throw new Error('city_required');
+      if (!checkedFirstPostRef.current) {
+        try {
+          prePublishOpenCountRef.current = await getPostRepo().countOpenByUser(ownerId);
+        } catch {
+          // Non-critical — skip push gate on error.
+        }
+      }
       return getCreatePostUseCase().execute({
         ownerId,
         type,
@@ -126,6 +143,13 @@ export default function CreatePostScreen() {
       await queryClient.invalidateQueries({ queryKey: ['openPostsCount'] });
       invalidatePersonalStatsCaches(queryClient, ownerId);
       useFeedSessionStore.getState().showEphemeralToast(t('post.publishSuccess'), 'success');
+      // FR-NOTIF-015 AC1: present push pre-prompt after first post published.
+      if (!checkedFirstPostRef.current && ownerId) {
+        checkedFirstPostRef.current = true;
+        if (prePublishOpenCountRef.current === 0) {
+          void presentPrePrompt('first-post-published');
+        }
+      }
       router.replace('/(tabs)');
     },
     onError: (err) => {
@@ -331,6 +355,17 @@ export default function CreatePostScreen() {
           )}
         </TouchableOpacity>
       </ScrollView>
+      <EnablePushModal
+        visible={modalState.visible}
+        trigger={modalState.trigger}
+        onAccept={async () => {
+          const status = await handleAccept();
+          if (status === 'granted' && ownerId) {
+            await registerCurrentDeviceIfPermitted(ownerId, { deviceRepo: container.deviceRepo });
+          }
+        }}
+        onDecline={handleDecline}
+      />
     </SafeAreaView>
   );
 }

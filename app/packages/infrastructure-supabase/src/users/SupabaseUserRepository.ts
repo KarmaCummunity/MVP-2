@@ -106,6 +106,15 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`dismissClosureExplainer: ${error.message}`);
   }
 
+  /** FR-FEED-015 AC3 — flips users.first_post_nudge_dismissed = true. */
+  async dismissFirstPostNudge(userId: string): Promise<void> {
+    const { error } = await this.client
+      .from('users')
+      .update({ first_post_nudge_dismissed: true })
+      .eq('user_id', userId);
+    if (error) throw new Error(`dismissFirstPostNudge: ${error.message}`);
+  }
+
   setProfileAddressLines(
     userId: string,
     street: string | null,
@@ -228,6 +237,21 @@ export class SupabaseUserRepository implements IUserRepository {
     opts: { excludeUserId: string; limit: number },
   ): Promise<User[]> {
     return searchUsers(this.client, query, opts);
+  }
+
+  async updateNotificationPreferences(
+    userId: string,
+    partial: { critical?: boolean; social?: boolean },
+  ): Promise<{ critical: boolean; social: boolean }> {
+    const merge: Record<string, boolean> = {};
+    if (partial.critical !== undefined) merge.critical = partial.critical;
+    if (partial.social !== undefined) merge.social = partial.social;
+    const { data, error } = await this.client.rpc(
+      'users_merge_notification_preferences',
+      { p_user_id: userId, p_merge: merge },
+    );
+    if (error) throw new Error(`updateNotificationPreferences: ${error.message}`);
+    return data as { critical: boolean; social: boolean };
   }
 
   async findByAuthIdentity(_provider: string, _subject: string): Promise<never> {

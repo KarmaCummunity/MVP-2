@@ -5,6 +5,7 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getSupabaseClient,
+  SupabaseUserRepository,
   SupabaseChatRepository,
   SupabaseChatRealtime,
   SupabaseReportRepository,
@@ -12,6 +13,7 @@ import {
   SupabasePostRepository,
   SupabaseModerationAdminRepository,
   SupabaseAccountGateRepository,
+  SupabaseDeviceRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -40,6 +42,7 @@ import {
   DeleteMessageUseCase,
   LookupAuditUseCase,
   ReportUserUseCase,
+  UpdateNotificationPreferencesUseCase,
 } from '@kc/application';
 
 function pickStorage(): SupabaseAuthStorage | undefined {
@@ -52,6 +55,7 @@ function pickStorage(): SupabaseAuthStorage | undefined {
 
 export const supabase = getSupabaseClient({ storage: pickStorage() });
 
+const userRepo = new SupabaseUserRepository(supabase);
 const chatRepo = new SupabaseChatRepository(supabase);
 const chatRealtime = new SupabaseChatRealtime(supabase);
 const reportRepo = new SupabaseReportRepository(supabase);
@@ -59,14 +63,20 @@ const donationLinksRepo = new SupabaseDonationLinksRepository(supabase);
 const postRepo = new SupabasePostRepository(supabase);
 const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
+const deviceRepo = new SupabaseDeviceRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
+  userRepo,
   chatRepo,
   chatRealtime,
   moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
+  deviceRepo,
+
+  // Notification preferences
+  updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),
 
   // Chat use cases
   listChats: new ListChatsUseCase(chatRepo),

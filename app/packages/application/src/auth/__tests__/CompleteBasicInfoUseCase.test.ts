@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CompleteBasicInfoUseCase } from '../CompleteBasicInfoUseCase';
-import { makeFakeUserRepo } from './fakeUserRepository';
+import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
 describe('CompleteBasicInfoUseCase', () => {
   const userId = 'user-1';

@@ -1,6 +1,6 @@
 // app/apps/mobile/src/components/profile/ProfileHeader.tsx
 // Shared profile header — avatar + display name + privacy lock + bio.
-// Used by (tabs)/profile.tsx and user/[handle]/index.tsx.
+// Used by My Profile tab routes and user/[handle]/index.tsx.
 // Mapped to: FR-PROFILE-001 AC1, FR-PROFILE-002 AC1, FR-PROFILE-011, 012.
 
 import React from 'react';

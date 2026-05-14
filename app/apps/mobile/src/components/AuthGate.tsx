@@ -126,7 +126,7 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
   }, [session]);
 
   // Redirect rules:
-  //   - Unauth + outside (auth)/(guest)/auth/callback → (auth).
+  //   - Unauth + outside (auth)/(guest)/auth/callback/auth/verify → (auth).
   //   - Auth + just landed in (auth) or (guest) → onboarding step matching
   //     onboarding_state, or (tabs) when completed.
   //   - Auth + already past the gates → no auto-redirect (FR-AUTH-015 soft-gate
@@ -138,24 +138,28 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     const inGuestGroup = (segments[0] as string | undefined) === '(guest)';
     const isOAuthCallback =
       (segments[0] as string | undefined) === 'auth' && segments[1] === 'callback';
+    // FR-AUTH-006 — email verification landing route is reachable while signed
+    // out; the route itself exchanges the token and sets the session.
+    const isEmailVerify =
+      (segments[0] as string | undefined) === 'auth' && segments[1] === 'verify';
     // FR-MOD-010 AC4 — account-blocked is a terminal screen reachable while
     // signed out; do not bounce the user back to (auth).
     const isAccountBlocked = (segments[0] as string | undefined) === 'account-blocked';
 
     if (!isAuthenticated) {
-      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback && !isAccountBlocked) {
+      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback && !isEmailVerify && !isAccountBlocked) {
         router.replace('/(auth)');
       }
       return;
     }
 
-    if (!inAuthGroup && !inGuestGroup && !isOAuthCallback) return;
+    if (!inAuthGroup && !inGuestGroup && !isOAuthCallback && !isEmailVerify) return;
     if (onboardingState === null) return;
 
     if (onboardingState === 'pending_basic_info' && basicInfoSkipped === true) {
       router.replace('/(tabs)');
     } else if (onboardingState === 'pending_basic_info') {
-      router.replace('/(onboarding)/basic-info');
+      router.replace('/(onboarding)/about-intro');
     } else if (onboardingState === 'pending_avatar') {
       router.replace('/(onboarding)/photo');
     } else {

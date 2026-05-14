@@ -42,8 +42,8 @@ The signed-in user's own profile, displaying identity, three headline counters, 
 - AC2. Three counters appear in a single row: `followers_count`, `following_count`, and `active_posts_count_internal` (includes `Only-me` posts; see `FR-PROFILE-013`).
 - AC3. Two action buttons: "Edit Profile" → `FR-PROFILE-007`, "Share Profile" → produces a deep-link URL.
 - AC4. Two tabs:
-   - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): lists all `open` posts authored by the user, including those at visibility `Public`, `Followers only`, and `Only me`. Each card carries a visual badge showing its visibility.
-   - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts in `closed_delivered` status only (PRD §3.3.5). The Hebrew label is intentionally generic (סגורים) rather than delivery-specific (שנמסרו) so it remains accurate if the tab is later extended to other terminal states; in MVP only `closed_delivered` is shown.
+   - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): unchanged — lists all `open` posts authored by the user including `Public`, `Followers only`, and `Only me`. Each card carries a visual badge showing its visibility.
+   - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts where the user is **either the publisher or the respondent**. The publisher side covers status `closed_delivered` and (for the user's own view) `deleted_no_recipient` within the 7-day grace window so they can still reopen — FR-CLOSURE-005 AC4, FR-CLOSURE-008. The respondent side covers only `closed_delivered`. Ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 📤 נתתי when the profile owner is the giver, 📥 קיבלתי when the profile owner is the receiver. (Revised 2026-05-13 per D-19.)
 - AC5. Tapping a post opens Post Detail in "owner mode" (see `FR-POST-016`).
 - AC6. **Counters fallback (MVP, pre-DB-schema)**: until `FR-FOLLOW-*` and `FR-POST-*` ship (see `spec/03_following.md` + `spec/04_posts.md`), the three headline counters render as `0` rather than mock values. They begin reflecting reality from `FR-FOLLOW-*` and `FR-POST-*` onward.
 
@@ -64,7 +64,7 @@ Viewing the profile of another user whose `privacy_mode = Public` shows their id
 
 **Acceptance Criteria.**
 - AC1. Header parity with `FR-PROFILE-001` minus edit/share; replaces them with "Follow / Following" and "Send Message" CTAs and a `⋮` menu (`Report`, `Block`).
-- AC2. The "Closed Posts" tab **is** shown for other users when the profile is `Public` (or `Private` and the viewer is an approved follower). Recipient identity ("נמסר ל-X") is included per the same rules as on My Profile (`FR-PROFILE-001`). Posts at `Only-me` visibility remain non-visible to non-owners. *(Reverses the prior privacy decision; see EXEC-7 in the decision log, 2026-05-11.)*
+- AC2. The "Closed Posts" tab on another user's profile follows the same UNION rule as `FR-PROFILE-001 AC4` (publisher ∪ respondent), filtered by each post's `visibility`. Third-party viewers see the same cards but the tap target opens a read-only post detail. (Revised 2026-05-13 per D-19.)
 - AC3. Counters reflect the **public** active-posts count, which excludes posts at visibility `Only me` (see `FR-PROFILE-013`).
 - AC4. The "Active Posts" tab lists `Public` posts; if I am an approved follower, `Followers only` posts also appear. Posts at `Only me` are never visible to non-owners.
 

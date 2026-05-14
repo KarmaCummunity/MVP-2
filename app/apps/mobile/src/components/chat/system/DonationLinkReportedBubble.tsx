@@ -6,7 +6,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
 import { openExternalUrl } from '../../../utils/openExternalUrl';
-import he from '../../../i18n/he';
+import he from '../../../i18n/locales/he';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 export function DonationLinkReportedBubble({
