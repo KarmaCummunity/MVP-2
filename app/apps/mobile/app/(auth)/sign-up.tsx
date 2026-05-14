@@ -8,9 +8,10 @@ import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { isAuthError } from '@kc/application';
-import { getSignUpUseCase } from '../../src/services/authComposition';
+import { getSignUpUseCase, AUTH_VERIFY_URL } from '../../src/services/authComposition';
 import { useAuthStore } from '../../src/store/authStore';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
+import { VerificationPendingPanel } from '../../src/components/auth/VerificationPendingPanel';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -18,6 +19,7 @@ export default function SignUpScreen() {
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
+  const [pendingEmail, setPendingEmail] = useState<string | null>(null);
 
   const handleSignUp = async () => {
     if (!email || !password) {
@@ -26,18 +28,18 @@ export default function SignUpScreen() {
     }
     setLoading(true);
     try {
-      const { session, pendingVerification } =
-        await getSignUpUseCase().execute({ email, password });
+      const { session, pendingVerification } = await getSignUpUseCase().execute({
+        email,
+        password,
+        emailRedirectTo: AUTH_VERIFY_URL,
+      });
 
       if (session) {
         setSession(session);
-        // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
-      } else if (pendingVerification) {
-        Alert.alert(
-          'כמעט שם',
-          'שלחנו אליך מייל לאישור החשבון. לחץ על הקישור ואז התחבר.',
-          [{ text: 'אוקי', onPress: () => router.replace('/(auth)/sign-in') }],
-        );
+        return;
+      }
+      if (pendingVerification) {
+        setPendingEmail(email.trim().toLowerCase());
       }
     } catch (err) {
       const message = isAuthError(err)
@@ -65,7 +67,14 @@ export default function SignUpScreen() {
           <Text style={styles.title}>הרשמה</Text>
           <Text style={styles.subtitle}>הצטרף לקהילה — חינם לגמרי</Text>
 
-          <View style={styles.form}>
+          {pendingEmail ? (
+            <VerificationPendingPanel
+              email={pendingEmail}
+              onChangeEmail={() => setPendingEmail(null)}
+            />
+          ) : null}
+
+          <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
             <View style={styles.field}>
               <Text style={styles.label}>דוא"ל</Text>
               <TextInput
@@ -107,17 +116,21 @@ export default function SignUpScreen() {
             </TouchableOpacity>
           </View>
 
-          <Text style={styles.legal}>
-            בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.
-          </Text>
+          {!pendingEmail ? (
+            <>
+              <Text style={styles.legal}>
+                בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.
+              </Text>
 
-          <TouchableOpacity
-            style={styles.switchMode}
-            onPress={() => router.replace('/(auth)/sign-in')}
-            disabled={loading}
-          >
-            <Text style={styles.switchModeText}>יש לי כבר חשבון — כניסה</Text>
-          </TouchableOpacity>
+              <TouchableOpacity
+                style={styles.switchMode}
+                onPress={() => router.replace('/(auth)/sign-in')}
+                disabled={loading}
+              >
+                <Text style={styles.switchModeText}>יש לי כבר חשבון — כניסה</Text>
+              </TouchableOpacity>
+            </>
+          ) : null}
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
@@ -133,6 +146,7 @@ const styles = StyleSheet.create({
   title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right', marginBottom: 4 },
   subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'right', marginBottom: spacing['2xl'] },
   form: { gap: spacing.base },
+  hidden: { display: 'none' },
   field: { gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
   input: {
