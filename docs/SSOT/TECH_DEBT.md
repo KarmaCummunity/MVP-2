@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-12 (TD-53 Edge deploy workflow; TD-152 closed — spec text was stale; FR-AUTH-002 `TD-151`; FR-STATS E2E; TD-20 resolved) |
+| **Last Updated** | 2026-05-14 (P1.5 PR-1: TD-115 closed — chat push shipped; TD-62..65 added for NOTIF-004 deferral, notification icon, queue-stuck alert, Web Push parity) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -67,7 +67,10 @@
 | TD-107 | 🟢 | **PARTIAL → STILL OPEN for non-delete rows.** Delete Account row closed 2026-05-11 (P2.2 V1 — wired to real flow). Remaining dead rows in `app/settings.tsx` (lines 99/132/133/139/145/146/147 of pre-P2.2 state — verify post-merge) still no-op; show "בקרוב" alerts. | Opportunistic |
 | TD-108 | 🟢 | **FR-AUTH-011 AC4 — avatar removal leaks Storage object.** `app/(onboarding)/photo.tsx:47-60` clears `users.avatar_url = null` but never deletes `avatars/<userId>/avatar.jpg`. ~50KB leak per remove (not a privacy issue — RLS still owns the path). Call `client.storage.from('avatars').remove([path])` before persisting null | Opportunistic |
 | TD-114 | 🟠 | **Donations · Time → support thread wire-up.** **P0.5 ready** — `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` + the `/chat/[id]` route now exist. Wire-up in `app/(tabs)/donations/time.tsx`'s volunteer composer to navigate to the support thread is a separate post-P0.5 PR. | Post-P0.5 follow-up |
-| TD-115 | 🔴 | **Push notifications wiring for chat absent.** Required by FR-CHAT-003 AC4. Depends on FR-NOTIF-001..006 (P1.5). Currently messages send + receive via Realtime, but no push is delivered when the app is backgrounded. | P1.5 |
+| TD-62 | 🟢 | **FR-NOTIF-004 (message_undeliverable) — deferred from P1.5 PR-1.** Requires sender-side detection of recipient account state change. Surface via a daily cron that scans outgoing messages where the recipient's `account_status` flipped to suspended/deleted within 24h. | Post-MVP |
+| TD-63 | 🟢 | **Notification icon placeholder.** `app/apps/mobile/assets/notification-icon.png` is a 96×96 placeholder. Replace with a designed icon (white shape on transparent, Android adaptive guidelines). | Pre-launch |
+| TD-64 | 🟠 | **Notification dispatcher has no operational alert when the outbox accumulates pending rows.** Add a daily check that fires if `count(*) where dispatched_at IS NULL AND created_at < now() - interval '15 minutes' > 10`. | Pre-launch |
+| TD-65 | 🟠 | **Web Push parity deferred from P1.5.** Implement VAPID + Service Worker; outbox + dispatcher pattern unchanged, only the adapter changes (Web Push HTTP API instead of Expo Push). | Post-MVP |
 | TD-119 | 🟠 | **Notify recipient on mark.** FR-CLOSURE-006 — Critical-category notification ("[Owner] סימן אותך כמקבל של [post]") is not delivered when a recipient is marked. Currently the recipient sees the mark passively when they next view the post. Depends on FR-NOTIF-001..006 (P1.5). | P1.5 |
 | TD-120 | 🟠 | **Recipient un-marks self.** FR-CLOSURE-007 — recipient cannot remove their own credit. UI absent; use case absent; FR-NOTIF-013 (notify owner on un-mark) also depends on push. | P2.x |
 | TD-121 | 🟠 | **Suspect flag at 5+ reopens.** FR-CLOSURE-010 — `posts.reopen_count` is incremented on every reopen (via 0015 RPC), but no moderation queue entry is created when the count reaches 5. Depends on FR-MOD-008 (P1.3). | P1.3 |
@@ -142,6 +145,7 @@
 | TD-116 | **Full report processing pipeline absent** (24h dedup, auto-removal, false-report sanctions). | Closed 2026-05-12 (P1.3) — 24h dedup + auto-removal already shipped in `0005_init_moderation.sql`; false-report sanctions trigger now ships in `0039_sanction_trigger.sql` with statement-level + per-reporter advisory lock + level guard, addressing the council-flagged "instant permaban from one restore" failure mode. Cascade restore on dismiss in `0036_admin_dismiss_confirm.sql`; owner-side notification in `0040_owner_notification.sql`. |
 | TD-20 | Statistics partial — no nightly recompute; timeline missing reopen/unmark events. | Closed 2026-05-12 — `0044_personal_activity_log.sql` (append log + triggers + RPC reads log); `0045_stats_recompute_nightly.sql` (`stats_recompute_personal_counters_nightly`, `stats_drift_events`, cron `stats_recompute_nightly`); mobile invalidates `user-profile` + `my-activity-timeline` after closure/create/delete. **NFR-RELI-005** alert on drift rate (>0.1%/night) still requires external log/metrics wiring beyond Postgres `RAISE NOTICE`. |
 | TD-152 | Donation-link “edit” created duplicate DB rows: TD text wrongly cited `donationLinkUrlReachability.ts` (never existed here) and a PostgREST UPDATE path. `SupabaseDonationLinksRepository` add/update already go through Edge `validate-donation-link` with `link_id` on update; prod duplicates matched **undeployed/stale** Edge code (INSERT-only). | Closed 2026-05-12 — TD narrative corrected; prevention = **TD-53** workflow + operator one-time deploy if prod still behind. |
+| TD-115 | Push notifications wiring for chat absent (FR-CHAT-003 AC4). | Closed 2026-05-14 — PR-1 of P1.5 ships chat push end-to-end (FR-NOTIF-001/002/003). |
 
 ---
 

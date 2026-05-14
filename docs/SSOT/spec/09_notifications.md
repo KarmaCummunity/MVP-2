@@ -1,6 +1,6 @@
 # 2.9 Notifications
 
-> **Status:** ⏳ Planned — Push notifications not yet implemented. Taxonomy defined.
+> **Status:** 🟡 In progress — PR-1 ships foundation + chat path (FR-NOTIF-001/002/003). PR-2 wires the remaining producers. NOTIF-004 deferred to TD-59; NOTIF-012 remains deferred per R-MVP-Privacy-6.
 
 
 
