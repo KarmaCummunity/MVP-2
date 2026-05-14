@@ -1,7 +1,7 @@
 // Onboarding step 1 — FR-AUTH-010
 import React from 'react';
 import {
-  View, Text, TextInput, TouchableOpacity,
+  View, Text, TextInput,
   StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -10,6 +10,9 @@ import { colors, typography, spacing, radius } from '@kc/ui';
 import { EditProfileAddressBlock } from '../../src/components/EditProfileAddressBlock';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { useOnboardingBasicInfoFlow } from '../../src/hooks/useOnboardingBasicInfoFlow';
+import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
+import { PressableScale } from '../../src/components/animations/PressableScale';
+import { staggerDelay } from '../../src/lib/animations/motion';
 
 export default function OnboardingBasicInfoScreen() {
   const { t } = useTranslation();
@@ -31,41 +34,49 @@ export default function OnboardingBasicInfoScreen() {
             keyboardShouldPersistTaps="handled"
           >
             <OnboardingStepHeader
-              step={1}
+              step={2}
               onSkip={handleSkip}
               onBack={handleBack}
               skipDisabled={loading}
               backDisabled={loading}
             />
-            <Text style={styles.title}>פרטים בסיסיים</Text>
-            <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
+            <AnimatedEntry delay={staggerDelay(0)}>
+              <Text style={styles.title}>פרטים בסיסיים</Text>
+            </AnimatedEntry>
+            <AnimatedEntry delay={staggerDelay(1)}>
+              <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
+            </AnimatedEntry>
 
-            <View style={styles.field}>
-              <Text style={styles.label}>שם מלא</Text>
-              <TextInput
-                style={styles.input}
-                value={displayName}
-                onChangeText={setDisplayName}
-                placeholder="לדוגמה: רינה כהן"
-                placeholderTextColor={colors.textDisabled}
-                maxLength={50}
-                textAlign="right"
-                editable={!loading}
+            <AnimatedEntry delay={staggerDelay(2)}>
+              <View style={styles.field}>
+                <Text style={styles.label}>שם מלא</Text>
+                <TextInput
+                  style={styles.input}
+                  value={displayName}
+                  onChangeText={setDisplayName}
+                  placeholder="לדוגמה: רינה כהן"
+                  placeholderTextColor={colors.textDisabled}
+                  maxLength={50}
+                  textAlign="right"
+                  editable={!loading}
+                />
+              </View>
+            </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(3)}>
+              <EditProfileAddressBlock
+                city={city}
+                onCityChange={setCity}
+                street={street}
+                streetNumber={streetNumber}
+                onStreetChange={setStreet}
+                onStreetNumberChange={setStreetNumber}
+                disabled={loading}
               />
-            </View>
-
-            <EditProfileAddressBlock
-              city={city}
-              onCityChange={setCity}
-              street={street}
-              streetNumber={streetNumber}
-              onStreetChange={setStreet}
-              onStreetNumberChange={setStreetNumber}
-              disabled={loading}
-            />
+            </AnimatedEntry>
           </ScrollView>
 
-          <TouchableOpacity
+          <PressableScale
             style={[
               styles.cta,
               !hasRequiredFields && { opacity: 0.4 },
@@ -73,13 +84,15 @@ export default function OnboardingBasicInfoScreen() {
             ]}
             disabled={!hasRequiredFields || loading}
             onPress={handleContinue}
+            accessibilityRole="button"
+            accessibilityLabel="המשך"
           >
             {loading ? (
               <ActivityIndicator color={colors.textInverse} />
             ) : (
               <Text style={styles.ctaText}>המשך</Text>
             )}
-          </TouchableOpacity>
+          </PressableScale>
         </View>
       </KeyboardAvoidingView>
     </SafeAreaView>
