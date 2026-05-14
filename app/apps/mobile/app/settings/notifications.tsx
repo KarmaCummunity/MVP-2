@@ -7,6 +7,7 @@ import {
   Linking,
   StyleSheet,
   Pressable,
+  Platform,
 } from 'react-native';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -29,9 +30,10 @@ export default function NotificationSettingsScreen() {
   const [permStatus, setPermStatus] = useState<PermStatus>('undetermined');
 
   useEffect(() => {
-    void Notifications.getPermissionsAsync().then((p) =>
-      setPermStatus(p.status as PermStatus),
-    );
+    if (Platform.OS === 'web') return; // TD-65: Web Push parity post-MVP
+    void Notifications.getPermissionsAsync()
+      .then((p) => setPermStatus(p.status as PermStatus))
+      .catch(() => {});
   }, []);
 
   const queryKey = ['notification-preferences', userId] as const;
@@ -90,26 +92,30 @@ export default function NotificationSettingsScreen() {
           onValueChange={(v) => mutation.mutate({ social: v })}
         />
 
-        <Text style={styles.sectionHeader}>
-          {t('notifications.deviceStatusSection')}
-        </Text>
-        <View style={styles.statusRow}>
-          <Text>
-            {permStatus === 'granted'
-              ? t('notifications.permissionGranted')
-              : t('notifications.permissionDenied')}
-          </Text>
-          {permStatus === 'denied' && (
-            <Pressable
-              onPress={() => void Linking.openSettings()}
-              style={styles.button}
-            >
-              <Text style={styles.buttonText}>
-                {t('notifications.openOsSettings')}
+        {Platform.OS !== 'web' && (
+          <>
+            <Text style={styles.sectionHeader}>
+              {t('notifications.deviceStatusSection')}
+            </Text>
+            <View style={styles.statusRow}>
+              <Text>
+                {permStatus === 'granted'
+                  ? t('notifications.permissionGranted')
+                  : t('notifications.permissionDenied')}
               </Text>
-            </Pressable>
-          )}
-        </View>
+              {permStatus === 'denied' && (
+                <Pressable
+                  onPress={() => void Linking.openSettings()}
+                  style={styles.button}
+                >
+                  <Text style={styles.buttonText}>
+                    {t('notifications.openOsSettings')}
+                  </Text>
+                </Pressable>
+              )}
+            </View>
+          </>
+        )}
       </ScrollView>
     </>
   );
