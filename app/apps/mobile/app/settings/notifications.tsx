@@ -12,6 +12,7 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
+import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 import type { NotificationPreferences } from '@kc/domain';
 import { NotificationToggleRow } from '../../src/components/NotificationToggleRow';
 import { useAuthStore } from '../../src/store/authStore';
@@ -69,7 +70,12 @@ export default function NotificationSettingsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: t('notifications.settingsTitle') }} />
+      <Stack.Screen
+        options={{
+          ...detailStackScreenOptions,
+          headerTitle: t('notifications.settingsTitle'),
+        }}
+      />
       <ScrollView>
         <NotificationToggleRow
           label={t('notifications.criticalLabel')}

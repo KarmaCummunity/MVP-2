@@ -64,7 +64,7 @@ import {
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
-import { BackButton } from '../src/components/BackButton';
+import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
@@ -76,17 +76,6 @@ const queryClient = new QueryClient({
     queries: { staleTime: 1000 * 60 * 2, retry: 2 },
   },
 });
-
-const detailHeader = {
-  headerShown: true,
-  headerLeft: BackButton,
-  headerBackVisible: false,
-  headerTintColor: colors.primary,
-  headerStyle: { backgroundColor: colors.surface },
-  // Native iOS already centers the title; Android + RN-Web default to start-aligned
-  // which under forced RTL pushes the title to the right edge. Center everywhere.
-  headerTitleAlign: 'center',
-} as const;
 
 function NotificationsBridge(): null {
   const userId = useAuthStore((s) => s.session?.userId ?? null);
@@ -197,11 +186,11 @@ export default function RootLayout() {
                     {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
                     <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
-                    <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
-                    <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
+                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: 'עריכת פרופיל' }} />
+                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: 'פרטי פוסט' }} />
                     {/* user/[handle]/* owns its own header via the nested _layout */}
                     <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    <Stack.Screen name="chat/[id]" options={detailHeader} />
+                    <Stack.Screen name="chat/[id]" options={detailStackScreenOptions} />
                     {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
                     <Stack.Screen name="chat/index" options={{ headerShown: false }} />
                   </Stack>
