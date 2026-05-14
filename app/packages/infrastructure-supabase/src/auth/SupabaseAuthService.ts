@@ -14,8 +14,16 @@ export class SupabaseAuthService implements IAuthService {
 
   constructor(private readonly client: SupabaseClient) {}
 
-  async signUpWithEmail(email: string, password: string): Promise<AuthSession | null> {
-    const { data, error } = await this.client.auth.signUp({ email, password });
+  async signUpWithEmail(
+    email: string,
+    password: string,
+    options?: { emailRedirectTo?: string },
+  ): Promise<AuthSession | null> {
+    const { data, error } = await this.client.auth.signUp({
+      email,
+      password,
+      options: { emailRedirectTo: options?.emailRedirectTo },
+    });
     if (error) throw mapAuthError(error);
     return data.session ? toSession(data.session) : null;
   }
@@ -82,6 +90,28 @@ export class SupabaseAuthService implements IAuthService {
     });
     
     return this.activeExchangePromise;
+  }
+
+  async resendVerificationEmail(
+    email: string,
+    options?: { emailRedirectTo?: string },
+  ): Promise<void> {
+    const { error } = await this.client.auth.resend({
+      type: 'signup',
+      email,
+      options: { emailRedirectTo: options?.emailRedirectTo },
+    });
+    if (error) throw mapAuthError(error);
+  }
+
+  async verifyEmail(tokenHash: string): Promise<AuthSession> {
+    const { data, error } = await this.client.auth.verifyOtp({
+      type: 'signup',
+      token_hash: tokenHash,
+    });
+    if (error) throw mapAuthError(error);
+    if (!data.session) throw new AuthError('unknown', 'verify_no_session');
+    return toSession(data.session);
   }
 }
 
