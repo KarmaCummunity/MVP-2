@@ -160,9 +160,30 @@ function checkFile(absPath, violations) {
   }
 }
 
+function checkNotificationsCoalesceMirror(violations) {
+  let app, edge;
+  try {
+    app = readFileSync(join(ROOT, 'packages/application/src/notifications/coalesce.ts'), 'utf8');
+    edge = readFileSync(join(ROOT, '../supabase/functions/dispatch-notification/coalesce.ts'), 'utf8');
+  } catch (err) {
+    violations.push(`COALESCE-MIRROR: could not read both files: ${err.message}`);
+    return;
+  }
+  const stripHeader = (s) => s.split('\n').slice(7).join('\n').trimEnd();
+  if (stripHeader(app) !== stripHeader(edge)) {
+    violations.push(
+      'COALESCE-MIRROR: coalesce.ts diverges between @kc/application and dispatch-notification Edge Function.\n' +
+        '  application: app/packages/application/src/notifications/coalesce.ts\n' +
+        '  edge:        supabase/functions/dispatch-notification/coalesce.ts\n' +
+        '  Re-sync (the application package is source-of-truth).'
+    );
+  }
+}
+
 const targets = [join(ROOT, 'packages'), join(ROOT, 'apps', 'mobile')];
 const files = targets.flatMap((t) => walk(t));
 const violations = [];
+checkNotificationsCoalesceMirror(violations);
 for (const f of files) checkFile(f, violations);
 
 if (violations.length > 0) {
