@@ -7,7 +7,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
-import type { Post } from '@kc/domain';
+import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
 import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 
@@ -25,15 +25,28 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.xs * 2) / 3;
 
 interface PostCardProfileProps {
   post: Post;
+  /**
+   * When set, an economic-role badge ("📤 נתתי" / "📥 קיבלתי") renders on
+   * the card. The role is derived from (post.type, identityRole):
+   *   publisher + Give    → giver  → 📤 נתתי
+   *   publisher + Request → receiver → 📥 קיבלתי
+   *   respondent + Give   → receiver → 📥 קיבלתי
+   *   respondent + Request→ giver   → 📤 נתתי
+   */
+  identityRole?: IdentityRoleForViewedProfile;
   onPressOverride?: () => void;
 }
 
-export function PostCardProfile({ post, onPressOverride }: PostCardProfileProps) {
+export function PostCardProfile({ post, identityRole, onPressOverride }: PostCardProfileProps) {
   const router = useRouter();
   const isGive = post.type === 'Give';
 
   const firstImageUrl = post.mediaAssets[0]
     ? getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(post.mediaAssets[0].path).data.publicUrl
+    : null;
+
+  const economicRole: 'giver' | 'receiver' | null = identityRole
+    ? deriveEconomicRole(post.type, identityRole)
     : null;
 
   return (
@@ -55,6 +68,13 @@ export function PostCardProfile({ post, onPressOverride }: PostCardProfileProps)
             {isGive ? 'לתת' : 'לבקש'}
           </Text>
         </View>
+        {economicRole ? (
+          <View style={styles.roleBadge}>
+            <Text style={styles.roleBadgeText}>
+              {economicRole === 'giver' ? '📤 נתתי' : '📥 קיבלתי'}
+            </Text>
+          </View>
+        ) : null}
       </View>
       <View style={styles.titleRow}>
         <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
@@ -62,6 +82,14 @@ export function PostCardProfile({ post, onPressOverride }: PostCardProfileProps)
       </View>
     </TouchableOpacity>
   );
+}
+
+function deriveEconomicRole(
+  postType: Post['type'],
+  identityRole: IdentityRoleForViewedProfile,
+): 'giver' | 'receiver' {
+  if (identityRole === 'publisher') return postType === 'Give' ? 'giver' : 'receiver';
+  return postType === 'Give' ? 'receiver' : 'giver';
 }
 
 const styles = StyleSheet.create({
@@ -116,5 +144,19 @@ const styles = StyleSheet.create({
     fontSize: 9,
     color: colors.primary,
     flexShrink: 0,
+  },
+  roleBadge: {
+    position: 'absolute',
+    bottom: spacing.xs,
+    ...(I18nManager.isRTL && Platform.OS !== 'web' ? { right: spacing.xs } : { left: spacing.xs }),
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    paddingHorizontal: 6,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+  },
+  roleBadgeText: {
+    ...typography.label,
+    fontSize: 10,
+    color: '#fff',
   },
 });
