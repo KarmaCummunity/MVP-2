@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { UpdatePrivacyModeUseCase } from '../UpdatePrivacyModeUseCase';
-import { FakeUserRepository, makeUser } from './FakeUserRepository';
+import { FollowFakeUserRepository, makeUser } from './followFakeUserRepository';
 
 describe('UpdatePrivacyModeUseCase', () => {
   it('flips Public → Private and returns updated user', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.user = makeUser({ privacyMode: 'Public' });
     repo.setPrivacyModeResult = makeUser({ privacyMode: 'Private', privacyChangedAt: '2026-05-10T00:00:00Z' });
     const uc = new UpdatePrivacyModeUseCase(repo);
@@ -16,7 +16,7 @@ describe('UpdatePrivacyModeUseCase', () => {
   });
 
   it('no-ops when mode === current', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.user = makeUser({ privacyMode: 'Public' });
     const uc = new UpdatePrivacyModeUseCase(repo);
 
@@ -27,7 +27,7 @@ describe('UpdatePrivacyModeUseCase', () => {
   });
 
   it('throws user_not_found if user is missing', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.user = null;
     const uc = new UpdatePrivacyModeUseCase(repo);
 

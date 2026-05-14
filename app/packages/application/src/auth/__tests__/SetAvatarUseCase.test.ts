@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SetAvatarUseCase } from '../SetAvatarUseCase';
-import { makeFakeUserRepo } from './fakeUserRepository';
+import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
 describe('SetAvatarUseCase', () => {
   const userId = 'user-1';

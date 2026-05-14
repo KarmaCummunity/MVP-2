@@ -118,6 +118,9 @@ export interface IUserRepository {
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */
   dismissClosureExplainer(userId: string): Promise<void>;
 
+  /** FR-FEED-015 AC3 — flips users.first_post_nudge_dismissed = true. Idempotent. */
+  dismissFirstPostNudge(userId: string): Promise<void>;
+
   /**
    * Lightweight user search by display name or share handle (case-insensitive
    * substring). Used by the closure flow's "pick from any user" mode (option 4)

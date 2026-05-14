@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { ListPendingFollowRequestsUseCase } from '../ListPendingFollowRequestsUseCase';
-import { FakeUserRepository, makeUser } from './FakeUserRepository';
+import { FollowFakeUserRepository, makeUser } from './followFakeUserRepository';
 
 describe('ListPendingFollowRequestsUseCase', () => {
   it('forwards (targetId, limit, cursor) and returns requests with requester users', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.pendingRequestsWithUsers = {
       requests: [
         {

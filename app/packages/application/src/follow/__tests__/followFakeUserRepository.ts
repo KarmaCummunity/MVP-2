@@ -1,6 +1,7 @@
-// In-memory IUserRepository slice for follow use-case tests. Captures the last
-// call to each follow-related method so tests can assert on what the use case
-// forwarded. Methods unrelated to follow are stubbed to throw.
+// followFakeUserRepository.ts — in-memory IUserRepository for follow use-case
+// tests. Captures the last call to each follow-related method so tests can
+// assert on what the use case forwarded. Methods unrelated to follow are
+// stubbed to throw.
 
 import type {
   AuthIdentity,
@@ -14,7 +15,7 @@ import type { FollowStateRaw, IUserRepository } from '../../ports/IUserRepositor
 
 const N = (m: string) => () => Promise.reject(new Error(`fake.${m}: not_used_in_test`));
 
-export class FakeUserRepository implements IUserRepository {
+export class FollowFakeUserRepository implements IUserRepository {
   // Captures
   lastFollow: { followerId: string; followedId: string } | null = null;
   lastUnfollow: { followerId: string; followedId: string } | null = null;
@@ -132,6 +133,7 @@ export class FakeUserRepository implements IUserRepository {
   setBiography = N('setBiography') as IUserRepository['setBiography'];
   setProfileAddressLines = N('setProfileAddressLines') as IUserRepository['setProfileAddressLines'];
   dismissClosureExplainer = N('dismissClosureExplainer') as IUserRepository['dismissClosureExplainer'];
+  dismissFirstPostNudge = N('dismissFirstPostNudge') as IUserRepository['dismissFirstPostNudge'];
   getEditableProfile = N('getEditableProfile') as IUserRepository['getEditableProfile'];
   searchUsers = N('searchUsers') as IUserRepository['searchUsers'];
   create = N('create') as IUserRepository['create'];

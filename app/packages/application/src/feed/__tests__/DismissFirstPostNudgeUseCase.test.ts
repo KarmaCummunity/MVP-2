@@ -1,59 +1,23 @@
 import { describe, it, expect } from 'vitest';
-import type { User } from '@kc/domain';
 import { DismissFirstPostNudgeUseCase } from '../DismissFirstPostNudgeUseCase';
 import type { IUserRepository } from '../../ports/IUserRepository';
 
 class CapturingUserRepo implements Partial<IUserRepository> {
-  lastUpdateArgs: { userId: string; patch: Partial<User> } | null = null;
+  dismissFirstPostNudgeUserId: string | null = null;
 
-  update = async (userId: string, patch: Partial<User>): Promise<User> => {
-    this.lastUpdateArgs = { userId, patch };
-    return makeUser({ userId, ...patch });
-  };
-}
-
-function makeUser(overrides: Partial<User> = {}): User {
-  return {
-    userId: 'u_1',
-    authProvider: 'email',
-    shareHandle: 'handle',
-    displayName: 'Test',
-    city: 'tel-aviv',
-    cityName: 'תל אביב',
-    profileStreet: null,
-    profileStreetNumber: null,
-    biography: null,
-    avatarUrl: null,
-    privacyMode: 'Public',
-    privacyChangedAt: null,
-    accountStatus: 'active',
-    onboardingState: 'completed',
-    notificationPreferences: { critical: true, social: true },
-    isSuperAdmin: false,
-    closureExplainerDismissed: false,
-    firstPostNudgeDismissed: false,
-    itemsGivenCount: 0,
-    itemsReceivedCount: 0,
-    activePostsCountInternal: 0,
-    followersCount: 0,
-    followingCount: 0,
-    createdAt: '2026-01-01T00:00:00Z',
-    updatedAt: '2026-01-01T00:00:00Z',
-    ...overrides,
+  dismissFirstPostNudge = async (userId: string): Promise<void> => {
+    this.dismissFirstPostNudgeUserId = userId;
   };
 }
 
 describe('DismissFirstPostNudgeUseCase', () => {
-  it('writes the dismissed flag through IUserRepository.update', async () => {
+  it('persists dismissal through IUserRepository.dismissFirstPostNudge', async () => {
     const repo = new CapturingUserRepo();
     const uc = new DismissFirstPostNudgeUseCase(repo as unknown as IUserRepository);
 
     await uc.execute('u_abc');
 
-    expect(repo.lastUpdateArgs).toEqual({
-      userId: 'u_abc',
-      patch: { firstPostNudgeDismissed: true },
-    });
+    expect(repo.dismissFirstPostNudgeUserId).toBe('u_abc');
   });
 
   it('rejects an empty userId rather than writing to the wrong row', async () => {
@@ -61,6 +25,6 @@ describe('DismissFirstPostNudgeUseCase', () => {
     const uc = new DismissFirstPostNudgeUseCase(repo as unknown as IUserRepository);
 
     await expect(uc.execute('')).rejects.toThrow(/userId is required/);
-    expect(repo.lastUpdateArgs).toBeNull();
+    expect(repo.dismissFirstPostNudgeUserId).toBeNull();
   });
 });

@@ -1,8 +1,6 @@
-// ─────────────────────────────────────────────
-// In-memory IUserRepository for use-case tests. Only the methods exercised by
-// the onboarding use cases are implemented; the rest throw to flag accidental
-// reach-through during tests.
-// ─────────────────────────────────────────────
+// onboardingFakeUserRepository.ts — in-memory IUserRepository for auth/onboarding
+// use-case tests. Only methods those tests exercise are implemented; the rest
+// throw to flag accidental reach-through.
 
 import type { IUserRepository, OnboardingBootstrap } from '../../ports/IUserRepository';
 import type { OnboardingState } from '@kc/domain';
@@ -18,6 +16,7 @@ interface Row {
   avatarUrl?: string | null;
   biography?: string | null;
   closureExplainerDismissed?: boolean;
+  firstPostNudgeDismissed?: boolean;
 }
 
 export interface FakeUserRepo extends IUserRepository {
@@ -29,7 +28,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
   const notImpl =
     (name: string) =>
     async (..._args: unknown[]): Promise<never> => {
-      throw new Error(`fakeUserRepo: ${name} not implemented`);
+      throw new Error(`onboardingFakeUserRepo: ${name} not implemented`);
     };
   return {
     rows,
@@ -58,7 +57,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     createAuthIdentity: notImpl('createAuthIdentity') as IUserRepository['createAuthIdentity'],
     async getOnboardingBootstrap(userId): Promise<OnboardingBootstrap> {
       const row = rows.get(userId);
-      if (!row) throw new Error(`fakeUserRepo: no row for userId=${userId}`);
+      if (!row) throw new Error(`onboardingFakeUserRepo: no row for userId=${userId}`);
       return {
         state: row.onboardingState,
         basicInfoSkipped: row.basicInfoSkipped === true,
@@ -120,7 +119,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
     },
     async getEditableProfile(userId) {
       const row = rows.get(userId);
-      if (!row) throw new Error(`fakeUserRepo: no row for userId=${userId}`);
+      if (!row) throw new Error(`onboardingFakeUserRepo: no row for userId=${userId}`);
       return {
         displayName: row.displayName,
         city: row.city,
@@ -148,6 +147,15 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         onboardingState: 'pending_basic_info' as OnboardingState,
       };
       rows.set(userId, { ...row, closureExplainerDismissed: true });
+    },
+    async dismissFirstPostNudge(userId) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, firstPostNudgeDismissed: true });
     },
     searchUsers: notImpl('searchUsers') as IUserRepository['searchUsers'],
     setPrivacyMode: notImpl('setPrivacyMode') as IUserRepository['setPrivacyMode'],

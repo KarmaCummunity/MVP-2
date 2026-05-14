@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { CancelFollowRequestUseCase } from '../CancelFollowRequestUseCase';
-import { FakeUserRepository } from './FakeUserRepository';
+import { FollowFakeUserRepository } from './followFakeUserRepository';
 
 describe('CancelFollowRequestUseCase', () => {
   it('forwards (requesterId, targetId) to repo', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new CancelFollowRequestUseCase(repo);
 
     await uc.execute({ viewerId: 'u_a', targetUserId: 'u_b' });
@@ -13,7 +13,7 @@ describe('CancelFollowRequestUseCase', () => {
   });
 
   it('rejects self-cancel defensively', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new CancelFollowRequestUseCase(repo);
 
     await expect(

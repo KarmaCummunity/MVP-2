@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { UnfollowUserUseCase } from '../UnfollowUserUseCase';
-import { FakeUserRepository } from './FakeUserRepository';
+import { FollowFakeUserRepository } from './followFakeUserRepository';
 
 describe('UnfollowUserUseCase', () => {
   it('forwards to repo and returns void', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new UnfollowUserUseCase(repo);
 
     await uc.execute({ viewerId: 'u_a', targetUserId: 'u_b' });
@@ -13,7 +13,7 @@ describe('UnfollowUserUseCase', () => {
   });
 
   it('rejects self-unfollow defensively', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new UnfollowUserUseCase(repo);
 
     await expect(

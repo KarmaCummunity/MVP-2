@@ -106,6 +106,15 @@ export class SupabaseUserRepository implements IUserRepository {
     if (error) throw new Error(`dismissClosureExplainer: ${error.message}`);
   }
 
+  /** FR-FEED-015 AC3 — flips users.first_post_nudge_dismissed = true. */
+  async dismissFirstPostNudge(userId: string): Promise<void> {
+    const { error } = await this.client
+      .from('users')
+      .update({ first_post_nudge_dismissed: true })
+      .eq('user_id', userId);
+    if (error) throw new Error(`dismissFirstPostNudge: ${error.message}`);
+  }
+
   setProfileAddressLines(
     userId: string,
     street: string | null,
