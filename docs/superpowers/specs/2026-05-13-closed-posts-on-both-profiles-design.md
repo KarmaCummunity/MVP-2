@@ -31,8 +31,8 @@ The UI shows the economic role per profile owner:
 
 | Profile owner's identity role | `post.type = Give` | `post.type = Request` |
 |---|---|---|
-| `publisher` | 🎁 נתתי | 🎀 קיבלתי |
-| `respondent` | 🎀 קיבלתי | 🎁 נתתי |
+| `publisher` | 📤 נתתי | 📥 קיבלתי |
+| `respondent` | 📥 קיבלתי | 📤 נתתי |
 
 Note: the legacy column name `recipients.user_id` is now semantically misleading (for a `Request` post the row stores the *giver*). The name stays for this change; a future rename is logged as tech debt.
 
@@ -57,7 +57,7 @@ The community-trail intent is broken: a viewer browsing Moshe's profile cannot s
 
 ## Goal
 
-A closed-delivered post appears in the "פוסטים סגורים" tab of **both** the publisher and the respondent. The economic role label (🎁 נתתי / 🎀 קיבלתי) is derived per profile owner from `(post.type, identity-role-on-profile)`. Visibility to third parties is governed by the post's original `visibility` field (Public / Followers-only / Only-me) — unchanged. No new visibility option, no automatic visibility upgrade on close.
+A closed-delivered post appears in the "פוסטים סגורים" tab of **both** the publisher and the respondent. The economic role label (📤 נתתי / 📥 קיבלתי) is derived per profile owner from `(post.type, identity-role-on-profile)`. Visibility to third parties is governed by the post's original `visibility` field (Public / Followers-only / Only-me) — unchanged. No new visibility option, no automatic visibility upgrade on close.
 
 ## Out of scope
 
@@ -81,10 +81,15 @@ Existing tables suffice:
 The "closed posts of user X" set is now defined as:
 
 ```
-closed_posts(X) :=
-  { p ∈ posts : p.owner_user_id = X ∧ p.status = 'closed_delivered' }
+closed_posts(X, viewer) :=
+  -- Publisher side: also includes deleted_no_recipient so the publisher
+  -- can still see and reopen posts they closed without a recipient within
+  -- the 7-day grace window (FR-CLOSURE-005 AC4, FR-CLOSURE-008). Those rows
+  -- are owner-only by is_post_visible_to, so third parties never see them.
+  { p ∈ posts : p.owner_user_id = X ∧ p.status ∈ {'closed_delivered','deleted_no_recipient'} }
   ∪
-  { p ∈ posts : p.id ∈ (SELECT post_id FROM recipients WHERE user_id = X)
+  -- Respondent side: only closed_delivered (deleted_no_recipient has no respondent).
+  { p ∈ posts : p.id ∈ (SELECT post_id FROM recipients WHERE recipient_user_id = X)
                 ∧ p.status = 'closed_delivered' }
 ```
 
@@ -155,7 +160,7 @@ This is an intentional product change. Recorded as a new decision (see DECISIONS
 ## Acceptance criteria (additions to existing FRs)
 
 **FR-PROFILE-001 AC4 (revised)**:
-> Closed Posts tab lists posts where the profile user is **either the publisher or the respondent**, status `closed_delivered`, ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 🎁 נתתי when the profile owner is the giver, 🎀 קיבלתי when the profile owner is the receiver.
+> Closed Posts tab lists posts where the profile user is **either the publisher or the respondent**, status `closed_delivered`, ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 📤 נתתי when the profile owner is the giver, 📥 קיבלתי when the profile owner is the receiver.
 
 **FR-PROFILE-002 AC2 (revised)**:
 > Closed Posts tab on another user's profile follows the same UNION rule, filtered by each post's `visibility`. Third-party viewers see the same cards but with a read-only post detail.
@@ -175,7 +180,7 @@ This is an intentional product change. Recorded as a new decision (see DECISIONS
 
 ## Decisions log entry
 
-> **D-19 (2026-05-13)** — Closed-delivered posts surface on both the publisher's and the respondent's profile, subject to the post's original `visibility`. The economic-role badge (🎁 נתתי / 🎀 קיבלתי) is derived from `(post.type, identity-role)`. Reverses the respondent-privacy carve-out previously stated in D-7 / FR-POST-017 AC1. Rationale: a public karma trail is more important than the implicit privacy of being a respondent on a public post; users who want privacy can publish posts as Followers-only or Only-me, and the closed visibility inherits accordingly.
+> **D-19 (2026-05-13)** — Closed-delivered posts surface on both the publisher's and the respondent's profile, subject to the post's original `visibility`. The economic-role badge (📤 נתתי / 📥 קיבלתי) is derived from `(post.type, identity-role)`. Reverses the respondent-privacy carve-out previously stated in D-7 / FR-POST-017 AC1. Rationale: a public karma trail is more important than the implicit privacy of being a respondent on a public post; users who want privacy can publish posts as Followers-only or Only-me, and the closed visibility inherits accordingly.
 
 ## Tech debt notes
 
