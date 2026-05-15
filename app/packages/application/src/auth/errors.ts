@@ -6,6 +6,7 @@
 export type AuthErrorCode =
   | 'invalid_credentials'
   | 'email_already_in_use'
+  | 'authentication_failed'
   | 'weak_password'
   | 'invalid_email'
   | 'email_not_verified'

@@ -2,6 +2,10 @@ import type { AuthErrorCode } from '@kc/application';
 
 export function mapAuthErrorToHebrew(code: AuthErrorCode): string {
   switch (code) {
+    case 'authentication_failed':
+      // TD-69: generic credentialed-sign-in failure. Do NOT distinguish between
+      // wrong password and unregistered email — that's an enumeration oracle.
+      return 'לא הצלחנו להתחבר עם הפרטים האלו. בדקו את הדוא"ל והסיסמה ונסו שוב.';
     case 'invalid_credentials':
       return 'דוא"ל או סיסמה שגויים.';
     case 'email_already_in_use':

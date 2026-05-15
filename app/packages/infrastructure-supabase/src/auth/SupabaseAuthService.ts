@@ -24,13 +24,28 @@ export class SupabaseAuthService implements IAuthService {
       password,
       options: { emailRedirectTo: options?.emailRedirectTo },
     });
-    if (error) throw mapAuthError(error);
+    if (error) {
+      const mapped = mapAuthError(error);
+      // TD-69: never reveal that the email is already registered. Treat it as
+      // a pending-verification success — the caller already routes a null
+      // session to the "check your email" panel (FR-AUTH-006 AC2).
+      if (mapped.code === 'email_already_in_use') return null;
+      throw mapped;
+    }
     return data.session ? toSession(data.session) : null;
   }
 
   async signInWithEmail(email: string, password: string): Promise<AuthSession> {
     const { data, error } = await this.client.auth.signInWithPassword({ email, password });
-    if (error) throw mapAuthError(error);
+    if (error) {
+      const mapped = mapAuthError(error);
+      // TD-69: collapse credentialed-sign-in failures to a generic code so a
+      // scripted attacker can't tell whether the email is registered.
+      if (mapped.code === 'invalid_credentials' || mapped.code === 'email_already_in_use') {
+        throw new AuthError('authentication_failed', error.message, error);
+      }
+      throw mapped;
+    }
     if (!data.session) {
       throw new AuthError('unknown', 'sign_in_no_session');
     }
