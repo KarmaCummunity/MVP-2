@@ -51,6 +51,12 @@
 | P3.2 | Apple SSO (iOS only) | ⏳ Deferred | `spec/01_auth_and_onboarding.md` FR-AUTH-004 |
 | P3.3 | Quiet hours / DND | ⏳ Deferred | `spec/09_notifications.md` FR-NOTIF-016 |
 
+## INFRA — Tooling & Environment
+
+| ID | Task | Owner | Status | Spec |
+|----|------|-------|--------|------|
+| INFRA-DEV-BRANCH-RESTORE | Restore `dev` branch + auto-sync from `main`; in-app DEV environment banner; document env topology | infra | 🟡 In progress | `docs/SSOT/ENVIRONMENTS.md` (to be created) |
+
 ---
 
 ## Sprint Protocol
