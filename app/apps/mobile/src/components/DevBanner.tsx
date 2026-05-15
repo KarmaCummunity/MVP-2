@@ -1,13 +1,13 @@
 // Visible warning shown at the top of every screen.
 //
-// Two independent trigger paths:
-//   1. EXPO_PUBLIC_ENVIRONMENT === 'development' — fires in ANY bundle
-//      (including the Railway production web build) when the app is wired
-//      to the dev Supabase project. This is what end-users / beta testers
-//      will see on the dev deployment.
-//   2. __DEV__ ghost session / auto-sign-in shortcuts — only fires inside
-//      a local dev bundle when the developer toggled the shortcut on.
-// Both are styled the same so the warning is always recognizable.
+// Trigger paths:
+//   1. EXPO_PUBLIC_ENVIRONMENT === 'development' — any client bundle (e.g.
+//      Railway dev web) built with that env baked in.
+//   2. Metro dev bundle (__DEV__) — local `expo start` without duplicating
+//      the env var still shows the generic DEV strip.
+//   3. __DEV__ ghost session / auto-sign-in — extra copy when those
+//      shortcuts are enabled.
+// All strips use the same styling so the warning is recognizable.
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { isDevGhostSessionEnabled } from '../services/devGhostSession';
@@ -16,10 +16,11 @@ import { isDevEnvironment } from '../config/environment';
 
 export function DevBanner() {
   const envDev = isDevEnvironment();
-  const ghost = __DEV__ && isDevGhostSessionEnabled();
-  const auto = __DEV__ && isDevAutoSignInEnabled();
+  const metroDev = typeof __DEV__ !== 'undefined' && __DEV__;
+  const ghost = metroDev && isDevGhostSessionEnabled();
+  const auto = metroDev && isDevAutoSignInEnabled();
 
-  if (!envDev && !ghost && !auto) return null;
+  if (!envDev && !metroDev) return null;
 
   // Priority: explicit dev shortcuts > env signal (devs already know they're
   // local; the shortcut warning is more actionable).

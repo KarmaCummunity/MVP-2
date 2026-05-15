@@ -11,7 +11,7 @@
 | Supabase project | `slxijdfvinbjmrsfgbzx` — https://slxijdfvinbjmrsfgbzx.supabase.co | `roeefqpdbftlndzsvhfj` — https://roeefqpdbftlndzsvhfj.supabase.co |
 | Railway service env | `prod` | `dev` (`mvp-2-dev.up.railway.app`) |
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | `development` |
-| In-app dev banner | hidden | visible at top of every screen |
+| In-app dev banner | hidden | visible at top of every screen when the client bundle is dev (see below) |
 
 ## Branching rules
 
@@ -31,7 +31,9 @@ All variables prefixed `EXPO_PUBLIC_*` are exposed to the client bundle by Expo'
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://slxijdfvinbjmrsfgbzx.supabase.co` | `https://roeefqpdbftlndzsvhfj.supabase.co` | `packages/infrastructure-supabase/src/client.ts` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | (publishable key for prod project) | (publishable key for dev project) | `packages/infrastructure-supabase/src/client.ts` |
 
-> **Pitfall:** Expo only exposes vars that start with `EXPO_PUBLIC_`. A var named `PUBLIC_ENVIRONMENT` (no `EXPO_` prefix) is invisible to the client bundle. If the dev banner doesn't appear, check the Railway env var name first.
+> **Pitfall:** Expo only exposes vars that start with `EXPO_PUBLIC_`. A var named `PUBLIC_ENVIRONMENT` (no `EXPO_` prefix) is invisible to the client bundle. If the dev banner doesn't appear on **Railway / exported web**, check the env var name and redeploy first.
+>
+> **Local Metro:** `pnpm ios` / `expo start` runs a `__DEV__` bundle, which shows the dev strip even without `EXPO_PUBLIC_ENVIRONMENT`. That variable is still required for **non-`__DEV__`** builds (e.g. `expo export` on CI) so testers see the strip without a debug client.
 
 ## Runbook: `dev` branch was deleted
 
@@ -48,6 +50,7 @@ Then in Railway → service Settings → reconnect the dev environment to the `d
 
 Checklist in order:
 
+0. If you are on **local Metro** (`expo start`) and still see no strip, you are likely running a **release** build (`__DEV__` off). Use a debug build or set `EXPO_PUBLIC_ENVIRONMENT=development` and rebuild.
 1. Railway dev service → Variables → confirm `EXPO_PUBLIC_ENVIRONMENT=development` exists with the **exact** name (not `PUBLIC_ENVIRONMENT`, not `EXPO_ENVIRONMENT`).
 2. Trigger a redeploy — env-var changes don't apply to running builds.
 3. Open the dev URL in an incognito window (cached service worker can serve stale bundles).
