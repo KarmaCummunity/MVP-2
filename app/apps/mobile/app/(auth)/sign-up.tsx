@@ -2,7 +2,7 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image,
+  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,6 +12,7 @@ import { getSignUpUseCase, AUTH_VERIFY_URL } from '../../src/services/authCompos
 import { useAuthStore } from '../../src/store/authStore';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { VerificationPendingPanel } from '../../src/components/auth/VerificationPendingPanel';
+import { NotifyModal } from '../../src/components/NotifyModal';
 
 export default function SignUpScreen() {
   const router = useRouter();
@@ -20,10 +21,12 @@ export default function SignUpScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const handleSignUp = async () => {
     if (!email || !password) {
-      Alert.alert('שגיאה', 'יש למלא כל השדות');
+      setNotify({ title: 'שגיאה', message: 'יש למלא כל השדות' });
       return;
     }
     setLoading(true);
@@ -45,7 +48,7 @@ export default function SignUpScreen() {
       const message = isAuthError(err)
         ? mapAuthErrorToHebrew(err.code)
         : 'שגיאת רשת. נסה שוב.';
-      Alert.alert('הרשמה נכשלה', message);
+      setNotify({ title: 'הרשמה נכשלה', message });
     } finally {
       setLoading(false);
     }
@@ -133,6 +136,7 @@ export default function SignUpScreen() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }
