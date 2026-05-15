@@ -56,7 +56,7 @@
 
 | ID | Task | Owner | Status | Spec |
 |----|------|-------|--------|------|
-| INFRA-DEV-BRANCH-RESTORE | Restore `dev` branch + auto-sync from `main`; in-app DEV environment banner; document env topology | infra | 🟡 In progress | `docs/SSOT/ENVIRONMENTS.md` (to be created) |
+| INFRA-DEV-BRANCH-RESTORE | Restore `dev` branch + auto-sync from `main`; in-app DEV environment banner; document env topology | infra | ✅ Done | `docs/SSOT/ENVIRONMENTS.md` |
 
 ---
 
