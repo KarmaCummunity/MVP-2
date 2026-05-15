@@ -96,12 +96,13 @@ function mapRecipientUser(row: PostJoinedRow): PostWithOwner['recipientUser'] {
 }
 
 export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner {
-  // Owner can be null when:
-  // 1. The user_id was deleted from public.users (FK posts_owner_id_fkey is ON DELETE
-  //    cascading, but if a row was orphaned through some other path the join returns null).
-  // 2. RLS hides the owner row from the viewer (rare with current users RLS, but possible).
-  // Per FR-CHAT-013 / R-MVP-Privacy-6 placeholder convention, surface a "משתמש שנמחק"
-  // placeholder rather than throwing — one orphan post must not crash the feed.
+  // Owner can be null when the user_id is orphaned in public.users (the FK
+  // posts_owner_id_fkey is ON DELETE cascading, but defensive coding still
+  // handles a stale join). Per D-21, users RLS no longer hides Private
+  // profiles from non-followers, so privacy mode is no longer a reason for
+  // a null owner. Surface "משתמש שנמחק" placeholder rather than throwing —
+  // one orphan post must not crash the feed (FR-CHAT-013 placeholder
+  // convention).
   const recipientUser = mapRecipientUser(row);
   if (!row.owner) {
     return {
