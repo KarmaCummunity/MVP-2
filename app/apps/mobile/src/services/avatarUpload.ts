@@ -4,7 +4,8 @@
 // → upload to `avatars` bucket at <userId>/avatar.jpg → return public URL.
 // ─────────────────────────────────────────────
 
-import { Alert, Linking, Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
+import { confirmAction } from './platformConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -32,14 +33,12 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (result.granted) return true;
   if (result.canAskAgain) return false;
-  Alert.alert(
+  const openSettings = await confirmAction(
     'גישה לגלריה נדחתה',
     'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
-    [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
-    ],
+    { confirmLabel: 'פתח הגדרות' },
   );
+  if (openSettings) void Linking.openSettings();
   return false;
 }
 
@@ -47,14 +46,12 @@ async function ensureCameraPermission(): Promise<boolean> {
   const result = await ImagePicker.requestCameraPermissionsAsync();
   if (result.granted) return true;
   if (result.canAskAgain) return false;
-  Alert.alert(
+  const openSettings = await confirmAction(
     'גישה למצלמה נדחתה',
     'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קהילת קארמה → מצלמה.',
-    [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
-    ],
+    { confirmLabel: 'פתח הגדרות' },
   );
+  if (openSettings) void Linking.openSettings();
   return false;
 }
 
