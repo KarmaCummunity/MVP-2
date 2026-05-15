@@ -12,6 +12,7 @@ import { EditProfileAddressBlock } from '../src/components/EditProfileAddressBlo
 import { EditProfileAvatar } from '../src/components/EditProfileAvatar';
 import { useAuthStore } from '../src/store/authStore';
 import { getEditableProfile, getUpdateProfileUseCase } from '../src/services/userComposition';
+import { removeUploadedAvatar } from '../src/services/avatarUpload';
 import { mapEditProfileSaveError } from '../src/lib/editProfileSaveErrors';
 
 interface InitialState {
@@ -111,6 +112,8 @@ export default function EditProfileScreen() {
       }
       const includeBasicInfo = nameChanged || cityChanged;
       const profileAddress = addrChanged ? { street: nextStreet, streetNumber: nextNum } : undefined;
+      // TD-108: drop the Storage object before persisting null on remove.
+      if (avatarChanged && avatarUrl === null && initial.avatarUrl) await removeUploadedAvatar(session.userId);
       await getUpdateProfileUseCase().execute({
         userId: session.userId,
         ...(includeBasicInfo

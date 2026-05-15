@@ -126,3 +126,15 @@ export async function resizeAndUploadAvatar(picked: PickedImage, userId: string)
   const { data } = client.storage.from(AVATAR_BUCKET).getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;
 }
+
+/**
+ * TD-108: delete the Storage object before persisting `avatar_url = null`.
+ * Best-effort — Storage failures are logged and swallowed so the user-visible
+ * "avatar gone" action still succeeds; the metadata wipe is the source of truth.
+ */
+export async function removeUploadedAvatar(userId: string): Promise<void> {
+  if (!userId) return;
+  const client = getSupabaseClient();
+  const { error } = await client.storage.from(AVATAR_BUCKET).remove([`${userId}/avatar.jpg`]);
+  if (error) console.warn(`avatar_remove: ${error.message}`);
+}
