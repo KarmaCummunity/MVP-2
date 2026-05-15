@@ -9,6 +9,7 @@ import {
 } from '../services/userComposition';
 import {
   pickAvatarImage,
+  removeUploadedAvatar,
   resizeAndUploadAvatar,
   type AvatarSource,
 } from '../services/avatarUpload';
@@ -47,6 +48,7 @@ export function useOnboardingPhotoFlow() {
     if (!session) return;
     setUploading(true);
     try {
+      await removeUploadedAvatar(session.userId); // TD-108: delete Storage object first.
       await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: null });
       setSession({ ...session, avatarUrl: null });
     } catch (err) {
