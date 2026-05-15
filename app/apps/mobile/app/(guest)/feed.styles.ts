@@ -1,0 +1,70 @@
+import { StyleSheet } from 'react-native';
+import { colors, radius, spacing, typography } from '@kc/ui';
+
+export const guestFeedStyles = StyleSheet.create({
+  container: { flex: 1, backgroundColor: colors.background },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  backBtn: { padding: spacing.sm },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
+  headerSpacer: { width: 40 },
+  list: { paddingTop: spacing.md, paddingBottom: 160 },
+  centerWrap: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.xl,
+    paddingTop: spacing.xl,
+    gap: spacing.base,
+  },
+  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  retryBtn: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+  },
+  retryText: { ...typography.button, color: colors.textInverse },
+  empty: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginTop: spacing.xl,
+  },
+  bottomBar: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
+    paddingBottom: spacing.lg,
+  },
+  bottomHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: spacing.sm,
+  },
+  bottomCta: {
+    backgroundColor: colors.primary,
+    borderRadius: radius.md,
+    paddingVertical: spacing.md,
+    alignItems: 'center',
+  },
+  bottomCtaText: {
+    ...typography.button,
+    color: colors.textInverse,
+  },
+});

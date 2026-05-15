@@ -4,9 +4,8 @@
 
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
 import { colors, typography } from '@kc/ui';
-import { getActivePostsCountUseCase } from '../services/postsComposition';
+import { useActivePostsCount } from '../hooks/useActivePostsCount';
 
 interface FeedCommunityCounterProps {
   template: (count: number) => string;
@@ -14,14 +13,9 @@ interface FeedCommunityCounterProps {
 }
 
 export function FeedCommunityCounter({ template, style }: FeedCommunityCounterProps) {
-  const { data } = useQuery({
-    queryKey: ['communityActivePostsCount'],
-    queryFn: () => getActivePostsCountUseCase().execute(),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-  });
-  if (typeof data !== 'number') return null;
-  return <Text style={[styles.text, style]}>{template(data)}</Text>;
+  const count = useActivePostsCount();
+  if (count === undefined) return null;
+  return <Text style={[styles.text, style]}>{template(count)}</Text>;
 }
 
 const styles = StyleSheet.create({
