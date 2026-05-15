@@ -42,6 +42,7 @@
 | P2.4 | Owner delete closed-without-recipient posts (RLS + FR-POST-010) | agent-be + agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-010, `DECISIONS.md` D-18 |
 | P2.5 | Closed posts on both profiles (D-19) | agent-be + agent-fe | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-001 AC4, FR-PROFILE-002 AC2; `spec/04_posts.md` FR-POST-017 AC1+AC5 |
 | P2.6 | About landing (full vision narrative, section menu, Instagram embed, `/about-site`, query chrome for web shells) | agent-fe | ✅ Done | `spec/11_settings.md` (About under Settings) |
+| P2.7 | Privacy-mode reframe to follow-approval flag only (migration `0069`, FR-PROFILE-003/004/010 rewrite, `LockedPanel` deletion) | agent-be + agent-fe | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-003, 004, 010; `DECISIONS.md` D-21 |
 
 ## P3 — Post-MVP (Deferred)
 
