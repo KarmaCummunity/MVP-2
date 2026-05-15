@@ -1,0 +1,51 @@
+# Keeps the `dev` branch always >= `main` by merging main into dev on every
+# push to main. Fast-forwards when possible; creates a merge commit otherwise.
+#
+# Why this matters: dev is our working branch — every PR targets dev — so any
+# hotfix that lands directly on main (rare but allowed for docs/CI typos) MUST
+# also reach dev, otherwise dev silently drifts behind production.
+#
+# If the merge has conflicts the workflow fails loudly and an operator must
+# resolve manually. That's the right failure mode — silent conflict resolution
+# would lose work.
+
+name: Sync main → dev
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: sync-main-to-dev
+  cancel-in-progress: false
+
+jobs:
+  sync:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout dev
+        uses: actions/checkout@v4
+        with:
+          ref: dev
+          fetch-depth: 0
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Configure git identity
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Merge main into dev
+        run: |
+          git fetch origin main
+          # --no-edit keeps the default merge commit message if a merge commit
+          # is needed; fast-forwards otherwise (no merge commit, clean history).
+          git merge --no-edit origin/main
+
+      - name: Push
+        run: git push origin dev
