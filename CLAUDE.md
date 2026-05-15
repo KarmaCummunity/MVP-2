@@ -130,6 +130,7 @@ When you spot tech debt outside the immediate scope:
 ## 6. Git & PR workflow
 
 > Repo: `KarmaCummunity/MVP-2` · Default branch: `main` · Merge strategy: **squash** · Auto-merge: **on, after CI passes**.
+> **Working branch: `dev`.** All PRs target `dev`. `main` is updated by squash-merging `dev` → `main`. Full topology in [`docs/SSOT/ENVIRONMENTS.md`](docs/SSOT/ENVIRONMENTS.md).
 
 ### Pre-flight (once per session)
 
@@ -288,6 +289,7 @@ If you don't see a home for something below, **ask the PM** before inventing a n
 | Tech debt register        | `docs/SSOT/TECH_DEBT.md`               |
 | Architectural decisions   | `docs/SSOT/DECISIONS.md`               |
 | Migration verification    | `docs/SSOT/OPERATOR_RUNBOOK.md`        |
+| Environment topology      | `docs/SSOT/ENVIRONMENTS.md`            |
 | **Process rules**         | **`CLAUDE.md`** (this file)            |
 | `docs/AGENTS.md`          | Thin pointer to `CLAUDE.md` (browse from `docs/`) |
 | Implementation plans      | `docs/superpowers/plans/`              |
