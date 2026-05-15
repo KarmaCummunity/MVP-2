@@ -14,7 +14,6 @@ import {
 } from '@kc/infrastructure-supabase';
 import {
   CreatePostUseCase,
-  DeletePostUseCase,
   DismissFirstPostNudgeUseCase,
   GetActivePostsCountUseCase,
   GetClosureCandidatesUseCase,
@@ -38,7 +37,6 @@ let _realtime: IFeedRealtime | null = null;
 let _stats: IStatsRepository | null = null;
 let _create: CreatePostUseCase | null = null;
 let _update: UpdatePostUseCase | null = null;
-let _del: DeletePostUseCase | null = null;
 let _getFeed: GetFeedUseCase | null = null;
 let _getById: GetPostByIdUseCase | null = null;
 let _myPosts: GetMyPostsUseCase | null = null;
@@ -73,11 +71,6 @@ export function getCreatePostUseCase(): CreatePostUseCase {
 export function getUpdatePostUseCase(): UpdatePostUseCase {
   if (!_update) _update = new UpdatePostUseCase(getRepo());
   return _update;
-}
-
-export function getDeletePostUseCase(): DeletePostUseCase {
-  if (!_del) _del = new DeletePostUseCase(getRepo());
-  return _del;
 }
 
 export function getFeedUseCase(): GetFeedUseCase {
