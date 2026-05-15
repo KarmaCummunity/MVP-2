@@ -40,6 +40,7 @@
 | P2.3 | Guest preview polish | agent-fe | ⏳ Planned | `spec/01_auth_and_onboarding.md` FR-AUTH-014 |
 | P2.4 | Owner delete closed-without-recipient posts (RLS + FR-POST-010) | agent-be + agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-010, `DECISIONS.md` D-18 |
 | P2.5 | Closed posts on both profiles (D-19) | agent-be + agent-fe | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-001 AC4, FR-PROFILE-002 AC2; `spec/04_posts.md` FR-POST-017 AC1+AC5 |
+| P2.6 | BE security hardening — closes 7 CRITICAL/HIGH from audit 2026-05-10 (anon grants, RPC enumeration, support-thread race, inject_system_message forgery, server-managed column writes) | agent-be | ✅ Done | `docs/SSOT/archive/AUDIT_2026-05-10_full_codebase_review.md` §1.1, §1.2, §15.1, §15.2, §15.3, §15.5, §15.11; migration `0068_security_hardening.sql` |
 
 ## P3 — Post-MVP (Deferred)
 
