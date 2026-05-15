@@ -3,9 +3,10 @@
 // focused on form orchestration. The parent receives the new URL (or null)
 // via `onChange` and is responsible for persisting on Save.
 import React, { useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { colors, spacing, typography } from '@kc/ui';
 import { AvatarInitials } from './AvatarInitials';
+import { NotifyModal } from './NotifyModal';
 import { PhotoSourceSheet } from './PhotoSourceSheet';
 import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../services/avatarUpload';
 
@@ -20,6 +21,7 @@ interface Props {
 export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, onChange }: Props) {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
+  const [errorMsg, setErrorMsg] = useState<string | null>(null);
   const busy = !!disabled || uploading;
 
   const handlePick = async (source: AvatarSource) => {
@@ -31,7 +33,8 @@ export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, on
       const url = await resizeAndUploadAvatar(picked, userId);
       onChange(url);
     } catch (err) {
-      Alert.alert('העלאת התמונה נכשלה', err instanceof Error ? err.message : 'נסה שוב.');
+      // TD-138: `Alert.alert` is a no-op on react-native-web@0.21.2 — use NotifyModal.
+      setErrorMsg(err instanceof Error ? err.message : 'נסה שוב.');
     } finally {
       setUploading(false);
     }
@@ -62,6 +65,12 @@ export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, on
         onPick={handlePick}
         onRemove={handleRemove}
         onClose={() => setSheetVisible(false)}
+      />
+      <NotifyModal
+        visible={!!errorMsg}
+        title="העלאת התמונה נכשלה"
+        message={errorMsg ?? ''}
+        onDismiss={() => setErrorMsg(null)}
       />
     </View>
   );
