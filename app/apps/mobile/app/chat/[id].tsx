@@ -2,7 +2,7 @@
 import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Alert,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
@@ -23,6 +23,7 @@ import { useChatInit } from '../../src/components/useChatInit';
 import { chatConversationStyles as styles } from './chatScreenStyles';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
+import { NotifyModal } from '../../src/components/NotifyModal';
 
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
 
@@ -39,6 +40,8 @@ export default function ChatScreen() {
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [hideConfirmOpen, setHideConfirmOpen] = useState(false);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
   const [hideBusy, setHideBusy] = useState(false);
   const { modalState, presentPrePrompt, handleAccept, handleDecline } = usePushPermissionGate();
   const checkedFirstSendRef = useRef(false);
@@ -106,7 +109,7 @@ export default function ChatScreen() {
     } catch (err) {
       useChatStore.getState().markFailed(chatId, clientId);
       if (err instanceof ChatError && err.code === 'send_to_deleted_user') {
-        Alert.alert('משתמש לא זמין', 'המשתמש כבר לא קיים במערכת.');
+        setNotify({ title: 'משתמש לא זמין', message: 'המשתמש כבר לא קיים במערכת.' });
       }
     }
   };
@@ -136,7 +139,7 @@ export default function ChatScreen() {
         err instanceof ChatError && err.code === 'support_thread_not_hideable'
           ? 'לא ניתן להסיר את שיחת התמיכה.'
           : 'לא הצלחנו להסיר את השיחה. נסה שוב.';
-      Alert.alert('שגיאה', msg);
+      setNotify({ title: 'שגיאה', message: msg });
     }
   };
 
@@ -215,6 +218,7 @@ export default function ChatScreen() {
         }}
         onDecline={handleDecline}
       />
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }
