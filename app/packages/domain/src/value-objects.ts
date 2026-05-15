@@ -179,3 +179,21 @@ export const DONATION_LINK_DISPLAY_NAME_MIN = 2;
 export const DONATION_LINK_DISPLAY_NAME_MAX = 80;
 export const DONATION_LINK_DESCRIPTION_MAX = 280;
 export const DONATION_LINK_URL_PATTERN = /^https?:\/\//i;
+
+// ── Biography (FR-PROFILE-007 AC3 / FR-PROFILE-014) ───────────────────
+// The same `BIOGRAPHY_URL_PATTERN` source-of-truth is mirrored in the
+// Postgres CHECK constraint `users_biography_no_url_check` (migration
+// 0073). Edit both together — the regex grammar is intentionally PCRE-
+// portable (no JS-only features) so the Postgres-side
+// `biography !~* '...'` enforces identical semantics.
+export const BIOGRAPHY_MAX_LENGTH = 200;
+export const BIOGRAPHY_URL_PATTERN = /(https?:\/\/|www\.|[\w.-]+\.[a-z]{2,})/i;
+
+/** FR-PROFILE-014 — true when the text contains an http(s) URL, a `www.`
+ *  prefix, or a bare token with a TLD-like suffix. Centralised so the
+ *  UseCase and any future bio-bearing surface (onboarding, etc.) share
+ *  one policy. The server-side CHECK constraint enforces the same
+ *  shape on direct inserts. */
+export function containsBiographyUrl(text: string): boolean {
+  return BIOGRAPHY_URL_PATTERN.test(text);
+}
