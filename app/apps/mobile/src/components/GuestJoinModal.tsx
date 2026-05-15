@@ -6,6 +6,7 @@ import {
   StyleSheet,
   Pressable,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, typography, shadow } from '@kc/ui';
 
 export interface GuestJoinModalProps {
@@ -24,6 +25,7 @@ export function GuestJoinModal({
   onJoin,
   onDismiss,
 }: Readonly<GuestJoinModalProps>) {
+  const { t } = useTranslation();
   return (
     <Modal
       visible={visible}
@@ -38,7 +40,7 @@ export function GuestJoinModal({
             <Text style={styles.joinBtnText}>{joinLabel}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.dismissBtn} onPress={onDismiss}>
-            <Text style={styles.dismissText}>סגור</Text>
+            <Text style={styles.dismissText}>{t('general.close')}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>

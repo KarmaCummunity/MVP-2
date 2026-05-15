@@ -28,6 +28,7 @@ const he = {
     continueWithEmail: 'המשך עם דוא"ל',
     orDivider: 'או',
     guestPreview: 'הצץ בפיד',
+    guestPreviewBackA11y: 'חזרה למסך הנחיתה',
     signIn: 'כניסה',
     signUp: 'הרשמה',
     email: 'דוא"ל',
