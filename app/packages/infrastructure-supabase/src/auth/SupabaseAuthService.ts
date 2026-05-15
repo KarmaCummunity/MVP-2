@@ -5,8 +5,9 @@
 // docs/SSOT/spec/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
-import type { SupabaseClient, AuthError as SbAuthError, Session as SbSession } from '@supabase/supabase-js';
+import type { SupabaseClient, Session as SbSession } from '@supabase/supabase-js';
 import { AuthError, type AuthSession, type IAuthService } from '@kc/application';
+import { mapAuthError } from './mapAuthError';
 
 export class SupabaseAuthService implements IAuthService {
   private activeExchangeCode: string | null = null;
@@ -152,27 +153,3 @@ function pickString(meta: Record<string, unknown>, keys: readonly string[]): str
   return null;
 }
 
-function mapAuthError(err: SbAuthError): AuthError {
-  const status = err.status;
-  const msg = (err.message || '').toLowerCase();
-
-  if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
-    return new AuthError('invalid_credentials', err.message, err);
-  }
-  if (msg.includes('already registered') || msg.includes('already in use') || status === 422) {
-    return new AuthError('email_already_in_use', err.message, err);
-  }
-  if (msg.includes('email not confirmed')) {
-    return new AuthError('email_not_verified', err.message, err);
-  }
-  if (msg.includes('rate limit') || status === 429) {
-    return new AuthError('rate_limited', err.message, err);
-  }
-  if (msg.includes('network')) {
-    return new AuthError('network', err.message, err);
-  }
-  if (status === 401 || status === 403) {
-    return new AuthError('session_expired', err.message, err);
-  }
-  return new AuthError('unknown', err.message, err);
-}
