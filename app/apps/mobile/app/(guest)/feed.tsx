@@ -21,6 +21,8 @@ export default function GuestPreviewFeedScreen() {
   const setGuest = useAuthStore((s) => s.setGuest);
   const [modalVisible, setModalVisible] = useState(false);
 
+  // limit=6 leaves a small buffer in case the feed includes non-public/closed posts
+  // that `selectGuestPreviewPosts` filters out; the selector caps display at 3 (FR-AUTH-014 AC1).
   const query = useQuery({
     queryKey: ['guest-feed'],
     queryFn: () => getFeedUseCase().execute({ viewerId: null, filter: {}, limit: 6 }),
@@ -49,7 +51,7 @@ export default function GuestPreviewFeedScreen() {
         <TouchableOpacity
           style={styles.backBtn}
           onPress={goWelcome}
-          accessibilityLabel="חזרה למסך הנחיתה"
+          accessibilityLabel={t('auth.guestPreviewBackA11y')}
         >
           <Ionicons
             name={Platform.OS === 'ios' ? 'chevron-forward' : 'arrow-forward'}
