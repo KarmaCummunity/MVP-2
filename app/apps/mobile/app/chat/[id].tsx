@@ -1,5 +1,5 @@
 // Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform,
@@ -7,7 +7,6 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { randomUUID } from 'expo-crypto';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
 import { colors } from '@kc/ui';
@@ -20,6 +19,7 @@ import { computeHandledIds } from '../../src/components/chat/system/handledIds';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
+import { useChatSend } from '../../src/hooks/useChatSend';
 import { chatConversationStyles as styles } from './chatScreenStyles';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
@@ -44,7 +44,7 @@ export default function ChatScreen() {
   const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
   const [hideBusy, setHideBusy] = useState(false);
   const { modalState, presentPrePrompt, handleAccept, handleDecline } = usePushPermissionGate();
-  const checkedFirstSendRef = useRef(false);
+  const send = useChatSend({ chatId, userId, input, setInput, presentPrePrompt, setNotify });
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -79,40 +79,6 @@ export default function ChatScreen() {
       ),
     });
   }, [navigation, router, counterpart, chat?.isSupportThread]);
-
-  const send = async (overrideClientId?: string, overrideBody?: string) => {
-    const body = (overrideBody ?? input).trim();
-    if (body.length === 0 || body.length > MESSAGE_MAX_CHARS) return;
-    // FR-NOTIF-015 AC1: capture first-send state before inserting the message.
-    let wasFirstSend = false;
-    if (!checkedFirstSendRef.current && userId) {
-      checkedFirstSendRef.current = true;
-      try {
-        const hasSent = await container.chatRepo.hasSentAnyMessage(userId);
-        if (!hasSent) wasFirstSend = true;
-      } catch { /* non-critical — skip gate on error */ }
-    }
-    const clientId = overrideClientId ?? randomUUID();
-    const optimistic: OptimisticMessage = {
-      messageId: clientId, clientId, chatId, senderId: userId, kind: 'user',
-      body, systemPayload: null, status: 'pending',
-      createdAt: new Date().toISOString(), deliveredAt: null, readAt: null,
-    };
-    if (!overrideClientId) {
-      useChatStore.getState().appendOptimistic(chatId, optimistic);
-      setInput('');
-    }
-    try {
-      const server = await container.sendMessage.execute({ chatId, senderId: userId, body });
-      useChatStore.getState().reconcileSent(chatId, clientId, server);
-      if (wasFirstSend) void presentPrePrompt('first-message-sent');
-    } catch (err) {
-      useChatStore.getState().markFailed(chatId, clientId);
-      if (err instanceof ChatError && err.code === 'send_to_deleted_user') {
-        setNotify({ title: 'משתמש לא זמין', message: 'המשתמש כבר לא קיים במערכת.' });
-      }
-    }
-  };
 
   const counter = input.length;
   const showCounter = counter >= 1900;
