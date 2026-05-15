@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { colors, typography, spacing, radius, shadow } from '@kc/ui';
 import { EditProfileAddressBlock } from './EditProfileAddressBlock';
+import { NotifyModal } from './NotifyModal';
 import { useAuthStore } from '../store/authStore';
 import { getCompleteBasicInfoUseCase } from '../services/userComposition';
 import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
@@ -37,6 +37,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
 
   const addressIssue = getProfileAddressPairIssue(street, streetNumber);
   const hasRequiredFields = displayName.trim().length > 0 && city !== null;
@@ -74,13 +75,14 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
       const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
       const mapped = mapEditProfileSaveError(raw);
       useFeedSessionStore.getState().showEphemeralToast(mapped, 'error', 2800);
-      Alert.alert('שמירה נכשלה', mapped);
+      setSaveErrorMsg(mapped); // TD-138: Alert.alert no-op on web → NotifyModal.
     } finally {
       setSaving(false);
     }
   };
 
   return (
+    <>
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <KeyboardAvoidingView
@@ -146,6 +148,8 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
         </KeyboardAvoidingView>
       </View>
     </Modal>
+    <NotifyModal visible={!!saveErrorMsg} title="שמירה נכשלה" message={saveErrorMsg ?? ''} onDismiss={() => setSaveErrorMsg(null)} />
+    </>
   );
 }
 
