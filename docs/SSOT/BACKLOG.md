@@ -30,6 +30,7 @@
 | P1.3.2 | Chat mark-read covers system messages (FR-CHAT-011 AC4) — migrations `0054` + `0055` (`delivered_at` back-fill + defensive RPC) deployed to prod + dev; pull-to-refresh on inbox + dev-tools "סימולציית רענון מלא" | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` |
 | P1.5 | Push notifications | agent-be + agent-fe | ✅ Done | `spec/09_notifications.md` |
 | P1.6 | MVP email verification gate (migration 0067 + verify route + verify-pending panel) | agent-be + agent-fe | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-006 / FR-AUTH-007; `DECISIONS.md` D-20 |
+| P1.6.1 | Verification status follow-up: phone OTP + Apple-hide-email path leaves `account_status='pending_verification'`; trigger only watched `email_confirmed_at` (migration 0068 — provider-aware INSERT + dual-column verified trigger + backfill) | agent-be | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-005 / FR-AUTH-006; `DECISIONS.md` D-20 |
 
 ## P2 — Stats, Admin & Polish
 

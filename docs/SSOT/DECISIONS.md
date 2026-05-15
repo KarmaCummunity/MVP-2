@@ -464,6 +464,8 @@ Web Push parity is deferred — only the adapter changes, the pipeline is shared
 
 **Affected docs.** FR-AUTH-006 AC2 (rewritten), FR-AUTH-007 AC6 (new), FR-AUTH-003 (no change), migrations `0067_mvp_email_verification_gate.sql` (supersedes `0046_auth_gate_allow_pending_verification.sql`).
 
+**Follow-up (2026-05-15).** The original premise — "Google / Apple / phone users are `active` on first INSERT because the provider returns `email_confirmed_at` immediately" — is correct for Google but wrong for phone-only OTP, where the verification flag lives on `auth.users.phone_confirmed_at` and `email_confirmed_at` is never set. With the 0067 trigger watching only `UPDATE OF email_confirmed_at`, phone users were written as `pending_verification` at INSERT and never promoted; `auth_check_account_gate` then signed them out on every sign-in. Migration `0068_verification_status_provider_aware_and_phone.sql` closes this by making `handle_new_user` provider-aware (Google/Apple set `active` from the `provider` field alone, eliminating the transient state for OAuth), extending the verified trigger to also watch `phone_confirmed_at`, and backfilling any rows already verified at the auth layer. D-20's enforcement contract (gate denies `pending_verification`; no in-app middle state) is unchanged.
+
 ---
 
 ## Change Log
@@ -481,3 +483,4 @@ Web Push parity is deferred — only the adapter changes, the pipeline is shared
 | 0.9 | 2026-05-13 | Added `D-19` (closed posts surface on both publisher and respondent profiles; reverses D-7 respondent-privacy carve-out). |
 | 1.0 | 2026-05-14 | Added `EXEC-10` (push notifications outbox + database-webhook + Edge Function pattern; P1.5 complete). |
 | 1.1 | 2026-05-14 | Added `D-20` (MVP email verification at the auth boundary; supersedes `0046`). |
+| 1.2 | 2026-05-15 | `D-20` follow-up: migration `0068` closes the phone-OTP / provider-aware gap left by `0067`. Trigger now watches both `email_confirmed_at` and `phone_confirmed_at`; OAuth providers (google/apple) skip the transient `pending_verification` state. |
