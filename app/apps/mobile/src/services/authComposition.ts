@@ -12,6 +12,7 @@ import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import {
   getSupabaseClient,
+  SupabaseAccountGateRepository,
   SupabaseAuthService,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
@@ -101,7 +102,13 @@ export function getSignOutUseCase(): SignOutUseCase {
 }
 
 export function getRestoreSessionUseCase(): RestoreSessionUseCase {
-  if (!_restore) _restore = new RestoreSessionUseCase(getAuthService());
+  if (!_restore) {
+    // TD-68: cold-start restore consults the same server-side gate the 60s
+    // in-session poll uses, so a suspended/banned user is signed out before
+    // any session-scoped query runs.
+    const gate = new SupabaseAccountGateRepository(getSupabaseClient({ storage: pickStorage() }));
+    _restore = new RestoreSessionUseCase(getAuthService(), gate);
+  }
   return _restore;
 }
 
