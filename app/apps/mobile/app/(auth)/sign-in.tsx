@@ -9,7 +9,6 @@ import {
   KeyboardAvoidingView,
   Platform,
   ActivityIndicator,
-  Alert,
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -20,6 +19,7 @@ import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { getSignInUseCase } from '../../src/services/authComposition';
 import { useAuthStore } from '../../src/store/authStore';
 import { VerificationPendingPanel } from '../../src/components/auth/VerificationPendingPanel';
+import { NotifyModal } from '../../src/components/NotifyModal';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -28,10 +28,12 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      Alert.alert('שגיאה', 'יש למלא דוא"ל וסיסמה');
+      setNotify({ title: 'שגיאה', message: 'יש למלא דוא"ל וסיסמה' });
       return;
     }
     setLoading(true);
@@ -47,7 +49,7 @@ export default function SignInScreen() {
       const message = isAuthError(err)
         ? mapAuthErrorToHebrew(err.code)
         : 'שגיאת רשת. נסה שוב.';
-      Alert.alert('כניסה נכשלה', message);
+      setNotify({ title: 'כניסה נכשלה', message });
     } finally {
       setLoading(false);
     }
@@ -136,6 +138,7 @@ export default function SignInScreen() {
           ) : null}
         </View>
       </KeyboardAvoidingView>
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }
