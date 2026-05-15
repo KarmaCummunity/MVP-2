@@ -33,13 +33,28 @@ export function GuestJoinModal({
       animationType="fade"
       onRequestClose={onDismiss}
     >
-      <Pressable style={styles.backdrop} onPress={onDismiss}>
+      <Pressable
+        style={styles.backdrop}
+        onPress={onDismiss}
+        accessibilityLabel={t('general.close')}
+      >
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.message}>{message}</Text>
-          <TouchableOpacity style={styles.joinBtn} onPress={onJoin} activeOpacity={0.9}>
+          <TouchableOpacity
+            style={styles.joinBtn}
+            onPress={onJoin}
+            activeOpacity={0.9}
+            accessibilityRole="button"
+            accessibilityLabel={joinLabel}
+          >
             <Text style={styles.joinBtnText}>{joinLabel}</Text>
           </TouchableOpacity>
-          <TouchableOpacity style={styles.dismissBtn} onPress={onDismiss}>
+          <TouchableOpacity
+            style={styles.dismissBtn}
+            onPress={onDismiss}
+            accessibilityRole="button"
+            accessibilityLabel={t('general.close')}
+          >
             <Text style={styles.dismissText}>{t('general.close')}</Text>
           </TouchableOpacity>
         </Pressable>
