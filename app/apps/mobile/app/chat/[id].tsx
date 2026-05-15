@@ -69,7 +69,7 @@ export default function ChatScreen() {
           <Text style={styles.headerTitle}>{title}</Text>
         </TouchableOpacity>
       ),
-      headerRight: () => chat?.isSupportThread ? null : (
+      headerRight: () => (
         <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel="פעולות">
           <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
