@@ -17,8 +17,12 @@ RUN pnpm install --frozen-lockfile
 
 # Build args become inlined into the bundle by `expo export -p web`.
 # Railway exposes service variables to the build via build args automatically.
+# Every EXPO_PUBLIC_* the client reads at bundle time must be listed here;
+# otherwise the builder stage never sees it and Metro inlines `undefined` / defaults.
+ARG EXPO_PUBLIC_ENVIRONMENT
 ARG EXPO_PUBLIC_SUPABASE_URL
 ARG EXPO_PUBLIC_SUPABASE_ANON_KEY
+ENV EXPO_PUBLIC_ENVIRONMENT=${EXPO_PUBLIC_ENVIRONMENT}
 ENV EXPO_PUBLIC_SUPABASE_URL=${EXPO_PUBLIC_SUPABASE_URL}
 ENV EXPO_PUBLIC_SUPABASE_ANON_KEY=${EXPO_PUBLIC_SUPABASE_ANON_KEY}
 
