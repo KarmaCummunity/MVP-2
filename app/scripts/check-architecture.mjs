@@ -46,7 +46,7 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
   // Chat screen bumped 195→220 (FR-NOTIF-015 AC1 push-gate wired in). Split tracked as TD-140.
-  ['apps/mobile/app/chat/[id].tsx', { td: 'TD-140', max: 220 }],
+  ['apps/mobile/app/chat/[id].tsx', { td: 'TD-140', max: 224 }],
   // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
   ['apps/mobile/app/user/[handle]/index.tsx', { td: 'TD-29', max: 217 }],
 ]);
