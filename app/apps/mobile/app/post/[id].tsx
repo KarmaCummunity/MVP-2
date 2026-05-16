@@ -151,7 +151,12 @@ export default function PostDetailScreen() {
         />
       ) : !isOwner ? (
         <View style={styles.cta}>
-          <TouchableOpacity style={styles.messageBtn} onPress={() => contactPoster(viewerId, post, router)}>
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={() => contactPoster(viewerId, post, router)}
+            accessibilityRole="button"
+            accessibilityLabel="שלח הודעה למפרסם"
+          >
             <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
           </TouchableOpacity>
         </View>

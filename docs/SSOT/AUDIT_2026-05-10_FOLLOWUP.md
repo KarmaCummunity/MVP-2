@@ -93,7 +93,6 @@
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
 | 9.1 No CSP for web build | ⏳ | Meta tag in Expo web template. |
-| 9.2 No a11y check on icon-only buttons | ⏳ | Same as §16.4 — mechanical sweep. |
 | 9.3 No rate-limit on `signIn` at application layer | ⏳ | Folded into §19.1. |
 
 ## 13. PRD business-rules compliance (Round 2)
@@ -122,7 +121,6 @@
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
 | 16.3 [HIGH] Type-toggle emoji in `(tabs)/create.tsx` | ⏳ | Folded into §4.6. |
-| 16.4 [HIGH] Icon-only TouchableOpacity missing `accessibilityLabel` | ⏳ | Mechanical sweep (~1h). |
 | 16.6 [MEDIUM] Soft-gate success alert emoji `✅` | ⏳ | Folded into §4.6. |
 | 16.8 [MEDIUM] Donations time composer no trim | ⏳ | Same shape as §16.7. |
 | 16.10 [MEDIUM] Edit Profile no unsaved-changes warn on Back | ⏳ | `dirty` flag + confirm Alert. |
