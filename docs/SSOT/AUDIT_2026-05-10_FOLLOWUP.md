@@ -83,7 +83,7 @@ The remaining audit findings (below) split into three classes:
 | Section | Status | Closed by / closing slice |
 | ------- | ------ | ------------------------- |
 | 4.1 [INFO] publishable key in `.env` | ⛔ | Re-classified — not a vulnerability (designed-to-ship key). |
-| 4.2 [HIGH] `client.ts` falls back to non-`EXPO_PUBLIC_` env names | ⏳ | **Queued (Task #3)** — drop fallback, throw `ConfigurationError`. |
+| 4.2 [HIGH] `client.ts` falls back to non-`EXPO_PUBLIC_` env names | ✅ | `client.ts` no longer reads `SUPABASE_URL` / `SUPABASE_ANON_KEY` fallback. Edge Functions verified to use `Deno.env` directly. |
 | 4.3 [HIGH] OAuth callback doesn't validate `state` explicitly | ⏳ | Open — explicit state in `signInWithOAuth.options.queryParams` + `expo-secure-store`. |
 | 4.4 [HIGH] `locationDisplayLevel` ignored on display | ✅ | `PostCard.tsx:34-37`, `PostCardGrid.tsx:33` — both branch on the level. |
 | 4.5 [HIGH] Bio raw text / no URL filter | ✅ | `0073_users_biography_no_url_check` — DB CHECK rejects URLs. |
@@ -126,7 +126,7 @@ The remaining audit findings (below) split into three classes:
 | ------- | ------ | ------------------------- |
 | 7.1 Turbo `test` task has no `inputs` | ⏳ | Open — add `"inputs": ["src/**", "**/*.test.ts(x)"]`. |
 | 7.2 No CI gate on `database.types.ts` drift | ⏳ | Open — `pnpm typegen:check` script + CI step. |
-| 7.3 `client.ts` env fallback | ⏳ | Dup of §4.2. |
+| 7.3 `client.ts` env fallback | ✅ | Dup of §4.2 (closed). |
 | 7.4 No tests for Supabase adapters (TD-50) | 🟡 | Recent commits add adapter coverage (`mapClosurePgError`, `SupabaseAccountGateRepository`). Continue. |
 | 7.5 `i18n/he.ts` 207 LOC | ✅ | TD-156 closed all Hebrew strings moved to `src/i18n/locales/he/`. |
 | 7.6 `audit_events` no INSERT policy | ⛔ | Intentional. |
@@ -264,8 +264,8 @@ The remaining audit findings (below) split into three classes:
 The audit followup PRs land into `dev` one section at a time. Sequencing (highest-impact first):
 
 1. ~~**§3.1** — Hebrew street_number regex~~ ✅ closed in `0080`
-2. **§4.2** — `client.ts` drop env fallback *(next)*
-3. **§17.6** — sign-out clears React Query cache
+2. ~~**§4.2** — `client.ts` drop env fallback~~ ✅
+3. **§17.6** — sign-out clears React Query cache *(next)*
 4. **§17.2** — collapse `mapAuthError` to unified failure code
 5. **§18.1 / §18.2** — chat idempotency + atomic findOrCreateChat
 6. **§3.5 / §3.6** — atomic profile update + typed `ProfileError`
