@@ -23,6 +23,15 @@ export interface ConfirmAndRunOpts {
 }
 
 export function confirmAndRun({ action, onConfirm, onSuccess, onError }: ConfirmAndRunOpts): void {
+  if (Platform.OS === 'web') {
+    const ok = globalThis.window?.confirm(`${t[action]}\n\n${t.confirmModal[action]}`);
+    if (ok) {
+      onConfirm()
+        .then(onSuccess)
+        .catch((e: unknown) => onError(errorMessage(e)));
+    }
+    return;
+  }
   Alert.alert(
     t[action] as string,
     t.confirmModal[action],
@@ -48,6 +57,8 @@ export function confirmAndRun({ action, onConfirm, onSuccess, onError }: Confirm
 export function showAdminToast(msg: string): void {
   if (Platform.OS === 'android') {
     ToastAndroid.show(msg, ToastAndroid.SHORT);
+  } else if (Platform.OS === 'web') {
+    globalThis.window?.alert(msg);
   } else {
     Alert.alert(msg);
   }
