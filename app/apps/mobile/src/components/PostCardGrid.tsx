@@ -8,7 +8,6 @@ import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
-import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { PostMenuButton } from './post/PostMenuButton';
 import { isRtlLayout as isRTL, postCardGridStyles as styles } from './PostCardGrid.styles';
@@ -77,7 +76,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
           <Text style={styles.title} numberOfLines={2}>{post.title}</Text>
           <View style={styles.categoryTag}>
             <Text style={styles.categoryTagText} numberOfLines={1}>
-              {CATEGORY_LABELS[post.category]}
+              {t(`post.category.${post.category}`)}
             </Text>
           </View>
         </View>

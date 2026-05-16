@@ -5,7 +5,6 @@ import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
-import { CATEGORY_LABELS } from '@kc/domain';
 import { AvatarInitials } from './AvatarInitials';
 import { styles } from './PostCard.styles';
 
@@ -76,7 +75,7 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
       <View style={styles.footer}>
         <View style={styles.metaRow}>
           <Text style={styles.categoryText}>
-            {CATEGORY_LABELS[post.category]}
+            {t(`post.category.${post.category}`)}
           </Text>
           <Text style={styles.dot}>·</Text>
           <Text style={styles.locationText}>📍 {locationText}</Text>

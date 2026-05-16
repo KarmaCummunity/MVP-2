@@ -3,7 +3,6 @@ import { StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   ALL_CATEGORIES,
-  CATEGORY_LABELS,
   type Category,
   type FeedStatusFilter,
   type ItemCondition,
@@ -80,7 +79,7 @@ export function FiltersSection({
           {ALL_CATEGORIES.map((c) => (
             <Chip
               key={c}
-              label={CATEGORY_LABELS[c]}
+              label={t(`post.category.${c}`)}
               active={categories.includes(c)}
               onPress={() => onCategoriesChange(toggleInArray(categories, c))}
             />

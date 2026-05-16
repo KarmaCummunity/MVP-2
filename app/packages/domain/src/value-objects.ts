@@ -50,14 +50,6 @@ export const ITEM_CONDITIONS: ItemCondition[] = [
   'New', 'LikeNew', 'Good', 'Fair', 'Damaged',
 ];
 
-export const ITEM_CONDITION_LABELS_HE: Record<ItemCondition, string> = {
-  New: 'חדש',
-  LikeNew: 'כמו חדש',
-  Good: 'טוב',
-  Fair: 'בינוני',
-  Damaged: 'שבור/תקול',
-};
-
 export type Category =
   | 'Furniture'
   | 'Clothing'
@@ -69,20 +61,6 @@ export type Category =
   | 'Electronics'
   | 'Tools'
   | 'Other';
-
-// Hebrew labels for UI
-export const CATEGORY_LABELS: Record<Category, string> = {
-  Furniture: 'רהיטים',
-  Clothing: 'בגדים',
-  Books: 'ספרים',
-  Toys: 'משחקים',
-  BabyGear: 'ציוד תינוקות',
-  Kitchen: 'מטבח',
-  Sports: 'ספורט',
-  Electronics: 'חשמל',
-  Tools: 'כלי עבודה',
-  Other: 'אחר',
-};
 
 export const ALL_CATEGORIES: Category[] = [
   'Furniture', 'Clothing', 'Books', 'Toys', 'BabyGear',

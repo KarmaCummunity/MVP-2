@@ -10,11 +10,9 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
-import {
-  ALL_CATEGORIES, CATEGORY_LABELS, canUpgradeVisibility,
-  ITEM_CONDITIONS, ITEM_CONDITION_LABELS_HE,
-} from '@kc/domain';
+import { ALL_CATEGORIES, canUpgradeVisibility, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -40,6 +38,7 @@ function assetUrl(path: string): string {
 export default function EditPostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
@@ -340,7 +339,7 @@ export default function EditPostScreen() {
                 onPress={() => setCategory(cat)}
               >
                 <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>
-                  {CATEGORY_LABELS[cat]}
+                  {t(`post.category.${cat}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -358,7 +357,7 @@ export default function EditPostScreen() {
                   onPress={() => setCondition(c)}
                 >
                   <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
-                    {ITEM_CONDITION_LABELS_HE[c]}
+                    {t(`post.condition.${c}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
