@@ -18,3 +18,4 @@ supabase/.branches/
 
 # Agent PR body scratch file (generated per-PR by `gh pr create --body-file`).
 .github/.pr-body.md
+.aider*
