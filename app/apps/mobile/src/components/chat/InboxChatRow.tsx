@@ -20,7 +20,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
     <View style={styles.chatRow}>
       <TouchableOpacity style={styles.chatRowMain} onPress={onOpen}>
         <AvatarInitials
-          name={item.otherParticipant.displayName}
+          name={item.otherParticipant.displayName ?? t('common.deletedUser')}
           avatarUrl={item.otherParticipant.avatarUrl}
           size={48}
         />
@@ -29,7 +29,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
             <Text style={styles.chatTime}>
               {formatRelativeChatTime(item.lastMessage?.createdAt ?? item.lastMessageAt)}
             </Text>
-            <Text style={styles.chatName}>{item.otherParticipant.displayName}</Text>
+            <Text style={styles.chatName}>{item.otherParticipant.displayName ?? t('common.deletedUser')}</Text>
           </View>
           <Text style={styles.chatPreview} numberOfLines={1}>
             {item.lastMessage?.body ?? ''}

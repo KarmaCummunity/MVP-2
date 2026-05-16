@@ -133,9 +133,9 @@ describe('mapPostWithOwnerRow (TD-50)', () => {
     expect(out.distanceKm).toBeNull();
   });
 
-  it('falls back to "משתמש שנמחק" placeholder when owner is null (orphan FK)', () => {
+  it('returns ownerName: null when owner is null (orphan FK); UI renders placeholder', () => {
     const out = mapPostWithOwnerRow(makeOwnerRow({ owner: null }));
-    expect(out.ownerName).toBe('משתמש שנמחק');
+    expect(out.ownerName).toBeNull();
     expect(out.ownerAvatarUrl).toBeNull();
     expect(out.ownerHandle).toBe('');
     expect(out.ownerPrivacyMode).toBe('Public');

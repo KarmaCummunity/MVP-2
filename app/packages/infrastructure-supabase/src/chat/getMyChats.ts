@@ -119,7 +119,7 @@ export async function getMyChats(
             }
           : {
               userId: null,
-              displayName: 'משתמש שנמחק',
+              displayName: null,
               avatarUrl: null,
               shareHandle: null,
               isDeleted: true,

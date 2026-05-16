@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
 import { colors } from '@kc/ui';
@@ -33,6 +34,7 @@ export default function ChatScreen() {
   const chatId = id!;
   const navigation = useNavigation();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
@@ -60,7 +62,7 @@ export default function ChatScreen() {
   }, [unreadIncoming, chatId, userId]);
 
   useLayoutEffect(() => {
-    const title = counterpart.isDeleted ? 'משתמש שנמחק' : counterpart.displayName;
+    const title = counterpart.displayName ?? t('common.deletedUser');
     const canOpenProfile = !counterpart.isDeleted && !!counterpart.shareHandle && !chat?.isSupportThread;
     navigation.setOptions({
       title,
@@ -79,7 +81,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
       ),
     });
-  }, [navigation, router, counterpart, chat?.isSupportThread]);
+  }, [navigation, router, counterpart, chat?.isSupportThread, t]);
 
   const counter = input.length;
   const showCounter = counter >= 1900;

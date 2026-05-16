@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import { CATEGORY_LABELS, ITEM_CONDITION_LABELS_HE } from '@kc/domain';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
@@ -25,6 +26,7 @@ import { styles } from './postDetailScreen.styles';
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
 
   const query = useQuery({
@@ -128,9 +130,9 @@ export default function PostDetailScreen() {
             style={styles.authorRow}
             onPress={() => router.push(`/user/${post.ownerHandle}`)}
           >
-            <AvatarInitials name={post.ownerName} avatarUrl={post.ownerAvatarUrl} size={44} />
+            <AvatarInitials name={post.ownerName ?? t('common.deletedUser')} avatarUrl={post.ownerAvatarUrl} size={44} />
             <View style={styles.authorInfo}>
-              <Text style={styles.authorName}>{post.ownerName}</Text>
+              <Text style={styles.authorName}>{post.ownerName ?? t('common.deletedUser')}</Text>
               <Text style={styles.authorCity}>{post.address.cityName}</Text>
             </View>
             <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />

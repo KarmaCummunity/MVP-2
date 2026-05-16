@@ -14,7 +14,7 @@ import { container } from '../lib/container';
 
 export interface ChatCounterpart {
   userId: string | null;
-  displayName: string;
+  displayName: string | null;
   shareHandle: string | null;
   isDeleted: boolean;
 }

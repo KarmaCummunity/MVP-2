@@ -46,12 +46,12 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
       <View style={styles.header}>
         <View style={styles.authorRow}>
           <AvatarInitials
-            name={post.ownerName}
+            name={post.ownerName ?? t('common.deletedUser')}
             avatarUrl={post.ownerAvatarUrl}
             size={36}
           />
           <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{post.ownerName}</Text>
+            <Text style={styles.authorName}>{post.ownerName ?? t('common.deletedUser')}</Text>
             <Text style={styles.timeText}>{timeAgo}</Text>
           </View>
         </View>

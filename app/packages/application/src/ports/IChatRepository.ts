@@ -3,7 +3,7 @@ import type { Chat, Message } from '@kc/domain';
 export interface ChatWithPreview extends Chat {
   otherParticipant: {
     userId: string | null;            // null when counterpart hard-deleted
-    displayName: string;
+    displayName: string | null;       // null when counterpart hard-deleted; UI renders t('common.deletedUser')
     avatarUrl: string | null;
     shareHandle: string | null;       // null when counterpart hard-deleted
     isDeleted: boolean;
@@ -47,7 +47,7 @@ export interface IChatRepository {
     viewerId: string,
   ): Promise<{
     userId: string | null;
-    displayName: string;
+    displayName: string | null;
     avatarUrl: string | null;
     shareHandle: string | null;
     isDeleted: boolean;
