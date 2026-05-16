@@ -2,6 +2,7 @@
 // Three-option pill selector for how much of the address shows publicly.
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { LocationDisplayLevel } from '@kc/domain';
 
@@ -11,18 +12,19 @@ interface Props {
   readonly disabled?: boolean;
 }
 
-const OPTIONS: { value: LocationDisplayLevel; label: string; hint: string }[] = [
-  { value: 'CityOnly',      label: 'עיר בלבד',   hint: 'אנונימיות מרבית' },
-  { value: 'CityAndStreet', label: 'עיר ורחוב',  hint: 'מומלץ' },
-  { value: 'FullAddress',   label: 'כתובת מלאה', hint: 'כולל מספר בית' },
+const OPTION_KEYS: { value: LocationDisplayLevel; labelKey: string; hintKey: string }[] = [
+  { value: 'CityOnly',      labelKey: 'post.cityOnly',                   hintKey: 'post.locationDisplayHintCityOnly' },
+  { value: 'CityAndStreet', labelKey: 'post.locationDisplayCityAndStreet', hintKey: 'post.locationDisplayHintCityAndStreet' },
+  { value: 'FullAddress',   labelKey: 'post.fullAddress',                hintKey: 'post.locationDisplayHintFullAddress' },
 ];
 
 export function LocationDisplayLevelChooser({ value, onChange, disabled }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.section}>
-      <Text style={styles.label}>תצוגת הכתובת</Text>
+      <Text style={styles.label}>{t('post.locationDisplayLabel')}</Text>
       <View style={styles.row}>
-        {OPTIONS.map((opt) => {
+        {OPTION_KEYS.map((opt) => {
           const active = value === opt.value;
           return (
             <TouchableOpacity
@@ -32,8 +34,8 @@ export function LocationDisplayLevelChooser({ value, onChange, disabled }: Props
               accessibilityRole="button"
               accessibilityState={{ selected: active, disabled: !!disabled }}
             >
-              <Text style={[styles.btnLabel, active && styles.btnLabelActive]}>{opt.label}</Text>
-              <Text style={[styles.btnHint, active && styles.btnHintActive]}>{opt.hint}</Text>
+              <Text style={[styles.btnLabel, active && styles.btnLabelActive]}>{t(opt.labelKey)}</Text>
+              <Text style={[styles.btnHint, active && styles.btnHintActive]}>{t(opt.hintKey)}</Text>
             </TouchableOpacity>
           );
         })}

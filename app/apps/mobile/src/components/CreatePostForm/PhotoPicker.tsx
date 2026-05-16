@@ -3,6 +3,7 @@ import {
   ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { MAX_MEDIA_ASSETS } from '@kc/domain';
 import type { UploadedAsset } from '../../services/imageUpload';
@@ -17,14 +18,15 @@ interface Props {
 }
 
 export function PhotoPicker({ uploads, isUploading, uploadingCount, required, onAdd, onRemove }: Props) {
+  const { t } = useTranslation();
   const remaining = MAX_MEDIA_ASSETS - uploads.length - uploadingCount;
   const canAdd = remaining > 0 && !isUploading;
 
   return (
     <View style={styles.section}>
       <Text style={styles.sectionLabel}>
-        תמונות{' '}
-        {required && <Text style={styles.required}>* (חובה עבור "לתת")</Text>}
+        {t('post.photos')}{' '}
+        {required && <Text style={styles.required}>{t('post.photosRequiredSuffix')}</Text>}
       </Text>
       <View style={styles.grid}>
         {uploads.map((u) => (
@@ -48,7 +50,7 @@ export function PhotoPicker({ uploads, isUploading, uploadingCount, required, on
         )}
       </View>
       {uploads.length === 0 && !isUploading && (
-        <Text style={styles.hint}>בחר עד 5 תמונות מהגלריה.</Text>
+        <Text style={styles.hint}>{t('post.photosHint')}</Text>
       )}
     </View>
   );

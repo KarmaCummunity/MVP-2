@@ -76,4 +76,19 @@ export const postHe = {
   reportDuplicateTitle: 'כבר דיווחת',
   reportDuplicateBody: 'דיווחת על הפוסט הזה ב-24 השעות האחרונות.',
   reportErrorBody: 'נסה שוב מאוחר יותר.',
+
+  // FR-POST-003 — LocationDisplayLevelChooser (publish-address granularity)
+  locationDisplayLabel: 'תצוגת הכתובת',
+  locationDisplayCityAndStreet: 'עיר ורחוב',
+  locationDisplayHintCityOnly: 'אנונימיות מרבית',
+  locationDisplayHintCityAndStreet: 'מומלץ',
+  locationDisplayHintFullAddress: 'כולל מספר בית',
+
+  // PhotoPicker
+  photosRequiredSuffix: '* (חובה עבור "לתת")',
+  photosHint: 'בחר עד 5 תמונות מהגלריה.',
+
+  // VisibilityChooser sub-labels
+  visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
+  visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי; אפשר לפתוח לציבור בעריכה',
 } as const;
