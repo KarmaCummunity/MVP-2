@@ -9,6 +9,7 @@
 //   3. Pick a chat partner → toggle 'chats' mode + select + Mark and Close
 //   4. Pick from any user (with search) → toggle 'search' mode + select + Mark and Close
 import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { useClosureStore } from '../../store/closureStore';
@@ -33,6 +34,7 @@ export function ClosureStep2({
   onCloseWithoutMarking,
   onCancel,
 }: Props) {
+  const { t } = useTranslation();
   const pickMode = useClosureStore((s) => s.pickMode);
   const candidates = useClosureStore((s) => s.candidates);
   const searchResults = useClosureStore((s) => s.searchResults);
@@ -50,7 +52,7 @@ export function ClosureStep2({
     searchResults.length === 0;
 
   const give = postType === 'Give';
-  const title = give ? '🎁  למי מסרת את הפריט?' : '🎁  ממי קיבלת את הפריט?';
+  const title = give ? t('closure.step2GiveTitle') : t('closure.step2RequestTitle');
 
   return (
     <View>
@@ -79,14 +81,14 @@ export function ClosureStep2({
           disabled={isBusy}
           style={[styles.btn, styles.btnGhost, isBusy && styles.btnDisabled]}
         >
-          <Text style={styles.btnGhostText}>ביטול</Text>
+          <Text style={styles.btnGhostText}>{t('general.cancel')}</Text>
         </Pressable>
         <Pressable
           onPress={onCloseWithoutMarking}
           disabled={isBusy}
           style={[styles.btn, styles.btnSecondary, isBusy && styles.btnDisabled]}
         >
-          <Text style={styles.btnSecondaryText}>סגור בלי לסמן</Text>
+          <Text style={styles.btnSecondaryText}>{t('closure.step2CloseWithoutMarking')}</Text>
         </Pressable>
         <Pressable
           onPress={onMarkAndClose}
@@ -96,11 +98,11 @@ export function ClosureStep2({
           {isBusy ? (
             <ActivityIndicator color={colors.textInverse} />
           ) : (
-            <Text style={styles.btnPrimaryText}>סמן וסגור ✓</Text>
+            <Text style={styles.btnPrimaryText}>{t('closure.step2MarkAndClose')}</Text>
           )}
         </Pressable>
       </View>
-      {showNoResultsHint ? <Text style={styles.helper}>לא נמצא משתמש בשם כזה.</Text> : null}
+      {showNoResultsHint ? <Text style={styles.helper}>{t('closure.step2NoSearchResults')}</Text> : null}
     </View>
   );
 }

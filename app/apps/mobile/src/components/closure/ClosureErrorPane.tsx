@@ -2,6 +2,7 @@
 // (e.g. block-list fetch rejected). Without this the modal would never appear
 // and the CTA would just stay disabled — the original "nothing happens" bug.
 import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 
 interface Props {
@@ -10,15 +11,16 @@ interface Props {
 }
 
 export function ClosureErrorPane({ errorMessage, onClose }: Props) {
+  const { t } = useTranslation();
   return (
     <View>
-      <Text style={styles.title}>⚠️  משהו לא עבד</Text>
+      <Text style={styles.title}>{t('closure.errorTitle')}</Text>
       <Text style={styles.body}>
-        {errorMessage ?? 'לא הצלחנו להתחיל את תהליך הסגירה. נסה שוב עוד רגע.'}
+        {errorMessage ?? t('closure.errorDefault')}
       </Text>
       <View style={styles.actions}>
         <Pressable onPress={onClose} style={styles.btn}>
-          <Text style={styles.btnText}>סגור</Text>
+          <Text style={styles.btnText}>{t('general.close')}</Text>
         </Pressable>
       </View>
     </View>
