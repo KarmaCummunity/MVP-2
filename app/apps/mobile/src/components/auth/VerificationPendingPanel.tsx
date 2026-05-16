@@ -19,6 +19,7 @@ export interface VerificationPendingPanelProps {
 }
 
 export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
+  const { t } = useTranslation();
   const { email, onChangeEmail } = props;
   const [cooldown, setCooldown] = useState(0);
   const [resending, setResending] = useState(false);

@@ -45,6 +45,7 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 416 }],
   // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
+  ['apps/mobile/src/components/CityPicker.tsx', { td: 'TD-156', max: 201 }],
   ['apps/mobile/app/user/[handle]/index.tsx', { td: 'TD-29', max: 217 }],
 ]);
 

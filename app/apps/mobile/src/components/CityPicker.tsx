@@ -23,6 +23,7 @@ interface Props {
   readonly disabled?: boolean;
 }
 export function CityPicker({ value, onChange, disabled }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);
