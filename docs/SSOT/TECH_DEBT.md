@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (added TD-153 + TD-154 — Hebrew→i18n migration close-out) |
+| **Last Updated** | 2026-05-16 (TD-31 downgraded 🟠→🟢 after sweep across domain / application / infra / mobile lib + stores) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -61,7 +61,7 @@
 | TD-9 | 🟢 | `android/` is gitignored (CNG workflow). Must run `expo run:android` with `JAVA_HOME=.../temurin-17.jdk`. Pinned in `package.json android` script. If CI added, set `JAVA_HOME` env var there too | When CI lands |
 | TD-11 | 🟢 | `post-images` storage bucket is public-read. For `OnlyMe`/`FollowersOnly` posts we rely on URL non-discoverability (post row hidden by RLS, image paths not enumerable). Replace with per-object signed URLs (or private bucket + sign-on-fetch) at scale | Pre-launch hardening |
 | TD-30 | 🟠 | No JSDoc / TSDoc on most public exports across `domain`, `application`, `infrastructure`, mobile components | Opportunistic |
-| TD-31 | 🟠 | Test coverage limited; no tests for repos, components, infra adapters, or invariants beyond use-cases | Opportunistic |
+| TD-31 | 🟢 | **Test coverage — repos / infra adapters / invariants / stores all covered.** Remaining gap is React components + hooks (gated by TD-150, no RNTL infrastructure). Status as of 2026-05-16: `@kc/domain` 37 tests, `@kc/application` 340+ tests, `@kc/infrastructure-supabase` 660+ tests, `@kc/mobile` lib/stores/notifications 213+ tests — total ~1250 passing. Close once TD-150 ships and a first wave of component tests lands. | Pre-launch hardening / blocked on TD-150 |
 | TD-36 | 🟢 | `SRS/appendices/A_traceability_matrix.md` referenced as FR ↔ R-MVP ↔ Screen ↔ Test mapping — needs population audit | Opportunistic |
 
 ---
