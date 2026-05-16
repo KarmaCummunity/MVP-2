@@ -1,8 +1,7 @@
 /** FR-AUTH-007 (email path): Sign in via email + password. */
+import { EMAIL_PATTERN } from '@kc/domain';
 import type { IAuthService, AuthSession } from '../ports/IAuthService';
 import { AuthError } from './errors';
-
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export interface SignInWithEmailInput {
   email: string;
@@ -20,7 +19,7 @@ export class SignInWithEmailUseCase {
     const email = input.email.trim().toLowerCase();
     const password = input.password;
 
-    if (!EMAIL_RE.test(email)) {
+    if (!EMAIL_PATTERN.test(email)) {
       throw new AuthError('invalid_email', 'invalid_email');
     }
     if (password.length === 0) {

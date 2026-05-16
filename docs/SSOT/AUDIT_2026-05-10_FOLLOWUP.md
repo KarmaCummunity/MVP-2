@@ -68,7 +68,7 @@ The remaining audit findings (below) split into three classes:
 | ------- | ------ | ------------------------- |
 | 3.1 [HIGH] `street_number` regex rejects Hebrew suffixes (5א, 12ב) | ✅ | `0081_street_number_allow_hebrew_suffix` (renumbered from 0080 to clear TD-54-class collision with `0080_strip_exif_cron`). Pattern now `^[0-9]+[A-Za-zא-ת]?$` in domain + posts + users.profile_street_number CHECKs. Spec FR-POST-019 AC3 updated. |
 | 3.2 [HIGH] Trim discrepancy on `title` / `description` | ✅ | `CreatePostUseCase.ts:21,26` — both fields trimmed before validation. |
-| 3.3 [HIGH] Email regex permissive in `SignUpWithEmailUseCase` | ⏳ | Open — replace regex or remove and rely on Supabase `invalid_email` code. |
+| 3.3 [HIGH] Email regex permissive in `SignUpWithEmailUseCase` | ✅ | Centralized `EMAIL_PATTERN` in `@kc/domain/value-objects` (`^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$`). Both `SignInWithEmailUseCase` and `SignUpWithEmailUseCase` reference it. Rejects `a@b.c`, `user@@x.co`, `a@b.co.`. |
 | 3.4 [HIGH] Session expiry uses device clock | ⏳ | Open — accept practical impact + document, OR derive clock skew from response `Date` header. Low priority in MVP. |
 | 3.5 [HIGH] `UpdateProfileUseCase` `Promise.all` non-atomic | ⏳ | Open — single `UPDATE users SET …` or RPC. |
 | 3.6 [HIGH] Profile use cases throw raw `Error` | ⏳ | Open — typed `ProfileError`/`BasicInfoError` (mirror of `PostError`). |
