@@ -50,7 +50,7 @@ export default function FollowersListScreen() {
   }
 
   const filtered = (followersQuery.data?.users ?? []).filter((u) =>
-    !search || u.displayName.toLowerCase().startsWith(search.toLowerCase()),
+    !search || (u.displayName ?? '').toLowerCase().startsWith(search.toLowerCase()),
   );
 
   const confirmRemove = async () => {
@@ -90,10 +90,10 @@ export default function FollowersListScreen() {
             style={styles.row}
             onPress={() => router.push({ pathname: '/user/[handle]', params: { handle: u.shareHandle } })}
           >
-            <AvatarInitials name={u.displayName} avatarUrl={u.avatarUrl} size={44} />
+            <AvatarInitials name={u.displayName ?? t('profile.fallbackName')} avatarUrl={u.avatarUrl} size={44} />
             <View style={styles.rowText}>
-              <Text style={styles.name}>{u.displayName}</Text>
-              <Text style={styles.city}>{u.cityName}</Text>
+              <Text style={styles.name}>{u.displayName ?? t('profile.fallbackName')}</Text>
+              <Text style={styles.city}>{u.cityName ?? t('profile.cityNotSet')}</Text>
             </View>
             {isMe ? (
               <TouchableOpacity onPress={() => setPendingRemove(u)} style={styles.menuBtn}>

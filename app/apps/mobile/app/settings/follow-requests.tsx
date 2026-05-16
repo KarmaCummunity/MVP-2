@@ -93,13 +93,13 @@ export default function FollowRequestsScreen() {
                 }
               >
                 <AvatarInitials
-                  name={r.requester.displayName}
+                  name={r.requester.displayName ?? t('profile.fallbackName')}
                   avatarUrl={r.requester.avatarUrl}
                   size={44}
                 />
                 <View style={styles.text}>
-                  <Text style={styles.name}>{r.requester.displayName}</Text>
-                  <Text style={styles.city}>{r.requester.cityName}</Text>
+                  <Text style={styles.name}>{r.requester.displayName ?? t('profile.fallbackName')}</Text>
+                  <Text style={styles.city}>{r.requester.cityName ?? t('profile.cityNotSet')}</Text>
                 </View>
               </TouchableOpacity>
               <View style={styles.actions}>

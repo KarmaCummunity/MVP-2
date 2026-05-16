@@ -105,7 +105,7 @@ describe('getClosureCandidates — chat lookup + partner resolution', () => {
     ]);
   });
 
-  it('falls back to empty fullName and null cityName when the user row carries nulls', async () => {
+  it('passes null fullName and null cityName through when the user row carries nulls (migration 0084)', async () => {
     const { client } = makeFakeClient({
       ownerRow: { owner_id: 'u_owner' },
       chats: [
@@ -115,8 +115,9 @@ describe('getClosureCandidates — chat lookup + partner resolution', () => {
         { user_id: 'u_p1', display_name: null, avatar_url: null, city_name: null },
       ],
     });
+    // ClosureCandidate.fullName is `string | null` per migration 0084; UI applies fallback.
     const out = await getClosureCandidates(client, 'p_1');
-    expect(out[0]?.fullName).toBe('');
+    expect(out[0]?.fullName).toBeNull();
     expect(out[0]?.avatarUrl).toBeNull();
     expect(out[0]?.cityName).toBeNull();
   });

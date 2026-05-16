@@ -158,7 +158,7 @@ export async function getClosureCandidates(
   return (users ?? [])
     .map((u) => ({
       userId: u.user_id,
-      fullName: u.display_name ?? '',
+      fullName: u.display_name ?? null,
       avatarUrl: u.avatar_url,
       cityName: u.city_name ?? null,
       lastMessageAt: partners.get(u.user_id) ?? '',

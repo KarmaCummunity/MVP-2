@@ -29,7 +29,12 @@ export const profileHe = {
   // Header / framing
   privateProfileA11y: 'פרופיל פרטי',
   headerTitle: 'פרופיל',
+  // FR-PROFILE / migration 0084 — fallbacks when a User row is in the
+  // `pending_basic_info` transient window and `display_name` / `city_name`
+  // are still NULL in the DB. Render sites use `value ?? t('profile.fallbackName')`
+  // / `value ?? t('profile.cityNotSet')`.
   fallbackName: 'משתמש',
+  cityNotSet: '—',
   userNotFound: 'משתמש לא נמצא',
 
   // Tabs

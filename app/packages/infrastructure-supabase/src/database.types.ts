@@ -819,13 +819,13 @@ export type Database = {
           avatar_url: string | null
           basic_info_skipped: boolean
           biography: string | null
-          city: string
-          city_name: string
+          city: string | null
+          city_name: string | null
           profile_street: string | null
           profile_street_number: string | null
           closure_explainer_dismissed: boolean
           created_at: string
-          display_name: string
+          display_name: string | null
           false_report_sanction_count: number
           false_reports_count: number
           first_post_nudge_dismissed: boolean
@@ -853,13 +853,13 @@ export type Database = {
           avatar_url?: string | null
           basic_info_skipped?: boolean
           biography?: string | null
-          city: string
-          city_name: string
+          city?: string | null
+          city_name?: string | null
           profile_street?: string | null
           profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
-          display_name: string
+          display_name?: string | null
           false_report_sanction_count?: number
           false_reports_count?: number
           first_post_nudge_dismissed?: boolean
@@ -887,13 +887,13 @@ export type Database = {
           avatar_url?: string | null
           basic_info_skipped?: boolean
           biography?: string | null
-          city?: string
-          city_name?: string
+          city?: string | null
+          city_name?: string | null
           profile_street?: string | null
           profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
-          display_name?: string
+          display_name?: string | null
           false_report_sanction_count?: number
           false_reports_count?: number
           first_post_nudge_dismissed?: boolean

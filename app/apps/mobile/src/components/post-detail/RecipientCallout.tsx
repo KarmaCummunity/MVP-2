@@ -15,7 +15,8 @@ interface Props {
   postType: PostType;
   recipient: {
     userId: string;
-    displayName: string;
+    /** Null while the recipient is still in `pending_basic_info` (migration 0084). */
+    displayName: string | null;
     shareHandle: string;
     avatarUrl: string | null;
   };
@@ -26,22 +27,23 @@ export function RecipientCallout({ postType, recipient }: Props) {
   const router = useRouter();
   const labelLeft = postType === 'Give' ? t('closure.calloutGiveLabel') : t('closure.calloutRequestLabel');
   const sublabel = postType === 'Give' ? t('closure.calloutGiveSublabel') : t('closure.calloutRequestSublabel');
+  const name = recipient.displayName ?? t('profile.fallbackName');
 
   return (
     <Pressable
       style={styles.row}
       onPress={() => router.push(`/user/${recipient.shareHandle}`)}
-      accessibilityLabel={`${labelLeft} ${recipient.displayName}`}
+      accessibilityLabel={`${labelLeft} ${name}`}
     >
       <Ionicons name="checkmark-circle" size={22} color={colors.success} />
       <View style={styles.text}>
         <Text style={styles.sublabel}>{sublabel}</Text>
         <Text style={styles.label} numberOfLines={1}>
           {labelLeft}{' '}
-          <Text style={styles.name}>{recipient.displayName}</Text>
+          <Text style={styles.name}>{name}</Text>
         </Text>
       </View>
-      <AvatarInitials name={recipient.displayName} avatarUrl={recipient.avatarUrl} size={36} />
+      <AvatarInitials name={name} avatarUrl={recipient.avatarUrl} size={36} />
       <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
     </Pressable>
   );
