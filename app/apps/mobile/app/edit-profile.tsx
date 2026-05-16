@@ -20,9 +20,11 @@ import { useUnsavedChangesGuard } from '../src/hooks/useUnsavedChangesGuard';
 import { editProfileStyles as styles } from './edit-profile.styles';
 
 interface InitialState {
-  readonly displayName: string;
-  readonly cityId: string;
-  readonly cityName: string;
+  // Nullable after migration 0084 (user still in `pending_basic_info`). The form
+  // requires non-null on save; loaders default to '' so inputs stay controlled.
+  readonly displayName: string | null;
+  readonly cityId: string | null;
+  readonly cityName: string | null;
   readonly profileStreet: string | null;
   readonly profileStreetNumber: string | null;
   readonly biography: string | null;
@@ -56,8 +58,8 @@ export default function EditProfileScreen() {
       try {
         const p = await getEditableProfile(session.userId);
         if (cancelled) return;
-        setDisplayName(p.displayName);
-        setCity({ id: p.city, name: p.cityName });
+        setDisplayName(p.displayName ?? '');
+        setCity(p.city && p.cityName ? { id: p.city, name: p.cityName } : null);
         setStreet(p.profileStreet ?? '');
         setStreetNumber(p.profileStreetNumber ?? '');
         setBiography(p.biography ?? '');
@@ -88,8 +90,8 @@ export default function EditProfileScreen() {
     const tn = streetNumber.trim() || null;
     const newBio = biography.trim() || null;
     return (
-      displayName.trim() !== initial.displayName ||
-      (city?.id ?? '') !== initial.cityId ||
+      displayName.trim() !== (initial.displayName ?? '') ||
+      (city?.id ?? '') !== (initial.cityId ?? '') ||
       newBio !== initial.biography ||
       avatarUrl !== initial.avatarUrl ||
       ts !== (initial.profileStreet ?? null) ||
@@ -128,8 +130,8 @@ export default function EditProfileScreen() {
       const trimmedName = displayName.trim();
       const trimmedBio = biography.trim();
       const newBio = trimmedBio.length === 0 ? null : trimmedBio;
-      const nameChanged = trimmedName !== initial.displayName;
-      const cityChanged = city.id !== initial.cityId;
+      const nameChanged = trimmedName !== (initial.displayName ?? '');
+      const cityChanged = city.id !== (initial.cityId ?? '');
       const bioChanged = newBio !== initial.biography;
       const avatarChanged = avatarUrl !== initial.avatarUrl;
       const nextStreet = ts.length === 0 ? null : ts;

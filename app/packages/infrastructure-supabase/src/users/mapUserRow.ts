@@ -6,9 +6,9 @@ export interface UserRow {
   user_id: string;
   auth_provider: string;
   share_handle: string;
-  display_name: string;
-  city: string;
-  city_name: string;
+  display_name: string | null;
+  city: string | null;
+  city_name: string | null;
   profile_street?: string | null;
   profile_street_number?: string | null;
   biography: string | null;

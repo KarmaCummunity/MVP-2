@@ -25,9 +25,13 @@ export interface User {
   readonly userId: string;
   readonly authProvider: AuthProvider;
   readonly shareHandle: string;
-  displayName: string;
-  city: string;
-  cityName: string;
+  // `displayName`/`city`/`cityName` are nullable to represent the legitimate
+  // `pending_basic_info` transient window (migration 0084). Onboarding fills
+  // them; UI applies `t('profile.unnamedUser')` / `t('profile.cityNotSet')`
+  // fallbacks at render time when null.
+  displayName: string | null;
+  city: string | null;
+  cityName: string | null;
   /** Optional home address line on profile; null = city-only (FR-PROFILE-007). */
   profileStreet: string | null;
   profileStreetNumber: string | null;

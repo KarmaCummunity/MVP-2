@@ -36,12 +36,13 @@ export interface SearchFilters {
 
 export interface UserSearchResult {
   readonly userId: string;
-  readonly displayName: string;
+  /** Null during the `pending_basic_info` window (migration 0084). UI renders fallback. */
+  readonly displayName: string | null;
   readonly shareHandle: string;
   readonly avatarUrl: string | null;
   readonly biography: string | null;
-  readonly city: string;
-  readonly cityName: string;
+  readonly city: string | null;
+  readonly cityName: string | null;
   readonly followersCount: number;
   readonly itemsGivenCount: number;
 }

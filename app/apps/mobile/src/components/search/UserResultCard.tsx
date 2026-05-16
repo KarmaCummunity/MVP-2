@@ -13,7 +13,8 @@ export function UserResultCard({ user }: { user: UserSearchResult }) {
   const router = useRouter();
   const { t } = useTranslation();
   const showHandle = !isOpaqueSystemShareHandle(user.shareHandle);
-  const a11yLabel = showHandle ? `${user.displayName} — @${user.shareHandle}` : user.displayName;
+  const displayName = user.displayName ?? t('profile.fallbackName');
+  const a11yLabel = showHandle ? `${displayName} — @${user.shareHandle}` : displayName;
 
   return (
     <Pressable
@@ -23,10 +24,10 @@ export function UserResultCard({ user }: { user: UserSearchResult }) {
       accessibilityLabel={a11yLabel}
     >
       <View style={styles.avatarWrap}>
-        <AvatarInitials name={user.displayName} avatarUrl={user.avatarUrl} size={48} />
+        <AvatarInitials name={displayName} avatarUrl={user.avatarUrl} size={48} />
       </View>
       <View style={styles.cardContent}>
-        <Text style={styles.cardTitle} numberOfLines={1}>{user.displayName}</Text>
+        <Text style={styles.cardTitle} numberOfLines={1}>{displayName}</Text>
         {showHandle ? <Text style={styles.cardHandle} numberOfLines={1}>@{user.shareHandle}</Text> : null}
         {user.biography ? <Text style={styles.cardSubtitle} numberOfLines={2}>{user.biography}</Text> : null}
         <View style={styles.metaRow}>
@@ -36,7 +37,7 @@ export function UserResultCard({ user }: { user: UserSearchResult }) {
           </View>
           <View style={styles.metaChip}>
             <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{user.cityName}</Text>
+            <Text style={styles.metaText}>{user.cityName ?? t('profile.cityNotSet')}</Text>
           </View>
         </View>
       </View>

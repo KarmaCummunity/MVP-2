@@ -96,9 +96,9 @@ export interface IUserRepository {
    * mappings deferred to P2.4). Throws if the row is missing.
    */
   getEditableProfile(userId: string): Promise<{
-    displayName: string;
-    city: string;
-    cityName: string;
+    displayName: string | null;
+    city: string | null;
+    cityName: string | null;
     profileStreet: string | null;
     profileStreetNumber: string | null;
     biography: string | null;

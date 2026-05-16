@@ -114,6 +114,14 @@ describe('mapUserRow', () => {
       const out = mapUserRow(makeRow({ privacy_changed_at: null }));
       expect(out.privacyChangedAt).toBeNull();
     });
+
+    // Migration 0084 — display_name/city/city_name nullable in pending_basic_info; UI fallbacks.
+    it('passes display_name / city / city_name null through verbatim (migration 0084)', () => {
+      const out = mapUserRow(makeRow({ display_name: null, city: null, city_name: null }));
+      expect(out.displayName).toBeNull();
+      expect(out.city).toBeNull();
+      expect(out.cityName).toBeNull();
+    });
   });
 
   describe('opaque enum / json casts', () => {

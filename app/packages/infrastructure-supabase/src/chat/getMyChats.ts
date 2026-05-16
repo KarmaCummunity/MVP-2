@@ -92,7 +92,7 @@ export async function getMyChats(
   if (usersRes.error) throw mapChatError(usersRes.error);
   const userMap = new Map<
     string,
-    { displayName: string; avatarUrl: string | null; shareHandle: string | null }
+    { displayName: string | null; avatarUrl: string | null; shareHandle: string | null }
   >();
   for (const u of usersRes.data ?? []) {
     userMap.set(u.user_id, {

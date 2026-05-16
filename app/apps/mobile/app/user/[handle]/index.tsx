@@ -127,7 +127,7 @@ export default function OtherProfileScreen() {
       <ScrollView>
         <View style={styles.card}>
           <ProfileHeader
-            displayName={u.displayName}
+            displayName={u.displayName ?? t('profile.fallbackName')}
             handle={u.shareHandle}
             locationLine={formatUserLocationLine(u)}
             avatarUrl={u.avatarUrl}

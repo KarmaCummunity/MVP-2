@@ -60,6 +60,7 @@
 |----|------|-------|--------|------|
 | INFRA-DEV-BRANCH-RESTORE | Restore `dev` branch + auto-sync from `main`; in-app DEV environment banner; document env topology | infra | ✅ Done | `docs/SSOT/ENVIRONMENTS.md` |
 | INFRA-I18N-PROD-CODE | Migrate inline Hebrew in production code to react-i18next; remove display strings from domain/application/infrastructure-supabase | infra | ✅ Done | `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` |
+| INFRA-I18N-MIGRATIONS | Remove Hebrew literals from SQL migrations (relax NOT NULL on `users.display_name`/`city`/`city_name`; UI applies translated fallback) | infra | ✅ Done | `docs/superpowers/specs/2026-05-16-migrations-i18n-hardening-design.md` |
 
 ---
 

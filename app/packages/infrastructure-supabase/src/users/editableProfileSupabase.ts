@@ -1,9 +1,9 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 
 export type EditableProfileDTO = {
-  displayName: string;
-  city: string;
-  cityName: string;
+  displayName: string | null;
+  city: string | null;
+  cityName: string | null;
   profileStreet: string | null;
   profileStreetNumber: string | null;
   biography: string | null;
@@ -22,9 +22,9 @@ export async function supabaseGetEditableProfile(
   if (error) throw new Error(`getEditableProfile: ${error.message}`);
   if (!data) throw new Error('getEditableProfile: no row');
   const row = data as {
-    display_name: string;
-    city: string;
-    city_name: string;
+    display_name: string | null;
+    city: string | null;
+    city_name: string | null;
     profile_street: string | null;
     profile_street_number: string | null;
     biography: string | null;

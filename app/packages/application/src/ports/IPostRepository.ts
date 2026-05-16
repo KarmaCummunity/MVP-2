@@ -54,7 +54,8 @@ export interface PostWithOwner extends Post {
    */
   recipientUser: {
     userId: string;
-    displayName: string;
+    /** Null during the `pending_basic_info` window (migration 0084). UI renders fallback. */
+    displayName: string | null;
     shareHandle: string;
     avatarUrl: string | null;
   } | null;
@@ -69,7 +70,8 @@ export interface PostWithOwner extends Post {
 /** FR-CLOSURE-003 AC1/AC2 — chat-partner candidate for the recipient picker. */
 export interface ClosureCandidate {
   userId: string;
-  fullName: string;
+  /** Null during the `pending_basic_info` window (migration 0084). UI renders fallback. */
+  fullName: string | null;
   avatarUrl: string | null;
   cityName: string | null;
   /** ISO timestamp of the latest message in the anchored chat. Used for sort. */

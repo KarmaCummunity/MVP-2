@@ -2,8 +2,10 @@ import type { LastAddress } from '../store/lastAddressStore';
 
 /** Subset of `getEditableProfile` used for create-post address prefill. */
 export interface ProfileAddressPrefillSource {
-  readonly city: string;
-  readonly cityName: string;
+  // Nullable after migration 0084. The merger already guards on both being
+  // truthy before building a city option, so null flows through safely.
+  readonly city: string | null;
+  readonly cityName: string | null;
   readonly profileStreet: string | null;
   readonly profileStreetNumber: string | null;
 }

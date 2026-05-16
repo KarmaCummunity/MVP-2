@@ -3,9 +3,9 @@ import type { Database } from '../database.types';
 import { SLUG_TO_LABEL_HE } from './searchConstants';
 export type LinkRow = Database['public']['Tables']['donation_links']['Row'] & { tags?: string | null };
 export interface SearchUserRow {
-  user_id: string; display_name: string; share_handle: string;
+  user_id: string; display_name: string | null; share_handle: string;
   avatar_url: string | null; biography: string | null;
-  city: string; city_name: string; followers_count: number; items_given_count: number;
+  city: string | null; city_name: string | null; followers_count: number; items_given_count: number;
 }
 export function mapUserSearchResult(row: SearchUserRow): UserSearchResult {
   return { userId: row.user_id, displayName: row.display_name, shareHandle: row.share_handle,
