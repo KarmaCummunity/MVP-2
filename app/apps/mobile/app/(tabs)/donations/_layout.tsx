@@ -10,13 +10,24 @@ const detailHeader = {
   ...nativeStackHeaderLeftIconOnly,
   headerBackVisible: false,
   headerTintColor: colors.primary,
-  headerStyle: { backgroundColor: colors.surface },
+  // Cream header continues the screen backdrop instead of cutting it with a
+  // white bar — the rest of the redesigned app does the same in TopBar.
+  headerStyle: { backgroundColor: colors.background },
 } as const;
 
 export default function DonationsLayout() {
   const { t } = useTranslation();
   return (
-    <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>
+    <Stack
+      screenOptions={{
+        headerShown: false,
+        contentStyle: { backgroundColor: colors.background },
+        // Same subtle cross-fade as the root stack so navigating into a
+        // donation sub-screen feels continuous with the rest of the app.
+        animation: 'fade',
+        animationDuration: 220,
+      }}
+    >
       <Stack.Screen name="index" />
       <Stack.Screen name="money" options={{ ...detailHeader, headerTitle: t('donations.moneyScreen.title') }} />
       <Stack.Screen name="time" options={{ ...detailHeader, headerTitle: t('donations.timeScreen.title') }} />

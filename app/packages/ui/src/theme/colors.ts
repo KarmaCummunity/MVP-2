@@ -23,12 +23,13 @@ export const colors = {
   info: '#3B82F6',
   infoLight: '#DBEAFE',
 
-  // Backgrounds
-  background: '#F9FAFB',
+  // Backgrounds — warm cream is the app-wide backdrop (redesigned auth idiom).
+  // `surfaceCream` is kept as a semantic alias so primitives that intend the
+  // backdrop explicitly stay readable even if `background` drifts later.
+  background: '#FFFBF7',
+  surfaceCream: '#FFFBF7',
   surface: '#FFFFFF',
   surfaceRaised: '#FFFFFF',
-  // Warm cream — main-screen backdrop in the redesigned auth/tab idiom.
-  surfaceCream: '#FFFBF7',
 
   // Borders
   border: '#E5E7EB',
