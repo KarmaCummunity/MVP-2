@@ -32,7 +32,12 @@ export function PhotoPicker({ uploads, isUploading, uploadingCount, required, on
         {uploads.map((u) => (
           <View key={u.path} style={styles.thumb}>
             <Image source={{ uri: u.previewUri }} style={styles.thumbImage} />
-            <TouchableOpacity style={styles.removeBtn} onPress={() => onRemove(u.path)}>
+            <TouchableOpacity
+              style={styles.removeBtn}
+              onPress={() => onRemove(u.path)}
+              accessibilityRole="button"
+              accessibilityLabel={t('post.removePhoto')}
+            >
               <Ionicons name="close" size={14} color={colors.textInverse} />
             </TouchableOpacity>
           </View>
@@ -43,7 +48,13 @@ export function PhotoPicker({ uploads, isUploading, uploadingCount, required, on
           </View>
         ))}
         {canAdd && (
-          <TouchableOpacity style={[styles.thumb, styles.addBtn]} onPress={onAdd} disabled={!canAdd}>
+          <TouchableOpacity
+            style={[styles.thumb, styles.addBtn]}
+            onPress={onAdd}
+            disabled={!canAdd}
+            accessibilityRole="button"
+            accessibilityLabel={t('post.addPhoto')}
+          >
             <Ionicons name="add" size={28} color={colors.textSecondary} />
             <Text style={styles.addText}>{remaining}/{MAX_MEDIA_ASSETS}</Text>
           </TouchableOpacity>

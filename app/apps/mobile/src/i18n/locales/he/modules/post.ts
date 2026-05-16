@@ -12,6 +12,8 @@ export const postHe = {
   urgencyPlaceholder: 'לדוגמה: צריך עד שישי',
   photos: 'תמונות',
   addPhoto: 'הוסף תמונה',
+  removePhoto: 'הסר תמונה',
+  sendMessageA11y: 'שלח הודעה למפרסם',
   address: 'כתובת',
   cityLabel: 'עיר',
   streetLabel: 'רחוב',
