@@ -57,6 +57,7 @@
 | P2.20 | Saved posts — bookmark save/unsave + My Profile שמורים list | agent-be + agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-022, `spec/02_profile_and_privacy.md` FR-PROFILE-016; migration `0086_saved_posts.sql` |
 | P2.21 | My Profile: move `OnlyMe` posts off open/closed tabs into `⋮` → Hidden; exclude `OnlyMe` from `active_posts_count_internal` / stats | agent-fullstack | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-001 AC4, FR-PROFILE-013 AC1; `spec/10_statistics.md` FR-STATS-002 AC3; migrations `0087_*`, `0088_*` |
 | P2.22 | **Create-post draft autosave (FR-POST-007)** — debounced AsyncStorage write, resume banner, per-user scoping, image-availability probe; clears on publish/sign-out. Closes TD-108. | agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-007; `docs/superpowers/specs/2026-05-17-post-draft-autosave-design.md` |
+| P2.23 | **Main-screen visual unification (no logic changes)** — apply the redesigned welcome-screen idiom (cream backdrop `#FFFBF7`, ambient orange blobs, white cards with soft shadow, IconTile pattern, staggered Reanimated entry) across Profile, Home Feed, Search, Create Post, Donations. Introduces shared primitives at `apps/mobile/src/components/ui/`: `Screen`, `Card`, `IconTile`, `Buttons`, `AmbientBlobs`, `MotionEntry`, `SectionHeading`. New token `colors.surfaceCream`. | agent-fe | 🟡 In progress | (visual-only — no FR adjustment) |
 
 ## P3 — Post-MVP (Deferred)
 

@@ -10,12 +10,14 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { colors, radius, spacing, typography } from '@kc/ui';
 import { TopBar } from '../TopBar';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfileStatsRow } from './ProfileStatsRow';
 import { ProfileTabs, type ProfilePostsTab } from './ProfileTabs';
 import { MyProfileOverflowMenu } from './MyProfileOverflowMenu';
+import { Card } from '../ui/Card';
+import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
@@ -61,62 +63,66 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
   return (
     <>
       <TopBar />
-      <View style={styles.profileOuter}>
-        <View
-          style={[styles.profileMenuCorner, profileMenuCornerHorizontalInset()]}
-          pointerEvents="box-none"
-        >
-          <MyProfileOverflowMenu showFollowRequests={user?.privacyMode === 'Private'} />
-        </View>
-        <View style={styles.profileCard}>
-          <ProfileHeader
-            displayName={displayName}
-            locationLine={user ? formatUserLocationLine(user) : null}
-            avatarUrl={avatarUrl}
-            biography={biography}
-            privacyMode={user?.privacyMode ?? 'Public'}
-            onLockPress={() => router.push('/settings/privacy' as never)}
-            size={72}
-          />
-          <ProfileStatsRow
-            followersCount={user?.followersCount ?? 0}
-            followingCount={user?.followingCount ?? 0}
-            postsCount={user?.activePostsCountInternal ?? 0}
-            enabled
-            onPressFollowers={() =>
-              router.push({
-                pathname: '/user/[handle]/followers' as never,
-                params: { handle: user?.shareHandle ?? '' },
-              })
-            }
-            onPressFollowing={() =>
-              router.push({
-                pathname: '/user/[handle]/following' as never,
-                params: { handle: user?.shareHandle ?? '' },
-              })
-            }
-          />
-          <View style={styles.actionRow}>
-            <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
-              <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity style={styles.shareBtn}>
-              <Ionicons name="share-outline" size={18} color={colors.primary} />
-            </TouchableOpacity>
-          </View>
-          <TouchableOpacity
-            style={styles.statsLink}
-            onPress={() => router.push('/stats')}
-            accessibilityRole="button"
-            accessibilityLabel={t('settings.stats')}
+      <MotionEntry variant="hero" delay={ENTRY_DELAY.hero}>
+        <View style={styles.profileOuter}>
+          <View
+            style={[styles.profileMenuCorner, profileMenuCornerHorizontalInset()]}
+            pointerEvents="box-none"
           >
-            <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
-            <Text style={styles.statsLinkText}>{t('settings.stats')}</Text>
-            <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
-          </TouchableOpacity>
+            <MyProfileOverflowMenu showFollowRequests={user?.privacyMode === 'Private'} />
+          </View>
+          <Card padding="base" style={styles.profileCard}>
+            <ProfileHeader
+              displayName={displayName}
+              locationLine={user ? formatUserLocationLine(user) : null}
+              avatarUrl={avatarUrl}
+              biography={biography}
+              privacyMode={user?.privacyMode ?? 'Public'}
+              onLockPress={() => router.push('/settings/privacy' as never)}
+              size={72}
+            />
+            <ProfileStatsRow
+              followersCount={user?.followersCount ?? 0}
+              followingCount={user?.followingCount ?? 0}
+              postsCount={user?.activePostsCountInternal ?? 0}
+              enabled
+              onPressFollowers={() =>
+                router.push({
+                  pathname: '/user/[handle]/followers' as never,
+                  params: { handle: user?.shareHandle ?? '' },
+                })
+              }
+              onPressFollowing={() =>
+                router.push({
+                  pathname: '/user/[handle]/following' as never,
+                  params: { handle: user?.shareHandle ?? '' },
+                })
+              }
+            />
+            <View style={styles.actionRow}>
+              <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
+                <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
+              </TouchableOpacity>
+              <TouchableOpacity style={styles.shareBtn}>
+                <Ionicons name="share-outline" size={18} color={colors.primary} />
+              </TouchableOpacity>
+            </View>
+            <TouchableOpacity
+              style={styles.statsLink}
+              onPress={() => router.push('/stats')}
+              accessibilityRole="button"
+              accessibilityLabel={t('settings.stats')}
+            >
+              <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
+              <Text style={styles.statsLinkText}>{t('settings.stats')}</Text>
+              <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          </Card>
         </View>
-      </View>
-      <ProfileTabs active={activeTab} onChange={goToTab} />
+      </MotionEntry>
+      <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
+        <ProfileTabs active={activeTab} onChange={goToTab} />
+      </MotionEntry>
     </>
   );
 }
@@ -143,30 +149,29 @@ const styles = StyleSheet.create({
     top: spacing.sm,
     zIndex: 2,
   },
-  profileCard: {
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    padding: spacing.base,
-    ...shadow.card,
-    gap: spacing.base,
-  },
+  // Card primitive supplies bg + radius + shadow; we only add layout-level gap.
+  profileCard: { gap: spacing.base },
   actionRow: { flexDirection: 'row', gap: spacing.sm },
+  // Edit / share pills mirror the secondary button in the welcome screen
+  // (white card surface, soft border, radius.lg).
   editBtn: {
     flex: 1,
-    height: 40,
-    borderRadius: radius.md,
+    height: 44,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: colors.border,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
   editBtnText: { ...typography.button, color: colors.textPrimary },
   shareBtn: {
-    width: 40,
-    height: 40,
-    borderRadius: radius.md,
+    width: 44,
+    height: 44,
+    borderRadius: radius.lg,
     borderWidth: 1.5,
     borderColor: colors.border,
+    backgroundColor: colors.surface,
     justifyContent: 'center',
     alignItems: 'center',
   },
