@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { exchangeOAuthCode } from '../../src/services/authComposition';
@@ -14,6 +15,7 @@ import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 
 export default function AuthCallbackScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{
     code?: string;
     error?: string;
@@ -33,7 +35,7 @@ export default function AuthCallbackScreen() {
       return;
     }
     if (!code) {
-      setError('קישור החזרה לא תקין: לא נמצא קוד אימות.');
+      setError(t('auth.callbackInvalidLink'));
       return;
     }
     let cancelled = false;
@@ -62,22 +64,22 @@ export default function AuthCallbackScreen() {
         if (cancelled) return;
         const msg = isAuthError(err)
           ? mapAuthErrorToHebrew(err.code)
-          : 'שגיאה בהשלמת ההתחברות. נסה שוב.';
+          : t('auth.callbackGenericError');
         setError(msg);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [code, oauthError, oauthErrorDesc, router, setSession]);
+  }, [code, oauthError, oauthErrorDesc, router, setSession, t]);
 
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.title}>ההתחברות לא הושלמה</Text>
+        <Text style={styles.title}>{t('auth.callbackFailedTitle')}</Text>
         <Text style={styles.body}>{error}</Text>
         <TouchableOpacity style={styles.btn} onPress={() => router.replace('/(auth)')}>
-          <Text style={styles.btnText}>חזרה למסך הכניסה</Text>
+          <Text style={styles.btnText}>{t('auth.backToSignInCta')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -86,7 +88,7 @@ export default function AuthCallbackScreen() {
   return (
     <View style={styles.center}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.body}>משלים התחברות…</Text>
+      <Text style={styles.body}>{t('auth.callbackCompleting')}</Text>
     </View>
   );
 }

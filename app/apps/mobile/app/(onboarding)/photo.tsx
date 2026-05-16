@@ -1,6 +1,7 @@
 // Onboarding step 3 — FR-AUTH-011 (camera+gallery, resize+upload, skip→silhouette).
 import React, { useState } from 'react';
 import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
@@ -17,6 +18,7 @@ const HALO_SIZE = 196;
 const AVATAR_SIZE = 128;
 
 export default function OnboardingPhotoScreen() {
+  const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
   const {
     session, avatarUrl, hasAvatar,
@@ -50,11 +52,11 @@ export default function OnboardingPhotoScreen() {
             onPress={openSheet}
             disabled={busy}
             accessibilityRole="button"
-            accessibilityLabel={hasAvatar ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
+            accessibilityLabel={hasAvatar ? t('onboarding.photoReplaceA11y') : t('onboarding.photoAddA11y')}
           >
             <HeroHalo size={HALO_SIZE}>
               <AvatarInitials
-                name={session?.displayName ?? 'משתמש'}
+                name={session?.displayName ?? t('profile.fallbackName')}
                 avatarUrl={avatarUrl}
                 size={AVATAR_SIZE}
               />
@@ -71,11 +73,11 @@ export default function OnboardingPhotoScreen() {
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(1)}>
-          <Text style={styles.title}>תמונת פרופיל</Text>
+          <Text style={styles.title}>{t('onboarding.stepPhoto')}</Text>
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(2)}>
-          <Text style={styles.subtitle}>פנים מוכרות עוזרות לבנות אמון בקהילה.</Text>
+          <Text style={styles.subtitle}>{t('onboarding.photoSubtitle')}</Text>
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(3)} style={styles.changeBtnWrap}>
@@ -90,7 +92,7 @@ export default function OnboardingPhotoScreen() {
               color={colors.primary}
             />
             <Text style={styles.changeBtnText}>
-              {hasAvatar ? 'החלף תמונה' : 'בחר תמונה'}
+              {hasAvatar ? t('onboarding.photoReplaceCta') : t('onboarding.photoChooseCta')}
             </Text>
           </PressableScale>
         </AnimatedEntry>
@@ -108,7 +110,7 @@ export default function OnboardingPhotoScreen() {
             ) : (
               <>
                 <Text style={styles.ctaText}>
-                  {hasAvatar ? 'המשך עם התמונה' : 'המשך ללא תמונה'}
+                  {hasAvatar ? t('onboarding.photoContinueWithCta') : t('onboarding.photoContinueWithoutCta')}
                 </Text>
                 <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
               </>
@@ -117,7 +119,7 @@ export default function OnboardingPhotoScreen() {
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(5)}>
-          <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בפרופיל.</Text>
+          <Text style={styles.hint}>{t('onboarding.photoHint')}</Text>
         </AnimatedEntry>
       </View>
 

@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '@kc/ui';
 import { isAuthError } from '@kc/application';
@@ -27,6 +28,7 @@ import { welcomeScreenStyles as styles } from '../../src/components/auth/welcome
 
 export default function WelcomeScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const setGuest = useAuthStore((s) => s.setGuest);
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -51,7 +53,7 @@ export default function WelcomeScreen() {
           ? null // user closed the browser — silent
           : isAuthError(err)
             ? mapAuthErrorToHebrew(code)
-            : 'שגיאת רשת. נסה שוב.';
+            : t('auth.networkError');
       if (message && !useAuthStore.getState().isAuthenticated) {
         setGoogleError(`${message} (${isAuthError(err) ? err.message : String(err)})`);
       }
@@ -71,16 +73,16 @@ export default function WelcomeScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.appName}>קהילת קארמה</Text>
-          <Text style={styles.tagline}>תן. קבל. חבר קהילה.</Text>
+          <Text style={styles.appName}>{t('auth.welcomeAppName')}</Text>
+          <Text style={styles.tagline}>{t('auth.tagline')}</Text>
         </View>
 
         {/* Value props */}
         <View style={styles.valueProps}>
           {[
-            { emoji: '🎁', text: 'פרסם חפצים שאינך צריך' },
-            { emoji: '🔍', text: 'מצא מה שאתה מחפש' },
-            { emoji: '💬', text: 'תאם מסירה ישירות' },
+            { emoji: '🎁', text: t('auth.welcomeValueProp1') },
+            { emoji: '🔍', text: t('auth.welcomeValueProp2') },
+            { emoji: '💬', text: t('auth.welcomeValueProp3') },
           ].map((item) => (
             <View key={item.text} style={styles.valuePropRow}>
               <Text style={styles.valuePropEmoji}>{item.emoji}</Text>
@@ -93,7 +95,7 @@ export default function WelcomeScreen() {
         <View style={styles.buttons}>
           {Platform.OS === 'ios' && (
             <AuthButton
-              label="המשך עם Apple"
+              label={t('auth.continueWithApple')}
               emoji="🍎"
               style={styles.appleBtn}
               textStyle={styles.appleBtnText}
@@ -102,7 +104,7 @@ export default function WelcomeScreen() {
           )}
 
           <AuthButton
-            label="המשך עם Google"
+            label={t('auth.continueWithGoogle')}
             emoji="G"
             style={styles.googleBtn}
             textStyle={styles.googleBtnText}
@@ -118,15 +120,13 @@ export default function WelcomeScreen() {
               router.replace('/(guest)/feed' as Href);
             }}
           >
-            <Text style={styles.guestBtnText}>הצץ בפיד (ללא כניסה)</Text>
+            <Text style={styles.guestBtnText}>{t('auth.guestPreviewCta')}</Text>
           </TouchableOpacity>
         </View>
 
-        <Text style={styles.legal}>
-          בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות.
-        </Text>
+        <Text style={styles.legal}>{t('auth.legalConsentShort')}</Text>
       </ScrollView>
-      <NotifyModal visible={googleError !== null} title="כניסה עם Google נכשלה" message={googleError ?? ''} onDismiss={() => setGoogleError(null)} />
+      <NotifyModal visible={googleError !== null} title={t('auth.googleSignInFailedTitle')} message={googleError ?? ''} onDismiss={() => setGoogleError(null)} />
     </SafeAreaView>
   );
 }
