@@ -29,7 +29,7 @@ interface Props {
 }
 
 export function OnboardingSoftGateModal({
-  const { t } = useTranslation(); visible, onClose, onSaved }: Props) {
+  visible, onClose, onSaved }: Props) {
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
