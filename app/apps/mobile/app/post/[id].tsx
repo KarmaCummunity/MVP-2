@@ -16,23 +16,39 @@ import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
+import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { styles } from './postDetailScreen.styles';
 
+function normalizeRoutePostId(raw: string | string[] | undefined): string | undefined {
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof id !== 'string') return undefined;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return undefined;
+  return trimmed;
+}
+
 export default function PostDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
+  const postIdParam = normalizeRoutePostId(rawId);
   const router = useRouter();
   const { t } = useTranslation();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
 
   const query = useQuery({
-    queryKey: ['post', id, viewerId],
-    queryFn: () => getPostByIdUseCase().execute({ postId: id ?? '', viewerId }),
-    enabled: Boolean(id),
+    queryKey: ['post', postIdParam, viewerId],
+    queryFn: () => getPostByIdUseCase().execute({ postId: postIdParam ?? '', viewerId }),
+    enabled: Boolean(postIdParam),
   });
+
+  const exitAfterOwnerMutation = (messageKey: 'closure.detailCloseSuccessToast' | 'closure.detailReopenSuccessToast') => {
+    useFeedSessionStore.getState().showEphemeralToast(t(messageKey), 'success', 2200);
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  };
 
   if (query.isLoading) {
     return (
@@ -143,12 +159,9 @@ export default function PostDetailScreen() {
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
-          // onClosed: pop back; onReopened: refetch in place (CTA flips).
-          onClosed={() => {
-            if (router.canGoBack()) router.back();
-            else router.replace('/(tabs)');
-          }}
-          onReopened={() => void query.refetch()}
+          // onClosed / onReopened: toast + leave detail (lists invalidated in OwnerActionsBar).
+          onClosed={() => exitAfterOwnerMutation('closure.detailCloseSuccessToast')}
+          onReopened={() => exitAfterOwnerMutation('closure.detailReopenSuccessToast')}
         />
       ) : !isOwner ? (
         <View style={styles.cta}>

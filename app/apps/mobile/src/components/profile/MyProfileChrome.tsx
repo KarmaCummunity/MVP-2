@@ -73,7 +73,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfileChro
           style={[styles.profileMenuCorner, profileMenuCornerHorizontalInset()]}
           pointerEvents="box-none"
         >
-          <MyProfileOverflowMenu />
+          <MyProfileOverflowMenu showFollowRequests={user?.privacyMode === 'Private'} />
         </View>
         <View style={styles.profileCard}>
           <ProfileHeader

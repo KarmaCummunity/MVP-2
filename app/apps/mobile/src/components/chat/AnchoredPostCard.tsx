@@ -61,7 +61,8 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
 
   useEffect(() => {
     if (sawPostClosedSysMsg && closureStep === 'idle') {
-      void queryClient.invalidateQueries({ queryKey: ['post', anchorPostId, viewerId] });
+      void queryClient.invalidateQueries({ queryKey: ['post', anchorPostId] });
+      void queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
       invalidatePersonalStatsCaches(queryClient, viewerId);
     }
   }, [sawPostClosedSysMsg, closureStep, anchorPostId, viewerId, queryClient]);
@@ -75,7 +76,8 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
       void queryClient.invalidateQueries({ queryKey: ['feed'] });
       void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       void queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
-      void queryClient.invalidateQueries({ queryKey: ['post', anchorPostId, viewerId] });
+      void queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      void queryClient.invalidateQueries({ queryKey: ['post', anchorPostId] });
       invalidatePersonalStatsCaches(queryClient, viewerId);
     }
   }, [closureStep, closureInitiator, resetClosure, queryClient, anchorPostId, viewerId]);

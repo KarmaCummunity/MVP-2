@@ -31,6 +31,7 @@ import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOver
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
 import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profileTabSession';
 import { otherProfileScreenStyles as styles } from '../../../src/components/profile/otherProfileScreen.styles';
+import { nativeStackHeaderRightIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
 export default function OtherProfileScreen() {
   const { t } = useTranslation();
@@ -115,7 +116,14 @@ export default function OtherProfileScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: '', headerRight: !isMe ? () => <ProfileOverflowMenu targetUserId={u.userId} /> : undefined }} />
+      <Stack.Screen
+        options={{
+          headerTitle: '',
+          ...(!isMe
+            ? nativeStackHeaderRightIconOnly(() => <ProfileOverflowMenu targetUserId={u.userId} />)
+            : { headerRight: undefined }),
+        }}
+      />
       <ScrollView>
         <View style={styles.card}>
           <ProfileHeader

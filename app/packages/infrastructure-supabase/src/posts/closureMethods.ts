@@ -115,6 +115,9 @@ export async function getClosureCandidates(
     .single();
   if (ownerErr) throw mapClosurePgError(ownerErr);
   const ownerId = ownerRow.owner_id;
+  if (!ownerId) {
+    throw new PostError('unknown', 'post_missing_owner');
+  }
 
   // Pull EVERY chat the owner is part of (not just chats anchored to THIS post).
   // Reason: `findOrCreateChat` reuses an existing chat between two users and
@@ -133,15 +136,19 @@ export async function getClosureCandidates(
   // Dedupe by partner userId, keep latest last_message_at.
   const partners = new Map<string, string>();
   for (const c of chats ?? []) {
-    const otherId = c.participant_a === ownerId ? c.participant_b : c.participant_a;
-    if (otherId === ownerId) continue; // safety
+    const rawOther = c.participant_a === ownerId ? c.participant_b : c.participant_a;
+    // SET NULL on deleted accounts — skip; otherwise `.in('user_id', …)` can send
+    // invalid UUIDs and Postgres returns: invalid input syntax for type uuid: "null".
+    const otherId = rawOther ?? '';
+    if (!otherId || otherId === ownerId) continue;
     if (!c.last_message_at) continue;
     const prev = partners.get(otherId);
     if (!prev || prev < c.last_message_at) partners.set(otherId, c.last_message_at);
   }
   if (partners.size === 0) return [];
 
-  const ids = Array.from(partners.keys());
+  const ids = Array.from(partners.keys()).filter((uid) => uid.length > 0);
+  if (ids.length === 0) return [];
   const { data: users, error: usersErr } = await client
     .from('users')
     .select('user_id, display_name, avatar_url, city_name')

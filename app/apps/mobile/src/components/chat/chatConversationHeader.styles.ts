@@ -1,0 +1,35 @@
+// Styles for `ChatConversationHeader.tsx` (kept out of `app/` so `src/` does not import `app/`).
+import { StyleSheet } from 'react-native';
+import { colors, typography, spacing } from '@kc/ui';
+
+export const chatConversationHeaderStyles = StyleSheet.create({
+  wrap: {
+    backgroundColor: colors.surface,
+    borderBottomWidth: StyleSheet.hairlineWidth,
+    borderBottomColor: colors.border,
+    zIndex: 2,
+    elevation: 4,
+  },
+  row: {
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    minHeight: 44,
+    paddingHorizontal: spacing.sm,
+  },
+  side: {
+    width: 44,
+    height: 44,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  titleWrap: {
+    flex: 1,
+    minWidth: 0,
+    minHeight: 44,
+    justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+  },
+  title: { ...typography.h3, color: colors.textPrimary },
+});

@@ -15,7 +15,7 @@ interface Props {
 export function ChatNotFoundView({ onBack }: Props) {
   const { t } = useTranslation();
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
+    <SafeAreaView style={styles.container} edges={['top', 'bottom']}>
       <EmptyState
         icon="chatbubble-ellipses-outline"
         title={t('chat.notFoundTitle')}

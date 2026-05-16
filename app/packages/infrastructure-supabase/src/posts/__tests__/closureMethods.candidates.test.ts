@@ -13,7 +13,7 @@ interface FakeOpts {
   chats?: Array<{
     chat_id: string;
     participant_a: string;
-    participant_b: string;
+    participant_b: string | null;
     last_message_at: string | null;
     is_support_thread?: boolean;
     removed_at?: string | null;
@@ -171,5 +171,29 @@ describe('getClosureCandidates — dedupe + sort', () => {
     });
     const out = await getClosureCandidates(client, 'p_1');
     expect(out[0]?.userId).toBe('u_partner');
+  });
+
+  it('skips chats where the counterpart is null (deleted account / SET NULL) and still returns other partners', async () => {
+    const { client } = makeFakeClient({
+      ownerRow: { owner_id: 'u_owner' },
+      chats: [
+        {
+          chat_id: 'c_ghost',
+          participant_a: 'u_owner',
+          participant_b: null,
+          last_message_at: '2026-05-16T12:00:00Z',
+        },
+        {
+          chat_id: 'c_ok',
+          participant_a: 'u_owner',
+          participant_b: 'u_p1',
+          last_message_at: '2026-05-15T12:00:00Z',
+        },
+      ],
+      users: [{ user_id: 'u_p1', display_name: 'Bob', avatar_url: null, city_name: null }],
+    });
+    const out = await getClosureCandidates(client, 'p_1');
+    expect(out).toHaveLength(1);
+    expect(out[0]?.userId).toBe('u_p1');
   });
 });

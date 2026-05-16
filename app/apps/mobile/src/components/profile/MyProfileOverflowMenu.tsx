@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 
-export function MyProfileOverflowMenu() {
+export function MyProfileOverflowMenu({ showFollowRequests }: Readonly<{ showFollowRequests: boolean }>) {
   const router = useRouter();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -40,8 +40,12 @@ export function MyProfileOverflowMenu() {
             <SheetItem label={t('settings.notifications')} onPress={() => go('/settings/notifications')} />
             <View style={styles.divider} />
             <SheetItem label={t('settings.privateProfileToggle')} onPress={() => go('/settings/privacy')} />
-            <View style={styles.divider} />
-            <SheetItem label={t('settings.followRequests')} onPress={() => go('/settings/follow-requests')} />
+            {showFollowRequests ? (
+              <>
+                <View style={styles.divider} />
+                <SheetItem label={t('settings.followRequests')} onPress={() => go('/settings/follow-requests')} />
+              </>
+            ) : null}
             <View style={styles.divider} />
             <SheetItem label={t('settings.stats')} onPress={() => go('/stats')} />
             <View style={styles.divider} />

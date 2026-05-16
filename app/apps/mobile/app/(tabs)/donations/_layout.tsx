@@ -1,14 +1,13 @@
 // Donations tab — Stack within the tab so Hub / Money / Time / Category share back-nav.
 // Mapped to: FR-DONATE-001..009 / D-16.
-import React from 'react';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
-import { BackButton } from '../../../src/components/BackButton';
+import { nativeStackHeaderLeftIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
 const detailHeader = {
   headerShown: true,
-  headerLeft: BackButton,
+  ...nativeStackHeaderLeftIconOnly,
   headerBackVisible: false,
   headerTintColor: colors.primary,
   headerStyle: { backgroundColor: colors.surface },

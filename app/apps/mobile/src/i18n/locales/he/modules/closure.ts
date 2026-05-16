@@ -3,6 +3,8 @@
 // `index.ts` under the 200-LOC cap (TD-156 slice 6).
 export const closureHe = {
   // FR-CLOSURE-001 — owner CTAs on PostDetail (OwnerActionsBar)
+  detailCloseSuccessToast: 'הפוסט נסגר בהצלחה.',
+  detailReopenSuccessToast: 'הפוסט נפתח מחדש בהצלחה.',
   markGiveCta: 'סמן כנמסר ✓',
   markRequestCta: 'סמן שקיבלתי ✓',
   reopenCta: '📤 פתח מחדש',

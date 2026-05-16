@@ -86,6 +86,7 @@ A row entry leading to the Follow Requests screen, visible only when the profile
 - AC1. Row label: "Follow requests (X)" with X being the current pending count.
 - AC2. Tapping navigates to `FR-FOLLOW-007` (screen 5.4).
 - AC3. The row is hidden when `User.privacy_mode = Public`.
+- AC4. The My Profile card `⋮` overflow omits the same entry when `User.privacy_mode = Public` (parity with the Settings list).
 
 **Related.** Screens: 5.4.
 

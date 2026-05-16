@@ -171,7 +171,9 @@ export default function RootLayout() {
                     <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
                     {/* user/[handle]/* owns its own header via the nested _layout */}
                     <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    <Stack.Screen name="chat/[id]" options={detailStackScreenOptions} />
+                    {/* In-screen `ChatConversationHeader` owns the top bar; a native-stack header
+                        must stay off so it never sits above the custom bar on web/mobile (taps). */}
+                    <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
                     {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
                     <Stack.Screen name="chat/index" options={{ headerShown: false }} />
                   </Stack>

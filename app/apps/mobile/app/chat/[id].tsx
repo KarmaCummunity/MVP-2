@@ -1,11 +1,11 @@
 // Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
-import React, { useEffect, useLayoutEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  View, Text, FlatList, TextInput, TouchableOpacity, Pressable,
+  View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
@@ -26,13 +26,13 @@ import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../s
 import { EnablePushModal } from '../../src/components/EnablePushModal';
 import { ChatNotFoundView } from '../../src/components/chat/ChatNotFoundView';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { ChatConversationHeader } from '../../src/components/chat/ChatConversationHeader';
 
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
 
 export default function ChatScreen() {
   const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string }>();
   const chatId = id!;
-  const navigation = useNavigation();
   const router = useRouter();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId)!;
@@ -60,28 +60,6 @@ export default function ChatScreen() {
       useChatStore.getState().markChatLocallyRead(chatId);
     })();
   }, [unreadIncoming, chatId, userId]);
-
-  useLayoutEffect(() => {
-    const title = counterpart.displayName ?? t('common.deletedUser');
-    const canOpenProfile = !counterpart.isDeleted && !!counterpart.shareHandle && !chat?.isSupportThread;
-    navigation.setOptions({
-      title,
-      headerTitle: () => (
-        <TouchableOpacity
-          disabled={!canOpenProfile}
-          onPress={() => router.push(`/user/${counterpart.shareHandle}`)}
-          accessibilityRole={canOpenProfile ? 'button' : undefined}
-        >
-          <Text style={styles.headerTitle}>{title}</Text>
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel={t('chat.headerActionsA11y')}>
-          <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, router, counterpart, chat?.isSupportThread, t]);
 
   const counter = input.length;
   const showCounter = counter >= 1900;
@@ -119,6 +97,12 @@ export default function ChatScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ChatConversationHeader
+        title={counterpart.displayName ?? t('common.deletedUser')}
+        canOpenProfile={!counterpart.isDeleted && Boolean(counterpart.shareHandle)}
+        shareHandle={counterpart.shareHandle ?? undefined}
+        onOpenMenu={() => setMenuOpen(true)}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}

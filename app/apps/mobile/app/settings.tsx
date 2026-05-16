@@ -4,7 +4,7 @@ import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useQueryClient } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing } from '@kc/ui';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
@@ -17,6 +17,7 @@ import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfir
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 import { SettingsScreenRow } from '../src/components/SettingsScreenRow';
 import { settingsScreenStyles as styles } from './settings.styles';
+import { getUserRepo } from '../src/services/userComposition';
 
 /** Metro `__DEV__` is false in release; set `EXPO_PUBLIC_DEV_SETTINGS_TOOLS=1` for internal builds only. */
 const SHOW_SETTINGS_DEBUG_TOOLS =
@@ -26,6 +27,13 @@ export default function SettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
+  const userId = session?.userId;
+  const userQuery = useQuery({
+    queryKey: ['user-profile', userId],
+    queryFn: () => getUserRepo().findById(userId!),
+    enabled: Boolean(userId),
+  });
+  const showFollowRequests = userQuery.data?.privacyMode === 'Private';
   const isSuperAdmin = useIsSuperAdmin();
   const queryClient = useQueryClient();
   const [hardRefreshing, setHardRefreshing] = React.useState(false);
@@ -93,11 +101,13 @@ export default function SettingsScreen() {
             icon="lock-closed-outline"
             onPress={() => router.push('/settings/privacy' as never)}
           />
-          <SettingsScreenRow
-            label={t('settings.followRequests')}
-            icon="people-outline"
-            onPress={() => router.push('/settings/follow-requests' as never)}
-          />
+          {showFollowRequests ? (
+            <SettingsScreenRow
+              label={t('settings.followRequests')}
+              icon="people-outline"
+              onPress={() => router.push('/settings/follow-requests' as never)}
+            />
+          ) : null}
         </View>
 
         <Text style={styles.sectionTitle}>{t('settings.statsSection')}</Text>

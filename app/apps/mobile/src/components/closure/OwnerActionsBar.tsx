@@ -23,12 +23,12 @@ import { ReopenConfirmModal } from './ReopenConfirmModal';
 interface Props {
   post: Post;
   ownerId: string;
-  /** Called after a successful "mark as delivered". Parent typically navigates
-   * back, since the post is no longer the focus once the closure is done. */
-  onClosed: () => void;
-  /** Called after a successful reopen. Parent typically refetches the detail
-   * query so the now-open post stays on screen with the updated CTA. */
-  onReopened: () => void;
+  /** Called after caches are invalidated following a successful "mark as delivered".
+   * Parent typically shows confirmation and navigates away from post detail. */
+  onClosed: () => void | Promise<void>;
+  /** Called after a successful reopen. Parent typically shows confirmation and
+   * navigates away from post detail (same as onClosed). */
+  onReopened: () => void | Promise<void>;
 }
 
 export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) {
@@ -52,15 +52,19 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
   // Only handle done-state for closures initiated from the post-detail screen.
   // Chat-initiated closures are handled by AnchoredPostCard's own done-handler.
   useEffect(() => {
-    if (closureStep === 'done' && closureInitiator !== 'chat') {
-      resetClosure();
-      void queryClient.invalidateQueries({ queryKey: ['feed'] });
-      void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
-      void queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+    if (closureStep !== 'done' || closureInitiator === 'chat') return;
+    const closedPostId = post.postId;
+    resetClosure();
+    void (async () => {
+      await queryClient.invalidateQueries({ queryKey: ['feed'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['post', closedPostId] });
       invalidatePersonalStatsCaches(queryClient, ownerId);
-      onClosed();
-    }
-  }, [closureStep, closureInitiator, resetClosure, onClosed, queryClient, ownerId]);
+      await Promise.resolve(onClosed());
+    })();
+  }, [closureStep, closureInitiator, resetClosure, post.postId, onClosed, queryClient, ownerId]);
 
   const isOpen = post.status === 'open';
   const isReopenable =
@@ -86,8 +90,10 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['post', post.postId] });
       invalidatePersonalStatsCaches(queryClient, ownerId);
-      onReopened();
+      await Promise.resolve(onReopened());
     } catch (e) {
       const code: PostErrorCode = isPostError(e) ? e.code : 'unknown';
       setReopenError(mapPostErrorToHebrew(code));
