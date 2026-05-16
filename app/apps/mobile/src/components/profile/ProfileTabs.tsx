@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 
 export type ProfileTab = 'open' | 'closed' | 'removed';
@@ -11,11 +12,12 @@ export type ProfileTab = 'open' | 'closed' | 'removed';
 export function ProfileTabs({
   active, onChange,
 }: { active: ProfileTab; onChange: (t: ProfileTab) => void }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.row}>
-      <Tab label="פוסטים פתוחים" active={active === 'open'} onPress={() => onChange('open')} />
-      <Tab label="פוסטים סגורים" active={active === 'closed'} onPress={() => onChange('closed')} />
-      <Tab label="הוסרו" active={active === 'removed'} onPress={() => onChange('removed')} />
+      <Tab label={t('profile.tabOpen')} active={active === 'open'} onPress={() => onChange('open')} />
+      <Tab label={t('profile.tabClosed')} active={active === 'closed'} onPress={() => onChange('closed')} />
+      <Tab label={t('profile.tabRemoved')} active={active === 'removed'} onPress={() => onChange('removed')} />
     </View>
   );
 }

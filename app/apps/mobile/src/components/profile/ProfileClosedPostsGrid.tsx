@@ -1,5 +1,5 @@
 // app/apps/mobile/src/components/profile/ProfileClosedPostsGrid.tsx
-// Grid + loader + empty state for the "פוסטים סגורים" tab.
+// Grid + loader + empty state for the closed-posts tab.
 // Mapped to: FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised).
 
 import React from 'react';
@@ -22,23 +22,6 @@ export interface ProfileClosedPostsGridProps {
   onLoadMore?: () => void;
 }
 
-const EMPTY_COPY: Record<ClosedEmptyVariant, {
-  title: string;
-  subtitle: string;
-  icon: keyof typeof Ionicons.glyphMap;
-}> = {
-  self_closed: {
-    title: 'אין פוסטים סגורים עדיין',
-    subtitle: 'פוסטים שסגרת או שקיבלת יופיעו כאן.',
-    icon: 'archive-outline',
-  },
-  other_closed: {
-    title: 'אין פוסטים סגורים',
-    subtitle: 'משתמש זה עוד לא סגר ולא קיבל פוסט.',
-    icon: 'archive-outline',
-  },
-};
-
 export function ProfileClosedPostsGrid({
   items,
   isLoading,
@@ -48,6 +31,22 @@ export function ProfileClosedPostsGrid({
   onLoadMore,
 }: ProfileClosedPostsGridProps) {
   const { t } = useTranslation();
+  const EMPTY_COPY: Record<ClosedEmptyVariant, {
+    title: string;
+    subtitle: string;
+    icon: keyof typeof Ionicons.glyphMap;
+  }> = {
+    self_closed: {
+      title: t('profile.emptyClosedTitleSelf'),
+      subtitle: t('profile.emptySelfClosedSubtitle'),
+      icon: 'archive-outline',
+    },
+    other_closed: {
+      title: t('profile.emptyClosedTitle'),
+      subtitle: t('profile.emptyOtherClosedSubtitle'),
+      icon: 'archive-outline',
+    },
+  };
   if (isLoading) {
     return (
       <View style={styles.loading}>

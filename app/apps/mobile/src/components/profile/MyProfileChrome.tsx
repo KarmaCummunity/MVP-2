@@ -25,6 +25,7 @@ export function MyProfileChrome({ activeTab }: { activeTab: ProfileTab }) {
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId;
+  const fallbackName = t('profile.fallbackName');
 
   const userQuery = useQuery({
     queryKey: ['user-profile', userId],
@@ -32,7 +33,7 @@ export function MyProfileChrome({ activeTab }: { activeTab: ProfileTab }) {
     enabled: Boolean(userId),
   });
   const user = userQuery.data ?? null;
-  const displayName = user?.displayName?.trim() || resolveDisplayName(session);
+  const displayName = user?.displayName?.trim() || resolveDisplayName(session, fallbackName);
   const avatarUrl = user?.avatarUrl ?? session?.avatarUrl ?? null;
   const biography = user?.biography ?? null;
 
@@ -82,7 +83,7 @@ export function MyProfileChrome({ activeTab }: { activeTab: ProfileTab }) {
         />
         <View style={styles.actionRow}>
           <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
-            <Text style={styles.editBtnText}>ערוך פרופיל</Text>
+            <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
           </TouchableOpacity>
           <TouchableOpacity style={styles.shareBtn}>
             <Ionicons name="share-outline" size={18} color={colors.primary} />
@@ -104,13 +105,16 @@ export function MyProfileChrome({ activeTab }: { activeTab: ProfileTab }) {
   );
 }
 
-function resolveDisplayName(session: ReturnType<typeof useAuthStore.getState>['session']): string {
+function resolveDisplayName(
+  session: ReturnType<typeof useAuthStore.getState>['session'],
+  fallbackName: string,
+): string {
   if (session?.displayName && session.displayName.trim().length > 0) return session.displayName;
   if (session?.email) {
     const local = session.email.split('@')[0];
     if (local && local.length > 0) return local;
   }
-  return 'משתמש';
+  return fallbackName;
 }
 
 const styles = StyleSheet.create({

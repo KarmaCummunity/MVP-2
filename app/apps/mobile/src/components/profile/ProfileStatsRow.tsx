@@ -4,6 +4,7 @@
 
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 
 export interface ProfileStatsRowProps {
@@ -19,21 +20,22 @@ export function ProfileStatsRow({
   followersCount, followingCount, postsCount, enabled,
   onPressFollowers, onPressFollowing,
 }: ProfileStatsRowProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.row}>
       <Stat
         count={followersCount}
-        label="עוקבים"
+        label={t('profile.followers')}
         onPress={enabled ? onPressFollowers : undefined}
       />
       <View style={styles.divider} />
       <Stat
         count={followingCount}
-        label="נעקבים"
+        label={t('profile.following')}
         onPress={enabled ? onPressFollowing : undefined}
       />
       <View style={styles.divider} />
-      <Stat count={postsCount} label="פוסטים" />
+      <Stat count={postsCount} label={t('profile.statsPostsLabel')} />
     </View>
   );
 }

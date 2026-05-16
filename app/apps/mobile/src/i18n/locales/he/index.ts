@@ -16,6 +16,7 @@ import { aboutContentMerged } from './modules/aboutContentBundle';
 import { tabsHe } from './modules/tabs';
 import { errorBoundaryHe, devBannerHe, optionsMenuHe } from './modules/ui';
 import { feedHe } from './modules/feed';
+import { profileHe } from './modules/profile';
 
 const he = {
   // App
@@ -84,21 +85,8 @@ const he = {
   // Post — see modules/post.ts
   post: postHe,
 
-  // Profile
-  profile: {
-    myProfile: 'הפרופיל שלי',
-    editProfile: 'ערוך פרופיל',
-    shareProfile: 'שתף פרופיל',
-    followers: 'עוקבים',
-    following: 'נעקבים',
-    activePosts: 'פוסטים פעילים',
-    closedPosts: 'פוסטים שנמסרו',
-    follow: 'עקוב',
-    following_btn: 'מעקב פעיל ✓',
-    requestSent: 'בקשה נשלחה ⏳',
-    sendMessage: 'שלח הודעה',
-    privateProfile: '🔒 הפרופיל פרטי. שלח בקשת עקיבה כדי לראות פוסטים.',
-  },
+  // Profile — see modules/profile.ts
+  profile: profileHe,
 
   // Chat — see modules/chat.ts (FR-CHAT-016)
   chat: chatHe,
