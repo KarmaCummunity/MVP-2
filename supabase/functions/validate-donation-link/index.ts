@@ -24,6 +24,95 @@ const ALLOWED_SLUGS = new Set([
 
 const MAX_LINKS_PER_HOUR = 10;
 const FETCH_TIMEOUT_MS = 5000;
+const MAX_REDIRECT_HOPS = 3;
+
+// TD-79 / TD-82 (audit 2026-05-16, P2.12) — SSRF guard rails.
+// `validate-donation-link` server-side fetches a user-supplied URL. Before
+// this guard the only check was `^https?://`; the Edge runtime would
+// `fetch(redirect: 'follow')` and report 200/3xx/4xx/5xx as "reachable",
+// effectively giving any authenticated user a confused-deputy port scanner
+// over the Supabase Edge network (and following redirects into cloud
+// metadata / private IPv4 space).
+//
+// Defense in depth — three layers:
+//   1. Port allow-list (80 / 443 / default) before any DNS work.
+//   2. Hostname allow-list rejecting cloud-metadata names and IP-literal
+//      private/loopback/link-local ranges (IPv4 + IPv6).
+//   3. Manual redirect following — we re-validate the destination at every
+//      hop instead of trusting `redirect: 'follow'`.
+const ALLOWED_PORTS = new Set(['', '80', '443']);
+
+// Forbidden hostnames (lowercase exact match). The metadata names cover the
+// well-known cloud IMDS / metadata endpoints that an SSRF would target.
+const FORBIDDEN_HOSTNAMES = new Set<string>([
+  'localhost',
+  'localhost.localdomain',
+  'ip6-localhost',
+  'ip6-loopback',
+  'metadata',
+  'metadata.google.internal',
+  'metadata.azure.com',
+  'instance-data',
+  'instance-data.ec2.internal',
+]);
+
+function isPrivateIPv4(host: string): boolean {
+  // Accept dotted-quad only; ignore octal/hex tricks by requiring 4 decimal octets.
+  const m = host.match(/^(\d{1,3})\.(\d{1,3})\.(\d{1,3})\.(\d{1,3})$/);
+  if (!m) return false;
+  const a = Number(m[1]), b = Number(m[2]);
+  if (a > 255 || b > 255 || Number(m[3]) > 255 || Number(m[4]) > 255) return true;
+  // 0.0.0.0/8 — "this network".
+  if (a === 0) return true;
+  // 10/8
+  if (a === 10) return true;
+  // 127/8 loopback
+  if (a === 127) return true;
+  // 169.254/16 link-local + AWS / GCP metadata
+  if (a === 169 && b === 254) return true;
+  // 172.16/12 — 172.16..172.31
+  if (a === 172 && b >= 16 && b <= 31) return true;
+  // 192.168/16
+  if (a === 192 && b === 168) return true;
+  // 100.64/10 carrier-grade NAT (RFC6598)
+  if (a === 100 && b >= 64 && b <= 127) return true;
+  // 198.18/15 benchmarking
+  if (a === 198 && (b === 18 || b === 19)) return true;
+  // 224.0/4 multicast, 240.0/4 reserved
+  if (a >= 224) return true;
+  return false;
+}
+
+function isPrivateIPv6Literal(host: string): boolean {
+  // URL.hostname returns IPv6 wrapped in brackets — strip them.
+  let h = host;
+  if (h.startsWith('[') && h.endsWith(']')) h = h.slice(1, -1);
+  // Normalize: remove zone id (`%eth0`), lowercase.
+  h = h.split('%')[0].toLowerCase();
+  if (h === '::' || h === '::1') return true;
+  // fe80::/10 link-local
+  if (h.startsWith('fe8') || h.startsWith('fe9') || h.startsWith('fea') || h.startsWith('feb')) return true;
+  // fc00::/7 unique-local (fc00..fdff)
+  if (h.startsWith('fc') || h.startsWith('fd')) return true;
+  // ff00::/8 multicast
+  if (h.startsWith('ff')) return true;
+  // IPv4-mapped IPv6: ::ffff:a.b.c.d — check the embedded IPv4.
+  const mapped = h.match(/^::ffff:(\d{1,3}\.\d{1,3}\.\d{1,3}\.\d{1,3})$/);
+  if (mapped) return isPrivateIPv4(mapped[1]);
+  return false;
+}
+
+function isSafeHost(url: URL): { ok: true } | { ok: false; reason: string } {
+  if (!ALLOWED_PORTS.has(url.port)) {
+    return { ok: false, reason: `port_not_allowed:${url.port}` };
+  }
+  const host = url.hostname.toLowerCase();
+  if (!host || host.length > 253) return { ok: false, reason: 'hostname_invalid' };
+  if (FORBIDDEN_HOSTNAMES.has(host)) return { ok: false, reason: 'hostname_forbidden' };
+  if (isPrivateIPv4(host)) return { ok: false, reason: 'ipv4_private' };
+  if (isPrivateIPv6Literal(host)) return { ok: false, reason: 'ipv6_private' };
+  return { ok: true };
+}
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -49,30 +138,53 @@ function parseUrl(raw: unknown): URL | null {
   }
 }
 
-async function checkReachable(url: string): Promise<boolean> {
-  // Try HEAD first; some hosts reject HEAD with 405 — fall back to GET.
-  for (const method of ['HEAD', 'GET'] as const) {
-    try {
-      const resp = await fetch(url, {
-        method,
-        redirect: 'follow',
-        signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
-        headers: { 
-          'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-          'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
-          'Accept-Language': 'en-US,en;q=0.5'
-        },
-      });
-      // We accept any response except 404 (Not Found). 
-      // Cloudflare/anti-bot might return 403, 503, 401, etc. which means the server exists and is reachable.
-      if (resp.status !== 404) return true;
-      if (method === 'HEAD') continue;
-      return false;
-    } catch {
-      // Network error, DNS resolution failed, or timeout — try next method.
-      if (method === 'GET') return false;
+// Manually follow redirects and re-validate the destination at each hop.
+// Closes TD-79 / TD-82 — `redirect: 'follow'` would let a 302 to
+// `http://169.254.169.254/latest/meta-data/` escape the initial isSafeHost
+// check.
+async function checkReachable(initial: URL): Promise<boolean> {
+  let url = initial;
+  for (let hop = 0; hop <= MAX_REDIRECT_HOPS; hop++) {
+    const safety = isSafeHost(url);
+    if (!safety.ok) return false;
+    for (const method of ['HEAD', 'GET'] as const) {
+      try {
+        const resp = await fetch(url.toString(), {
+          method,
+          redirect: 'manual',
+          signal: AbortSignal.timeout(FETCH_TIMEOUT_MS),
+          headers: {
+            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
+            'Accept-Language': 'en-US,en;q=0.5',
+          },
+        });
+        // Redirect — re-validate the next hop. `Location` may be relative.
+        if (resp.status >= 300 && resp.status < 400) {
+          const loc = resp.headers.get('location');
+          if (!loc) return false;
+          let next: URL;
+          try {
+            next = new URL(loc, url);
+          } catch {
+            return false;
+          }
+          if (!/^https?:$/i.test(next.protocol)) return false;
+          url = next;
+          break; // out of the HEAD/GET loop; outer hop loop re-checks safety.
+        }
+        // Accept any non-redirect, non-404 status as "reachable". Cloudflare /
+        // anti-bot frequently returns 403/503/401 for legitimate sites.
+        if (resp.status !== 404) return true;
+        if (method === 'HEAD') continue;
+        return false;
+      } catch {
+        // Network error / DNS failure / timeout — try the next method, or fail.
+        if (method === 'GET') return false;
+      }
     }
   }
+  // Exceeded MAX_REDIRECT_HOPS.
   return false;
 }
 
@@ -123,12 +235,19 @@ serve(async (req) => {
 
   const parsed = parseUrl(body.url);
   if (!parsed) return jsonResponse({ ok: false, code: 'invalid_url' }, 200);
+  // TD-79 / TD-82 — SSRF host guard. Reject private / loopback / metadata
+  // hosts and non-standard ports before issuing any fetch. The reachability
+  // check also re-runs this guard on every redirect hop.
+  const initialSafety = isSafeHost(parsed);
+  if (!initialSafety.ok) {
+    return jsonResponse({ ok: false, code: 'invalid_url' }, 200);
+  }
 
   const adminClient = createClient(SUPABASE_URL, SUPABASE_SERVICE_ROLE_KEY, {
     auth: { persistSession: false },
   });
 
-  const reachable = await checkReachable(parsed.toString());
+  const reachable = await checkReachable(parsed);
   if (!reachable) {
     return jsonResponse({ ok: false, code: 'unreachable' }, 200);
   }
