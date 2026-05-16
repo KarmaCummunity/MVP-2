@@ -1,5 +1,5 @@
 // FR-PROFILE-007 — Edit Profile (getEditableProfile + UpdateProfileUseCase).
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
   Text, TextInput, TouchableOpacity, View,
@@ -15,6 +15,7 @@ import { useAuthStore } from '../src/store/authStore';
 import { getEditableProfile, getUpdateProfileUseCase } from '../src/services/userComposition';
 import { removeUploadedAvatar } from '../src/services/avatarUpload';
 import { mapEditProfileSaveError } from '../src/lib/editProfileSaveErrors';
+import { useUnsavedChangesGuard } from '../src/hooks/useUnsavedChangesGuard';
 import { editProfileStyles as styles } from './edit-profile.styles';
 
 interface InitialState {
@@ -76,6 +77,27 @@ export default function EditProfileScreen() {
     })();
     return () => { cancelled = true; };
   }, [session]);
+
+  // Audit §16.10 — confirm before discarding unsaved edits on Back.
+  const isDirty = useMemo(() => {
+    if (!initial) return false;
+    const ts = street.trim() || null;
+    const tn = streetNumber.trim() || null;
+    const newBio = biography.trim() || null;
+    return (
+      displayName.trim() !== initial.displayName ||
+      (city?.id ?? '') !== initial.cityId ||
+      newBio !== initial.biography ||
+      avatarUrl !== initial.avatarUrl ||
+      ts !== (initial.profileStreet ?? null) ||
+      tn !== (initial.profileStreetNumber ?? null)
+    );
+  }, [initial, displayName, city, biography, avatarUrl, street, streetNumber]);
+  useUnsavedChangesGuard({
+    isDirty: isDirty && !saving, title: 'יש שינויים שלא נשמרו',
+    message: 'אם תצא עכשיו השינויים יאבדו. לצאת בכל זאת?',
+    discardLabel: 'צא בלי לשמור', cancelLabel: 'ביטול',
+  });
 
   const handleSave = async () => {
     if (!session || !initial) return;
