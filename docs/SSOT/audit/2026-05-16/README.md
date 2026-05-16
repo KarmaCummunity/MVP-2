@@ -21,6 +21,7 @@ This audit was run six days after the prior one, after P2.7–P2.11 landed (priv
 | `06_donations_stats_settings.md` | FR-DONATE-*, FR-STATS-*, FR-SETTINGS-* (specs 13, 10, 11) |
 | `07_mobile_frontend.md` | Cross-cutting FE: routing, RTL, state mgmt, error handling, perf |
 | `99_consolidated.md` | Master sheet, severity-sorted; lands in TECH_DEBT/BACKLOG |
+| `supplementary_findings.md` | Second independent pass later same day. 8 NEW rows (TD-50/51 BE + TD-158..164 FE) + verified false positives. |
 
 ## Severity scale
 
