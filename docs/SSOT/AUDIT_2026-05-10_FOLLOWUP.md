@@ -42,10 +42,9 @@
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
 | 4.3 [HIGH] OAuth callback doesn't validate `state` explicitly | ⏳ | Explicit state in `signInWithOAuth.options.queryParams` + `expo-secure-store`. |
-| 4.6 [MEDIUM] Soft-gate emoji literals in `Alert.alert` | ⏳ | Replace with Ionicons in custom modal. |
+| 4.6 [MEDIUM] Soft-gate emoji literals in `Alert.alert` | 🟡 | Type-toggle emojis (`🔍`/`🎁`) → Ionicons (this PR). Remaining: success toast emoji in `Alert.alert` is rendered by `<EphemeralToast>` (no Alert.alert), so the audit's specific concern is moot; spot-verify on iOS 26 simulator. |
 | 4.7 [MEDIUM] AsyncStorage holds session in plaintext | 🟡 | Documented EXEC-1 trade-off; close pre-launch with `expo-secure-store` for refresh token. |
 | 4.9 [LOW] `app.json` may include unused permissions | ⏳ | Audit + prune (`WRITE_EXTERNAL_STORAGE`, `SYSTEM_ALERT_WINDOW` if present). |
-| 4.10 [LOW] emoji + format-string leaks via console/Alert | ⏳ | Folded into §4.6. |
 
 ## 5. Spec ↔ implementation gaps
 
@@ -118,8 +117,6 @@
 
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
-| 16.3 [HIGH] Type-toggle emoji in `(tabs)/create.tsx` | ⏳ | Folded into §4.6. |
-| 16.6 [MEDIUM] Soft-gate success alert emoji `✅` | ⏳ | Folded into §4.6. |
 | 16.8 [MEDIUM] Donations time composer no trim | ⏳ | Same shape as §16.7. |
 | 16.12 [MEDIUM] Many screens lack loading skeletons | ⏳ | Shared `<ScreenLoading />`. |
 

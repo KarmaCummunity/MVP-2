@@ -216,17 +216,23 @@ export default function CreatePostScreen() {
           <TouchableOpacity
             style={[styles.typeBtn, type === 'Request' && styles.typeBtnActive]}
             onPress={() => setType('Request')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: type === 'Request' }}
           >
+            <Ionicons name="search-outline" size={18} color={type === 'Request' ? colors.textInverse : colors.textPrimary} />
             <Text style={[styles.typeBtnText, type === 'Request' && styles.typeBtnTextActive]}>
-              🔍 לבקש חפץ
+              {t('post.request')}
             </Text>
           </TouchableOpacity>
           <TouchableOpacity
             style={[styles.typeBtn, type === 'Give' && styles.typeBtnActiveGive]}
             onPress={() => setType('Give')}
+            accessibilityRole="button"
+            accessibilityState={{ selected: type === 'Give' }}
           >
+            <Ionicons name="gift-outline" size={18} color={type === 'Give' ? colors.textInverse : colors.textPrimary} />
             <Text style={[styles.typeBtnText, type === 'Give' && styles.typeBtnTextActive]}>
-              🎁 לתת חפץ
+              {t('post.give')}
             </Text>
           </TouchableOpacity>
         </View>
