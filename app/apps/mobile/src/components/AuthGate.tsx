@@ -7,6 +7,7 @@ import React, { useEffect } from 'react';
 import { ActivityIndicator, Image, View } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
+import { useQueryClient } from '@tanstack/react-query';
 import { colors } from '@kc/ui';
 import {
   getRestoreSessionUseCase,
@@ -23,6 +24,7 @@ import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const router = useRouter();
   const segments = useSegments();
+  const queryClient = useQueryClient();
   const {
     session,
     isAuthenticated,
@@ -116,14 +118,20 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
   // changes so the subscription lifecycle is always in sync with auth state.
   // Ghost mode skips realtime entirely (the fake JWT would be rejected and
   // generate noisy WS reconnect loops).
+  //
+  // Audit 2026-05-10 §17.6 — also clear the React Query cache on sign-out so a
+  // follow-up sign-in on the same device doesn't see the previous user's
+  // cached posts/profile/feed in the first frame. Sign-in path doesn't clear:
+  // a returning user's own cached data is still valid.
   useEffect(() => {
     if (isDevGhostSessionEnabled()) return;
     if (session?.userId) {
       useChatStore.getState().startInboxSub(session.userId, container.chatRepo, container.chatRealtime);
     } else {
       useChatStore.getState().resetOnSignOut();
+      queryClient.clear();
     }
-  }, [session]);
+  }, [session, queryClient]);
 
   // Redirect rules:
   //   - Unauth + outside (auth)/(guest)/auth/callback/auth/verify → (auth).
