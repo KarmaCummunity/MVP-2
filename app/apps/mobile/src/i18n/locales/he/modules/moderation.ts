@@ -93,6 +93,11 @@ export const moderationHe = {
       networkError: 'תקלה ברשת. נסה שוב.',
     },
   },
+  supportIssueBubble: {
+    title: 'פנייה לתמיכה',
+    issueRef: 'מזהה פנייה:',
+    categoryLabel: 'קטגוריה:',
+  },
 } as const;
 
 export const auditHe = {

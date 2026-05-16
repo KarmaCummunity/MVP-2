@@ -57,6 +57,12 @@ export interface IChatRepository {
   getOrCreateSupportThread(userId: string): Promise<Chat>;
 
   /**
+   * FR-MOD-002 / FR-CHAT-007 AC3 — get/create the support thread and inject a
+   * system message with the issue details in one round-trip.
+   */
+  submitSupportIssue(category: string | null, description: string): Promise<Chat>;
+
+  /**
    * Returns true if the user has ever sent any user-kind message across all
    * chats. Used to detect the first-message-sent moment for push-prompt gating
    * (FR-NOTIF-015 AC1).
