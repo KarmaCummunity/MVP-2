@@ -16,4 +16,12 @@ export const chatHe = {
   hideFromInboxConfirm: 'הסר',
   menuReport: 'דווח על השיחה',
   minutesAgoShort: "לפני {{count}} דק'",
+
+  // InboxChatRow
+  hideChatA11y: 'הסר שיחה מהאינבוקס',
+
+  // AnchoredPostCard (FR-CHAT-014/015)
+  anchoredOpenA11y: 'פתח את הפוסט',
+  anchoredTypeGive: 'נותן',
+  anchoredTypeRequest: 'מבקש',
 } as const;

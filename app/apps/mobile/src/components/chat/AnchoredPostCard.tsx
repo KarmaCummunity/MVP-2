@@ -2,6 +2,7 @@
 import { useEffect, useMemo } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import type { GestureResponderEvent } from 'react-native';
@@ -22,12 +23,13 @@ interface Props {
   counterpartId: string | null;
 }
 
-const TYPE_LABEL: Record<PostType, string> = {
-  Give: 'נותן',
-  Request: 'מבקש',
+const TYPE_LABEL_KEYS: Record<PostType, string> = {
+  Give: 'chat.anchoredTypeGive',
+  Request: 'chat.anchoredTypeRequest',
 };
 
 export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
@@ -89,9 +91,9 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
 
   if (!showCard && !isActiveChatClosure) return null;
 
-  const typeLabel = post ? TYPE_LABEL[post.type] : '';
+  const typeLabel = post ? t(TYPE_LABEL_KEYS[post.type]) : '';
   const isGive = post?.type === 'Give';
-  const ctaText = post?.type === 'Give' ? 'סמן כנמסר ✓' : 'סמן שקיבלתי ✓';
+  const ctaText = post?.type === 'Give' ? t('closure.markGiveCta') : t('closure.markRequestCta');
 
   const openPost = () => {
     if (!post) return;
@@ -115,7 +117,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
           onPress={openPost}
           style={styles.card}
           accessibilityRole="button"
-          accessibilityLabel="פתח את הפוסט"
+          accessibilityLabel={t('chat.anchoredOpenA11y')}
         >
           <AnchoredPostCardPreview type={post!.type} mediaPaths={post!.mediaAssets} />
           <View style={styles.body}>

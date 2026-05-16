@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import type { ChatWithPreview } from '@kc/application';
 import { colors, typography, spacing } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
@@ -14,6 +15,7 @@ interface Props {
 }
 
 export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.chatRow}>
       <TouchableOpacity style={styles.chatRowMain} onPress={onOpen}>
@@ -46,7 +48,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
       <TouchableOpacity
         onPress={onRequestHide}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityLabel="הסר שיחה מהאינבוקס"
+        accessibilityLabel={t('chat.hideChatA11y')}
       >
         <Ionicons name="ellipsis-horizontal" size={22} color={colors.textSecondary} />
       </TouchableOpacity>
