@@ -53,3 +53,33 @@ export async function supabaseSetProfileAddressLines(
     .eq('user_id', userId);
   if (error) throw new Error(`setProfileAddressLines: ${error.message}`);
 }
+
+export type EditableProfilePatch = {
+  displayName?: string;
+  city?: string;
+  cityName?: string;
+  profileStreet?: string | null;
+  profileStreetNumber?: string | null;
+  biography?: string | null;
+  avatarUrl?: string | null;
+};
+
+/** Audit §3.5 — single `UPDATE users SET ...` so a multi-column edit lands
+ *  atomically. Caller passes only the fields it wants to change. */
+export async function supabaseUpdateEditableProfile(
+  client: SupabaseClient,
+  userId: string,
+  patch: EditableProfilePatch,
+): Promise<void> {
+  const row: Record<string, string | null> = {};
+  if (patch.displayName !== undefined) row.display_name = patch.displayName;
+  if (patch.city !== undefined) row.city = patch.city;
+  if (patch.cityName !== undefined) row.city_name = patch.cityName;
+  if (patch.profileStreet !== undefined) row.profile_street = patch.profileStreet;
+  if (patch.profileStreetNumber !== undefined) row.profile_street_number = patch.profileStreetNumber;
+  if (patch.biography !== undefined) row.biography = patch.biography;
+  if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl;
+  if (Object.keys(row).length === 0) return; // empty patch — caller is expected to validate
+  const { error } = await client.from('users').update(row).eq('user_id', userId);
+  if (error) throw new Error(`updateEditableProfile: ${error.message}`);
+}
