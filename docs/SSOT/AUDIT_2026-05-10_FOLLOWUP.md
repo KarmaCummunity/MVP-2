@@ -44,7 +44,6 @@
 | 4.3 [HIGH] OAuth callback doesn't validate `state` explicitly | ⏳ | Explicit state in `signInWithOAuth.options.queryParams` + `expo-secure-store`. |
 | 4.6 [MEDIUM] Soft-gate emoji literals in `Alert.alert` | ⏳ | Replace with Ionicons in custom modal. |
 | 4.7 [MEDIUM] AsyncStorage holds session in plaintext | 🟡 | Documented EXEC-1 trade-off; close pre-launch with `expo-secure-store` for refresh token. |
-| 4.8 [MEDIUM] No file-size cap after the 2048px resize | ⏳ | Assert `result.size < 5 MB` post-resize; re-encode at lower quality if larger. |
 | 4.9 [LOW] `app.json` may include unused permissions | ⏳ | Audit + prune (`WRITE_EXTERNAL_STORAGE`, `SYSTEM_ALERT_WINDOW` if present). |
 | 4.10 [LOW] emoji + format-string leaks via console/Alert | ⏳ | Folded into §4.6. |
 
