@@ -95,6 +95,7 @@ const he = {
     followersTag: '👥 לעוקבים בלבד',
     refreshSuccess: 'הפיד עודכן',
     refreshFailed: 'הרענון נכשל — נסה שוב',
+    refreshA11y: 'רענן את הפיד (R)',
   },
 
   // Post — see modules/post.ts
@@ -165,6 +166,7 @@ const he = {
     no: 'לא',
     back: 'חזרה',
     close: 'סגור',
+    gotIt: 'הבנתי',
     now: 'עכשיו',
     today: 'היום',
     yesterday: 'אתמול',
