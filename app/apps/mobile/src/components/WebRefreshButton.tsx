@@ -6,6 +6,7 @@
 import React, { useEffect } from 'react';
 import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '@kc/ui';
 
 interface WebRefreshButtonProps {
@@ -14,6 +15,7 @@ interface WebRefreshButtonProps {
 }
 
 export function WebRefreshButton({ onPress, isLoading }: WebRefreshButtonProps) {
+  const { t } = useTranslation();
   // R-key shortcut. Only attaches on web — and only fires when no input is
   // focused so we never hijack a typing user.
   useEffect(() => {
@@ -39,7 +41,7 @@ export function WebRefreshButton({ onPress, isLoading }: WebRefreshButtonProps) 
       style={styles.btn}
       onPress={onPress}
       disabled={isLoading}
-      accessibilityLabel="רענן את הפיד (R)"
+      accessibilityLabel={t('feed.refreshA11y')}
     >
       <Ionicons
         name="refresh-outline"
