@@ -31,6 +31,11 @@ const EXCLUDE = [
   // inline `> Note (2026-05-11)` blocks pointing to the live source).
   // Excluded so the lint doesn't fail on intentional historical text.
   ':!docs/SSOT/DECISIONS.md',
+  // AUDIT_2026-05-10_FOLLOWUP.md tracks legacy dead-doc drift as actionable
+  // rows (§8.2–8.4) — the dead-doc names must appear verbatim to identify
+  // what's being removed. Excluded so the lint doesn't recursively flag the
+  // rows whose purpose is to document the dead refs themselves.
+  ':!docs/SSOT/AUDIT_2026-05-10_FOLLOWUP.md',
 ];
 
 const pattern = `(${DEAD_REFS.join('|')})`;
