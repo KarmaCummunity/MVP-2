@@ -48,6 +48,7 @@ export function PostFeedList({
   ListHeaderComponent,
   listRef,
 }: Props) {
+  const { t } = useTranslation();
   if (isLoading && !data) {
     return (
       <View style={styles.center}>
