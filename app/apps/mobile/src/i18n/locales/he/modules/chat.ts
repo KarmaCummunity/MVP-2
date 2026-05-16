@@ -38,4 +38,18 @@ export const chatHe = {
   autoMessage: {
     initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח לדעת עוד.',
   },
+
+  // Chat conversation screen (chat/[id].tsx) — PR5b i18n sweep.
+  headerActionsA11y: 'פעולות',
+  errorTitle: 'שגיאה',
+  hideErrorSupport: 'לא ניתן להסיר את שיחת התמיכה.',
+  hideErrorGeneric: 'לא הצלחנו להסיר את השיחה. נסה שוב.',
+
+  // Chat inbox screen (chat/index.tsx) — PR5b i18n sweep.
+  searchPlaceholder: 'חפש לפי שם...',
+
+  // ChatNotFoundView (components/chat/ChatNotFoundView.tsx) — PR5b i18n sweep.
+  notFoundTitle: 'השיחה לא זמינה',
+  notFoundSubtitle: 'ייתכן שהשיחה נמחקה או שאין לך גישה אליה.',
+  notFoundBack: 'חזרה',
 } as const;

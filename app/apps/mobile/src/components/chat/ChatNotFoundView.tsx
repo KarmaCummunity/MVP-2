@@ -4,6 +4,7 @@
 import React from 'react';
 import { Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing } from '@kc/ui';
 import { EmptyState } from '../EmptyState';
 
@@ -12,15 +13,16 @@ interface Props {
 }
 
 export function ChatNotFoundView({ onBack }: Props) {
+  const { t } = useTranslation();
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <EmptyState
         icon="chatbubble-ellipses-outline"
-        title="השיחה לא זמינה"
-        subtitle="ייתכן שהשיחה נמחקה או שאין לך גישה אליה."
+        title={t('chat.notFoundTitle')}
+        subtitle={t('chat.notFoundSubtitle')}
         action={
           <TouchableOpacity onPress={onBack} accessibilityRole="button">
-            <Text style={styles.cta}>חזרה</Text>
+            <Text style={styles.cta}>{t('chat.notFoundBack')}</Text>
           </TouchableOpacity>
         }
       />

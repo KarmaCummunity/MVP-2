@@ -76,7 +76,7 @@ export default function ChatScreen() {
         </TouchableOpacity>
       ),
       headerRight: () => (
-        <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel="פעולות">
+        <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel={t('chat.headerActionsA11y')}>
           <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
         </TouchableOpacity>
       ),
@@ -109,9 +109,9 @@ export default function ChatScreen() {
       setHideBusy(false);
       const msg =
         err instanceof ChatError && err.code === 'support_thread_not_hideable'
-          ? 'לא ניתן להסיר את שיחת התמיכה.'
-          : 'לא הצלחנו להסיר את השיחה. נסה שוב.';
-      setNotify({ title: 'שגיאה', message: msg });
+          ? t('chat.hideErrorSupport')
+          : t('chat.hideErrorGeneric');
+      setNotify({ title: t('chat.errorTitle'), message: msg });
     }
   };
 
@@ -156,7 +156,7 @@ export default function ChatScreen() {
               style={styles.input}
               value={input}
               onChangeText={setInput}
-              placeholder="כתוב הודעה..."
+              placeholder={t('chat.inputPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
               multiline
