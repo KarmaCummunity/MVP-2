@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-139 closed — edit-post visibility chooser now renders all 3 rows with canUpgradeVisibility-derived enabled state) |
+| **Last Updated** | 2026-05-16 (TD-133 partial — SupabaseSearchRepository.ts 391→41-line orchestrator; 5 helper modules extracted; only search.tsx (634) remains) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
