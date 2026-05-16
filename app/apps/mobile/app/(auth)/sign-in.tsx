@@ -12,6 +12,7 @@ import {
   Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { isAuthError } from '@kc/application';
@@ -23,6 +24,7 @@ import { NotifyModal } from '../../src/components/NotifyModal';
 
 export default function SignInScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const setSession = useAuthStore((s) => s.setSession);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -33,7 +35,7 @@ export default function SignInScreen() {
 
   const handleSignIn = async () => {
     if (!email || !password) {
-      setNotify({ title: 'שגיאה', message: 'יש למלא דוא"ל וסיסמה' });
+      setNotify({ title: t('auth.genericErrorTitle'), message: t('auth.fillEmailAndPassword') });
       return;
     }
     setLoading(true);
@@ -48,8 +50,8 @@ export default function SignInScreen() {
       }
       const message = isAuthError(err)
         ? mapAuthErrorToHebrew(err.code)
-        : 'שגיאת רשת. נסה שוב.';
-      setNotify({ title: 'כניסה נכשלה', message });
+        : t('auth.networkError');
+      setNotify({ title: t('auth.signInFailedTitle'), message });
     } finally {
       setLoading(false);
     }
@@ -63,7 +65,7 @@ export default function SignInScreen() {
       >
         <View style={styles.content}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>← חזרה</Text>
+            <Text style={styles.backText}>{t('auth.backCta')}</Text>
           </TouchableOpacity>
 
           <Image
@@ -71,7 +73,7 @@ export default function SignInScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>כניסה לחשבון</Text>
+          <Text style={styles.title}>{t('auth.signInScreenTitle')}</Text>
 
           {pendingEmail ? (
             <VerificationPendingPanel
@@ -82,12 +84,12 @@ export default function SignInScreen() {
 
           <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
             <View style={styles.field}>
-              <Text style={styles.label}>דוא"ל</Text>
+              <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder='הכנס דוא"ל'
+                placeholder={t('auth.emailPlaceholder')}
                 placeholderTextColor={colors.textDisabled}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -97,12 +99,12 @@ export default function SignInScreen() {
             </View>
 
             <View style={styles.field}>
-              <Text style={styles.label}>סיסמה</Text>
+              <Text style={styles.label}>{t('auth.password')}</Text>
               <TextInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
-                placeholder="הכנס סיסמה"
+                placeholder={t('auth.passwordPlaceholder')}
                 placeholderTextColor={colors.textDisabled}
                 secureTextEntry
                 textAlign="right"
@@ -111,7 +113,7 @@ export default function SignInScreen() {
             </View>
 
             <TouchableOpacity disabled={loading}>
-              <Text style={styles.forgotText}>שכחתי סיסמה</Text>
+              <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
             </TouchableOpacity>
 
             <TouchableOpacity
@@ -122,7 +124,7 @@ export default function SignInScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
-                <Text style={styles.submitBtnText}>כניסה</Text>
+                <Text style={styles.submitBtnText}>{t('auth.signIn')}</Text>
               )}
             </TouchableOpacity>
           </View>
@@ -133,7 +135,7 @@ export default function SignInScreen() {
               onPress={() => router.replace('/(auth)/sign-up')}
               disabled={loading}
             >
-              <Text style={styles.switchModeText}>אין לי חשבון עדיין — הרשמה</Text>
+              <Text style={styles.switchModeText}>{t('auth.noAccountSwitchCta')}</Text>
             </TouchableOpacity>
           ) : null}
         </View>

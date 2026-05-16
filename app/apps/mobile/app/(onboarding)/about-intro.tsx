@@ -61,7 +61,7 @@ export default function OnboardingAboutIntroScreen() {
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(5)}>
-          <Text style={styles.hint}>רוצים לקרוא עוד על החזון, איך זה עובד ויצירת קשר? אחרי ההרשמה תמצאו את כל הפרטים תחת ״הגדרות״ ← ״אודות״.</Text>
+          <Text style={styles.hint}>{t('onboarding.aboutIntroFinePrint')}</Text>
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(4)} style={styles.pillars}>

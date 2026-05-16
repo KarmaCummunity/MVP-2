@@ -6,6 +6,8 @@
 // ─────────────────────────────────────────────
 
 import { donations, search } from './donations';
+import { authHe } from './modules/auth';
+import { onboardingHe } from './modules/onboarding';
 import { errorsHe } from './modules/errors';
 import { chatHe } from './modules/chat';
 import { notificationsHe } from './modules/notifications';
@@ -26,80 +28,11 @@ const he = {
   // App
   appName: 'KC - קהילת קארמה',
 
-  // Auth
-  auth: {
-    welcome: 'ברוכים הבאים',
-    tagline: 'תן. קבל. חבר קהילה.',
-    continueWithGoogle: 'המשך עם Google',
-    continueWithApple: 'המשך עם Apple',
-    continueWithPhone: 'המשך עם מספר טלפון',
-    continueWithEmail: 'המשך עם דוא"ל',
-    orDivider: 'או',
-    guestPreview: 'הצץ בפיד',
-    guestPreviewBackA11y: 'חזרה למסך הנחיתה',
-    signIn: 'כניסה',
-    signUp: 'הרשמה',
-    email: 'דוא"ל',
-    password: 'סיסמה',
-    forgotPassword: 'שכחתי סיסמה',
-    noAccount: 'אין לי חשבון עדיין',
-    hasAccount: 'יש לי כבר חשבון',
-    phone: 'מספר טלפון',
-    otpCode: 'קוד אימות',
-    otpSent: 'שלחנו קוד SMS ל-{{phone}}',
-    verify: 'אמת',
-    resendOtp: 'שלח שוב',
-    bySigningUp: 'בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.',
-    verifyTitle: 'בדוק את האימייל שלך',
-    verifyBodyBefore: 'שלחנו לינק לאימות אל ',
-    verifyBodyAfter: '. לחץ עליו כדי להמשיך.',
-    openMail: 'פתח אימייל',
-    resendWithCountdown: 'שלח שוב ({{count}})',
-    resendOk: 'נשלח. בדוק את תיבת הדואר.',
-    networkError: 'שגיאת רשת. נסה שוב.',
-    changeEmail: 'שנה אימייל',
-  },
+  // Auth (FR-AUTH-001..014) — see modules/auth.ts
+  auth: authHe,
 
-  // Onboarding
-  onboarding: {
-    aboutIntroTitle: 'ברוכים הבאים לקארמה',
-    aboutIntroBody:
-      'מחברים בין מי שרוצה לתת, למי שצריך לקבל. פשוט, חברי, וחינמי לחלוטין.',
-    aboutIntroCta: 'מתחילים',
-    pillarFree: 'חינמי לחלוטין',
-    pillarNoAds: 'בלי פרסומות',
-    pillarNonProfit: 'ללא רווחים',
-    stepBasic: 'פרטים בסיסיים',
-    basicInfoSubtitle:
-      ' וודא את השם ומלא את הכתובת שלך — כדי שנוכל להתאים פוסטים אליך. אפשר להשלים גם בהמשך.',
-    displayName: 'שם מלא',
-    city: 'עיר מגורים',
-    stepPhoto: 'תמונת פרופיל',
-    uploadPhoto: 'העלה תמונה',
-    skip: 'דלג',
-    continue: 'המשך',
-    stepWelcome: 'ברוכים הבאים לקהילה!',
-    welcomeDesc: 'כאן תוכל לתת ולקבל חפצים בחינם מוחלט — ללא כסף, ללא חליפין.',
-    howItWorks: 'איך זה עובד?',
-    step1Title: 'פרסם מה יש לך לתת',
-    step1Desc: 'תמונה + כמה מילים — וזהו.',
-    step2Title: 'בקש מה שאתה צריך',
-    step2Desc: 'פרסם בקשה ומישהו מהקהילה יענה.',
-    step3Title: 'תאם מסירה',
-    step3Desc: 'שוחח ישירות עם הנותן/מקבל.',
-    letsGo: 'יאללה, מתחילים!',
-    stepProgress: 'שלב {{step}} מתוך 4',
-    noActiveSession: 'אין סשן פעיל. נסה להתחבר שוב.',
-    fillNameAndCity: 'יש למלא שם ועיר',
-    saveFailed: 'שמירה נכשלה',
-    uploadFailed: 'העלאת התמונה נכשלה',
-    uploadFailedBody: 'אפשר לדלג ולהוסיף תמונה מאוחר יותר.',
-    removeFailed: 'הסרת התמונה נכשלה',
-    softGateTitle: 'נשלים פרטים בסיסיים',
-    fullNamePlaceholder: 'לדוגמה: רינה כהן',
-    unknownError: 'שגיאה לא ידועה',
-    saveAndContinue: 'שמור והמשך',
-  },
+  // Onboarding (FR-AUTH-010..012, FR-AUTH-018) — see modules/onboarding.ts
+  onboarding: onboardingHe,
 
   // Feed — see modules/feed.ts
   feed: feedHe,

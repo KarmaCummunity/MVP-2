@@ -6,6 +6,7 @@
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { getVerifyEmailUseCase } from '../../src/services/authComposition';
@@ -14,6 +15,7 @@ import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 
 export default function AuthVerifyScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const params = useLocalSearchParams<{ token_hash?: string; type?: string }>();
   const setSession = useAuthStore((s) => s.setSession);
   const [error, setError] = useState<string | null>(null);
@@ -22,7 +24,7 @@ export default function AuthVerifyScreen() {
 
   useEffect(() => {
     if (!tokenHash) {
-      setError('קישור האימות אינו תקין.');
+      setError(t('auth.verifyInvalidLink'));
       return;
     }
     let cancelled = false;
@@ -43,22 +45,22 @@ export default function AuthVerifyScreen() {
         if (cancelled) return;
         const msg = isAuthError(err)
           ? mapAuthErrorToHebrew(err.code)
-          : 'הקישור פג תוקף או כבר מומש. נסה להתחבר.';
+          : t('auth.verifyExpired');
         setError(msg);
       }
     })();
     return () => {
       cancelled = true;
     };
-  }, [tokenHash, setSession]);
+  }, [tokenHash, setSession, t]);
 
   if (error) {
     return (
       <View style={styles.center}>
-        <Text style={styles.title}>האימות לא הצליח</Text>
+        <Text style={styles.title}>{t('auth.verifyFailedTitle')}</Text>
         <Text style={styles.body}>{error}</Text>
         <TouchableOpacity style={styles.btn} onPress={() => router.replace('/(auth)/sign-in')}>
-          <Text style={styles.btnText}>חזרה למסך הכניסה</Text>
+          <Text style={styles.btnText}>{t('auth.backToSignInCta')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -66,7 +68,7 @@ export default function AuthVerifyScreen() {
   return (
     <View style={styles.center}>
       <ActivityIndicator size="large" color={colors.primary} />
-      <Text style={styles.body}>מאמת…</Text>
+      <Text style={styles.body}>{t('auth.verifyingProgress')}</Text>
     </View>
   );
 }
