@@ -1,0 +1,70 @@
+// Shared styles for UserResultCard, PostResultCard, LinkResultCard.
+import { StyleSheet } from 'react-native';
+import { colors, radius, spacing, typography } from '@kc/ui';
+
+export const styles = StyleSheet.create({
+  card: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    gap: spacing.md,
+    marginBottom: spacing.sm,
+  },
+  cardPressed: { backgroundColor: colors.background },
+  cardContent: { flex: 1, gap: 2 },
+  cardTitle: {
+    ...typography.body,
+    fontWeight: '600' as const,
+    color: colors.textPrimary,
+    textAlign: 'right',
+  },
+  cardHandle: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  cardSubtitle: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: 'right',
+    marginTop: 2,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    gap: spacing.md,
+    marginTop: spacing.xs,
+    justifyContent: 'flex-end',
+  },
+  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaText: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
+  avatarWrap: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0 },
+  postThumb: { width: 56, height: 56, borderRadius: radius.md, overflow: 'hidden' },
+  postThumbPlaceholder: { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
+  postTitleRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 2 },
+  typeTag: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
+  typeTagText: { fontSize: 11, fontWeight: '600' as const },
+  linkIconWrap: {
+    width: 48,
+    height: 48,
+    borderRadius: 24,
+    backgroundColor: colors.secondaryLight,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  categoryTag: {
+    alignSelf: 'flex-end',
+    backgroundColor: colors.primarySurface,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    borderRadius: radius.sm,
+    marginTop: 2,
+  },
+  categoryTagText: { fontSize: 11, color: colors.primary, fontWeight: '600' as const },
+  linkUrl: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    textAlign: 'right',
+    fontSize: 10,
+    marginTop: 2,
+  },
+});

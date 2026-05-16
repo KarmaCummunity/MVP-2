@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-64 closed — notifications_backlog_check() cron 0077; TD-121 closed retrospectively — trigger already in 0005) |
+| **Last Updated** | 2026-05-16 (TD-133 partial — SearchResultCard.tsx split into search/{User,Post,Link}ResultCard + styles; 352→4-line barrel; entry removed from allowlist) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.

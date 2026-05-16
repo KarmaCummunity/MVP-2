@@ -17,6 +17,10 @@ export interface GetProfileClosedPostsInput {
 
 export interface GetProfileClosedPostsOutput {
   items: ProfileClosedPostsItem[];
+  // Pass to the next call's `cursor`. Null when no further pages exist.
+  // The RPC orders by `closed_at desc` with exclusive `<` cursor semantics,
+  // so we feed back the last item's `closedAt`.
+  nextCursor: string | null;
 }
 
 const DEFAULT_LIMIT = 30;
@@ -33,7 +37,9 @@ export class GetProfileClosedPostsUseCase {
       limit,
       input.cursor,
     );
-    return { items };
+    const lastItem = items.length === limit ? items[items.length - 1] : undefined;
+    const nextCursor = lastItem ? lastItem.closedAt : null;
+    return { items, nextCursor };
   }
 }
 
