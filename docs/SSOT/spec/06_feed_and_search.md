@@ -1,6 +1,6 @@
 # 2.6 Feed, Search & Filters
 
-> **Status:** ✅ Core Complete — Feed, filters, proximity sort, universal search shipped.
+> **Status:** ✅ Core Complete — Feed, filters, proximity sort, universal search shipped. ⚠️ Audit 2026-05-16: Home Feed `onEndReached` not wired → perpetual spinner past page 1 (TD-120 / POST-09); `SearchFilters` domain type lacks shared post-shape dimensions (TD-107 expansion of TD-136); FR-FEED-016 AC6 / FR-FEED-018 AC1 need clarification that shared dimensions live at the type level. See `docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md`.
 
 
 

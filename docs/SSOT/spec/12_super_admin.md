@@ -1,6 +1,6 @@
 # 2.12 Super Admin (in-chat moderation)
 
-> **Status:** ✅ Done (P1.3 + P2.2 slice) — All FR-ADMIN-001..009 shipped. Suspect-queue producers (FR-MOD-008) and 90-day re-registration block (FR-ADMIN-003 AC3) deferred to TECH_DEBT.
+> **Status:** ✅ Done (P1.3 + P2.2 slice) — All FR-ADMIN-001..009 shipped. Suspect-queue producers (FR-MOD-008) and 90-day re-registration block (FR-ADMIN-003 AC3) deferred to TECH_DEBT. ⚠️ Audit 2026-05-16: FR-ADMIN-007 AC2 audit-search blocked by `users_select_active` (admin can't search banned/suspended targets) — TD-93; FR-ADMIN-006 AC2 single-admin invariant has no DB-level unique index — TD-95; `admin_restore_target` cascade-dismiss can multi-sanction reporters simultaneously — TD-94; restore audit `metadata` empty vs auto-remove `{distinct_reporters}`. See `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md`.
 
 
 
