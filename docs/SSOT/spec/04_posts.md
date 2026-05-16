@@ -358,7 +358,7 @@ A user marked as the recipient of a `closed_delivered` post sees a special view 
 - Decisions: `D-7`.
 
 **Acceptance Criteria.**
-- AC1. A user picked as the respondent of a `closed_delivered` post sees the post in their own profile's "פוסטים סגורים" tab. The post is **also** visible to other viewers of the respondent's profile, subject to the post's original `visibility` setting (Public / Followers-only / Only-me). The "Remove my recipient mark" CTA remains exclusive to the respondent themselves. (Revised 2026-05-13 per D-19 — reverses the respondent-privacy carve-out previously in D-7.)
+- AC1. A user picked as the respondent of a `closed_delivered` post sees the post in their own profile's "פוסטים סגורים" tab. The post is **also** visible to other viewers of the respondent's profile, subject to the **respondent's** `post_actor_identity.surface_visibility` for that post (Public / FollowersOnly / OnlyMe; default `Public`). The publisher's `posts.visibility` no longer gates third-party access to the closed-post listing — each participant's `surface_visibility` governs their own profile tab independently (`D-28`, supersedes the `D-19` clause that read "subject to the post's original `visibility` setting"). The "Remove my recipient mark" CTA remains exclusive to the respondent themselves.
 - AC2. Detail view renders the post's content read-only with a banner: *"You were marked as the recipient by [owner]."*
 - AC3. CTA: "Remove my recipient mark" (`FR-CLOSURE-007`).
 - AC4. No other actions are available; the recipient cannot reopen or edit the post.
@@ -424,23 +424,35 @@ At publish time, an advisory check warns users against posting forbidden categor
 
 ---
 
-## FR-POST-021 — Per-actor identity exposure on a post
+## FR-POST-021 — Per-participant privacy on a closed post
 
 **Description.**
-After closure, each **participant** (publisher and marked respondent) may control how their **identity** (name, avatar, profile link from post surfaces) is shown to viewers — independently from `Post.visibility`, which still governs **who can see the post listing/content** in community surfaces (`FR-POST-009`).
+After closure, each **participant** (publisher and marked respondent) may independently control three orthogonal axes for the post:
+
+1. **Surface audience** — who, beyond the two participants, can discover the post **through this participant's surface** (their "פוסטים סגורים" profile tab, and generic third-party post fetch). Values: `Public` / `FollowersOnly` / `OnlyMe`. Default `Public`.
+2. **Identity visibility** — how this participant's name / avatar / profile-deep-link render on the post chrome to viewers who are permitted to see the post. Values: `Public` / `FollowersOnly` / `Hidden`. Default `Public`.
+3. **Counterparty mask** — boolean: hide this participant's identity specifically from the counterparty even when the counterparty can read the post.
+
+These three axes are stored per `(post_id, user_id)` on `public.post_actor_identity` and apply **independently for each participant on the same post**. They are decoupled from `posts.visibility`, which continues to govern open-post community discovery (`FR-POST-009`) only.
 
 **Source.**
-- Design: `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md`
-- Decision: `D-26`
+- Design: `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (original) + addendum (2026-05-16).
+- Decisions: `D-26` (two-axis model: post visibility vs per-actor identity) and `D-28` (surface_visibility per participant, supersedes `D-19`'s third-party visibility clause).
 
 **Acceptance Criteria.**
-- AC1. Table `public.post_actor_identity` stores per `(post_id, user_id)` policy: `exposure ∈ {Public, FollowersOnly, Hidden}` and `hide_from_counterparty`. RLS allows read when the viewer may read the post (`is_post_visible_to`); write only by the participant for their own row.
-- AC2. `GetPostById` / feed hydration applies a pure projection so owner and respondent fields are evaluated **independently** for viewer `V` (third parties included).
-- AC3. If `Post.visibility === OnlyMe`, the owner is always shown **anonymously** to the counterparty on post surfaces (coupling rule).
-- AC4. When projection marks an identity as anonymous, post-detail must not offer a one-tap profile deep-link from that row (`ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost`).
-- AC5. Chat headers and profile shells remain real-user surfaces; masking applies to **post chrome** only (`D-26`).
+- AC1. Table `public.post_actor_identity` stores per `(post_id, user_id)` policy with three columns: `surface_visibility ∈ {Public, FollowersOnly, OnlyMe}` (default `Public`), `identity_visibility ∈ {Public, FollowersOnly, Hidden}` (default `Public`, renamed from `exposure`), and `hide_from_counterparty boolean` (default `false`). RLS allows read when the viewer may read the post; write only by the participant for their own row. The SELECT policy uses a `SECURITY DEFINER` helper to avoid recursion with `is_post_visible_to`.
+- AC2. **Counterparty read invariant.** `posts.owner_id` and active `recipients.recipient_user_id` always retain read access to the post regardless of either participant's `surface_visibility`. Surface visibility governs **third-party** access only.
+- AC3. **Closed-post third-party access.** `is_post_visible_to(post, viewer)` for `closed_delivered` returns true to a non-participant `V` iff **either** participant's `surface_visibility` admits `V` (Public always; FollowersOnly iff `V` follows that participant; OnlyMe never for `V`). `profile_closed_posts(profile, viewer)` gates each row by **that row's role-actor** `surface_visibility` (publisher rows by owner's; respondent rows by respondent's) — not by `posts.visibility` (`D-28`).
+- AC4. **Identity projection (pure domain).** `projectActorIdentityForViewer(actor, policy, ctx)` runs independently per participant on `GetPostById` / feed / profile hydration. The viewer sees the actor's full identity unless one of the following anonymizes them:
+  - **(a) Counterparty mask:** viewer is the counterparty AND (`hide_from_counterparty = true` OR `posts.visibility = OnlyMe` for the owner, per the `D-26` coupling rule); or
+  - **(b) Identity visibility gate:** `identity_visibility = Hidden`, or (`identity_visibility = FollowersOnly` AND viewer does not follow the actor); or
+  - **(c) Surface coupling:** viewer reached the post via the counterparty's surface but does **not** meet this actor's own `surface_visibility` gate (i.e., `surface_visibility = FollowersOnly` and viewer does not follow the actor, or `surface_visibility = OnlyMe`). This prevents identity leakage when the counterparty's broader surface broadcasts the post.
+- AC5. When projection marks an identity as anonymous, post-detail must not offer a one-tap profile deep-link from that row (`ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost = false`).
+- AC6. Chat headers and profile shells remain real-user surfaces; masking applies to **post chrome** only (`D-26`).
 
-**Related.** `FR-POST-014`, `FR-POST-017`, `FR-CLOSURE-005`, `FR-CLOSURE-007`, migration `0083_post_actor_identity.sql`.
+**Migration.** Forward-only migration `0085_post_actor_identity_audience_split.sql`: adds `surface_visibility` with default `Public` (no row backfill needed — default matches prior public-by-default closed-post behavior); renames `exposure` → `identity_visibility` (data and constraint preserved); replaces `is_post_visible_to` and `profile_closed_posts` predicates per AC3; introduces the `SECURITY DEFINER` helper from AC1.
+
+**Related.** `FR-POST-014`, `FR-POST-017` AC1, `FR-PROFILE-001` AC4, `FR-PROFILE-002` AC2, `FR-CLOSURE-005`, `FR-CLOSURE-007`. Migrations: `0083_post_actor_identity.sql` (initial table), `0085_post_actor_identity_audience_split.sql` (this revision).
 
 ---
 
@@ -448,3 +460,4 @@ After closure, each **participant** (publisher and marked respondent) may contro
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
+| 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

@@ -85,3 +85,29 @@ Table `public.post_actor_identity` (name finalised in migration + SSOT):
 ## SSOT follow-up
 
 Before coding P2+: add FR-IDs + ACs to `docs/SSOT/spec/04_posts.md`, `05_closure_and_reopen.md`, `02_profile_and_privacy.md`, and append `D-*` to `DECISIONS.md` for the two-axis model (visibility vs actor identity).
+
+---
+
+## Addendum — 2026-05-16 (revision)
+
+The two-axis model above conflated *who can see the post in a given participant's surface* with *how that participant's identity renders on post chrome*. This addendum splits them into three orthogonal axes per `(post_id, user_id)`, driven by `D-28`:
+
+| Axis | Column | Values | Meaning |
+| --- | --- | --- | --- |
+| Surface audience | `surface_visibility` | `Public` / `FollowersOnly` / `OnlyMe` (default `Public`) | Who, beyond the two participants, can discover the post **through this participant's surface** (profile "פוסטים סגורים" tab and generic third-party fetch). |
+| Identity chrome | `identity_visibility` *(renamed from `exposure`)* | `Public` / `FollowersOnly` / `Hidden` (default `Public`) | How this participant's name / avatar / profile deep-link render on post surfaces to viewers who are permitted to see the post. |
+| Counterparty mask | `hide_from_counterparty` | boolean (default `false`) | Hide this participant's identity specifically from the counterparty, even when they can read the post. |
+
+**Counterparty read invariant.** `posts.owner_id` and active `recipients.recipient_user_id` always retain read access to the post regardless of either participant's `surface_visibility`. Surface visibility governs **third-party** access only.
+
+**Coupling — audience implies identity.** If a participant's `surface_visibility` does not admit viewer V on the participant's own surface, V must also see that participant **anonymously** if V reaches the post via the counterparty's broader surface. This prevents identity leakage when the two participants chose mismatched audiences.
+
+**Coupling — `D-26` retained.** When `posts.visibility = OnlyMe`, the owner remains forcibly anonymous to the counterparty on post surfaces (independent of the new axes).
+
+**Closed-post third-party access — corrected predicates.**
+- `is_post_visible_to(post, viewer)` for `closed_delivered`: true to non-participant V iff **either** participant's `surface_visibility` admits V.
+- `profile_closed_posts(profile, viewer)`: gates each row by **the row's role-actor** `surface_visibility` (publisher rows by owner's; respondent rows by respondent's) — not by `posts.visibility`.
+
+**Migration.** Forward-only `0085_post_actor_identity_audience_split.sql`: add `surface_visibility` with default `Public` (no row backfill — default matches prior public-by-default closed-post behavior); rename `exposure` → `identity_visibility` (data and check constraint preserved); replace predicates per above; route the `post_actor_identity` SELECT policy through a `SECURITY DEFINER` helper so it no longer recurses through `is_post_visible_to`.
+
+**Why this revision was needed.** The shipped `P2.11` model treated `PostActorIdentityExposure` as both audience and identity chrome. In practice `profile_closed_posts` therefore filtered every row by the publisher's `posts.visibility`, leaving respondents with no say over their own profile tab. `D-28` fixes the product rule "each participant controls their own surfaces" without losing the identity-anonymity affordances of the original model.
