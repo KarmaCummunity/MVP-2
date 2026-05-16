@@ -111,7 +111,9 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: '100%' },
   pageImage: { width: SCREEN_WIDTH, height: HEIGHT },
   counter: {
-    position: 'absolute', top: spacing.sm, left: spacing.sm,
+    // Audit §16.2 — `start` flips automatically under RTL; raw `left` keeps the
+    // chip pinned to the screen-left edge instead of the image-left edge.
+    position: 'absolute', top: spacing.sm, start: spacing.sm,
     paddingHorizontal: spacing.sm, paddingVertical: 2,
     backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.full,
   },
