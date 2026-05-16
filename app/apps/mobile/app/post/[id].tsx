@@ -44,9 +44,9 @@ export default function PostDetailScreen() {
   if (query.isError) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorTitle}>שגיאה בטעינת הפוסט</Text>
+        <Text style={styles.errorTitle}>{t('post.detail.loadErrorTitle')}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => query.refetch()}>
-          <Text style={styles.retryText}>נסה שוב</Text>
+          <Text style={styles.retryText}>{t('post.detail.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -57,8 +57,8 @@ export default function PostDetailScreen() {
       <SafeAreaView style={styles.container}>
         <EmptyState
           icon="search-outline"
-          title="הפוסט לא נמצא"
-          subtitle="ייתכן שהוא נסגר או שאין לך הרשאה לצפייה."
+          title={t('post.detail.notFoundTitle')}
+          subtitle={t('post.detail.notFoundSubtitle')}
         />
       </SafeAreaView>
     );
@@ -70,7 +70,7 @@ export default function PostDetailScreen() {
   const locationText = (() => {
     if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
     if (post.locationDisplayLevel === 'CityAndStreet')
-      return `${post.address.cityName}, רחוב ${post.address.street}`;
+      return `${post.address.cityName}, ${t('post.detail.streetPrefix')} ${post.address.street}`;
     return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
   })();
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe });
@@ -84,7 +84,7 @@ export default function PostDetailScreen() {
             fallbackIcon={isGive ? 'gift-outline' : 'search-outline'}
           />
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
-            <Text style={styles.typeTagText}>{isGive ? 'לתת' : 'לבקש'}</Text>
+            <Text style={styles.typeTagText}>{isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}</Text>
           </View>
           {/* FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009 — ⋮ menu (overlay, not Stack header). */}
           <View style={styles.menuOverlay} pointerEvents="box-none">
@@ -98,13 +98,13 @@ export default function PostDetailScreen() {
 
           {isGive && post.itemCondition && (
             <View style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>מצב: </Text>
+              <Text style={styles.conditionLabel}>{t('post.detail.conditionPrefix')}</Text>
               <Text style={styles.conditionValue}>{t(`post.condition.${post.itemCondition}`)}</Text>
             </View>
           )}
           {!isGive && post.urgency && (
             <View style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>⚡ דחיפות: </Text>
+              <Text style={styles.conditionLabel}>{t('post.detail.urgencyPrefix')}</Text>
               <Text style={styles.conditionValue}>{post.urgency}</Text>
             </View>
           )}
@@ -156,9 +156,9 @@ export default function PostDetailScreen() {
             style={styles.messageBtn}
             onPress={() => contactPoster(viewerId, post, router)}
             accessibilityRole="button"
-            accessibilityLabel="שלח הודעה למפרסם"
+            accessibilityLabel={t('post.detail.contactA11y')}
           >
-            <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
+            <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
           </TouchableOpacity>
         </View>
       ) : null}
