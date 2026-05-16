@@ -17,6 +17,7 @@ import {
 } from './onboardingSupabase';
 import { supabaseGetEditableProfile, supabaseSetProfileAddressLines } from './editableProfileSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
+import { fetchUserBy } from './fetchUserBy';
 import { searchUsers } from './searchUsers';
 import {
   followEdge,
@@ -130,45 +131,10 @@ export class SupabaseUserRepository implements IUserRepository {
   // ── Methods deferred to later slices ─────────────────────────────────────
 
   async findById(userId: string): Promise<User | null> {
-    return this.fetchUserBy('user_id', userId);
+    return fetchUserBy(this.client, 'user_id', userId);
   }
   async findByHandle(handle: string): Promise<User | null> {
-    return this.fetchUserBy('share_handle', handle);
-  }
-
-  /**
-   * Shared helper: SELECT * FROM users WHERE <col> = <value>, mapped to domain.
-   *
-   * TD-39: when the viewer is NOT the row's owner, blank out the internal
-   * counter columns that would otherwise let a non-owner infer OnlyMe post
-   * existence via `active_posts_count_internal − visible_count`. The DB
-   * column-grants still return the raw numbers (RLS predicates apply per row,
-   * not per column), so the privacy boundary is enforced here at the adapter.
-   *
-   * `auth.getSession()` reads the cached JWT — no network roundtrip.
-   */
-  private async fetchUserBy(
-    column: 'user_id' | 'share_handle',
-    value: string,
-  ): Promise<User | null> {
-    const { data, error } = await this.client
-      .from('users')
-      .select('*')
-      .eq(column, value)
-      .maybeSingle();
-    if (error) throw new Error(`fetchUserBy(${column}): ${error.message}`);
-    if (!data) return null;
-
-    const user = mapUserRow(data as unknown as UserRow);
-
-    const { data: sessionData } = await this.client.auth.getSession();
-    const viewerId = sessionData.session?.user.id ?? null;
-    if (viewerId === user.userId) return user;
-
-    // Non-self read — blank out the leak-vector counters. Closure-side counters
-    // (items_given_count / items_received_count) stay visible; they're lifetime
-    // totals over closed_delivered posts and don't leak OnlyMe presence.
-    return { ...user, activePostsCountInternal: 0 };
+    return fetchUserBy(this.client, 'share_handle', handle);
   }
   async create(): Promise<never> {
     throw NOT_IMPL('create', 'auto-created by handle_new_user trigger');

@@ -34,8 +34,6 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
-  // Bumped 242→264 (accumulated additions through 2026-05-16). Remove once TD-29 splits the file.
-  ['packages/domain/src/entities.ts', { td: 'TD-29', max: 264 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).

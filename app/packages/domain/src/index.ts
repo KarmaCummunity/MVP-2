@@ -1,5 +1,7 @@
 export * from './errors';
 export * from './entities';
+export * from './audit';
+export * from './posts';
 export * from './donations';
 export * from './value-objects';
 export * from './invariants';
