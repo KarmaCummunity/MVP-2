@@ -121,7 +121,6 @@
 | 16.3 [HIGH] Type-toggle emoji in `(tabs)/create.tsx` | ⏳ | Folded into §4.6. |
 | 16.6 [MEDIUM] Soft-gate success alert emoji `✅` | ⏳ | Folded into §4.6. |
 | 16.8 [MEDIUM] Donations time composer no trim | ⏳ | Same shape as §16.7. |
-| 16.10 [MEDIUM] Edit Profile no unsaved-changes warn on Back | ⏳ | `dirty` flag + confirm Alert. |
 | 16.12 [MEDIUM] Many screens lack loading skeletons | ⏳ | Shared `<ScreenLoading />`. |
 
 ## 18. Concurrency, idempotency, atomicity

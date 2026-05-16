@@ -39,6 +39,9 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // SearchResultCard.tsx barrel (TD-133); entry removed.
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 416 }],
+  // Edit-profile — large single-screen form; bumped 193→215 by audit §16.10
+  // unsaved-changes guard (isDirty memo). TD-29 broader split tracks shrinking.
+  ['apps/mobile/app/edit-profile.tsx', { td: 'TD-29', max: 215 }],
   // UniversalSearch test suite split into UniversalSearchUseCase.test.ts (152 LOC)
   // + UniversalSearchUseCase.limitsAndFilters.test.ts (178 LOC) in PR #207; both
   // under cap, allowlist entry removed.
