@@ -91,7 +91,7 @@ export default function PostDetailScreen() {
   const isRecipientMarked =
     viewerId != null && post.recipient?.recipientUserId === viewerId;
   const showActorPrivacy =
-    post.status === 'closed_delivered' && viewerId != null && (isOwner || isRecipientMarked);
+    viewerId != null && (isOwner || (post.status === 'closed_delivered' && isRecipientMarked));
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
   const ownerLabel = ownerNavigable
     ? (post.ownerName ?? t('common.deletedUser'))

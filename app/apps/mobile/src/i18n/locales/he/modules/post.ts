@@ -88,9 +88,12 @@ export const postHe = {
   photosRequiredSuffix: '* (חובה עבור "לתת")',
   photosHint: 'בחר עד {{max}} תמונות מהגלריה.',
 
-  // VisibilityChooser sub-labels
+  // VisibilityChooser sub-labels (FR-POST-003)
   visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
+  visibilityFollowersSub: 'הפוסט יוצג רק לעוקבים מאושרים שלך',
   visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי; אפשר לפתוח לציבור בעריכה',
+  /** FR-POST-003 AC5 — public profile: Followers-only row hint (tooltip copy as subtitle). */
+  visibilityFollowersLockedSub: 'זמין בפרופיל פרטי. הגדרות ← פרטיות.',
   deleteError: 'המחיקה נכשלה, נסה שוב.',
   deleteSuccess: 'הפוסט נמחק.',
   adminRemoveError: 'ההסרה נכשלה, נסה שוב.',
@@ -136,6 +139,13 @@ export const postHe = {
   networkError: 'שגיאת רשת. נסה שוב.',
   publishFailed: 'פרסום נכשל: {{message}}',
 
+  // FR-POST-006 AC2 — publish with Followers-only visibility (create flow).
+  publishFollowersTitle: 'לפרסם רק לעוקבים מאושרים?',
+  publishFollowersBody:
+    'הפוסט יופיע בפיד של עד {{count}} עוקבים מאושרים (לפי המונה בפרופיל).',
+  publishFollowersConfirmCta: 'רק עוקבים',
+  publishFollowersMakePublicCta: 'הפוך לציבורי',
+
   // Post detail screen (post/[id].tsx) — PR5b i18n sweep.
   detail: {
     loadErrorTitle: 'שגיאה בטעינת הפוסט',
@@ -151,6 +161,14 @@ export const postHe = {
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
     identityHidePartner: 'הסתר את שמי מהפוסט של השותף',
+    /** FR-POST-021 — how this participant’s profile appears on this post (not post audience). */
+    actorIdentityTitle: 'איך מזוהים איתי בפוסט הזה',
+    actorExposurePublic: '🌍 כולם רואים אותי',
+    actorExposurePublicSub: 'שם, תמונה וקישור לפרופיל כרגיל',
+    actorExposureFollowers: '👥 רק למי שעוקב אחריי',
+    actorExposureFollowersSub: 'משתמשים שלא עוקבים יראו אותך אנונימי בפוסט',
+    actorExposureHidden: '🔒 אנונימי',
+    actorExposureHiddenSub: 'שם ותמונה מוסתרים; בלי קישור לפרופיל מהפוסט',
   },
 
   // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.

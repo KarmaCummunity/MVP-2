@@ -72,7 +72,7 @@ export function PostDetailScrollContent({
           <Text style={styles.description}>{post.description}</Text>
         ) : null}
 
-        <ClosedDeliveredExtras post={post} viewerId={viewerId} showActorPrivacy={showActorPrivacy} />
+        <ClosedDeliveredExtras post={post} viewerId={viewerId} />
 
         <View style={styles.locationRow}>
           <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
@@ -88,6 +88,9 @@ export function PostDetailScrollContent({
           cityName={post.address.cityName}
           ownerHandle={post.ownerHandle}
         />
+        {showActorPrivacy && viewerId != null ? (
+          <PostActorPrivacyBar post={post} viewerId={viewerId} />
+        ) : null}
       </View>
     </ScrollView>
   );
@@ -97,10 +100,9 @@ function ClosedDeliveredExtras(
   props: Readonly<{
     post: PostWithOwner;
     viewerId: string | null;
-    showActorPrivacy: boolean;
   }>,
 ) {
-  const { post, viewerId, showActorPrivacy } = props;
+  const { post, viewerId } = props;
   if (post.status === 'closed_delivered') {
     return (
       <>
@@ -111,7 +113,6 @@ function ClosedDeliveredExtras(
             profileNavigable={(post.recipientProfileNavigableFromPost ?? true) === true}
           />
         )}
-        {showActorPrivacy && viewerId != null ? <PostActorPrivacyBar post={post} viewerId={viewerId} /> : null}
         {post.recipient?.recipientUserId === viewerId && viewerId != null ? (
           <RecipientUnmarkBar postId={post.postId} userId={viewerId} />
         ) : null}

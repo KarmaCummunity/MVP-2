@@ -6,6 +6,7 @@ import {
   type PostActorIdentityExposure,
 } from '@kc/domain';
 import type { Database } from '../database.types';
+import { isPostgrestRelationMissing } from '../lib/postgrestRelationMissing';
 
 type IdentityRowDb = Database['public']['Tables']['post_actor_identity']['Row'];
 
@@ -45,7 +46,10 @@ export async function fetchPostActorIdentitiesByPostIds(
     .from('post_actor_identity')
     .select('*')
     .in('post_id', uniqueIds);
-  if (error) throw new Error(`fetchPostActorIdentitiesByPostIds: ${error.message}`);
+  if (error) {
+    if (isPostgrestRelationMissing(error)) return out;
+    throw new Error(`fetchPostActorIdentitiesByPostIds: ${error.message}`);
+  }
   for (const raw of (data ?? []) as IdentityRowDb[]) {
     if (!out.has(raw.post_id)) out.set(raw.post_id, new Map());
     out.get(raw.post_id)!.set(raw.user_id, raw);

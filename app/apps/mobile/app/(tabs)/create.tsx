@@ -1,8 +1,8 @@
 // Create Post — wired to IPostRepository (P0.4-FE).
-// Mapped to: FR-POST-001..006, FR-POST-010 (delete) lives elsewhere.
+// Mapped to: FR-POST-001..006 (incl. FR-POST-003 visibility + FR-POST-006 followers publish confirm), FR-POST-010 (delete) lives elsewhere.
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
 // FR-NOTIF-015 AC1: push pre-prompt fires after first post published.
-import React, { useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator, ScrollView,
   Text, TextInput, TouchableOpacity, View,
@@ -11,12 +11,12 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors } from '@kc/ui';
 import {
   ALL_CATEGORIES, ITEM_CONDITIONS,
 } from '@kc/domain';
-import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
+import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
@@ -38,6 +38,8 @@ import { VisibilityChooser } from '../../src/components/CreatePostForm/Visibilit
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { invalidatePersonalStatsCaches } from '../../src/lib/invalidatePersonalStatsCaches';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
+import { getUserRepo } from '../../src/services/userComposition';
 import { createPostStyles as styles } from './create.styles';
 
 export default function CreatePostScreen() {
@@ -67,7 +69,24 @@ export default function CreatePostScreen() {
   const [urgency, setUrgency] = useState('');
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
-  const [visibility, setVisibility] = useState<'Public' | 'OnlyMe'>('Public');
+  const [visibility, setVisibility] = useState<PostVisibility>('Public');
+  const visibilityRef = useRef<PostVisibility>(visibility);
+  visibilityRef.current = visibility;
+
+  const [publishFollowersOpen, setPublishFollowersOpen] = useState(false);
+
+  const userQuery = useQuery({
+    queryKey: ['user-profile', ownerId],
+    queryFn: () => getUserRepo().findById(ownerId!),
+    enabled: Boolean(ownerId),
+  });
+  const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
+
+  useEffect(() => {
+    if (profilePrivacy === 'Public' && visibility === 'FollowersOnly') {
+      setVisibility('Public');
+    }
+  }, [profilePrivacy, visibility]);
 
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
@@ -126,7 +145,7 @@ export default function CreatePostScreen() {
       return getCreatePostUseCase().execute({
         ownerId,
         type,
-        visibility,
+        visibility: visibilityRef.current,
         title,
         description: description.trim() ? description : null,
         category,
@@ -170,6 +189,10 @@ export default function CreatePostScreen() {
 
   const isPublishing = publish.isPending || uploadingCount > 0;
 
+  const runPublishAfterGate = () => {
+    requestSoftGate(() => publish.mutate());
+  };
+
   const tryPublish = () => {
     if (isPublishing) return;
     const missingMsg = buildCreatePostMissingFieldsToastMessage({
@@ -184,7 +207,11 @@ export default function CreatePostScreen() {
       useFeedSessionStore.getState().showEphemeralToast(missingMsg, 'error', 2500);
       return;
     }
-    requestSoftGate(() => publish.mutate());
+    if (visibilityRef.current === 'FollowersOnly') {
+      setPublishFollowersOpen(true);
+      return;
+    }
+    runPublishAfterGate();
   };
 
   // FR-AUTH-015: gate publish on onboarding_state. requestSoftGate runs publish
@@ -356,7 +383,18 @@ export default function CreatePostScreen() {
           </View>
         )}
 
-        <VisibilityChooser value={visibility} onChange={setVisibility} />
+        <VisibilityChooser
+          value={visibility}
+          onChange={setVisibility}
+          profilePrivacy={profilePrivacy}
+          onFollowersOnlyBlockedPress={() =>
+            useFeedSessionStore.getState().showEphemeralToast(
+              t('post.visibilityFollowersLockedSub'),
+              'success',
+              3200,
+            )
+          }
+        />
 
         <TouchableOpacity
           style={[styles.publishBtn, styles.publishBtnFooter]}
@@ -387,6 +425,25 @@ export default function CreatePostScreen() {
         title={notify?.title ?? ''}
         message={notify?.message ?? ''}
         onDismiss={() => setNotify(null)}
+      />
+      <ConfirmActionModal
+        visible={publishFollowersOpen}
+        title={t('post.publishFollowersTitle')}
+        message={t('post.publishFollowersBody', {
+          count: userQuery.data?.followersCount ?? 0,
+        })}
+        confirmLabel={t('post.publishFollowersConfirmCta')}
+        cancelLabel={t('post.publishFollowersMakePublicCta')}
+        onCancel={() => {
+          setPublishFollowersOpen(false);
+          visibilityRef.current = 'Public';
+          setVisibility('Public');
+          runPublishAfterGate();
+        }}
+        onConfirm={() => {
+          setPublishFollowersOpen(false);
+          runPublishAfterGate();
+        }}
       />
     </SafeAreaView>
   );

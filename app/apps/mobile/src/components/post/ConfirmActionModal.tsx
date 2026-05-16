@@ -9,6 +9,8 @@ interface Props {
   title: string;
   message: string;
   confirmLabel: string;
+  /** Secondary action label (defaults to `general.cancel`). */
+  cancelLabel?: string;
   /** When true, the confirm button is rendered in destructive (red) style. */
   destructive?: boolean;
   isBusy?: boolean;
@@ -22,6 +24,7 @@ export function ConfirmActionModal({
   title,
   message,
   confirmLabel,
+  cancelLabel: cancelLabelProp,
   destructive = false,
   isBusy = false,
   errorMessage = null,
@@ -29,7 +32,7 @@ export function ConfirmActionModal({
   onConfirm,
 }: Props) {
   const { t } = useTranslation();
-  const cancelLabel = t('general.cancel');
+  const cancelLabel = cancelLabelProp ?? t('general.cancel');
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onCancel}>
       <View style={styles.backdrop}>

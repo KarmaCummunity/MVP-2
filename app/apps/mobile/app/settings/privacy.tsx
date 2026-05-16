@@ -2,13 +2,13 @@
 // FR-PROFILE-005 / FR-PROFILE-006: Public ↔ Private toggle + follow-requests entry.
 
 import React from 'react';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { PlatformSwitch, colors, radius, spacing, typography } from '@kc/ui';
 import { useAuthStore } from '../../src/store/authStore';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { getUserRepo } from '../../src/services/userComposition';
@@ -76,7 +76,7 @@ export default function PrivacyScreen() {
             <Text style={styles.label}>{t('settings.privacyScreen.privateProfileLabel')}</Text>
             <Text style={styles.hint}>{t('settings.privacyScreen.privateProfileHint')}</Text>
           </View>
-          <Switch value={isPrivate ?? false} onValueChange={onToggle} disabled={!user} />
+          <PlatformSwitch value={isPrivate ?? false} onValueChange={onToggle} disabled={!user} />
         </View>
 
         {isPrivate ? (
