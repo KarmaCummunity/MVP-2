@@ -228,7 +228,18 @@ export default function EditPostScreen() {
     setVisibility(next);
   }
 
-  const onlyMeDisabled = !canUpgradeVisibility('Public', 'OnlyMe') && post.visibility === 'Public';
+  // FR-POST-009: visibility is upgrade-only. A row is enabled when it's the
+  // current value (no-op tap) or when `canUpgradeVisibility(current, row)` is
+  // true. Disabled rows render greyed with a brief reason in the subtitle.
+  const isVisibilityRowEnabled = (v: PostVisibility): boolean =>
+    v === post.visibility || canUpgradeVisibility(post.visibility, v);
+
+  const DOWNGRADE_SUB = 'לא ניתן להוריד פרטיות לאחר פרסום';
+  const VISIBILITY_ROWS: Array<{ v: PostVisibility; label: string; openSub: string }> = [
+    { v: 'Public', label: '🌍 כולם', openSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים' },
+    { v: 'FollowersOnly', label: '👥 עוקבים בלבד', openSub: 'הפוסט יוצג רק לעוקבים שלך' },
+    { v: 'OnlyMe', label: '🔒 רק אני', openSub: 'הפוסט נשמר באופן פרטי' },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -379,21 +390,19 @@ export default function EditPostScreen() {
         {/* Visibility — upgrade-only (FR-POST-009) */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>מי יראה את הפוסט</Text>
-          {([
-            { v: 'Public' as PostVisibility, label: '🌍 כולם', sub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים' },
-            { v: 'OnlyMe' as PostVisibility, label: '🔒 רק אני', sub: onlyMeDisabled ? 'לא ניתן להוריד פרטיות לאחר פרסום' : 'הפוסט נשמר באופן פרטי' },
-          ]).map(({ v, label, sub }) => {
-            const isDisabled = v === 'OnlyMe' && onlyMeDisabled;
+          {VISIBILITY_ROWS.map(({ v, label, openSub }) => {
+            const enabled = isVisibilityRowEnabled(v);
+            const sub = enabled ? openSub : DOWNGRADE_SUB;
             return (
               <TouchableOpacity
                 key={v}
-                style={[styles.visRow, visibility === v && styles.visRowActive, isDisabled && styles.visRowDisabled]}
-                onPress={() => !isDisabled && handleVisibilityChange(v)}
-                disabled={isDisabled}
+                style={[styles.visRow, visibility === v && styles.visRowActive, !enabled && styles.visRowDisabled]}
+                onPress={() => enabled && handleVisibilityChange(v)}
+                disabled={!enabled}
               >
                 <View style={[styles.radio, visibility === v && styles.radioActive]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.visLabel, isDisabled && { color: colors.textDisabled }]}>{label}</Text>
+                  <Text style={[styles.visLabel, !enabled && { color: colors.textDisabled }]}>{label}</Text>
                   <Text style={styles.visSub}>{sub}</Text>
                 </View>
               </TouchableOpacity>
