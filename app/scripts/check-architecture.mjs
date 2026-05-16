@@ -42,9 +42,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // Pre-existing before FR-ADMIN-009; tracked as TD-128 for the split work.
   ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-128', max: 418 }],
   ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-128', max: 646 }],
-  // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-133 splits the file.
-  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-133', max: 308 }],
-  // SearchResultCard.tsx is now a 4-line barrel (TD-133 split done); entry removed.
+  // SearchFilterSheet.tsx split → 127 lines (TD-133); entry removed.
+  // SearchResultCard.tsx barrel (TD-133); entry removed.
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
   // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
