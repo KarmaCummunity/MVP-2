@@ -55,11 +55,9 @@
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
 | 5.3 FR-AUTH-013 AC1 cold-start race | 🟡 | TD-3 — opportunistic. |
-| 5.4 FR-FEED-014 AC1 guest banner literal "50+" | ⏳ | Wire `community_stats.active_public_posts_count`. |
 | 5.5 FR-PROFILE-007 AC5 `profile_updated` analytics | 🟡 | TD-134 — gated on analytics spine. |
 | 5.6 FR-POST-005 AC4 server-side EXIF strip | 🟡 | TD-23 — Edge Function shipped (PR #195) + cron in `0080_strip_exif_cron`. |
 | 5.7 FR-AUTH-011 AC4 avatar-removal Storage leak | ⏳ | Mirror P0.4-FE upload cleanup. |
-| 5.8 FR-DONATE-003 AC4 error message drift | ⏳ | Copy fix in `i18n/locales/he/donations.ts`. |
 | 5.9 FR-SETTINGS-001/003/006 toggles | 🟡 | Most settings persist now (notification prefs via 0062). Audit row only refers to the legacy `useState` defaults — re-verify per toggle. |
 | 5.10 FR-PROFILE-007 AC2 email/phone read-only on Edit Profile | ⏳ | Small UI addition. |
 | 5.11 [LOW] CLAUDE.md verification gate not enforced | ⏳ | Pre-commit hook checking commit-message format. |
@@ -126,17 +124,12 @@
 
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
-| 16.2 [HIGH] `PostImageCarousel` counter RTL position | ⏳ | `start: spacing.sm` instead of `left:`. |
 | 16.3 [HIGH] Type-toggle emoji in `(tabs)/create.tsx` | ⏳ | Folded into §4.6. |
 | 16.4 [HIGH] Icon-only TouchableOpacity missing `accessibilityLabel` | ⏳ | Mechanical sweep (~1h). |
 | 16.6 [MEDIUM] Soft-gate success alert emoji `✅` | ⏳ | Folded into §4.6. |
 | 16.8 [MEDIUM] Donations time composer no trim | ⏳ | Same shape as §16.7. |
 | 16.10 [MEDIUM] Edit Profile no unsaved-changes warn on Back | ⏳ | `dirty` flag + confirm Alert. |
-| 16.11 [MEDIUM] PhotoPicker no pre-launch permission check | ⏳ | Mirror avatarUpload pattern. |
 | 16.12 [MEDIUM] Many screens lack loading skeletons | ⏳ | Shared `<ScreenLoading />`. |
-| 16.13 [LOW] Hebrew copy inconsistencies in chat menu Alert | ⏳ | Cosmetic. |
-| 16.14 [LOW] Donation tiles `activeOpacity` | ⏳ | Cosmetic. |
-| 16.15 [LOW] `MOCK_CHATS` dead code? | ⏳ | Verify and remove. |
 
 ## 18. Concurrency, idempotency, atomicity
 
