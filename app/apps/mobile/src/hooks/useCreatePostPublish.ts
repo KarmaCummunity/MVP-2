@@ -13,6 +13,7 @@ import { isPostError } from '@kc/application';
 import { getCreatePostUseCase, getPostRepo } from '../services/postsComposition';
 import { useFeedSessionStore } from '../store/feedSessionStore';
 import { useLastAddressStore } from '../store/lastAddressStore';
+import { usePostDraftStore } from '../store/postDraftStore';
 import { buildCreatePostMissingFieldsToastMessage } from '../lib/createPostMissingFieldsToast';
 import { mapPostErrorToHebrew } from '../services/postMessages';
 import { invalidatePersonalStatsCaches } from '../lib/invalidatePersonalStatsCaches';
@@ -95,6 +96,8 @@ export function useCreatePostPublish(args: {
           streetNumber,
         });
       }
+      // FR-POST-007 AC4 — successful publish clears the local draft.
+      usePostDraftStore.getState().clearDraft();
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       invalidateMyProfilePostQueries(queryClient, ownerId);
       await queryClient.invalidateQueries({ queryKey: ['openPostsCount'] });
