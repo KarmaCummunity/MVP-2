@@ -5,7 +5,7 @@ export const profileHe = {
   editProfile: 'ערוך פרופיל',
   shareProfile: 'שתף פרופיל',
   followers: 'עוקבים',
-  following: 'נעקבים',
+  following: 'במעקב',
   activePosts: 'פוסטים פעילים',
   closedPosts: 'פוסטים שנמסרו',
   follow: 'עקוב',

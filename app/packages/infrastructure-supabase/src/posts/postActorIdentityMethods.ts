@@ -1,11 +1,11 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from '@kc/application';
-import type { PostActorIdentityExposure } from '@kc/domain';
+import type { PostVisibility } from '@kc/domain';
 import type { Database } from '../database.types';
 import { isPostgrestRelationMissing } from '../lib/postgrestRelationMissing';
 
-function parseActorExposure(raw: string): PostActorIdentityExposure {
-  if (raw === 'Public' || raw === 'FollowersOnly' || raw === 'Hidden') return raw;
+function parsePostVisibility(raw: string | null | undefined): PostVisibility {
+  if (raw === 'Public' || raw === 'FollowersOnly' || raw === 'OnlyMe') return raw;
   return 'Public';
 }
 
@@ -21,7 +21,9 @@ export async function listPostActorIdentitiesForPost(
   return (data ?? []).map((row) => ({
     postId: row.post_id,
     userId: row.user_id,
-    exposure: parseActorExposure(row.exposure),
+    surfaceVisibility: parsePostVisibility(
+      (row as { surface_visibility?: string }).surface_visibility ?? 'Public',
+    ),
     hideFromCounterparty: row.hide_from_counterparty,
   }));
 }
@@ -34,7 +36,8 @@ export async function upsertPostActorIdentityRow(
     {
       post_id: input.postId,
       user_id: input.userId,
-      exposure: input.exposure,
+      surface_visibility: input.surfaceVisibility,
+      identity_visibility: 'Public',
       hide_from_counterparty: input.hideFromCounterparty,
       updated_at: new Date().toISOString(),
     },

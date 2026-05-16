@@ -122,6 +122,15 @@ export const postHe = {
   publishFollowersConfirmCta: 'רק עוקבים',
   publishFollowersMakePublicCta: 'הפוך לציבורי',
 
+  /** Collapsible block on create post — address display, visibility, partner-surface mask. */
+  exposureSettingsSectionTitle: 'הגדרות חשיפה',
+
+  /** FR-POST-021 + D-31 — third-party viewers on the partner's closed-post profile (not the partner in chat). */
+  counterpartyMaskLabel: 'להסתיר את הזהות שלי מצופים אחרים ב״פוסטים סגורים״ של המתאם',
+  createCounterpartyPrivacyTitle: 'מי רואה אותי ליד הפוסט אצל המתאם?',
+  createCounterpartyPrivacyHint:
+    'בצ׳אט המתאם כבר רואה מי אתה. כאן מדובר במשתמשים שלישיים שנכנסים לרשימת הפוסטים הסגורים בפרופיל של המתאם — הם לא ייראו את השם והתמונה שלך בכרטיס הפוסט. בפיד ובמקומות אחרים זה לפי הגדרות הנראות למעלה.',
+
   // Post detail screen (post/[id].tsx) — PR5b i18n sweep.
   detail: {
     loadErrorTitle: 'שגיאה בטעינת הפוסט',
@@ -137,15 +146,6 @@ export const postHe = {
     contactOpeningA11y: 'פותח שיחה עם המפרסם',
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
-    identityHidePartner: 'הסתר את שמי מהפוסט של השותף',
-    /** FR-POST-021 — how this participant’s profile appears on this post (not post audience). */
-    actorIdentityTitle: 'איך מזוהים איתי בפוסט הזה',
-    actorExposurePublic: '🌍 כולם רואים אותי',
-    actorExposurePublicSub: 'שם, תמונה וקישור לפרופיל כרגיל',
-    actorExposureFollowers: '👥 רק למי שעוקב אחריי',
-    actorExposureFollowersSub: 'משתמשים שלא עוקבים יראו אותך אנונימי בפוסט',
-    actorExposureHidden: '🔒 אנונימי',
-    actorExposureHiddenSub: 'שם ותמונה מוסתרים; בלי קישור לפרופיל מהפוסט',
   },
 
   // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.

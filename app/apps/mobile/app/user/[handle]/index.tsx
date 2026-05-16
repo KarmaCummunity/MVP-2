@@ -186,6 +186,7 @@ export default function OtherProfileScreen() {
             hasMore={closed.hasMore}
             isLoadingMore={closed.isLoadingMore}
             onLoadMore={closed.loadMore}
+            profileUserId={u.userId}
           />
         )}
       </ScrollView>

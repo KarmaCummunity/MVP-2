@@ -20,6 +20,8 @@ export interface ProfileClosedPostsGridProps {
   hasMore?: boolean;
   isLoadingMore?: boolean;
   onLoadMore?: () => void;
+  /** Profile whose closed-posts tab is shown — forwarded to post detail for D-31 identity projection. */
+  profileUserId: string;
 }
 
 export function ProfileClosedPostsGrid({
@@ -29,6 +31,7 @@ export function ProfileClosedPostsGrid({
   hasMore = false,
   isLoadingMore = false,
   onLoadMore,
+  profileUserId,
 }: ProfileClosedPostsGridProps) {
   const { t } = useTranslation();
   const EMPTY_COPY: Record<ClosedEmptyVariant, {
@@ -67,7 +70,12 @@ export function ProfileClosedPostsGrid({
     <>
       <View style={styles.grid}>
         {items.map(({ post, identityRole }) => (
-          <PostCardProfile key={post.postId} post={post} identityRole={identityRole} />
+          <PostCardProfile
+            key={post.postId}
+            post={post}
+            identityRole={identityRole}
+            closedPostsProfileUserId={profileUserId}
+          />
         ))}
       </View>
       {hasMore && onLoadMore ? (

@@ -14,6 +14,7 @@ import { EmptyState } from '../../src/components/EmptyState';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
+import { postOwnerDisplayLabel } from '../../src/lib/postOwnerDisplayLabel';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
@@ -27,16 +28,19 @@ function normalizeRoutePostId(raw: string | string[] | undefined): string | unde
   return trimmed;
 }
 
+function normalizeOptionalUserId(raw: string | string[] | undefined): string | null {
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof id !== 'string') return null;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+  return trimmed;
+}
+
 function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string): string {
   if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
   if (post.locationDisplayLevel === 'CityAndStreet')
     return `${post.address.cityName}, ${t('post.detail.streetPrefix')} ${post.address.street}`;
   return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
-}
-
-function postDetailOwnerLabel(post: PostWithOwner, ownerNavigable: boolean, t: (key: string) => string): string {
-  if (!ownerNavigable) return t('post.detail.anonymousUser');
-  return post.ownerName ?? t('common.deletedUser');
 }
 
 function postDetailShowActorPrivacy(
@@ -49,15 +53,24 @@ function postDetailShowActorPrivacy(
 }
 
 export default function PostDetailScreen() {
-  const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
+  const { id: rawId, fromProfile: rawFromProfile } = useLocalSearchParams<{
+    id?: string | string[];
+    fromProfile?: string | string[];
+  }>();
   const postIdParam = normalizeRoutePostId(rawId);
+  const identityListingHostUserId = normalizeOptionalUserId(rawFromProfile);
   const router = useRouter();
   const { t } = useTranslation();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
 
   const query = useQuery({
-    queryKey: ['post', postIdParam, viewerId],
-    queryFn: () => getPostByIdUseCase().execute({ postId: postIdParam ?? '', viewerId }),
+    queryKey: ['post', postIdParam, viewerId, identityListingHostUserId ?? ''],
+    queryFn: () =>
+      getPostByIdUseCase().execute({
+        postId: postIdParam ?? '',
+        viewerId,
+        identityListingHostUserId,
+      }),
     enabled: Boolean(postIdParam),
   });
 
@@ -122,7 +135,7 @@ export default function PostDetailScreen() {
     viewerId != null && post.recipient?.recipientUserId === viewerId;
   const showActorPrivacy = postDetailShowActorPrivacy(viewerId, isOwner, post, isRecipientMarked);
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
-  const ownerLabel = postDetailOwnerLabel(post, ownerNavigable, t);
+  const ownerLabel = postOwnerDisplayLabel(post, t);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>

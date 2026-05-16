@@ -56,6 +56,7 @@ export default function MyProfileHiddenScreen() {
           hasMore={hiddenClosed.hasMore}
           isLoadingMore={hiddenClosed.isLoadingMore}
           onLoadMore={hiddenClosed.loadMore}
+          profileUserId={userId!}
         />
       </ScrollView>
     </SafeAreaView>

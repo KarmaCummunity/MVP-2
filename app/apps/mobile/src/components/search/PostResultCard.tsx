@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { PostWithOwner } from '@kc/application';
+import { postOwnerDisplayLabel } from '../../lib/postOwnerDisplayLabel';
 import { styles } from './searchResultCard.styles';
 
 const STORAGE_BUCKET = 'post-images';
@@ -50,7 +51,7 @@ export function PostResultCard({ post }: { post: PostWithOwner }) {
         <View style={styles.metaRow}>
           <View style={styles.metaChip}>
             <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{post.ownerName ?? t('common.deletedUser')}</Text>
+            <Text style={styles.metaText}>{postOwnerDisplayLabel(post, t)}</Text>
           </View>
           <View style={styles.metaChip}>
             <Ionicons name="location-outline" size={12} color={colors.textSecondary} />

@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
+import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { PostMenuButton } from './post/PostMenuButton';
 import { isRtlLayout as isRTL, postCardGridStyles as styles } from './PostCardGrid.styles';
 
@@ -81,7 +82,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
           </View>
         </View>
         <Text style={styles.metaContainerText} numberOfLines={1}>
-          <Text style={styles.meta}>{post.ownerName ?? t('common.deletedUser')}</Text>
+          <Text style={styles.meta}>{postOwnerDisplayLabel(post, t)}</Text>
           <Text style={styles.metaDot}> · </Text>
           <Text style={styles.meta}>{timeAgo}</Text>
         </Text>

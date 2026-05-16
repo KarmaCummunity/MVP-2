@@ -28,7 +28,11 @@ export class FakePostRepository implements IPostRepository {
 
   // Call captures
   lastGetFeedArgs: { viewerId: string | null; filter: PostFeedFilter; limit: number; cursor?: string } | null = null;
-  lastFindByIdArgs: { postId: string; viewerId: string | null } | null = null;
+  lastFindByIdArgs: {
+    postId: string;
+    viewerId: string | null;
+    opts?: { identityListingHostUserId?: string | null };
+  } | null = null;
   lastCreateArgs: CreatePostInput | null = null;
   lastUpdateArgs: { postId: string; patch: UpdatePostInput } | null = null;
   lastDeletePostId: string | null = null;
@@ -76,8 +80,12 @@ export class FakePostRepository implements IPostRepository {
     return { posts: this.posts, nextCursor: this.nextCursor };
   };
 
-  findById = async (postId: string, viewerId: string | null): Promise<PostWithOwner | null> => {
-    this.lastFindByIdArgs = { postId, viewerId };
+  findById = async (
+    postId: string,
+    viewerId: string | null,
+    opts?: { identityListingHostUserId?: string | null },
+  ): Promise<PostWithOwner | null> => {
+    this.lastFindByIdArgs = { postId, viewerId, opts };
     if (this.findByIdError) throw this.findByIdError;
     return this.findByIdResult;
   };

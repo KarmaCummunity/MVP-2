@@ -1,5 +1,5 @@
 // Create Post — wired to IPostRepository (P0.4-FE).
-// Mapped to: FR-POST-001..006 (incl. FR-POST-003 visibility + FR-POST-006 followers publish confirm), FR-POST-010 (delete) lives elsewhere.
+// Mapped to: FR-POST-001..006 (incl. FR-POST-003 visibility + FR-POST-006 followers publish confirm), FR-POST-021 (D-31 partner-surface mask + collapsible exposure settings), FR-POST-010 (delete) lives elsewhere.
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
 // FR-NOTIF-015 AC1: push pre-prompt fires after first post published.
 import React, { useEffect, useRef, useState } from 'react';
@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors } from '@kc/ui';
+import { colors, PlatformSwitch } from '@kc/ui';
 import {
   ALL_CATEGORIES, ITEM_CONDITIONS,
 } from '@kc/domain';
@@ -75,6 +75,8 @@ export default function CreatePostScreen() {
   visibilityRef.current = visibility;
 
   const [publishFollowersOpen, setPublishFollowersOpen] = useState(false);
+  const [hideFromCounterparty, setHideFromCounterparty] = useState(false);
+  const [exposureSettingsOpen, setExposureSettingsOpen] = useState(false);
 
   const userQuery = useQuery({
     queryKey: ['user-profile', ownerId],
@@ -155,6 +157,7 @@ export default function CreatePostScreen() {
         itemCondition: isGive ? condition : null,
         urgency: !isGive && urgency.trim() ? urgency : null,
         mediaAssets: uploads.map((u) => ({ path: u.path, mimeType: u.mimeType, sizeBytes: u.sizeBytes })),
+        hideFromCounterparty,
       });
     },
     onSuccess: async () => {
@@ -362,39 +365,75 @@ export default function CreatePostScreen() {
           />
           <Text style={styles.charCount}>{description.length}/500</Text>
         </View>
-        <LocationDisplayLevelChooser
-          value={locationDisplayLevel}
-          onChange={setLocationDisplayLevel}
-          disabled={isPublishing}
-        />
 
-        {!isGive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('post.urgency')}</Text>
-            <TextInput
-              style={styles.input}
-              value={urgency}
-              onChangeText={setUrgency}
-              placeholder={t('post.urgencyPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              maxLength={100}
+        <View style={styles.exposureAccordion}>
+          <TouchableOpacity
+            style={styles.exposureAccordionHeader}
+            onPress={() => setExposureSettingsOpen((o) => !o)}
+            accessibilityRole="button"
+            accessibilityState={{ expanded: exposureSettingsOpen }}
+            accessibilityLabel={t('post.exposureSettingsSectionTitle')}
+          >
+            <Text style={styles.exposureAccordionTitle}>{t('post.exposureSettingsSectionTitle')}</Text>
+            <Ionicons
+              name={exposureSettingsOpen ? 'chevron-up' : 'chevron-down'}
+              size={22}
+              color={colors.textSecondary}
             />
-          </View>
-        )}
+          </TouchableOpacity>
+          {exposureSettingsOpen ? (
+            <View style={styles.exposureAccordionBody}>
+              <LocationDisplayLevelChooser
+                value={locationDisplayLevel}
+                onChange={setLocationDisplayLevel}
+                disabled={isPublishing}
+              />
 
-        <VisibilityChooser
-          value={visibility}
-          onChange={setVisibility}
-          profilePrivacy={profilePrivacy}
-          onFollowersOnlyBlockedPress={() =>
-            useFeedSessionStore.getState().showEphemeralToast(
-              t('post.visibilityFollowersLockedSub'),
-              'success',
-              3200,
-            )
-          }
-        />
+              {!isGive && (
+                <View style={styles.section}>
+                  <Text style={styles.sectionLabel}>{t('post.urgency')}</Text>
+                  <TextInput
+                    style={styles.input}
+                    value={urgency}
+                    onChangeText={setUrgency}
+                    placeholder={t('post.urgencyPlaceholder')}
+                    placeholderTextColor={colors.textDisabled}
+                    textAlign="right"
+                    maxLength={100}
+                  />
+                </View>
+              )}
+
+              <VisibilityChooser
+                value={visibility}
+                onChange={setVisibility}
+                profilePrivacy={profilePrivacy}
+                onFollowersOnlyBlockedPress={() =>
+                  useFeedSessionStore.getState().showEphemeralToast(
+                    t('post.visibilityFollowersLockedSub'),
+                    'success',
+                    3200,
+                  )
+                }
+              />
+
+              <View style={styles.counterpartyPrivacy}>
+                <View style={styles.counterpartyPrivacyHeader}>
+                  <Text style={styles.counterpartyPrivacyTitle}>{t('post.createCounterpartyPrivacyTitle')}</Text>
+                </View>
+                <View style={styles.counterpartyPrivacyRow}>
+                  <Text style={styles.counterpartyPrivacyLabel}>{t('post.counterpartyMaskLabel')}</Text>
+                  <PlatformSwitch
+                    value={hideFromCounterparty}
+                    onValueChange={setHideFromCounterparty}
+                    disabled={isPublishing}
+                  />
+                </View>
+                <Text style={styles.counterpartyPrivacyHint}>{t('post.createCounterpartyPrivacyHint')}</Text>
+              </View>
+            </View>
+          ) : null}
+        </View>
 
         <TouchableOpacity
           style={[styles.publishBtn, styles.publishBtnFooter]}

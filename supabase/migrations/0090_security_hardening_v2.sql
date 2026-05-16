@@ -1,5 +1,6 @@
 -- ─────────────────────────────────────────────
--- Migration 0085 — BACKLOG P2.12 (audit 2026-05-16) — BE Security Hardening v2
+-- Migration 0090 — BACKLOG P2.12 (audit 2026-05-16) — BE Security Hardening v2
+-- (Renumbered from 0085: unique version required; 0085 reserved for post_actor FR-POST-021.)
 --
 -- Closes 3 BE-side HIGH findings from the 2026-05-16 audit
 -- (`docs/SSOT/audit/2026-05-16/01_backend_security.md`):

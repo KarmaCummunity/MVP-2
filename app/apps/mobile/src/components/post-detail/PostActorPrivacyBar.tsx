@@ -1,16 +1,22 @@
-// FR-POST-021 — participant controls: identity exposure on this post + optional counterparty hide (closed only).
+// FR-POST-003 + FR-POST-021 — post detail: who may see this post (open → posts.visibility;
+// closed participant → surface_visibility) + optional counterparty identity mask (closed only).
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { PlatformSwitch, colors, spacing, typography } from '@kc/ui';
-import type { PostActorIdentityExposure } from '@kc/domain';
+import type { PostVisibility } from '@kc/domain';
 import type { PostWithOwner } from '@kc/application';
+import { isPostError } from '@kc/application';
 import {
   getListPostActorIdentityUseCase,
+  getUpdatePostUseCase,
   getUpsertPostActorIdentityUseCase,
 } from '../../services/postsComposition';
-import { PostActorExposurePicker } from './PostActorExposurePicker';
+import { getUserRepo } from '../../services/userComposition';
+import { VisibilityChooser } from '../CreatePostForm/VisibilityChooser';
+import { useFeedSessionStore } from '../../store/feedSessionStore';
+import { mapPostErrorToHebrew } from '../../services/postMessages';
 
 interface Props {
   readonly post: PostWithOwner;
@@ -21,9 +27,24 @@ function hasMarkedCounterparty(post: PostWithOwner): boolean {
   return Boolean(post.recipientUser ?? post.recipient?.recipientUserId);
 }
 
+function inferredClosedSurface(post: PostWithOwner, viewerId: string): PostVisibility {
+  if (post.ownerId === viewerId) return post.visibility;
+  return 'Public';
+}
+
 export function PostActorPrivacyBar({ post, viewerId }: Props) {
   const { t } = useTranslation();
   const qc = useQueryClient();
+  const isOwner = post.ownerId === viewerId;
+  const isOpenOwner = post.status === 'open' && isOwner;
+
+  const userQuery = useQuery({
+    queryKey: ['user-profile', viewerId],
+    queryFn: () => getUserRepo().findById(viewerId),
+    enabled: Boolean(viewerId),
+  });
+  const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
+
   const identityQuery = useQuery({
     queryKey: ['post-actor-identity', post.postId],
     queryFn: () => getListPostActorIdentityUseCase().execute({ postId: post.postId }),
@@ -31,59 +52,99 @@ export function PostActorPrivacyBar({ post, viewerId }: Props) {
 
   const myRow = identityQuery.data?.find((r) => r.userId === viewerId);
   const [hide, setHide] = useState(myRow?.hideFromCounterparty ?? false);
-  const [exposure, setExposure] = useState<PostActorIdentityExposure>(myRow?.exposure ?? 'Public');
+  const defaultSurface =
+    post.status === 'closed_delivered' ? inferredClosedSurface(post, viewerId) : post.visibility;
+  const [surface, setSurface] = useState<PostVisibility>(myRow?.surfaceVisibility ?? defaultSurface);
 
   useEffect(() => {
     setHide(myRow?.hideFromCounterparty ?? false);
-    setExposure(myRow?.exposure ?? 'Public');
-  }, [myRow?.hideFromCounterparty, myRow?.exposure]);
+    setSurface(myRow?.surfaceVisibility ?? defaultSurface);
+  }, [myRow?.hideFromCounterparty, myRow?.surfaceVisibility, defaultSurface]);
 
-  const mutation = useMutation({
-    mutationFn: (input: { exposure: PostActorIdentityExposure; hideFromCounterparty: boolean }) =>
+  const audienceValue = isOpenOwner ? post.visibility : surface;
+
+  const invalidateAfterPrivacyChange = async () => {
+    await qc.invalidateQueries({ queryKey: ['post-actor-identity', post.postId] });
+      await qc.invalidateQueries({ queryKey: ['post', post.postId] });
+    await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+    await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
+    await qc.invalidateQueries({ queryKey: ['feed'] });
+    await qc.invalidateQueries({ queryKey: ['my-posts'] });
+  };
+
+  const toastErr = (err: unknown) => {
+    const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : t('post.networkError');
+    useFeedSessionStore.getState().showEphemeralToast(t('post.publishFailed', { message }), 'error');
+  };
+
+  const updatePostVisibility = useMutation({
+    mutationFn: (next: PostVisibility) =>
+      getUpdatePostUseCase().execute({
+        postId: post.postId,
+        viewerId,
+        patch: { visibility: next },
+      }),
+    onSuccess: async () => {
+      await invalidateAfterPrivacyChange();
+    },
+    onError: toastErr,
+  });
+
+  const upsertIdentity = useMutation({
+    mutationFn: (input: { surfaceVisibility: PostVisibility; hideFromCounterparty: boolean }) =>
       getUpsertPostActorIdentityUseCase().execute({
         postId: post.postId,
         userId: viewerId,
-        exposure: input.exposure,
+        surfaceVisibility: input.surfaceVisibility,
         hideFromCounterparty: input.hideFromCounterparty,
       }),
     onSuccess: async () => {
-      await qc.invalidateQueries({ queryKey: ['post-actor-identity', post.postId] });
-      await qc.invalidateQueries({ queryKey: ['post', post.postId] });
-      await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
-      await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
-      await qc.invalidateQueries({ queryKey: ['feed'] });
+      await invalidateAfterPrivacyChange();
     },
+    onError: toastErr,
   });
+
+  const saving = updatePostVisibility.isPending || upsertIdentity.isPending;
 
   const showCounterpartyRow =
     post.status === 'closed_delivered' && hasMarkedCounterparty(post);
 
-  const persist = (next: { exposure?: PostActorIdentityExposure; hideFromCounterparty?: boolean }) => {
-    const e = next.exposure ?? exposure;
+  const persistClosed = (next: { surfaceVisibility?: PostVisibility; hideFromCounterparty?: boolean }) => {
+    const sv = next.surfaceVisibility ?? surface;
     const h = next.hideFromCounterparty ?? hide;
-    mutation.mutate({ exposure: e, hideFromCounterparty: h });
+    setSurface(sv);
+    upsertIdentity.mutate({ surfaceVisibility: sv, hideFromCounterparty: h });
+  };
+
+  const onAudienceChange = (next: PostVisibility) => {
+    if (isOpenOwner) {
+      updatePostVisibility.mutate(next);
+      return;
+    }
+    persistClosed({ surfaceVisibility: next });
   };
 
   return (
     <View style={styles.outer}>
-      <PostActorExposurePicker
-        value={exposure}
-        disabled={mutation.isPending}
-        onSelect={(v) => {
-          setExposure(v);
-          persist({ exposure: v });
-        }}
+      <VisibilityChooser
+        value={audienceValue}
+        onChange={onAudienceChange}
+        profilePrivacy={profilePrivacy}
+        disabled={saving}
+        onFollowersOnlyBlockedPress={() =>
+          useFeedSessionStore.getState().showEphemeralToast(t('post.visibilityFollowersLockedSub'), 'success', 3200)
+        }
       />
       {showCounterpartyRow ? (
         <View style={styles.partnerRow}>
-          <Text style={styles.partnerLabel}>{t('post.detail.identityHidePartner')}</Text>
+          <Text style={styles.partnerLabel}>{t('post.counterpartyMaskLabel')}</Text>
           <PlatformSwitch
             value={hide}
             onValueChange={(v) => {
               setHide(v);
-              persist({ hideFromCounterparty: v });
+              persistClosed({ hideFromCounterparty: v });
             }}
-            disabled={mutation.isPending}
+            disabled={saving}
           />
         </View>
       ) : null}

@@ -36,9 +36,14 @@ interface PostCardProfileProps {
    */
   identityRole?: IdentityRoleForViewedProfile;
   onPressOverride?: () => void;
+  /**
+   * When opening from a profile's closed-posts grid, pass that profile's user id so post detail
+   * can pass `identityListingHostUserId` (query `fromProfile`) for D-31 projection.
+   */
+  closedPostsProfileUserId?: string;
 }
 
-export function PostCardProfile({ post, identityRole, onPressOverride }: PostCardProfileProps) {
+export function PostCardProfile({ post, identityRole, onPressOverride, closedPostsProfileUserId }: PostCardProfileProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const isGive = post.type === 'Give';
@@ -55,9 +60,17 @@ export function PostCardProfile({ post, identityRole, onPressOverride }: PostCar
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() =>
-        onPressOverride ? onPressOverride() : router.push(`/post/${post.postId}`)
-      }
+      onPress={() => {
+        if (onPressOverride) {
+          onPressOverride();
+          return;
+        }
+        const q =
+          closedPostsProfileUserId != null
+            ? `?fromProfile=${encodeURIComponent(closedPostsProfileUserId)}`
+            : '';
+        router.push(`/post/${post.postId}${q}` as never);
+      }}
     >
       <View style={styles.imageArea}>
         {firstImageUrl ? (

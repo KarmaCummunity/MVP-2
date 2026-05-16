@@ -30,6 +30,17 @@ describe('CreatePostUseCase', () => {
     expect(repo.lastCreateArgs?.title).toBe('ספה');
   });
 
+  it('normalizes hideFromCounterparty and forwards to repository (FR-POST-021)', async () => {
+    const repo = new FakePostRepository();
+    repo.createResult = { ...makePostWithOwner() };
+    const uc = new CreatePostUseCase(repo);
+    await uc.execute(baseInput({ hideFromCounterparty: true }));
+    expect(repo.lastCreateArgs?.hideFromCounterparty).toBe(true);
+
+    await uc.execute(baseInput({ hideFromCounterparty: undefined }));
+    expect(repo.lastCreateArgs?.hideFromCounterparty).toBe(false);
+  });
+
   it('rejects empty title', async () => {
     const repo = new FakePostRepository();
     const uc = new CreatePostUseCase(repo);

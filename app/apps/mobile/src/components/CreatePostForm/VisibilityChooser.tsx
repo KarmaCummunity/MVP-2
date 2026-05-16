@@ -10,6 +10,8 @@ interface Props {
   /** FR-POST-003 AC4–AC5 — Followers-only requires a private profile. */
   profilePrivacy: 'Public' | 'Private';
   onFollowersOnlyBlockedPress?: () => void;
+  /** When true, rows ignore presses (e.g. in-flight mutation). */
+  disabled?: boolean;
 }
 
 const ROWS: { v: PostVisibility; labelKey: string; subKey: string }[] = [
@@ -23,6 +25,7 @@ export function VisibilityChooser({
   onChange,
   profilePrivacy,
   onFollowersOnlyBlockedPress,
+  disabled: interactionDisabled,
 }: Props) {
   const { t } = useTranslation();
   const followersLocked = profilePrivacy === 'Public';
@@ -32,25 +35,27 @@ export function VisibilityChooser({
       <Text style={styles.sectionLabel}>{t('post.visibility')}</Text>
       {ROWS.map(({ v, labelKey, subKey }) => {
         const isFollowersRow = v === 'FollowersOnly';
-        const disabled = isFollowersRow && followersLocked;
-        const sub = disabled ? t('post.visibilityFollowersLockedSub') : t(subKey);
+        const followersRowLocked = isFollowersRow && followersLocked;
+        const rowDisabled = Boolean(interactionDisabled) || followersRowLocked;
+        const sub = followersRowLocked ? t('post.visibilityFollowersLockedSub') : t(subKey);
         return (
           <TouchableOpacity
             key={v}
-            style={[styles.row, value === v && styles.rowActive, disabled && styles.rowDisabled]}
+            style={[styles.row, value === v && styles.rowActive, rowDisabled && styles.rowDisabled]}
             onPress={() => {
-              if (disabled) {
+              if (interactionDisabled) return;
+              if (followersRowLocked) {
                 onFollowersOnlyBlockedPress?.();
                 return;
               }
               onChange(v);
             }}
-            accessibilityState={{ disabled }}
+            accessibilityState={{ disabled: rowDisabled }}
           >
             <View style={[styles.radio, value === v && styles.radioActive]} />
             <View style={{ flex: 1 }}>
-              <Text style={[styles.label, disabled && styles.labelDisabled]}>{t(labelKey)}</Text>
-              <Text style={[styles.sub, disabled && styles.subDisabled]}>{sub}</Text>
+              <Text style={[styles.label, rowDisabled && styles.labelDisabled]}>{t(labelKey)}</Text>
+              <Text style={[styles.sub, rowDisabled && styles.subDisabled]}>{sub}</Text>
             </View>
           </TouchableOpacity>
         );

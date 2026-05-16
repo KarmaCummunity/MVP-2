@@ -512,23 +512,26 @@ export type Database = {
       }
       post_actor_identity: {
         Row: {
-          exposure: string
           hide_from_counterparty: boolean
+          identity_visibility: string
           post_id: string
+          surface_visibility: string
           updated_at: string
           user_id: string
         }
         Insert: {
-          exposure: string
           hide_from_counterparty?: boolean
+          identity_visibility: string
           post_id: string
+          surface_visibility?: string
           updated_at?: string
           user_id: string
         }
         Update: {
-          exposure?: string
           hide_from_counterparty?: boolean
+          identity_visibility?: string
           post_id?: string
+          surface_visibility?: string
           updated_at?: string
           user_id?: string
         }

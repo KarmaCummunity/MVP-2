@@ -5,6 +5,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
+import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { AvatarInitials } from './AvatarInitials';
 import { styles } from './PostCard.styles';
 
@@ -33,6 +34,8 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
     return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
   })();
 
+  const ownerLabel = postOwnerDisplayLabel(post, t);
+
   return (
     <TouchableOpacity
       style={styles.card}
@@ -45,12 +48,12 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
       <View style={styles.header}>
         <View style={styles.authorRow}>
           <AvatarInitials
-            name={post.ownerName ?? t('common.deletedUser')}
+            name={ownerLabel}
             avatarUrl={post.ownerAvatarUrl}
             size={36}
           />
           <View style={styles.authorInfo}>
-            <Text style={styles.authorName}>{post.ownerName ?? t('common.deletedUser')}</Text>
+            <Text style={styles.authorName}>{ownerLabel}</Text>
             <Text style={styles.timeText}>{timeAgo}</Text>
           </View>
         </View>

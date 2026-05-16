@@ -88,7 +88,11 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   // ── Single post ─────────────────────────────────────────────────────────
-  async findById(postId: string, viewerId: string | null): Promise<PostWithOwner | null> {
+  async findById(
+    postId: string,
+    viewerId: string | null,
+    opts?: { identityListingHostUserId?: string | null },
+  ): Promise<PostWithOwner | null> {
     const { data, error } = await this.client
       .from('posts')
       .select(POST_SELECT_OWNER)
@@ -97,7 +101,9 @@ export class SupabasePostRepository implements IPostRepository {
     if (error) throw new Error(`findById: ${error.message}`);
     if (!data) return null;
     const mapped = mapPostWithOwnerRow(data as unknown as PostWithOwnerJoinedRow);
-    const [out] = await applyPostActorIdentityProjectionBatch(this.client, [mapped], viewerId);
+    const [out] = await applyPostActorIdentityProjectionBatch(this.client, [mapped], viewerId, {
+      identityListingHostUserId: opts?.identityListingHostUserId ?? null,
+    });
     return out ?? null;
   }
 
@@ -145,6 +151,21 @@ export class SupabasePostRepository implements IPostRepository {
 
     const created = await fetchPostById(this.client, postId);
     if (!created) throw new Error(`create: post ${postId} disappeared after insert`);
+
+    if (input.hideFromCounterparty) {
+      try {
+        await upsertPostActorIdentityRow(this.client, {
+          postId,
+          userId: input.ownerId,
+          surfaceVisibility: input.visibility,
+          hideFromCounterparty: true,
+        });
+      } catch (e) {
+        await this.client.from('posts').delete().eq('post_id', postId);
+        throw e instanceof Error ? e : new Error(String(e));
+      }
+    }
+
     return created;
   }
 

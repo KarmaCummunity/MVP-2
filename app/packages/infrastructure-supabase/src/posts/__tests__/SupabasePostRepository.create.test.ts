@@ -111,6 +111,26 @@ describe('SupabasePostRepository.create — happy paths', () => {
     ]);
   });
 
+  it('upserts post_actor_identity when hideFromCounterparty is true (FR-POST-021)', async () => {
+    const { client, ops } = makeFakeClient([
+      { data: { post_id: 'p_new' } },
+      { data: FETCH_ROW },
+      { error: null },
+    ]);
+    const repo = new SupabasePostRepository(client);
+    await repo.create({ ...VALID_INPUT, mediaAssets: [], hideFromCounterparty: true });
+
+    const upsertOp = ops.find((o) => o.kind === 'upsert' && o.table === 'post_actor_identity');
+    expect(upsertOp).toBeDefined();
+    expect(upsertOp?.args?.[0]).toMatchObject({
+      post_id: 'p_new',
+      user_id: 'u_me',
+      surface_visibility: 'Public',
+      identity_visibility: 'Public',
+      hide_from_counterparty: true,
+    });
+  });
+
   it('inserts the posts row with the address fields flattened (city/street/street_number)', async () => {
     const { client, ops } = makeFakeClient([
       { data: { post_id: 'p_new' } },

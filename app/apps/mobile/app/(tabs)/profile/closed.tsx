@@ -24,6 +24,7 @@ export default function MyProfileClosedScreen() {
           hasMore={closed.hasMore}
           isLoadingMore={closed.isLoadingMore}
           onLoadMore={closed.loadMore}
+          profileUserId={userId!}
         />
       </ScrollView>
     </SafeAreaView>

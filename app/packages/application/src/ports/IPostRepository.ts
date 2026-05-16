@@ -102,6 +102,11 @@ export interface CreatePostInput {
   itemCondition: ItemCondition | null;
   urgency: string | null;
   mediaAssets: MediaAssetInput[];
+  /**
+   * FR-POST-021 + D-31 — when true, persists `hide_from_counterparty` at publish time so
+   * third-party viewers on the counterparty's closed-post profile surface see anonymous chrome for the owner.
+   */
+  hideFromCounterparty?: boolean;
 }
 
 export interface UpdatePostInput {
@@ -127,7 +132,11 @@ export interface IPostRepository {
   ): Promise<FeedPage>;
 
   // Single post
-  findById(postId: string, viewerId: string | null): Promise<PostWithOwner | null>;
+  findById(
+    postId: string,
+    viewerId: string | null,
+    opts?: { identityListingHostUserId?: string | null },
+  ): Promise<PostWithOwner | null>;
 
   // Mutations
   create(input: CreatePostInput): Promise<Post>;

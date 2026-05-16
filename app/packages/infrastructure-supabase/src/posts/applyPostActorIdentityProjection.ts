@@ -64,7 +64,7 @@ function policyFor(
   const row = identities.get(userId);
   if (!row) return { exposure: 'Public', hideFromCounterparty: false };
   return {
-    exposure: asExposure(row.exposure),
+    exposure: asExposure(row.identity_visibility),
     hideFromCounterparty: row.hide_from_counterparty,
   };
 }
@@ -89,11 +89,17 @@ function recipientActorFrom(post: PostWithOwner): ActorIdentityInput | null {
   };
 }
 
+export type ApplyPostActorIdentityProjectionOptions = {
+  /** Whose profile "closed posts" grid is being rendered — drives D-31 third-party mask. */
+  readonly identityListingHostUserId?: string | null;
+};
+
 function projectSingle(
   post: PostWithOwner,
   viewerId: string | null,
   identities: Map<string, IdentityRowDb>,
   followed: Set<string>,
+  identityListingHostUserId: string | null,
 ): PostWithOwner {
   const recipientId = post.recipientUser?.userId ?? post.recipient?.recipientUserId ?? null;
 
@@ -105,6 +111,8 @@ function projectSingle(
     isCounterparty: Boolean(viewerId && recipientId && viewerId === recipientId),
     hideFromCounterparty: ownerPolicy.hideFromCounterparty,
     ownerPostVisibilityOnlyMe: post.visibility === 'OnlyMe',
+    counterpartyUserId: recipientId,
+    identityListingHostUserId,
   });
 
   const recipientActor = recipientActorFrom(post);
@@ -126,6 +134,8 @@ function projectSingle(
     isCounterparty: Boolean(viewerId && viewerId === post.ownerId),
     hideFromCounterparty: recPolicy.hideFromCounterparty,
     ownerPostVisibilityOnlyMe: false,
+    counterpartyUserId: post.ownerId,
+    identityListingHostUserId,
   });
 
   return {
@@ -148,6 +158,7 @@ export async function applyPostActorIdentityProjectionBatch(
   client: SupabaseClient<Database>,
   posts: PostWithOwner[],
   viewerId: string | null,
+  opts?: ApplyPostActorIdentityProjectionOptions,
 ): Promise<PostWithOwner[]> {
   if (posts.length === 0) return posts;
   const identityByPost = await fetchPostActorIdentitiesByPostIds(
@@ -163,7 +174,9 @@ export async function applyPostActorIdentityProjectionBatch(
   }
   const followed = viewerId ? await fetchFollowedTargets(client, viewerId, targets) : new Set<string>();
 
+  const listingHost = opts?.identityListingHostUserId ?? null;
+
   return posts.map((post) =>
-    projectSingle(post, viewerId, identityByPost.get(post.postId) ?? new Map(), followed),
+    projectSingle(post, viewerId, identityByPost.get(post.postId) ?? new Map(), followed, listingHost),
   );
 }

@@ -55,6 +55,7 @@ export class CreatePostUseCase {
       title,
       description,
       urgency: urgency && urgency.length > 0 ? urgency : null,
+      hideFromCounterparty: Boolean(input.hideFromCounterparty),
     };
   }
 }
