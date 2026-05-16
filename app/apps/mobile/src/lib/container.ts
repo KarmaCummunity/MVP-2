@@ -2,7 +2,7 @@
 // Screens import the use cases from here, not from @kc/application directly.
 // Mapped to SRS: FR-CHAT-001..013, FR-POST-010, FR-POST-014 AC4, FR-POST-015 AC1, FR-MOD-001, FR-MOD-007, FR-ADMIN-009.
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAuthSecureStorage } from '../services/authSecureStorage';
 import {
   getSupabaseClient,
   SupabaseUserRepository,
@@ -45,12 +45,19 @@ import {
   UpdateNotificationPreferencesUseCase,
 } from '@kc/application';
 
+/**
+ * Web localStorage exposes async-compatible sync methods; native routes
+ * through SecureStore per TD-101 (BACKLOG P2.14). See
+ * `apps/mobile/src/services/authComposition.ts:pickStorage` for the full
+ * rationale. The Supabase client is a singleton so this duplicate exists
+ * for loader-order independence only.
+ */
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
     if (typeof window === 'undefined' || !window.localStorage) return undefined;
     return window.localStorage;
   }
-  return AsyncStorage;
+  return createAuthSecureStorage();
 }
 
 export const supabase = getSupabaseClient({ storage: pickStorage() });
