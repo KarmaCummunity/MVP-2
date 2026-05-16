@@ -1,8 +1,9 @@
-// Donations · Time — coming-soon copy + external link to we-me.app + volunteer composer + community NGO links list.
-// Mapped to: FR-DONATE-004 (top section + composer) / FR-DONATE-007..009 (list section) / D-16.
-// TD-114 (post-P0.5): replace local intent log with a real sendVolunteerMessageToAdmin use-case + chat navigation.
+// Donations · Time — coming-soon copy + volunteer composer wired to support thread + community NGO links.
+// Mapped to: FR-DONATE-004 (top section + composer AC1-AC9) / FR-DONATE-007..009 (list section).
+// TD-114 closed: composer now sends to support thread and navigates to /chat/[id].
 import React, { useState } from 'react';
 import {
+  ActivityIndicator,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -10,51 +11,52 @@ import {
   TextInput,
   View,
 } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { ChatError } from '@kc/application';
 import { colors, radius, spacing, typography } from '@kc/ui';
+import { useAuthStore } from '../../../src/store/authStore';
+import { container } from '../../../src/lib/container';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
-import { NotifyModal } from '../../../src/components/NotifyModal';
 
-
-const INTENT_LOG_KEY = 'volunteer_intent_log';
-const INTENT_LOG_MAX = 50;
 const COMPOSER_MAX_CHARS = 2000;
-
-interface VolunteerIntent {
-  body: string;
-  createdAt: string; // ISO timestamp
-}
-
-async function appendVolunteerIntent(body: string): Promise<void> {
-  try {
-    const raw = await AsyncStorage.getItem(INTENT_LOG_KEY);
-    const list: VolunteerIntent[] = raw ? JSON.parse(raw) : [];
-    list.push({ body, createdAt: new Date().toISOString() });
-    const trimmed = list.length > INTENT_LOG_MAX ? list.slice(-INTENT_LOG_MAX) : list;
-    await AsyncStorage.setItem(INTENT_LOG_KEY, JSON.stringify(trimmed));
-  } catch {
-    // FR-DONATE-004 AC7: silent on storage failure; alert still shown.
-  }
-}
+const VOLUNTEER_PREFIX = 'התנדבות בארגון: ';
 
 export default function DonationsTimeScreen() {
   const { t } = useTranslation();
+  const router = useRouter();
+  const userId = useAuthStore((s) => s.session?.userId ?? null);
   const [text, setText] = useState('');
-  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
-  const [successOpen, setSuccessOpen] = useState(false);
+  const [busy, setBusy] = useState(false);
+  const [sendError, setSendError] = useState(false);
+
+  const sendDisabled = text.trim().length === 0 || busy;
 
   const onSend = async () => {
     const body = text.trim();
-    if (!body) return;
-    await appendVolunteerIntent(body);
-    setText('');
-    setSuccessOpen(true);
+    if (!body || !userId || busy) return;
+    setBusy(true);
+    setSendError(false);
+    try {
+      const chat = await container.getSupportThread.execute({ userId });
+      await container.sendMessage.execute({
+        chatId: chat.chatId,
+        senderId: userId,
+        body: `${VOLUNTEER_PREFIX}${body}`,
+      });
+      router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
+    } catch (err) {
+      if (err instanceof ChatError && err.code === 'super_admin_not_found') {
+        setSendError(true);
+      } else {
+        setSendError(true);
+      }
+    } finally {
+      setBusy(false);
+    }
   };
-
-  const sendDisabled = text.trim().length === 0;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -67,14 +69,14 @@ export default function DonationsTimeScreen() {
           <Ionicons name="time-outline" size={48} color={colors.primary} />
         </View>
         <Text style={styles.body}>{t('donations.timeScreen.body')}</Text>
-        
+
         <View style={styles.divider} />
 
         <Text style={styles.composerHeading}>{t('donations.timeScreen.composerHeading')}</Text>
         <TextInput
           style={styles.input}
           value={text}
-          onChangeText={setText}
+          onChangeText={(v) => { setText(v); setSendError(false); }}
           placeholder={t('donations.timeScreen.composerPlaceholder')}
           placeholderTextColor={colors.textDisabled}
           multiline
@@ -94,21 +96,28 @@ export default function DonationsTimeScreen() {
             pressed && !sendDisabled && styles.sendPressed,
           ]}
         >
-          <Text style={[styles.sendText, sendDisabled && styles.sendTextDisabled]}>
-            {t('donations.timeScreen.sendButton')}
-          </Text>
+          {busy ? (
+            <ActivityIndicator color={colors.textInverse} />
+          ) : (
+            <Text style={[styles.sendText, sendDisabled && styles.sendTextDisabled]}>
+              {t('donations.timeScreen.sendButton')}
+            </Text>
+          )}
         </Pressable>
+
+        {sendError ? (
+          <View style={styles.errorRow}>
+            <Text style={styles.errorText}>{t('donations.timeScreen.sendError')}</Text>
+            <Pressable onPress={onSend} disabled={busy}>
+              <Text style={styles.retryText}>{t('donations.timeScreen.sendRetry')}</Text>
+            </Pressable>
+          </View>
+        ) : null}
 
         <View style={styles.divider} />
 
         <DonationLinksList categorySlug="time" />
       </ScrollView>
-      <NotifyModal
-        visible={successOpen}
-        title={t('donations.timeScreen.sendSuccessTitle')}
-        message={t('donations.timeScreen.sendSuccessBody')}
-        onDismiss={() => setSuccessOpen(false)}
-      />
     </SafeAreaView>
   );
 }
@@ -141,18 +150,6 @@ const styles = StyleSheet.create({
     textAlign: 'right',
     lineHeight: 26,
   },
-  cta: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.lg,
-  },
-  ctaPressed: { backgroundColor: colors.primaryDark },
-  ctaText: { ...typography.button, color: colors.textInverse },
   divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.md },
   composerHeading: {
     ...typography.body,
@@ -182,4 +179,7 @@ const styles = StyleSheet.create({
   sendDisabled: { backgroundColor: colors.primaryLight, opacity: 0.6 },
   sendText: { ...typography.button, color: colors.textInverse },
   sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
+  errorRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm },
+  errorText: { ...typography.bodySmall, color: colors.error, textAlign: 'right' },
+  retryText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' as const },
 });
