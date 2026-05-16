@@ -1,9 +1,9 @@
 // FR-CHAT-004 + FR-CHAT-005 AC4 — open/create chat anchored on the post and
 // prefill the auto-message only if the viewer hasn't sent it within the last
-// 50 messages. Extracted from app/post/[id].tsx to keep the route file under
-// the 200-line cap.
+// 50 messages.
 import type { Post } from '@kc/domain';
 import type { useRouter } from 'expo-router';
+import i18n from '../i18n';
 import { container } from './container';
 import { consumePreferNewThread } from './chatNavigationPrefs';
 
@@ -23,7 +23,7 @@ export async function contactPoster(
     preferNewThread,
   });
   const recent = await container.chatRepo.getMessages(chat.chatId, 50);
-  const template = container.buildAutoMessage.execute({ postTitle: post.title });
+  const template = i18n.t('chat.autoMessage.initial', { title: post.title.trim() });
   const sentBefore = recent.some((m) => m.senderId === viewerId && m.body === template);
   router.push({
     pathname: '/chat/[id]',

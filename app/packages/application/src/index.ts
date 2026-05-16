@@ -51,7 +51,6 @@ export * from './posts/SearchUsersForClosureUseCase';
 export * from './auth/DismissClosureExplainerUseCase';
 
 // Chat use cases
-export { BuildAutoMessageUseCase } from './chat/BuildAutoMessageUseCase';
 export { SendMessageUseCase } from './chat/SendMessageUseCase';
 export type { SendMessageInput } from './chat/SendMessageUseCase';
 export { HideChatFromInboxUseCase } from './chat/HideChatFromInboxUseCase';
