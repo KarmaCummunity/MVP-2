@@ -3,6 +3,7 @@
 // Items shown depend on viewer role (see spec §3).
 import { useState } from 'react';
 import { Modal, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
 import { ConfirmActionModal } from './ConfirmActionModal';
@@ -32,6 +33,7 @@ export function PostMenuSheet({
   onAfterRemoval,
   onEdit,
 }: Props) {
+  const { t } = useTranslation();
   const [active, setActive] = useState<ActiveModal>(null);
   const { busy, error, clearError, handleOwnerDelete, handleAdminRemove } =
     usePostMenuActions({
@@ -61,12 +63,12 @@ export function PostMenuSheet({
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             {isOwner ? null : (
-              <MenuItem icon="🚩" label="דווח" onPress={() => openModal('report')} />
+              <MenuItem icon="🚩" label={t('post.report')} onPress={() => openModal('report')} />
             )}
             {canEditPost ? (
               <MenuItem
                 icon="✏️"
-                label="ערוך פוסט"
+                label={t('post.menuEdit')}
                 onPress={() => {
                   onClose();
                   onEdit();
@@ -76,7 +78,7 @@ export function PostMenuSheet({
             {isOwner ? (
               <MenuItem
                 icon="🗑️"
-                label="מחק את הפוסט"
+                label={t('post.menuDelete')}
                 destructive
                 onPress={() => openModal('delete-owner')}
               />
@@ -84,25 +86,21 @@ export function PostMenuSheet({
             {isSuperAdmin ? (
               <MenuItem
                 icon="🛡️"
-                label="הסר כאדמין"
+                label={t('post.menuAdminRemove')}
                 destructive
                 onPress={() => openModal('admin-remove')}
               />
             ) : null}
-            <MenuItem icon="✕" label="ביטול" onPress={onClose} muted />
+            <MenuItem icon="✕" label={t('general.cancel')} onPress={onClose} muted />
           </Pressable>
         </Pressable>
       </Modal>
 
       <ConfirmActionModal
         visible={active === 'delete-owner'}
-        title="🗑️ למחוק את הפוסט?"
-        message={
-          'הפוסט יימחק לצמיתות. שיחות שנפתחו סביבו יישארו ברשימת הצ\'אטים שלך, עם הערה שהפוסט המקורי לא זמין יותר.\n\n'
-          + 'ניתן למחוק פוסט פתוח, או פוסט סגור בלי שורת מקבל במערכת (למשל נסגר בלי סימון, או מקבל שנמחק מהמערכת). '
-          + 'אם יש מקבל רשום — לא ניתן למחיקה מכאן; אפשר לפתוח מחדש לפי הצורך.'
-        }
-        confirmLabel="מחק"
+        title={t('post.deleteConfirmTitle')}
+        message={t('post.deleteConfirmBody')}
+        confirmLabel={t('post.delete')}
         destructive
         isBusy={busy}
         errorMessage={error}
@@ -112,9 +110,9 @@ export function PostMenuSheet({
 
       <ConfirmActionModal
         visible={active === 'admin-remove'}
-        title="🛡️ להסיר את הפוסט?"
-        message={`הפוסט "${post.title}" יוסתר מהפיד ויסומן כמוסר על ידי מנהל. ניתן יהיה לשחזר אותו בעתיד דרך יומן האודיט.`}
-        confirmLabel="הסר"
+        title={t('post.adminRemoveTitle')}
+        message={t('post.adminRemoveBody', { title: post.title })}
+        confirmLabel={t('post.adminRemoveCta')}
         destructive
         isBusy={busy}
         errorMessage={error}
