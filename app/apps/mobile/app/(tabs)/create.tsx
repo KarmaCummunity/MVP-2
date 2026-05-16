@@ -89,13 +89,17 @@ export default function CreatePostScreen() {
 
     setUploadingCount((n) => n + picked.length);
     try {
+      // Audit §3.8 — allSettled keeps successes (orphans reaped by cron 0079).
       const startOrdinal = uploads.length;
-      const results = await Promise.all(
+      const r = await Promise.allSettled(
         picked.map((p, i) => resizeAndUploadImage(p, ownerId, batchId, startOrdinal + i)),
       );
-      setUploads((prev) => [...prev, ...results]);
-    } catch (err) {
-      setNotify({ title: 'העלאת התמונה נכשלה', message: err instanceof Error ? err.message : 'נסה שוב.' });
+      const ok = r.flatMap((x) => (x.status === 'fulfilled' ? [x.value] : []));
+      if (ok.length > 0) setUploads((prev) => [...prev, ...ok]);
+      if (ok.length < r.length) {
+        const msg = ok.length === 0 ? 'נסה שוב.' : `${ok.length}/${r.length} הועלו — נסה שוב את היתר.`;
+        setNotify({ title: 'העלאת התמונה נכשלה', message: msg });
+      }
     } finally {
       setUploadingCount((n) => Math.max(0, n - picked.length));
     }
