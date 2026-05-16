@@ -132,6 +132,11 @@ export type IdentityRoleForViewedProfile = 'publisher' | 'respondent';
 export interface ProfileClosedPostsItem {
   readonly post: Post;
   readonly identityRole: IdentityRoleForViewedProfile;
+  // ISO timestamp of when the post entered its closed state for this identity.
+  // Publisher rows: max(recipients.marked_at, posts.updated_at).
+  // Respondent rows: recipients.marked_at.
+  // Used as the cursor for `getProfileClosedPosts` pagination (exclusive `<`).
+  readonly closedAt: string;
 }
 
 // ── Follow ────────────────────────────────────

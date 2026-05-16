@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
 import { colors } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
@@ -22,7 +23,7 @@ import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
 import { consumePreferNewThread } from '../../../src/lib/chatNavigationPrefs';
 import { getUserRepo } from '../../../src/services/userComposition';
-import { getPostRepo, getMyPostsUseCase, getProfileClosedPostsUseCase } from '../../../src/services/postsComposition';
+import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { NotifyModal } from '../../../src/components/NotifyModal';
@@ -85,15 +86,10 @@ export default function OtherProfileScreen() {
     enabled: Boolean(u?.userId) && activeTab === 'open',
   });
 
-  const closedPostsQuery = useQuery({
-    queryKey: ['profile-other-closed-posts', u?.userId, me],
-    queryFn: () =>
-      getProfileClosedPostsUseCase().execute({
-        profileUserId: u!.userId,
-        viewerUserId: me ?? null,
-        limit: 30,
-      }),
-    enabled: Boolean(u?.userId) && activeTab === 'closed',
+  const closed = useProfileClosedPosts({
+    profileUserId: u?.userId,
+    viewerUserId: me ?? null,
+    enabled: activeTab === 'closed',
   });
 
   if (!handle || userQuery.isLoading)
@@ -194,9 +190,12 @@ export default function OtherProfileScreen() {
           />
         ) : (
           <ProfileClosedPostsGrid
-            items={closedPostsQuery.data?.items ?? []}
-            isLoading={closedPostsQuery.isLoading}
+            items={closed.items}
+            isLoading={closed.isLoading}
             empty="other_closed"
+            hasMore={closed.hasMore}
+            isLoadingMore={closed.isLoadingMore}
+            onLoadMore={closed.loadMore}
           />
         )}
       </ScrollView>
