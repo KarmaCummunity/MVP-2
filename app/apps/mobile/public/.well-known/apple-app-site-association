@@ -3,7 +3,15 @@
     "details": [
       {
         "appID": "REPLACE_WITH_APPLE_TEAM_ID.com.karmacommunity.app",
-        "paths": ["/auth/verify", "/auth/verify*"]
+        "paths": [
+          "/auth/verify",
+          "/auth/verify*",
+          "/auth/callback",
+          "/auth/callback*",
+          "/post/*",
+          "/user/*",
+          "/chat/*"
+        ]
       }
     ]
   }
