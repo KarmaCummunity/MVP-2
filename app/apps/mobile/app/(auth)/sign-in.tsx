@@ -1,19 +1,20 @@
 // Sign-in with email/password — FR-AUTH-007 (email path)
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  StyleSheet,
-  KeyboardAvoidingView,
-  Platform,
-  ActivityIndicator,
-  Image,
+  View, Text, TouchableOpacity, StyleSheet,
+  KeyboardAvoidingView, Platform, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withDelay,
+} from 'react-native-reanimated';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
@@ -21,6 +22,8 @@ import { getSignInUseCase } from '../../src/services/authComposition';
 import { useAuthStore } from '../../src/store/authStore';
 import { VerificationPendingPanel } from '../../src/components/auth/VerificationPendingPanel';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { AuthBackground } from '../../src/components/auth/AuthBackground';
+import { AnimatedAuthInput } from '../../src/components/auth/AnimatedAuthInput';
 
 export default function SignInScreen() {
   const router = useRouter();
@@ -30,8 +33,27 @@ export default function SignInScreen() {
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
-  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
   const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
+
+  // ── Entry animation ───────────────────────────────────────────────────
+  const screenOpacity = useSharedValue(0);
+  const headerTranslate = useSharedValue(-20);
+  const formOpacity = useSharedValue(0);
+  const formTranslate = useSharedValue(30);
+
+  useEffect(() => {
+    screenOpacity.value = withTiming(1, { duration: 300 });
+    headerTranslate.value = withSpring(0, { damping: 20, stiffness: 120 });
+    formOpacity.value = withDelay(150, withTiming(1, { duration: 400 }));
+    formTranslate.value = withDelay(150, withSpring(0, { damping: 18, stiffness: 100 }));
+  }, []);
+
+  const screenStyle = useAnimatedStyle(() => ({ opacity: screenOpacity.value }));
+  const headerStyle = useAnimatedStyle(() => ({ transform: [{ translateY: headerTranslate.value }] }));
+  const formStyle = useAnimatedStyle(() => ({
+    opacity: formOpacity.value,
+    transform: [{ translateY: formTranslate.value }],
+  }));
 
   const handleSignIn = async () => {
     if (!email || !password) {
@@ -42,15 +64,12 @@ export default function SignInScreen() {
     try {
       const { session } = await getSignInUseCase().execute({ email, password });
       setSession(session);
-      // AuthGate will route to (onboarding) or (tabs) based on onboarding_state.
     } catch (err) {
       if (isAuthError(err) && err.code === 'email_not_verified') {
         setPendingEmail(email.trim().toLowerCase());
         return;
       }
-      const message = isAuthError(err)
-        ? mapAuthErrorToHebrew(err.code)
-        : t('auth.networkError');
+      const message = isAuthError(err) ? mapAuthErrorToHebrew(err.code) : t('auth.networkError');
       setNotify({ title: t('auth.signInFailedTitle'), message });
     } finally {
       setLoading(false);
@@ -59,125 +78,136 @@ export default function SignInScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-        style={styles.kav}
-      >
-        <View style={styles.content}>
-          <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>{t('auth.backCta')}</Text>
-          </TouchableOpacity>
+      <AuthBackground />
+      <Animated.View style={[{ flex: 1 }, screenStyle]}>
+        <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
+          <View style={styles.content}>
 
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
-          <Text style={styles.title}>{t('auth.signInScreenTitle')}</Text>
+            {/* Header */}
+            <Animated.View style={[styles.header, headerStyle]}>
+              <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
+                <Ionicons name="arrow-forward" size={22} color="#F97316" />
+              </TouchableOpacity>
+              <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+            </Animated.View>
 
-          {pendingEmail ? (
-            <VerificationPendingPanel
-              email={pendingEmail}
-              onChangeEmail={() => setPendingEmail(null)}
-            />
-          ) : null}
+            {/* Form card */}
+            <Animated.View style={[styles.card, formStyle]}>
+              <Text style={styles.title}>{t('auth.signInScreenTitle')}</Text>
 
-          <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
-            <View style={styles.field}>
-              <Text style={styles.label}>{t('auth.email')}</Text>
-              <TextInput
-                style={styles.input}
-                value={email}
-                onChangeText={setEmail}
-                placeholder={t('auth.emailPlaceholder')}
-                placeholderTextColor={colors.textDisabled}
-                keyboardType="email-address"
-                autoCapitalize="none"
-                textAlign="right"
-                editable={!loading}
-              />
-            </View>
+              {pendingEmail ? (
+                <VerificationPendingPanel email={pendingEmail} onChangeEmail={() => setPendingEmail(null)} />
+              ) : null}
 
-            <View style={styles.field}>
-              <Text style={styles.label}>{t('auth.password')}</Text>
-              <TextInput
-                style={styles.input}
-                value={password}
-                onChangeText={setPassword}
-                placeholder={t('auth.passwordPlaceholder')}
-                placeholderTextColor={colors.textDisabled}
-                secureTextEntry
-                textAlign="right"
-                editable={!loading}
-              />
-            </View>
+              <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
+                <AnimatedAuthInput
+                  label={t('auth.email')}
+                  value={email}
+                  onChangeText={setEmail}
+                  placeholder={t('auth.emailPlaceholder')}
+                  keyboardType="email-address"
+                  autoCapitalize="none"
+                  editable={!loading}
+                />
+                <AnimatedAuthInput
+                  label={t('auth.password')}
+                  value={password}
+                  onChangeText={setPassword}
+                  placeholder={t('auth.passwordPlaceholder')}
+                  secureTextEntry
+                  editable={!loading}
+                />
+                <TouchableOpacity disabled={loading}>
+                  <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
+                </TouchableOpacity>
+                <SubmitButton label={t('auth.signIn')} loading={loading} onPress={handleSignIn} />
+              </View>
 
-            <TouchableOpacity disabled={loading}>
-              <Text style={styles.forgotText}>{t('auth.forgotPassword')}</Text>
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
-              onPress={handleSignIn}
-              disabled={loading}
-            >
-              {loading ? (
-                <ActivityIndicator color={colors.textInverse} />
-              ) : (
-                <Text style={styles.submitBtnText}>{t('auth.signIn')}</Text>
-              )}
-            </TouchableOpacity>
+              {!pendingEmail ? (
+                <TouchableOpacity
+                  style={styles.switchMode}
+                  onPress={() => router.replace('/(auth)/sign-up')}
+                  disabled={loading}
+                >
+                  <Text style={styles.switchModeText}>{t('auth.noAccountSwitchCta')}</Text>
+                </TouchableOpacity>
+              ) : null}
+            </Animated.View>
           </View>
-
-          {!pendingEmail ? (
-            <TouchableOpacity
-              style={styles.switchMode}
-              onPress={() => router.replace('/(auth)/sign-up')}
-              disabled={loading}
-            >
-              <Text style={styles.switchModeText}>{t('auth.noAccountSwitchCta')}</Text>
-            </TouchableOpacity>
-          ) : null}
-        </View>
-      </KeyboardAvoidingView>
-      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
+        </KeyboardAvoidingView>
+      </Animated.View>
+      <NotifyModal
+        visible={notify !== null}
+        title={notify?.title ?? ''}
+        message={notify?.message ?? ''}
+        onDismiss={() => setNotify(null)}
+      />
     </SafeAreaView>
   );
 }
 
+function SubmitButton({ label, loading, onPress }: { label: string; loading: boolean; onPress: () => void }) {
+  const scale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+  return (
+    <Animated.View style={[pressStyle, { marginTop: spacing.sm }]}>
+      <TouchableOpacity
+        style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
+        onPress={onPress}
+        onPressIn={() => { scale.value = withTiming(0.97, { duration: 100 }); }}
+        onPressOut={() => { scale.value = withSpring(1, { damping: 15 }); }}
+        activeOpacity={1}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color={colors.textInverse} />
+        ) : (
+          <Text style={styles.submitBtnText}>{label}</Text>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
+  );
+}
+
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surface },
-  kav: { flex: 1 },
-  content: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.base },
-  backBtn: { marginBottom: spacing.base },
-  backText: { ...typography.body, color: colors.primary },
-  logo: { width: 64, height: 64, alignSelf: 'flex-end', marginBottom: spacing.base },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing['2xl'] },
+  container: { flex: 1, backgroundColor: '#FFFBF7' },
+  content: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.md },
+  header: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: spacing.xl,
+  },
+  backBtn: { padding: spacing.sm },
+  logo: { width: 48, height: 48, borderRadius: 12 },
+  card: {
+    backgroundColor: '#FFFFFF',
+    borderRadius: 24,
+    padding: spacing.xl,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.08,
+    shadowRadius: 16,
+    elevation: 4,
+  },
+  title: { ...typography.h1, color: '#1C1917', textAlign: 'right', marginBottom: spacing.xl },
   form: { gap: spacing.base },
   hidden: { display: 'none' },
-  field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  input: {
-    height: 50,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.base,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  forgotText: { ...typography.body, color: colors.primary, textAlign: 'right' },
+  forgotText: { ...typography.body, color: '#F97316', textAlign: 'right' },
   submitBtn: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    height: 56,
+    backgroundColor: '#F97316',
+    borderRadius: radius.xl,
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: spacing.sm,
+    shadowColor: '#F97316',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.3,
+    shadowRadius: 8,
+    elevation: 4,
   },
-  submitBtnDisabled: { opacity: 0.7 },
-  submitBtnText: { ...typography.button, color: colors.textInverse },
+  submitBtnDisabled: { opacity: 0.65, shadowOpacity: 0 },
+  submitBtnText: { ...typography.button, fontSize: 16, color: colors.textInverse },
   switchMode: { marginTop: spacing.xl, alignItems: 'center' },
-  switchModeText: { ...typography.body, color: colors.primary },
+  switchModeText: { ...typography.body, color: '#F97316' },
 });
