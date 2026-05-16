@@ -30,8 +30,7 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 254 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
-  // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
-  ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
+  // PostCard.tsx styles extracted to PostCard.styles.ts → 101 lines (TD-29); entry removed.
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
