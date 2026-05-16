@@ -117,7 +117,6 @@
 | 15.7 [MEDIUM] Realtime publication on `users` exposes sensitive columns | ⏳ | Curated `users_public_view` or column-filter on publication. |
 | 15.9 [MEDIUM] `messages.sender_id ON DELETE SET NULL` keeps body | 🟡 | Documented intent per spec. Re-decide at GDPR pass. |
 | 15.14 [LOW] `is_post_visible_to()` STABLE per-row evaluation | ⏳ | Profile EXPLAIN at scale. |
-| 15.15 [LOW] `cities` table has theatrical RLS | ⏳ | Disable RLS on `cities` OR add intent comment. |
 
 ## 16. Per-screen UI/UX correctness (Round 2)
 
