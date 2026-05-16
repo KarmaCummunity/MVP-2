@@ -38,6 +38,9 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // SearchResultCard.tsx barrel (TD-133); entry removed.
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 416 }],
+  // UniversalSearch test suite (#205) — 8 distinct query-shape scenarios; splitting
+  // would scatter shared fixtures. Allowlisted under TD-31 (test coverage drive).
+  ['packages/application/src/search/__tests__/UniversalSearchUseCase.test.ts', { td: 'TD-31', max: 300 }],
 ]);
 
 const LAYER_RULES = [

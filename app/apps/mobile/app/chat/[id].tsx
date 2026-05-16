@@ -82,7 +82,10 @@ export default function ChatScreen() {
 
   const counter = input.length;
   const showCounter = counter >= 1900;
-  const sendDisabled = counter === 0 || counter > MESSAGE_MAX_CHARS;
+  // Audit §16.7 — trim for the disabled state so whitespace-only input doesn't
+  // present an enabled "send" button (the underlying useChatSend already trims
+  // and silently drops empty bodies, but the button shouldn't pretend to work).
+  const sendDisabled = input.trim().length === 0 || counter > MESSAGE_MAX_CHARS;
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
   // Precompute O(1) lookup of message ids handled by a later mod_action_taken

@@ -174,7 +174,7 @@ The remaining audit findings (below) split into three classes:
 | 14.6 [MEDIUM] Filter button non-functional | ✅ | P1.2 — filter modal wired. |
 | 14.7 [MEDIUM] Apple SSO + Phone OTP placeholder | 🟡 | TD-24 + TD-151 (auth hardening). |
 | 14.8 [LOW] Search CTA wording | ⏳ | Open — reword to "גלה בפיד הראשי". |
-| 14.9 [LOW] Onboarding photo hint promises Settings | ⏳ | Open — reword to "בפרופיל". |
+| 14.9 [LOW] Onboarding photo hint promises Settings | ✅ | `(onboarding)/photo.tsx:120` reworded to "בפרופיל". |
 
 ## 15. RLS, triggers & SECURITY DEFINER (Round 2)
 
@@ -206,7 +206,7 @@ The remaining audit findings (below) split into three classes:
 | 16.4 [HIGH] Icon-only TouchableOpacity missing `accessibilityLabel` | ⏳ | Open — mechanical sweep (~1h). |
 | 16.5 [HIGH] Create-post form clears on publish error | ⏳ | Open — don't clear in `onError`; only in `onSuccess`. |
 | 16.6 [MEDIUM] Soft-gate success alert emoji `✅` | ⏳ | Folded into §4.6. |
-| 16.7 [MEDIUM] Chat send button no trim | ⏳ | Open — `sendDisabled = input.trim().length === 0`. |
+| 16.7 [MEDIUM] Chat send button no trim | ✅ | `chat/[id].tsx:85` — `sendDisabled` now trims (was raw `input.length`). The underlying `useChatSend` already trimmed and silently dropped empty bodies; the button no longer pretends to work. |
 | 16.8 [MEDIUM] Donations time composer no trim | ⏳ | Same shape as §16.7. |
 | 16.9 [MEDIUM] Sign-in / sign-up no client-side email format check | ⏳ | Folded into §3.3. |
 | 16.10 [MEDIUM] Edit Profile no unsaved-changes warn on Back | ⏳ | Open — `dirty` flag + confirm Alert. |
@@ -223,8 +223,8 @@ The remaining audit findings (below) split into three classes:
 | 17.1 [HIGH] `RestoreSession` no `account_status` check | ✅ | `RestoreSession.ts:32-40` — `gate.checkAccountGate(userId)`. TD-68. |
 | 17.2 [HIGH] `mapAuthError` distinguishes invalid_credentials vs email_already_in_use | ⏳ | Open — collapse to unified `authentication_failed`. |
 | 17.3 [HIGH] No state-machine guard on `onboarding_state` transitions | ✅ | `OnboardingError('illegal_transition')` introduced. `CompleteBasicInfoUseCase` rejects when current state is `completed`; `CompleteOnboardingUseCase` rejects when current is `pending_basic_info`. Idempotent re-runs on the same step still pass. (DB-trigger defense-in-depth is deferred — app-level guard sufficient for the practical attack surface.) |
-| 17.4 [MEDIUM] `onboarding_state = 'completed'` can be rolled back | ⏳ | Open — remove "Reset onboarding" or restrict the grant. |
-| 17.5 [MEDIUM] Token expiry only at cold start | ⏳ | Open — subscribe to `onAuthStateChange('SIGNED_OUT')`. |
+| 17.4 [MEDIUM] `onboarding_state = 'completed'` can be rolled back | ✅ | `app/settings.tsx:21-23` — "Reset onboarding" gated behind `__DEV__ \|\| EXPO_PUBLIC_DEV_SETTINGS_TOOLS === '1'`. Doesn't ship in release builds. |
+| 17.5 [MEDIUM] Token expiry only at cold start | ✅ | `SupabaseAuthService.onSessionChange` wires `client.auth.onAuthStateChange`; `AuthGate` reacts to session → null with redirect to `/(auth)` plus cache clear (§17.6). |
 | 17.6 [MEDIUM] Sign-out doesn't clear React Query cache | ✅ | `AuthGate.tsx` session-change effect now calls `queryClient.clear()` when `session` transitions to null. Covers Settings sign-out, account-gate enforcement sign-out, and delete-account sign-out via one location. |
 
 ## 18. Concurrency, idempotency, atomicity
