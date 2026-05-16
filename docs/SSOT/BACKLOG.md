@@ -56,6 +56,7 @@
 | P2.19 | Per-participant closed-post audience: split legacy `exposure` into `surface_visibility` (audience) × `identity_visibility` (chrome) × `hide_from_counterparty`; fix `is_post_visible_to` + `profile_closed_posts` to gate by per-participant surface, not `posts.visibility` (D-28, supersedes D-19 third-party clause) | agent-fullstack | ✅ Done | `spec/04_posts.md` FR-POST-021 + FR-POST-017 AC1; `spec/02_profile_and_privacy.md` FR-PROFILE-001 AC4 + FR-PROFILE-002 AC2; `DECISIONS.md` D-28; migration `0085_post_actor_identity_audience_split.sql` |
 | P2.20 | Saved posts — bookmark save/unsave + My Profile שמורים list | agent-be + agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-022, `spec/02_profile_and_privacy.md` FR-PROFILE-016; migration `0086_saved_posts.sql` |
 | P2.21 | My Profile: move `OnlyMe` posts off open/closed tabs into `⋮` → Hidden; exclude `OnlyMe` from `active_posts_count_internal` / stats | agent-fullstack | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-001 AC4, FR-PROFILE-013 AC1; `spec/10_statistics.md` FR-STATS-002 AC3; migrations `0087_*`, `0088_*` |
+| P2.22 | **Create-post draft autosave (FR-POST-007)** — debounced AsyncStorage write, resume banner, per-user scoping, image-availability probe; clears on publish/sign-out. Closes TD-108. | agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-007; `docs/superpowers/specs/2026-05-17-post-draft-autosave-design.md` |
 
 ## P3 — Post-MVP (Deferred)
 

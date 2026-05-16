@@ -33,6 +33,8 @@ export const postHe = {
   draft: 'שמור טיוטה',
   publishSuccess: 'הפוסט שלך פורסם!',
   draftRestored: 'יש לך טיוטה שלא פורסמה',
+  draftRestoredBody: 'התחלת לכתוב פוסט ולא פרסמת אותו. להמשיך מאיפה שעצרת או להתחיל מחדש?',
+  draftMissingImage: 'התמונה אינה זמינה — הוסף שוב.',
   continueDraft: 'המשך לערוך',
   discardDraft: 'התחל מחדש',
   sendMessage: '💬 שלח הודעה למפרסם',
