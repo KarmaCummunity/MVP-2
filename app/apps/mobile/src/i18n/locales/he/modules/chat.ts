@@ -30,4 +30,12 @@ export const chatHe = {
   reportChatNotePlaceholder: 'תיאור (אופציונלי, עד 500 תווים)',
   reportChatDuplicateBody: 'דיווחת על השיחה הזו ב-24 השעות האחרונות.',
   reportChatSubmitting: '...',
+
+  // Auto chat-message template — moved out of
+  // application/chat/BuildAutoMessageUseCase.ts (Pattern #4). The wording
+  // must match the use case's template exactly because contactPoster.ts
+  // dedupes against the rendered string in the last 50 messages.
+  autoMessage: {
+    initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח לדעת עוד.',
+  },
 } as const;

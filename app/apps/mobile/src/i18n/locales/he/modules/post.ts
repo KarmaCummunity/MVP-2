@@ -6,8 +6,6 @@ export const postHe = {
   titlePlaceholder: 'מה אתה נותן/מבקש?',
   description: 'תיאור (אופציונלי)',
   descPlaceholder: 'פרטים נוספים על החפץ...',
-  category: 'קטגוריה',
-  condition: 'מצב החפץ',
   urgency: 'דחיפות (אופציונלי)',
   urgencyPlaceholder: 'לדוגמה: צריך עד שישי',
   photos: 'תמונות',
@@ -97,4 +95,30 @@ export const postHe = {
   deleteSuccess: 'הפוסט נמחק.',
   adminRemoveError: 'ההסרה נכשלה, נסה שוב.',
   adminRemoveSuccess: 'הפוסט הוסר.',
+
+  // Category labels — keys match the `Category` enum so callers do
+  // `t(\`post.category.${cat}\`)`. Moved out of domain/value-objects.ts
+  // per the Hebrew→i18n migration (Pattern #2).
+  category: {
+    Furniture: 'רהיטים',
+    Clothing: 'בגדים',
+    Books: 'ספרים',
+    Toys: 'משחקים',
+    BabyGear: 'ציוד תינוקות',
+    Kitchen: 'מטבח',
+    Sports: 'ספורט',
+    Electronics: 'חשמל',
+    Tools: 'כלי עבודה',
+    Other: 'אחר',
+  },
+
+  // Item-condition labels — keys match the `ItemCondition` enum so callers
+  // do `t(\`post.condition.${cond}\`)`. Moved out of domain/value-objects.ts.
+  condition: {
+    New: 'חדש',
+    LikeNew: 'כמו חדש',
+    Good: 'טוב',
+    Fair: 'בינוני',
+    Damaged: 'שבור/תקול',
+  },
 } as const;
