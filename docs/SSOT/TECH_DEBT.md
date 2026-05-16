@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-133 partial — SearchResultCard.tsx split into search/{User,Post,Link}ResultCard + styles; 352→4-line barrel; entry removed from allowlist) |
+| **Last Updated** | 2026-05-16 (TD-133 partial — SearchFilterSheet.tsx split (308→127); SearchChip + styles extracted to search/; 2 allowlist entries removed) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
