@@ -7,6 +7,7 @@
 // ─────────────────────────────────────────────
 
 import { Linking } from 'react-native';
+import i18n from '../i18n';
 import { confirmAction } from './platformConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -42,9 +43,9 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   if (result.granted) return true;
   if (result.canAskAgain) return false;
   const openSettings = await confirmAction(
-    'גישה לגלריה נדחתה',
-    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
-    { confirmLabel: 'פתח הגדרות' },
+    i18n.t('errors.media.galleryDeniedTitle'),
+    i18n.t('errors.media.galleryDeniedBodyPost'),
+    { confirmLabel: i18n.t('errors.media.openSettings') },
   );
   if (openSettings) void Linking.openSettings();
   return false;
