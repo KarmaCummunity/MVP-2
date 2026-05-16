@@ -13,11 +13,6 @@ vi.mock('../../i18n', () => ({
 import { mapEditProfileSaveError } from '../editProfileSaveErrors';
 
 describe('mapEditProfileSaveError — direct exact codes', () => {
-  // NOTE: `invalid_profile_street_number` is intentionally NOT in this list
-  // because the helper uses `.includes()` + `Object.keys` declaration order,
-  // and `invalid_profile_street` (which is a prefix substring) is declared
-  // earlier — so it wins. That behavior is pinned by its own test below; this
-  // exhaustive list covers the codes whose mapping is unambiguous.
   it.each([
     'invalid_display_name',
     'biography_too_long',
@@ -25,31 +20,33 @@ describe('mapEditProfileSaveError — direct exact codes', () => {
     'invalid_city',
     'incomplete_profile_address',
     'invalid_profile_street',
+    'invalid_profile_street_number',
   ])('routes %s to the matching errors.profile.* i18n key', (code) => {
     expect(mapEditProfileSaveError(code)).toBe(`[t:errors.profile.${code}]`);
   });
 });
 
-describe('mapEditProfileSaveError — substring matching (existing behavior)', () => {
+describe('mapEditProfileSaveError — substring matching', () => {
   it('matches even when the code is wrapped with surrounding text (e.g. adapter prefix)', () => {
     expect(mapEditProfileSaveError('repo:invalid_display_name@5'))
       .toBe('[t:errors.profile.invalid_display_name]');
   });
 
-  it('shadowing: invalid_profile_street_number is matched as invalid_profile_street (declaration-order substring win)', () => {
-    // The map literal declares `invalid_profile_street` BEFORE
-    // `invalid_profile_street_number`. Since `.includes()` is true for both
-    // and `.find()` returns the first hit, the longer code is shadowed by
-    // its prefix. This is pinned here as known existing behavior — if the
-    // map is reordered (or the matcher switched to longest-prefix), this
-    // test will flag it.
+  it('longest-prefix wins: invalid_profile_street_number is NOT shadowed by invalid_profile_street', () => {
+    // The map literal declares longer keys BEFORE their prefixes so .includes()
+    // matches the more-specific one first. Pinning this so a future reorder
+    // (e.g. alphabetization) that reintroduces the shadow fails this test.
     expect(mapEditProfileSaveError('invalid_profile_street_number'))
+      .toBe('[t:errors.profile.invalid_profile_street_number]');
+    expect(mapEditProfileSaveError('invalid_profile_street'))
       .toBe('[t:errors.profile.invalid_profile_street]');
   });
 
-  it('takes the FIRST matching key when a code contains multiple unrelated known substrings', () => {
-    // 'biography_too_long' comes before 'invalid_profile_street' in the map.
-    const code = 'biography_too_long and invalid_profile_street';
+  it('takes the first matching key when a code contains multiple unrelated known substrings', () => {
+    // The order is: street_number, street, address, display_name, biography_too_long,
+    // biography_url_forbidden, city. None of these unrelated codes overlap, so
+    // 'biography_too_long' wins over 'invalid_city' here purely by declaration order.
+    const code = 'biography_too_long and invalid_city';
     expect(mapEditProfileSaveError(code)).toBe('[t:errors.profile.biography_too_long]');
   });
 });
