@@ -23,6 +23,7 @@ import { useChatSend } from '../../src/hooks/useChatSend';
 import { chatConversationStyles as styles } from './chatScreenStyles';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
+import { ChatNotFoundView } from '../../src/components/chat/ChatNotFoundView';
 import { NotifyModal } from '../../src/components/NotifyModal';
 
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
@@ -35,7 +36,7 @@ export default function ChatScreen() {
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
-  const { chat, counterpart } = useChatInit(chatId, userId);
+  const { chat, counterpart, status: chatStatus } = useChatInit(chatId, userId);
   const [input, setInput] = useState(prefill ?? '');
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
@@ -111,6 +112,8 @@ export default function ChatScreen() {
       setNotify({ title: 'שגיאה', message: msg });
     }
   };
+
+  if (chatStatus === 'not_found') return <ChatNotFoundView onBack={() => router.back()} />;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
