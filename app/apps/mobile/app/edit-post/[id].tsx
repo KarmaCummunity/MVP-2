@@ -3,7 +3,7 @@
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Platform, ScrollView,
+  ActivityIndicator, ScrollView,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -29,6 +29,7 @@ import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
+import { NotifyModal } from '../../src/components/NotifyModal';
 import { styles } from './editPostScreen.styles';
 
 const POST_IMAGES_BUCKET = 'post-images';
@@ -65,6 +66,7 @@ export default function EditPostScreen() {
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [batchId] = useState(() => newUploadBatchId());
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const post = query.data?.post;
 
@@ -97,7 +99,7 @@ export default function EditPostScreen() {
 
   const handlePickImages = async () => {
     if (!viewerId) {
-      Alert.alert('שגיאה', 'יש להתחבר מחדש לפני שמירת פוסט.');
+      setNotify({ title: 'שגיאה', message: 'יש להתחבר מחדש לפני שמירת פוסט.' });
       return;
     }
     const picked = await pickPostImages(uploads.length + uploadingCount);
@@ -111,7 +113,7 @@ export default function EditPostScreen() {
       );
       setUploads((prev) => [...prev, ...results]);
     } catch (err) {
-      Alert.alert('העלאת התמונה נכשלה', err instanceof Error ? err.message : 'נסה שוב.');
+      setNotify({ title: 'העלאת התמונה נכשלה', message: err instanceof Error ? err.message : 'נסה שוב.' });
     } finally {
       setUploadingCount((n) => Math.max(0, n - picked.length));
     }
@@ -153,12 +155,7 @@ export default function EditPostScreen() {
     },
     onError: (err) => {
       const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(`שמירה נכשלה: ${message}`);
-      } else {
-        Alert.alert('שמירה נכשלה', message);
-      }
+      setNotify({ title: 'שמירה נכשלה', message });
     },
   });
 
@@ -404,6 +401,7 @@ export default function EditPostScreen() {
           })}
         </View>
       </ScrollView>
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }
