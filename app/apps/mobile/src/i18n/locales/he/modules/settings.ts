@@ -83,4 +83,33 @@ export const settingsHe = {
   resetOnboardingConfirmTitle: 'איפוס אונבורדינג',
   resetOnboardingBtn: 'איפוס',
   signOutFailed: 'ההתנתקות נכשלה. נסה שוב.',
+
+  // Follow-requests inbox (FR-FOLLOW-007)
+  followRequestsScreen: {
+    headerTitle: 'בקשות עוקבים',
+    empty: 'אין בקשות ממתינות.\nבקשות חדשות יופיעו כאן.',
+    approve: 'אשר',
+    reject: 'דחה',
+    errorTitle: 'שגיאה',
+    errorMessage: 'הפעולה נכשלה. נסו שוב.',
+  },
+
+  // Privacy screen (FR-PROFILE-005 / FR-PROFILE-006)
+  privacyScreen: {
+    privateProfileLabel: 'פרופיל פרטי',
+    privateProfileHint: 'רק עוקבים מאושרים יראו את הפוסטים והעוקבים שלך.',
+    followRequestsLink: 'בקשות עוקבים',
+    followRequestsLinkWithCount: 'בקשות עוקבים ({{count}})',
+    confirmPrivateTitle: 'להפוך את הפרופיל לפרטי?',
+    confirmPublicTitle: 'להפוך את הפרופיל לציבורי?',
+    confirmPrivateMessage:
+      'בקשות עקיבה חדשות ידרשו אישור. עוקבים קיימים יישארו (אפשר להסיר אותם ידנית). פוסטים פתוחים יישארו פתוחים. תוכלי לפרסם פוסטים חדשים לעוקבים בלבד.',
+    confirmPublicMessage:
+      'כל הבקשות הממתינות יאושרו אוטומטית. פוסטים שפורסמו לעוקבים בלבד יישארו גלויים לכל עוקב חדש מעכשיו.',
+    confirmPrivateCta: 'הפוך לפרטי',
+    confirmPublicCta: 'הפוך לציבורי',
+  },
+
+  // Report-issue notify-modal title (FR-MOD-002 / FR-CHAT-007 AC3)
+  reportIssueErrorTitle: 'שגיאה',
 } as const;

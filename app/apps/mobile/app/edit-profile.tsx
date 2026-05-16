@@ -7,6 +7,7 @@ import {
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import { EditProfileAddressBlock } from '../src/components/EditProfileAddressBlock';
 import { EditProfileAvatar } from '../src/components/EditProfileAvatar';
@@ -29,6 +30,7 @@ interface InitialState {
 }
 
 export default function EditProfileScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
@@ -70,7 +72,8 @@ export default function EditProfileScreen() {
           avatarUrl: p.avatarUrl ?? session.avatarUrl ?? null,
         });
       } catch (err) {
-        setNotify({ title: 'טעינה נכשלה', message: err instanceof Error ? err.message : 'שגיאה לא ידועה' });
+        const message = err instanceof Error ? err.message : t('profile.editScreen.unknownError');
+        setNotify({ title: t('profile.editScreen.loadFailedTitle'), message });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -94,29 +97,30 @@ export default function EditProfileScreen() {
     );
   }, [initial, displayName, city, biography, avatarUrl, street, streetNumber]);
   useUnsavedChangesGuard({
-    isDirty: isDirty && !saving, title: 'יש שינויים שלא נשמרו',
-    message: 'אם תצא עכשיו השינויים יאבדו. לצאת בכל זאת?',
-    discardLabel: 'צא בלי לשמור', cancelLabel: 'ביטול',
+    isDirty: isDirty && !saving,
+    title: t('profile.editScreen.unsavedChangesTitle'), message: t('profile.editScreen.unsavedChangesMessage'),
+    discardLabel: t('profile.editScreen.unsavedChangesDiscard'), cancelLabel: t('profile.editScreen.unsavedChangesCancel'),
   });
 
   const handleSave = async () => {
     if (!session || !initial) return;
     if (displayName.trim().length === 0 || displayName.trim().length > 50) {
-      setNotify({ title: 'שם לא תקין', message: 'נא להזין שם בין 1 ל־50 תווים.' });
+      setNotify({ title: t('profile.editScreen.invalidNameTitle'), message: t('profile.editScreen.invalidNameMessage') });
       return;
     }
     if (!city) {
-      setNotify({ title: 'עיר חסרה', message: 'נא לבחור עיר.' });
+      setNotify({ title: t('profile.editScreen.missingCityTitle'), message: t('profile.editScreen.missingCityMessage') });
       return;
     }
     const ts = street.trim();
     const tn = streetNumber.trim();
+    const addrTitle = t('profile.editScreen.incompleteAddressTitle');
     if (ts.length > 0 && tn.length === 0) {
-      setNotify({ title: 'כתובת לא מלאה', message: 'נא למלא גם מספר בית, או למחוק את שם הרחוב.' });
+      setNotify({ title: addrTitle, message: t('profile.editScreen.incompleteAddressMessageNumber') });
       return;
     }
     if (tn.length > 0 && ts.length === 0) {
-      setNotify({ title: 'כתובת לא מלאה', message: 'נא למלא שם רחוב, או למחוק את מספר הבית.' });
+      setNotify({ title: addrTitle, message: t('profile.editScreen.incompleteAddressMessageStreet') });
       return;
     }
     setSaving(true);
@@ -154,8 +158,8 @@ export default function EditProfileScreen() {
       await queryClient.invalidateQueries({ queryKey: ['user-profile', session.userId] });
       router.back();
     } catch (err) {
-      const code = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      setNotify({ title: 'שמירה נכשלה', message: mapEditProfileSaveError(code) });
+      const code = err instanceof Error ? err.message : t('profile.editScreen.unknownError');
+      setNotify({ title: t('profile.editScreen.saveFailedTitle'), message: mapEditProfileSaveError(code) });
     } finally {
       setSaving(false);
     }
@@ -169,46 +173,32 @@ export default function EditProfileScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <EditProfileAvatar
-            userId={session?.userId ?? ''}
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            disabled={saving}
-            onChange={setAvatarUrl}
-          />
+          <EditProfileAvatar userId={session?.userId ?? ''} displayName={displayName}
+            avatarUrl={avatarUrl} disabled={saving} onChange={setAvatarUrl} />
           <View style={styles.field}>
-            <Text style={styles.label}>שם מלא</Text>
+            <Text style={styles.label}>{t('profile.editScreen.fullNameLabel')}</Text>
             <TextInput style={styles.input} value={displayName} onChangeText={setDisplayName}
-              maxLength={50} textAlign="right" editable={!saving} placeholder="לדוגמה: רינה כהן" />
+              maxLength={50} textAlign="right" editable={!saving}
+              placeholder={t('profile.editScreen.fullNamePlaceholder')} />
             <Text style={styles.count}>{displayName.length}/50</Text>
           </View>
-          <EditProfileAddressBlock
-            city={city}
-            onCityChange={setCity}
-            street={street}
-            streetNumber={streetNumber}
-            onStreetChange={setStreet}
-            onStreetNumberChange={setStreetNumber}
-            disabled={saving}
-          />
+          <EditProfileAddressBlock city={city} onCityChange={setCity} street={street}
+            streetNumber={streetNumber} onStreetChange={setStreet}
+            onStreetNumberChange={setStreetNumber} disabled={saving} />
           <View style={styles.field}>
-            <Text style={styles.label}>ביוגרפיה (אופציונלי)</Text>
+            <Text style={styles.label}>{t('profile.editScreen.biographyLabel')}</Text>
             <TextInput style={[styles.input, styles.textarea]} value={biography} onChangeText={setBiography}
               maxLength={200} multiline textAlign="right" editable={!saving}
-              placeholder="קצת עליך — בלי קישורים" />
+              placeholder={t('profile.editScreen.biographyPlaceholder')} />
             <Text style={styles.count}>{biography.length}/200</Text>
           </View>
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.saveText}>שמור</Text>}
+            {saving ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.saveText}>{t('profile.editScreen.save')}</Text>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
-      <NotifyModal
-        visible={notify !== null}
-        title={notify?.title ?? ''}
-        message={notify?.message ?? ''}
-        onDismiss={() => setNotify(null)}
-      />
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''}
+        message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }
