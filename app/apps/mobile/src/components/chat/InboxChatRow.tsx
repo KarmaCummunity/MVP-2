@@ -15,7 +15,7 @@ interface Props {
 }
 
 export function InboxChatRow({
-  const { t } = useTranslation(); item, onOpen, onRequestHide }: Props) {
+  item, onOpen, onRequestHide }: Props) {
   const { t } = useTranslation();
   return (
     <View style={styles.chatRow}>

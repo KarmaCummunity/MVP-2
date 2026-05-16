@@ -20,7 +20,7 @@ interface Props {
 }
 
 export function EditProfileAvatar({
-  const { t } = useTranslation(); userId, displayName, avatarUrl, disabled, onChange }: Props) {
+  userId, displayName, avatarUrl, disabled, onChange }: Props) {
   const [sheetVisible, setSheetVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);

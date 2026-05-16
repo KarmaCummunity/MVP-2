@@ -29,7 +29,7 @@ const TYPE_LABEL_KEYS: Record<PostType, string> = {
 };
 
 export function AnchoredPostCard({
-  const { t } = useTranslation(); chatId, anchorPostId, viewerId, counterpartId }: Props) {
+  chatId, anchorPostId, viewerId, counterpartId }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();

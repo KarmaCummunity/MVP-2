@@ -46,6 +46,7 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 416 }],
   // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
   ['apps/mobile/app/user/[handle]/index.tsx', { td: 'TD-29', max: 217 }],
+  ['apps/mobile/src/components/CityPicker.tsx', { td: 'TD-156', max: 202 }],
 ]);
 
 const LAYER_RULES = [
