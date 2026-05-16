@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 // FR-CHAT-010 — Report modal opened from chat ⋮ menu.
 import React, { useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function ReportChatModal({ chatId, visible, onClose }: Props) {
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');

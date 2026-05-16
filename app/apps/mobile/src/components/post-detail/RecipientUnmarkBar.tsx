@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 // FR-CLOSURE-007 — lets the credited recipient remove their own mark.
 // Spec AC1: only on closed_delivered when viewer === recipient.
 // Spec AC2: confirmation modal explains consequences.
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function RecipientUnmarkBar({ postId, userId }: Props) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [notify, setNotify] = useState<string | null>(null);
