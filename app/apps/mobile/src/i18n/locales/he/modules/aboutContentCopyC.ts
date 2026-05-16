@@ -15,28 +15,33 @@ export const aboutContentCopyC = {
   roadmapPhase4Body:
     'הרחבות שמשרתות את החזון בלי למכור את המשתמשים: נתינת זמן ומומחיות, חיבור למעגלים רחבים, וכלים שמודדים את הטוב שממשיך להיווצר בשטח.',
 
-  // Structured phases (for the new vertical timeline UI)
+  // Structured phases (for the new vertical timeline UI).
+  // `severity` is locale-agnostic — the timeline component keys color off it.
   roadmapPhases: [
     {
       label: 'שלב א׳',
+      severity: 'current',
       status: 'עכשיו',
       title: 'ליבה יציבה (MVP)',
       body: 'זהות, פוסטים, צ׳אט, פרטיות, דיווחים, וסטטיסטיקות בסיסיות — בסיס שמאפשר לקהילה לגדול על אמון.',
     },
     {
       label: 'שלב ב׳',
+      severity: 'soon',
       status: 'בקרוב',
       title: 'עומק קהילתי',
       body: 'גילוי טוב יותר, פיקוח שקוף, onboarding משופר, וגשרים לעמותות ולשכונות.',
     },
     {
       label: 'שלב ג׳',
+      severity: 'future',
       status: 'בעתיד',
       title: 'השפעה רחבה',
       body: 'שותפויות, אירועים, חינוך לנתינה אחראית, וכלים למובילי קהילה.',
     },
     {
       label: 'שלב ד׳',
+      severity: 'long-term',
       status: 'טווח ארוך',
       title: 'מעבר לחפצים',
       body: 'נתינת זמן ומומחיות, חיבור למעגלים רחבים, ומדידה של הטוב שנוצר בשטח.',
@@ -57,6 +62,10 @@ export const aboutContentCopyC = {
     'בהמשך הדרך נרחיב את סוגי הנתינה: נתינת זמן (התנדבות ממוקדת) שתישקל בזהירות מול עומס המקבלים, נתינת מומחיות (ליווי, הדרכה, סיוע טכני), חיבור לארגונים מאומתים, וקמפיינים קהילתיים לאיסוף ציוד לפי צורך אמיתי.\n\n' +
     'כל אלה ייכנסו רק כשהבטיחות והפרטיות יהיו מוכנות. אנחנו לא ממהרים לפיצ׳ר על חשבון אמון.',
 
+  // Badge labels for the contributions tiles
+  contributionsAvailableBadge: 'זמין',
+  contributionsComingSoonBadge: 'בקרוב',
+
   // Structured contributions (for the new visual tile grid)
   contributionsList: [
     { icon: 'gift-outline', label: 'חפצים וציוד', available: true },
@@ -72,6 +81,9 @@ export const aboutContentCopyC = {
   // Team
   teamTitle: 'הצוות',
   teamLeadTitle: 'נוח סרוסי — מייסד הפרויקט',
+  teamLeadName: 'נוח סרוסי',
+  teamLeadRole: 'מייסד הפרויקט',
+  teamLeadInitials: 'נ"ס',
   teamLeadBio:
     'מתכנת לשעבר בצבא. בסוף השירות הבנתי שהדרך שלי להפוך טוב לנגיש יותר היא דרך טכנולוגיה — חיבור פשוט ובטוח בין מי שרוצה לתת למי שצריך לקבל. אני מאמין בכוח של קהילה לשנות מציאות, ואשמח שתצטרפו אלי למסע. כרגע הליבה נבנית סביבי ומסביב לקהילה המוקדמת — פתוחים בשמחה לשותפים, מתנדבים ויועצים בכל תחום.',
 

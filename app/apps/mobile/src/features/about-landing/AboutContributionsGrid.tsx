@@ -41,7 +41,9 @@ export function AboutContributionsGrid() {
               {it.label}
             </Text>
             <View style={badgeStyle}>
-              <Text style={badgeTextStyle}>{it.available ? 'זמין' : 'בקרוב'}</Text>
+              <Text style={badgeTextStyle}>
+                {it.available ? t('aboutContent.contributionsAvailableBadge') : t('aboutContent.contributionsComingSoonBadge')}
+              </Text>
             </View>
           </View>
         );
