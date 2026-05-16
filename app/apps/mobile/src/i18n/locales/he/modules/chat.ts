@@ -14,4 +14,5 @@ export const chatHe = {
     'השיחה תיעלם רק אצלך. אצל הצד השני נשארת ההיסטוריה. הודעה חדשה באותו שרשור עלולה להחזיר אותה לרשימה.',
   hideFromInboxCancel: 'ביטול',
   hideFromInboxConfirm: 'הסר',
+  menuReport: 'דווח על השיחה',
 } as const;

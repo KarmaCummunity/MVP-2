@@ -3,10 +3,25 @@
 // renders a recoverable fallback instead of unmounting to a white screen.
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@kc/ui';
 
 type Props = { children: React.ReactNode };
 type State = { error: Error | null };
+
+function ErrorBoundaryFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const { t } = useTranslation();
+  return (
+    <View style={styles.container}>
+      <Text style={styles.title}>{t('errorBoundary.title')}</Text>
+      <Text style={styles.body}>{t('errorBoundary.body')}</Text>
+      {__DEV__ ? <Text style={styles.errMessage}>{error.message}</Text> : null}
+      <TouchableOpacity style={styles.cta} onPress={onRetry} accessibilityRole="button">
+        <Text style={styles.ctaText}>{t('general.retry')}</Text>
+      </TouchableOpacity>
+    </View>
+  );
+}
 
 export class ErrorBoundary extends React.Component<Props, State> {
   state: State = { error: null };
@@ -26,16 +41,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   render(): React.ReactNode {
     const { error } = this.state;
     if (!error) return this.props.children;
-    return (
-      <View style={styles.container}>
-        <Text style={styles.title}>משהו השתבש</Text>
-        <Text style={styles.body}>אפשר לנסות שוב או לרענן את האפליקציה.</Text>
-        {__DEV__ ? <Text style={styles.errMessage}>{error.message}</Text> : null}
-        <TouchableOpacity style={styles.cta} onPress={this.reset} accessibilityRole="button">
-          <Text style={styles.ctaText}>נסה שוב</Text>
-        </TouchableOpacity>
-      </View>
-    );
+    return <ErrorBoundaryFallback error={error} onRetry={this.reset} />;
   }
 }
 

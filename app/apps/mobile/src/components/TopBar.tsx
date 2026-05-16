@@ -9,6 +9,7 @@ import React from 'react';
 import { Image, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '@kc/ui';
 import { useChatStore } from '../store/chatStore';
 
@@ -19,12 +20,13 @@ interface TopBarProps {
 
 export function TopBar({ extraIcon }: TopBarProps = {}) {
   const router = useRouter();
+  const { t } = useTranslation();
   const total = useChatStore((s) => s.unreadTotal);
   const display = total > 9 ? '9+' : String(total);
 
   return (
     <View style={styles.topBar}>
-      <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/chat/')} accessibilityLabel="שיחות">
+      <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/chat/')} accessibilityLabel={t('chat.title')}>
         <Ionicons name="chatbubbles-outline" size={24} color={colors.textPrimary} />
         {total > 0 && (
           <View style={styles.badge}>
@@ -35,7 +37,7 @@ export function TopBar({ extraIcon }: TopBarProps = {}) {
       <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
       <View style={styles.rightGroup}>
         {extraIcon}
-        <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings')} accessibilityLabel="הגדרות">
+        <TouchableOpacity style={styles.iconBtn} onPress={() => router.push('/settings')} accessibilityLabel={t('settings.title')}>
           <Ionicons name="settings-outline" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
       </View>

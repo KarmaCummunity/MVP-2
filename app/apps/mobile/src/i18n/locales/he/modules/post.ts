@@ -44,4 +44,7 @@ export const postHe = {
   photoRequired: 'תמונה נדרשת עבור פוסט "לתת"',
   maxPhotos: 'מקסימום 5 תמונות',
   maxPosts: 'הגעת למקסימום 20 פוסטים פעילים',
+  imageZoom: 'הגדל תמונה',
+  imageZoomNth: 'הגדל תמונה {{index}} מתוך {{total}}',
+  imageViewerClose: 'סגור תצוגת תמונה',
 } as const;

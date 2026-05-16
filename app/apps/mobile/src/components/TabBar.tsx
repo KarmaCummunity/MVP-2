@@ -10,6 +10,7 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { useTranslation } from 'react-i18next';
 import { colors, shadow } from '@kc/ui';
 
 type TabKey = 'home' | 'create' | 'profile' | 'search' | 'donations';
@@ -51,6 +52,7 @@ function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnPr
 
 export function TabBar() {
   const router = useRouter();
+  const { t } = useTranslation();
   const segments = useSegments() as string[];
   const insets = useSafeAreaInsets();
   const active = activeTab(segments);
@@ -61,21 +63,21 @@ export function TabBar() {
       <IconBtn
         active={active === 'profile'}
         onPress={() => router.push('/(tabs)/profile')}
-        label="פרופיל"
+        label={t('tabs.profile')}
         iconActive="person"
         iconInactive="person-outline"
       />
       <IconBtn
         active={active === 'search'}
         onPress={() => router.push('/(tabs)/search')}
-        label="חיפוש"
+        label={t('search.tabLabel')}
         iconActive="search"
         iconInactive="search-outline"
       />
       <Pressable
         onPress={() => router.push('/(tabs)/create')}
         accessibilityRole="button"
-        accessibilityLabel="פוסט חדש"
+        accessibilityLabel={t('tabs.newPost')}
         style={styles.plusTabBtn}
       >
         <View style={[styles.plusCircle, active === 'create' && styles.plusCircleActive]}>
@@ -85,14 +87,14 @@ export function TabBar() {
       <IconBtn
         active={active === 'donations'}
         onPress={() => router.push('/(tabs)/donations')}
-        label="תרומות"
+        label={t('donations.tabLabel')}
         iconActive="heart"
         iconInactive="heart-outline"
       />
       <IconBtn
         active={active === 'home'}
         onPress={() => router.push('/(tabs)')}
-        label="בית"
+        label={t('tabs.home')}
         iconActive="home"
         iconInactive="home-outline"
       />

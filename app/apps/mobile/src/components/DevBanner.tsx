@@ -10,11 +10,13 @@
 // All strips use the same styling so the warning is recognizable.
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { isDevGhostSessionEnabled } from '../services/devGhostSession';
 import { isDevAutoSignInEnabled } from '../services/devAutoSignIn';
 import { isDevEnvironment } from '../config/environment';
 
 export function DevBanner() {
+  const { t } = useTranslation();
   const envDev = isDevEnvironment();
   const metroDev = typeof __DEV__ !== 'undefined' && __DEV__;
   const ghost = metroDev && isDevGhostSessionEnabled();
@@ -28,7 +30,7 @@ export function DevBanner() {
     ? 'DEV GHOST SESSION — fake JWT, Supabase queries will 401'
     : auto
     ? 'DEV AUTO SIGN-IN — real test user'
-    : 'סביבת פיתוח · DEV — לא הפרודקשן';
+    : t('devBanner');
 
   return (
     <View style={styles.bar} pointerEvents="box-none">

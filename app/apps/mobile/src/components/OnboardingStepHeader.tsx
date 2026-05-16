@@ -2,6 +2,7 @@
 import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 import { OnboardingProgressBar } from './animations/OnboardingProgressBar';
 
@@ -21,6 +22,7 @@ export function OnboardingStepHeader({
   skipDisabled = false,
   backDisabled = false,
 }: OnboardingStepHeaderProps) {
+  const { t } = useTranslation();
   const showBack = step > 1;
 
   return (
@@ -30,20 +32,20 @@ export function OnboardingStepHeader({
           onPress={onSkip}
           disabled={skipDisabled}
           accessibilityRole="button"
-          accessibilityLabel="דלג"
+          accessibilityLabel={t('onboarding.skip')}
           style={styles.side}
         >
-          <Text style={[styles.skip, skipDisabled && styles.muted]}>דלג</Text>
+          <Text style={[styles.skip, skipDisabled && styles.muted]}>{t('onboarding.skip')}</Text>
         </TouchableOpacity>
         <Text style={styles.step} accessibilityRole="text">
-          שלב {step} מתוך 4
+          {t('onboarding.stepProgress', { step })}
         </Text>
         {showBack ? (
           <Pressable
             onPress={onBack}
             disabled={backDisabled}
             accessibilityRole="button"
-            accessibilityLabel="חזרה"
+            accessibilityLabel={t('general.back')}
             hitSlop={12}
             style={({ pressed }) => [styles.side, pressed && { opacity: 0.6 }]}
           >

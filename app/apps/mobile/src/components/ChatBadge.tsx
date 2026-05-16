@@ -3,15 +3,17 @@ import React from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { useChatStore } from '../store/chatStore';
 import { colors, typography } from '@kc/ui';
 
 export function ChatBadge() {
   const router = useRouter();
+  const { t } = useTranslation();
   const total = useChatStore((s) => s.unreadTotal);
   const display = total > 9 ? '9+' : String(total);
   return (
-    <TouchableOpacity onPress={() => router.push('/chat')} style={styles.wrap} accessibilityLabel="שיחות">
+    <TouchableOpacity onPress={() => router.push('/chat')} style={styles.wrap} accessibilityLabel={t('chat.title')}>
       <Ionicons name="chatbubbles-outline" size={22} color={colors.textPrimary} />
       {total > 0 && (
         <View style={styles.badge}>
