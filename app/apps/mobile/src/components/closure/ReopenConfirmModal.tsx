@@ -3,6 +3,7 @@
 //   1. status:  closed_delivered (with consequences) vs deleted_no_recipient (cancel cleanup)
 //   2. type:    Give (owner gave / marked received) vs Request (owner received / marked gave)
 import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 
@@ -25,37 +26,35 @@ export function ReopenConfirmModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation();
   const give = postType === 'Give';
-  // Marked-user direction: Give → "מי שקיבל"; Request → "מי שמסר".
-  const markedSideLabel = give ? 'מי שקיבל' : 'מי שמסר לך';
-  // Counters from the user's mental model — see RecipientCallout for the same
-  // convention. The DB columns lag this naming for Request posts (TD pending).
-  const ownerCounter = give ? 'פריטים שתרמתי' : 'פריטים שקיבלתי';
-  const markedCounter = give ? 'פריטים שקיבלתי' : 'פריטים שתרמתי';
+  // Marked-user direction depends on post type (see RecipientCallout for the
+  // same convention). The DB columns lag this naming for Request posts.
+  const markedSideLabel = give ? t('closure.markedSideGive') : t('closure.markedSideRequest');
+  const ownerCounter = give ? t('closure.counterDonated') : t('closure.counterReceived');
+  const markedCounter = give ? t('closure.counterReceived') : t('closure.counterDonated');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>📤  לפתוח את הפוסט מחדש?</Text>
+          <Text style={styles.title}>{t('closure.reopenTitle')}</Text>
           {variant === 'closed_delivered' ? (
             <View>
-              <Text style={styles.body}>הפוסט יחזור להיות פעיל בפיד.</Text>
-              <Text style={styles.bullet}>• הסימון של {markedSideLabel} יוסר.</Text>
-              <Text style={styles.bullet}>
-                • &quot;{markedCounter}&quot; שלו יקטן ב-1 (בלי התראה).
-              </Text>
-              <Text style={styles.bullet}>• &quot;{ownerCounter}&quot; שלך יקטן ב-1.</Text>
+              <Text style={styles.body}>{t('closure.reopenBodyClosedDelivered')}</Text>
+              <Text style={styles.bullet}>{t('closure.reopenBulletMarkedRemoved', { markedSide: markedSideLabel })}</Text>
+              <Text style={styles.bullet}>{t('closure.reopenBulletMarkedCounter', { counter: markedCounter })}</Text>
+              <Text style={styles.bullet}>{t('closure.reopenBulletOwnerCounter', { counter: ownerCounter })}</Text>
             </View>
           ) : (
-            <Text style={styles.body}>הפוסט יחזור להיות פעיל בפיד והוא לא יימחק.</Text>
+            <Text style={styles.body}>{t('closure.reopenBodyDeletedNoRecipient')}</Text>
           )}
 
           {errorMessage ? <Text style={styles.error}>{errorMessage}</Text> : null}
 
           <View style={styles.actions}>
             <Pressable onPress={onCancel} disabled={isBusy} style={[styles.btn, styles.btnSecondary]}>
-              <Text style={styles.btnSecondaryText}>ביטול</Text>
+              <Text style={styles.btnSecondaryText}>{t('general.cancel')}</Text>
             </Pressable>
             <Pressable
               onPress={onConfirm}
@@ -65,7 +64,7 @@ export function ReopenConfirmModal({
               {isBusy ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
-                <Text style={styles.btnPrimaryText}>פתח מחדש</Text>
+                <Text style={styles.btnPrimaryText}>{t('closure.reopenConfirmCta')}</Text>
               )}
             </Pressable>
           </View>

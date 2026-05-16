@@ -1,12 +1,13 @@
 // FR-CLOSURE-001 + FR-CLOSURE-005 — owner CTAs on PostDetail.
-//   open (Give)     → "סמן כנמסר ✓"
-//   open (Request)  → "סמן שקיבלתי ✓"
-//   closed_delivered                  → "📤 פתח מחדש"
-//   deleted_no_recipient (in grace)   → "📤 פתח מחדש"
+//   open (Give)                       → "mark as delivered"
+//   open (Request)                    → "mark as received"
+//   closed_delivered                  → "reopen"
+//   deleted_no_recipient (in grace)   → "reopen"
 //   deleted_no_recipient (past grace) → no CTA (post is on its way out)
 //   removed_admin / expired           → no CTA
 import { useEffect, useState } from 'react';
 import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { Post } from '@kc/domain';
@@ -31,6 +32,7 @@ interface Props {
 }
 
 export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) {
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
   const closureStep = useClosureStore((s) => s.step);
@@ -73,7 +75,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
   }
 
   // Direction flips by post.type — see RecipientCallout for the same convention.
-  const markCtaText = post.type === 'Give' ? 'סמן כנמסר ✓' : 'סמן שקיבלתי ✓';
+  const markCtaText = post.type === 'Give' ? t('closure.markGiveCta') : t('closure.markRequestCta');
 
   async function handleReopen() {
     setIsReopening(true);
@@ -114,9 +116,9 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
               setReopenError(null);
               setReopenOpen(true);
             }}
-            accessibilityLabel="פתח מחדש"
+            accessibilityLabel={t('closure.reopenA11y')}
           >
-            <Text style={styles.btnPrimaryText}>📤 פתח מחדש</Text>
+            <Text style={styles.btnPrimaryText}>{t('closure.reopenCta')}</Text>
           </Pressable>
         )}
       </View>
