@@ -28,3 +28,6 @@ supabase/.branches/
 .env
 .env.local
 .env.*.local
+
+# Aider AI coding assistant
+.aider*
