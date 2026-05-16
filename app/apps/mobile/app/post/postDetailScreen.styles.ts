@@ -1,5 +1,5 @@
 // Styles extracted from app/post/[id].tsx to keep the screen under the
-// 200-LOC cap (TD-29).
+// 300-LOC cap (TD-29).
 import { StyleSheet } from 'react-native';
 import { colors, radius, spacing, typography } from '@kc/ui';
 

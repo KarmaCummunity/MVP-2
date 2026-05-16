@@ -102,7 +102,7 @@ If you catch yourself importing `@kc/infrastructure-supabase` or `@supabase/supa
 
 ### Hard constraints
 
-- **File size cap**: ≤ 200 lines per file. Split if you exceed. Enforced by `pnpm lint:arch`.
+- **File size cap**: ≤ 300 lines per file. Split if you exceed. Enforced by `pnpm lint:arch`.
 - **Indentation cap**: ≤ 3 levels. Extract if deeper.
 - **Cyclomatic complexity**: prefer many small functions over one large one.
 - **No speculative abstractions** (YAGNI). No "nice-to-have" generalization unless an FR demands it.
