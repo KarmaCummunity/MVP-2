@@ -33,7 +33,11 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
     },
     onError: () => {
       setConfirmOpen(false);
+<<<<<<< HEAD
       setNotify(t('closure.unmarkErrorBody'));
+=======
+      setNotify(t('post.unmarkError'));
+>>>>>>> 1727c28 (chore(mobile): move components hebrew to i18n (TD-156 slice 10))
     },
   });
 
@@ -44,6 +48,7 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
         style={styles.btn}
         onPress={() => setConfirmOpen(true)}
         accessibilityRole="button"
+<<<<<<< HEAD
         accessibilityLabel={cta}
       >
         <Text style={styles.btnText}>{cta}</Text>
@@ -53,6 +58,17 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
         title={t('closure.unmarkConfirmTitle')}
         message={t('closure.unmarkConfirmBody')}
         confirmLabel={t('closure.unmarkConfirmCta')}
+=======
+        accessibilityLabel={t('post.unmarkSelfA11y')}
+      >
+        <Text style={styles.btnText}>{t('post.unmarkSelf')}</Text>
+      </Pressable>
+      <ConfirmActionModal
+        visible={confirmOpen}
+        title={t('post.unmarkTitle')}
+        message={t('post.unmarkMessage')}
+        confirmLabel={t('post.unmarkConfirmBtn')}
+>>>>>>> 1727c28 (chore(mobile): move components hebrew to i18n (TD-156 slice 10))
         destructive
         isBusy={mutation.isPending}
         onCancel={() => setConfirmOpen(false)}

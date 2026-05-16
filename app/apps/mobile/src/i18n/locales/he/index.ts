@@ -48,6 +48,14 @@ const he = {
     otpSent: 'שלחנו קוד SMS ל-{{phone}}',
     verify: 'אמת',
     resendOtp: 'שלח שוב',
+    verifyEmailTitle: 'בדוק את האימייל שלך',
+    verifyEmailBody: 'שלחנו לינק לאימות אל {{email}}. לחץ עליו כדי להמשיך.',
+    openEmailBtn: 'פתח אימייל',
+    resendBtn: 'שלח שוב',
+    resendCooldown: 'שלח שוב ({{count}})',
+    resendOkMsg: 'נשלח. בדוק את תיבת הדואר.',
+    changeEmailBtn: 'שנה אימייל',
+    networkError: 'שגיאת רשת. נסה שוב.',
     bySigningUp: 'בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.',
   },
 
@@ -89,6 +97,9 @@ const he = {
   },
 
   // Feed — see modules/feed.ts
+  feedLoadError: 'שגיאה בטעינת הפוסטים',
+  feedNoResults: 'לא נמצאו פוסטים',
+  feedNoResultsSubtitle: 'נסה לשנות את הסינון או חפש בכל הערים.',
   feed: feedHe,
 
   // Post — see modules/post.ts

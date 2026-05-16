@@ -24,4 +24,5 @@ export const chatHe = {
   anchoredOpenA11y: 'פתח את הפוסט',
   anchoredTypeGive: 'נותן',
   anchoredTypeRequest: 'מבקש',
+  removeFromInboxA11y: 'הסר שיחה מהאינבוקס',
 } as const;

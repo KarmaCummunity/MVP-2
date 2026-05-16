@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 // FR-AUTH-006 — verification-pending state shown inside sign-up and sign-in screens.
 // Renders email-icon header, three actions: open mail, resend (60s cooldown), change email.
 import React, { useEffect, useRef, useState } from 'react';
@@ -19,6 +20,7 @@ export interface VerificationPendingPanelProps {
 }
 
 export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
+  const { t } = useTranslation();
   const { email, onChangeEmail } = props;
   const [cooldown, setCooldown] = useState(0);
   const [resending, setResending] = useState(false);
@@ -64,7 +66,7 @@ export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
       setCooldown(RESEND_COOLDOWN_SECONDS);
       setResendOk(true);
     } catch (err) {
-      const message = isAuthError(err) ? mapAuthErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
+      const message = isAuthError(err) ? mapAuthErrorToHebrew(err.code) : t('auth.networkError');
       setResendError(message);
     } finally {
       setResending(false);
@@ -74,13 +76,13 @@ export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
   return (
     <View style={styles.container}>
       <Text style={styles.icon}>📧</Text>
-      <Text style={styles.title}>בדוק את האימייל שלך</Text>
+      <Text style={styles.title}>{t('auth.verifyEmailTitle')}</Text>
       <Text style={styles.body}>
-        שלחנו לינק לאימות אל <Text style={styles.bodyBold}>{email}</Text>. לחץ עליו כדי להמשיך.
+        {t('auth.verifyEmailBody', { email })} 
       </Text>
 
       <TouchableOpacity style={styles.primaryBtn} onPress={onOpenMail}>
-        <Text style={styles.primaryBtnText}>פתח אימייל</Text>
+        <Text style={styles.primaryBtnText}>{t('auth.openEmailBtn')}</Text>
       </TouchableOpacity>
 
       <TouchableOpacity
@@ -92,16 +94,16 @@ export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
           <ActivityIndicator color={colors.primary} />
         ) : (
           <Text style={styles.secondaryBtnText}>
-            {cooldown > 0 ? `שלח שוב (${cooldown})` : 'שלח שוב'}
+            {cooldown > 0 ? t('auth.resendCooldown', { count: cooldown }) : t('auth.resendBtn')}
           </Text>
         )}
       </TouchableOpacity>
 
-      {resendOk ? <Text style={styles.helperOk}>נשלח. בדוק את תיבת הדואר.</Text> : null}
+      {resendOk ? <Text style={styles.helperOk}>{t('auth.resendOkMsg')}</Text> : null}
       {resendError ? <Text style={styles.helperErr}>{resendError}</Text> : null}
 
       <TouchableOpacity style={styles.tertiaryBtn} onPress={onChangeEmail}>
-        <Text style={styles.tertiaryBtnText}>שנה אימייל</Text>
+        <Text style={styles.tertiaryBtnText}>{t('auth.changeEmailBtn')}</Text>
       </TouchableOpacity>
     </View>
   );

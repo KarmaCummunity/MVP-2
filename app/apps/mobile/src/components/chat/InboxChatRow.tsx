@@ -14,7 +14,8 @@ interface Props {
   readonly onRequestHide: () => void;
 }
 
-export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
+export function InboxChatRow({
+  const { t } = useTranslation(); item, onOpen, onRequestHide }: Props) {
   const { t } = useTranslation();
   return (
     <View style={styles.chatRow}>

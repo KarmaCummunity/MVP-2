@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 // FR-CLOSURE (UI extension) — shows who closed the loop on a closed_delivered
 // post. Label depends on post.type:
 //   • Give    → "delivered to X" (owner gave; marked user is the receiver)

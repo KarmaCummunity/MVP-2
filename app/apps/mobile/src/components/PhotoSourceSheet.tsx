@@ -1,3 +1,4 @@
+import { useTranslation } from 'react-i18next';
 // FR-AUTH-011 AC1 — bottom-sheet action picker for profile photo source.
 // Camera button auto-hidden on web (no native camera).
 import React from 'react';
@@ -15,21 +16,22 @@ interface Props {
   readonly onClose: () => void;
 }
 
-export function PhotoSourceSheet({ visible, canRemove, onPick, onRemove, onClose }: Props) {
+export function PhotoSourceSheet({
+  const { t } = useTranslation(); visible, canRemove, onPick, onRemove, onClose }: Props) {
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>תמונת פרופיל</Text>
+          <Text style={styles.title}>{t('profile.photoSheetTitle')}</Text>
 
           {isCameraAvailable && (
             <TouchableOpacity
               style={styles.option}
               onPress={() => onPick('camera')}
               accessibilityRole="button"
-              accessibilityLabel="צילום במצלמה"
+              accessibilityLabel={t('profile.takePictureA11y')}
             >
-              <Text style={styles.optionText}>📷  צלם תמונה</Text>
+              <Text style={styles.optionText}>{t('profile.takePicture')}</Text>
             </TouchableOpacity>
           )}
 
@@ -37,9 +39,9 @@ export function PhotoSourceSheet({ visible, canRemove, onPick, onRemove, onClose
             style={styles.option}
             onPress={() => onPick('gallery')}
             accessibilityRole="button"
-            accessibilityLabel="בחירה מהגלריה"
+            accessibilityLabel={t('profile.chooseFromGalleryA11y')}
           >
-            <Text style={styles.optionText}>🖼️  בחר מהגלריה</Text>
+            <Text style={styles.optionText}>{t('profile.chooseFromGallery')}</Text>
           </TouchableOpacity>
 
           {canRemove && (
@@ -47,9 +49,9 @@ export function PhotoSourceSheet({ visible, canRemove, onPick, onRemove, onClose
               style={styles.option}
               onPress={onRemove}
               accessibilityRole="button"
-              accessibilityLabel="הסרת התמונה הנוכחית"
+              accessibilityLabel={t('profile.removePhotoA11y')}
             >
-              <Text style={[styles.optionText, styles.removeText]}>🗑️  הסר תמונה</Text>
+              <Text style={[styles.optionText, styles.removeText]}>{t('profile.removePhotoBtn')}</Text>
             </TouchableOpacity>
           )}
 
@@ -58,7 +60,7 @@ export function PhotoSourceSheet({ visible, canRemove, onPick, onRemove, onClose
             onPress={onClose}
             accessibilityRole="button"
           >
-            <Text style={[styles.optionText, styles.cancelText]}>ביטול</Text>
+            <Text style={[styles.optionText, styles.cancelText]}>{t('general.cancel')}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>

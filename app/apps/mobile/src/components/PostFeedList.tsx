@@ -34,6 +34,7 @@ interface Props {
 }
 
 export function PostFeedList({
+  const { t } = useTranslation();
   data,
   isLoading,
   isRefetching,
@@ -57,9 +58,9 @@ export function PostFeedList({
   if (isError && !data) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorTitle}>שגיאה בטעינת הפוסטים</Text>
+        <Text style={styles.errorTitle}>{t('feedLoadError')}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={onRetry}>
-          <Text style={styles.retryText}>נסה שוב</Text>
+          <Text style={styles.retryText}>{t('general.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -83,8 +84,8 @@ export function PostFeedList({
         (emptyComponent as React.ReactElement) ?? (
           <EmptyState
             icon="search-outline"
-            title="לא נמצאו פוסטים"
-            subtitle="נסה לשנות את הסינון או חפש בכל הערים."
+            title={t('feedNoResults')}
+            subtitle={t('feedNoResultsSubtitle')}
           />
         )
       }

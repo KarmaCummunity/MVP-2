@@ -1,5 +1,6 @@
 /** CityPicker: `public.cities` modal per FR-AUTH-010 AC2; searchable list. */
 
+import React, { useTranslation as _t } from 'react-i18next';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View,
@@ -23,6 +24,7 @@ interface Props {
   readonly disabled?: boolean;
 }
 export function CityPicker({ value, onChange, disabled }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);
@@ -52,7 +54,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
         style={[styles.field, disabled && { opacity: 0.5 }]}
         onPress={() => !disabled && setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel="בחר עיר"
+        accessibilityLabel={t('post.cityPickerA11y')}
       >
         <Text
           style={[
@@ -60,7 +62,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
             !value && { color: colors.textDisabled },
           ]}
         >
-          {value ? value.name : 'בחר עיר'}
+          {value ? value.name : t('post.cityPickerPlaceholder')}
         </Text>
       </TouchableOpacity>
 
@@ -75,15 +77,15 @@ export function CityPicker({ value, onChange, disabled }: Props) {
             style={styles.backdropPressable}
             onPress={() => setOpen(false)}
             accessibilityRole="button"
-            accessibilityLabel="סגור"
+            accessibilityLabel={t('general.close')}
           />
           <View style={styles.sheetOuter} pointerEvents="box-none">
             <View style={styles.sheet}>
-              <Text style={styles.sheetTitle}>בחר עיר</Text>
+              <Text style={styles.sheetTitle}>{t('post.cityPickerPlaceholder')}</Text>
               <TextInput
                 ref={searchInputRef}
                 style={styles.search}
-                placeholder="...חיפוש עיר"
+                placeholder={t('post.citySearchPlaceholder')}
                 placeholderTextColor={colors.textDisabled}
                 value={query}
                 onChangeText={setQuery}
@@ -97,7 +99,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
                 </View>
               )}
               {error && (
-                <Text style={styles.errorText}>שגיאה בטעינת רשימת הערים. נסה שוב.</Text>
+                <Text style={styles.errorText}>{t('post.cityPickerError')}</Text>
               )}
               {!isLoading && !error && (
                 <FlatList
@@ -105,7 +107,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
                   keyExtractor={(c) => c.cityId}
                   keyboardShouldPersistTaps="handled"
                   ListEmptyComponent={
-                    <Text style={styles.emptyText}>לא נמצאו ערים תואמות.</Text>
+                    <Text style={styles.emptyText}>{t('post.cityPickerEmpty')}</Text>
                   }
                   renderItem={({ item }) => (
                     <TouchableOpacity

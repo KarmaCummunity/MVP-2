@@ -28,7 +28,8 @@ interface Props {
   readonly onSaved: () => void;
 }
 
-export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
+export function OnboardingSoftGateModal({
+  const { t } = useTranslation(); visible, onClose, onSaved }: Props) {
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
@@ -72,7 +73,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
       setOnboardingState('pending_avatar');
       onSaved();
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      const raw = err instanceof Error ? err.message : t('general.unknownError');
       const mapped = mapEditProfileSaveError(raw);
       useFeedSessionStore.getState().showEphemeralToast(mapped, 'error', 2800);
       setSaveErrorMsg(mapped); // TD-138: Alert.alert no-op on web → NotifyModal.
@@ -92,25 +93,25 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
           <View style={styles.card}>
             <ScrollView contentContainerStyle={styles.cardContent} keyboardShouldPersistTaps="handled">
               <View style={styles.headerRow}>
-                <Text style={styles.title}>נשלים פרטים בסיסיים</Text>
+                <Text style={styles.title}>{t('profile.softGateTitle')}</Text>
                 <TouchableOpacity
                   onPress={onClose}
                   disabled={saving}
                   accessibilityRole="button"
-                  accessibilityLabel="ביטול"
+                  accessibilityLabel={t('general.cancel')}
                 >
-                  <Text style={styles.cancel}>ביטול</Text>
+                  <Text style={styles.cancel}>{t('general.cancel')}</Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
 
               <View style={styles.field}>
-                <Text style={styles.label}>שם מלא</Text>
+                <Text style={styles.label}>{t('onboarding.displayName')}</Text>
                 <TextInput
                   style={styles.input}
                   value={displayName}
                   onChangeText={setDisplayName}
-                  placeholder="לדוגמה: רינה כהן"
+                  placeholder={t('onboarding.displayName')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
                   textAlign="right"
@@ -140,7 +141,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                 {saving ? (
                   <ActivityIndicator color={colors.textInverse} />
                 ) : (
-                  <Text style={styles.ctaText}>שמור והמשך</Text>
+                  <Text style={styles.ctaText}>{t('profile.saveAndContinue')}</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -148,7 +149,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
         </KeyboardAvoidingView>
       </View>
     </Modal>
-    <NotifyModal visible={!!saveErrorMsg} title="שמירה נכשלה" message={saveErrorMsg ?? ''} onDismiss={() => setSaveErrorMsg(null)} />
+    <NotifyModal visible={!!saveErrorMsg} title={t('onboarding.saveFailed')} message={saveErrorMsg ?? ''} onDismiss={() => setSaveErrorMsg(null)} />
     </>
   );
 }

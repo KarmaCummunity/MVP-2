@@ -10,6 +10,16 @@ export const moderationHe = {
       duplicateError: 'כבר דיווחת על משתמש זה ב-24 השעות האחרונות.',
     },
   },
+  reportChat: {
+    title: 'דיווח על השיחה',
+    notePlaceholder: 'תיאור (אופציונלי, עד 500 תווים)',
+    successTitle: 'הדיווח נשלח',
+    successMessage: 'תודה, נבחן את הדיווח.',
+    duplicateTitle: 'כבר דיווחת',
+    duplicateMessage: 'דיווחת על השיחה הזו ב-24 השעות האחרונות.',
+    errorTitle: 'שגיאה',
+    errorMessage: 'נסה שוב מאוחר יותר.',
+  },
   reasons: {
     spam: 'ספאם',
     offensive: 'תוכן פוגעני',

@@ -10,11 +10,11 @@ import { colors, typography, spacing, radius } from '@kc/ui';
 import { NotifyModal } from './NotifyModal';
 
 const REASONS: Array<{ value: ReportReason; label: string }> = [
-  { value: 'Spam', label: 'ספאם' },
-  { value: 'Offensive', label: 'תוכן פוגעני' },
-  { value: 'Misleading', label: 'מטעה' },
-  { value: 'Illegal', label: 'בלתי חוקי' },
-  { value: 'Other', label: 'אחר' },
+  { value: 'Spam', label: t('moderation.reasons.spam') },
+  { value: 'Offensive', label: t('moderation.reasons.offensive') },
+  { value: 'Misleading', label: t('moderation.reasons.misleading') },
+  { value: 'Illegal', label: t('moderation.reasons.illegal') },
+  { value: 'Other', label: t('moderation.reasons.other') },
 ];
 
 interface Props {
@@ -43,13 +43,13 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
         note: note.trim() || undefined,
       });
       onClose();
-      setNotify({ title: 'הדיווח נשלח', message: 'תודה, נבחן את הדיווח.' });
+      setNotify({ title: t('moderation.reportChat.successTitle'), message: t('moderation.reportChat.successMessage') });
     } catch (err) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
         onClose();
-        setNotify({ title: 'כבר דיווחת', message: 'דיווחת על השיחה הזו ב-24 השעות האחרונות.' });
+        setNotify({ title: t('moderation.reportChat.duplicateTitle'), message: t('moderation.reportChat.duplicateMessage') });
       } else {
-        setNotify({ title: 'שגיאה', message: 'נסה שוב מאוחר יותר.' });
+        setNotify({ title: t('moderation.reportChat.errorTitle'), message: t('moderation.reportChat.errorMessage') });
       }
     } finally {
       setSubmitting(false);
@@ -61,7 +61,7 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>דיווח על השיחה</Text>
+          <Text style={styles.title}>{t('moderation.reportChat.title')}</Text>
           {REASONS.map((r) => (
             <TouchableOpacity
               key={r.value}
@@ -76,7 +76,7 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
             style={styles.note}
             value={note}
             onChangeText={setNote}
-            placeholder="תיאור (אופציונלי, עד 500 תווים)"
+            placeholder={t('moderation.reportChat.notePlaceholder')}
             placeholderTextColor={colors.textDisabled}
             multiline
             maxLength={500}
@@ -84,14 +84,14 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
           />
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={onClose}>
-              <Text style={styles.btnGhostText}>ביטול</Text>
+              <Text style={styles.btnGhostText}>{t('general.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.btn, styles.btnPrimary]}
               onPress={submit}
               disabled={submitting}
             >
-              <Text style={styles.btnPrimaryText}>{submitting ? '...' : 'שלח דיווח'}</Text>
+              <Text style={styles.btnPrimaryText}>{submitting ? '...' : t('moderation.report.user.submit')}</Text>
             </TouchableOpacity>
           </View>
         </View>
