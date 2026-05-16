@@ -139,6 +139,23 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
       };
       rows.set(userId, { ...row, profileStreet: street, profileStreetNumber: streetNumber });
     },
+    async updateEditableProfile(userId, patch) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      const next = { ...row };
+      if (patch.displayName !== undefined) next.displayName = patch.displayName;
+      if (patch.city !== undefined) next.city = patch.city;
+      if (patch.cityName !== undefined) next.cityName = patch.cityName;
+      if (patch.profileStreet !== undefined) next.profileStreet = patch.profileStreet;
+      if (patch.profileStreetNumber !== undefined) next.profileStreetNumber = patch.profileStreetNumber;
+      if (patch.biography !== undefined) next.biography = patch.biography;
+      if (patch.avatarUrl !== undefined) next.avatarUrl = patch.avatarUrl;
+      rows.set(userId, next);
+    },
     async dismissClosureExplainer(userId) {
       const row = rows.get(userId) ?? {
         displayName: '',

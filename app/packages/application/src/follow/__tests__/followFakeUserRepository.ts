@@ -132,6 +132,7 @@ export class FollowFakeUserRepository implements IUserRepository {
   setAvatar = N('setAvatar') as IUserRepository['setAvatar'];
   setBiography = N('setBiography') as IUserRepository['setBiography'];
   setProfileAddressLines = N('setProfileAddressLines') as IUserRepository['setProfileAddressLines'];
+  updateEditableProfile = N('updateEditableProfile') as IUserRepository['updateEditableProfile'];
   dismissClosureExplainer = N('dismissClosureExplainer') as IUserRepository['dismissClosureExplainer'];
   dismissFirstPostNudge = N('dismissFirstPostNudge') as IUserRepository['dismissFirstPostNudge'];
   getEditableProfile = N('getEditableProfile') as IUserRepository['getEditableProfile'];

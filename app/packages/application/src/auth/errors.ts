@@ -86,3 +86,39 @@ export class OnboardingError extends Error {
 export function isOnboardingError(value: unknown): value is OnboardingError {
   return value instanceof OnboardingError;
 }
+
+// ─────────────────────────────────────────────
+// Edit-profile domain error
+// Audit 2026-05-10 §3.6 — replaces raw `Error('invalid_display_name')`
+// throws in UpdateProfileUseCase / CompleteBasicInfoUseCase.
+// Mapped to SRS: FR-PROFILE-007.
+// ─────────────────────────────────────────────
+
+export type ProfileErrorCode =
+  | 'invalid_user_id'
+  | 'invalid_display_name'
+  | 'biography_too_long'
+  | 'biography_url_forbidden'
+  | 'city_pair_required'
+  | 'invalid_city'
+  | 'incomplete_profile_address'
+  | 'invalid_profile_street'
+  | 'invalid_profile_street_number'
+  | 'empty_patch';
+
+export class ProfileError extends Error {
+  readonly code: ProfileErrorCode;
+  readonly cause?: unknown;
+
+  constructor(code: ProfileErrorCode, message?: string, cause?: unknown) {
+    super(message ?? code);
+    this.name = 'ProfileError';
+    this.code = code;
+    this.cause = cause;
+    Object.setPrototypeOf(this, ProfileError.prototype);
+  }
+}
+
+export function isProfileError(value: unknown): value is ProfileError {
+  return value instanceof ProfileError;
+}

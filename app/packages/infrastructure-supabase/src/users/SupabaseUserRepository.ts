@@ -15,7 +15,12 @@ import {
   supabaseMarkBasicInfoSkipped,
   supabaseSetBasicInfo,
 } from './onboardingSupabase';
-import { supabaseGetEditableProfile, supabaseSetProfileAddressLines } from './editableProfileSupabase';
+import {
+  supabaseGetEditableProfile,
+  supabaseSetProfileAddressLines,
+  supabaseUpdateEditableProfile,
+  type EditableProfilePatch,
+} from './editableProfileSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { fetchUserBy } from './fetchUserBy';
 import { searchUsers } from './searchUsers';
@@ -122,6 +127,10 @@ export class SupabaseUserRepository implements IUserRepository {
     streetNumber: string | null,
   ): Promise<void> {
     return supabaseSetProfileAddressLines(this.client, userId, street, streetNumber);
+  }
+
+  updateEditableProfile(userId: string, patch: EditableProfilePatch): Promise<void> {
+    return supabaseUpdateEditableProfile(this.client, userId, patch);
   }
 
   getEditableProfile(userId: string) {
