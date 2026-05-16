@@ -62,4 +62,18 @@ export const closureHe = {
   markedSideRequest: 'מי שמסר לך',
   counterDonated: 'פריטים שתרמתי',
   counterReceived: 'פריטים שקיבלתי',
+
+  // RecipientCallout (closed_delivered post-detail row)
+  calloutGiveLabel: 'נמסר ל',
+  calloutRequestLabel: 'ניתן על-ידי',
+  calloutGiveSublabel: 'הפריט נמסר',
+  calloutRequestSublabel: 'הבקשה נענתה',
+
+  // RecipientUnmarkBar (FR-CLOSURE-007)
+  unmarkSelfCta: 'הסר סימון שלי',
+  unmarkConfirmTitle: 'הסרת סימון',
+  unmarkConfirmBody:
+    'לא תקבל קרדיט על פריט זה, ובעל הפוסט יקבל הודעה. הפוסט יישמר 7 ימים לפני מחיקה.',
+  unmarkConfirmCta: 'הסר',
+  unmarkErrorBody: 'לא הצלחנו להסיר את הסימון. נסה שוב.',
 } as const;
