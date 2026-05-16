@@ -1,5 +1,6 @@
 export * from './ports/IUserRepository';
 export * from './ports/IPostRepository';
+export * from './ports/ISavedPostsRepository';
 export * from './ports/postActorIdentity';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
@@ -41,6 +42,10 @@ export * from './posts/UpdatePostUseCase';
 export * from './posts/GetPostByIdUseCase';
 export * from './posts/GetMyPostsUseCase';
 export * from './posts/GetProfileClosedPostsUseCase';
+export * from './posts/SavePostUseCase';
+export * from './posts/UnsavePostUseCase';
+export * from './posts/IsPostSavedUseCase';
+export * from './posts/ListSavedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';

@@ -59,7 +59,7 @@ What each feed card displays.
 **Acceptance Criteria.**
 - AC1. Always shown: image OR category icon (for image-less Request posts), type badge `🎁`/`🔍`, title, 2-line truncated description with "Read more" affordance, owner row (avatar + name), location string per `Post.location_display_level`, relative timestamp.
 - AC2. Conditional: `👥 Followers only` badge (when applicable to the viewer-owner pair), `🔒 Closed — delivered` badge (only when the user enabled "Include closed posts" filter).
-- AC3. **Never shown in the feed**: posts at visibility `OnlyMe` (regardless of whether the viewer is the owner). Owner sees them in their profile only (`FR-PROFILE-001`).
+- AC3. **Never shown in the feed**: posts at visibility `OnlyMe` (regardless of whether the viewer is the owner). Owner sees them under My Profile `⋮` → Hidden (`FR-PROFILE-001` AC4).
 - AC4. Quick "💬 Send Message" icon visible on cards owned by other users (`FR-POST-018`).
 
 **Related.** Screens: 2.1.

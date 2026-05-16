@@ -9,7 +9,8 @@ import { mapUserRow, type UserRow } from './mapUserRow';
 /**
  * TD-39: when the viewer is NOT the row's owner, blank out the internal
  * counter columns that would otherwise let a non-owner infer OnlyMe post
- * existence via `active_posts_count_internal − visible_count`. The DB
+ * existence via counter deltas (internal excludes OnlyMe; public projection does not).
+ * The DB
  * column-grants still return the raw numbers (RLS predicates apply per row,
  * not per column), so the privacy boundary is enforced here at the adapter.
  *

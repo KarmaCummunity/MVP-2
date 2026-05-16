@@ -1,5 +1,5 @@
 // Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
-import React, { useEffect, useMemo, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
   KeyboardAvoidingView, Platform,
@@ -32,8 +32,13 @@ import { ChatConversationHeader } from '../../src/components/chat/ChatConversati
 
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
 
+function routeStringParam(v: string | string[] | undefined): string | undefined {
+  const s = Array.isArray(v) ? v[0] : v;
+  return typeof s === 'string' && s.length > 0 ? s : undefined;
+}
+
 export default function ChatScreen() {
-  const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string }>();
+  const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string | string[] }>();
   const chatId = id!;
   const router = useRouter();
   const { t } = useTranslation();
@@ -41,7 +46,19 @@ export default function ChatScreen() {
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
   const { chat, counterpart, status: chatStatus } = useChatInit(chatId, userId);
-  const [input, setInput] = useState(prefill ?? '');
+  const prefillText = routeStringParam(prefill);
+  const [input, setInput] = useState(() => prefillText ?? '');
+  const autoPrefillDedupeRef = useRef<string | undefined>(prefillText);
+
+  useEffect(() => {
+    const template = autoPrefillDedupeRef.current;
+    if (!template) return;
+    if (messages.length === 0) return;
+    const recent = messages.length <= 50 ? messages : messages.slice(-50);
+    const sent = recent.some((m) => m.senderId === userId && m.body === template);
+    if (sent) setInput((cur) => (cur === template ? '' : cur));
+    autoPrefillDedupeRef.current = undefined;
+  }, [messages, userId]);
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [hideConfirmOpen, setHideConfirmOpen] = useState(false);

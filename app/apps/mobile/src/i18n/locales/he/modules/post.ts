@@ -1,5 +1,10 @@
 // FR-POST strings split from main bundle (TD-35 file-size budget).
+import { postMenuHe } from './postMenu';
+import { postReportHe } from './postReport';
+
 export const postHe = {
+  ...postMenuHe,
+  ...postReportHe,
   give: 'לתת חפץ',
   request: 'לבקש חפץ',
   title: 'כותרת',
@@ -48,35 +53,6 @@ export const postHe = {
   imageZoomNth: 'הגדל תמונה {{index}} מתוך {{total}}',
   imageViewerClose: 'סגור תצוגת תמונה',
 
-  // ⋮ menu (FR-POST-014/015 + FR-ADMIN-006/009 — PostMenuButton / PostMenuSheet)
-  menuA11y: 'תפריט פעולות',
-  menuEdit: 'ערוך פוסט',
-  menuDelete: 'מחק את הפוסט',
-  menuAdminRemove: 'הסר כאדמין',
-  deleteConfirmTitle: '🗑️ למחוק את הפוסט?',
-  deleteConfirmBody:
-    'הפוסט יימחק לצמיתות. שיחות שנפתחו סביבו יישארו ברשימת הצ\'אטים שלך, עם הערה שהפוסט המקורי לא זמין יותר.\n\nניתן למחוק פוסט פתוח, או פוסט סגור בלי שורת מקבל במערכת (למשל נסגר בלי סימון, או מקבל שנמחק מהמערכת). אם יש מקבל רשום — לא ניתן למחיקה מכאן; אפשר לפתוח מחדש לפי הצורך.',
-  adminRemoveTitle: '🛡️ להסיר את הפוסט?',
-  adminRemoveBody:
-    'הפוסט "{{title}}" יוסתר מהפיד ויסומן כמוסר על ידי מנהל. ניתן יהיה לשחזר אותו בעתיד דרך יומן האודיט.',
-  adminRemoveCta: 'הסר',
-
-  // Report modal (FR-MOD-001 — ReportPostModal)
-  reportTitle: 'דיווח על הפוסט',
-  reportReasonSpam: 'ספאם',
-  reportReasonOffensive: 'תוכן פוגעני',
-  reportReasonMisleading: 'מטעה',
-  reportReasonIllegal: 'בלתי חוקי',
-  reportReasonOther: 'אחר',
-  reportNotePlaceholder: 'הערה (אופציונלי)',
-  reportSubmit: 'שלח דיווח',
-  reportSubmitting: 'שולח...',
-  reportSuccessTitle: 'הדיווח נשלח',
-  reportSuccessBody: 'תודה, נבחן את הדיווח.',
-  reportDuplicateTitle: 'כבר דיווחת',
-  reportDuplicateBody: 'דיווחת על הפוסט הזה ב-24 השעות האחרונות.',
-  reportErrorBody: 'נסה שוב מאוחר יותר.',
-
   // FR-POST-003 — LocationDisplayLevelChooser (publish-address granularity)
   locationDisplayLabel: 'תצוגת הכתובת',
   locationDisplayCityAndStreet: 'עיר ורחוב',
@@ -92,7 +68,7 @@ export const postHe = {
   visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
   visibilityFollowersSub: 'הפוסט יוצג רק לעוקבים מאושרים שלך',
   visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי; אפשר לפתוח לציבור בעריכה',
-  /** FR-POST-003 AC5 — public profile: Followers-only row hint (tooltip copy as subtitle). */
+  // FR-POST-003 AC5 — public profile: Followers-only row hint (tooltip copy as subtitle).
   visibilityFollowersLockedSub: 'זמין בפרופיל פרטי. הגדרות ← פרטיות.',
   deleteError: 'המחיקה נכשלה, נסה שוב.',
   deleteSuccess: 'הפוסט נמחק.',
@@ -158,6 +134,7 @@ export const postHe = {
     conditionPrefix: 'מצב: ',
     urgencyPrefix: '⚡ דחיפות: ',
     contactA11y: 'שלח הודעה למפרסם',
+    contactOpeningA11y: 'פותח שיחה עם המפרסם',
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
     identityHidePartner: 'הסתר את שמי מהפוסט של השותף',

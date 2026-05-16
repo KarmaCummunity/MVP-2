@@ -50,6 +50,7 @@ export function PostActorPrivacyBar({ post, viewerId }: Props) {
       await qc.invalidateQueries({ queryKey: ['post-actor-identity', post.postId] });
       await qc.invalidateQueries({ queryKey: ['post', post.postId] });
       await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
       await qc.invalidateQueries({ queryKey: ['feed'] });
     },
   });

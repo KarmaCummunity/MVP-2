@@ -16,6 +16,9 @@ interface Props {
   post: PostWithOwner;
   viewerId: string | null;
   isSuperAdmin: boolean;
+  isSaved: boolean;
+  saveBusy: boolean;
+  onToggleSave: () => void;
   /** Called after a successful destructive action so parent can route away. */
   onAfterRemoval: () => void;
   /** Called when the owner taps "Edit" — caller handles navigation. */
@@ -30,6 +33,9 @@ export function PostMenuSheet({
   post,
   viewerId,
   isSuperAdmin,
+  isSaved,
+  saveBusy,
+  onToggleSave,
   onAfterRemoval,
   onEdit,
 }: Props) {
@@ -65,6 +71,15 @@ export function PostMenuSheet({
             {isOwner ? null : (
               <MenuItem icon="🚩" label={t('post.report')} onPress={() => openModal('report')} />
             )}
+            <MenuItem
+              icon={isSaved ? '🔖' : '📌'}
+              label={isSaved ? t('post.menuUnsave') : t('post.menuSave')}
+              onPress={() => {
+                if (saveBusy) return;
+                onToggleSave();
+                onClose();
+              }}
+            />
             {canEditPost ? (
               <MenuItem
                 icon="✏️"

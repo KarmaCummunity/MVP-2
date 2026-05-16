@@ -29,6 +29,7 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
       setConfirmOpen(false);
       await qc.invalidateQueries({ queryKey: ['post', postId] });
       await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
     },
     onError: () => {
       setConfirmOpen(false);

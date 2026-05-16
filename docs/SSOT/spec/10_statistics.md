@@ -61,7 +61,7 @@ Each counter has precise increment/decrement rules.
    - +1 when a `Recipient` row is created (post owner marked the user).
    - −1 when a `Recipient` row is deleted (reopen, un-mark, post removal).
 - AC3. **Active posts** (`active_posts_count_internal`):
-   - Equal to count of posts where `owner = user` and `status = open` (any visibility, including `OnlyMe`).
+   - Equal to count of posts where `owner = user`, `status = open`, and `visibility <> 'OnlyMe'` (hidden posts are excluded from stats and the profile headline counter).
    - The public-projection variant (`active_posts_count_public`, `FR-PROFILE-013`) is not surfaced on this screen.
 - AC4. Counters never go below zero; an attempt is treated as a domain integrity error and triggers an alert (`NFR-RELI-005`).
 

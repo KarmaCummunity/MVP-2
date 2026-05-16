@@ -601,10 +601,26 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
+## D-29 — Saved-posts list shows only still-visible posts
+
+**Decision.** The My Profile saved-posts list (`FR-PROFILE-016`) returns only posts the viewer can still read under `is_post_visible_to`. Bookmark rows for posts that later become invisible remain in `saved_posts` until the user unsaves or the post is deleted.
+
+**Rationale.** Avoids empty or misleading cards when visibility, follow state, or blocks change after save. Reuses existing RLS on `posts` instead of a separate visibility snapshot.
+
+**Alternatives rejected.**
+
+- *Snapshot visibility at save time.* More complex; stale snapshots could show posts the user should no longer see.
+- *Auto-delete bookmarks when visibility drops.* Surprising UX if the user regains access (e.g. re-follow).
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-022`), `spec/02_profile_and_privacy.md` (`FR-PROFILE-016`); migration `0086_saved_posts.sql`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.9 | 2026-05-16 | Added `D-29` (saved-posts list filters by current `is_post_visible_to`; `FR-POST-022`, `FR-PROFILE-016`). |
 | 0.1 | 2026-05-05 | Initial decisions log; D-1..D-15. |
 | 0.2 | 2026-05-09 | Added `D-16` (Reintroduce Donations and Search tabs in MVP). |
 | 0.3 | 2026-05-11 | Added `EXEC-7` (closed posts visible on other-user profile — reverses PRD §3.2.2). |

@@ -1,5 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Post, PostStatus } from '@kc/domain';
+import type { Post, PostStatus, PostVisibility } from '@kc/domain';
 import type { Database } from '../database.types';
 import { POST_SELECT_BARE, mapPostRow, type PostJoinedRow } from './mapPostRow';
 import { decodeCursor, encodeCursor } from './cursor';
@@ -15,6 +15,8 @@ export async function getMyPostsPage(
   status: PostStatus[],
   limit: number,
   cursor?: string,
+  visibility?: PostVisibility,
+  excludeVisibility?: PostVisibility,
 ): Promise<{ posts: Post[]; nextCursor: string | null }> {
   if (status.length === 0) return { posts: [], nextCursor: null };
   const safeLimit = Math.max(1, Math.min(limit, MY_POSTS_PAGE_MAX));
@@ -27,6 +29,9 @@ export async function getMyPostsPage(
     .in('status', status)
     .order('created_at', { ascending: false })
     .limit(safeLimit + 1);
+
+  if (visibility) q = q.eq('visibility', visibility);
+  if (excludeVisibility) q = q.neq('visibility', excludeVisibility);
 
   if (decoded) q = q.lt('created_at', decoded.createdAt);
 

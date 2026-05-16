@@ -1,7 +1,7 @@
 /** About UX refresh — scope toggles, vision hierarchy, problems / features / goals lists (Hebrew). */
 export const aboutContentUxRefreshPartA = {
   scopeToggleMvp: 'מה אנחנו פותרים עכשיו',
-  scopeToggleVision: 'מה נרצה לפתור בחזון',
+  scopeToggleVision: 'מה אנחנו שואפים לפתור',
   scopeToggleHint:
     'המעבר בין המצבים לא משנה את המוצר היום — רק את עומק הסיפור שאנחנו מספרים לכם כאן.',
 

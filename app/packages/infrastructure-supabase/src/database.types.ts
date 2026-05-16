@@ -660,6 +660,39 @@ export type Database = {
           },
         ]
       }
+      saved_posts: {
+        Row: {
+          post_id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "saved_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       reporter_hides: {
         Row: {
           created_at: string

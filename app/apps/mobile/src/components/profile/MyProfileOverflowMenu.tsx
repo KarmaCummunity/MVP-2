@@ -49,6 +49,10 @@ export function MyProfileOverflowMenu({ showFollowRequests }: Readonly<{ showFol
             <View style={styles.divider} />
             <SheetItem label={t('settings.stats')} onPress={() => go('/stats')} />
             <View style={styles.divider} />
+            <SheetItem label={t('profile.myProfileMenuSavedPosts')} onPress={() => go('/(tabs)/profile/saved')} />
+            <View style={styles.divider} />
+            <SheetItem label={t('profile.myProfileMenuHiddenPosts')} onPress={() => go('/(tabs)/profile/hidden')} />
+            <View style={styles.divider} />
             <SheetItem label={t('profile.myProfileMenuRemovedPosts')} onPress={() => go('/(tabs)/profile/removed')} />
             <View style={styles.divider} />
             <TouchableOpacity style={styles.item} onPress={close} accessibilityRole="button">

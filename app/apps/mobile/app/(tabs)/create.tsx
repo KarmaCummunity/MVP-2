@@ -37,6 +37,7 @@ import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { invalidatePersonalStatsCaches } from '../../src/lib/invalidatePersonalStatsCaches';
+import { invalidateMyProfilePostQueries } from '../../src/lib/invalidateMyProfilePostQueries';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { getUserRepo } from '../../src/services/userComposition';
@@ -167,8 +168,7 @@ export default function CreatePostScreen() {
         });
       }
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
+      invalidateMyProfilePostQueries(queryClient, ownerId);
       await queryClient.invalidateQueries({ queryKey: ['openPostsCount'] });
       invalidatePersonalStatsCaches(queryClient, ownerId);
       useFeedSessionStore.getState().showEphemeralToast(t('post.publishSuccess'), 'success');

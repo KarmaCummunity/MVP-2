@@ -43,7 +43,18 @@ export const profileHe = {
 
   // My Profile top-bar ⋮ (admin-removed posts — FR-POST-008 owner list)
   myProfileMenuA11y: 'אפשרויות פרופיל',
+  myProfileMenuHiddenPosts: 'מוסתרים',
   myProfileMenuRemovedPosts: 'פוסטים שהוסרו על ידי מנהל',
+  hiddenBanner: 'פוסטים אלה מוצגים רק לך. הם לא מופיעים בטאבים הפתוחים או הסגורים בפרופיל.',
+  hiddenSectionOpen: 'פוסטים פתוחים',
+  hiddenSectionClosed: 'פוסטים סגורים',
+  emptyHiddenOpenTitle: 'אין פוסטים מוסתרים פתוחים',
+  emptyHiddenOpenSubtitle: 'כשתפרסמי פוסט שמוצג רק לך, הוא יופיע כאן.',
+  emptyHiddenClosedTitle: 'אין פוסטים מוסתרים סגורים',
+  emptyHiddenClosedSubtitle: 'פוסטים מוסתרים שסגרת יופיעו כאן.',
+  myProfileMenuSavedPosts: 'שמורים',
+  emptySavedTitle: 'אין פוסטים שמורים',
+  emptySavedSubtitle: 'שמרי פוסטים מהפיד או ממסך הפוסט כדי לראות אותם כאן.',
 
   // Stats row
   statsPostsLabel: 'פוסטים',

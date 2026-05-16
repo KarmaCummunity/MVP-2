@@ -11,7 +11,13 @@ import type { Post } from '@kc/domain';
 import { PostCardProfile } from '../PostCardProfile';
 import { EmptyState } from '../EmptyState';
 
-export type EmptyVariant = 'self_open' | 'self_closed' | 'other_open' | 'other_closed';
+export type EmptyVariant =
+  | 'self_open'
+  | 'self_closed'
+  | 'self_saved'
+  | 'self_hidden_open'
+  | 'other_open'
+  | 'other_closed';
 
 export interface ProfilePostsGridProps {
   posts: Post[];
@@ -31,6 +37,16 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
       title: t('profile.emptyClosedTitleSelf'),
       subtitle: t('profile.emptySelfClosedSubtitleLegacy'),
       icon: 'archive-outline',
+    },
+    self_saved: {
+      title: t('profile.emptySavedTitle'),
+      subtitle: t('profile.emptySavedSubtitle'),
+      icon: 'bookmark-outline',
+    },
+    self_hidden_open: {
+      title: t('profile.emptyHiddenOpenTitle'),
+      subtitle: t('profile.emptyHiddenOpenSubtitle'),
+      icon: 'eye-off-outline',
     },
     other_open: {
       title: t('profile.emptyOpenTitle'),

@@ -79,6 +79,10 @@ export const aboutContentUxRefreshPartB = {
   contactWhatsappPersonalLabel: 'ווטסאפ — נוה (אישי)',
   contactEmailNaveLabel: 'מייל — נוה',
   contactEmailOrgLabel: 'מייל — ארגון',
+  /** Default `subject=` for About → Contact mailto links (URL-encoded at runtime). */
+  contactMailSubjectDefault: 'פנייה מקהילת קארמה',
+  /** Prefilled `text=` for personal WhatsApp deep link (URL-encoded at runtime). */
+  contactWhatsappPersonalPrefill: 'היי נוה, הגעתי מקהילת קארמה. אשמח לדבר.',
   contactDonationTitle: 'תמיכה ישירה (מחוץ לאפליקציה)',
   contactDonationNote:
     'תרומה ישירה דרך ביט או פייבוקס למספר 0528616878 — מחוץ למוצר, בלי איסוף ובלי ערבות של האפליקציה. זו דרך אישית לתמוך בפרויקט אם נוח לכם.',

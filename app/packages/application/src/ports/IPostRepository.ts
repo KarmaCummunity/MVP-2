@@ -1,4 +1,4 @@
-import type { Post, ProfileClosedPostsItem } from '@kc/domain';
+import type { Post, ProfileClosedPostsItem, ProfileClosedPostsListMode } from '@kc/domain';
 import type {
   Address,
   Category,
@@ -166,6 +166,8 @@ export interface IPostRepository {
     status: PostStatus[],
     limit: number,
     cursor?: string,
+    visibility?: PostVisibility,
+    excludeVisibility?: PostVisibility,
   ): Promise<{ posts: Post[]; nextCursor: string | null }>;
 
   /**
@@ -186,6 +188,7 @@ export interface IPostRepository {
     viewerUserId: string | null,
     limit: number,
     cursor?: string,
+    listMode?: ProfileClosedPostsListMode,
   ): Promise<ProfileClosedPostsItem[]>;
 
   /** FR-POST-021 — per-actor identity exposure rows for a post. */

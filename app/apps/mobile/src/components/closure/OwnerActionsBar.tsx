@@ -15,6 +15,7 @@ import { isPostError, type PostErrorCode } from '@kc/application';
 import { useClosureStore } from '../../store/closureStore';
 import { getReopenPostUseCase } from '../../services/postsComposition';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
+import { invalidateMyProfilePostQueries } from '../../lib/invalidateMyProfilePostQueries';
 import { mapPostErrorToHebrew } from '../../services/postMessages';
 import { ClosureSheet } from './ClosureSheet';
 import { ClosureExplainerSheet } from './ClosureExplainerSheet';
@@ -57,9 +58,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
     resetClosure();
     void (async () => {
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
-      await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      invalidateMyProfilePostQueries(queryClient, ownerId);
       await queryClient.invalidateQueries({ queryKey: ['post', closedPostId] });
       invalidatePersonalStatsCaches(queryClient, ownerId);
       await Promise.resolve(onClosed());
@@ -88,9 +87,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
       await getReopenPostUseCase().execute({ postId: post.postId, ownerId });
       setReopenOpen(false);
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
-      await queryClient.invalidateQueries({ queryKey: ['my-open-count'] });
-      await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      invalidateMyProfilePostQueries(queryClient, ownerId);
       await queryClient.invalidateQueries({ queryKey: ['post', post.postId] });
       invalidatePersonalStatsCaches(queryClient, ownerId);
       await Promise.resolve(onReopened());

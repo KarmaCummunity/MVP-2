@@ -20,6 +20,7 @@ export default function MyProfileOpenScreen() {
         userId: userId!,
         status: ['open'],
         limit: 30,
+        excludeVisibility: 'OnlyMe',
       }),
     enabled: Boolean(userId),
   });

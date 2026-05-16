@@ -59,6 +59,9 @@ export interface Post {
  */
 export type IdentityRoleForViewedProfile = 'publisher' | 'respondent';
 
+/** FR-PROFILE-001 AC4 — main Closed tab vs Hidden (owner OnlyMe) screen. */
+export type ProfileClosedPostsListMode = 'standard' | 'owner_only_me';
+
 export interface ProfileClosedPostsItem {
   readonly post: Post;
   readonly identityRole: IdentityRoleForViewedProfile;

@@ -19,7 +19,21 @@ describe('GetProfileClosedPostsUseCase', () => {
       viewerUserId: 'u_viewer',
       limit: 50,
       cursor: 'cur',
+      listMode: 'standard',
     });
+  });
+
+  it('forwards owner_only_me listMode for Hidden screen', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetProfileClosedPostsUseCase(repo);
+
+    await uc.execute({
+      profileUserId: 'u_profile',
+      viewerUserId: 'u_profile',
+      listMode: 'owner_only_me',
+    });
+
+    expect(repo.lastGetProfileClosedPostsArgs?.listMode).toBe('owner_only_me');
   });
 
   it('clamps limit to [1, 100]; defaults to 30', async () => {

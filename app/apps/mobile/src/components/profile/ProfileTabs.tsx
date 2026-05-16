@@ -1,6 +1,6 @@
 // app/apps/mobile/src/components/profile/ProfileTabs.tsx
-// Open / closed tabs row. Used by both profile screens.
-// Mapped to: FR-PROFILE-001 AC4. Admin-removed list: My Profile ⋮ menu → ./profile/removed.
+// Open / closed tabs row. Used by My Profile open + closed routes.
+// Mapped to: FR-PROFILE-001 AC4. Saved / hidden / removed lists use the profile stack header.
 
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -8,14 +8,12 @@ import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 
 /** Tabs shown in the strip (two lanes per FR-PROFILE-001 AC4). */
+/** Open / closed lane highlighted in the tab strip under the profile card. */
 export type ProfilePostsTab = 'open' | 'closed';
-
-/** Which lane is highlighted; `removed` screen shows neither tab as active. */
-export type ProfileChromePostsArea = ProfilePostsTab | 'removed';
 
 export function ProfileTabs({
   active, onChange,
-}: { active: ProfileChromePostsArea; onChange: (t: ProfilePostsTab) => void }) {
+}: { active: ProfilePostsTab; onChange: (t: ProfilePostsTab) => void }) {
   const { t } = useTranslation();
   return (
     <View style={styles.row}>

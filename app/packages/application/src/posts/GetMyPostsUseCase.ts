@@ -1,12 +1,16 @@
 /** FR-POST-016: list the caller's own posts (any visibility, owner sees all). */
 import type { IPostRepository } from '../ports/IPostRepository';
-import type { Post, PostStatus } from '@kc/domain';
+import type { Post, PostStatus, PostVisibility } from '@kc/domain';
 
 export interface GetMyPostsInput {
   userId: string;
   status: PostStatus[];
   limit?: number;
   cursor?: string;
+  /** When set, only posts with this visibility are returned. */
+  visibility?: PostVisibility;
+  /** When set, posts with this visibility are excluded. */
+  excludeVisibility?: PostVisibility;
 }
 
 export interface GetMyPostsOutput {
@@ -26,7 +30,14 @@ export class GetMyPostsUseCase {
       throw new Error('GetMyPostsUseCase: status must include at least one value');
     }
     const limit = clamp(input.limit ?? DEFAULT_LIMIT, 1, HARD_MAX);
-    return this.repo.getMyPosts(input.userId, input.status, limit, input.cursor);
+    return this.repo.getMyPosts(
+      input.userId,
+      input.status,
+      limit,
+      input.cursor,
+      input.visibility,
+      input.excludeVisibility,
+    );
   }
 }
 

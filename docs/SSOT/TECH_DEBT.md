@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-31 downgraded 🟠→🟢 after sweep across domain / application / infra / mobile lib + stores) |
+| **Last Updated** | 2026-05-16 (TD-67 added — cities bulk geo backfill remainder) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -27,6 +27,7 @@
 | TD-60 | 🟢 | **RTBF scrub of `messages.system_payload` snapshots in `delete_account_data` (R-MVP-Privacy-6).** Migration `0046` snapshots `target_preview` (author handle + content snippet) into `messages.system_payload` at report time. `delete_account_data` (migration `0043`) does not null these snapshots. Defer until pre-EU-launch GDPR readiness pass. | Pre-EU-launch GDPR pass |
 | TD-61 | 🟠 | **Rename `recipients` table → `respondents`.** Column `recipient_user_id` is semantically misleading: for `Request` posts the row stores the *giver*, not the receiver. Touches schema, RLS, RPCs (`profile_closed_posts`, `close_post_with_recipient`, `reopen_post_marked`), FE types (`Recipient` interface in `entities.ts`), and `FR-POST-017` CTA copy ("Remove my recipient mark"). Driven by D-19 (2026-05-13). | Post-MVP / standalone rename slice |
 | TD-66 | 🟠 | **Deep-link manifests reference release signing fingerprints.** `apple-app-site-association` uses `REPLACE_WITH_APPLE_TEAM_ID`; `assetlinks.json` uses `REPLACE_WITH_ANDROID_RELEASE_SHA256`. Real values must be filled in before the universal link / app link works on a release build; until then native users see the chooser dialog instead of direct app open. | Pre-launch (EAS release build) |
+| TD-67 | 🟢 | **`cities.lat/lon` remainder after `0089_cities_geo_bulk_backfill`.** Fifteen CBS codes still have `NULL` coordinates (listed in the migration header): no confident match in `israel-geolocation` + OSM Nominatim within the `0021` bounding-box checks. Distance sort correctly degrades for posts in those settlements (`FR-FEED-006` AC3). Close by joining CBS GIS centroid export (or another authoritative point layer) keyed by `סמל_ישוב`. | Opportunistic / data refresh |
 | TD-118 | 🟠 | **Delete Account V1 deferred polish — orphan storage + cooldown + email + recovery window.** P2.2 V1 shipped immediate hard-delete. Remaining items for V1.1: (1) orphan `post-images` cleanup cron — Edge Function logs storage delete failures but does not retry; orphan media in this public-read bucket remains world-readable until cleaned. (2) `DeletedIdentifier` cooldown table (FR-AUTH-016) — 30-day reuse lockout for email/Google identity. (3) Confirmation email (FR-NOTIF-012) — requires email infra. (4) Recovery/undo window — current V1 is irreversible; industry baseline is 30 days. | V1.1 |
 
 ### Mobile & UI (apps/mobile · packages/ui)

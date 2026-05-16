@@ -1,4 +1,4 @@
-// My Profile — admin-removed posts tab. Sibling routes: ./index.tsx, ./closed.tsx.
+// My Profile — admin-removed posts. Stack header + title from `profile/_layout.tsx`.
 // Mapped to: FR-POST-008 edge-case (owner sees removed_admin posts), TD-131.
 // RLS allows this: is_post_visible_to() returns true when owner_id = viewer.
 import React from 'react';
@@ -8,7 +8,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
-import { MyProfileChrome } from '../../../src/components/profile/MyProfileChrome';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
@@ -29,9 +28,8 @@ export default function MyProfileRemovedScreen() {
   });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
-        <MyProfileChrome activeTab="removed" />
         <View style={styles.banner}>
           <Ionicons name="shield-outline" size={18} color={colors.textSecondary} />
           <Text style={styles.bannerText}>

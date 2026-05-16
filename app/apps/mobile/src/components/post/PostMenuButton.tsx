@@ -10,6 +10,7 @@ import { useAuthStore } from '../../store/authStore';
 import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { PostMenuSheet } from './PostMenuSheet';
+import { usePostSavedActions } from '../../hooks/usePostSavedActions';
 
 interface Props {
   post: PostWithOwner;
@@ -22,6 +23,7 @@ export function PostMenuButton({ post }: Props) {
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
   const [open, setOpen] = useState(false);
+  const { isSaved, busy: saveBusy, toggleSave } = usePostSavedActions(post.postId);
 
   if (viewerId === null) {
     // Guests don't get a menu (no actions available to them).
@@ -46,6 +48,9 @@ export function PostMenuButton({ post }: Props) {
         post={post}
         viewerId={viewerId}
         isSuperAdmin={isSuperAdmin}
+        isSaved={isSaved}
+        saveBusy={saveBusy}
+        onToggleSave={toggleSave}
         onAfterRemoval={() => {
           void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
           void queryClient.invalidateQueries({ queryKey: ['profile-other-posts'] });

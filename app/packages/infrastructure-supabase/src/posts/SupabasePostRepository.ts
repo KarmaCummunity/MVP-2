@@ -14,7 +14,13 @@ import type {
   UpdatePostInput,
   UpsertPostActorIdentityInput,
 } from '@kc/application';
-import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
+import type {
+  Post,
+  PostStatus,
+  PostVisibility,
+  ProfileClosedPostsItem,
+  ProfileClosedPostsListMode,
+} from '@kc/domain';
 import type { Database } from '../database.types';
 import {
   POST_SELECT_BARE,
@@ -41,6 +47,7 @@ import {
   upsertPostActorIdentityRow,
 } from './postActorIdentityMethods';
 import { getMyPostsPage } from './getMyPostsPage';
+import { countOpenByUser as countOpenByUserQuery, fetchPostById } from './postRepoQueries';
 
 const FEED_HARD_MAX = 100;
 
@@ -136,13 +143,13 @@ export class SupabasePostRepository implements IPostRepository {
       }
     }
 
-    const created = await this.fetchPostById(postId);
+    const created = await fetchPostById(this.client, postId);
     if (!created) throw new Error(`create: post ${postId} disappeared after insert`);
     return created;
   }
 
   async update(postId: string, patch: UpdatePostInput): Promise<Post> {
-    return executePostUpdate(this.client, postId, patch, (pid) => this.fetchPostById(pid));
+    return executePostUpdate(this.client, postId, patch, (pid) => fetchPostById(this.client, pid));
   }
 
   async delete(postId: string): Promise<void> {
@@ -195,8 +202,18 @@ export class SupabasePostRepository implements IPostRepository {
     status: PostStatus[],
     limit: number,
     cursor?: string,
+    visibility?: PostVisibility,
+    excludeVisibility?: PostVisibility,
   ): Promise<{ posts: Post[]; nextCursor: string | null }> {
-    return getMyPostsPage(this.client, userId, status, limit, cursor);
+    return getMyPostsPage(
+      this.client,
+      userId,
+      status,
+      limit,
+      cursor,
+      visibility,
+      excludeVisibility,
+    );
   }
 
   // ── Profile closed posts (publisher ∪ respondent) ────────────────────────
@@ -205,8 +222,16 @@ export class SupabasePostRepository implements IPostRepository {
     viewerUserId: string | null,
     limit: number,
     cursor?: string,
+    listMode?: ProfileClosedPostsListMode,
   ): Promise<ProfileClosedPostsItem[]> {
-    return getProfileClosedPostsHelper(this.client, profileUserId, viewerUserId, limit, cursor);
+    return getProfileClosedPostsHelper(
+      this.client,
+      profileUserId,
+      viewerUserId,
+      limit,
+      cursor,
+      listMode ?? 'standard',
+    );
   }
 
   async listPostActorIdentities(postId: string): Promise<PostActorIdentityRow[]> {
@@ -218,25 +243,7 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   // ── Stats ───────────────────────────────────────────────────────────────
-  async countOpenByUser(userId: string): Promise<number> {
-    const { count, error } = await this.client
-      .from('posts')
-      .select('post_id', { count: 'exact', head: true })
-      .eq('owner_id', userId)
-      .eq('status', 'open');
-    if (error) throw new Error(`countOpenByUser: ${error.message}`);
-    return count ?? 0;
-  }
-
-  // ── Internal ────────────────────────────────────────────────────────────
-  private async fetchPostById(postId: string): Promise<Post | null> {
-    const { data, error } = await this.client
-      .from('posts')
-      .select(POST_SELECT_BARE)
-      .eq('post_id', postId)
-      .maybeSingle();
-    if (error) throw new Error(`fetchPostById: ${error.message}`);
-    if (!data) return null;
-    return mapPostRow(data as unknown as PostJoinedRow);
+  countOpenByUser(userId: string): Promise<number> {
+    return countOpenByUserQuery(this.client, userId);
   }
 }

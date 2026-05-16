@@ -456,8 +456,29 @@ These three axes are stored per `(post_id, user_id)` on `public.post_actor_ident
 
 ---
 
+## FR-POST-022 — Save / unsave post
+
+**Description.**
+A signed-in user may bookmark any post they can currently read (their own or another user's) for later access from My Profile.
+
+**Source.**
+- Product request (2026-05-16); deferred V2 bookmarks revived for MVP bookmark-lite.
+
+**Acceptance Criteria.**
+- AC1. Only authenticated users see save actions (guests have no post ⋮ menu).
+- AC2. The user may save any post that passes `is_post_visible_to` at save time (owner, public, followers-only when following, closed-post rules, etc.).
+- AC3. Post ⋮ menu shows **Save** when not bookmarked and **Remove from saved** when bookmarked (mutually exclusive). Applies to own posts and others' posts.
+- AC4. Save is idempotent (duplicate save is a no-op).
+- AC5. Unsave deletes the bookmark row.
+- AC6. When the underlying post is hard-deleted, bookmark rows are removed via `ON DELETE CASCADE`.
+
+**Related.** Screens: 2.3, 3.1 · Domain: `saved_posts` · Profile list: `FR-PROFILE-016`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
+| 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
 | 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

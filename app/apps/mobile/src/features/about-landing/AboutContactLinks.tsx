@@ -1,4 +1,4 @@
-import React, { useCallback } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
@@ -6,11 +6,11 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import {
   ABOUT_DONATION_PHONE_DISPLAY,
+  ABOUT_EMAIL_NAVE,
+  ABOUT_EMAIL_ORG,
   ABOUT_INSTAGRAM_PROFILE_URL,
-  ABOUT_MAILTO_NAVE,
-  ABOUT_MAILTO_ORG,
   ABOUT_WHATSAPP_GROUP_URL,
-  ABOUT_WHATSAPP_PERSONAL_URL,
+  ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE,
 } from './aboutExternalLinks';
 import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
 
@@ -32,13 +32,31 @@ export function AboutContactLinks() {
     [t],
   );
 
-  const rows: Row[] = [
-    { key: 'waG', label: t('aboutContent.contactWhatsappGroupLabel'), url: ABOUT_WHATSAPP_GROUP_URL, icon: 'logo-whatsapp' },
-    { key: 'waP', label: t('aboutContent.contactWhatsappPersonalLabel'), url: ABOUT_WHATSAPP_PERSONAL_URL, icon: 'chatbubble-ellipses-outline' },
-    { key: 'm1', label: t('aboutContent.contactEmailNaveLabel'), url: ABOUT_MAILTO_NAVE, icon: 'mail-outline' },
-    { key: 'm2', label: t('aboutContent.contactEmailOrgLabel'), url: ABOUT_MAILTO_ORG, icon: 'mail-open-outline' },
-    { key: 'ig', label: t('aboutContent.instagramOpen'), url: ABOUT_INSTAGRAM_PROFILE_URL, icon: 'logo-instagram' },
-  ];
+  const rows: Row[] = useMemo(() => {
+    const mailSubject = encodeURIComponent(t('aboutContent.contactMailSubjectDefault'));
+    const mailtoNave = `mailto:${ABOUT_EMAIL_NAVE}?subject=${mailSubject}`;
+    const mailtoOrg = `mailto:${ABOUT_EMAIL_ORG}?subject=${mailSubject}`;
+    const waPersonal = `${ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE}?text=${encodeURIComponent(
+      t('aboutContent.contactWhatsappPersonalPrefill'),
+    )}`;
+    return [
+      {
+        key: 'waG',
+        label: t('aboutContent.contactWhatsappGroupLabel'),
+        url: ABOUT_WHATSAPP_GROUP_URL,
+        icon: 'logo-whatsapp',
+      },
+      {
+        key: 'waP',
+        label: t('aboutContent.contactWhatsappPersonalLabel'),
+        url: waPersonal,
+        icon: 'chatbubble-ellipses-outline',
+      },
+      { key: 'm1', label: t('aboutContent.contactEmailNaveLabel'), url: mailtoNave, icon: 'mail-outline' },
+      { key: 'm2', label: t('aboutContent.contactEmailOrgLabel'), url: mailtoOrg, icon: 'mail-open-outline' },
+      { key: 'ig', label: t('aboutContent.instagramOpen'), url: ABOUT_INSTAGRAM_PROFILE_URL, icon: 'logo-instagram' },
+    ];
+  }, [t]);
 
   return (
     <View style={styles.wrap}>

@@ -35,7 +35,7 @@ export const chatHe = {
   // must match the use case's template exactly because contactPoster.ts
   // dedupes against the rendered string in the last 50 messages.
   autoMessage: {
-    initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח לדעת עוד.',
+    initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח שנדבר.',
   },
 
   // Chat conversation screen (chat/[id].tsx) — PR5b i18n sweep.

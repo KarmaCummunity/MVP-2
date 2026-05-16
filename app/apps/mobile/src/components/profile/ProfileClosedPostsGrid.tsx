@@ -11,7 +11,7 @@ import type { ProfileClosedPostsItem } from '@kc/domain';
 import { PostCardProfile } from '../PostCardProfile';
 import { EmptyState } from '../EmptyState';
 
-export type ClosedEmptyVariant = 'self_closed' | 'other_closed';
+export type ClosedEmptyVariant = 'self_closed' | 'self_hidden_closed' | 'other_closed';
 
 export interface ProfileClosedPostsGridProps {
   items: ProfileClosedPostsItem[];
@@ -40,6 +40,11 @@ export function ProfileClosedPostsGrid({
       title: t('profile.emptyClosedTitleSelf'),
       subtitle: t('profile.emptySelfClosedSubtitle'),
       icon: 'archive-outline',
+    },
+    self_hidden_closed: {
+      title: t('profile.emptyHiddenClosedTitle'),
+      subtitle: t('profile.emptyHiddenClosedSubtitle'),
+      icon: 'eye-off-outline',
     },
     other_closed: {
       title: t('profile.emptyClosedTitle'),

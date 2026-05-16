@@ -1,5 +1,5 @@
 // app/apps/mobile/src/components/profile/MyProfileChrome.tsx
-// Shared chrome for My Profile routes (`/profile`, `/profile/closed`, `/profile/removed`).
+// Shared chrome for My Profile open/closed routes (`/profile`, `/profile/closed`).
 // Renders TopBar + profile card (⋮ menu: web uses `right` when `dir=rtl` / `I18nManager.isRTL`; native uses `start`) + …
 // Tab clicks navigate to the sibling route (router.replace, so no back-stack
 // build-up across tab toggles).
@@ -14,10 +14,9 @@ import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import { TopBar } from '../TopBar';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfileStatsRow } from './ProfileStatsRow';
-import { ProfileTabs, type ProfileChromePostsArea, type ProfilePostsTab } from './ProfileTabs';
+import { ProfileTabs, type ProfilePostsTab } from './ProfileTabs';
 import { MyProfileOverflowMenu } from './MyProfileOverflowMenu';
 import { useAuthStore } from '../../store/authStore';
-import { getPostRepo } from '../../services/postsComposition';
 import { getUserRepo } from '../../services/userComposition';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
 
@@ -36,7 +35,7 @@ function profileMenuCornerHorizontalInset(): Pick<ViewStyle, 'left' | 'right' | 
   return rtl ? { right: spacing.sm } : { left: spacing.sm };
 }
 
-export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfileChromePostsArea }>) {
+export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePostsTab }>) {
   const router = useRouter();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
@@ -52,12 +51,6 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfileChro
   const displayName = user?.displayName?.trim() || resolveDisplayName(session, fallbackName);
   const avatarUrl = user?.avatarUrl ?? session?.avatarUrl ?? null;
   const biography = user?.biography ?? null;
-
-  const openCountQuery = useQuery({
-    queryKey: ['my-open-count', userId],
-    queryFn: () => getPostRepo().countOpenByUser(userId!),
-    enabled: Boolean(userId),
-  });
 
   const goToTab = (next: ProfilePostsTab) => {
     if (next === activeTab) return;
@@ -88,7 +81,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfileChro
           <ProfileStatsRow
             followersCount={user?.followersCount ?? 0}
             followingCount={user?.followingCount ?? 0}
-            postsCount={openCountQuery.data ?? 0}
+            postsCount={user?.activePostsCountInternal ?? 0}
             enabled
             onPressFollowers={() =>
               router.push({

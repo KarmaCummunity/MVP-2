@@ -82,6 +82,7 @@ describe('getProfileClosedPostsHelper — RPC call', () => {
         p_viewer_user_id: 'u_viewer',
         p_limit: 25,
         p_cursor: null,
+        p_list_mode: 'standard',
       },
     });
   });
@@ -96,6 +97,12 @@ describe('getProfileClosedPostsHelper — RPC call', () => {
     const { client, calls } = makeFakeClient({ rpcData: [] });
     await getProfileClosedPostsHelper(client, 'u_profile', null, 10);
     expect(calls.rpcs[0]?.args.p_viewer_user_id).toBeNull();
+  });
+
+  it('forwards owner_only_me list mode for Hidden screen', async () => {
+    const { client, calls } = makeFakeClient({ rpcData: [] });
+    await getProfileClosedPostsHelper(client, 'u_profile', 'u_profile', 10, undefined, 'owner_only_me');
+    expect(calls.rpcs[0]?.args.p_list_mode).toBe('owner_only_me');
   });
 
   it('throws with prefixed "getProfileClosedPosts: " message on RPC error', async () => {

@@ -6,13 +6,15 @@
  * role (giver / receiver) from (post.type, identityRole) to render the badge.
  */
 import type { IPostRepository } from '../ports/IPostRepository';
-import type { ProfileClosedPostsItem } from '@kc/domain';
+import type { ProfileClosedPostsItem, ProfileClosedPostsListMode } from '@kc/domain';
 
 export interface GetProfileClosedPostsInput {
   profileUserId: string;
   viewerUserId: string | null;
   limit?: number;
   cursor?: string;
+  /** Default `standard` — main profile Closed tab. `owner_only_me` for Hidden screen. */
+  listMode?: ProfileClosedPostsListMode;
 }
 
 export interface GetProfileClosedPostsOutput {
@@ -36,6 +38,7 @@ export class GetProfileClosedPostsUseCase {
       input.viewerUserId,
       limit,
       input.cursor,
+      input.listMode ?? 'standard',
     );
     const lastItem = items.length === limit ? items[items.length - 1] : undefined;
     const nextCursor = lastItem ? lastItem.closedAt : null;

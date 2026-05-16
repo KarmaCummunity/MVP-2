@@ -14,7 +14,28 @@ describe('GetMyPostsUseCase', () => {
       status: ['open'],
       limit: 50,
       cursor: 'cur',
+      visibility: undefined,
+      excludeVisibility: undefined,
     });
+  });
+
+  it('forwards visibility filters to the repo', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetMyPostsUseCase(repo);
+
+    await uc.execute({
+      userId: 'u_1',
+      status: ['open'],
+      excludeVisibility: 'OnlyMe',
+    });
+    expect(repo.lastGetMyPostsArgs?.excludeVisibility).toBe('OnlyMe');
+
+    await uc.execute({
+      userId: 'u_1',
+      status: ['open'],
+      visibility: 'OnlyMe',
+    });
+    expect(repo.lastGetMyPostsArgs?.visibility).toBe('OnlyMe');
   });
 
   it('clamps limit to [1, 100]; defaults to 20', async () => {

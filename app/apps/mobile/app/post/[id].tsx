@@ -1,6 +1,6 @@
 // Post detail — wired to live IPostRepository (P0.4-FE).
 // Mapped to: FR-POST-014, FR-POST-015, FR-POST-021, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
-import React from 'react';
+import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -8,6 +8,7 @@ import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
+import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
 import { EmptyState } from '../../src/components/EmptyState';
 import { useAuthStore } from '../../src/store/authStore';
@@ -26,6 +27,27 @@ function normalizeRoutePostId(raw: string | string[] | undefined): string | unde
   return trimmed;
 }
 
+function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string): string {
+  if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
+  if (post.locationDisplayLevel === 'CityAndStreet')
+    return `${post.address.cityName}, ${t('post.detail.streetPrefix')} ${post.address.street}`;
+  return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
+}
+
+function postDetailOwnerLabel(post: PostWithOwner, ownerNavigable: boolean, t: (key: string) => string): string {
+  if (!ownerNavigable) return t('post.detail.anonymousUser');
+  return post.ownerName ?? t('common.deletedUser');
+}
+
+function postDetailShowActorPrivacy(
+  viewerId: string | null,
+  isOwner: boolean,
+  post: PostWithOwner,
+  isRecipientMarked: boolean,
+): boolean {
+  return viewerId != null && (isOwner || (post.status === 'closed_delivered' && isRecipientMarked));
+}
+
 export default function PostDetailScreen() {
   const { id: rawId } = useLocalSearchParams<{ id?: string | string[] }>();
   const postIdParam = normalizeRoutePostId(rawId);
@@ -38,6 +60,19 @@ export default function PostDetailScreen() {
     queryFn: () => getPostByIdUseCase().execute({ postId: postIdParam ?? '', viewerId }),
     enabled: Boolean(postIdParam),
   });
+
+  const [contactPosterBusy, setContactPosterBusy] = useState(false);
+  const onOpenPosterChat = useCallback(async () => {
+    if (!viewerId) return;
+    const p = query.data?.post;
+    if (!p) return;
+    setContactPosterBusy(true);
+    try {
+      await contactPoster(viewerId, p, router);
+    } finally {
+      setContactPosterBusy(false);
+    }
+  }, [viewerId, query.data?.post, router]);
 
   const exitAfterOwnerMutation = (messageKey: 'closure.detailCloseSuccessToast' | 'closure.detailReopenSuccessToast') => {
     useFeedSessionStore.getState().showEphemeralToast(t(messageKey), 'success', 2200);
@@ -78,24 +113,16 @@ export default function PostDetailScreen() {
   // FR-POST-015 AC1: owner-mode CTAs vs viewer's "Send Message to Poster" (FR-POST-014 AC6: open only).
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isGive = post.type === 'Give';
-  const locationText = (() => {
-    if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
-    if (post.locationDisplayLevel === 'CityAndStreet')
-      return `${post.address.cityName}, ${t('post.detail.streetPrefix')} ${post.address.street}`;
-    return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
-  })();
+  const locationText = postLocationDisplayText(post, t);
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe });
 
   const showViewerContactCta = !isOwner && post.status === 'open';
 
   const isRecipientMarked =
     viewerId != null && post.recipient?.recipientUserId === viewerId;
-  const showActorPrivacy =
-    viewerId != null && (isOwner || (post.status === 'closed_delivered' && isRecipientMarked));
+  const showActorPrivacy = postDetailShowActorPrivacy(viewerId, isOwner, post, isRecipientMarked);
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
-  const ownerLabel = ownerNavigable
-    ? (post.ownerName ?? t('common.deletedUser'))
-    : t('post.detail.anonymousUser');
+  const ownerLabel = postDetailOwnerLabel(post, ownerNavigable, t);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
@@ -123,11 +150,19 @@ export default function PostDetailScreen() {
         <View style={styles.cta}>
           <TouchableOpacity
             style={styles.messageBtn}
-            onPress={() => contactPoster(viewerId, post, router)}
+            onPress={() => void onOpenPosterChat()}
+            disabled={contactPosterBusy}
             accessibilityRole="button"
-            accessibilityLabel={t('post.detail.contactA11y')}
+            accessibilityState={{ busy: contactPosterBusy }}
+            accessibilityLabel={
+              contactPosterBusy ? t('post.detail.contactOpeningA11y') : t('post.detail.contactA11y')
+            }
           >
-            <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+            {contactPosterBusy ? (
+              <ActivityIndicator size="small" color={colors.textInverse} />
+            ) : (
+              <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+            )}
           </TouchableOpacity>
         </View>
       ) : null}

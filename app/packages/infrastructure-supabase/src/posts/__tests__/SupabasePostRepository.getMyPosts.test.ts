@@ -98,6 +98,20 @@ describe('SupabasePostRepository.getMyPosts', () => {
     expect(lt?.args).toEqual(['created_at', '2026-05-16T12:00:00.000Z']);
   });
 
+  it('applies visibility neq when excludeVisibility is set', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    const repo = new SupabasePostRepository(client);
+    await repo.getMyPosts('u_me', ['open'] as PostStatus[], 10, undefined, undefined, 'OnlyMe');
+    expect(ops.find((o) => o.kind === 'neq')?.args).toEqual(['visibility', 'OnlyMe']);
+  });
+
+  it('applies visibility eq when visibility filter is set', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    const repo = new SupabasePostRepository(client);
+    await repo.getMyPosts('u_me', ['open'] as PostStatus[], 10, undefined, 'OnlyMe');
+    expect(ops.filter((o) => o.kind === 'eq').map((o) => o.args)).toContainEqual(['visibility', 'OnlyMe']);
+  });
+
   it('skips the lt() clause when the cursor is malformed (defensive)', async () => {
     const { client, ops } = makeFakeClient({ data: [] });
     const repo = new SupabasePostRepository(client);
