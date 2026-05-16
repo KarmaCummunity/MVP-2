@@ -225,7 +225,7 @@ The remaining audit findings (below) split into three classes:
 | 17.3 [HIGH] No state-machine guard on `onboarding_state` transitions | ⏳ | Open — typed `OnboardingError('illegal_transition')` per use case + DB trigger. |
 | 17.4 [MEDIUM] `onboarding_state = 'completed'` can be rolled back | ⏳ | Open — remove "Reset onboarding" or restrict the grant. |
 | 17.5 [MEDIUM] Token expiry only at cold start | ⏳ | Open — subscribe to `onAuthStateChange('SIGNED_OUT')`. |
-| 17.6 [MEDIUM] Sign-out doesn't clear React Query cache | ⏳ | **Queued (Task #4)** — `queryClient.clear()` in sign-out handler. |
+| 17.6 [MEDIUM] Sign-out doesn't clear React Query cache | ✅ | `AuthGate.tsx` session-change effect now calls `queryClient.clear()` when `session` transitions to null. Covers Settings sign-out, account-gate enforcement sign-out, and delete-account sign-out via one location. |
 
 ## 18. Concurrency, idempotency, atomicity
 
@@ -263,9 +263,9 @@ The remaining audit findings (below) split into three classes:
 
 The audit followup PRs land into `dev` one section at a time. Sequencing (highest-impact first):
 
-1. ~~**§3.1** — Hebrew street_number regex~~ ✅ closed in `0080`
+1. ~~**§3.1** — Hebrew street_number regex~~ ✅ closed in `0081`
 2. ~~**§4.2** — `client.ts` drop env fallback~~ ✅
-3. **§17.6** — sign-out clears React Query cache *(next)*
+3. ~~**§17.6** — sign-out clears React Query cache~~ ✅
 4. **§17.2** — collapse `mapAuthError` to unified failure code
 5. **§18.1 / §18.2** — chat idempotency + atomic findOrCreateChat
 6. **§3.5 / §3.6** — atomic profile update + typed `ProfileError`
