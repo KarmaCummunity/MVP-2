@@ -11,6 +11,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
 import { colors } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
@@ -32,6 +33,7 @@ import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profi
 import { otherProfileScreenStyles as styles } from '../../../src/components/profile/otherProfileScreen.styles';
 
 export default function OtherProfileScreen() {
+  const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
@@ -96,8 +98,10 @@ export default function OtherProfileScreen() {
 
   if (!u) return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: 'פרופיל' }} />
-      <View style={styles.notFound}><Text style={styles.notFoundText}>משתמש לא נמצא</Text></View>
+      <Stack.Screen options={{ headerTitle: t('profile.otherScreen.headerTitle') }} />
+      <View style={styles.notFound}>
+        <Text style={styles.notFoundText}>{t('profile.otherScreen.userNotFound')}</Text>
+      </View>
     </SafeAreaView>
   );
 
@@ -147,7 +151,7 @@ export default function OtherProfileScreen() {
               ) : null}
               <TouchableOpacity style={styles.msgBtn} onPress={startChat}>
                 <Ionicons name="chatbubble-outline" size={18} color={colors.primary} />
-                <Text style={styles.msgBtnText}>שלח הודעה</Text>
+                <Text style={styles.msgBtnText}>{t('profile.otherScreen.sendMessage')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}

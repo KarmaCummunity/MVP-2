@@ -1,4 +1,4 @@
-// My Profile — "הוסרו" tab (posts removed by admin). Sibling route: ./index.tsx, ./closed.tsx.
+// My Profile — admin-removed posts tab. Sibling routes: ./index.tsx, ./closed.tsx.
 // Mapped to: FR-POST-008 edge-case (owner sees removed_admin posts), TD-131.
 // RLS allows this: is_post_visible_to() returns true when owner_id = viewer.
 import React from 'react';
@@ -6,6 +6,7 @@ import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 import { MyProfileChrome } from '../../../src/components/profile/MyProfileChrome';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
@@ -13,6 +14,7 @@ import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 
 export default function MyProfileRemovedScreen() {
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
 
   const removedPostsQuery = useQuery({
@@ -33,7 +35,7 @@ export default function MyProfileRemovedScreen() {
         <View style={styles.banner}>
           <Ionicons name="shield-outline" size={18} color={colors.textSecondary} />
           <Text style={styles.bannerText}>
-            פוסטים אלה הוסרו על ידי מנהל הקהילה. הם גלויים רק לך.
+            {t('profile.removedBanner')}
           </Text>
         </View>
         <ProfilePostsGrid

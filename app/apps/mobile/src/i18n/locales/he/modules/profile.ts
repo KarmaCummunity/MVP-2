@@ -82,4 +82,55 @@ export const profileHe = {
   // EditProfileAddressBlock
   addressLabel: 'כתובת',
   streetNumberShort: 'מס׳',
+
+  // Removed-tab banner (FR-POST-008 owner-view of removed_admin posts)
+  removedBanner: 'פוסטים אלה הוסרו על ידי מנהל הקהילה. הם גלויים רק לך.',
+
+  // Edit Profile screen (FR-PROFILE-007)
+  editScreen: {
+    loadFailedTitle: 'טעינה נכשלה',
+    saveFailedTitle: 'שמירה נכשלה',
+    unknownError: 'שגיאה לא ידועה',
+    unsavedChangesTitle: 'יש שינויים שלא נשמרו',
+    unsavedChangesMessage: 'אם תצא עכשיו השינויים יאבדו. לצאת בכל זאת?',
+    unsavedChangesDiscard: 'צא בלי לשמור',
+    unsavedChangesCancel: 'ביטול',
+    invalidNameTitle: 'שם לא תקין',
+    invalidNameMessage: 'נא להזין שם בין 1 ל־50 תווים.',
+    missingCityTitle: 'עיר חסרה',
+    missingCityMessage: 'נא לבחור עיר.',
+    incompleteAddressTitle: 'כתובת לא מלאה',
+    incompleteAddressMessageNumber: 'נא למלא גם מספר בית, או למחוק את שם הרחוב.',
+    incompleteAddressMessageStreet: 'נא למלא שם רחוב, או למחוק את מספר הבית.',
+    fullNameLabel: 'שם מלא',
+    fullNamePlaceholder: 'לדוגמה: רינה כהן',
+    biographyLabel: 'ביוגרפיה (אופציונלי)',
+    biographyPlaceholder: 'קצת עליך — בלי קישורים',
+    save: 'שמור',
+  },
+
+  // Other user's profile (FR-PROFILE-002..004)
+  otherScreen: {
+    headerTitle: 'פרופיל',
+    userNotFound: 'משתמש לא נמצא',
+    sendMessage: 'שלח הודעה',
+  },
+
+  // Followers list (FR-PROFILE-009 / FR-PROFILE-010)
+  followersScreen: {
+    headerTitle: 'עוקבים',
+    searchPlaceholder: 'חיפוש לפי שם',
+    empty: 'אין תוצאות',
+    removeFollowerTitle: 'להסיר עוקב?',
+    removeFollowerMessage:
+      '{{name}} לא יראה יותר פוסטים שיועדו לעוקבים בלבד, ולא יקבל על כך הודעה. אם הפרופיל שלך פתוח הם יוכלו לעקוב מחדש מיד; אם הוא פרטי — יצטרכו לשלוח בקשה.',
+    removeFollowerConfirm: 'הסר',
+  },
+
+  // Following list (FR-PROFILE-010)
+  followingScreen: {
+    headerTitle: 'נעקבים',
+    searchPlaceholder: 'חיפוש לפי שם',
+    empty: 'אין תוצאות',
+  },
 } as const;

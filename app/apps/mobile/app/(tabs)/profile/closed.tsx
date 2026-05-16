@@ -1,4 +1,4 @@
-// My Profile — "פוסטים סגורים" tab (closed posts). Sibling route: ./index.tsx.
+// My Profile — closed-posts tab. Sibling route: ./index.tsx.
 // Mapped to: FR-PROFILE-001 AC4 (closed lane), FR-CLOSURE-005 AC4, FR-CLOSURE-008.
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';

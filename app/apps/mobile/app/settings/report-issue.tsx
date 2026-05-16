@@ -33,10 +33,11 @@ export default function ReportIssueScreen() {
       const chat = await container.submitSupportIssue.execute({ category, description: descTrimmed });
       router.replace({ pathname: '/chat/[id]', params: { id: chat.chatId } });
     } catch (err) {
+      const errorTitle = he.settings.reportIssueErrorTitle;
       if (err instanceof ChatError && err.code === 'super_admin_not_found') {
-        setNotify({ title: 'שגיאה', message: t.errorAdminNotFound });
+        setNotify({ title: errorTitle, message: t.errorAdminNotFound });
       } else {
-        setNotify({ title: 'שגיאה', message: t.errorGeneric });
+        setNotify({ title: errorTitle, message: t.errorGeneric });
       }
     } finally {
       setBusy(false);

@@ -5,6 +5,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
@@ -20,6 +21,7 @@ import {
 } from '../../src/services/followComposition';
 
 export default function FollowRequestsScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
@@ -68,14 +70,15 @@ export default function FollowRequestsScreen() {
   return (
     <SafeAreaView style={styles.container}>
       <Stack.Screen
-        options={{ ...detailStackScreenOptions, headerTitle: 'בקשות עוקבים' }}
+        options={{
+          ...detailStackScreenOptions,
+          headerTitle: t('settings.followRequestsScreen.headerTitle'),
+        }}
       />
       {requestsQuery.isLoading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
       ) : (requestsQuery.data?.requests.length ?? 0) === 0 ? (
-        <Text style={styles.empty}>
-          {'אין בקשות ממתינות.\nבקשות חדשות יופיעו כאן.'}
-        </Text>
+        <Text style={styles.empty}>{t('settings.followRequestsScreen.empty')}</Text>
       ) : (
         <View style={styles.list}>
           {requestsQuery.data!.requests.map((r) => (
@@ -104,13 +107,17 @@ export default function FollowRequestsScreen() {
                   style={styles.btnApprove}
                   onPress={() => onResolve(r, 'accept')}
                 >
-                  <Text style={styles.btnApproveText}>אשר</Text>
+                  <Text style={styles.btnApproveText}>
+                    {t('settings.followRequestsScreen.approve')}
+                  </Text>
                 </TouchableOpacity>
                 <TouchableOpacity
                   style={styles.btnReject}
                   onPress={() => onResolve(r, 'reject')}
                 >
-                  <Text style={styles.btnRejectText}>דחה</Text>
+                  <Text style={styles.btnRejectText}>
+                    {t('settings.followRequestsScreen.reject')}
+                  </Text>
                 </TouchableOpacity>
               </View>
             </View>
@@ -119,8 +126,8 @@ export default function FollowRequestsScreen() {
       )}
       <NotifyModal
         visible={errorOpen}
-        title="שגיאה"
-        message="הפעולה נכשלה. נסו שוב."
+        title={t('settings.followRequestsScreen.errorTitle')}
+        message={t('settings.followRequestsScreen.errorMessage')}
         onDismiss={() => setErrorOpen(false)}
       />
     </SafeAreaView>
