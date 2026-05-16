@@ -48,8 +48,8 @@ export interface PostWithOwner extends Post {
   /**
    * Populated when a post is `closed_delivered` and the recipients row was joined.
    * The label rendered on PostDetail depends on `post.type`:
-   *   - Give    → "נמסר ל-{recipientUser.displayName}"
-   *   - Request → "ניתן על-ידי {recipientUser.displayName}"
+   *   - Give    → "delivered to {recipientUser.displayName}"
+   *   - Request → "given by {recipientUser.displayName}"
    * Tap opens /user/{shareHandle}.
    */
   recipientUser: {

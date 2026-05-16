@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-23 + TD-41 + TD-54 + TD-122 closed → rows deleted per delete-on-close policy; merge-conflict residue removed) |
+| **Last Updated** | 2026-05-16 (added TD-153 + TD-154 — Hebrew→i18n migration close-out) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
