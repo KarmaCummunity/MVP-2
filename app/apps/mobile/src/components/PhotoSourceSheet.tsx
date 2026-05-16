@@ -18,6 +18,7 @@ interface Props {
 
 export function PhotoSourceSheet({
   visible, canRemove, onPick, onRemove, onClose }: Props) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
