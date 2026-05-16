@@ -492,10 +492,161 @@ These weren't bugs to patch — they were symptoms of a privacy model the produc
 
 ---
 
+## D-22 — Auth error messages must not enumerate registered emails (2026-05-16)
+
+**Decision.** The email/password sign-in and sign-up surfaces present the same generic outcome regardless of whether the email is registered.
+- **Sign-in failure** (wrong password OR unknown email) → single `authentication_failed` code → Hebrew message: `"לא הצלחנו להתחבר עם הפרטים האלו. בדקו את הדוא"ל והסיסמה ונסו שוב."`
+- **Sign-up** against an email that is already registered → the adapter swallows the underlying `email_already_in_use` error and returns a `null` session, which the use case maps to `pendingVerification: true` and the screen renders the existing "check your email" panel. The user sees the same path they would on a fresh sign-up.
+
+**Rationale.** `SupabaseAuthService.mapAuthError` previously returned distinct `invalid_credentials` vs `email_already_in_use` codes (TD-69, audit 2026-05-10 §17.2). A scripted attacker could probe any address and learn whether it was registered — straightforward email-enumeration oracle. Cost of the fix: a legitimate user who mistypes their email on sign-in no longer sees "this email isn't registered, try sign-up" guidance. UX trade-off accepted because (a) the same outcome on sign-up still routes the user to the verification flow, (b) password reset flow is the canonical "I might not have an account" path, and (c) the alternative leaks security-relevant data on every wrong attempt.
+
+**Implementation.** New `'authentication_failed'` value on `AuthErrorCode` (`packages/application/src/auth/errors.ts`). Adapter `SupabaseAuthService.signInWithEmail` rewrites `invalid_credentials` / `email_already_in_use` to `authentication_failed`. Adapter `signUpWithEmail` short-circuits on `email_already_in_use` and returns `null` (no throw). Hebrew copy added in `services/authMessages.ts`. Closes `TD-69`.
+
+---
+
+## D-23 — Display strings live in the mobile composition root, not in domain/application/infrastructure (2026-05-16)
+
+**Decision.** All user-visible Hebrew strings live in `apps/mobile/src/i18n/locales/he/`. The `domain` layer holds enum *keys* only (`'Furniture'`, `'New'`, …) and never `*_LABELS_HE` maps. The `application` layer never produces display strings (e.g., chat-auto-message templates inline at the mobile call site via the `react-i18next` singleton, not via a use case). The `infrastructure-supabase` layer returns `null` for absent counterparts (`PostWithOwner.ownerName: string | null`, chat `displayName: string | null`); the mobile UI renders `t('common.deletedUser')` at the JSX site.
+
+**Rationale.** The codebase had accumulated Hebrew literals across all four layers, violating CLAUDE.md §5 (Clean Architecture: domain pure, application no I/O, infra returns data not UI). The accumulation made future localization impossible without re-touching the same files and made every cross-layer test of category/condition/owner labels depend on a Hebrew string. Migrating display responsibilities to the composition root restored the invariant, eliminated `BuildAutoMessageUseCase` (which was a one-line template wrapped in a class), and unblocked a future second-language bundle without re-touching domain/application/infrastructure code.
+
+**Rollout.** 9 PRs landed 2026-05-16 against `dev`:
+- Spec + plan (`#237`, `#240`).
+- PR1 — i18n key foundation (`#241`): `common`, `post.category.*`, `post.condition.*`, `chat.autoMessage.initial`.
+- PR2 — domain label removal (`#247`): deleted `CATEGORY_LABELS`, `ITEM_CONDITION_LABELS_HE`; 7 mobile consumers updated.
+- PR3 — `deletedUser` null contract (`#246`): widened `ownerName` / `displayName` to `string | null`; UI fallback.
+- PR4 — `BuildAutoMessageUseCase` deletion (`#245`): inlined `i18n.t('chat.autoMessage.initial', { title })` in `contactPoster.ts`.
+- PR5a-d — UI sweep across 28 screens + `ChatNotFoundView` (`#254`, `#250`, `#253`, `#251`). PR5a additionally split the root `locales/he/index.ts` into `modules/auth.ts` + `modules/onboarding.ts` to keep the 200-LOC cap.
+- Close-out — `BACKLOG.md` flipped to ✅, this entry, two new TDs (`TD-153` reconcile templates, `TD-154` Hebrew-literal lint rule).
+
+Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `docs/superpowers/plans/2026-05-16-hebrew-to-i18n-migration.md`.
+
+**Out of scope, retained.** `infrastructure-supabase/src/search/searchConstants.ts` keeps its Hebrew↔slug map (query-parser vocabulary, not display). `value-objects.ts:STREET_NUMBER_PATTERN` keeps `[A-Za-zא-ת]?` in the regex (data validation, not display). Server-emitted Hebrew in `supabase/migrations/0031_post_closure_emit_system_messages.sql` remains open (tracked as `TD-148`). iOS `Info.plist` permission strings are Hebrew literals (deferred to native `InfoPlist.strings` if/when iOS localization is rationalized — out of scope for this migration).
+
+**Note (2026-05-16):** Scope for *where* copy may live is extended by **D-24** (bilingual MVP + migration indirection). D-23 remains the authoritative split for *layering* (composition root vs domain/application/infrastructure).
+
+---
+
+## D-24 — Bilingual MVP (`he` + `en`) and locale-backed copy everywhere (2026-05-16)
+
+**Decision.** The MVP **includes English** alongside Hebrew. All user-visible strings in the **mobile app** must flow through the i18n system: **stable keys → locale bundles** (under `apps/mobile/src/i18n/locales/he/` and `apps/mobile/src/i18n/locales/en/`, or successor paths agreed in implementation). The same **contract** applies **outside the app tree**: SQL under `supabase/migrations/`, PL/pgSQL, triggers, and any server-side text that reaches users must **not** rely on raw inline natural-language literals as the long-term pattern; they must use **indirection** (e.g. message keys + parameters, with resolved text supplied from the same versioned locale artifacts used by the app and/or Edge Function bundles such as `supabase/functions/*/i18n.json`, or SQL generated from a single copy SSOT). **Implementation of migration refactors and full `en` parity is deferred**; this entry records the target architecture only.
+
+**Rationale.** English-speaking users and English-first contributors need a first-class UI language. Inline Hebrew (or English) in application code or migrations couples copy to code history, bypasses review parity, and blocks consistent localization. Keys + locale files give one audit trail and one place to edit tone.
+
+**Alternatives rejected.** *Hebrew-only product surface for MVP* — conflicts with contributor ergonomics and user growth. *Allow literals in migrations indefinitely* — same coupling problem; SQL may remain transitional but is not exempt from the end-state contract.
+
+**Trade-offs accepted.** Refactoring historical migrations and trigger bodies to key-based copy is expensive; phased delivery after explicit backlog tasks. Until then, the Hebrew literal scan may keep **transitional exclusions** (see `scripts/extract-hebrew-text.mjs` header) so CI stays green while debt is burned down.
+
+**Relationship to D-23.** D-23 fixed *layering* (no display strings in domain/application/infrastructure). D-24 adds **languages** (`en` parity as a product requirement) and **extends the copy contract to the database layer** (keys → locale-backed sources, not raw literals in SQL).
+
+**Affected docs.** This entry; `scripts/extract-hebrew-text.mjs` (policy comment only until tooling tightens). Future updates: `spec/11_settings.md` (language selection), `TECH_DEBT.md` as concrete refactors are filed.
+
+---
+
+## D-25 — `users.display_name` / `city` / `city_name` are nullable; UI applies translated fallback (2026-05-16)
+
+**Decision.** `public.users.display_name`, `public.users.city`, and `public.users.city_name` are **nullable**. `handle_new_user` writes `NULL` for these fields when no signal exists at signup time (e.g. phone-only OTP with no name in metadata). The mobile UI applies a translated fallback at render time: `value ?? t('profile.fallbackName')` and `value ?? t('profile.cityNotSet')`. Onboarding (`pending_basic_info` → `completed`) is the contract that fills these fields with user-provided values.
+
+**Rationale.** Implementation step of `D-24`: the only way to keep SQL migrations free of user-visible Hebrew without breaking the signup contract is to admit that the columns are legitimately unknown during the `pending_basic_info` window. Migration `0084` removes the last user-visible Hebrew literals (`'משתמש'`, `'תל אביב - יפו'`) that previously sat as defaults inside `handle_new_user` and were written into every phone-OTP signup row. Representing absence as `NULL` (not as a hardcoded Hebrew string) lets the FE pick the right copy per locale at render time.
+
+**Alternatives rejected.** *Keep the Hebrew defaults inline* — couples copy to schema and blocks `en` parity (`D-24`). *Add `display_name_en` / `city_name_en` columns* — expands schema indefinitely for a problem that belongs in the FE; the fallback is a presentation concern. *Use a sentinel string (e.g. `'__UNNAMED__'`)* — pushes parsing logic into every consumer instead of leveraging SQL `NULL`.
+
+**Trade-offs accepted.** Every consumer of these columns must tolerate `NULL`. TypeScript catches the call sites in `domain/application/infrastructure` and the mobile app; RPC outputs (`personal_activity_timeline`, `universal_search`, `0047` reports payload) already wrap user fields in shapes that accept `NULL`. Tests that asserted non-null defaults were updated.
+
+**Relationship to D-24.** This is the first concrete migration refactor delivered against `D-24`'s end-state contract for SQL.
+
+**Affected.** `supabase/migrations/0084_user_basic_info_nullable.sql`; `packages/domain/src/entities.ts` (`User`); `packages/infrastructure-supabase/src/users/mapUserRow.ts`, `editableProfileSupabase.ts`, `database.types.ts`; `packages/application/src/ports/IUserRepository.ts`, `IPostRepository.ts`, `posts/SearchUsersForClosureUseCase.ts`; mobile render sites under `apps/mobile/` (edit-profile, user/[handle] screens, RecipientCallout, RecipientPickerRow, UserResultCard, follow-requests); i18n keys `profile.fallbackName` (already present) + `profile.cityNotSet` (new).
+
+---
+
+## D-26 — Post visibility vs per-actor identity on posts (2026-05-16)
+
+**Decision.** Keep `Post.visibility` / `is_post_visible_to` as the **community audience** control for post listings (`FR-POST-009`). Add a separate per-`(post_id, user_id)` policy (`post_actor_identity`) for **how that user's identity is rendered on post surfaces** (feed cards, post detail author/recipient rows) including the **`hide_from_counterparty` third-party mask on the counterparty's profile surface (`D-31`)** and the coupling rule: when the post is `OnlyMe` for the owner, the owner is always anonymous to the counterparty on those surfaces. **Profiles and chat participants** stay real-user shells; chat anchors remain **open posts only** (existing anchor lifecycle).
+
+**Rationale.** Product requires independent axes: a post can be broadly visible while a participant limits how **third parties** see them on the partner's profile surface (`D-31`), and vice versa. Collapsing both into `visibility` would break `FR-POST-009` invariants and blur UX.
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021`), `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md`, migration `0083_post_actor_identity.sql`.
+
+---
+
+## D-27 — About narrative: product transparency vs optional user anonymity (2026-05-16)
+
+**Decision.** In-app About / marketing copy should **not** claim “privacy by default” as a *product value chip* when the product stance is **transparent operation by default** (what the system measures, why, and how safety works). **User-controlled anonymity** (e.g. profile/post visibility choices) is described as an **optional user preference**, not a substitute for product transparency.
+
+**Rationale.** The prior phrasing created cognitive tension with the “open community / transparency” story. Separating *platform transparency* from *personal anonymity choices* keeps trust messaging coherent while still honoring legitimate privacy needs.
+
+**Affected docs.** `docs/SSOT/spec/11_settings.md` (About scope ACs), Hebrew `aboutContent` bundles + FAQ alignment.
+
+---
+
+## D-28 — Per-participant surface visibility for closed posts (2026-05-16)
+
+**Decision.** Closed-post **third-party access is governed per participant**, not by a single `posts.visibility` value. Each `(post_id, user_id)` row in `public.post_actor_identity` carries a `surface_visibility ∈ {Public, FollowersOnly, OnlyMe}` (default `Public`) that gates discoverability *through that participant's surface* (their profile "פוסטים סגורים" tab, and generic post fetch when the viewer is a third party). The owner's `posts.visibility` continues to govern **community discovery for open posts** (`FR-POST-009`) and is **not** the gate for closed-post third-party access. The previously-conflated `exposure` column is renamed to `identity_visibility` and is retained as the **identity-chrome** axis (how this participant's name/avatar appear on post surfaces when the viewer is permitted to see the post), and `hide_from_counterparty` stores a **third-party mask on the counterparty's closed-post profile surface** (see **`D-31`**; DB column name is historical).
+
+**Counterparty read invariant.** `posts.owner_id` and active `recipients.recipient_user_id` rows **always** retain read access to the post regardless of either participant's `surface_visibility`. Surface visibility governs **third-party** access only.
+
+**Coupling rule (audience → identity).** When a participant's `surface_visibility` does not admit viewer V on the participant's own surface, V must also see that participant **anonymously** if V reaches the post via the counterparty's surface. This prevents identity leakage through cross-surface entry while still letting the counterparty's surface broadcast the post.
+
+**Effective third-party access for closed posts.** `is_post_visible_to(post, viewer)` for `closed_delivered` returns true to a non-participant V iff **either** participant's `surface_visibility` admits V. `profile_closed_posts(profile, viewer)` gates each row by the row's own role-actor `surface_visibility` (publisher rows by owner's, respondent rows by respondent's), not by `posts.visibility`.
+
+**Supersedes (in part).** `D-19`'s "*Visibility to third parties is governed by the post's original `visibility` field*" clause for `closed_delivered`. The rest of `D-19` (closed posts shown on both publisher and respondent profiles; per-side economic-role badges; no auto-upgrade on close) stands.
+
+**Refines.** `D-26` by promoting `post_actor_identity` from an identity-only policy to a three-axis per-participant policy (surface_visibility ⟂ identity_visibility ⟂ hide_from_counterparty). **`D-30` (2026-05-16)** collapses MVP UI to audience + counterparty mask only; `identity_visibility` is no longer user-editable in-app (see `FR-POST-021`, migration `0092`).
+
+**Rationale.** The single-`posts.visibility` model gave the publisher unilateral control over the respondent's profile tab — a respondent could not surface a post they were proud of (or, conversely, hide their participation) if the publisher had chosen a different audience. The product rule is *"each participant controls their own surfaces"*. Backward compatibility is preserved because `surface_visibility` defaults to `Public`, which matches the prior public-by-default closed-post behavior; the publisher's `posts.visibility` no longer adds a second filter on top.
+
+**Migration semantics (no behavior regression).** New column `surface_visibility text not null default 'Public'`. Existing `exposure` column renamed to `identity_visibility`; values (`Public` / `FollowersOnly` / `Hidden`) and runtime meaning preserved. No row backfill needed for the new column — `Public` default already matches existing behavior. The new RPC/RLS predicates internally use a `SECURITY DEFINER` SQL helper to avoid the policy-recursion deadlock with `post_actor_identity`'s own SELECT policy that previously referenced `is_post_visible_to`.
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021` rewrite, `FR-POST-017` AC1 amendment); `spec/02_profile_and_privacy.md` (`FR-PROFILE-001` AC4, `FR-PROFILE-002` AC2); `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (addendum); migration `0085_post_actor_identity_audience_split.sql`.
+
+---
+
+## D-29 — Saved-posts list shows only still-visible posts
+
+**Decision.** The My Profile saved-posts list (`FR-PROFILE-016`) returns only posts the viewer can still read under `is_post_visible_to`. Bookmark rows for posts that later become invisible remain in `saved_posts` until the user unsaves or the post is deleted.
+
+**Rationale.** Avoids empty or misleading cards when visibility, follow state, or blocks change after save. Reuses existing RLS on `posts` instead of a separate visibility snapshot.
+
+**Alternatives rejected.**
+
+- *Snapshot visibility at save time.* More complex; stale snapshots could show posts the user should no longer see.
+- *Auto-delete bookmarks when visibility drops.* Surprising UX if the user regains access (e.g. re-follow).
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-022`), `spec/02_profile_and_privacy.md` (`FR-PROFILE-016`); migration `0086_saved_posts.sql`.
+
+---
+
+## D-30 — MVP post-detail privacy: audience + counterparty mask only (2026-05-16)
+
+**Decision.** The post-detail privacy block is **audience-first**: for **open** posts the owner edits `posts.visibility` (`FR-POST-003` / `FR-POST-009`); for **closed** posts each participant edits their own `surface_visibility` (`D-28`). The **only** user-facing identity toggle in MVP besides audience is `hide_from_counterparty`, whose **product semantics** are defined in **`D-31`** (third parties on the counterparty's closed-post profile — not hiding from the counterparty; see also `D-30` supersession note). Per-participant `identity_visibility` (`FollowersOnly` / `Hidden` chrome) is **not** exposed in the mobile UI; client upserts normalize `identity_visibility` to `Public`, and migration `0092_post_actor_identity_public_chrome.sql` clears legacy non-`Public` rows.
+
+**Rationale.** The prior three-level control duplicated the visibility affordance (🌍/👥/🔒) but changed chrome, not audience — users consistently misread it as “who sees the post”. Collapsing MVP UX to audience + one identity toggle matches the mental model while preserving `D-28` closed-post surface rules and `D-26` post-chrome rules. **`D-31`** corrects the original reading of `hide_from_counterparty` as “hide from the partner” — partners already recognize each other in chat; the risk is **other users** browsing the partner's profile.
+
+**Supersedes (in part).** MVP UX scope of the `identity_visibility` axis described in `D-28`'s addendum table; server columns and projection hooks remain for future refinement / surface-coupling. **`D-30`'s** prior sentence that described `hide_from_counterparty` as hiding from the counterparty on post chrome is superseded by **`D-31`**.
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021`); `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (PM revision note); migration `0092_post_actor_identity_public_chrome.sql`; mobile `PostActorPrivacyBar`, `VisibilityChooser`.
+
+---
+
+## D-31 — `hide_from_counterparty` targets third parties on the counterparty's profile surface (2026-05-16)
+
+**Decision.** The boolean `hide_from_counterparty` on `public.post_actor_identity` means: when **true**, **non-participant** viewers who consume the post in the **counterparty's** closed-post **profile** context (the "פוסטים סגורים" grid hosted on the counterparty's user id) see **anonymous** post chrome for this actor. The **counterparty** always sees the actor's **full** identity on post chrome in that context (they already recognize the actor from **chat**, where identity remains real). Neutral entry points (home feed, post detail without a `fromProfile` / listing-host hint, etc.) do **not** apply this flag until a listing-host context is supplied (`D-30` MVP scope: mobile passes the host when navigating from closed-post profile cards).
+
+**Rationale.** The prior interpretation ("hide from the partner on the post") duplicated chat reality and confused Hebrew product copy. The actual privacy need is **strangers** discovering the relationship via **the partner's profile shell**, not hiding from the partner themselves.
+
+**Refines.** `D-28` / `D-30` wording on what `hide_from_counterparty` does; column name stays for migration compatibility.
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021` AC4/AC7, Description); `spec/02_profile_and_privacy.md` (cross-reference); `packages/domain/src/postActorIdentity.ts`; `applyPostActorIdentityProjectionBatch` options; mobile closed-post navigation query `fromProfile`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.1 | 2026-05-16 | Added `D-31` (`hide_from_counterparty` third-party-on-partner-surface semantics); refined `D-30` + `D-28` hide-flag wording. |
+| 2.0 | 2026-05-16 | Added `D-30` (MVP post-detail privacy: audience + counterparty mask; `FR-POST-021`, migration `0092`). |
+| 1.9 | 2026-05-16 | Added `D-29` (saved-posts list filters by current `is_post_visible_to`; `FR-POST-022`, `FR-PROFILE-016`). |
 | 0.1 | 2026-05-05 | Initial decisions log; D-1..D-15. |
 | 0.2 | 2026-05-09 | Added `D-16` (Reintroduce Donations and Search tabs in MVP). |
 | 0.3 | 2026-05-11 | Added `EXEC-7` (closed posts visible on other-user profile — reverses PRD §3.2.2). |
@@ -508,3 +659,9 @@ These weren't bugs to patch — they were symptoms of a privacy model the produc
 | 1.0 | 2026-05-14 | Added `EXEC-10` (push notifications outbox + database-webhook + Edge Function pattern; P1.5 complete). |
 | 1.1 | 2026-05-14 | Added `D-20` (MVP email verification at the auth boundary; supersedes `0046`). |
 | 1.2 | 2026-05-15 | `D-20` follow-up: migration `0068` closes the phone-OTP / provider-aware gap left by `0067`. Trigger now watches both `email_confirmed_at` and `phone_confirmed_at`; OAuth providers (google/apple) skip the transient `pending_verification` state. |
+| 1.3 | 2026-05-16 | Added `D-22` (auth errors must not enumerate registered emails; closes `TD-69`). |
+| 1.4 | 2026-05-16 | Added `D-23` (display strings live in the mobile composition root; `INFRA-I18N-PROD-CODE` ✅). |
+| 1.5 | 2026-05-16 | Added `D-24` (bilingual MVP `he`+`en`; locale-backed copy contract includes migrations/SQL — implementation deferred). |
+| 1.6 | 2026-05-16 | Added `D-25` (`users.display_name`/`city`/`city_name` nullable; migration `0084` removes the Hebrew defaults — first concrete delivery against `D-24`). |
+| 1.7 | 2026-05-16 | Added `D-26` (Post visibility vs per-actor identity on posts; `FR-POST-021`) and `D-27` (About copy: transparency vs optional anonymity). |
+| 1.8 | 2026-05-16 | Added `D-28` (per-participant `surface_visibility` for closed posts; supersedes `D-19`'s third-party visibility clause in part and refines `D-26`; rewrites `FR-POST-021`; migration `0085`). |

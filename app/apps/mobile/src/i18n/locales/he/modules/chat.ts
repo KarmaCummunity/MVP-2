@@ -6,7 +6,6 @@ export const chatHe = {
   inputPlaceholder: 'כתוב הודעה...',
   send: 'שלח',
   read: 'נקרא',
-  defaultFirstMessage: 'היי! ראיתי את הפוסט שלך על {{title}}. מעוניין/ת לדעת עוד.',
   report: 'דווח על שיחה',
   menuDeleteFromInbox: 'הסר מהאינבוקס שלי',
   hideFromInboxTitle: 'להסיר את השיחה מהאינבוקס?',
@@ -14,4 +13,42 @@ export const chatHe = {
     'השיחה תיעלם רק אצלך. אצל הצד השני נשארת ההיסטוריה. הודעה חדשה באותו שרשור עלולה להחזיר אותה לרשימה.',
   hideFromInboxCancel: 'ביטול',
   hideFromInboxConfirm: 'הסר',
+  menuReport: 'דווח על השיחה',
+  minutesAgoShort: "לפני {{count}} דק'",
+
+  // InboxChatRow
+  hideChatA11y: 'הסר שיחה מהאינבוקס',
+
+  // AnchoredPostCard (FR-CHAT-014/015)
+  anchoredOpenA11y: 'פתח את הפוסט',
+  anchoredTypeGive: 'נותן',
+  anchoredTypeRequest: 'מבקש',
+
+  // ReportChatModal (FR-CHAT-010)
+  reportChatTitle: 'דיווח על השיחה',
+  reportChatNotePlaceholder: 'תיאור (אופציונלי, עד 500 תווים)',
+  reportChatDuplicateBody: 'דיווחת על השיחה הזו ב-24 השעות האחרונות.',
+  reportChatSubmitting: '...',
+
+  // Auto chat-message template — moved out of
+  // application/chat/BuildAutoMessageUseCase.ts (Pattern #4). The wording
+  // must match the use case's template exactly because contactPoster.ts
+  // dedupes against the rendered string in the last 50 messages.
+  autoMessage: {
+    initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח שנדבר.',
+  },
+
+  // Chat conversation screen (chat/[id].tsx) — PR5b i18n sweep.
+  headerActionsA11y: 'פעולות',
+  errorTitle: 'שגיאה',
+  hideErrorSupport: 'לא ניתן להסיר את שיחת התמיכה.',
+  hideErrorGeneric: 'לא הצלחנו להסיר את השיחה. נסה שוב.',
+
+  // Chat inbox screen (chat/index.tsx) — PR5b i18n sweep.
+  searchPlaceholder: 'חפש לפי שם...',
+
+  // ChatNotFoundView (components/chat/ChatNotFoundView.tsx) — PR5b i18n sweep.
+  notFoundTitle: 'השיחה לא זמינה',
+  notFoundSubtitle: 'ייתכן שהשיחה נמחקה או שאין לך גישה אליה.',
+  notFoundBack: 'חזרה',
 } as const;

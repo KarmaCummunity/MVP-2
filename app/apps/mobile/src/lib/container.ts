@@ -25,7 +25,7 @@ import {
   MarkChatReadUseCase,
   GetUnreadTotalUseCase,
   GetSupportThreadUseCase,
-  BuildAutoMessageUseCase,
+  SubmitSupportIssueUseCase,
   ReportChatUseCase,
   ReportPostUseCase,
   DeletePostUseCase,
@@ -86,7 +86,7 @@ export const container = {
   markChatRead: new MarkChatReadUseCase(chatRepo),
   getUnreadTotal: new GetUnreadTotalUseCase(chatRepo),
   getSupportThread: new GetSupportThreadUseCase(chatRepo),
-  buildAutoMessage: new BuildAutoMessageUseCase(),
+  submitSupportIssue: new SubmitSupportIssueUseCase(chatRepo),
 
   // Reports
   reportChat: new ReportChatUseCase(reportRepo),

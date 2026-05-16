@@ -2,6 +2,7 @@
 import React, { useState } from 'react';
 import { Image, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import type { DonationLink } from '@kc/domain';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import { openExternalUrl } from '../utils/openExternalUrl';
@@ -21,6 +22,7 @@ function getHost(url: string): string {
 }
 
 export function DonationLinkRow({ link, canRemove, onMenuPress }: Props) {
+  const { t } = useTranslation();
   const host = getHost(link.url);
   const [iconError, setIconError] = useState(false);
   const faviconUrl = `https://www.google.com/s2/favicons?domain=${host}&sz=64`;
@@ -59,7 +61,7 @@ export function DonationLinkRow({ link, canRemove, onMenuPress }: Props) {
       <Pressable
         onPress={() => onMenuPress(link)}
         accessibilityRole="button"
-        accessibilityLabel={canRemove ? 'אפשרויות נוספות' : 'אפשרויות'}
+        accessibilityLabel={canRemove ? t('optionsMenu.more') : t('optionsMenu.default')}
         hitSlop={8}
         style={styles.menuBtn}
       >

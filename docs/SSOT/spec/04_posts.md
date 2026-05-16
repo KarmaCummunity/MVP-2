@@ -1,6 +1,6 @@
 # 2.4 Posts: Create, Edit, Discover
 
-> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility, draft autosave shipped.
+> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. ⚠️ Audit 2026-05-16 (`docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md`): **FR-POST-007 (local draft autosave) is ⏳ unimplemented** — zero code references; status header above was inaccurate. **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
 
 
 
@@ -141,6 +141,8 @@ Publishing a post confirms or warns based on chosen visibility.
 ---
 
 ## FR-POST-007 — Local draft autosave
+
+> **Status:** ⏳ Unimplemented (audit 2026-05-16). Tracked as TD-108; awaiting BACKLOG slot.
 
 **Description.**
 The form persists its state to local storage to survive accidental closure.
@@ -303,10 +305,11 @@ The screen rendered when any non-owner viewer opens a post they are allowed to s
 
 **Acceptance Criteria.**
 - AC1. Renders: image carousel (or large category icon if a request without images), type badge `🎁`/`🔍`, title, category, owner row (avatar + name + city, tap → profile), full description, type-specific fields, computed location string per `location_display_level`, relative timestamp.
-- AC2. Primary CTA: "💬 Send Message to Poster" — opens chat with the contextual auto-message (`FR-CHAT-005`).
+- AC2. When `Post.status === 'open'`, the primary CTA is "💬 Send Message to Poster" — opens chat with the contextual auto-message (`FR-CHAT-005`). See AC6 for non-open posts.
 - AC3. Secondary CTA: dynamic follow button per `FR-FOLLOW-011`.
 - AC4. `⋮` menu: "Report" (`FR-MOD-001`). (Per `EXEC-9`, the "Block User" item is removed from MVP scope.)
 - AC5. If the post is no longer visible to the viewer (e.g., follower removed, post auto-removed) the screen renders an empty state: *"This post is no longer available. It may have been removed or limited to followers only."*
+- AC6. The primary "Send Message to Poster" CTA (`FR-CHAT-005`) is shown only when `Post.status === 'open'`; it is hidden for any non-open lifecycle state (including `closed_delivered`, `expired`, `removed_admin`, etc.).
 
 **Related.** Screens: 2.3 · Domain: `Post`, `LocationDisplayLevel`.
 
@@ -357,7 +360,7 @@ A user marked as the recipient of a `closed_delivered` post sees a special view 
 - Decisions: `D-7`.
 
 **Acceptance Criteria.**
-- AC1. A user picked as the respondent of a `closed_delivered` post sees the post in their own profile's "פוסטים סגורים" tab. The post is **also** visible to other viewers of the respondent's profile, subject to the post's original `visibility` setting (Public / Followers-only / Only-me). The "Remove my recipient mark" CTA remains exclusive to the respondent themselves. (Revised 2026-05-13 per D-19 — reverses the respondent-privacy carve-out previously in D-7.)
+- AC1. A user picked as the respondent of a `closed_delivered` post sees the post in their own profile's "פוסטים סגורים" tab. The post is **also** visible to other viewers of the respondent's profile, subject to the **respondent's** `post_actor_identity.surface_visibility` for that post (Public / FollowersOnly / OnlyMe; default `Public`). The publisher's `posts.visibility` no longer gates third-party access to the closed-post listing — each participant's `surface_visibility` governs their own profile tab independently (`D-28`, supersedes the `D-19` clause that read "subject to the post's original `visibility` setting"). The "Remove my recipient mark" CTA remains exclusive to the respondent themselves.
 - AC2. Detail view renders the post's content read-only with a banner: *"You were marked as the recipient by [owner]."*
 - AC3. CTA: "Remove my recipient mark" (`FR-CLOSURE-007`).
 - AC4. No other actions are available; the recipient cannot reopen or edit the post.
@@ -395,7 +398,7 @@ Address fields are validated for shape only, not against a geocoder.
 **Acceptance Criteria.**
 - AC1. `city` is selected from the canonical seeded list (no free text).
 - AC2. `street` is free text (1–80 chars), trimmed.
-- AC3. `street_number` accepts digits and an optional letter suffix (e.g., `12A`).
+- AC3. `street_number` accepts digits and an optional single-letter suffix. The suffix may be a Latin letter (`12A`, `12B`) or a Hebrew letter (`12א`, `15ב`) to support Israeli street numbering conventions. Punctuation and multi-character suffixes are rejected.
 - AC4. Geocoding to lat/lon is **not** performed in MVP.
 - AC5. The composed display string follows `location_display_level`:
    - `CityOnly` → "Tel Aviv"
@@ -423,7 +426,60 @@ At publish time, an advisory check warns users against posting forbidden categor
 
 ---
 
+## FR-POST-021 — Per-participant audience on closed posts + counterparty identity mask
+
+**Description.**
+Participants control **who may see the post** (audience), not a separate “identity chrome” tier in the MVP UI.
+
+- **Open posts (`status = open`, owner on post detail):** the same three-level control as `FR-POST-003` edits `posts.visibility` (subject to `FR-POST-009` upgrade-only). Shown on the post detail screen for quick changes.
+- **Closed posts (`status = closed_delivered`, owner or marked respondent):** each participant edits their own `post_actor_identity.surface_visibility` (`Public` / `FollowersOnly` / `OnlyMe`, default `Public`) — who, beyond the two participants, can discover the post **through that participant's surface** (their "פוסטים סגורים" profile tab and generic third-party fetch). Changes follow the same **upgrade-only** ordering as post visibility (`FR-POST-009`).
+- **Third-party mask on the counterparty's profile surface (`hide_from_counterparty`):** when a marked respondent exists, each participant may toggle this flag so **non-participant viewers** who discover the post through the **counterparty's** "פוסטים סגורים" profile context see anonymous post chrome for that actor (name / avatar / profile link from the post row). The **counterparty** still sees the actor's real identity on post chrome (they already coordinate in chat, where identity stays real per `FR-POST-021` AC6). The historical column name `hide_from_counterparty` is retained in `public.post_actor_identity`; product semantics are defined in **`D-31`**.
+
+The column `identity_visibility` remains in `public.post_actor_identity` for projection compatibility and is **written as `Public` by the app**; migration `0092_post_actor_identity_public_chrome.sql` normalizes legacy non-`Public` values. Advanced identity-chrome rules (`FollowersOnly` / `Hidden` on chrome only) are **out of MVP UI scope** (`D-30`).
+
+**Source.**
+- Design: `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (original) + addendum (2026-05-16) + PM revision (2026-05-16).
+- Decisions: `D-26`, `D-28`, `D-30`, `D-31`.
+
+**Acceptance Criteria.**
+- AC1. Table `public.post_actor_identity` stores per `(post_id, user_id)`: `surface_visibility ∈ {Public, FollowersOnly, OnlyMe}` (default `Public`), `identity_visibility` (app writes `Public` only in MVP), and `hide_from_counterparty boolean` (default `false`). RLS allows read when the viewer may read the post; write only by the participant for their own row. The SELECT policy uses a `SECURITY DEFINER` helper to avoid recursion with `is_post_visible_to`.
+- AC2. **Counterparty read invariant.** `posts.owner_id` and active `recipients.recipient_user_id` always retain read access to the post regardless of either participant's `surface_visibility`. Surface visibility governs **third-party** access only.
+- AC3. **Closed-post third-party access.** `is_post_visible_to(post, viewer)` for `closed_delivered` returns true to a non-participant `V` iff **either** participant's `surface_visibility` admits `V` (Public always; FollowersOnly iff `V` follows that participant; OnlyMe never for `V`). `profile_closed_posts(profile, viewer)` gates each row by **that row's role-actor** `surface_visibility` (publisher rows by owner's; respondent rows by respondent's) — not by `posts.visibility` (`D-28`).
+- AC4. **Identity projection (pure domain).** `projectActorIdentityForViewer` runs per participant after fetch. The viewer sees full identity unless **(a)** `D-26` coupling: the viewer is the counterparty **and** the owner's `posts.visibility = OnlyMe` (owner anonymized to counterparty on post chrome), **(b)** `D-31` + `hide_from_counterparty`: the viewer is a **third party** (not actor, not counterparty) **and** the hydration context is the counterparty's closed-post profile surface (`identityListingHostUserId = counterparty`), **(c)** legacy non-`Public` `identity_visibility` rows until migration `0092` runs, or **(d)** surface-coupling rules where implemented in the projection pipeline / SQL (`D-28` addendum).
+- AC5. When projection marks an identity as anonymous, post-detail must not offer a one-tap profile deep-link from that row (`ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost = false`).
+- AC6. Chat headers and profile shells remain real-user surfaces; masking applies to **post chrome** only (`D-26`).
+- AC7. **Create-time preference.** The new-post screen lets the publisher set `hide_from_counterparty` before publish. When enabled, the client upserts the owner's `post_actor_identity` row at publish time with `surface_visibility = posts.visibility` (at publish), `identity_visibility = Public`, and `hide_from_counterparty = true` (semantics per **`D-31`** — third parties on the counterparty's closed-post profile surface, not hiding from the counterparty in chat). When disabled, no row is written at create unless the user later changes closed-post surface settings from post detail.
+
+**Migrations.** `0083_post_actor_identity.sql`, `0085_post_actor_identity_audience_split.sql`, `0092_post_actor_identity_public_chrome.sql`.
+
+**Related.** `FR-POST-003`, `FR-POST-009`, `FR-POST-014`, `FR-POST-017` AC1, `FR-PROFILE-001` AC4, `FR-PROFILE-002` AC2, `FR-CLOSURE-005`, `FR-CLOSURE-007`.
+
+---
+
+## FR-POST-022 — Save / unsave post
+
+**Description.**
+A signed-in user may bookmark any post they can currently read (their own or another user's) for later access from My Profile.
+
+**Source.**
+- Product request (2026-05-16); deferred V2 bookmarks revived for MVP bookmark-lite.
+
+**Acceptance Criteria.**
+- AC1. Only authenticated users see save actions (guests have no post ⋮ menu).
+- AC2. The user may save any post that passes `is_post_visible_to` at save time (owner, public, followers-only when following, closed-post rules, etc.).
+- AC3. Post ⋮ menu shows **Save** when not bookmarked and **Remove from saved** when bookmarked (mutually exclusive). Applies to own posts and others' posts.
+- AC4. Save is idempotent (duplicate save is a no-op).
+- AC5. Unsave deletes the bookmark row.
+- AC6. When the underlying post is hard-deleted, bookmark rows are removed via `ON DELETE CASCADE`.
+
+**Related.** Screens: 2.3, 3.1 · Domain: `saved_posts` · Profile list: `FR-PROFILE-016`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
+| 0.5 | 2026-05-16 | `FR-POST-021` — MVP post-detail privacy: audience (`posts.visibility` / `surface_visibility`) + `hide_from_counterparty` only; `identity_visibility` not user-editable in UI (`D-30`, migration `0092`). |
+| 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
+| 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

@@ -7,6 +7,8 @@
 
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { FollowState } from '@kc/application';
 import { ConfirmActionModal } from '../post/ConfirmActionModal';
@@ -32,11 +34,12 @@ interface ButtonCfg {
 export function FollowButton({
   state, cooldownUntil, onPress, busy, interactionDisabled,
 }: FollowButtonProps) {
+  const { t } = useTranslation();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   if (state === 'self') return null;
 
-  const cfg = config(state, cooldownUntil);
+  const cfg = config(state, cooldownUntil, t);
   const disabled = busy || cfg.disabled || Boolean(interactionDisabled);
 
   const handlePress = () => {
@@ -59,7 +62,7 @@ export function FollowButton({
         <Text style={[styles.text, cfg.textStyle]}>{cfg.label}</Text>
         {cfg.subtitle ? <Text style={styles.subtitle}>{cfg.subtitle}</Text> : null}
         {interactionDisabled && !cfg.subtitle ? (
-          <Text style={styles.subtitle}>המשתמש לא זמין למעקב כרגע</Text>
+          <Text style={styles.subtitle}>{t('profile.followUnavailable')}</Text>
         ) : null}
       </TouchableOpacity>
       {cfg.confirm ? (
@@ -77,34 +80,43 @@ export function FollowButton({
   );
 }
 
-function config(state: FollowState, cooldownUntil?: string): ButtonCfg {
+function config(state: FollowState, cooldownUntil: string | undefined, t: TFunction): ButtonCfg {
   switch (state) {
     case 'not_following_public':
-      return { label: '+ עקוב' };
+      return { label: t('profile.followCta') };
     case 'following':
       return {
-        label: 'עוקב ✓',
+        label: t('profile.followingActive'),
         style: styles.btnSecondary,
         textStyle: styles.textSecondary,
-        confirm: { title: 'להפסיק לעקוב?', body: '', cta: 'הפסק לעקוב', destructive: true },
+        confirm: {
+          title: t('profile.unfollowConfirmTitle'),
+          body: '',
+          cta: t('profile.unfollowConfirmCta'),
+          destructive: true,
+        },
       };
     case 'not_following_private_no_request':
-      return { label: '+ שלח בקשה' };
+      return { label: t('profile.followRequestCta') };
     case 'request_pending':
       return {
-        label: 'בקשה נשלחה ⏳',
+        label: t('profile.requestSent'),
         style: styles.btnSecondary,
         textStyle: styles.textSecondary,
-        confirm: { title: 'לבטל את בקשת המעקב?', body: 'תוכלי לשלוח בקשה חדשה בכל עת.', cta: 'בטל בקשה' },
+        confirm: {
+          title: t('profile.cancelRequestTitle'),
+          body: t('profile.cancelRequestBody'),
+          cta: t('profile.cancelRequestCta'),
+        },
       };
     case 'cooldown_after_reject': {
       const days = cooldownUntil ? Math.max(0, Math.ceil(
         (new Date(cooldownUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
       )) : 0;
       return {
-        label: '+ שלח בקשה',
+        label: t('profile.followRequestCta'),
         disabled: true,
-        subtitle: `ניתן לשלוח שוב בעוד ${days} ימים`,
+        subtitle: t('profile.cooldownRetryDays', { days }),
       };
     }
     default: return { label: '' };

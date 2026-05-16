@@ -1,6 +1,6 @@
 # 2.6 Feed, Search & Filters
 
-> **Status:** ✅ Core Complete — Feed, filters, proximity sort, universal search shipped.
+> **Status:** ✅ Core Complete — Feed, filters, proximity sort, universal search shipped. ⚠️ Audit 2026-05-16: Home Feed `onEndReached` not wired → perpetual spinner past page 1 (TD-120 / POST-09); `SearchFilters` domain type lacks shared post-shape dimensions (TD-107 expansion of TD-136); FR-FEED-016 AC6 / FR-FEED-018 AC1 need clarification that shared dimensions live at the type level. See `docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md`.
 
 
 
@@ -59,7 +59,7 @@ What each feed card displays.
 **Acceptance Criteria.**
 - AC1. Always shown: image OR category icon (for image-less Request posts), type badge `🎁`/`🔍`, title, 2-line truncated description with "Read more" affordance, owner row (avatar + name), location string per `Post.location_display_level`, relative timestamp.
 - AC2. Conditional: `👥 Followers only` badge (when applicable to the viewer-owner pair), `🔒 Closed — delivered` badge (only when the user enabled "Include closed posts" filter).
-- AC3. **Never shown in the feed**: posts at visibility `OnlyMe` (regardless of whether the viewer is the owner). Owner sees them in their profile only (`FR-PROFILE-001`).
+- AC3. **Never shown in the feed**: posts at visibility `OnlyMe` (regardless of whether the viewer is the owner). Owner sees them under My Profile `⋮` → Hidden (`FR-PROFILE-001` AC4).
 - AC4. Quick "💬 Send Message" icon visible on cards owned by other users (`FR-POST-018`).
 
 **Related.** Screens: 2.1.

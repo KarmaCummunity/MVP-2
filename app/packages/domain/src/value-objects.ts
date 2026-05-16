@@ -50,14 +50,6 @@ export const ITEM_CONDITIONS: ItemCondition[] = [
   'New', 'LikeNew', 'Good', 'Fair', 'Damaged',
 ];
 
-export const ITEM_CONDITION_LABELS_HE: Record<ItemCondition, string> = {
-  New: 'חדש',
-  LikeNew: 'כמו חדש',
-  Good: 'טוב',
-  Fair: 'בינוני',
-  Damaged: 'שבור/תקול',
-};
-
 export type Category =
   | 'Furniture'
   | 'Clothing'
@@ -69,20 +61,6 @@ export type Category =
   | 'Electronics'
   | 'Tools'
   | 'Other';
-
-// Hebrew labels for UI
-export const CATEGORY_LABELS: Record<Category, string> = {
-  Furniture: 'רהיטים',
-  Clothing: 'בגדים',
-  Books: 'ספרים',
-  Toys: 'משחקים',
-  BabyGear: 'ציוד תינוקות',
-  Kitchen: 'מטבח',
-  Sports: 'ספורט',
-  Electronics: 'חשמל',
-  Tools: 'כלי עבודה',
-  Other: 'אחר',
-};
 
 export const ALL_CATEGORIES: Category[] = [
   'Furniture', 'Clothing', 'Books', 'Toys', 'BabyGear',
@@ -129,7 +107,7 @@ export const RADIUS_OPTIONS_KM: readonly number[] = [5, 10, 25, 50, 100] as cons
 
 export interface Address {
   readonly city: string;   // city slug, e.g. "tel-aviv"
-  readonly cityName: string; // display name, e.g. "תל אביב"
+  readonly cityName: string; // display name (Hebrew label as stored), e.g. Tel Aviv
   readonly street: string;
   readonly streetNumber: string;
 }
@@ -145,10 +123,10 @@ export function createAddress(raw: {
   return { ...raw };
 }
 
-// Street number must be digits, optionally followed by a single Latin letter.
-// Mirrors the DB CHECK on `posts.street_number` in `0002_init_posts.sql`.
-// Keep these two definitions in sync.
-export const STREET_NUMBER_PATTERN = /^[0-9]+[A-Za-z]?$/;
+// Street number: digits + optional Latin/Hebrew letter (mirrors `0081`).
+export const STREET_NUMBER_PATTERN = /^[0-9]+[A-Za-z\u05D0-\u05EA]?$/;
+// Email: 2+ char alphabetic TLD; Supabase is the source of truth (audit §3.3).
+export const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 
 // ── Notification preferences ──────────────────
 
@@ -179,3 +157,21 @@ export const DONATION_LINK_DISPLAY_NAME_MIN = 2;
 export const DONATION_LINK_DISPLAY_NAME_MAX = 80;
 export const DONATION_LINK_DESCRIPTION_MAX = 280;
 export const DONATION_LINK_URL_PATTERN = /^https?:\/\//i;
+
+// ── Biography (FR-PROFILE-007 AC3 / FR-PROFILE-014) ───────────────────
+// The same `BIOGRAPHY_URL_PATTERN` source-of-truth is mirrored in the
+// Postgres CHECK constraint `users_biography_no_url_check` (migration
+// 0073). Edit both together — the regex grammar is intentionally PCRE-
+// portable (no JS-only features) so the Postgres-side
+// `biography !~* '...'` enforces identical semantics.
+export const BIOGRAPHY_MAX_LENGTH = 200;
+export const BIOGRAPHY_URL_PATTERN = /(https?:\/\/|www\.|[\w.-]+\.[a-z]{2,})/i;
+
+/** FR-PROFILE-014 — true when the text contains an http(s) URL, a `www.`
+ *  prefix, or a bare token with a TLD-like suffix. Centralised so the
+ *  UseCase and any future bio-bearing surface (onboarding, etc.) share
+ *  one policy. The server-side CHECK constraint enforces the same
+ *  shape on direct inserts. */
+export function containsBiographyUrl(text: string): boolean {
+  return BIOGRAPHY_URL_PATTERN.test(text);
+}

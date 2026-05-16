@@ -6,17 +6,23 @@
  * role (giver / receiver) from (post.type, identityRole) to render the badge.
  */
 import type { IPostRepository } from '../ports/IPostRepository';
-import type { ProfileClosedPostsItem } from '@kc/domain';
+import type { ProfileClosedPostsItem, ProfileClosedPostsListMode } from '@kc/domain';
 
 export interface GetProfileClosedPostsInput {
   profileUserId: string;
   viewerUserId: string | null;
   limit?: number;
   cursor?: string;
+  /** Default `standard` — main profile Closed tab. `owner_only_me` for Hidden screen. */
+  listMode?: ProfileClosedPostsListMode;
 }
 
 export interface GetProfileClosedPostsOutput {
   items: ProfileClosedPostsItem[];
+  // Pass to the next call's `cursor`. Null when no further pages exist.
+  // The RPC orders by `closed_at desc` with exclusive `<` cursor semantics,
+  // so we feed back the last item's `closedAt`.
+  nextCursor: string | null;
 }
 
 const DEFAULT_LIMIT = 30;
@@ -32,8 +38,11 @@ export class GetProfileClosedPostsUseCase {
       input.viewerUserId,
       limit,
       input.cursor,
+      input.listMode ?? 'standard',
     );
-    return { items };
+    const lastItem = items.length === limit ? items[items.length - 1] : undefined;
+    const nextCursor = lastItem ? lastItem.closedAt : null;
+    return { items, nextCursor };
   }
 }
 

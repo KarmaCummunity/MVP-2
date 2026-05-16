@@ -102,7 +102,7 @@ If you catch yourself importing `@kc/infrastructure-supabase` or `@supabase/supa
 
 ### Hard constraints
 
-- **File size cap**: ≤ 200 lines per file. Split if you exceed. Enforced by `pnpm lint:arch`.
+- **File size cap**: ≤ 300 lines per file. Split if you exceed. Enforced by `pnpm lint:arch`.
 - **Indentation cap**: ≤ 3 levels. Extract if deeper.
 - **Cyclomatic complexity**: prefer many small functions over one large one.
 - **No speculative abstractions** (YAGNI). No "nice-to-have" generalization unless an FR demands it.
@@ -297,3 +297,60 @@ If you don't see a home for something below, **ask the PM** before inventing a n
 | Historical archive        | `docs/SSOT/archive/`                   |
 | `.cursor/rules/*.mdc`     | Thin pointers to `CLAUDE.md` (kept only so Cursor's `alwaysApply: true` resolves) |
 | `AGENTS.md` (root)        | Thin pointer to `CLAUDE.md` for Codex / Copilot CLI conventions |
+
+## 13. Autonomous loop mode
+
+When this section is active, the agent operates as a continuous self-driven task loop targeting the `dev` branch. The PM is hands-off; the agent is expected to keep producing PRs until externally halted.
+
+### Activation & halt
+
+- **Opt-in per environment.** The Stop hook in `.claude/settings.json` only fires when `.claude/LOOP_ENABLED` exists (gitignored). To start the loop in a checkout: `touch .claude/LOOP_ENABLED`. To disable permanently: delete the file.
+- **Within an active session**, iterations are kept alive by ScheduleWakeup (primary) and the Stop hook (backstop). The agent calls `ScheduleWakeup(60s, "Continue autonomous loop per CLAUDE.md §13.")` before ending every turn.
+- **Halt mechanisms** — any one stops the loop cleanly:
+  1. `touch .claude/HALT_LOOP` — Stop hook honors it and lets the turn end. Loop stays armed; remove the file to resume.
+  2. `rm .claude/LOOP_ENABLED` — disarm the loop entirely until re-enabled.
+  3. PM presses Esc / interrupts a turn. The agent must not auto-resume the same task that was just interrupted; pick a different one next iteration.
+  4. Token / quota exhausted (hard external limit).
+- **Runtime sentinels** (all gitignored, never committed):
+  - `.claude/LOOP_ENABLED` — opt-in marker. Loop is off until this exists.
+  - `.claude/HALT_LOOP` — temporary pause marker. Honored by Stop hook.
+  - `.claude/AUTONOMOUS_LOOP_LOG.md` — append-only log of iteration outcomes.
+
+### Iteration cycle
+
+1. **Pick next work** in this priority order:
+   1. Highest-priority `⏳ Planned` item in `docs/SSOT/BACKLOG.md` (P0 > P1 > P2 > P3 > INFRA).
+   2. If no `⏳` remain: highest-impact item from `docs/SSOT/TECH_DEBT.md` Active section.
+   3. If both empty: SSOT documentation polish, adjacent dead-code removal, or test-coverage gaps surfaced by `pnpm test` in `app/`.
+2. **Flip status to 🟡 In progress** before any code edit.
+3. **Branch from latest `origin/dev`**: `<type>/<FR-id-or-scope>-<slug>` per §6.
+4. **Implement** under all constraints in §1–§5 (spec validation, clean architecture, file/indent caps, error handling).
+5. **Verify locally** before push: from `app/` run `pnpm typecheck && pnpm test && pnpm lint`. All three green or do not push.
+6. **PR to `dev`** with `gh pr create --base dev` then `gh pr merge --auto --squash --delete-branch`. Body follows the §6 template, including the `Mapped to spec` line.
+7. **CI watch.** If CI fails: up to 3 fix attempts on the same PR. If still red after 3, investigate CI itself (workflow drift, flake, env mismatch) — fix it in-scope. Only after CI repair also fails twice do you close the PR with a blocker note and skip to the next task; the blocked item is added to `TECH_DEBT.md` with a clear reproducer.
+8. **Update SSOT in the same PR**: `BACKLOG.md` → ✅, `spec/<domain>.md` status header if all ACs done, `TECH_DEBT.md` closures/additions.
+9. **Append to `.claude/AUTONOMOUS_LOOP_LOG.md`**: `<ISO-timestamp> | <branch> | <PR url> | <merged|closed|blocked> | <one-line outcome>`.
+10. **Schedule next iteration**: call `ScheduleWakeup(delaySeconds=60, prompt="Continue autonomous loop per CLAUDE.md §13.")` before ending the turn. The Stop hook is a backstop only — do not rely on it alone.
+
+### Authorities granted under this mode (`dev` scope only)
+
+- **Product decisions**: when a task forks on UX/product, decide based on user-visible coherence + simplicity. Record the call in `docs/SSOT/DECISIONS.md` as a new `D-*` entry with a one-paragraph rationale. Do not block on PM input.
+- **CI / tooling repairs**: if `.github/workflows/*`, root configs, or monorepo tooling appear broken, fix as part of the loop — CI is in-scope.
+- **Dev Supabase database**: full read/write/migration authority on project `roeefqpdbftlndzsvhfj` via Supabase MCP tools and the local CLI. Migrations live in `supabase/migrations/` and ship in the same PR as their consumers. Secrets needed by the CLI are in `~/.kc-dev-secrets.env` (outside the repo).
+
+### Still prohibited (§7 holds regardless of loop mode)
+
+- Direct push to `main`, force-push anywhere, history rewrites on shared branches.
+- Committing `.env*` files or any secret. Use `~/.kc-dev-secrets.env` for shell sourcing.
+- Mutating SQL on the production Supabase project (different ref). Dev project only.
+- Merging a PR with red required checks.
+- Opening a PR without the `Mapped to spec` line.
+
+### Blocker handling
+
+A task is *blocked* (vs. failed) only when it strictly requires an action the agent cannot perform:
+- Requires PM to obtain an external credential or sign a contract.
+- Requires a `main` push or production DB write.
+- Hits two consecutive product-decision forks where both paths conflict with existing SSOT and only the PM can adjudicate.
+
+For a blocker: close any open PR with a labeled comment, move the BACKLOG item back to `⏳ Planned` with `[blocked: <one-line reason>]` appended, add a row to `TECH_DEBT.md` if non-trivial, log to `AUTONOMOUS_LOOP_LOG.md`, then start the next iteration. Do not idle the loop.

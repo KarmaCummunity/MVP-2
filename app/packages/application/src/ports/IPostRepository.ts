@@ -1,4 +1,4 @@
-import type { Post, ProfileClosedPostsItem } from '@kc/domain';
+import type { Post, ProfileClosedPostsItem, ProfileClosedPostsListMode } from '@kc/domain';
 import type {
   Address,
   Category,
@@ -11,6 +11,8 @@ import type {
   PostType,
   PostVisibility,
 } from '@kc/domain';
+
+import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from './postActorIdentity';
 
 /**
  * Filter shape consumed by IPostRepository.getFeed.
@@ -41,20 +43,21 @@ export interface FeedPage {
 }
 
 export interface PostWithOwner extends Post {
-  ownerName: string;
+  ownerName: string | null;
   ownerAvatarUrl: string | null;
   ownerHandle: string;
   ownerPrivacyMode: 'Public' | 'Private';
   /**
    * Populated when a post is `closed_delivered` and the recipients row was joined.
    * The label rendered on PostDetail depends on `post.type`:
-   *   - Give    → "נמסר ל-{recipientUser.displayName}"
-   *   - Request → "ניתן על-ידי {recipientUser.displayName}"
+   *   - Give    → "delivered to {recipientUser.displayName}"
+   *   - Request → "given by {recipientUser.displayName}"
    * Tap opens /user/{shareHandle}.
    */
   recipientUser: {
     userId: string;
-    displayName: string;
+    /** Null during the `pending_basic_info` window (migration 0084). UI renders fallback. */
+    displayName: string | null;
     shareHandle: string;
     avatarUrl: string | null;
   } | null;
@@ -64,12 +67,17 @@ export interface PostWithOwner extends Post {
    * `null` otherwise (or when either side lacks coordinates).
    */
   distanceKm: number | null;
+  /** When false, post-detail must not deep-link to the owner's profile from this post surface. */
+  ownerProfileNavigableFromPost?: boolean;
+  /** When false, post-detail must not deep-link to the recipient's profile from this post surface. */
+  recipientProfileNavigableFromPost?: boolean;
 }
 
 /** FR-CLOSURE-003 AC1/AC2 — chat-partner candidate for the recipient picker. */
 export interface ClosureCandidate {
   userId: string;
-  fullName: string;
+  /** Null during the `pending_basic_info` window (migration 0084). UI renders fallback. */
+  fullName: string | null;
   avatarUrl: string | null;
   cityName: string | null;
   /** ISO timestamp of the latest message in the anchored chat. Used for sort. */
@@ -94,6 +102,11 @@ export interface CreatePostInput {
   itemCondition: ItemCondition | null;
   urgency: string | null;
   mediaAssets: MediaAssetInput[];
+  /**
+   * FR-POST-021 + D-31 — when true, persists `hide_from_counterparty` at publish time so
+   * third-party viewers on the counterparty's closed-post profile surface see anonymous chrome for the owner.
+   */
+  hideFromCounterparty?: boolean;
 }
 
 export interface UpdatePostInput {
@@ -119,7 +132,11 @@ export interface IPostRepository {
   ): Promise<FeedPage>;
 
   // Single post
-  findById(postId: string, viewerId: string | null): Promise<PostWithOwner | null>;
+  findById(
+    postId: string,
+    viewerId: string | null,
+    opts?: { identityListingHostUserId?: string | null },
+  ): Promise<PostWithOwner | null>;
 
   // Mutations
   create(input: CreatePostInput): Promise<Post>;
@@ -147,16 +164,20 @@ export interface IPostRepository {
   //   current status closed_delivered      → RPC `reopen_post_marked` (delete recipient row + status)
   //   current status deleted_no_recipient  → UPDATE status='open', delete_after=null
   reopen(postId: string): Promise<Post>;
+  // FR-CLOSURE-007: recipient removes their own credit (→ deleted_no_recipient, 7d window).
+  unmrkRecipientSelf(postId: string): Promise<void>;
   /** Recipient picker source: distinct chat partners on this post, sorted by latest message recency. */
   getClosureCandidates(postId: string): Promise<ClosureCandidate[]>;
 
-  // User's own posts
+  // User's own posts (audit §3.10 — paginated; was Post[]).
   getMyPosts(
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
-  ): Promise<Post[]>;
+    visibility?: PostVisibility,
+    excludeVisibility?: PostVisibility,
+  ): Promise<{ posts: Post[]; nextCursor: string | null }>;
 
   /**
    * Closed-posts tab on a profile screen.
@@ -176,7 +197,12 @@ export interface IPostRepository {
     viewerUserId: string | null,
     limit: number,
     cursor?: string,
+    listMode?: ProfileClosedPostsListMode,
   ): Promise<ProfileClosedPostsItem[]>;
+
+  /** FR-POST-021 — per-actor identity exposure rows for a post. */
+  listPostActorIdentities(postId: string): Promise<PostActorIdentityRow[]>;
+  upsertPostActorIdentity(input: UpsertPostActorIdentityInput): Promise<void>;
 
   // Stats
   countOpenByUser(userId: string): Promise<number>;

@@ -6,6 +6,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { isOpaqueSystemShareHandle } from '../../lib/shareHandleDisplay';
@@ -25,6 +26,7 @@ export interface ProfileHeaderProps {
 export function ProfileHeader({
   displayName, handle, locationLine, avatarUrl, biography, privacyMode, onLockPress, size = 96,
 }: ProfileHeaderProps) {
+  const { t } = useTranslation();
   const showLock = privacyMode === 'Private';
   return (
     <View style={styles.wrap}>
@@ -32,7 +34,7 @@ export function ProfileHeader({
       <View style={styles.nameRow}>
         <Text style={styles.displayName}>{displayName}</Text>
         {showLock ? (
-          <TouchableOpacity onPress={onLockPress} accessibilityLabel="פרופיל פרטי">
+          <TouchableOpacity onPress={onLockPress} accessibilityLabel={t('profile.privateProfileA11y')}>
             <Ionicons
               name="lock-closed"
               size={18}

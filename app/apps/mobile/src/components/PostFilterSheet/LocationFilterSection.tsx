@@ -1,5 +1,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 import { RADIUS_OPTIONS_KM, type LocationFilter } from '@kc/domain';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { CityPicker } from '../CityPicker';
@@ -12,6 +14,7 @@ interface LocationFilterSectionProps {
 const DEFAULT_RADIUS_KM = 5;
 
 export function LocationFilterSection({ value, onChange }: LocationFilterSectionProps) {
+  const { t } = useTranslation();
   const cityValue = value ? { id: value.centerCity, name: value.centerCityName } : null;
   const radiusKm = value?.radiusKm ?? DEFAULT_RADIUS_KM;
 
@@ -39,18 +42,18 @@ export function LocationFilterSection({ value, onChange }: LocationFilterSection
       <View style={styles.titleRow}>
         {value && (
           <Pressable onPress={handleClearAllCities} hitSlop={8}>
-            <Text style={styles.clearText}>כל הערים</Text>
+            <Text style={styles.clearText}>{t('filters.allCities')}</Text>
           </Pressable>
         )}
-        <Text style={styles.title}>מיקום</Text>
+        <Text style={styles.title}>{t('filters.sectionLocation')}</Text>
       </View>
       <CityPicker value={cityValue} onChange={handleCity} />
       {value && (
         <>
-          <Text style={styles.subLabel}>טווח</Text>
+          <Text style={styles.subLabel}>{t('filters.radius')}</Text>
           <View style={styles.row}>
             {RADIUS_OPTIONS_KM.map((km) => (
-              <RadiusChip key={km} km={km} active={radiusKm === km} onPress={() => handleRadius(km)} />
+              <RadiusChip key={km} km={km} active={radiusKm === km} onPress={() => handleRadius(km)} t={t} />
             ))}
           </View>
         </>
@@ -59,7 +62,7 @@ export function LocationFilterSection({ value, onChange }: LocationFilterSection
   );
 }
 
-function RadiusChip({ km, active, onPress }: { km: number; active: boolean; onPress: () => void }) {
+function RadiusChip({ km, active, onPress, t }: { km: number; active: boolean; onPress: () => void; t: TFunction }) {
   return (
     <Pressable
       onPress={onPress}
@@ -67,7 +70,7 @@ function RadiusChip({ km, active, onPress }: { km: number; active: boolean; onPr
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
     >
-      <Text style={[radiusStyles.text, active && radiusStyles.textActive]}>{km} ק"מ</Text>
+      <Text style={[radiusStyles.text, active && radiusStyles.textActive]}>{t('filters.radiusKm', { km })}</Text>
     </Pressable>
   );
 }

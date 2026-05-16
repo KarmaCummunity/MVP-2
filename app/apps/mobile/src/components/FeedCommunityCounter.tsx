@@ -1,12 +1,12 @@
-// FeedCommunityCounter — small text counter for "{N} פוסטים פעילים בקהילה".
-// Used in the guest banner (FR-FEED-014 + FR-AUTH-014 AC3) and in the warm
-// empty state. Fetched on mount, refreshed every 60 seconds per FR-FEED-014.
+// FeedCommunityCounter — small text counter rendered via a caller-supplied
+// `template(count)` function so the i18n key lives at the call site (guest
+// banner, warm empty state). Mapped to FR-FEED-014 + FR-AUTH-014 AC3.
+// Fetched on mount, refreshed every 60 seconds per FR-FEED-014.
 
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';
-import { useQuery } from '@tanstack/react-query';
 import { colors, typography } from '@kc/ui';
-import { getActivePostsCountUseCase } from '../services/postsComposition';
+import { useActivePostsCount } from '../hooks/useActivePostsCount';
 
 interface FeedCommunityCounterProps {
   template: (count: number) => string;
@@ -14,14 +14,9 @@ interface FeedCommunityCounterProps {
 }
 
 export function FeedCommunityCounter({ template, style }: FeedCommunityCounterProps) {
-  const { data } = useQuery({
-    queryKey: ['communityActivePostsCount'],
-    queryFn: () => getActivePostsCountUseCase().execute(),
-    staleTime: 60_000,
-    refetchInterval: 60_000,
-  });
-  if (typeof data !== 'number') return null;
-  return <Text style={[styles.text, style]}>{template(data)}</Text>;
+  const count = useActivePostsCount();
+  if (count === undefined) return null;
+  return <Text style={[styles.text, style]}>{template(count)}</Text>;
 }
 
 const styles = StyleSheet.create({

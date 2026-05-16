@@ -4,7 +4,7 @@
 // FR-FEED-020 (followers-only scope).
 //
 // State pattern: the sheet keeps a local snapshot of the store so the user
-// can preview changes; "החל" commits, "נקה" resets. This mirrors the
+// can preview changes; "Apply" commits, "Clear" resets. This mirrors the
 // existing SearchFilterSheet UX and avoids feed flicker while picking.
 
 import React, { useState } from 'react';
@@ -17,6 +17,7 @@ import {
   View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import type {
   Category,
   FeedSortOrder,
@@ -58,6 +59,7 @@ export function PostFilterSheet({
   onClear,
   onClose,
 }: PostFilterSheetProps) {
+  const { t } = useTranslation();
   // Local snapshot — Modal stays mounted, so re-seed each time it opens.
   const [draft, setDraft] = useState<PostFilterValue>(initial);
 
@@ -86,9 +88,9 @@ export function PostFilterSheet({
             <Pressable onPress={onClose} hitSlop={12}>
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
-            <Text style={styles.headerTitle}>סינון ומיון</Text>
+            <Text style={styles.headerTitle}>{t('filters.header')}</Text>
             <Pressable onPress={handleClear} hitSlop={8}>
-              <Text style={styles.clearText}>נקה הכל</Text>
+              <Text style={styles.clearText}>{t('filters.clearAll')}</Text>
             </Pressable>
           </View>
 
@@ -128,7 +130,7 @@ export function PostFilterSheet({
           </ScrollView>
 
           <Pressable style={styles.applyBtn} onPress={handleApply}>
-            <Text style={styles.applyText}>החל</Text>
+            <Text style={styles.applyText}>{t('filters.apply')}</Text>
           </Pressable>
         </View>
       </View>

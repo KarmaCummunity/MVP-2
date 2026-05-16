@@ -1,5 +1,7 @@
 export * from './ports/IUserRepository';
 export * from './ports/IPostRepository';
+export * from './ports/ISavedPostsRepository';
+export * from './ports/postActorIdentity';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
@@ -40,17 +42,23 @@ export * from './posts/UpdatePostUseCase';
 export * from './posts/GetPostByIdUseCase';
 export * from './posts/GetMyPostsUseCase';
 export * from './posts/GetProfileClosedPostsUseCase';
+export * from './posts/SavePostUseCase';
+export * from './posts/UnsavePostUseCase';
+export * from './posts/IsPostSavedUseCase';
+export * from './posts/ListSavedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
+export * from './posts/UnmarkRecipientSelfUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
+export { ListPostActorIdentityUseCase, type ListPostActorIdentityInput } from './posts/ListPostActorIdentityUseCase';
+export { UpsertPostActorIdentityUseCase } from './posts/UpsertPostActorIdentityUseCase';
 export * from './posts/AdminRemovePostUseCase';
 export * from './posts/SearchUsersForClosureUseCase';
 
 export * from './auth/DismissClosureExplainerUseCase';
 
 // Chat use cases
-export { BuildAutoMessageUseCase } from './chat/BuildAutoMessageUseCase';
 export { SendMessageUseCase } from './chat/SendMessageUseCase';
 export type { SendMessageInput } from './chat/SendMessageUseCase';
 export { HideChatFromInboxUseCase } from './chat/HideChatFromInboxUseCase';
@@ -61,6 +69,8 @@ export { ListChatsUseCase } from './chat/ListChatsUseCase';
 export { MarkChatReadUseCase } from './chat/MarkChatReadUseCase';
 export { GetUnreadTotalUseCase } from './chat/GetUnreadTotalUseCase';
 export { GetSupportThreadUseCase } from './chat/GetSupportThreadUseCase';
+export { SubmitSupportIssueUseCase } from './chat/SubmitSupportIssueUseCase';
+export type { SubmitSupportIssueInput } from './chat/SubmitSupportIssueUseCase';
 export { ChatError } from './chat/errors';
 export type { ChatErrorCode } from './chat/errors';
 

@@ -1,12 +1,14 @@
 // FR-CLOSURE-004 — one-time educational explainer with "don't show again".
 import { useEffect, useState } from 'react';
 import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import { useClosureStore } from '../../store/closureStore';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 
 export function ClosureExplainerSheet() {
+  const { t } = useTranslation();
   const step = useClosureStore((s) => s.step);
   const postType = useClosureStore((s) => s.postType);
   const dismiss = useClosureStore((s) => s.dismissExplainer);
@@ -59,24 +61,22 @@ export function ClosureExplainerSheet() {
   // Direction flips by post.type. The "give" copy is what was originally
   // shipped; the "request" copy mirrors it for the recipient-side flow.
   const give = postType !== 'Request';
-  const titleText = give ? '✨  תודה שתרמת!' : '✨  תודה שעדכנת!';
+  const titleText = give ? t('closure.explainerGiveTitle') : t('closure.explainerRequestTitle');
   const markedBullet = give
-    ? '• פוסטים שסומנו עם מקבל — נשמרים לתמיד ומופיעים בסטטיסטיקה שלך ושל המקבל.'
-    : '• פוסטים שסומנו עם נותן — נשמרים לתמיד ומופיעים בסטטיסטיקה שלך ושל הנותן.';
+    ? t('closure.explainerGiveMarkedBullet')
+    : t('closure.explainerRequestMarkedBullet');
   const counterBullet = give
-    ? '• בכל מקרה — "פריטים שתרמתי" שלך עולה ב-1.'
-    : '• בכל מקרה — "פריטים שקיבלתי" שלך עולה ב-1.';
+    ? t('closure.explainerGiveCounterBullet')
+    : t('closure.explainerRequestCounterBullet');
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={completeWithoutExplainer}>
       <Pressable style={styles.backdrop} onPress={completeWithoutExplainer}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
           <Text style={styles.title}>{titleText}</Text>
-          <Text style={styles.body}>כך זה עובד:</Text>
+          <Text style={styles.body}>{t('closure.explainerLead')}</Text>
           <Text style={styles.bullet}>{markedBullet}</Text>
-          <Text style={styles.bullet}>
-            • פוסטים שנסגרו בלי לסמן — נשמרים 7 ימים למקרה של טעות, ואז נמחקים אוטומטית.
-          </Text>
+          <Text style={styles.bullet}>{t('closure.explainerMiddleBullet')}</Text>
           <Text style={styles.bullet}>{counterBullet}</Text>
 
           <Pressable
@@ -86,14 +86,14 @@ export function ClosureExplainerSheet() {
             <View style={[styles.checkbox, stayDismissed && styles.checkboxChecked]}>
               {stayDismissed ? <Text style={styles.checkboxMark}>✓</Text> : null}
             </View>
-            <Text style={styles.checkboxLabel}>אל תציג שוב</Text>
+            <Text style={styles.checkboxLabel}>{t('closure.explainerDontShowAgain')}</Text>
           </Pressable>
 
           <Pressable
             onPress={() => dismiss(stayDismissed, userId)}
             style={[styles.btn, styles.btnPrimary]}
           >
-            <Text style={styles.btnPrimaryText}>הבנתי</Text>
+            <Text style={styles.btnPrimaryText}>{t('general.gotIt')}</Text>
           </Pressable>
         </Pressable>
       </Pressable>

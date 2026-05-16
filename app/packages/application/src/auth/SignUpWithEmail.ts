@@ -1,8 +1,8 @@
 /** FR-AUTH-006: Sign up via email + password. */
+import { EMAIL_PATTERN } from '@kc/domain';
 import type { IAuthService, AuthSession } from '../ports/IAuthService';
 import { AuthError } from './errors';
 
-const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 const MIN_PASSWORD_LEN = 8;
 
 export interface SignUpWithEmailInput {
@@ -35,7 +35,7 @@ export class SignUpWithEmailUseCase {
   }
 
   private validate(email: string, password: string): void {
-    if (!EMAIL_RE.test(email)) {
+    if (!EMAIL_PATTERN.test(email)) {
       throw new AuthError('invalid_email', 'invalid_email');
     }
     if (password.length < MIN_PASSWORD_LEN) {

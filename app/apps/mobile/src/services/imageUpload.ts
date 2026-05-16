@@ -6,7 +6,9 @@
 // Avatar pipeline lives in ./avatarUpload.ts.
 // ─────────────────────────────────────────────
 
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
+import i18n from '../i18n';
+import { confirmAction } from './platformConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as Crypto from 'expo-crypto';
@@ -17,6 +19,11 @@ import { base64ToUint8Array } from './mediaEncoding';
 
 const POST_RESIZE_MAX_EDGE = 2048;
 const COMPRESS = 0.85; // JPEG quality (FR-POST-005 AC3)
+// Audit §4.8 — cap the post-resize byte budget so a 50MP camera at q=0.85
+// can't produce a >5 MB JPEG that chews cellular bandwidth + Storage quota.
+// If the first encode is too big, fall back to q=0.6; reject if still over.
+const POST_MAX_BYTES = 5 * 1024 * 1024;
+const POST_FALLBACK_COMPRESS = 0.6;
 const POST_BUCKET = 'post-images';
 
 export interface PickedImage {
@@ -40,14 +47,12 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (result.granted) return true;
   if (result.canAskAgain) return false;
-  Alert.alert(
-    'גישה לגלריה נדחתה',
-    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
-    [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
-    ],
+  const openSettings = await confirmAction(
+    i18n.t('errors.media.galleryDeniedTitle'),
+    i18n.t('errors.media.galleryDeniedBodyPost'),
+    { confirmLabel: i18n.t('errors.media.openSettings') },
   );
+  if (openSettings) void Linking.openSettings();
   return false;
 }
 
@@ -94,16 +99,28 @@ export function buildPostImagePath(userId: string, batchUuid: string, ordinal: n
 
 /**
  * Resize the image to a max-edge size, JPEG-encode, and return raw bytes.
+ * Audit §4.8 — if the encode is over POST_MAX_BYTES, re-encode once at a
+ * lower quality. If still over, reject (a 5 MB JPEG at 2048px is already
+ * implausible for normal photos; rejecting protects cellular users).
  * fetch(file://).blob() is unreliable on iOS — see `mediaEncoding.ts` for context.
  */
 async function resizeImage(uri: string, maxEdge: number): Promise<{ bytes: Uint8Array; sizeBytes: number }> {
-  const manipulated = await ImageManipulator.manipulateAsync(
-    uri,
-    [{ resize: { width: maxEdge } }],
-    { compress: COMPRESS, format: ImageManipulator.SaveFormat.JPEG, base64: true },
-  );
-  if (!manipulated.base64) throw new Error('image_resize: manipulator returned no base64 payload');
-  const bytes = base64ToUint8Array(manipulated.base64);
+  const encode = async (compress: number) => {
+    const r = await ImageManipulator.manipulateAsync(
+      uri,
+      [{ resize: { width: maxEdge } }],
+      { compress, format: ImageManipulator.SaveFormat.JPEG, base64: true },
+    );
+    if (!r.base64) throw new Error('image_resize: manipulator returned no base64 payload');
+    return base64ToUint8Array(r.base64);
+  };
+  let bytes = await encode(COMPRESS);
+  if (bytes.byteLength > POST_MAX_BYTES) {
+    bytes = await encode(POST_FALLBACK_COMPRESS);
+    if (bytes.byteLength > POST_MAX_BYTES) {
+      throw new Error(`image_resize: too large after fallback compress (${bytes.byteLength} > ${POST_MAX_BYTES})`);
+    }
+  }
   return { bytes, sizeBytes: bytes.byteLength };
 }
 

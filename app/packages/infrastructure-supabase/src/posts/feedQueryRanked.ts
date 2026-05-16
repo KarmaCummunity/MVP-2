@@ -22,6 +22,7 @@ import {
   mapPostWithOwnerRow,
   type PostWithOwnerJoinedRow,
 } from './mapPostRow';
+import { applyPostActorIdentityProjectionBatch } from './applyPostActorIdentityProjection';
 
 export interface RankedCursor {
   distanceKm: number | null;
@@ -104,9 +105,11 @@ export async function fetchRankedFeedPage(
   const posts: PostWithOwner[] = [];
   for (const id of ids) {
     const post = byId.get(id);
-    if (!post) continue; // dropped by RLS between calls; skip silently
+    if (!post) continue;
     posts.push({ ...post, distanceKm: distanceById.get(id) ?? null });
   }
+
+  const projected = await applyPostActorIdentityProjectionBatch(client, posts, viewerId);
 
   const last = page[page.length - 1];
   const nextCursor = hasMore && last
@@ -117,5 +120,5 @@ export async function fetchRankedFeedPage(
       })
     : null;
 
-  return { posts, nextCursor };
+  return { posts: projected, nextCursor };
 }

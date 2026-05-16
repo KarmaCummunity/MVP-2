@@ -5,6 +5,7 @@
 // like one component family.
 
 import { Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 
 interface Props {
@@ -15,15 +16,17 @@ interface Props {
   onDismiss: () => void;
 }
 
-export function NotifyModal({ visible, title, message, ctaLabel = 'הבנתי', onDismiss }: Props) {
+export function NotifyModal({ visible, title, message, ctaLabel, onDismiss }: Props) {
+  const { t } = useTranslation();
+  const label = ctaLabel ?? t('general.gotIt');
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onDismiss}>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
           <Text style={styles.title}>{title}</Text>
           <Text style={styles.message}>{message}</Text>
-          <Pressable style={styles.btn} onPress={onDismiss} accessibilityLabel={ctaLabel}>
-            <Text style={styles.btnText}>{ctaLabel}</Text>
+          <Pressable style={styles.btn} onPress={onDismiss} accessibilityLabel={label}>
+            <Text style={styles.btnText}>{label}</Text>
           </Pressable>
         </View>
       </View>

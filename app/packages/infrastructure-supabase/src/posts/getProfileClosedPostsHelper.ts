@@ -5,7 +5,7 @@
 // Mapped to FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised).
 
 import type { SupabaseClient } from '@supabase/supabase-js';
-import type { Post, ProfileClosedPostsItem } from '@kc/domain';
+import type { Post, ProfileClosedPostsItem, ProfileClosedPostsListMode } from '@kc/domain';
 import { POST_SELECT_BARE, mapPostRow, type PostJoinedRow } from './mapPostRow';
 
 const HARD_MAX_LIMIT = 100;
@@ -16,6 +16,7 @@ export async function getProfileClosedPostsHelper(
   viewerUserId: string | null,
   limit: number,
   cursor?: string,
+  listMode: ProfileClosedPostsListMode = 'standard',
 ): Promise<ProfileClosedPostsItem[]> {
   const safeLimit = Math.max(1, Math.min(limit, HARD_MAX_LIMIT));
 
@@ -25,6 +26,7 @@ export async function getProfileClosedPostsHelper(
     p_viewer_user_id: viewerUserId, // RPC accepts NULL for anon viewers.
     p_limit: safeLimit,
     p_cursor: cursor ?? null,
+    p_list_mode: listMode,
   });
   if (rpcError) throw new Error(`getProfileClosedPosts: ${rpcError.message}`);
   const rpcRows = (rows ?? []) as Array<{
@@ -57,7 +59,7 @@ export async function getProfileClosedPostsHelper(
   for (const r of rpcRows) {
     const post = byId.get(r.post_id);
     if (!post) continue;
-    items.push({ post, identityRole: r.identity_role });
+    items.push({ post, identityRole: r.identity_role, closedAt: r.closed_at });
   }
   return items;
 }

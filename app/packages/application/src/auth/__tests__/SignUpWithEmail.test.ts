@@ -33,6 +33,20 @@ describe('SignUpWithEmailUseCase', () => {
     ).rejects.toMatchObject({ code: 'invalid_email' } satisfies Partial<AuthError>);
   });
 
+  // Audit §3.3 — strings the old permissive regex accepted but Supabase would
+  // bounce. Confirmation emails to these never deliver, leaving the user
+  // stuck in email_confirmation_pending.
+  it.each([
+    ['single-char TLD', 'a@b.c'],
+    ['double-@', 'user@@x.co'],
+    ['trailing dot in TLD', 'a@b.co.'],
+  ])('rejects %s (audit §3.3)', async (_label, email) => {
+    const uc = new SignUpWithEmailUseCase(new FakeAuthService());
+    await expect(uc.execute({ email, password: 'pass1word' })).rejects.toMatchObject({
+      code: 'invalid_email',
+    } satisfies Partial<AuthError>);
+  });
+
   it('rejects password < 8 chars (FR-AUTH-006 AC1)', async () => {
     const uc = new SignUpWithEmailUseCase(new FakeAuthService());
     await expect(

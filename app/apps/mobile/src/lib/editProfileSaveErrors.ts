@@ -1,11 +1,19 @@
-/** Maps UpdateProfileUseCase / adapter error codes to Hebrew alerts. */
+import i18n from '../i18n';
+
+/** Maps UpdateProfileUseCase / adapter error codes to user-visible messages. */
 export function mapEditProfileSaveError(code: string): string {
-  if (code.includes('invalid_display_name')) return 'שם לא תקין (1–50 תווים).';
-  if (code.includes('biography_too_long')) return 'הביוגרפיה ארוכה מדי (≤200 תווים).';
-  if (code.includes('biography_url_forbidden')) return 'הביוגרפיה לא יכולה להכיל קישור.';
-  if (code.includes('invalid_city')) return 'עיר לא תקינה.';
-  if (code.includes('incomplete_profile_address')) return 'נא למלא רחוב ומספר בית, או להשאיר את שניהם ריקים.';
-  if (code.includes('invalid_profile_street')) return 'שם רחוב לא תקין (1–80 תווים).';
-  if (code.includes('invalid_profile_street_number')) return 'מספר בית לא תקין (ספרות, אות אחת בסוף אופציונלי).';
-  return code;
+  // Order matters: keys are matched via `code.includes(k)` and the first hit
+  // wins. Longer keys MUST precede their prefixes so e.g.
+  // `invalid_profile_street_number` is not shadowed by `invalid_profile_street`.
+  const keys: Record<string, string> = {
+    invalid_profile_street_number: 'errors.profile.invalid_profile_street_number',
+    invalid_profile_street: 'errors.profile.invalid_profile_street',
+    incomplete_profile_address: 'errors.profile.incomplete_profile_address',
+    invalid_display_name: 'errors.profile.invalid_display_name',
+    biography_too_long: 'errors.profile.biography_too_long',
+    biography_url_forbidden: 'errors.profile.biography_url_forbidden',
+    invalid_city: 'errors.profile.invalid_city',
+  };
+  const match = Object.keys(keys).find((k) => code.includes(k));
+  return match ? i18n.t(keys[match]!) : code;
 }

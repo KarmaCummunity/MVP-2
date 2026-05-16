@@ -4,7 +4,6 @@
 // These are pure functions — no I/O, no imports from infrastructure.
 // ─────────────────────────────────────────────
 
-import type { Post, User } from './entities';
 import type { PostVisibility } from './value-objects';
 
 // ── Visibility / Privacy ──────────────────────
@@ -26,39 +25,18 @@ export function canUpgradeVisibility(
 }
 
 /**
- * Allowed visibility transitions after publish.
- */
-export function allowedVisibilityTransitions(
-  current: PostVisibility,
-  profilePrivate: boolean,
-): PostVisibility[] {
-  if (current === 'Public') return [];
-  if (current === 'FollowersOnly') return ['Public'];
-  // OnlyMe
-  const targets: PostVisibility[] = ['Public'];
-  if (profilePrivate) targets.unshift('FollowersOnly');
-  return targets;
-}
-
-/**
  * INV-L1: Active post limit per user.
+ * Enforced server-side by `posts_enforce_active_cap` trigger (migration 0002).
  * Mapped to: R-MVP-Items-8, R-MVP-Items-14
  */
 export const MAX_ACTIVE_POSTS = 20;
 
-export function canCreatePost(user: Pick<User, 'activePostsCountInternal'>): boolean {
-  return user.activePostsCountInternal < MAX_ACTIVE_POSTS;
-}
-
 /**
  * INV-C3: Excessive reopens trigger moderation queue.
+ * Enforced server-side by `posts_after_update_reopen_count` trigger (migration 0005).
  * Mapped to: R-MVP-Items-7
  */
 export const REOPEN_SUSPECT_THRESHOLD = 5;
-
-export function isReopenSuspect(post: Pick<Post, 'reopenCount'>): boolean {
-  return post.reopenCount >= REOPEN_SUSPECT_THRESHOLD;
-}
 
 /**
  * INV-L2: Max media assets per post.

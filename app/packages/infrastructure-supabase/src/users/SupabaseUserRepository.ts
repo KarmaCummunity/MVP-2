@@ -15,8 +15,14 @@ import {
   supabaseMarkBasicInfoSkipped,
   supabaseSetBasicInfo,
 } from './onboardingSupabase';
-import { supabaseGetEditableProfile, supabaseSetProfileAddressLines } from './editableProfileSupabase';
+import {
+  supabaseGetEditableProfile,
+  supabaseSetProfileAddressLines,
+  supabaseUpdateEditableProfile,
+  type EditableProfilePatch,
+} from './editableProfileSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
+import { fetchUserBy } from './fetchUserBy';
 import { searchUsers } from './searchUsers';
 import {
   followEdge,
@@ -123,6 +129,10 @@ export class SupabaseUserRepository implements IUserRepository {
     return supabaseSetProfileAddressLines(this.client, userId, street, streetNumber);
   }
 
+  updateEditableProfile(userId: string, patch: EditableProfilePatch): Promise<void> {
+    return supabaseUpdateEditableProfile(this.client, userId, patch);
+  }
+
   getEditableProfile(userId: string) {
     return supabaseGetEditableProfile(this.client, userId);
   }
@@ -130,25 +140,10 @@ export class SupabaseUserRepository implements IUserRepository {
   // ── Methods deferred to later slices ─────────────────────────────────────
 
   async findById(userId: string): Promise<User | null> {
-    return this.fetchUserBy('user_id', userId);
+    return fetchUserBy(this.client, 'user_id', userId);
   }
   async findByHandle(handle: string): Promise<User | null> {
-    return this.fetchUserBy('share_handle', handle);
-  }
-
-  /** Shared helper: SELECT * FROM users WHERE <col> = <value>, mapped to domain. */
-  private async fetchUserBy(
-    column: 'user_id' | 'share_handle',
-    value: string,
-  ): Promise<User | null> {
-    const { data, error } = await this.client
-      .from('users')
-      .select('*')
-      .eq(column, value)
-      .maybeSingle();
-    if (error) throw new Error(`fetchUserBy(${column}): ${error.message}`);
-    if (!data) return null;
-    return mapUserRow(data as unknown as UserRow);
+    return fetchUserBy(this.client, 'share_handle', handle);
   }
   async create(): Promise<never> {
     throw NOT_IMPL('create', 'auto-created by handle_new_user trigger');

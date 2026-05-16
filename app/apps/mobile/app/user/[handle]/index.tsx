@@ -11,31 +11,34 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
+import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
 import { colors } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
-import { ProfileTabs, type ProfileTab } from '../../../src/components/profile/ProfileTabs';
+import { ProfileTabs, type ProfilePostsTab } from '../../../src/components/profile/ProfileTabs';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
-import { container } from '../../../src/lib/container';
-import { consumePreferNewThread } from '../../../src/lib/chatNavigationPrefs';
 import { getUserRepo } from '../../../src/services/userComposition';
-import { getPostRepo, getMyPostsUseCase, getProfileClosedPostsUseCase } from '../../../src/services/postsComposition';
+import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
+import { useOtherProfileActions } from '../../../src/hooks/useOtherProfileActions';
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
 import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profileTabSession';
 import { otherProfileScreenStyles as styles } from '../../../src/components/profile/otherProfileScreen.styles';
+import { nativeStackHeaderRightIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
 export default function OtherProfileScreen() {
+  const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
-  const [activeTab, setActiveTab] = React.useState<ProfileTab>(() =>
+  const [activeTab, setActiveTab] = React.useState<ProfilePostsTab>(() =>
     getRestoredProfileTab({ otherHandle: handle ?? '' }),
   );
   // ✅ RULES OF HOOKS: must be declared here, before any early return.
@@ -85,15 +88,10 @@ export default function OtherProfileScreen() {
     enabled: Boolean(u?.userId) && activeTab === 'open',
   });
 
-  const closedPostsQuery = useQuery({
-    queryKey: ['profile-other-closed-posts', u?.userId, me],
-    queryFn: () =>
-      getProfileClosedPostsUseCase().execute({
-        profileUserId: u!.userId,
-        viewerUserId: me ?? null,
-        limit: 30,
-      }),
-    enabled: Boolean(u?.userId) && activeTab === 'closed',
+  const closed = useProfileClosedPosts({
+    profileUserId: u?.userId,
+    viewerUserId: me ?? null,
+    enabled: activeTab === 'closed',
   });
 
   if (!handle || userQuery.isLoading)
@@ -101,47 +99,35 @@ export default function OtherProfileScreen() {
 
   if (!u) return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: 'פרופיל' }} />
-      <View style={styles.notFound}><Text style={styles.notFoundText}>משתמש לא נמצא</Text></View>
+      <Stack.Screen options={{ headerTitle: t('profile.otherScreen.headerTitle') }} />
+      <View style={styles.notFound}>
+        <Text style={styles.notFoundText}>{t('profile.otherScreen.userNotFound')}</Text>
+      </View>
     </SafeAreaView>
   );
 
-  // (hooks moved above — see top of component)
-  const onFollowPress = () => {
-    const s = followInfo?.state;
-    if (s === 'not_following_public') dispatchFollowAction('follow');
-    else if (s === 'following') dispatchFollowAction('unfollow');
-    else if (s === 'not_following_private_no_request') dispatchFollowAction('send');
-    else if (s === 'request_pending') dispatchFollowAction('cancel');
-  };
+  const { onFollowPress, startChat } = useOtherProfileActions({ me, target: u, dispatchFollowAction });
 
-  const startChat = async () => {
-    if (!me) return;
-    const preferNewThread = consumePreferNewThread(u.userId);
-    const chat = await container.openOrCreateChat.execute({
-      viewerId: me,
-      otherUserId: u.userId,
-      preferNewThread,
-    });
-    router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
-  };
-
-  // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
+  // CTA paints immediately during stateQuery flight. On error we keep the button
+  // visible but busy/disabled so a transient failure can't double-tap-fire.
   const followState = followInfo?.state ?? 'not_following_public';
-  // Show the button for any non-self authenticated user.
-  // If the query errored, we keep the button visible but in busy/disabled state
-  // — hiding it entirely is confusing UX.
   const showFollowButton = Boolean(me) && !isMe;
-  // Busy = loading OR error (prevent double-tap on transient failure).
   const followBusy = stateQuery.isLoading || stateQuery.isError;
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: '', headerRight: !isMe ? () => <ProfileOverflowMenu targetUserId={u.userId} /> : undefined }} />
+      <Stack.Screen
+        options={{
+          headerTitle: '',
+          ...(!isMe
+            ? nativeStackHeaderRightIconOnly(() => <ProfileOverflowMenu targetUserId={u.userId} />)
+            : { headerRight: undefined }),
+        }}
+      />
       <ScrollView>
         <View style={styles.card}>
           <ProfileHeader
-            displayName={u.displayName}
+            displayName={u.displayName ?? t('profile.fallbackName')}
             handle={u.shareHandle}
             locationLine={formatUserLocationLine(u)}
             avatarUrl={u.avatarUrl}
@@ -165,7 +151,7 @@ export default function OtherProfileScreen() {
                   <FollowButton
                     state={followState}
                     cooldownUntil={followInfo?.cooldownUntil}
-                    onPress={onFollowPress}
+                    onPress={() => onFollowPress(followInfo?.state)}
                     busy={followBusy}
                     interactionDisabled={followInfo?.followInteractionDisabled}
                   />
@@ -173,7 +159,7 @@ export default function OtherProfileScreen() {
               ) : null}
               <TouchableOpacity style={styles.msgBtn} onPress={startChat}>
                 <Ionicons name="chatbubble-outline" size={18} color={colors.primary} />
-                <Text style={styles.msgBtnText}>שלח הודעה</Text>
+                <Text style={styles.msgBtnText}>{t('profile.otherScreen.sendMessage')}</Text>
               </TouchableOpacity>
             </View>
           ) : null}
@@ -194,9 +180,13 @@ export default function OtherProfileScreen() {
           />
         ) : (
           <ProfileClosedPostsGrid
-            items={closedPostsQuery.data?.items ?? []}
-            isLoading={closedPostsQuery.isLoading}
+            items={closed.items}
+            isLoading={closed.isLoading}
             empty="other_closed"
+            hasMore={closed.hasMore}
+            isLoadingMore={closed.isLoadingMore}
+            onLoadMore={closed.loadMore}
+            profileUserId={u.userId}
           />
         )}
       </ScrollView>

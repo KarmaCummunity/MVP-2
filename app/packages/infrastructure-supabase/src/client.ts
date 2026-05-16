@@ -8,6 +8,25 @@ import type { Database } from './database.types';
 
 let _client: SupabaseClient<Database> | null = null;
 
+// Singleton callback invoked when a PostgREST call returns 403 (RLS forbidden).
+// Bound by AuthGate after mount so the router is available. Provides near-instant
+// ban detection without waiting for the 60s poll (TD-149).
+const _onForbidden: { current: (() => void) | null } = { current: null };
+
+export function setOnForbiddenCallback(fn: (() => void) | null): void {
+  _onForbidden.current = fn;
+}
+
+function bannedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  return fetch(input, init).then((res) => {
+    if (res.status === 403) {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+      if (url.includes('/rest/v1/')) _onForbidden.current?.();
+    }
+    return res;
+  });
+}
+
 /** AsyncStorage-shaped adapter (RN) or compatible sync storage. */
 export type SupabaseAuthStorage = {
   getItem: (key: string) => Promise<string | null> | string | null;
@@ -29,17 +48,24 @@ export function getSupabaseClient(options?: {
 }): SupabaseClient<Database> {
   if (_client) return _client;
 
+  // Audit 2026-05-10 §4.2: only EXPO_PUBLIC_* is inlined by Metro into the
+  // mobile bundle. A non-prefixed fallback (`SUPABASE_URL`) never fires
+  // on-device — but in a Node test/CI context it can resolve to a different
+  // secret than EXPO_PUBLIC_SUPABASE_URL, causing silent test↔prod divergence.
+  // Edge Functions create their own client via Deno.env directly and don't
+  // consume this factory, so dropping the fallback is safe.
   const url = options?.url ?? (typeof process !== 'undefined'
-    ? (process.env['EXPO_PUBLIC_SUPABASE_URL'] ?? process.env['SUPABASE_URL'] ?? '')
+    ? (process.env['EXPO_PUBLIC_SUPABASE_URL'] ?? '')
     : '');
 
   const anonKey = options?.anonKey ?? (typeof process !== 'undefined'
-    ? (process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'] ?? process.env['SUPABASE_ANON_KEY'] ?? '')
+    ? (process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'] ?? '')
     : '');
 
   if (!url || !anonKey) {
     throw new Error(
-      'Supabase: EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set.'
+      'Supabase configuration missing: both EXPO_PUBLIC_SUPABASE_URL and ' +
+      'EXPO_PUBLIC_SUPABASE_ANON_KEY must be set (or passed via options).',
     );
   }
 
@@ -53,6 +79,7 @@ export function getSupabaseClient(options?: {
       flowType: 'pkce',
       ...(options?.storage ? { storage: options.storage } : {}),
     },
+    global: { fetch: bannedFetch },
   });
 
   return _client;

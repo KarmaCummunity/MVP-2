@@ -1,6 +1,6 @@
 # 2.7 Direct Messaging
 
-> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat, **personal inbox hide (FR-CHAT-016)** shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only).
+> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat, **personal inbox hide (FR-CHAT-016)** shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only). ⚠️ Audit 2026-05-16: `messages_insert_user` regression (lost `removed_at` guard + missing `has_blocked` — TD-67 / TD-75, BACKLOG P2.12); FR-CHAT-013 AC1 silent on deleted-counterpart dedupe; FR-CHAT-016 AC4 silent on tie-break. See `docs/SSOT/audit/2026-05-16/04_chat_notifications.md`.
 
 
 
@@ -60,7 +60,7 @@ The list of all of my conversations, sorted by latest activity.
 
 **Acceptance Criteria.**
 - AC1. Header: back button, counterpart avatar + name, `⋮` menu (`View profile`, `Block`, `Report conversation`).
-- AC2. Body: message bubbles (mine right-aligned in LTR, left-aligned in RTL; opposite for counterpart). Each bubble shows timestamp on tap.
+- AC2. Body: message bubbles (mine right-aligned in LTR, left-aligned in RTL; opposite for counterpart). Each bubble shows timestamp on tap (includes a short date when the message is not from the current local calendar day). A centered **day separator** (today / yesterday / full weekday date) is shown between messages when the thread crosses into a new local calendar day so the hour-only default is not ambiguous.
 - AC3. Composer: single-line auto-growing text input + send button. **No** attachment buttons (`R-MVP-Chat-2`).
 - AC4. Read receipt: a `✓✓` indicator is shown next to a sent message once the counterpart's client confirms reading. Read receipts cannot be turned off in MVP (`R-MVP-Chat-5`).
 - AC5. Maximum message length: 2,000 characters. Inputs longer are blocked with an inline counter.

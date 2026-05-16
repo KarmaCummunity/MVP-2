@@ -1,37 +1,97 @@
 // Post detail — wired to live IPostRepository (P0.4-FE).
-// Mapped to: FR-POST-014, FR-POST-015, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
-import React from 'react';
-import {
-  ActivityIndicator, ScrollView, StyleSheet, Text, TouchableOpacity, View,
-} from 'react-native';
+// Mapped to: FR-POST-014, FR-POST-015, FR-POST-021, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
+import React, { useCallback, useState } from 'react';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
-import { colors, radius, spacing, typography } from '@kc/ui';
-import { CATEGORY_LABELS, ITEM_CONDITION_LABELS_HE } from '@kc/domain';
-import { AvatarInitials } from '../../src/components/AvatarInitials';
+import { useTranslation } from 'react-i18next';
+import type { PostWithOwner } from '@kc/application';
+import { colors } from '@kc/ui';
 import { EmptyState } from '../../src/components/EmptyState';
-import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import { contactPoster } from '../../src/lib/contactPoster';
+import { postOwnerDisplayLabel } from '../../src/lib/postOwnerDisplayLabel';
+import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
-import { PostMenuButton } from '../../src/components/post/PostMenuButton';
-import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
+import { PostDetailScrollContent } from './PostDetailScrollContent';
+import { styles } from './postDetailScreen.styles';
+
+function normalizeRoutePostId(raw: string | string[] | undefined): string | undefined {
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof id !== 'string') return undefined;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return undefined;
+  return trimmed;
+}
+
+function normalizeOptionalUserId(raw: string | string[] | undefined): string | null {
+  const id = Array.isArray(raw) ? raw[0] : raw;
+  if (typeof id !== 'string') return null;
+  const trimmed = id.trim();
+  if (!trimmed || trimmed === 'null' || trimmed === 'undefined') return null;
+  return trimmed;
+}
+
+function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string): string {
+  if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
+  if (post.locationDisplayLevel === 'CityAndStreet')
+    return `${post.address.cityName}, ${t('post.detail.streetPrefix')} ${post.address.street}`;
+  return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
+}
+
+function postDetailShowActorPrivacy(
+  viewerId: string | null,
+  isOwner: boolean,
+  post: PostWithOwner,
+  isRecipientMarked: boolean,
+): boolean {
+  return viewerId != null && (isOwner || (post.status === 'closed_delivered' && isRecipientMarked));
+}
 
 export default function PostDetailScreen() {
-  const { id } = useLocalSearchParams<{ id: string }>();
+  const { id: rawId, fromProfile: rawFromProfile } = useLocalSearchParams<{
+    id?: string | string[];
+    fromProfile?: string | string[];
+  }>();
+  const postIdParam = normalizeRoutePostId(rawId);
+  const identityListingHostUserId = normalizeOptionalUserId(rawFromProfile);
   const router = useRouter();
+  const { t } = useTranslation();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
 
   const query = useQuery({
-    queryKey: ['post', id, viewerId],
-    queryFn: () => getPostByIdUseCase().execute({ postId: id ?? '', viewerId }),
-    enabled: Boolean(id),
+    queryKey: ['post', postIdParam, viewerId, identityListingHostUserId ?? ''],
+    queryFn: () =>
+      getPostByIdUseCase().execute({
+        postId: postIdParam ?? '',
+        viewerId,
+        identityListingHostUserId,
+      }),
+    enabled: Boolean(postIdParam),
   });
+
+  const [contactPosterBusy, setContactPosterBusy] = useState(false);
+  const onOpenPosterChat = useCallback(async () => {
+    if (!viewerId) return;
+    const p = query.data?.post;
+    if (!p) return;
+    setContactPosterBusy(true);
+    try {
+      await contactPoster(viewerId, p, router);
+    } finally {
+      setContactPosterBusy(false);
+    }
+  }, [viewerId, query.data?.post, router]);
+
+  const exitAfterOwnerMutation = (messageKey: 'closure.detailCloseSuccessToast' | 'closure.detailReopenSuccessToast') => {
+    useFeedSessionStore.getState().showEphemeralToast(t(messageKey), 'success', 2200);
+    if (router.canGoBack()) router.back();
+    else router.replace('/(tabs)');
+  };
 
   if (query.isLoading) {
     return (
@@ -43,9 +103,9 @@ export default function PostDetailScreen() {
   if (query.isError) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorTitle}>שגיאה בטעינת הפוסט</Text>
+        <Text style={styles.errorTitle}>{t('post.detail.loadErrorTitle')}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => query.refetch()}>
-          <Text style={styles.retryText}>נסה שוב</Text>
+          <Text style={styles.retryText}>{t('post.detail.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -56,100 +116,66 @@ export default function PostDetailScreen() {
       <SafeAreaView style={styles.container}>
         <EmptyState
           icon="search-outline"
-          title="הפוסט לא נמצא"
-          subtitle="ייתכן שהוא נסגר או שאין לך הרשאה לצפייה."
+          title={t('post.detail.notFoundTitle')}
+          subtitle={t('post.detail.notFoundSubtitle')}
         />
       </SafeAreaView>
     );
   }
 
-  // FR-POST-015 AC1: owner-mode CTAs vs viewer's "Send Message to Poster".
+  // FR-POST-015 AC1: owner-mode CTAs vs viewer's "Send Message to Poster" (FR-POST-014 AC6: open only).
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const isGive = post.type === 'Give';
-  const locationText = (() => {
-    if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
-    if (post.locationDisplayLevel === 'CityAndStreet')
-      return `${post.address.cityName}, רחוב ${post.address.street}`;
-    return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
-  })();
+  const locationText = postLocationDisplayText(post, t);
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe });
+
+  const showViewerContactCta = !isOwner && post.status === 'open';
+
+  const isRecipientMarked =
+    viewerId != null && post.recipient?.recipientUserId === viewerId;
+  const showActorPrivacy = postDetailShowActorPrivacy(viewerId, isOwner, post, isRecipientMarked);
+  const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
+  const ownerLabel = postOwnerDisplayLabel(post, t);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={styles.imageWrap}>
-          <PostImageCarousel
-            mediaAssets={post.mediaAssets}
-            fallbackIcon={isGive ? 'gift-outline' : 'search-outline'}
-          />
-          <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
-            <Text style={styles.typeTagText}>{isGive ? 'לתת' : 'לבקש'}</Text>
-          </View>
-          {/* FR-POST-014 AC4 + FR-POST-015 AC1 + FR-ADMIN-009 — ⋮ menu (overlay, not Stack header). */}
-          <View style={styles.menuOverlay} pointerEvents="box-none">
-            <PostMenuButton post={post} />
-          </View>
-        </View>
-
-        <View style={styles.content}>
-          <Text style={styles.title}>{post.title}</Text>
-          <Text style={styles.category}>{CATEGORY_LABELS[post.category]}</Text>
-
-          {isGive && post.itemCondition && (
-            <View style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>מצב: </Text>
-              <Text style={styles.conditionValue}>{ITEM_CONDITION_LABELS_HE[post.itemCondition]}</Text>
-            </View>
-          )}
-          {!isGive && post.urgency && (
-            <View style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>⚡ דחיפות: </Text>
-              <Text style={styles.conditionValue}>{post.urgency}</Text>
-            </View>
-          )}
-
-          {post.description && <Text style={styles.description}>{post.description}</Text>}
-
-          {post.status === 'closed_delivered' && post.recipientUser ? (
-            <RecipientCallout postType={post.type} recipient={post.recipientUser} />
-          ) : null}
-
-          <View style={styles.locationRow}>
-            <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
-            <Text style={styles.locationText}>{locationText}</Text>
-          </View>
-          <Text style={styles.timeText}>{timeAgo}</Text>
-
-          <View style={styles.divider} />
-          <TouchableOpacity
-            style={styles.authorRow}
-            onPress={() => router.push(`/user/${post.ownerHandle}`)}
-          >
-            <AvatarInitials name={post.ownerName} avatarUrl={post.ownerAvatarUrl} size={44} />
-            <View style={styles.authorInfo}>
-              <Text style={styles.authorName}>{post.ownerName}</Text>
-              <Text style={styles.authorCity}>{post.address.cityName}</Text>
-            </View>
-            <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
-          </TouchableOpacity>
-        </View>
-      </ScrollView>
+      <PostDetailScrollContent
+        post={post}
+        isGive={isGive}
+        showActorPrivacy={showActorPrivacy}
+        viewerId={viewerId}
+        ownerNavigable={ownerNavigable}
+        ownerLabel={ownerLabel}
+        locationText={locationText}
+        timeAgo={timeAgo}
+      />
 
       {isOwner && viewerId ? (
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
-          // onClosed: pop back; onReopened: refetch in place (CTA flips).
-          onClosed={() => {
-            if (router.canGoBack()) router.back();
-            else router.replace('/(tabs)');
-          }}
-          onReopened={() => void query.refetch()}
+          // onClosed / onReopened: toast + leave detail (lists invalidated in OwnerActionsBar).
+          onClosed={() => exitAfterOwnerMutation('closure.detailCloseSuccessToast')}
+          onReopened={() => exitAfterOwnerMutation('closure.detailReopenSuccessToast')}
         />
-      ) : !isOwner ? (
+      ) : null}
+      {showViewerContactCta ? (
         <View style={styles.cta}>
-          <TouchableOpacity style={styles.messageBtn} onPress={() => contactPoster(viewerId, post, router)}>
-            <Text style={styles.messageBtnText}>💬 שלח הודעה למפרסם</Text>
+          <TouchableOpacity
+            style={styles.messageBtn}
+            onPress={() => void onOpenPosterChat()}
+            disabled={contactPosterBusy}
+            accessibilityRole="button"
+            accessibilityState={{ busy: contactPosterBusy }}
+            accessibilityLabel={
+              contactPosterBusy ? t('post.detail.contactOpeningA11y') : t('post.detail.contactA11y')
+            }
+          >
+            {contactPosterBusy ? (
+              <ActivityIndicator size="small" color={colors.textInverse} />
+            ) : (
+              <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+            )}
           </TouchableOpacity>
         </View>
       ) : null}
@@ -157,41 +183,3 @@ export default function PostDetailScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.base },
-  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
-  retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: colors.primary, borderRadius: 999 },
-  retryText: { ...typography.button, color: colors.textInverse },
-  imageWrap: { position: 'relative' },
-  typeTagOverlay: {
-    position: 'absolute', bottom: spacing.base, right: spacing.base,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
-  },
-  menuOverlay: {
-    position: 'absolute', top: spacing.sm, start: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: radius.full,
-  },
-  giveTag: { backgroundColor: colors.giveTagBg },
-  requestTag: { backgroundColor: colors.requestTagBg },
-  typeTagText: { ...typography.label, color: colors.textPrimary },
-  content: { padding: spacing.base, gap: spacing.sm, backgroundColor: colors.surface },
-  title: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
-  category: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  conditionRow: { flexDirection: 'row', alignItems: 'center' },
-  conditionLabel: { ...typography.body, color: colors.textSecondary },
-  conditionValue: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
-  description: { ...typography.body, color: colors.textPrimary, lineHeight: 24, textAlign: 'right', paddingTop: spacing.sm },
-  locationRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs, paddingTop: spacing.sm },
-  locationText: { ...typography.body, color: colors.textSecondary, flex: 1, textAlign: 'right' },
-  timeText: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
-  authorInfo: { flex: 1, gap: 2 },
-  authorName: { ...typography.body, fontWeight: '600', color: colors.textPrimary, textAlign: 'right' },
-  authorCity: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  cta: { flexDirection: 'row', padding: spacing.base, gap: spacing.sm, backgroundColor: colors.surface, borderTopWidth: 1, borderTopColor: colors.border },
-  messageBtn: { flex: 1, height: 50, backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center' },
-  messageBtnText: { ...typography.button, color: colors.textInverse },
-});

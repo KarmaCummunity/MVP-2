@@ -18,4 +18,16 @@ supabase/.branches/
 
 # Agent PR body scratch file (generated per-PR by `gh pr create --body-file`).
 .github/.pr-body.md
+
+# Autonomous loop runtime artifacts (CLAUDE.md §13) — local-only.
+.claude/AUTONOMOUS_LOOP_LOG.md
+.claude/HALT_LOOP
+.claude/LOOP_ENABLED
+
+# Env files — never committed. Dev secrets live at ~/.kc-dev-secrets.env.
+.env
+.env.local
+.env.*.local
+
+# Aider AI coding assistant
 .aider*

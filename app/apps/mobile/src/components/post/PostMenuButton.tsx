@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
@@ -9,17 +10,20 @@ import { useAuthStore } from '../../store/authStore';
 import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { PostMenuSheet } from './PostMenuSheet';
+import { usePostSavedActions } from '../../hooks/usePostSavedActions';
 
 interface Props {
   post: PostWithOwner;
 }
 
 export function PostMenuButton({ post }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
   const [open, setOpen] = useState(false);
+  const { isSaved, busy: saveBusy, toggleSave } = usePostSavedActions(post.postId);
 
   if (viewerId === null) {
     // Guests don't get a menu (no actions available to them).
@@ -31,7 +35,7 @@ export function PostMenuButton({ post }: Props) {
       <Pressable
         style={styles.btn}
         onPress={() => setOpen(true)}
-        accessibilityLabel="תפריט פעולות"
+        accessibilityLabel={t('post.menuA11y')}
         accessibilityRole="button"
         hitSlop={8}
       >
@@ -44,6 +48,9 @@ export function PostMenuButton({ post }: Props) {
         post={post}
         viewerId={viewerId}
         isSuperAdmin={isSuperAdmin}
+        isSaved={isSaved}
+        saveBusy={saveBusy}
+        onToggleSave={toggleSave}
         onAfterRemoval={() => {
           void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
           void queryClient.invalidateQueries({ queryKey: ['profile-other-posts'] });

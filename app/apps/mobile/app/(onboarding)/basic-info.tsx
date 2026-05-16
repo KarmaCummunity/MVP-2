@@ -50,7 +50,7 @@ export default function OnboardingBasicInfoScreen() {
             </AnimatedEntry>
 
             <AnimatedEntry delay={staggerDelay(1)}>
-              <Text style={styles.title}>פרטים בסיסיים</Text>
+              <Text style={styles.title}>{t('onboarding.stepBasic')}</Text>
             </AnimatedEntry>
 
             <AnimatedEntry delay={staggerDelay(2)}>
@@ -59,12 +59,12 @@ export default function OnboardingBasicInfoScreen() {
 
             <AnimatedEntry delay={staggerDelay(3)}>
               <View style={styles.field}>
-                <Text style={styles.label}>שם מלא</Text>
+                <Text style={styles.label}>{t('onboarding.displayName')}</Text>
                 <TextInput
                   style={styles.input}
                   value={displayName}
                   onChangeText={setDisplayName}
-                  placeholder="לדוגמה: רינה כהן"
+                  placeholder={t('onboarding.fullNamePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
                   textAlign="right"
@@ -96,13 +96,13 @@ export default function OnboardingBasicInfoScreen() {
               disabled={!hasRequiredFields || loading}
               onPress={handleContinue}
               accessibilityRole="button"
-              accessibilityLabel="המשך"
+              accessibilityLabel={t('onboarding.continueA11y')}
             >
               {loading ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
                 <>
-                  <Text style={styles.ctaText}>המשך</Text>
+                  <Text style={styles.ctaText}>{t('onboarding.continue')}</Text>
                   <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
                 </>
               )}

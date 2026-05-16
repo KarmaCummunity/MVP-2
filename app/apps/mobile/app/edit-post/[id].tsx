@@ -3,18 +3,16 @@
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, Platform, ScrollView,
+  ActivityIndicator, ScrollView,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
-import {
-  ALL_CATEGORIES, CATEGORY_LABELS, canUpgradeVisibility,
-  ITEM_CONDITIONS, ITEM_CONDITION_LABELS_HE,
-} from '@kc/domain';
+import { ALL_CATEGORIES, canUpgradeVisibility, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -29,6 +27,7 @@ import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
+import { NotifyModal } from '../../src/components/NotifyModal';
 import { styles } from './editPostScreen.styles';
 
 const POST_IMAGES_BUCKET = 'post-images';
@@ -39,6 +38,7 @@ function assetUrl(path: string): string {
 export default function EditPostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
@@ -65,6 +65,7 @@ export default function EditPostScreen() {
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [batchId] = useState(() => newUploadBatchId());
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const post = query.data?.post;
 
@@ -97,7 +98,7 @@ export default function EditPostScreen() {
 
   const handlePickImages = async () => {
     if (!viewerId) {
-      Alert.alert('שגיאה', 'יש להתחבר מחדש לפני שמירת פוסט.');
+      setNotify({ title: t('post.editPost.notifyErrorTitle'), message: t('post.editPost.needReauthBody') });
       return;
     }
     const picked = await pickPostImages(uploads.length + uploadingCount);
@@ -111,7 +112,7 @@ export default function EditPostScreen() {
       );
       setUploads((prev) => [...prev, ...results]);
     } catch (err) {
-      Alert.alert('העלאת התמונה נכשלה', err instanceof Error ? err.message : 'נסה שוב.');
+      setNotify({ title: t('post.editPost.uploadFailedTitle'), message: err instanceof Error ? err.message : t('post.editPost.uploadFailedFallback') });
     } finally {
       setUploadingCount((n) => Math.max(0, n - picked.length));
     }
@@ -147,18 +148,15 @@ export default function EditPostScreen() {
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['post', id, viewerId] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       if (router.canGoBack()) router.back();
       else router.replace('/(tabs)');
     },
     onError: (err) => {
-      const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
-      if (Platform.OS === 'web') {
-        // eslint-disable-next-line no-alert
-        window.alert(`שמירה נכשלה: ${message}`);
-      } else {
-        Alert.alert('שמירה נכשלה', message);
-      }
+      const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : t('post.editPost.networkError');
+      setNotify({ title: t('post.editPost.saveFailedTitle'), message });
     },
   });
 
@@ -173,9 +171,9 @@ export default function EditPostScreen() {
   if (query.isError) {
     return (
       <View style={styles.center}>
-        <Text style={styles.errorTitle}>שגיאה בטעינת הפוסט</Text>
+        <Text style={styles.errorTitle}>{t('post.editPost.loadErrorTitle')}</Text>
         <TouchableOpacity style={styles.retryBtn} onPress={() => query.refetch()}>
-          <Text style={styles.retryText}>נסה שוב</Text>
+          <Text style={styles.retryText}>{t('post.editPost.retry')}</Text>
         </TouchableOpacity>
       </View>
     );
@@ -183,7 +181,7 @@ export default function EditPostScreen() {
   if (!post) {
     return (
       <SafeAreaView style={styles.container}>
-        <EmptyState icon="search-outline" title="הפוסט לא נמצא" subtitle="ייתכן שהוא נסגר או שאין לך הרשאה לצפייה." />
+        <EmptyState icon="search-outline" title={t('post.editPost.notFoundTitle')} subtitle={t('post.editPost.notFoundSubtitle')} />
       </SafeAreaView>
     );
   }
@@ -195,8 +193,8 @@ export default function EditPostScreen() {
       <SafeAreaView style={styles.container}>
         <EmptyState
           icon="lock-closed-outline"
-          title="אין הרשאה"
-          subtitle="רק בעל הפוסט או מנהל על יכולים לערוך אותו."
+          title={t('post.editPost.forbiddenTitle')}
+          subtitle={t('post.editPost.forbiddenSubtitle')}
         />
       </SafeAreaView>
     );
@@ -207,8 +205,8 @@ export default function EditPostScreen() {
       <SafeAreaView style={styles.container}>
         <EmptyState
           icon="lock-closed-outline"
-          title="לא ניתן לערוך"
-          subtitle={post.status === 'expired' ? 'הפוסט פג תוקף. פרסם אותו מחדש כדי לערוך.' : 'הפוסט הוסר על ידי מנהל ולא ניתן לעריכה.'}
+          title={t('post.editPost.notEditableTitle')}
+          subtitle={post.status === 'expired' ? t('post.editPost.notEditableExpired') : t('post.editPost.notEditableRemoved')}
         />
       </SafeAreaView>
     );
@@ -231,7 +229,18 @@ export default function EditPostScreen() {
     setVisibility(next);
   }
 
-  const onlyMeDisabled = !canUpgradeVisibility('Public', 'OnlyMe') && post.visibility === 'Public';
+  // FR-POST-009: visibility is upgrade-only. A row is enabled when it's the
+  // current value (no-op tap) or when `canUpgradeVisibility(current, row)` is
+  // true. Disabled rows render greyed with a brief reason in the subtitle.
+  const isVisibilityRowEnabled = (v: PostVisibility): boolean =>
+    v === post.visibility || canUpgradeVisibility(post.visibility, v);
+
+  const DOWNGRADE_SUB = t('post.editPost.visibilityDowngradeSub');
+  const VISIBILITY_ROWS: Array<{ v: PostVisibility; label: string; openSub: string }> = [
+    { v: 'Public', label: t('post.editPost.visibilityPublicLabel'), openSub: t('post.editPost.visibilityPublicSub') },
+    { v: 'FollowersOnly', label: t('post.editPost.visibilityFollowersLabel'), openSub: t('post.editPost.visibilityFollowersSub') },
+    { v: 'OnlyMe', label: t('post.editPost.visibilityOnlyMeLabel'), openSub: t('post.editPost.visibilityOnlyMeSub') },
+  ];
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -239,7 +248,7 @@ export default function EditPostScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>עריכת פוסט</Text>
+        <Text style={styles.headerTitle}>{t('post.editPost.headerTitle')}</Text>
         <TouchableOpacity
           style={[styles.saveBtn, (isSaving || !isFormValid) && { opacity: 0.5 }]}
           onPress={() => save.mutate()}
@@ -249,7 +258,7 @@ export default function EditPostScreen() {
           {isSaving ? (
             <ActivityIndicator color={colors.textInverse} size="small" />
           ) : (
-            <Text style={styles.saveBtnText}>שמור</Text>
+            <Text style={styles.saveBtnText}>{t('post.editPost.saveCta')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -257,8 +266,8 @@ export default function EditPostScreen() {
       <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
         {/* Read-only type badge */}
         <View style={[styles.typeBadge, isGive ? styles.typeBadgeGive : styles.typeBadgeRequest]}>
-          <Text style={styles.typeBadgeText}>{isGive ? '🎁 לתת חפץ' : '🔍 לבקש חפץ'}</Text>
-          <Text style={styles.typeBadgeSub}>לא ניתן לשנות את סוג הפוסט לאחר פרסום</Text>
+          <Text style={styles.typeBadgeText}>{isGive ? t('post.editPost.typeBadgeGive') : t('post.editPost.typeBadgeRequest')}</Text>
+          <Text style={styles.typeBadgeSub}>{t('post.editPost.typeBadgeSub')}</Text>
         </View>
 
         <PhotoPicker
@@ -271,12 +280,12 @@ export default function EditPostScreen() {
         />
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>כותרת <Text style={styles.required}>*</Text></Text>
+          <Text style={styles.sectionLabel}>{t('post.editPost.sectionTitle')} <Text style={styles.required}>*</Text></Text>
           <TextInput
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="מה אתה נותן/מבקש?"
+            placeholder={t('post.editPost.titlePlaceholder')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             maxLength={80}
@@ -285,14 +294,14 @@ export default function EditPostScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>כתובת <Text style={styles.required}>*</Text></Text>
+          <Text style={styles.sectionLabel}>{t('post.editPost.sectionAddress')} <Text style={styles.required}>*</Text></Text>
           <CityPicker value={city} onChange={setCity} disabled={isSaving} />
           <View style={styles.streetRow}>
             <TextInput
               style={[styles.input, styles.streetInputStreet]}
               value={street}
               onChangeText={setStreet}
-              placeholder="רחוב"
+              placeholder={t('post.editPost.streetPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
             />
@@ -300,7 +309,7 @@ export default function EditPostScreen() {
               style={[styles.input, styles.streetInputHouse]}
               value={streetNumber}
               onChangeText={setStreetNumber}
-              placeholder="מס׳"
+              placeholder={t('post.editPost.streetNumberPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
             />
@@ -308,12 +317,12 @@ export default function EditPostScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
+          <Text style={styles.sectionLabel}>{t('post.editPost.sectionDescription')}</Text>
           <TextInput
             style={[styles.input, styles.textarea]}
             value={description}
             onChangeText={setDescription}
-            placeholder="פרטים נוספים על החפץ..."
+            placeholder={t('post.editPost.descriptionPlaceholder')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             multiline
@@ -323,7 +332,7 @@ export default function EditPostScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>קטגוריה</Text>
+          <Text style={styles.sectionLabel}>{t('post.editPost.sectionCategory')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
             {ALL_CATEGORIES.map((cat) => (
               <TouchableOpacity
@@ -332,7 +341,7 @@ export default function EditPostScreen() {
                 onPress={() => setCategory(cat)}
               >
                 <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>
-                  {CATEGORY_LABELS[cat]}
+                  {t(`post.category.${cat}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -341,7 +350,7 @@ export default function EditPostScreen() {
 
         {isGive && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>מצב החפץ</Text>
+            <Text style={styles.sectionLabel}>{t('post.editPost.sectionCondition')}</Text>
             <View style={styles.conditionRow}>
               {ITEM_CONDITIONS.map((c) => (
                 <TouchableOpacity
@@ -350,7 +359,7 @@ export default function EditPostScreen() {
                   onPress={() => setCondition(c)}
                 >
                   <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
-                    {ITEM_CONDITION_LABELS_HE[c]}
+                    {t(`post.condition.${c}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
@@ -366,12 +375,12 @@ export default function EditPostScreen() {
 
         {!isGive && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>דחיפות (אופציונלי)</Text>
+            <Text style={styles.sectionLabel}>{t('post.editPost.sectionUrgency')}</Text>
             <TextInput
               style={styles.input}
               value={urgency}
               onChangeText={setUrgency}
-              placeholder="לדוגמה: צריך עד שישי"
+              placeholder={t('post.editPost.urgencyPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
               maxLength={100}
@@ -381,22 +390,20 @@ export default function EditPostScreen() {
 
         {/* Visibility — upgrade-only (FR-POST-009) */}
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>מי יראה את הפוסט</Text>
-          {([
-            { v: 'Public' as PostVisibility, label: '🌍 כולם', sub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים' },
-            { v: 'OnlyMe' as PostVisibility, label: '🔒 רק אני', sub: onlyMeDisabled ? 'לא ניתן להוריד פרטיות לאחר פרסום' : 'הפוסט נשמר באופן פרטי' },
-          ]).map(({ v, label, sub }) => {
-            const isDisabled = v === 'OnlyMe' && onlyMeDisabled;
+          <Text style={styles.sectionLabel}>{t('post.editPost.sectionVisibility')}</Text>
+          {VISIBILITY_ROWS.map(({ v, label, openSub }) => {
+            const enabled = isVisibilityRowEnabled(v);
+            const sub = enabled ? openSub : DOWNGRADE_SUB;
             return (
               <TouchableOpacity
                 key={v}
-                style={[styles.visRow, visibility === v && styles.visRowActive, isDisabled && styles.visRowDisabled]}
-                onPress={() => !isDisabled && handleVisibilityChange(v)}
-                disabled={isDisabled}
+                style={[styles.visRow, visibility === v && styles.visRowActive, !enabled && styles.visRowDisabled]}
+                onPress={() => enabled && handleVisibilityChange(v)}
+                disabled={!enabled}
               >
                 <View style={[styles.radio, visibility === v && styles.radioActive]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.visLabel, isDisabled && { color: colors.textDisabled }]}>{label}</Text>
+                  <Text style={[styles.visLabel, !enabled && { color: colors.textDisabled }]}>{label}</Text>
                   <Text style={styles.visSub}>{sub}</Text>
                 </View>
               </TouchableOpacity>
@@ -404,6 +411,7 @@ export default function EditPostScreen() {
           })}
         </View>
       </ScrollView>
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }

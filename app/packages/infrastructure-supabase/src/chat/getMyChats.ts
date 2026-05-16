@@ -12,18 +12,18 @@ import { mapChatError } from './mapChatError';
 
 type ChatRow = Database['public']['Tables']['chats']['Row'];
 
-function isVisibleInInboxForViewer(r: ChatRow, userId: string): boolean {
+export function isVisibleInInboxForViewer(r: ChatRow, userId: string): boolean {
   if (r.participant_a === userId) return r.inbox_hidden_at_a == null;
   if (r.participant_b === userId) return r.inbox_hidden_at_b == null;
   return false;
 }
 
-function counterpartId(r: ChatRow, userId: string): string | null {
+export function counterpartId(r: ChatRow, userId: string): string | null {
   return r.participant_a === userId ? r.participant_b : r.participant_a;
 }
 
 /** One row per human counterpart — highest last_message_at wins (FR-CHAT-016). */
-function dedupeRowsByCounterpart(userId: string, rows: ChatRow[]): ChatRow[] {
+export function dedupeRowsByCounterpart(userId: string, rows: ChatRow[]): ChatRow[] {
   const best = new Map<string, ChatRow>();
   for (const r of rows) {
     const other = counterpartId(r, userId) ?? '__deleted__';
@@ -92,7 +92,7 @@ export async function getMyChats(
   if (usersRes.error) throw mapChatError(usersRes.error);
   const userMap = new Map<
     string,
-    { displayName: string; avatarUrl: string | null; shareHandle: string | null }
+    { displayName: string | null; avatarUrl: string | null; shareHandle: string | null }
   >();
   for (const u of usersRes.data ?? []) {
     userMap.set(u.user_id, {
@@ -119,7 +119,7 @@ export async function getMyChats(
             }
           : {
               userId: null,
-              displayName: 'משתמש שנמחק',
+              displayName: null,
               avatarUrl: null,
               shareHandle: null,
               isDeleted: true,

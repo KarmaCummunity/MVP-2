@@ -1,10 +1,10 @@
 // Shared native-stack options for modal/detail routes (see root `app/_layout.tsx`).
 import { colors } from '@kc/ui';
-import { BackButton } from '../components/BackButton';
+import { nativeStackHeaderLeftIconOnly } from './nativeHeaderIconOnly';
 
 export const detailStackScreenOptions = {
   headerShown: true,
-  headerLeft: BackButton,
+  ...nativeStackHeaderLeftIconOnly,
   headerBackVisible: false,
   headerTintColor: colors.primary,
   headerStyle: { backgroundColor: colors.surface },

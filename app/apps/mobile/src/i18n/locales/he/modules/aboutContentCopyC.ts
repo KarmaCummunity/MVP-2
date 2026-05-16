@@ -15,47 +15,18 @@ export const aboutContentCopyC = {
   roadmapPhase4Body:
     'הרחבות שמשרתות את החזון בלי למכור את המשתמשים: נתינת זמן ומומחיות, חיבור למעגלים רחבים, וכלים שמודדים את הטוב שממשיך להיווצר בשטח.',
 
-  // Structured phases (for the new vertical timeline UI)
-  roadmapPhases: [
-    {
-      label: 'שלב א׳',
-      status: 'עכשיו',
-      title: 'ליבה יציבה (MVP)',
-      body: 'זהות, פוסטים, צ׳אט, פרטיות, דיווחים, וסטטיסטיקות בסיסיות — בסיס שמאפשר לקהילה לגדול על אמון.',
-    },
-    {
-      label: 'שלב ב׳',
-      status: 'בקרוב',
-      title: 'עומק קהילתי',
-      body: 'גילוי טוב יותר, פיקוח שקוף, onboarding משופר, וגשרים לעמותות ולשכונות.',
-    },
-    {
-      label: 'שלב ג׳',
-      status: 'בעתיד',
-      title: 'השפעה רחבה',
-      body: 'שותפויות, אירועים, חינוך לנתינה אחראית, וכלים למובילי קהילה.',
-    },
-    {
-      label: 'שלב ד׳',
-      status: 'טווח ארוך',
-      title: 'מעבר לחפצים',
-      body: 'נתינת זמן ומומחיות, חיבור למעגלים רחבים, ומדידה של הטוב שנוצר בשטח.',
-    },
-  ],
-
-  // Goals
+  // Goals (list UI — aboutContentUxRefreshPartA)
   goalsTitle: 'המטרות שלנו',
-  goalsText:
-    '🎯 להפוך את המסירה והבקשה לעניין שגרתי ובטוח.\n\n' +
-    '♻️ לצמצם בזבוז ולחזק כלכלה מעגלית מקומית.\n\n' +
-    '🤝 לבנות אמון דרך מוצר אמיתי — לא דרך הבטחות ריקות.\n\n' +
-    '💡 להישאר נאמנים למודל ללא תמורה כספית בין משתמשים.',
 
   // Contributions
   contributionsTitle: 'סוגי תרומה — היום ובעתיד',
   contributionsText:
     'בהמשך הדרך נרחיב את סוגי הנתינה: נתינת זמן (התנדבות ממוקדת) שתישקל בזהירות מול עומס המקבלים, נתינת מומחיות (ליווי, הדרכה, סיוע טכני), חיבור לארגונים מאומתים, וקמפיינים קהילתיים לאיסוף ציוד לפי צורך אמיתי.\n\n' +
     'כל אלה ייכנסו רק כשהבטיחות והפרטיות יהיו מוכנות. אנחנו לא ממהרים לפיצ׳ר על חשבון אמון.',
+
+  // Badge labels for the contributions tiles
+  contributionsAvailableBadge: 'זמין',
+  contributionsComingSoonBadge: 'בקרוב',
 
   // Structured contributions (for the new visual tile grid)
   contributionsList: [
@@ -69,15 +40,7 @@ export const aboutContentCopyC = {
     { icon: 'medkit-outline', label: 'סיוע ייעודי', available: false },
   ],
 
-  // Team
-  teamTitle: 'הצוות',
-  teamLeadTitle: 'נוח סרוסי — מייסד הפרויקט',
-  teamLeadBio:
-    'מתכנת לשעבר בצבא. בסוף השירות הבנתי שהדרך שלי להפוך טוב לנגיש יותר היא דרך טכנולוגיה — חיבור פשוט ובטוח בין מי שרוצה לתת למי שצריך לקבל. אני מאמין בכוח של קהילה לשנות מציאות, ואשמח שתצטרפו אלי למסע. כרגע הליבה נבנית סביבי ומסביב לקהילה המוקדמת — פתוחים בשמחה לשותפים, מתנדבים ויועצים בכל תחום.',
-
-  // Contact
+  // Contact (channels — aboutContentUxRefreshPartB)
   contactTitle: 'יצירת קשר',
-  contactText:
-    'רעיון, שיתוף פעולה או דיווח על באג — נשמח לשמוע. אפשר לפתוח פנייה דרך ״דיווח על בעיה״ בהגדרות, או לכתוב אלינו ל-karmacommunity2.0@gmail.com.',
   contactCta: 'פנייה לתמיכה באפליקציה',
 } as const;

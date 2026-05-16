@@ -8,13 +8,13 @@ import {
   TouchableOpacity,
   StyleSheet,
   ActivityIndicator,
-  Alert,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
 import { colors, typography, spacing, radius, shadow } from '@kc/ui';
 import { EditProfileAddressBlock } from './EditProfileAddressBlock';
+import { NotifyModal } from './NotifyModal';
 import { useAuthStore } from '../store/authStore';
 import { getCompleteBasicInfoUseCase } from '../services/userComposition';
 import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
@@ -37,6 +37,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
   const [saving, setSaving] = useState(false);
+  const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
 
   const addressIssue = getProfileAddressPairIssue(street, streetNumber);
   const hasRequiredFields = displayName.trim().length > 0 && city !== null;
@@ -71,16 +72,17 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
       setOnboardingState('pending_avatar');
       onSaved();
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      const raw = err instanceof Error ? err.message : t('onboarding.unknownError');
       const mapped = mapEditProfileSaveError(raw);
       useFeedSessionStore.getState().showEphemeralToast(mapped, 'error', 2800);
-      Alert.alert('שמירה נכשלה', mapped);
+      setSaveErrorMsg(mapped); // TD-138: Alert.alert no-op on web → NotifyModal.
     } finally {
       setSaving(false);
     }
   };
 
   return (
+    <>
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.backdrop}>
         <KeyboardAvoidingView
@@ -90,25 +92,25 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
           <View style={styles.card}>
             <ScrollView contentContainerStyle={styles.cardContent} keyboardShouldPersistTaps="handled">
               <View style={styles.headerRow}>
-                <Text style={styles.title}>נשלים פרטים בסיסיים</Text>
+                <Text style={styles.title}>{t('onboarding.softGateTitle')}</Text>
                 <TouchableOpacity
                   onPress={onClose}
                   disabled={saving}
                   accessibilityRole="button"
-                  accessibilityLabel="ביטול"
+                  accessibilityLabel={t('general.cancel')}
                 >
-                  <Text style={styles.cancel}>ביטול</Text>
+                  <Text style={styles.cancel}>{t('general.cancel')}</Text>
                 </TouchableOpacity>
               </View>
               <Text style={styles.subtitle}>{t('onboarding.basicInfoSubtitle')}</Text>
 
               <View style={styles.field}>
-                <Text style={styles.label}>שם מלא</Text>
+                <Text style={styles.label}>{t('onboarding.displayName')}</Text>
                 <TextInput
                   style={styles.input}
                   value={displayName}
                   onChangeText={setDisplayName}
-                  placeholder="לדוגמה: רינה כהן"
+                  placeholder={t('onboarding.fullNamePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
                   textAlign="right"
@@ -138,7 +140,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                 {saving ? (
                   <ActivityIndicator color={colors.textInverse} />
                 ) : (
-                  <Text style={styles.ctaText}>שמור והמשך</Text>
+                  <Text style={styles.ctaText}>{t('onboarding.saveAndContinue')}</Text>
                 )}
               </TouchableOpacity>
             </ScrollView>
@@ -146,6 +148,8 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
         </KeyboardAvoidingView>
       </View>
     </Modal>
+    <NotifyModal visible={!!saveErrorMsg} title={t('onboarding.saveFailed')} message={saveErrorMsg ?? ''} onDismiss={() => setSaveErrorMsg(null)} />
+    </>
   );
 }
 

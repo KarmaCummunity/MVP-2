@@ -96,9 +96,9 @@ export interface IUserRepository {
    * mappings deferred to P2.4). Throws if the row is missing.
    */
   getEditableProfile(userId: string): Promise<{
-    displayName: string;
-    city: string;
-    cityName: string;
+    displayName: string | null;
+    city: string | null;
+    cityName: string | null;
     profileStreet: string | null;
     profileStreetNumber: string | null;
     biography: string | null;
@@ -113,6 +113,26 @@ export interface IUserRepository {
     userId: string,
     street: string | null,
     streetNumber: string | null,
+  ): Promise<void>;
+
+  /**
+   * FR-PROFILE-007 — atomic multi-field edit (audit §3.5). All present fields
+   * land in one `UPDATE users SET ...` statement, so a transport-layer failure
+   * never leaves the user with a half-applied edit (e.g. new name + old city).
+   * Undefined fields are not written; null fields clear nullable columns
+   * (biography, avatar_url, profile_street, profile_street_number).
+   */
+  updateEditableProfile(
+    userId: string,
+    patch: {
+      displayName?: string;
+      city?: string;
+      cityName?: string;
+      profileStreet?: string | null;
+      profileStreetNumber?: string | null;
+      biography?: string | null;
+      avatarUrl?: string | null;
+    },
   ): Promise<void>;
 
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. Idempotent. */

@@ -1,7 +1,8 @@
 // Single inbox row — FR-CHAT-001, FR-CHAT-016.
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import type { ChatWithPreview } from '@kc/application';
 import { colors, typography, spacing } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
@@ -14,11 +15,12 @@ interface Props {
 }
 
 export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.chatRow}>
       <TouchableOpacity style={styles.chatRowMain} onPress={onOpen}>
         <AvatarInitials
-          name={item.otherParticipant.displayName}
+          name={item.otherParticipant.displayName ?? t('common.deletedUser')}
           avatarUrl={item.otherParticipant.avatarUrl}
           size={48}
         />
@@ -27,7 +29,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
             <Text style={styles.chatTime}>
               {formatRelativeChatTime(item.lastMessage?.createdAt ?? item.lastMessageAt)}
             </Text>
-            <Text style={styles.chatName}>{item.otherParticipant.displayName}</Text>
+            <Text style={styles.chatName}>{item.otherParticipant.displayName ?? t('common.deletedUser')}</Text>
           </View>
           <Text style={styles.chatPreview} numberOfLines={1}>
             {item.lastMessage?.body ?? ''}
@@ -43,13 +45,16 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
       ) : (
         <View style={{ width: 22 }} />
       )}
-      <TouchableOpacity
+      <Pressable
         onPress={onRequestHide}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
-        accessibilityLabel="הסר שיחה מהאינבוקס"
+        accessibilityRole="button"
+        accessibilityLabel={t('chat.hideChatA11y')}
+        android_ripple={null}
+        style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1 }]}
       >
         <Ionicons name="ellipsis-horizontal" size={22} color={colors.textSecondary} />
-      </TouchableOpacity>
+      </Pressable>
     </View>
   );
 }

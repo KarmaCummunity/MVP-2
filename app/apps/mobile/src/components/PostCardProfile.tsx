@@ -6,9 +6,9 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
-import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 
 import { I18nManager, Platform } from 'react-native';
@@ -26,19 +26,26 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.xs * 2) / 3;
 interface PostCardProfileProps {
   post: Post;
   /**
-   * When set, an economic-role badge ("📤 נתתי" / "📥 קיבלתי") renders on
-   * the card. The role is derived from (post.type, identityRole):
-   *   publisher + Give    → giver  → 📤 נתתי
-   *   publisher + Request → receiver → 📥 קיבלתי
-   *   respondent + Give   → receiver → 📥 קיבלתי
-   *   respondent + Request→ giver   → 📤 נתתי
+   * When set, renders an economic-role badge (giver/receiver) on the card.
+   * Role is derived from (post.type, identityRole):
+   *   publisher + Give     → giver
+   *   publisher + Request  → receiver
+   *   respondent + Give    → receiver
+   *   respondent + Request → giver
+   * Label text comes from i18n (`feed.giverBadge` / `feed.receiverBadge`).
    */
   identityRole?: IdentityRoleForViewedProfile;
   onPressOverride?: () => void;
+  /**
+   * When opening from a profile's closed-posts grid, pass that profile's user id so post detail
+   * can pass `identityListingHostUserId` (query `fromProfile`) for D-31 projection.
+   */
+  closedPostsProfileUserId?: string;
 }
 
-export function PostCardProfile({ post, identityRole, onPressOverride }: PostCardProfileProps) {
+export function PostCardProfile({ post, identityRole, onPressOverride, closedPostsProfileUserId }: PostCardProfileProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const isGive = post.type === 'Give';
 
   const firstImageUrl = post.mediaAssets[0]
@@ -53,9 +60,17 @@ export function PostCardProfile({ post, identityRole, onPressOverride }: PostCar
     <TouchableOpacity
       style={styles.card}
       activeOpacity={0.8}
-      onPress={() =>
-        onPressOverride ? onPressOverride() : router.push(`/post/${post.postId}`)
-      }
+      onPress={() => {
+        if (onPressOverride) {
+          onPressOverride();
+          return;
+        }
+        const q =
+          closedPostsProfileUserId != null
+            ? `?fromProfile=${encodeURIComponent(closedPostsProfileUserId)}`
+            : '';
+        router.push(`/post/${post.postId}${q}` as never);
+      }}
     >
       <View style={styles.imageArea}>
         {firstImageUrl ? (
@@ -65,20 +80,20 @@ export function PostCardProfile({ post, identityRole, onPressOverride }: PostCar
         )}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
-            {isGive ? 'לתת' : 'לבקש'}
+            {isGive ? t('feed.giveTypeShort') : t('feed.requestTypeShort')}
           </Text>
         </View>
         {economicRole ? (
           <View style={styles.roleBadge}>
             <Text style={styles.roleBadgeText}>
-              {economicRole === 'giver' ? '📤 נתתי' : '📥 קיבלתי'}
+              {economicRole === 'giver' ? t('feed.giverBadge') : t('feed.receiverBadge')}
             </Text>
           </View>
         ) : null}
       </View>
       <View style={styles.titleRow}>
         <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
-        <Text style={styles.categoryText} numberOfLines={1}>{CATEGORY_LABELS[post.category]}</Text>
+        <Text style={styles.categoryText} numberOfLines={1}>{t(`post.category.${post.category}`)}</Text>
       </View>
     </TouchableOpacity>
   );

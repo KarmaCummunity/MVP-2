@@ -4,6 +4,7 @@
 // note) is a separate sheet. Step 2 is now extracted to ClosureStep2.tsx —
 // it owns the chats/search mode tabs and is the bigger of the two panes.
 import { ActivityIndicator, Modal, Pressable, StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { useClosureStore } from '../../store/closureStore';
@@ -67,19 +68,18 @@ function Step1({
   // Direction flips by post.type. The "physical handoff" wording matters either
   // way — both sides need to be reminded that closure is for AFTER pickup, not
   // after scheduling it.
+  const { t } = useTranslation();
   const give = postType === 'Give';
-  const title = give ? '🤝  האם הפריט באמת נמסר?' : '🤝  האם באמת קיבלת את הפריט?';
-  const body = give
-    ? 'חשוב לסמן רק אחרי המסירה הפיזית — לא אחרי תיאום בצ\'אט. אם הפריט עדיין לא הגיע ליד מקבל, אל תסמן.'
-    : 'חשוב לסמן רק אחרי שהפריט הגיע אליך — לא אחרי תיאום בצ\'אט. אם עדיין לא קיבלת את הפריט, אל תסמן.';
-  const cta = give ? 'כן, נמסר ✓' : 'כן, קיבלתי ✓';
+  const title = give ? t('closure.step1GiveTitle') : t('closure.step1RequestTitle');
+  const body = give ? t('closure.step1GiveBody') : t('closure.step1RequestBody');
+  const cta = give ? t('closure.step1GiveCta') : t('closure.step1RequestCta');
   return (
     <View>
       <Text style={styles.title}>{title}</Text>
       <Text style={styles.body}>{body}</Text>
       <View style={styles.actions}>
         <Pressable onPress={onCancel} style={[styles.btn, styles.btnSecondary]}>
-          <Text style={styles.btnSecondaryText}>ביטול</Text>
+          <Text style={styles.btnSecondaryText}>{t('general.cancel')}</Text>
         </Pressable>
         <Pressable
           onPress={onConfirm}

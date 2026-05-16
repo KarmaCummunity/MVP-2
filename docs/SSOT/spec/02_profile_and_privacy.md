@@ -1,6 +1,6 @@
 # 2.2 Profile & Privacy Mode
 
-> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped.
+> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped. ⚠️ Audit 2026-05-16: 🔴 `mapUserRow.privacyMode` blind cast (TD-69, BACKLOG P2.12). 🟠 FR-PROFILE-007 AC2 no read-only email/phone block on Edit Profile; FR-PROFILE-009 AC5 followers list non-paginated; FR-PROFILE-012 AC1 lock icon tappable on other-user profile; FR-PROFILE-015 AC1 SSO avatar never copied to our bucket; FR-PROFILE-013 AC5 counters not Realtime-subscribed. TD-104 / TD-105. See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
 
 
 
@@ -26,6 +26,10 @@ Out of scope here:
 - Per-post visibility level → [`04_posts.md`](./04_posts.md)
 - Posts list within the profile → linked from [`04_posts.md`](./04_posts.md)
 
+### Cross-reference — closed post detail
+
+Taps from the profile **Closed Posts** tab open Post Detail per `FR-PROFILE-001 AC5`. When `post.status === 'closed_delivered'`, three orthogonal privacy axes apply per participant (publisher, respondent), all specified in **`FR-POST-021`** ([`04_posts.md`](./04_posts.md)) via `public.post_actor_identity`: **(1)** `surface_visibility` (Public/FollowersOnly/OnlyMe) governs whether a third-party viewer sees the row in *this profile's* Closed Posts tab — each participant controls their own tab; **(2)** `identity_visibility` (Public/FollowersOnly/Hidden) governs how the actor's name/avatar render on post chrome (MVP writes `Public` only; see `D-30`); **(3)** `hide_from_counterparty` masks the actor's identity for **third-party** viewers who reach the post through the **counterparty's** closed-post profile context (`D-31`), while the counterparty still sees real identity on post chrome (chat remains authoritative for mutual recognition). The deep-link from post detail to `/user/{handle}` is gated by `PostWithOwner.ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost`. All three axes are **orthogonal** to profile privacy mode (`FR-PROFILE-002` / `FR-PROFILE-003`); see **`D-26`** + **`D-28`** in [`../DECISIONS.md`](../DECISIONS.md) (visibility vs per-actor identity; per-participant surface visibility).
+
 ---
 
 ## FR-PROFILE-001 — My Profile screen
@@ -39,11 +43,13 @@ The signed-in user's own profile, displaying identity, three headline counters, 
 
 **Acceptance Criteria.**
 - AC1. Header renders avatar, `display_name`, location line (**`city` only**; saved street/number from `FR-PROFILE-007` is **not** shown — used for post defaults and proximity, not profile display), optional biography (≤200 chars), and a small lock icon when the profile is in `Private` mode.
-- AC2. Three counters appear in a single row: `followers_count`, `following_count`, and `active_posts_count_internal` (includes `Only-me` posts; see `FR-PROFILE-013`).
+- AC2. Three counters appear in a single row: `followers_count`, `following_count`, and `active_posts_count_internal` (excludes `Only-me` posts; see `FR-PROFILE-013`).
 - AC3. Two action buttons: "Edit Profile" → `FR-PROFILE-007`, "Share Profile" → produces a deep-link URL.
 - AC4. Two tabs:
-   - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): unchanged — lists all `open` posts authored by the user including `Public`, `Followers only`, and `Only me`. Each card carries a visual badge showing its visibility.
-   - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts where the user is **either the publisher or the respondent**. The publisher side covers status `closed_delivered` and (for the user's own view) `deleted_no_recipient` within the 7-day grace window so they can still reopen — FR-CLOSURE-005 AC4, FR-CLOSURE-008. The respondent side covers only `closed_delivered`. Ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 📤 נתתי when the profile owner is the giver, 📥 קיבלתי when the profile owner is the receiver. (Revised 2026-05-13 per D-19.)
+   - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): lists `open` posts authored by the user at visibility `Public` or `Followers only` only — **not** `Only me`. Each card carries a visual badge showing its visibility.
+   - **Hidden posts (owner-only, not a tab):** overflow entry labeled *"מוסתרים"* (locale key) routes to a dedicated stack screen (`/(tabs)/profile/hidden`) with the standard app header (back + title) and lists the owner's `Only me` posts (`open` and `closed` lanes), mirroring the `removed_admin` overflow pattern.
+   - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts where the user is **either the publisher or the respondent**, excluding rows where the owner published at `posts.visibility = OnlyMe` (those appear only under **Hidden**). The publisher side covers status `closed_delivered` and (for the user's own view) `deleted_no_recipient` within the 7-day grace window so they can still reopen — FR-CLOSURE-005 AC4, FR-CLOSURE-008. The respondent side covers only `closed_delivered`. Ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 📤 נתתי when the profile owner is the giver, 📥 קיבלתי when the profile owner is the receiver. On *my own* profile every row is included regardless of `surface_visibility` (counterparty-read invariant + self-read). (Established 2026-05-13 per D-19; clarified 2026-05-16 per D-28.)
+   - **Admin-removed posts (owner-only, not a tab):** on *My Profile*, the `⋮` control anchored to the top-start corner of the profile summary card (visual top-right in RTL / top-left in LTR) opens an overflow that mirrors the profile-adjacent Settings destinations from `app/settings.tsx` (account details → `/edit-profile`, notifications → `/settings/notifications`, private profile → `/settings/privacy`, follow requests → `/settings/follow-requests` when relevant, stats → `/stats`) and adds entries for **Saved** (`FR-PROFILE-016`), **Hidden** (see above), and the dedicated `removed_admin` posts list (owner visibility per `FR-POST-008` / moderation). Those three lists are not profile posts tabs; each opens as a nested stack screen under `/(tabs)/profile/{saved|hidden|removed}` with the standard app header (back + title).
 - AC5. Tapping a post opens Post Detail in "owner mode" (see `FR-POST-016`).
 - AC6. **Counters fallback (MVP, pre-DB-schema)**: until `FR-FOLLOW-*` and `FR-POST-*` ship (see `spec/03_following.md` + `spec/04_posts.md`), the three headline counters render as `0` rather than mock values. They begin reflecting reality from `FR-FOLLOW-*` and `FR-POST-*` onward.
 
@@ -64,7 +70,7 @@ Viewing the profile of another user whose `privacy_mode = Public` shows their id
 
 **Acceptance Criteria.**
 - AC1. Header parity with `FR-PROFILE-001` minus edit/share; replaces them with "Follow / Following" and "Send Message" CTAs and a `⋮` menu (`Report`, `Block`).
-- AC2. The "Closed Posts" tab on another user's profile follows the same UNION rule as `FR-PROFILE-001 AC4` (publisher ∪ respondent), filtered by each post's `visibility`. Third-party viewers see the same cards but the tap target opens a read-only post detail. (Revised 2026-05-13 per D-19.)
+- AC2. The "Closed Posts" tab on another user's profile follows the same UNION rule as `FR-PROFILE-001 AC4` (publisher ∪ respondent), but each row is filtered by **the profile owner's** `post_actor_identity.surface_visibility` for that post (Public always; FollowersOnly iff the viewer follows the profile owner; OnlyMe never to third parties; default `Public`). The publisher's `posts.visibility` is **not** the gate — each participant controls their own profile tab independently (`D-28`, supersedes the `D-19` "filtered by each post's `visibility`" clause). Third-party viewers see the same cards (with identity projection per `FR-POST-021`) but the tap target opens a read-only post detail. (Established 2026-05-13 per D-19; refined 2026-05-16 per D-28.)
 - AC3. Counters reflect the **public** active-posts count, which excludes posts at visibility `Only me` (see `FR-PROFILE-013`).
 - AC4. The "Active Posts" tab lists `Public` posts; if I am an approved follower, `Followers only` posts also appear. Posts at `Only me` are never visible to non-owners.
 
@@ -274,7 +280,7 @@ The "Active Posts" headline counter is **split**: a private (internal) value vis
 - Constraints: `R-MVP-Items-14`.
 
 **Acceptance Criteria.**
-- AC1. `active_posts_count_internal` = count of all `open` posts owned by the user, regardless of visibility.
+- AC1. `active_posts_count_internal` = count of `open` posts owned by the user where `visibility <> 'OnlyMe'`.
 - AC2. `active_posts_count_public` = count of `open` posts where `visibility ∈ {Public, FollowersOnly}` and the post is currently visible to **the viewer** (i.e., a `FollowersOnly` post counts only when I'm an approved follower).
 - AC3. The owner sees `active_posts_count_internal` on their own profile.
 - AC4. Anyone else sees `active_posts_count_public`. The system never reveals to a viewer that the owner has hidden `Only-me` posts.
@@ -319,9 +325,32 @@ At sign-up via Google or Apple, if the SSO provides a profile photo URL, the sys
 
 ---
 
+## FR-PROFILE-016 — My Profile ⋮ → Saved posts
+
+**Description.**
+The signed-in user opens a dedicated list of posts they have bookmarked from the My Profile overflow menu.
+
+**Source.**
+- Product request (2026-05-16); pairs with `FR-POST-022`.
+
+**Acceptance Criteria.**
+- AC1. My Profile ⋮ menu includes an entry **שמורים** (i18n key `profile.myProfileMenuSavedPosts`) below the admin-removed posts entry.
+- AC2. Tapping navigates to `/(tabs)/profile/saved` as a nested profile-stack screen with the standard app header (back + title; title uses `profile.myProfileMenuSavedPosts`), not the main profile chrome (stats / open–closed tabs).
+- AC3. The grid lists bookmarked posts the viewer can still read; posts that became invisible (visibility change, unfollow, block, etc.) are omitted from the list but remain stored until unsave or post delete (`D-29`).
+- AC4. Tapping a card opens Post Detail with the same navigation as other profile grids.
+- AC5. Empty state when the user has no visible saved posts: warm copy directing them to save from the feed or post detail.
+
+**Related.** Screens: 3.1 · `FR-POST-022`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 0.1 | 2026-05-05 | Initial draft from PRD §3.2, §3.5, and Decisions D-10. |
-| 0.2 | 2026-05-11 | FR-PROFILE-002 AC2 + FR-PROFILE-004 AC4 updated: closed posts now shown on other-user profiles (Public / Private-approved-follower). Reverses prior PRD §3.2.2 carveout; see EXEC-7. |
-| 0.3 | 2026-05-11 | Implementation note: FR-PROFILE-006 AC2 auto-approve-on-Public is enforced at the DB layer by `users_after_privacy_mode_change` (migration 0023). No application-level fan-out required; the existing on-accept trigger handles edge creation per row. |
+| 0.8 | 2026-05-16 | Saved / hidden / removed owner lists: nested stack header + back; no profile chrome on those routes (`FR-PROFILE-001` AC4, `FR-PROFILE-016` AC2). |
+| 0.7 | 2026-05-16 | `FR-PROFILE-016` — My Profile ⋮ → saved posts list (`FR-POST-022`). |
+| 0.6 | 2026-05-16 | `D-28` follow-up: `FR-PROFILE-001 AC4` and `FR-PROFILE-002 AC2` now cite **the profile owner's** per-post `surface_visibility` as the third-party gate for the Closed Posts tab (publisher's `posts.visibility` no longer applies); Scope cross-reference expanded to the three-axis model (surface / identity / counterparty). |
+| 0.5 | 2026-05-16 | Cross-reference: closed-post detail navigability and counterparty masking (`FR-POST-021`, `D-26`) linked from Scope; profile tabs unchanged. |
 | 0.4 | 2026-05-15 | D-21: Privacy mode reframed as a **follow-approval flag only**. FR-PROFILE-003 rewritten to match FR-PROFILE-002 (no locked panel, no hidden counters/lists). FR-PROFILE-010 ACs collapsed — lists visible to all viewers. FR-PROFILE-004 simplified — per-post `FollowersOnly` follow-edge rule is unchanged but no longer entangled with profile privacy. Implementation: migration `0069_privacy_mode_follow_approval_only.sql` drops `users_select_public` + `users_select_private_approved_follower`; replaces them with `users_select_active`. |
+| 0.3 | 2026-05-11 | Implementation note: FR-PROFILE-006 AC2 auto-approve-on-Public is enforced at the DB layer by `users_after_privacy_mode_change` (migration 0023). No application-level fan-out required; the existing on-accept trigger handles edge creation per row. |
+| 0.2 | 2026-05-11 | FR-PROFILE-002 AC2 + FR-PROFILE-004 AC4 updated: closed posts now shown on other-user profiles (Public / Private-approved-follower). Reverses prior PRD §3.2.2 carveout; see EXEC-7. |
+| 0.1 | 2026-05-05 | Initial draft from PRD §3.2, §3.5, and Decisions D-10. |

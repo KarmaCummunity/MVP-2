@@ -9,6 +9,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { User } from '@kc/domain';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
@@ -21,6 +22,7 @@ import {
 } from '../../../src/services/followComposition';
 
 export default function FollowersListScreen() {
+  const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
@@ -48,7 +50,7 @@ export default function FollowersListScreen() {
   }
 
   const filtered = (followersQuery.data?.users ?? []).filter((u) =>
-    !search || u.displayName.toLowerCase().startsWith(search.toLowerCase()),
+    !search || (u.displayName ?? '').toLowerCase().startsWith(search.toLowerCase()),
   );
 
   const confirmRemove = async () => {
@@ -66,12 +68,12 @@ export default function FollowersListScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: 'עוקבים' }} />
+      <Stack.Screen options={{ headerTitle: t('profile.followersScreen.headerTitle') }} />
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
-          placeholder="חיפוש לפי שם"
+          placeholder={t('profile.followersScreen.searchPlaceholder')}
           placeholderTextColor={colors.textSecondary}
           value={search}
           onChangeText={setSearch}
@@ -80,7 +82,7 @@ export default function FollowersListScreen() {
       {followersQuery.isLoading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
       ) : filtered.length === 0 ? (
-        <Text style={styles.empty}>אין תוצאות</Text>
+        <Text style={styles.empty}>{t('profile.followersScreen.empty')}</Text>
       ) : (
         filtered.map((u) => (
           <TouchableOpacity
@@ -88,10 +90,10 @@ export default function FollowersListScreen() {
             style={styles.row}
             onPress={() => router.push({ pathname: '/user/[handle]', params: { handle: u.shareHandle } })}
           >
-            <AvatarInitials name={u.displayName} avatarUrl={u.avatarUrl} size={44} />
+            <AvatarInitials name={u.displayName ?? t('profile.fallbackName')} avatarUrl={u.avatarUrl} size={44} />
             <View style={styles.rowText}>
-              <Text style={styles.name}>{u.displayName}</Text>
-              <Text style={styles.city}>{u.cityName}</Text>
+              <Text style={styles.name}>{u.displayName ?? t('profile.fallbackName')}</Text>
+              <Text style={styles.city}>{u.cityName ?? t('profile.cityNotSet')}</Text>
             </View>
             {isMe ? (
               <TouchableOpacity onPress={() => setPendingRemove(u)} style={styles.menuBtn}>
@@ -103,11 +105,11 @@ export default function FollowersListScreen() {
       )}
       <ConfirmActionModal
         visible={pendingRemove !== null}
-        title="להסיר עוקב?"
+        title={t('profile.followersScreen.removeFollowerTitle')}
         message={pendingRemove
-          ? `${pendingRemove.displayName} לא יראה יותר פוסטים שיועדו לעוקבים בלבד, ולא יקבל על כך הודעה. אם הפרופיל שלך פתוח הם יוכלו לעקוב מחדש מיד; אם הוא פרטי — יצטרכו לשלוח בקשה.`
+          ? t('profile.followersScreen.removeFollowerMessage', { name: pendingRemove.displayName })
           : ''}
-        confirmLabel="הסר"
+        confirmLabel={t('profile.followersScreen.removeFollowerConfirm')}
         destructive
         isBusy={busyRemove}
         onCancel={() => (busyRemove ? null : setPendingRemove(null))}

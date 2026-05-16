@@ -2,9 +2,10 @@
 import React, { useState } from 'react';
 import {
   View, Text, TextInput, TouchableOpacity,
-  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Alert, Image,
+  StyleSheet, KeyboardAvoidingView, Platform, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { isAuthError } from '@kc/application';
@@ -12,18 +13,22 @@ import { getSignUpUseCase, AUTH_VERIFY_URL } from '../../src/services/authCompos
 import { useAuthStore } from '../../src/store/authStore';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { VerificationPendingPanel } from '../../src/components/auth/VerificationPendingPanel';
+import { NotifyModal } from '../../src/components/NotifyModal';
 
 export default function SignUpScreen() {
   const router = useRouter();
+  const { t } = useTranslation();
   const setSession = useAuthStore((s) => s.setSession);
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [loading, setLoading] = useState(false);
   const [pendingEmail, setPendingEmail] = useState<string | null>(null);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const handleSignUp = async () => {
     if (!email || !password) {
-      Alert.alert('שגיאה', 'יש למלא כל השדות');
+      setNotify({ title: t('auth.genericErrorTitle'), message: t('auth.fillAllFields') });
       return;
     }
     setLoading(true);
@@ -44,8 +49,8 @@ export default function SignUpScreen() {
     } catch (err) {
       const message = isAuthError(err)
         ? mapAuthErrorToHebrew(err.code)
-        : 'שגיאת רשת. נסה שוב.';
-      Alert.alert('הרשמה נכשלה', message);
+        : t('auth.networkError');
+      setNotify({ title: t('auth.signUpFailedTitle'), message });
     } finally {
       setLoading(false);
     }
@@ -56,7 +61,7 @@ export default function SignUpScreen() {
       <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
         <View style={styles.content}>
           <TouchableOpacity style={styles.backBtn} onPress={() => router.back()}>
-            <Text style={styles.backText}>← חזרה</Text>
+            <Text style={styles.backText}>{t('auth.backCta')}</Text>
           </TouchableOpacity>
 
           <Image
@@ -64,8 +69,8 @@ export default function SignUpScreen() {
             style={styles.logo}
             resizeMode="contain"
           />
-          <Text style={styles.title}>הרשמה</Text>
-          <Text style={styles.subtitle}>הצטרף לקהילה — חינם לגמרי</Text>
+          <Text style={styles.title}>{t('auth.signUp')}</Text>
+          <Text style={styles.subtitle}>{t('auth.signUpSubtitle')}</Text>
 
           {pendingEmail ? (
             <VerificationPendingPanel
@@ -76,12 +81,12 @@ export default function SignUpScreen() {
 
           <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
             <View style={styles.field}>
-              <Text style={styles.label}>דוא"ל</Text>
+              <Text style={styles.label}>{t('auth.email')}</Text>
               <TextInput
                 style={styles.input}
                 value={email}
                 onChangeText={setEmail}
-                placeholder='הכנס דוא"ל'
+                placeholder={t('auth.emailPlaceholder')}
                 placeholderTextColor={colors.textDisabled}
                 keyboardType="email-address"
                 autoCapitalize="none"
@@ -90,12 +95,12 @@ export default function SignUpScreen() {
               />
             </View>
             <View style={styles.field}>
-              <Text style={styles.label}>סיסמה (לפחות 8 תווים, עם אות וספרה)</Text>
+              <Text style={styles.label}>{t('auth.passwordRuleLabel')}</Text>
               <TextInput
                 style={styles.input}
                 value={password}
                 onChangeText={setPassword}
-                placeholder="בחר סיסמה"
+                placeholder={t('auth.passwordPlaceholderNew')}
                 placeholderTextColor={colors.textDisabled}
                 secureTextEntry
                 textAlign="right"
@@ -111,28 +116,27 @@ export default function SignUpScreen() {
               {loading ? (
                 <ActivityIndicator color={colors.textInverse} />
               ) : (
-                <Text style={styles.submitBtnText}>הרשמה</Text>
+                <Text style={styles.submitBtnText}>{t('auth.signUp')}</Text>
               )}
             </TouchableOpacity>
           </View>
 
           {!pendingEmail ? (
             <>
-              <Text style={styles.legal}>
-                בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.
-              </Text>
+              <Text style={styles.legal}>{t('auth.bySigningUp')}</Text>
 
               <TouchableOpacity
                 style={styles.switchMode}
                 onPress={() => router.replace('/(auth)/sign-in')}
                 disabled={loading}
               >
-                <Text style={styles.switchModeText}>יש לי כבר חשבון — כניסה</Text>
+                <Text style={styles.switchModeText}>{t('auth.hasAccountSwitchCta')}</Text>
               </TouchableOpacity>
             </>
           ) : null}
         </View>
       </KeyboardAvoidingView>
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }

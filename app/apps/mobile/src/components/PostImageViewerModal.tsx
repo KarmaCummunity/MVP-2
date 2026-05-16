@@ -15,6 +15,7 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 
 export interface PostImageViewerModalProps {
@@ -30,6 +31,7 @@ export function PostImageViewerModal({
   initialIndex,
   onClose,
 }: PostImageViewerModalProps) {
+  const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
   const listRef = useRef<FlatList<string>>(null);
@@ -69,7 +71,7 @@ export function PostImageViewerModal({
           style={[styles.closeBtn, { top: insets.top + spacing.sm }]}
           onPress={onClose}
           accessibilityRole="button"
-          accessibilityLabel="סגור תצוגת תמונה"
+          accessibilityLabel={t('post.imageViewerClose')}
         >
           <Ionicons name="close" size={32} color={colors.textInverse} />
         </TouchableOpacity>

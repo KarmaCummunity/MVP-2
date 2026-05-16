@@ -1,18 +1,20 @@
+import { useTranslation } from 'react-i18next';
 // FR-CHAT-010 — Report modal opened from chat ⋮ menu.
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
 import { colors, typography, spacing, radius } from '@kc/ui';
+import { NotifyModal } from './NotifyModal';
 
-const REASONS: Array<{ value: ReportReason; label: string }> = [
-  { value: 'Spam', label: 'ספאם' },
-  { value: 'Offensive', label: 'תוכן פוגעני' },
-  { value: 'Misleading', label: 'מטעה' },
-  { value: 'Illegal', label: 'בלתי חוקי' },
-  { value: 'Other', label: 'אחר' },
+const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
+  { value: 'Spam', key: 'post.reportReasonSpam' },
+  { value: 'Offensive', key: 'post.reportReasonOffensive' },
+  { value: 'Misleading', key: 'post.reportReasonMisleading' },
+  { value: 'Illegal', key: 'post.reportReasonIllegal' },
+  { value: 'Other', key: 'post.reportReasonOther' },
 ];
 
 interface Props {
@@ -22,10 +24,13 @@ interface Props {
 }
 
 export function ReportChatModal({ chatId, visible, onClose }: Props) {
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const submit = async () => {
     if (!userId) return;
@@ -38,13 +43,13 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
         note: note.trim() || undefined,
       });
       onClose();
-      Alert.alert('הדיווח נשלח', 'תודה, נבחן את הדיווח.');
+      setNotify({ title: t('post.reportSuccessTitle'), message: t('post.reportSuccessBody') });
     } catch (err) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        Alert.alert('כבר דיווחת', 'דיווחת על השיחה הזו ב-24 השעות האחרונות.');
         onClose();
+        setNotify({ title: t('post.reportDuplicateTitle'), message: t('chat.reportChatDuplicateBody') });
       } else {
-        Alert.alert('שגיאה', 'נסה שוב מאוחר יותר.');
+        setNotify({ title: t('general.error'), message: t('post.reportErrorBody') });
       }
     } finally {
       setSubmitting(false);
@@ -52,25 +57,26 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
   };
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>דיווח על השיחה</Text>
-          {REASONS.map((r) => (
+          <Text style={styles.title}>{t('chat.reportChatTitle')}</Text>
+          {REASON_KEYS.map((r) => (
             <TouchableOpacity
               key={r.value}
               style={styles.option}
               onPress={() => setReason(r.value)}
             >
               <View style={[styles.radio, reason === r.value && styles.radioActive]} />
-              <Text style={styles.optionLabel}>{r.label}</Text>
+              <Text style={styles.optionLabel}>{t(r.key)}</Text>
             </TouchableOpacity>
           ))}
           <TextInput
             style={styles.note}
             value={note}
             onChangeText={setNote}
-            placeholder="תיאור (אופציונלי, עד 500 תווים)"
+            placeholder={t('chat.reportChatNotePlaceholder')}
             placeholderTextColor={colors.textDisabled}
             multiline
             maxLength={500}
@@ -78,19 +84,21 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
           />
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={onClose}>
-              <Text style={styles.btnGhostText}>ביטול</Text>
+              <Text style={styles.btnGhostText}>{t('general.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.btn, styles.btnPrimary]}
               onPress={submit}
               disabled={submitting}
             >
-              <Text style={styles.btnPrimaryText}>{submitting ? '...' : 'שלח דיווח'}</Text>
+              <Text style={styles.btnPrimaryText}>{submitting ? t('chat.reportChatSubmitting') : t('post.reportSubmit')}</Text>
             </TouchableOpacity>
           </View>
         </View>
       </View>
     </Modal>
+    <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
+    </>
   );
 }
 

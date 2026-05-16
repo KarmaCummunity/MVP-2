@@ -6,14 +6,14 @@
 import { Stack } from 'expo-router';
 import React from 'react';
 import { colors } from '@kc/ui';
-import { BackButton } from '../../../src/components/BackButton';
+import { nativeStackHeaderLeftIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
 export default function UserHandleLayout() {
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        headerLeft: BackButton,
+        ...nativeStackHeaderLeftIconOnly,
         headerBackVisible: false,
         headerTintColor: colors.primary,
         headerStyle: { backgroundColor: colors.surface },

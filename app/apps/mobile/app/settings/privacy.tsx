@@ -2,13 +2,13 @@
 // FR-PROFILE-005 / FR-PROFILE-006: Public ↔ Private toggle + follow-requests entry.
 
 import React from 'react';
-import { StyleSheet, Switch, Text, TouchableOpacity, View } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { PlatformSwitch, colors, radius, spacing, typography } from '@kc/ui';
 import { useAuthStore } from '../../src/store/authStore';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { getUserRepo } from '../../src/services/userComposition';
@@ -73,10 +73,10 @@ export default function PrivacyScreen() {
         <View style={styles.row}>
           <Ionicons name="lock-closed-outline" size={20} color={colors.textPrimary} />
           <View style={styles.labelWrap}>
-            <Text style={styles.label}>פרופיל פרטי</Text>
-            <Text style={styles.hint}>רק עוקבים מאושרים יראו את הפוסטים והעוקבים שלך.</Text>
+            <Text style={styles.label}>{t('settings.privacyScreen.privateProfileLabel')}</Text>
+            <Text style={styles.hint}>{t('settings.privacyScreen.privateProfileHint')}</Text>
           </View>
-          <Switch value={isPrivate ?? false} onValueChange={onToggle} disabled={!user} />
+          <PlatformSwitch value={isPrivate ?? false} onValueChange={onToggle} disabled={!user} />
         </View>
 
         {isPrivate ? (
@@ -86,7 +86,9 @@ export default function PrivacyScreen() {
           >
             <Ionicons name="people-outline" size={20} color={colors.textPrimary} />
             <Text style={[styles.label, { flex: 1 }]}>
-              {`בקשות עוקבים${pendingCount > 0 ? ` (${pendingCount})` : ''}`}
+              {pendingCount > 0
+                ? t('settings.privacyScreen.followRequestsLinkWithCount', { count: pendingCount })
+                : t('settings.privacyScreen.followRequestsLink')}
             </Text>
             <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
           </TouchableOpacity>
@@ -94,11 +96,15 @@ export default function PrivacyScreen() {
       </View>
       <ConfirmActionModal
         visible={pendingTarget !== null}
-        title={pendingTarget === 'Private' ? 'להפוך את הפרופיל לפרטי?' : 'להפוך את הפרופיל לציבורי?'}
+        title={pendingTarget === 'Private'
+          ? t('settings.privacyScreen.confirmPrivateTitle')
+          : t('settings.privacyScreen.confirmPublicTitle')}
         message={pendingTarget === 'Private'
-          ? 'בקשות עקיבה חדשות ידרשו אישור. עוקבים קיימים יישארו (אפשר להסיר אותם ידנית). פוסטים פתוחים יישארו פתוחים. תוכלי לפרסם פוסטים חדשים לעוקבים בלבד.'
-          : 'כל הבקשות הממתינות יאושרו אוטומטית. פוסטים שפורסמו לעוקבים בלבד יישארו גלויים לכל עוקב חדש מעכשיו.'}
-        confirmLabel={pendingTarget === 'Private' ? 'הפוך לפרטי' : 'הפוך לציבורי'}
+          ? t('settings.privacyScreen.confirmPrivateMessage')
+          : t('settings.privacyScreen.confirmPublicMessage')}
+        confirmLabel={pendingTarget === 'Private'
+          ? t('settings.privacyScreen.confirmPrivateCta')
+          : t('settings.privacyScreen.confirmPublicCta')}
         isBusy={busyToggle}
         onCancel={() => (busyToggle ? null : setPendingTarget(null))}
         onConfirm={confirmToggle}

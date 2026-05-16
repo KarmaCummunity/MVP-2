@@ -62,8 +62,9 @@ export const donations = {
     composerHeading: 'ניתן גם להתנדב ישירות בארגון שלנו, ולעזור לקהילה הזאת להפתח! \nהשאירו הודעה ונחזור אליכם.',
     composerPlaceholder: 'הקלידו את ההודעה שלכם — מקצוע, תחום עניין, וזמינות...',
     sendButton: 'שלח הודעה',
-    sendSuccessTitle: 'תודה!',
-    sendSuccessBody: 'ההודעה התקבלה. ניצור איתך קשר בקרוב דרך הצ׳אט.',
+    sendError: 'לא נשלח. נסו שוב.',
+    sendRetry: 'נסה שוב',
+    volunteerPrefix: 'התנדבות בארגון: ',
   },
   // FR-DONATE-007/008/009 — community-curated NGO link list.
   links: {
@@ -167,6 +168,8 @@ export const search = {
   nationalLinks: 'מציג קישורים ארציים',
   give: 'נתינה',
   request: 'בקשה',
+  giveBadge: '🎁 נתינה',
+  requestBadge: '🔍 בקשה',
 
   // Post categories for filter
   categories: {

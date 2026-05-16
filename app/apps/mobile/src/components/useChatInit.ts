@@ -14,7 +14,7 @@ import { container } from '../lib/container';
 
 export interface ChatCounterpart {
   userId: string | null;
-  displayName: string;
+  displayName: string | null;
   shareHandle: string | null;
   isDeleted: boolean;
 }
@@ -26,16 +26,29 @@ const EMPTY_COUNTERPART: ChatCounterpart = {
   isDeleted: false,
 };
 
+/** Audit §14.4 — three-state load:
+ *  - 'loading' = findById in flight (first paint)
+ *  - 'not_found' = findById resolved with null (chat doesn't exist or RLS hid it)
+ *  - 'loaded' = chat row available; subscription has started
+ *  Consumer renders an EmptyState on 'not_found' instead of an empty header+bubble list. */
+export type ChatInitStatus = 'loading' | 'not_found' | 'loaded';
+
 export function useChatInit(chatId: string, userId: string) {
   const [chat, setChat] = useState<Chat | null>(null);
   const [counterpart, setCounterpart] = useState<ChatCounterpart>(EMPTY_COUNTERPART);
+  const [status, setStatus] = useState<ChatInitStatus>('loading');
 
   useEffect(() => {
     let cancelled = false;
+    setStatus('loading');
 
     void (async () => {
       const c = await container.chatRepo.findById(chatId);
-      if (cancelled || !c) return;
+      if (cancelled) return;
+      if (!c) {
+        setStatus('not_found');
+        return;
+      }
       const cp = await container.chatRepo.getCounterpart(c, userId);
       if (cancelled) return;
       setChat(c);
@@ -45,19 +58,17 @@ export function useChatInit(chatId: string, userId: string) {
         shareHandle: cp.shareHandle,
         isDeleted: cp.isDeleted,
       });
-    })();
+      setStatus('loaded');
 
-    void useChatStore
-      .getState()
-      .startThreadSub(chatId, container.chatRepo, container.chatRealtime, (next) => {
-        // Chat row changed in realtime (e.g. anchor_post_id flipped because the
-        // counterpart entered from a new post, or the post anchored here just
-        // closed — see migration 0026). Refresh local state so AnchoredPostCard
-        // reflects the new anchor without requiring a screen reload.
-        if (!cancelled) setChat(next);
-      });
+      // Subscribe only once we know the chat exists. A subscription on a
+      // never-fires channel (RLS-hidden chat id) used to spin the empty UI
+      // forever with no diagnostic.
+      void useChatStore
+        .getState()
+        .startThreadSub(chatId, container.chatRepo, container.chatRealtime, (next) => {
+          if (!cancelled) setChat(next);
+        });
 
-    void (async () => {
       try {
         await container.markChatRead.execute({ chatId, userId });
         if (!cancelled) useChatStore.getState().markChatLocallyRead(chatId);
@@ -72,5 +83,5 @@ export function useChatInit(chatId: string, userId: string) {
     };
   }, [chatId, userId]);
 
-  return { chat, counterpart };
+  return { chat, counterpart, status };
 }

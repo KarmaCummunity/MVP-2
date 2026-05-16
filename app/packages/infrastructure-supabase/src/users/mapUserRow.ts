@@ -1,14 +1,25 @@
 // Row → domain User mapper. Shared by findById / findByHandle.
 // The shape mirrors the columns from `users` (see 0001_init_users.sql).
-import type { User } from '@kc/domain';
+import type { PrivacyMode, User } from '@kc/domain';
+
+// TD-69 (audit 2026-05-16, P2.12) — narrow the raw DB string into the
+// 2-value domain union. Before D-21 (2026-05-15) the column could legally
+// be `'Followers'`; after D-21 only `'Public'` / `'Private'` are valid.
+// Any drift (legacy row, mid-migration state, or a future column-type
+// change) must collapse to `'Public'` rather than silently flow into FE
+// predicates like `MyProfileChrome.tsx` follow-requests link and the lock
+// icon, where an out-of-union value would misfire.
+function asPrivacyMode(raw: string | null | undefined): PrivacyMode {
+  return raw === 'Private' ? 'Private' : 'Public';
+}
 
 export interface UserRow {
   user_id: string;
   auth_provider: string;
   share_handle: string;
-  display_name: string;
-  city: string;
-  city_name: string;
+  display_name: string | null;
+  city: string | null;
+  city_name: string | null;
   profile_street?: string | null;
   profile_street_number?: string | null;
   biography: string | null;
@@ -42,7 +53,7 @@ export function mapUserRow(row: UserRow): User {
     profileStreetNumber: row.profile_street_number ?? null,
     biography: row.biography,
     avatarUrl: row.avatar_url,
-    privacyMode: row.privacy_mode as User['privacyMode'],
+    privacyMode: asPrivacyMode(row.privacy_mode),
     privacyChangedAt: row.privacy_changed_at,
     accountStatus: row.account_status as User['accountStatus'],
     onboardingState: row.onboarding_state as User['onboardingState'],

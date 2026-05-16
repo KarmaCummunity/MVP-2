@@ -1,23 +1,30 @@
 // FR-PROFILE-007 — Edit Profile (getEditableProfile + UpdateProfileUseCase).
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { useTranslation } from 'react-i18next';
+import { colors } from '@kc/ui';
 import { EditProfileAddressBlock } from '../src/components/EditProfileAddressBlock';
 import { EditProfileAvatar } from '../src/components/EditProfileAvatar';
+import { NotifyModal } from '../src/components/NotifyModal';
 import { useAuthStore } from '../src/store/authStore';
 import { getEditableProfile, getUpdateProfileUseCase } from '../src/services/userComposition';
+import { removeUploadedAvatar } from '../src/services/avatarUpload';
 import { mapEditProfileSaveError } from '../src/lib/editProfileSaveErrors';
+import { useUnsavedChangesGuard } from '../src/hooks/useUnsavedChangesGuard';
+import { editProfileStyles as styles } from './edit-profile.styles';
 
 interface InitialState {
-  readonly displayName: string;
-  readonly cityId: string;
-  readonly cityName: string;
+  // Nullable after migration 0084 (user still in `pending_basic_info`). The form
+  // requires non-null on save; loaders default to '' so inputs stay controlled.
+  readonly displayName: string | null;
+  readonly cityId: string | null;
+  readonly cityName: string | null;
   readonly profileStreet: string | null;
   readonly profileStreetNumber: string | null;
   readonly biography: string | null;
@@ -25,6 +32,7 @@ interface InitialState {
 }
 
 export default function EditProfileScreen() {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
@@ -39,6 +47,9 @@ export default function EditProfileScreen() {
   const [biography, setBiography] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initial, setInitial] = useState<InitialState | null>(null);
+  // TD-138 — Alert.alert is a no-op on react-native-web; surface every
+  // validation / load / save failure via NotifyModal instead.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -47,8 +58,8 @@ export default function EditProfileScreen() {
       try {
         const p = await getEditableProfile(session.userId);
         if (cancelled) return;
-        setDisplayName(p.displayName);
-        setCity({ id: p.city, name: p.cityName });
+        setDisplayName(p.displayName ?? '');
+        setCity(p.city && p.cityName ? { id: p.city, name: p.cityName } : null);
         setStreet(p.profileStreet ?? '');
         setStreetNumber(p.profileStreetNumber ?? '');
         setBiography(p.biography ?? '');
@@ -63,7 +74,8 @@ export default function EditProfileScreen() {
           avatarUrl: p.avatarUrl ?? session.avatarUrl ?? null,
         });
       } catch (err) {
-        Alert.alert('טעינה נכשלה', err instanceof Error ? err.message : 'שגיאה לא ידועה');
+        const message = err instanceof Error ? err.message : t('profile.editScreen.unknownError');
+        setNotify({ title: t('profile.editScreen.loadFailedTitle'), message });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -71,24 +83,46 @@ export default function EditProfileScreen() {
     return () => { cancelled = true; };
   }, [session]);
 
+  // Audit §16.10 — confirm before discarding unsaved edits on Back.
+  const isDirty = useMemo(() => {
+    if (!initial) return false;
+    const ts = street.trim() || null;
+    const tn = streetNumber.trim() || null;
+    const newBio = biography.trim() || null;
+    return (
+      displayName.trim() !== (initial.displayName ?? '') ||
+      (city?.id ?? '') !== (initial.cityId ?? '') ||
+      newBio !== initial.biography ||
+      avatarUrl !== initial.avatarUrl ||
+      ts !== (initial.profileStreet ?? null) ||
+      tn !== (initial.profileStreetNumber ?? null)
+    );
+  }, [initial, displayName, city, biography, avatarUrl, street, streetNumber]);
+  useUnsavedChangesGuard({
+    isDirty: isDirty && !saving,
+    title: t('profile.editScreen.unsavedChangesTitle'), message: t('profile.editScreen.unsavedChangesMessage'),
+    discardLabel: t('profile.editScreen.unsavedChangesDiscard'), cancelLabel: t('profile.editScreen.unsavedChangesCancel'),
+  });
+
   const handleSave = async () => {
     if (!session || !initial) return;
     if (displayName.trim().length === 0 || displayName.trim().length > 50) {
-      Alert.alert('שם לא תקין', 'נא להזין שם בין 1 ל־50 תווים.');
+      setNotify({ title: t('profile.editScreen.invalidNameTitle'), message: t('profile.editScreen.invalidNameMessage') });
       return;
     }
     if (!city) {
-      Alert.alert('עיר חסרה', 'נא לבחור עיר.');
+      setNotify({ title: t('profile.editScreen.missingCityTitle'), message: t('profile.editScreen.missingCityMessage') });
       return;
     }
     const ts = street.trim();
     const tn = streetNumber.trim();
+    const addrTitle = t('profile.editScreen.incompleteAddressTitle');
     if (ts.length > 0 && tn.length === 0) {
-      Alert.alert('כתובת לא מלאה', 'נא למלא גם מספר בית, או למחוק את שם הרחוב.');
+      setNotify({ title: addrTitle, message: t('profile.editScreen.incompleteAddressMessageNumber') });
       return;
     }
     if (tn.length > 0 && ts.length === 0) {
-      Alert.alert('כתובת לא מלאה', 'נא למלא שם רחוב, או למחוק את מספר הבית.');
+      setNotify({ title: addrTitle, message: t('profile.editScreen.incompleteAddressMessageStreet') });
       return;
     }
     setSaving(true);
@@ -96,8 +130,8 @@ export default function EditProfileScreen() {
       const trimmedName = displayName.trim();
       const trimmedBio = biography.trim();
       const newBio = trimmedBio.length === 0 ? null : trimmedBio;
-      const nameChanged = trimmedName !== initial.displayName;
-      const cityChanged = city.id !== initial.cityId;
+      const nameChanged = trimmedName !== (initial.displayName ?? '');
+      const cityChanged = city.id !== (initial.cityId ?? '');
       const bioChanged = newBio !== initial.biography;
       const avatarChanged = avatarUrl !== initial.avatarUrl;
       const nextStreet = ts.length === 0 ? null : ts;
@@ -111,6 +145,8 @@ export default function EditProfileScreen() {
       }
       const includeBasicInfo = nameChanged || cityChanged;
       const profileAddress = addrChanged ? { street: nextStreet, streetNumber: nextNum } : undefined;
+      // TD-108: drop the Storage object before persisting null on remove.
+      if (avatarChanged && avatarUrl === null && initial.avatarUrl) await removeUploadedAvatar(session.userId);
       await getUpdateProfileUseCase().execute({
         userId: session.userId,
         ...(includeBasicInfo
@@ -124,8 +160,8 @@ export default function EditProfileScreen() {
       await queryClient.invalidateQueries({ queryKey: ['user-profile', session.userId] });
       router.back();
     } catch (err) {
-      const code = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(code));
+      const code = err instanceof Error ? err.message : t('profile.editScreen.unknownError');
+      setNotify({ title: t('profile.editScreen.saveFailedTitle'), message: mapEditProfileSaveError(code) });
     } finally {
       setSaving(false);
     }
@@ -139,58 +175,33 @@ export default function EditProfileScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <KeyboardAvoidingView style={{ flex: 1 }} behavior={Platform.OS === 'ios' ? 'padding' : undefined}>
         <ScrollView contentContainerStyle={styles.scroll} keyboardShouldPersistTaps="handled">
-          <EditProfileAvatar
-            userId={session?.userId ?? ''}
-            displayName={displayName}
-            avatarUrl={avatarUrl}
-            disabled={saving}
-            onChange={setAvatarUrl}
-          />
+          <EditProfileAvatar userId={session?.userId ?? ''} displayName={displayName}
+            avatarUrl={avatarUrl} disabled={saving} onChange={setAvatarUrl} />
           <View style={styles.field}>
-            <Text style={styles.label}>שם מלא</Text>
+            <Text style={styles.label}>{t('profile.editScreen.fullNameLabel')}</Text>
             <TextInput style={styles.input} value={displayName} onChangeText={setDisplayName}
-              maxLength={50} textAlign="right" editable={!saving} placeholder="לדוגמה: רינה כהן" />
+              maxLength={50} textAlign="right" editable={!saving}
+              placeholder={t('profile.editScreen.fullNamePlaceholder')} />
             <Text style={styles.count}>{displayName.length}/50</Text>
           </View>
-          <EditProfileAddressBlock
-            city={city}
-            onCityChange={setCity}
-            street={street}
-            streetNumber={streetNumber}
-            onStreetChange={setStreet}
-            onStreetNumberChange={setStreetNumber}
-            disabled={saving}
-          />
+          <EditProfileAddressBlock city={city} onCityChange={setCity} street={street}
+            streetNumber={streetNumber} onStreetChange={setStreet}
+            onStreetNumberChange={setStreetNumber} disabled={saving} />
           <View style={styles.field}>
-            <Text style={styles.label}>ביוגרפיה (אופציונלי)</Text>
+            <Text style={styles.label}>{t('profile.editScreen.biographyLabel')}</Text>
             <TextInput style={[styles.input, styles.textarea]} value={biography} onChangeText={setBiography}
               maxLength={200} multiline textAlign="right" editable={!saving}
-              placeholder="קצת עליך — בלי קישורים" />
+              placeholder={t('profile.editScreen.biographyPlaceholder')} />
             <Text style={styles.count}>{biography.length}/200</Text>
           </View>
           <TouchableOpacity style={[styles.saveBtn, saving && { opacity: 0.6 }]} onPress={handleSave} disabled={saving}>
-            {saving ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.saveText}>שמור</Text>}
+            {saving ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.saveText}>{t('profile.editScreen.save')}</Text>}
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''}
+        message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  scroll: { padding: spacing.lg, gap: spacing.base, paddingBottom: spacing['3xl'] },
-  field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  input: {
-    backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md, ...typography.body, color: colors.textPrimary, minHeight: 48,
-  },
-  textarea: { minHeight: 90, textAlignVertical: 'top', paddingTop: spacing.md },
-  count: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
-  saveBtn: {
-    height: 52, backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', marginTop: spacing.base,
-  },
-  saveText: { ...typography.button, color: colors.textInverse },
-});

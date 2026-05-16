@@ -8,11 +8,19 @@ import type {
   CreatePostInput,
   FeedPage,
   IPostRepository,
+  PostActorIdentityRow,
   PostFeedFilter,
   PostWithOwner,
   UpdatePostInput,
+  UpsertPostActorIdentityInput,
 } from '@kc/application';
-import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
+import type {
+  Post,
+  PostStatus,
+  PostVisibility,
+  ProfileClosedPostsItem,
+  ProfileClosedPostsListMode,
+} from '@kc/domain';
 import type { Database } from '../database.types';
 import {
   POST_SELECT_BARE,
@@ -23,7 +31,7 @@ import {
   type PostWithOwnerJoinedRow,
 } from './mapPostRow';
 import { mapInsertError } from './mapInsertError';
-import { decodeCursor, encodeCursor } from './cursor';
+import { encodeCursor } from './cursor';
 import { buildFeedQuery } from './feedQuery';
 import { fetchRankedFeedPage, needsRankedPath } from './feedQueryRanked';
 import {
@@ -33,6 +41,13 @@ import {
 } from './closureMethods';
 import { executePostUpdate } from './executePostUpdate';
 import { getProfileClosedPostsHelper } from './getProfileClosedPostsHelper';
+import { applyPostActorIdentityProjectionBatch } from './applyPostActorIdentityProjection';
+import {
+  listPostActorIdentitiesForPost,
+  upsertPostActorIdentityRow,
+} from './postActorIdentityMethods';
+import { getMyPostsPage } from './getMyPostsPage';
+import { countOpenByUser as countOpenByUserQuery, fetchPostById } from './postRepoQueries';
 
 const FEED_HARD_MAX = 100;
 
@@ -66,13 +81,18 @@ export class SupabasePostRepository implements IPostRepository {
     const hasMore = rows.length > safeLimit;
     const page = hasMore ? rows.slice(0, safeLimit) : rows;
     const posts = page.map(mapPostWithOwnerRow);
-    const last = posts[posts.length - 1];
+    const projected = await applyPostActorIdentityProjectionBatch(this.client, posts, viewerId);
+    const last = projected[projected.length - 1];
     const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt }) : null;
-    return { posts, nextCursor };
+    return { posts: projected, nextCursor };
   }
 
   // ── Single post ─────────────────────────────────────────────────────────
-  async findById(postId: string, _viewerId: string | null): Promise<PostWithOwner | null> {
+  async findById(
+    postId: string,
+    viewerId: string | null,
+    opts?: { identityListingHostUserId?: string | null },
+  ): Promise<PostWithOwner | null> {
     const { data, error } = await this.client
       .from('posts')
       .select(POST_SELECT_OWNER)
@@ -80,7 +100,11 @@ export class SupabasePostRepository implements IPostRepository {
       .maybeSingle();
     if (error) throw new Error(`findById: ${error.message}`);
     if (!data) return null;
-    return mapPostWithOwnerRow(data as unknown as PostWithOwnerJoinedRow);
+    const mapped = mapPostWithOwnerRow(data as unknown as PostWithOwnerJoinedRow);
+    const [out] = await applyPostActorIdentityProjectionBatch(this.client, [mapped], viewerId, {
+      identityListingHostUserId: opts?.identityListingHostUserId ?? null,
+    });
+    return out ?? null;
   }
 
   // ── Mutations ───────────────────────────────────────────────────────────
@@ -125,13 +149,28 @@ export class SupabasePostRepository implements IPostRepository {
       }
     }
 
-    const created = await this.fetchPostById(postId);
+    const created = await fetchPostById(this.client, postId);
     if (!created) throw new Error(`create: post ${postId} disappeared after insert`);
+
+    if (input.hideFromCounterparty) {
+      try {
+        await upsertPostActorIdentityRow(this.client, {
+          postId,
+          userId: input.ownerId,
+          surfaceVisibility: input.visibility,
+          hideFromCounterparty: true,
+        });
+      } catch (e) {
+        await this.client.from('posts').delete().eq('post_id', postId);
+        throw e instanceof Error ? e : new Error(String(e));
+      }
+    }
+
     return created;
   }
 
   async update(postId: string, patch: UpdatePostInput): Promise<Post> {
-    return executePostUpdate(this.client, postId, patch, (pid) => this.fetchPostById(pid));
+    return executePostUpdate(this.client, postId, patch, (pid) => fetchPostById(this.client, pid));
   }
 
   async delete(postId: string): Promise<void> {
@@ -170,35 +209,32 @@ export class SupabasePostRepository implements IPostRepository {
   reopen(postId: string): Promise<Post> {
     return reopenPostHelper(this.client, postId);
   }
+  async unmrkRecipientSelf(postId: string): Promise<void> {
+    const { error } = await this.client.rpc('rpc_recipient_unmark_self', { p_post_id: postId });
+    if (error) throw new Error(`unmrkRecipientSelf: ${error.message}`);
+  }
   getClosureCandidates(postId: string): Promise<ClosureCandidate[]> {
     return getClosureCandidatesHelper(this.client, postId);
   }
 
   // ── User's own posts ────────────────────────────────────────────────────
-  async getMyPosts(
+  getMyPosts(
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
-  ): Promise<Post[]> {
-    if (status.length === 0) return [];
-    const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
-    const decoded = decodeCursor(cursor);
-
-    let q = this.client
-      .from('posts')
-      .select(POST_SELECT_BARE)
-      .eq('owner_id', userId)
-      .in('status', status)
-      .order('created_at', { ascending: false })
-      .limit(safeLimit);
-
-    if (decoded) q = q.lt('created_at', decoded.createdAt);
-
-    const { data, error } = await q;
-    if (error) throw new Error(`getMyPosts: ${error.message}`);
-    const rows = (data ?? []) as unknown as PostJoinedRow[];
-    return rows.map(mapPostRow);
+    visibility?: PostVisibility,
+    excludeVisibility?: PostVisibility,
+  ): Promise<{ posts: Post[]; nextCursor: string | null }> {
+    return getMyPostsPage(
+      this.client,
+      userId,
+      status,
+      limit,
+      cursor,
+      visibility,
+      excludeVisibility,
+    );
   }
 
   // ── Profile closed posts (publisher ∪ respondent) ────────────────────────
@@ -207,30 +243,28 @@ export class SupabasePostRepository implements IPostRepository {
     viewerUserId: string | null,
     limit: number,
     cursor?: string,
+    listMode?: ProfileClosedPostsListMode,
   ): Promise<ProfileClosedPostsItem[]> {
-    return getProfileClosedPostsHelper(this.client, profileUserId, viewerUserId, limit, cursor);
+    return getProfileClosedPostsHelper(
+      this.client,
+      profileUserId,
+      viewerUserId,
+      limit,
+      cursor,
+      listMode ?? 'standard',
+    );
+  }
+
+  async listPostActorIdentities(postId: string): Promise<PostActorIdentityRow[]> {
+    return listPostActorIdentitiesForPost(this.client, postId);
+  }
+
+  async upsertPostActorIdentity(input: UpsertPostActorIdentityInput): Promise<void> {
+    return upsertPostActorIdentityRow(this.client, input);
   }
 
   // ── Stats ───────────────────────────────────────────────────────────────
-  async countOpenByUser(userId: string): Promise<number> {
-    const { count, error } = await this.client
-      .from('posts')
-      .select('post_id', { count: 'exact', head: true })
-      .eq('owner_id', userId)
-      .eq('status', 'open');
-    if (error) throw new Error(`countOpenByUser: ${error.message}`);
-    return count ?? 0;
-  }
-
-  // ── Internal ────────────────────────────────────────────────────────────
-  private async fetchPostById(postId: string): Promise<Post | null> {
-    const { data, error } = await this.client
-      .from('posts')
-      .select(POST_SELECT_BARE)
-      .eq('post_id', postId)
-      .maybeSingle();
-    if (error) throw new Error(`fetchPostById: ${error.message}`);
-    if (!data) return null;
-    return mapPostRow(data as unknown as PostJoinedRow);
+  countOpenByUser(userId: string): Promise<number> {
+    return countOpenByUserQuery(this.client, userId);
   }
 }

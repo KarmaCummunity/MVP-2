@@ -1,6 +1,7 @@
 // Generic two-button confirmation modal used by post-detail ⋮ menu actions
 // (delete-owner, admin-remove, block).
 import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 
 interface Props {
@@ -8,6 +9,8 @@ interface Props {
   title: string;
   message: string;
   confirmLabel: string;
+  /** Secondary action label (defaults to `general.cancel`). */
+  cancelLabel?: string;
   /** When true, the confirm button is rendered in destructive (red) style. */
   destructive?: boolean;
   isBusy?: boolean;
@@ -21,12 +24,15 @@ export function ConfirmActionModal({
   title,
   message,
   confirmLabel,
+  cancelLabel: cancelLabelProp,
   destructive = false,
   isBusy = false,
   errorMessage = null,
   onCancel,
   onConfirm,
 }: Props) {
+  const { t } = useTranslation();
+  const cancelLabel = cancelLabelProp ?? t('general.cancel');
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onCancel}>
       <View style={styles.backdrop}>
@@ -39,9 +45,9 @@ export function ConfirmActionModal({
               style={[styles.btn, styles.btnSecondary, isBusy && styles.btnDisabled]}
               disabled={isBusy}
               onPress={onCancel}
-              accessibilityLabel="ביטול"
+              accessibilityLabel={cancelLabel}
             >
-              <Text style={styles.btnSecondaryText}>ביטול</Text>
+              <Text style={styles.btnSecondaryText}>{cancelLabel}</Text>
             </Pressable>
             <Pressable
               style={[

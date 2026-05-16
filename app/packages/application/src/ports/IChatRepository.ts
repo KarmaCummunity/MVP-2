@@ -3,7 +3,7 @@ import type { Chat, Message } from '@kc/domain';
 export interface ChatWithPreview extends Chat {
   otherParticipant: {
     userId: string | null;            // null when counterpart hard-deleted
-    displayName: string;
+    displayName: string | null;       // null when counterpart hard-deleted; UI renders t('common.deletedUser')
     avatarUrl: string | null;
     shareHandle: string | null;       // null when counterpart hard-deleted
     isDeleted: boolean;
@@ -47,7 +47,7 @@ export interface IChatRepository {
     viewerId: string,
   ): Promise<{
     userId: string | null;
-    displayName: string;
+    displayName: string | null;
     avatarUrl: string | null;
     shareHandle: string | null;
     isDeleted: boolean;
@@ -55,6 +55,12 @@ export interface IChatRepository {
 
   // Support thread (FR-CHAT-007)
   getOrCreateSupportThread(userId: string): Promise<Chat>;
+
+  /**
+   * FR-MOD-002 / FR-CHAT-007 AC3 — get/create the support thread and inject a
+   * system message with the issue details in one round-trip.
+   */
+  submitSupportIssue(category: string | null, description: string): Promise<Chat>;
 
   /**
    * Returns true if the user has ever sent any user-kind message across all

@@ -1,11 +1,12 @@
 // FR-CLOSURE (UI extension) — shows who closed the loop on a closed_delivered
 // post. Label depends on post.type:
-//   • Give    → "נמסר ל-X" (owner gave; marked user is the receiver)
-//   • Request → "ניתן על-ידי X" (owner asked for help; marked user is the giver)
-// Tapping the row opens the marked user's profile.
+//   • Give    → "delivered to X" (owner gave; marked user is the receiver)
+//   • Request → "given by X"     (owner asked for help; marked user is the giver)
+// Tapping the row opens the marked user's profile when profileNavigable is true.
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { AvatarInitials } from '../AvatarInitials';
@@ -14,33 +15,54 @@ interface Props {
   postType: PostType;
   recipient: {
     userId: string;
-    displayName: string;
+    /** Null while the recipient is still in `pending_basic_info` (migration 0084). */
+    displayName: string | null;
     shareHandle: string;
     avatarUrl: string | null;
   };
+  /** FR-POST-021 — when false, do not navigate to profile from this row. */
+  profileNavigable?: boolean;
 }
 
-export function RecipientCallout({ postType, recipient }: Props) {
+export function RecipientCallout({ postType, recipient, profileNavigable = true }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
-  const labelLeft = postType === 'Give' ? 'נמסר ל' : 'ניתן על-ידי';
-  const sublabel = postType === 'Give' ? 'הפריט נמסר' : 'הבקשה נענתה';
+  const labelLeft = postType === 'Give' ? t('closure.calloutGiveLabel') : t('closure.calloutRequestLabel');
+  const sublabel = postType === 'Give' ? t('closure.calloutGiveSublabel') : t('closure.calloutRequestSublabel');
+  const displayName = profileNavigable
+    ? (recipient.displayName ?? t('profile.fallbackName'))
+    : (recipient.displayName || t('post.detail.anonymousUser'));
 
-  return (
-    <Pressable
-      style={styles.row}
-      onPress={() => router.push(`/user/${recipient.shareHandle}`)}
-      accessibilityLabel={`${labelLeft} ${recipient.displayName}`}
-    >
+  const inner = (
+    <>
       <Ionicons name="checkmark-circle" size={22} color={colors.success} />
       <View style={styles.text}>
         <Text style={styles.sublabel}>{sublabel}</Text>
         <Text style={styles.label} numberOfLines={1}>
           {labelLeft}{' '}
-          <Text style={styles.name}>{recipient.displayName}</Text>
+          <Text style={styles.name}>{displayName}</Text>
         </Text>
       </View>
-      <AvatarInitials name={recipient.displayName} avatarUrl={recipient.avatarUrl} size={36} />
-      <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
+      <AvatarInitials name={displayName} avatarUrl={profileNavigable ? recipient.avatarUrl : null} size={36} />
+      {profileNavigable ? <Ionicons name="chevron-back" size={18} color={colors.textSecondary} /> : null}
+    </>
+  );
+
+  if (!profileNavigable) {
+    return (
+      <View style={styles.row} accessibilityLabel={`${labelLeft} ${displayName}`}>
+        {inner}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      style={styles.row}
+      onPress={() => router.push(`/user/${recipient.shareHandle}`)}
+      accessibilityLabel={`${labelLeft} ${displayName}`}
+    >
+      {inner}
     </Pressable>
   );
 }

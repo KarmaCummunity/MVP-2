@@ -5,8 +5,9 @@
 // docs/SSOT/spec/01_auth_and_onboarding.md
 // ─────────────────────────────────────────────
 
-import type { SupabaseClient, AuthError as SbAuthError, Session as SbSession } from '@supabase/supabase-js';
+import type { SupabaseClient, Session as SbSession } from '@supabase/supabase-js';
 import { AuthError, type AuthSession, type IAuthService } from '@kc/application';
+import { mapAuthError } from './mapAuthError';
 
 export class SupabaseAuthService implements IAuthService {
   private activeExchangeCode: string | null = null;
@@ -24,13 +25,28 @@ export class SupabaseAuthService implements IAuthService {
       password,
       options: { emailRedirectTo: options?.emailRedirectTo },
     });
-    if (error) throw mapAuthError(error);
+    if (error) {
+      const mapped = mapAuthError(error);
+      // TD-69: never reveal that the email is already registered. Treat it as
+      // a pending-verification success — the caller already routes a null
+      // session to the "check your email" panel (FR-AUTH-006 AC2).
+      if (mapped.code === 'email_already_in_use') return null;
+      throw mapped;
+    }
     return data.session ? toSession(data.session) : null;
   }
 
   async signInWithEmail(email: string, password: string): Promise<AuthSession> {
     const { data, error } = await this.client.auth.signInWithPassword({ email, password });
-    if (error) throw mapAuthError(error);
+    if (error) {
+      const mapped = mapAuthError(error);
+      // TD-69: collapse credentialed-sign-in failures to a generic code so a
+      // scripted attacker can't tell whether the email is registered.
+      if (mapped.code === 'invalid_credentials' || mapped.code === 'email_already_in_use') {
+        throw new AuthError('authentication_failed', error.message, error);
+      }
+      throw mapped;
+    }
     if (!data.session) {
       throw new AuthError('unknown', 'sign_in_no_session');
     }
@@ -137,27 +153,3 @@ function pickString(meta: Record<string, unknown>, keys: readonly string[]): str
   return null;
 }
 
-function mapAuthError(err: SbAuthError): AuthError {
-  const status = err.status;
-  const msg = (err.message || '').toLowerCase();
-
-  if (msg.includes('invalid login') || msg.includes('invalid credentials')) {
-    return new AuthError('invalid_credentials', err.message, err);
-  }
-  if (msg.includes('already registered') || msg.includes('already in use') || status === 422) {
-    return new AuthError('email_already_in_use', err.message, err);
-  }
-  if (msg.includes('email not confirmed')) {
-    return new AuthError('email_not_verified', err.message, err);
-  }
-  if (msg.includes('rate limit') || status === 429) {
-    return new AuthError('rate_limited', err.message, err);
-  }
-  if (msg.includes('network')) {
-    return new AuthError('network', err.message, err);
-  }
-  if (status === 401 || status === 403) {
-    return new AuthError('session_expired', err.message, err);
-  }
-  return new AuthError('unknown', err.message, err);
-}

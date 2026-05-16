@@ -1,4 +1,5 @@
 import '../src/i18n';
+import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
@@ -18,7 +19,7 @@ if (Platform.OS === 'web' && typeof navigator !== 'undefined' && 'serviceWorker'
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
   document.documentElement.dir = 'rtl';
   document.documentElement.lang = 'he';
-  document.title = 'KC - קהילת קארמה';
+  document.title = i18n.t('appName');
   // Expo's prod export injects `<link rel="icon" href="/favicon.ico" />` from
   // `web.favicon`, but the dev server doesn't — inject it here so the tab icon
   // shows during local development too. No-op when the link already exists.
@@ -166,11 +167,13 @@ export default function RootLayout() {
                     {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
                     <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
-                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: 'עריכת פרופיל' }} />
-                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: 'פרטי פוסט' }} />
+                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
+                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
                     {/* user/[handle]/* owns its own header via the nested _layout */}
                     <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    <Stack.Screen name="chat/[id]" options={detailStackScreenOptions} />
+                    {/* In-screen `ChatConversationHeader` owns the top bar; a native-stack header
+                        must stay off so it never sits above the custom bar on web/mobile (taps). */}
+                    <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
                     {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
                     <Stack.Screen name="chat/index" options={{ headerShown: false }} />
                   </Stack>

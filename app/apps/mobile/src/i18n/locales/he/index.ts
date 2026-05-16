@@ -6,6 +6,9 @@
 // ─────────────────────────────────────────────
 
 import { donations, search } from './donations';
+import { authHe } from './modules/auth';
+import { onboardingHe } from './modules/onboarding';
+import { errorsHe } from './modules/errors';
 import { chatHe } from './modules/chat';
 import { notificationsHe } from './modules/notifications';
 import { moderationHe, auditHe, accountBlockedHe } from './modules/moderation';
@@ -13,107 +16,38 @@ import { postHe } from './modules/post';
 import { settingsHe } from './modules/settings';
 import { stats } from './stats';
 import { aboutContentMerged } from './modules/aboutContentBundle';
+import { tabsHe } from './modules/tabs';
+import { errorBoundaryHe, devBannerHe, optionsMenuHe } from './modules/ui';
+import { feedHe } from './modules/feed';
+import { profileHe } from './modules/profile';
+import { closureHe } from './modules/closure';
+import { filtersHe } from './modules/filters';
+import { commonHe } from './modules/common';
 
 const he = {
   // App
   appName: 'KC - קהילת קארמה',
 
-  // Auth
-  auth: {
-    welcome: 'ברוכים הבאים',
-    tagline: 'תן. קבל. חבר קהילה.',
-    continueWithGoogle: 'המשך עם Google',
-    continueWithApple: 'המשך עם Apple',
-    continueWithPhone: 'המשך עם מספר טלפון',
-    continueWithEmail: 'המשך עם דוא"ל',
-    orDivider: 'או',
-    guestPreview: 'הצץ בפיד',
-    signIn: 'כניסה',
-    signUp: 'הרשמה',
-    email: 'דוא"ל',
-    password: 'סיסמה',
-    forgotPassword: 'שכחתי סיסמה',
-    noAccount: 'אין לי חשבון עדיין',
-    hasAccount: 'יש לי כבר חשבון',
-    phone: 'מספר טלפון',
-    otpCode: 'קוד אימות',
-    otpSent: 'שלחנו קוד SMS ל-{{phone}}',
-    verify: 'אמת',
-    resendOtp: 'שלח שוב',
-    bySigningUp: 'בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.',
-  },
+  // Auth (FR-AUTH-001..014) — see modules/auth.ts
+  auth: authHe,
 
-  // Onboarding
-  onboarding: {
-    aboutIntroTitle: 'ברוכים הבאים לקארמה',
-    aboutIntroBody:
-      'מחברים בין מי שרוצה לתת, למי שצריך לקבל. פשוט, חברי, וחינמי לחלוטין.',
-    aboutIntroCta: 'מתחילים',
-    pillarFree: 'חינמי לחלוטין',
-    pillarNoAds: 'בלי פרסומות',
-    pillarNonProfit: 'ללא רווחים',
-    stepBasic: 'פרטים בסיסיים',
-    basicInfoSubtitle:
-      ' וודא את השם ומלא את הכתובת שלך — כדי שנוכל להתאים פוסטים אליך. אפשר להשלים גם בהמשך.',
-    displayName: 'שם מלא',
-    city: 'עיר מגורים',
-    stepPhoto: 'תמונת פרופיל',
-    uploadPhoto: 'העלה תמונה',
-    skip: 'דלג',
-    continue: 'המשך',
-    stepWelcome: 'ברוכים הבאים לקהילה!',
-    welcomeDesc: 'כאן תוכל לתת ולקבל חפצים בחינם מוחלט — ללא כסף, ללא חליפין.',
-    howItWorks: 'איך זה עובד?',
-    step1Title: 'פרסם מה יש לך לתת',
-    step1Desc: 'תמונה + כמה מילים — וזהו.',
-    step2Title: 'בקש מה שאתה צריך',
-    step2Desc: 'פרסם בקשה ומישהו מהקהילה יענה.',
-    step3Title: 'תאם מסירה',
-    step3Desc: 'שוחח ישירות עם הנותן/מקבל.',
-    letsGo: 'יאללה, מתחילים!',
-  },
+  // Onboarding (FR-AUTH-010..012, FR-AUTH-018) — see modules/onboarding.ts
+  onboarding: onboardingHe,
 
-  // Feed
-  feed: {
-    title: 'פיד ראשי',
-    filters: 'סננים',
-    clearFilters: 'נקה סינון',
-    activeFilters: '{{count}} סננים פעילים',
-    giveType: '🎁 לתת',
-    requestType: '🔍 לבקש',
-    allTypes: 'הכל',
-    searchPlaceholder: 'חפש לפי מוצר, קטגוריה...',
-    noResults: 'לא נמצאו פוסטים',
-    noResultsDesc: 'נסה לשנות את הסינון או חפש בכל הערים.',
-    loadMore: 'טעון עוד',
-    guestBanner: 'הצטרף לקהילה כדי לראות את כל הפוסטים הפעילים באזור שלך',
-    guestBannerWithCount: 'הצטרף לקהילה כדי לראות עוד {{count}} פוסטים פעילים באזור שלך',
-    joinNow: 'הצטרף עכשיו',
-    firstPostNudge: 'פרסם את הפוסט הראשון שלך! 🎁',
-    closedTag: '🔒 נמסר',
-    followersTag: '👥 לעוקבים בלבד',
-    refreshSuccess: 'הפיד עודכן',
-    refreshFailed: 'הרענון נכשל — נסה שוב',
-  },
+  // Feed — see modules/feed.ts
+  feed: feedHe,
 
   // Post — see modules/post.ts
   post: postHe,
 
-  // Profile
-  profile: {
-    myProfile: 'הפרופיל שלי',
-    editProfile: 'ערוך פרופיל',
-    shareProfile: 'שתף פרופיל',
-    followers: 'עוקבים',
-    following: 'נעקבים',
-    activePosts: 'פוסטים פעילים',
-    closedPosts: 'פוסטים שנמסרו',
-    follow: 'עקוב',
-    following_btn: 'מעקב פעיל ✓',
-    requestSent: 'בקשה נשלחה ⏳',
-    sendMessage: 'שלח הודעה',
-    privateProfile: '🔒 הפרופיל פרטי. שלח בקשת עקיבה כדי לראות פוסטים.',
-  },
+  // Profile — see modules/profile.ts
+  profile: profileHe,
+
+  // Closure (FR-CLOSURE-001..005) — see modules/closure.ts
+  closure: closureHe,
+
+  // Filters (FR-FEED-004/005/006/018/020) — see modules/filters.ts
+  filters: filtersHe,
 
   // Chat — see modules/chat.ts (FR-CHAT-016)
   chat: chatHe,
@@ -151,10 +85,25 @@ const he = {
   // Search (D-16, FR-FEED-016) — see donations.ts
   search,
 
+  // Tab labels — see modules/tabs.ts
+  tabs: tabsHe,
+
+  // Error messages (auth/post/profile/media/createPost) — see modules/errors.ts
+  errors: errorsHe,
+
+  // Misc chrome — see modules/ui.ts
+  errorBoundary: errorBoundaryHe,
+  devBanner: devBannerHe,
+  optionsMenu: optionsMenuHe,
+
+  // Cross-cutting placeholders — see modules/common.ts
+  common: commonHe,
+
   // General
   general: {
     loading: 'טוען...',
     error: 'אירעה שגיאה',
+    errorTitle: 'שגיאה',
     retry: 'נסה שוב',
     cancel: 'ביטול',
     confirm: 'אישור',
@@ -164,12 +113,14 @@ const he = {
     no: 'לא',
     back: 'חזרה',
     close: 'סגור',
+    gotIt: 'הבנתי',
     now: 'עכשיו',
     today: 'היום',
     yesterday: 'אתמול',
     minutesAgo: 'לפני {{count}} דקות',
     hoursAgo: 'לפני {{count}} שעות',
     daysAgo: 'לפני {{count}} ימים',
+    unknownError: 'שגיאה לא ידועה',
   },
 } as const;
 

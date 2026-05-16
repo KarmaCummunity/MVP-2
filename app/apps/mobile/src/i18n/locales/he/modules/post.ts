@@ -1,17 +1,22 @@
 // FR-POST strings split from main bundle (TD-35 file-size budget).
+import { postMenuHe } from './postMenu';
+import { postReportHe } from './postReport';
+
 export const postHe = {
+  ...postMenuHe,
+  ...postReportHe,
   give: 'לתת חפץ',
   request: 'לבקש חפץ',
   title: 'כותרת',
   titlePlaceholder: 'מה אתה נותן/מבקש?',
   description: 'תיאור (אופציונלי)',
   descPlaceholder: 'פרטים נוספים על החפץ...',
-  category: 'קטגוריה',
-  condition: 'מצב החפץ',
   urgency: 'דחיפות (אופציונלי)',
   urgencyPlaceholder: 'לדוגמה: צריך עד שישי',
   photos: 'תמונות',
   addPhoto: 'הוסף תמונה',
+  removePhoto: 'הסר תמונה',
+  sendMessageA11y: 'שלח הודעה למפרסם',
   address: 'כתובת',
   cityLabel: 'עיר',
   streetLabel: 'רחוב',
@@ -42,6 +47,147 @@ export const postHe = {
   conditionGood: 'טוב',
   conditionFair: 'בינוני',
   photoRequired: 'תמונה נדרשת עבור פוסט "לתת"',
-  maxPhotos: 'מקסימום 5 תמונות',
+  maxPhotos: 'מקסימום {{max}} תמונות',
   maxPosts: 'הגעת למקסימום 20 פוסטים פעילים',
+  imageZoom: 'הגדל תמונה',
+  imageZoomNth: 'הגדל תמונה {{index}} מתוך {{total}}',
+  imageViewerClose: 'סגור תצוגת תמונה',
+
+  // FR-POST-003 — LocationDisplayLevelChooser (publish-address granularity)
+  locationDisplayLabel: 'תצוגת הכתובת',
+  locationDisplayCityAndStreet: 'עיר ורחוב',
+  locationDisplayHintCityOnly: 'אנונימיות מרבית',
+  locationDisplayHintCityAndStreet: 'מומלץ',
+  locationDisplayHintFullAddress: 'כולל מספר בית',
+
+  // PhotoPicker
+  photosRequiredSuffix: '* (חובה עבור "לתת")',
+  photosHint: 'בחר עד {{max}} תמונות מהגלריה.',
+
+  // VisibilityChooser sub-labels (FR-POST-003)
+  visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
+  visibilityFollowersSub: 'הפוסט יוצג רק לעוקבים מאושרים שלך',
+  visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי; אפשר לפתוח לציבור בעריכה',
+  // FR-POST-003 AC5 — public profile: Followers-only row hint (tooltip copy as subtitle).
+  visibilityFollowersLockedSub: 'זמין בפרופיל פרטי. הגדרות ← פרטיות.',
+  deleteError: 'המחיקה נכשלה, נסה שוב.',
+  deleteSuccess: 'הפוסט נמחק.',
+  adminRemoveError: 'ההסרה נכשלה, נסה שוב.',
+  adminRemoveSuccess: 'הפוסט הוסר.',
+
+  // Category labels — keys match the `Category` enum so callers do
+  // `t(\`post.category.${cat}\`)`. Moved out of domain/value-objects.ts
+  // per the Hebrew→i18n migration (Pattern #2).
+  category: {
+    Furniture: 'רהיטים',
+    Clothing: 'בגדים',
+    Books: 'ספרים',
+    Toys: 'משחקים',
+    BabyGear: 'ציוד תינוקות',
+    Kitchen: 'מטבח',
+    Sports: 'ספורט',
+    Electronics: 'חשמל',
+    Tools: 'כלי עבודה',
+    Other: 'אחר',
+  },
+
+  // Item-condition labels — keys match the `ItemCondition` enum so callers
+  // do `t(\`post.condition.${cond}\`)`. Moved out of domain/value-objects.ts.
+  condition: {
+    New: 'חדש',
+    LikeNew: 'כמו חדש',
+    Good: 'טוב',
+    Fair: 'בינוני',
+    Damaged: 'שבור/תקול',
+  },
+
+  // PR5d (UI sweep, Pattern #1) — header titles + create-screen literals
+  // not covered by the existing keys above. Add a new key only when no
+  // sibling already covers the exact Hebrew string.
+  detailTitle: 'פרטי פוסט',
+  streetNumberShort: 'מס׳',
+  categoryLabel: 'קטגוריה',
+  conditionLabel: 'מצב החפץ',
+  reauthRequired: 'יש להתחבר מחדש לפני פרסום פוסט.',
+  uploadFailedTitle: 'העלאת התמונה נכשלה',
+  uploadRetry: 'נסה שוב.',
+  uploadPartial: '{{ok}}/{{total}} הועלו — נסה שוב את היתר.',
+  networkError: 'שגיאת רשת. נסה שוב.',
+  publishFailed: 'פרסום נכשל: {{message}}',
+
+  // FR-POST-006 AC2 — publish with Followers-only visibility (create flow).
+  publishFollowersTitle: 'לפרסם רק לעוקבים מאושרים?',
+  publishFollowersBody:
+    'הפוסט יופיע בפיד של עד {{count}} עוקבים מאושרים (לפי המונה בפרופיל).',
+  publishFollowersConfirmCta: 'רק עוקבים',
+  publishFollowersMakePublicCta: 'הפוך לציבורי',
+
+  /** Collapsible block on create post — address display, visibility, partner-surface mask. */
+  exposureSettingsSectionTitle: 'הגדרות חשיפה',
+
+  /** FR-POST-021 + D-31 — third-party viewers on the partner's closed-post profile (not the partner in chat). */
+  counterpartyMaskLabel: 'להסתיר את הזהות שלי מצופים אחרים ב״פוסטים סגורים״ של המתאם',
+  createCounterpartyPrivacyTitle: 'מי רואה אותי ליד הפוסט אצל המתאם?',
+  createCounterpartyPrivacyHint:
+    'בצ׳אט המתאם כבר רואה מי אתה. כאן מדובר במשתמשים שלישיים שנכנסים לרשימת הפוסטים הסגורים בפרופיל של המתאם — הם לא ייראו את השם והתמונה שלך בכרטיס הפוסט. בפיד ובמקומות אחרים זה לפי הגדרות הנראות למעלה.',
+
+  // Post detail screen (post/[id].tsx) — PR5b i18n sweep.
+  detail: {
+    loadErrorTitle: 'שגיאה בטעינת הפוסט',
+    retry: 'נסה שוב',
+    notFoundTitle: 'הפוסט לא נמצא',
+    notFoundSubtitle: 'ייתכן שהוא נסגר או שאין לך הרשאה לצפייה.',
+    streetPrefix: 'רחוב',
+    typeGiveLabel: 'לתת',
+    typeRequestLabel: 'לבקש',
+    conditionPrefix: 'מצב: ',
+    urgencyPrefix: '⚡ דחיפות: ',
+    contactA11y: 'שלח הודעה למפרסם',
+    contactOpeningA11y: 'פותח שיחה עם המפרסם',
+    contactCta: '💬 שלח הודעה למפרסם',
+    anonymousUser: 'אנונימי',
+  },
+
+  // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.
+  editPost: {
+    notifyErrorTitle: 'שגיאה',
+    needReauthBody: 'יש להתחבר מחדש לפני שמירת פוסט.',
+    uploadFailedTitle: 'העלאת התמונה נכשלה',
+    uploadFailedFallback: 'נסה שוב.',
+    networkError: 'שגיאת רשת. נסה שוב.',
+    saveFailedTitle: 'שמירה נכשלה',
+    loadErrorTitle: 'שגיאה בטעינת הפוסט',
+    retry: 'נסה שוב',
+    notFoundTitle: 'הפוסט לא נמצא',
+    notFoundSubtitle: 'ייתכן שהוא נסגר או שאין לך הרשאה לצפייה.',
+    forbiddenTitle: 'אין הרשאה',
+    forbiddenSubtitle: 'רק בעל הפוסט או מנהל על יכולים לערוך אותו.',
+    notEditableTitle: 'לא ניתן לערוך',
+    notEditableExpired: 'הפוסט פג תוקף. פרסם אותו מחדש כדי לערוך.',
+    notEditableRemoved: 'הפוסט הוסר על ידי מנהל ולא ניתן לעריכה.',
+    visibilityDowngradeSub: 'לא ניתן להוריד פרטיות לאחר פרסום',
+    visibilityPublicLabel: '🌍 כולם',
+    visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
+    visibilityFollowersLabel: '👥 עוקבים בלבד',
+    visibilityFollowersSub: 'הפוסט יוצג רק לעוקבים שלך',
+    visibilityOnlyMeLabel: '🔒 רק אני',
+    visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי',
+    headerTitle: 'עריכת פוסט',
+    saveCta: 'שמור',
+    typeBadgeGive: '🎁 לתת חפץ',
+    typeBadgeRequest: '🔍 לבקש חפץ',
+    typeBadgeSub: 'לא ניתן לשנות את סוג הפוסט לאחר פרסום',
+    sectionTitle: 'כותרת',
+    titlePlaceholder: 'מה אתה נותן/מבקש?',
+    sectionAddress: 'כתובת',
+    streetPlaceholder: 'רחוב',
+    streetNumberPlaceholder: 'מס׳',
+    sectionDescription: 'תיאור (אופציונלי)',
+    descriptionPlaceholder: 'פרטים נוספים על החפץ...',
+    sectionCategory: 'קטגוריה',
+    sectionCondition: 'מצב החפץ',
+    sectionUrgency: 'דחיפות (אופציונלי)',
+    urgencyPlaceholder: 'לדוגמה: צריך עד שישי',
+    sectionVisibility: 'מי יראה את הפוסט',
+  },
 } as const;

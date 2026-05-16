@@ -1,6 +1,6 @@
 # 2.5 Posts: Closure & Reopen
 
-> **Status:** ✅ Core Complete — Close with/without recipient, reopen, chat fan-out shipped.
+> **Status:** ✅ Core Complete — Close with/without recipient, reopen, chat fan-out shipped. ⚠️ Audit 2026-05-16: counter drift on `rpc_recipient_unmark_self` + `reopen_post_deleted_no_recipient` (TD-71, BACKLOG P2.16); FR-CLOSURE-007 silent on whether `closed_delivered → deleted_no_recipient` from unmark should emit a system message in anchored chats (see `docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md` POST-16).
 
 
 
@@ -29,7 +29,8 @@ The owner of an `open` post taps "Mark as Delivered" from Post Detail.
 - AC2. Tapping it opens **Closure Step 1** (`FR-CLOSURE-002`); no state change occurs until the user confirms.
 - AC3. Cancellation at any closure step leaves the post unchanged in `open`.
 - AC4. On successful close (regardless of trigger location — post detail screen or chat anchor card per FR-CHAT-015), the database fans out to every `Chat` with `anchor_post_id = postId` and inserts a `kind='system'` message describing the outcome. See FR-CHAT-015 AC4-AC6 for the bodies and `system_payload` schema.
-- AC5. (P1.2.x) Clear anchor on close: after the system-message fan-out in AC4, the same closure trigger sets `chats.anchor_post_id = NULL` for every chat that was anchored to the closed post. The clear runs after the message inserts (so the loop still finds the anchored chats) and applies to both `closed_delivered` and `deleted_no_recipient` transitions. Pairs with FR-CHAT-014 AC6 (re-anchor on next entry from a different post). Implemented in `supabase/migrations/0026_chat_anchor_lifecycle.sql`.
+- AC5. When closure completes successfully from **post detail**, the client shows a short success toast, navigates back (or to the main tabs shell if there is no stack history), and invalidates list caches (including profile closed-posts) so feeds and profile grids are not stale. **Reopen** from the same screen uses the same toast + back pattern (see FR-CLOSURE-005 AC7).
+- AC6. (P1.2.x) Clear anchor on close: after the system-message fan-out in AC4, the same closure trigger sets `chats.anchor_post_id = NULL` for every chat that was anchored to the closed post. The clear runs after the message inserts (so the loop still finds the anchored chats) and applies to both `closed_delivered` and `deleted_no_recipient` transitions. Pairs with FR-CHAT-014 AC6 (re-anchor on next entry from a different post). Implemented in `supabase/migrations/0026_chat_anchor_lifecycle.sql`.
 
 **Related.** Screens: 2.3, 6.4.1 · Spec: `docs/superpowers/specs/2026-05-11-chat-post-anchor-lifecycle-design.md`.
 
@@ -102,7 +103,7 @@ The owner can return a `closed_delivered` post (or a `deleted_no_recipient` post
 - Decisions: `D-6`.
 
 **Acceptance Criteria.**
-- AC1. The "📤 Reopen" CTA is visible on the owner's view of a closed post.
+- AC1. The primary CTA for reopening uses the shared *"item not delivered"* framing (`closure.itemNotDeliveredCta`); behavior remains reopen per AC3–AC7.
 - AC2. Confirmation modal warns about consequences and (when relevant) that the recipient mark will be removed.
 - AC3. On confirm, the post's status returns to `open`. If the post was `closed_delivered`:
    - The associated `Recipient` row is deleted.
@@ -111,6 +112,7 @@ The owner can return a `closed_delivered` post (or a `deleted_no_recipient` post
 - AC4. If the post was `deleted_no_recipient` and within the grace window, reopening cancels the scheduled deletion (`bg-job-soft-delete-cleanup`).
 - AC5. The owner's `items_given_count` decrements by 1 to keep totals consistent.
 - AC6. There is no upper bound on reopen count; however, after 5 reopens a `Suspect` flag is raised (`R-MVP-Items-7`), surfacing the post for admin review (`FR-MOD-008`).
+- AC7. When reopen completes successfully from **post detail**, the client shows a short success toast and navigates back (same shell behavior as FR-CLOSURE-001 AC5), after list caches are refreshed.
 
 **Edge Cases.**
 - The post was `removed_admin`: cannot be reopened (only the Super Admin may restore it via `FR-ADMIN-002`).
@@ -149,6 +151,7 @@ The recipient can remove their recipient mark from a post they were credited wit
 
 **Acceptance Criteria.**
 - AC1. Available only on the recipient's view of `FR-POST-017` for posts in `closed_delivered`.
+- AC1b. The primary CTA label matches the shared *"item not delivered"* copy (`closure.unmarkSelfCta`); behavior remains un-mark per AC3–AC4.
 - AC2. Confirmation modal explains the consequences: *"You will no longer be credited for this item, and the post owner will be notified that you removed your mark."*
 - AC3. On confirm:
    - The `Recipient` row is deleted.

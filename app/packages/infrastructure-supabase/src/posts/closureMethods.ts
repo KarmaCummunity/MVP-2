@@ -87,24 +87,13 @@ export async function reopenPost(
     const { error } = await client.rpc('reopen_post_marked', { p_post_id: postId });
     if (error) throw mapClosurePgError(error);
   } else if (current.status === 'deleted_no_recipient') {
-    // Single-table UPDATE gated on status='deleted_no_recipient' to prevent a
-    // race where the post moved to a different state between the SELECT and
-    // the UPDATE (e.g. admin removed, or the cleanup cron hard-deleted) (B8).
-    // The trigger handles items_given −1.
-    const { data: updated, error } = await client
-      .from('posts')
-      .update({
-        status: 'open',
-        delete_after: null,
-        reopen_count: (current.reopen_count ?? 0) + 1,
-      })
-      .eq('post_id', postId)
-      .eq('status', 'deleted_no_recipient')
-      .select('post_id');
+    // RPC (0068): owner-gated flip back to open + reopen_count++. Replaces a
+    // direct client UPDATE because reopen_count is no longer in the posts
+    // column grant (audit §15.5 — column was inflatable to game the queue).
+    const { error } = await client.rpc('reopen_post_deleted_no_recipient', {
+      p_post_id: postId,
+    });
     if (error) throw mapClosurePgError(error);
-    if (!updated || updated.length === 0) {
-      throw new PostError('closure_wrong_status', 'closure_wrong_status');
-    }
   } else {
     throw new PostError('closure_wrong_status', 'closure_wrong_status');
   }
@@ -126,6 +115,9 @@ export async function getClosureCandidates(
     .single();
   if (ownerErr) throw mapClosurePgError(ownerErr);
   const ownerId = ownerRow.owner_id;
+  if (!ownerId) {
+    throw new PostError('unknown', 'post_missing_owner');
+  }
 
   // Pull EVERY chat the owner is part of (not just chats anchored to THIS post).
   // Reason: `findOrCreateChat` reuses an existing chat between two users and
@@ -144,15 +136,19 @@ export async function getClosureCandidates(
   // Dedupe by partner userId, keep latest last_message_at.
   const partners = new Map<string, string>();
   for (const c of chats ?? []) {
-    const otherId = c.participant_a === ownerId ? c.participant_b : c.participant_a;
-    if (otherId === ownerId) continue; // safety
+    const rawOther = c.participant_a === ownerId ? c.participant_b : c.participant_a;
+    // SET NULL on deleted accounts — skip; otherwise `.in('user_id', …)` can send
+    // invalid UUIDs and Postgres returns: invalid input syntax for type uuid: "null".
+    const otherId = rawOther ?? '';
+    if (!otherId || otherId === ownerId) continue;
     if (!c.last_message_at) continue;
     const prev = partners.get(otherId);
     if (!prev || prev < c.last_message_at) partners.set(otherId, c.last_message_at);
   }
   if (partners.size === 0) return [];
 
-  const ids = Array.from(partners.keys());
+  const ids = Array.from(partners.keys()).filter((uid) => uid.length > 0);
+  if (ids.length === 0) return [];
   const { data: users, error: usersErr } = await client
     .from('users')
     .select('user_id, display_name, avatar_url, city_name')
@@ -162,7 +158,7 @@ export async function getClosureCandidates(
   return (users ?? [])
     .map((u) => ({
       userId: u.user_id,
-      fullName: u.display_name ?? '',
+      fullName: u.display_name ?? null,
       avatarUrl: u.avatar_url,
       cityName: u.city_name ?? null,
       lastMessageAt: partners.get(u.user_id) ?? '',

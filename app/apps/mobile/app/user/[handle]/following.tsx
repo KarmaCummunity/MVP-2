@@ -9,12 +9,14 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getListFollowingUseCase } from '../../../src/services/followComposition';
 
 export default function FollowingListScreen() {
+  const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const [search, setSearch] = React.useState('');
@@ -37,17 +39,17 @@ export default function FollowingListScreen() {
   }
 
   const filtered = (followingQuery.data?.users ?? []).filter((u) =>
-    !search || u.displayName.toLowerCase().startsWith(search.toLowerCase()),
+    !search || (u.displayName ?? '').toLowerCase().startsWith(search.toLowerCase()),
   );
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerTitle: 'נעקבים' }} />
+      <Stack.Screen options={{ headerTitle: t('profile.followingScreen.headerTitle') }} />
       <View style={styles.searchRow}>
         <Ionicons name="search" size={18} color={colors.textSecondary} />
         <TextInput
           style={styles.searchInput}
-          placeholder="חיפוש לפי שם"
+          placeholder={t('profile.followingScreen.searchPlaceholder')}
           placeholderTextColor={colors.textSecondary}
           value={search}
           onChangeText={setSearch}
@@ -56,7 +58,7 @@ export default function FollowingListScreen() {
       {followingQuery.isLoading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
       ) : filtered.length === 0 ? (
-        <Text style={styles.empty}>אין תוצאות</Text>
+        <Text style={styles.empty}>{t('profile.followingScreen.empty')}</Text>
       ) : (
         filtered.map((u) => (
           <TouchableOpacity
@@ -64,10 +66,10 @@ export default function FollowingListScreen() {
             style={styles.row}
             onPress={() => router.push({ pathname: '/user/[handle]', params: { handle: u.shareHandle } })}
           >
-            <AvatarInitials name={u.displayName} avatarUrl={u.avatarUrl} size={44} />
+            <AvatarInitials name={u.displayName ?? t('profile.fallbackName')} avatarUrl={u.avatarUrl} size={44} />
             <View style={styles.rowText}>
-              <Text style={styles.name}>{u.displayName}</Text>
-              <Text style={styles.city}>{u.cityName}</Text>
+              <Text style={styles.name}>{u.displayName ?? t('profile.fallbackName')}</Text>
+              <Text style={styles.city}>{u.cityName ?? t('profile.cityNotSet')}</Text>
             </View>
           </TouchableOpacity>
         ))

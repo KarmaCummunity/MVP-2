@@ -1,13 +1,13 @@
 // Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
-import React, { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform, Alert,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { randomUUID } from 'expo-crypto';
+import { useTranslation } from 'react-i18next';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
 import { colors } from '@kc/ui';
@@ -16,32 +16,57 @@ import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
 import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { MessageBubble } from '../../src/components/MessageBubble';
+import { ChatDaySeparator } from '../../src/components/chat/ChatDaySeparator';
+import { buildChatThreadRowsNewestFirst } from '../../src/lib/chatThreadListRows';
 import { computeHandledIds } from '../../src/components/chat/system/handledIds';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
+import { useChatSend } from '../../src/hooks/useChatSend';
 import { chatConversationStyles as styles } from './chatScreenStyles';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
+import { ChatNotFoundView } from '../../src/components/chat/ChatNotFoundView';
+import { NotifyModal } from '../../src/components/NotifyModal';
+import { ChatConversationHeader } from '../../src/components/chat/ChatConversationHeader';
 
 const EMPTY_MESSAGES: OptimisticMessage[] = [];
 
+function routeStringParam(v: string | string[] | undefined): string | undefined {
+  const s = Array.isArray(v) ? v[0] : v;
+  return typeof s === 'string' && s.length > 0 ? s : undefined;
+}
+
 export default function ChatScreen() {
-  const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string }>();
+  const { id, prefill } = useLocalSearchParams<{ id: string; prefill?: string | string[] }>();
   const chatId = id!;
-  const navigation = useNavigation();
   const router = useRouter();
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
-  const { chat, counterpart } = useChatInit(chatId, userId);
-  const [input, setInput] = useState(prefill ?? '');
+  const { chat, counterpart, status: chatStatus } = useChatInit(chatId, userId);
+  const prefillText = routeStringParam(prefill);
+  const [input, setInput] = useState(() => prefillText ?? '');
+  const autoPrefillDedupeRef = useRef<string | undefined>(prefillText);
+
+  useEffect(() => {
+    const template = autoPrefillDedupeRef.current;
+    if (!template) return;
+    if (messages.length === 0) return;
+    const recent = messages.length <= 50 ? messages : messages.slice(-50);
+    const sent = recent.some((m) => m.senderId === userId && m.body === template);
+    if (sent) setInput((cur) => (cur === template ? '' : cur));
+    autoPrefillDedupeRef.current = undefined;
+  }, [messages, userId]);
   const [reportOpen, setReportOpen] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
   const [hideConfirmOpen, setHideConfirmOpen] = useState(false);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
   const [hideBusy, setHideBusy] = useState(false);
   const { modalState, presentPrePrompt, handleAccept, handleDecline } = usePushPermissionGate();
-  const checkedFirstSendRef = useRef(false);
+  const send = useChatSend({ chatId, userId, input, setInput, presentPrePrompt, setNotify });
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -55,70 +80,18 @@ export default function ChatScreen() {
     })();
   }, [unreadIncoming, chatId, userId]);
 
-  useLayoutEffect(() => {
-    const title = counterpart.isDeleted ? 'משתמש שנמחק' : counterpart.displayName;
-    const canOpenProfile = !counterpart.isDeleted && !!counterpart.shareHandle && !chat?.isSupportThread;
-    navigation.setOptions({
-      title,
-      headerTitle: () => (
-        <TouchableOpacity
-          disabled={!canOpenProfile}
-          onPress={() => router.push(`/user/${counterpart.shareHandle}`)}
-          accessibilityRole={canOpenProfile ? 'button' : undefined}
-        >
-          <Text style={styles.headerTitle}>{title}</Text>
-        </TouchableOpacity>
-      ),
-      headerRight: () => (
-        <TouchableOpacity onPress={() => setMenuOpen(true)} accessibilityRole="button" accessibilityLabel="פעולות">
-          <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
-        </TouchableOpacity>
-      ),
-    });
-  }, [navigation, router, counterpart, chat?.isSupportThread]);
-
-  const send = async (overrideClientId?: string, overrideBody?: string) => {
-    const body = (overrideBody ?? input).trim();
-    if (body.length === 0 || body.length > MESSAGE_MAX_CHARS) return;
-    // FR-NOTIF-015 AC1: capture first-send state before inserting the message.
-    let wasFirstSend = false;
-    if (!checkedFirstSendRef.current && userId) {
-      checkedFirstSendRef.current = true;
-      try {
-        const hasSent = await container.chatRepo.hasSentAnyMessage(userId);
-        if (!hasSent) wasFirstSend = true;
-      } catch { /* non-critical — skip gate on error */ }
-    }
-    const clientId = overrideClientId ?? randomUUID();
-    const optimistic: OptimisticMessage = {
-      messageId: clientId, clientId, chatId, senderId: userId, kind: 'user',
-      body, systemPayload: null, status: 'pending',
-      createdAt: new Date().toISOString(), deliveredAt: null, readAt: null,
-    };
-    if (!overrideClientId) {
-      useChatStore.getState().appendOptimistic(chatId, optimistic);
-      setInput('');
-    }
-    try {
-      const server = await container.sendMessage.execute({ chatId, senderId: userId, body });
-      useChatStore.getState().reconcileSent(chatId, clientId, server);
-      if (wasFirstSend) void presentPrePrompt('first-message-sent');
-    } catch (err) {
-      useChatStore.getState().markFailed(chatId, clientId);
-      if (err instanceof ChatError && err.code === 'send_to_deleted_user') {
-        Alert.alert('משתמש לא זמין', 'המשתמש כבר לא קיים במערכת.');
-      }
-    }
-  };
-
   const counter = input.length;
   const showCounter = counter >= 1900;
-  const sendDisabled = counter === 0 || counter > MESSAGE_MAX_CHARS;
+  // Audit §16.7 — trim for the disabled state so whitespace-only input doesn't
+  // present an enabled "send" button (the underlying useChatSend already trims
+  // and silently drops empty bodies, but the button shouldn't pretend to work).
+  const sendDisabled = input.trim().length === 0 || counter > MESSAGE_MAX_CHARS;
   const reversedMessages = useMemo(() => [...messages].reverse(), [messages]);
 
   // Precompute O(1) lookup of message ids handled by a later mod_action_taken
   // bubble (FR-MOD-010). Built once per messages render; O(1) per row.
   const handledIds = useMemo(() => computeHandledIds(reversedMessages), [reversedMessages]);
+  const listRows = useMemo(() => buildChatThreadRowsNewestFirst(reversedMessages), [reversedMessages]);
 
   const confirmHideFromInbox = async () => {
     setHideBusy(true);
@@ -134,14 +107,22 @@ export default function ChatScreen() {
       setHideBusy(false);
       const msg =
         err instanceof ChatError && err.code === 'support_thread_not_hideable'
-          ? 'לא ניתן להסיר את שיחת התמיכה.'
-          : 'לא הצלחנו להסיר את השיחה. נסה שוב.';
-      Alert.alert('שגיאה', msg);
+          ? t('chat.hideErrorSupport')
+          : t('chat.hideErrorGeneric');
+      setNotify({ title: t('chat.errorTitle'), message: msg });
     }
   };
 
+  if (chatStatus === 'not_found') return <ChatNotFoundView onBack={() => router.back()} />;
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <ChatConversationHeader
+        title={counterpart.displayName ?? t('common.deletedUser')}
+        canOpenProfile={!counterpart.isDeleted && Boolean(counterpart.shareHandle)}
+        shareHandle={counterpart.shareHandle ?? undefined}
+        onOpenMenu={() => setMenuOpen(true)}
+      />
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
         style={{ flex: 1 }}
@@ -156,18 +137,21 @@ export default function ChatScreen() {
           />
         ) : null}
         <FlatList
-          data={reversedMessages}
+          data={listRows}
           inverted
-          keyExtractor={(m) => m.clientId}
+          keyExtractor={(row) => (row.rowType === 'message' ? row.message.clientId : row.rowKey)}
           contentContainerStyle={styles.messageList}
-          renderItem={({ item }) => (
-            <MessageBubble
-              m={item}
-              mine={item.senderId === userId}
-              onRetry={() => send(item.clientId, item.body)}
-              handledByLaterAction={handledIds.has(item.messageId)}
-            />
-          )}
+          renderItem={({ item }) =>
+            item.rowType === 'day' ? (
+              <ChatDaySeparator anchorIso={item.anchorIso} />
+            ) : (
+              <MessageBubble
+                m={item.message}
+                mine={item.message.senderId === userId}
+                onRetry={() => send(item.message.clientId, item.message.body)}
+                handledByLaterAction={handledIds.has(item.message.messageId)}
+              />
+            )}
         />
 
         <View style={styles.inputBar}>
@@ -179,7 +163,7 @@ export default function ChatScreen() {
               style={styles.input}
               value={input}
               onChangeText={setInput}
-              placeholder="כתוב הודעה..."
+              placeholder={t('chat.inputPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
               multiline
@@ -215,6 +199,7 @@ export default function ChatScreen() {
         }}
         onDecline={handleDecline}
       />
+      <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );
 }

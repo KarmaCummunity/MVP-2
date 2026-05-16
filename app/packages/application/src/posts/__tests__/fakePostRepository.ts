@@ -7,7 +7,14 @@ import type {
   PostWithOwner,
   UpdatePostInput,
 } from '../../ports/IPostRepository';
-import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
+import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from '../../ports/postActorIdentity';
+import type {
+  Post,
+  PostStatus,
+  PostVisibility,
+  ProfileClosedPostsItem,
+  ProfileClosedPostsListMode,
+} from '@kc/domain';
 import type { PostError } from '../errors';
 
 /**
@@ -21,20 +28,35 @@ export class FakePostRepository implements IPostRepository {
 
   // Call captures
   lastGetFeedArgs: { viewerId: string | null; filter: PostFeedFilter; limit: number; cursor?: string } | null = null;
-  lastFindByIdArgs: { postId: string; viewerId: string | null } | null = null;
+  lastFindByIdArgs: {
+    postId: string;
+    viewerId: string | null;
+    opts?: { identityListingHostUserId?: string | null };
+  } | null = null;
   lastCreateArgs: CreatePostInput | null = null;
   lastUpdateArgs: { postId: string; patch: UpdatePostInput } | null = null;
   lastDeletePostId: string | null = null;
   lastAdminRemovePostId: string | null = null;
-  lastGetMyPostsArgs: { userId: string; status: PostStatus[]; limit: number; cursor?: string } | null = null;
+  lastGetMyPostsArgs: {
+    userId: string;
+    status: PostStatus[];
+    limit: number;
+    cursor?: string;
+    visibility?: PostVisibility;
+    excludeVisibility?: PostVisibility;
+  } | null = null;
   lastCountOpenUserId: string | null = null;
   lastGetProfileClosedPostsArgs: {
     profileUserId: string;
     viewerUserId: string | null;
     limit: number;
     cursor?: string;
+    listMode?: ProfileClosedPostsListMode;
   } | null = null;
+  lastListPostActorIdentityPostId: string | null = null;
+  lastUpsertPostActorIdentityArgs: UpsertPostActorIdentityInput | null = null;
   profileClosedPostsResult: ProfileClosedPostsItem[] = [];
+  listPostActorIdentitiesResult: PostActorIdentityRow[] = [];
 
   // Stubs / errors
   createResult: Post | null = null;
@@ -58,8 +80,12 @@ export class FakePostRepository implements IPostRepository {
     return { posts: this.posts, nextCursor: this.nextCursor };
   };
 
-  findById = async (postId: string, viewerId: string | null): Promise<PostWithOwner | null> => {
-    this.lastFindByIdArgs = { postId, viewerId };
+  findById = async (
+    postId: string,
+    viewerId: string | null,
+    opts?: { identityListingHostUserId?: string | null },
+  ): Promise<PostWithOwner | null> => {
+    this.lastFindByIdArgs = { postId, viewerId, opts };
     if (this.findByIdError) throw this.findByIdError;
     return this.findByIdResult;
   };
@@ -112,19 +138,24 @@ export class FakePostRepository implements IPostRepository {
     return this.reopenResult;
   };
 
+  unmrkRecipientSelf = async (_postId: string): Promise<void> => {};
+
   getClosureCandidates = async (postId: string): Promise<ClosureCandidate[]> => {
     this.lastGetClosureCandidatesPostId = postId;
     return this.closureCandidatesResult;
   };
 
+  myPostsNextCursor: string | null = null;
   getMyPosts = async (
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
-  ): Promise<Post[]> => {
-    this.lastGetMyPostsArgs = { userId, status, limit, cursor };
-    return this.myPostsResult;
+    visibility?: PostVisibility,
+    excludeVisibility?: PostVisibility,
+  ): Promise<{ posts: Post[]; nextCursor: string | null }> => {
+    this.lastGetMyPostsArgs = { userId, status, limit, cursor, visibility, excludeVisibility };
+    return { posts: this.myPostsResult, nextCursor: this.myPostsNextCursor };
   };
 
   countOpenByUser = async (userId: string): Promise<number> => {
@@ -137,49 +168,21 @@ export class FakePostRepository implements IPostRepository {
     viewerUserId: string | null,
     limit: number,
     cursor?: string,
+    listMode?: ProfileClosedPostsListMode,
   ): Promise<ProfileClosedPostsItem[]> => {
-    this.lastGetProfileClosedPostsArgs = { profileUserId, viewerUserId, limit, cursor };
+    this.lastGetProfileClosedPostsArgs = { profileUserId, viewerUserId, limit, cursor, listMode };
     return this.profileClosedPostsResult;
   };
+
+  listPostActorIdentities = async (postId: string): Promise<PostActorIdentityRow[]> => {
+    this.lastListPostActorIdentityPostId = postId;
+    return this.listPostActorIdentitiesResult;
+  };
+
+  upsertPostActorIdentity = async (input: UpsertPostActorIdentityInput): Promise<void> => {
+    this.lastUpsertPostActorIdentityArgs = input;
+  };
+
 }
 
-export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostWithOwner {
-  return {
-    postId: 'p_1',
-    ownerId: 'u_1',
-    ownerName: 'Test User',
-    ownerAvatarUrl: null,
-    ownerHandle: 'test-user',
-    ownerPrivacyMode: 'Public',
-    type: 'Give',
-    status: 'open',
-    visibility: 'Public',
-    title: 'Test Post',
-    description: null,
-    category: 'Other',
-    address: { city: 'tel-aviv', cityName: 'תל אביב', street: 'Allenby', streetNumber: '10' },
-    locationDisplayLevel: 'CityAndStreet',
-    itemCondition: 'Good',
-    urgency: null,
-    mediaAssets: [],
-    recipient: null,
-    recipientUser: null,
-    distanceKm: null,
-    reopenCount: 0,
-    deleteAfter: null,
-    createdAt: '2026-05-08T10:00:00.000Z',
-    updatedAt: '2026-05-08T10:00:00.000Z',
-    ...overrides,
-  };
-}
-
-export function makeClosureCandidate(overrides: Partial<ClosureCandidate> = {}): ClosureCandidate {
-  return {
-    userId: 'u_recipient',
-    fullName: 'דנה לוי',
-    avatarUrl: null,
-    cityName: 'תל אביב',
-    lastMessageAt: '2026-05-10T10:00:00.000Z',
-    ...overrides,
-  };
-}
+export { makePostWithOwner, makeClosureCandidate } from './fakePostRepositoryFactories';

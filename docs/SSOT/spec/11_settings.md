@@ -1,6 +1,6 @@
 # 2.11 Settings
 
-> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1.
+> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name; About `support@karma.community` mailto is un-owned (use `karmacommunity2.0@gmail.com`). TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`.
 
 
 
@@ -20,6 +20,7 @@ The Settings screen and its sub-pages:
 - Logout.
 - Account deletion.
 - **About (in-app):** long-form narrative (vision beyond MVP, roadmap, FAQ, team, Instagram embed) with section navigation; marketing alias route `/about-site` and optional `hideTopBar` / `hideBottomBar` query flags for embedded web shells.
+  - **AC (About refresh, 2026-05-16):** Problems / Features / Goals share a synchronized MVP↔Vision scope toggle (default MVP on each screen visit; not persisted). Vision uses a short lead plus a single expandable block for deeper KPI-style prose. Roadmap phases show a summary with independently expandable per-phase details. Mission and Team are one scroll target (dual section anchors). Values copy reflects product transparency plus optional user anonymity (no “privacy by default” product framing). Contact lists WhatsApp (community + personal), two mailto links, in-app report CTA, and an explicit out-of-app Bit/PayBox note with the published phone number. Instagram on web uses no embedded browser module—static card + external open only.
 
 ---
 
@@ -86,6 +87,7 @@ A row entry leading to the Follow Requests screen, visible only when the profile
 - AC1. Row label: "Follow requests (X)" with X being the current pending count.
 - AC2. Tapping navigates to `FR-FOLLOW-007` (screen 5.4).
 - AC3. The row is hidden when `User.privacy_mode = Public`.
+- AC4. The My Profile card `⋮` overflow omits the same entry when `User.privacy_mode = Public` (parity with the Settings list).
 
 **Related.** Screens: 5.4.
 

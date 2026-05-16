@@ -510,6 +510,48 @@ export type Database = {
           },
         ]
       }
+      post_actor_identity: {
+        Row: {
+          hide_from_counterparty: boolean
+          identity_visibility: string
+          post_id: string
+          surface_visibility: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          hide_from_counterparty?: boolean
+          identity_visibility: string
+          post_id: string
+          surface_visibility?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          hide_from_counterparty?: boolean
+          identity_visibility?: string
+          post_id?: string
+          surface_visibility?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_actor_identity_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "post_actor_identity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           category: string
@@ -615,6 +657,39 @@ export type Database = {
           {
             foreignKeyName: "recipients_recipient_user_id_fkey"
             columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      saved_posts: {
+        Row: {
+          post_id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "saved_posts_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
@@ -819,13 +894,13 @@ export type Database = {
           avatar_url: string | null
           basic_info_skipped: boolean
           biography: string | null
-          city: string
-          city_name: string
+          city: string | null
+          city_name: string | null
           profile_street: string | null
           profile_street_number: string | null
           closure_explainer_dismissed: boolean
           created_at: string
-          display_name: string
+          display_name: string | null
           false_report_sanction_count: number
           false_reports_count: number
           first_post_nudge_dismissed: boolean
@@ -853,13 +928,13 @@ export type Database = {
           avatar_url?: string | null
           basic_info_skipped?: boolean
           biography?: string | null
-          city: string
-          city_name: string
+          city?: string | null
+          city_name?: string | null
           profile_street?: string | null
           profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
-          display_name: string
+          display_name?: string | null
           false_report_sanction_count?: number
           false_reports_count?: number
           first_post_nudge_dismissed?: boolean
@@ -887,13 +962,13 @@ export type Database = {
           avatar_url?: string | null
           basic_info_skipped?: boolean
           biography?: string | null
-          city?: string
-          city_name?: string
+          city?: string | null
+          city_name?: string | null
           profile_street?: string | null
           profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
           created_at?: string
-          display_name?: string
+          display_name?: string | null
           false_report_sanction_count?: number
           false_reports_count?: number
           first_post_nudge_dismissed?: boolean
@@ -993,13 +1068,34 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rpc_submit_support_issue: {
+        Args: { p_category: string | null; p_description: string }
+        Returns: {
+          anchor_post_id: string | null
+          chat_id: string
+          created_at: string
+          is_support_thread: boolean
+          last_message_at: string
+          participant_a: string
+          participant_b: string
+          removed_at: string | null
+        }
+      }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
+      // FR-CLOSURE-007 (0075) — manually added until next typegen run.
+      rpc_recipient_unmark_self: { Args: { p_post_id: string }; Returns: void }
       // P0.6 closure RPCs (0015) — manually added until next typegen run.
       close_post_with_recipient: {
         Args: { p_post_id: string; p_recipient_user_id: string }
         Returns: Database["public"]["Tables"]["posts"]["Row"]
       }
       reopen_post_marked: {
+        Args: { p_post_id: string }
+        Returns: Database["public"]["Tables"]["posts"]["Row"]
+      }
+      // 0068 security hardening — replaces the direct client UPDATE that
+      // previously inflated reopen_count from the deleted_no_recipient path.
+      reopen_post_deleted_no_recipient: {
         Args: { p_post_id: string }
         Returns: Database["public"]["Tables"]["posts"]["Row"]
       }

@@ -14,7 +14,6 @@ import {
 } from '@kc/infrastructure-supabase';
 import {
   CreatePostUseCase,
-  DeletePostUseCase,
   DismissFirstPostNudgeUseCase,
   GetActivePostsCountUseCase,
   GetClosureCandidatesUseCase,
@@ -24,9 +23,12 @@ import {
   GetProfileClosedPostsUseCase,
   GetPostByIdUseCase,
   ListMyActivityTimelineUseCase,
+  ListPostActorIdentityUseCase,
   MarkAsDeliveredUseCase,
   ReopenPostUseCase,
+  UnmarkRecipientSelfUseCase,
   UpdatePostUseCase,
+  UpsertPostActorIdentityUseCase,
   type IFeedRealtime,
   type IPostRepository,
   type IStatsRepository,
@@ -38,18 +40,20 @@ let _realtime: IFeedRealtime | null = null;
 let _stats: IStatsRepository | null = null;
 let _create: CreatePostUseCase | null = null;
 let _update: UpdatePostUseCase | null = null;
-let _del: DeletePostUseCase | null = null;
 let _getFeed: GetFeedUseCase | null = null;
 let _getById: GetPostByIdUseCase | null = null;
 let _myPosts: GetMyPostsUseCase | null = null;
 let _profileClosedPosts: GetProfileClosedPostsUseCase | null = null;
 let _markDelivered: MarkAsDeliveredUseCase | null = null;
 let _reopen: ReopenPostUseCase | null = null;
+let _unmrkRecipientSelf: UnmarkRecipientSelfUseCase | null = null;
 let _getClosureCandidates: GetClosureCandidatesUseCase | null = null;
 let _getActivePostsCount: GetActivePostsCountUseCase | null = null;
 let _communityStatsSnapshot: GetCommunityStatsSnapshotUseCase | null = null;
 let _listMyActivityTimeline: ListMyActivityTimelineUseCase | null = null;
 let _dismissFirstPostNudge: DismissFirstPostNudgeUseCase | null = null;
+let _listPostActorIdentity: ListPostActorIdentityUseCase | null = null;
+let _upsertPostActorIdentity: UpsertPostActorIdentityUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -73,11 +77,6 @@ export function getCreatePostUseCase(): CreatePostUseCase {
 export function getUpdatePostUseCase(): UpdatePostUseCase {
   if (!_update) _update = new UpdatePostUseCase(getRepo());
   return _update;
-}
-
-export function getDeletePostUseCase(): DeletePostUseCase {
-  if (!_del) _del = new DeletePostUseCase(getRepo());
-  return _del;
 }
 
 export function getFeedUseCase(): GetFeedUseCase {
@@ -114,6 +113,11 @@ export function getMarkAsDeliveredUseCase(): MarkAsDeliveredUseCase {
 export function getReopenPostUseCase(): ReopenPostUseCase {
   if (!_reopen) _reopen = new ReopenPostUseCase(getRepo());
   return _reopen;
+}
+
+export function getUnmarkRecipientSelfUseCase(): UnmarkRecipientSelfUseCase {
+  if (!_unmrkRecipientSelf) _unmrkRecipientSelf = new UnmarkRecipientSelfUseCase(getRepo());
+  return _unmrkRecipientSelf;
 }
 
 export function getGetClosureCandidatesUseCase(): GetClosureCandidatesUseCase {
@@ -162,4 +166,18 @@ export function getDismissFirstPostNudgeUseCase(): DismissFirstPostNudgeUseCase 
     _dismissFirstPostNudge = new DismissFirstPostNudgeUseCase(getUserRepo());
   }
   return _dismissFirstPostNudge;
+}
+
+export function getListPostActorIdentityUseCase(): ListPostActorIdentityUseCase {
+  if (!_listPostActorIdentity) {
+    _listPostActorIdentity = new ListPostActorIdentityUseCase(getRepo());
+  }
+  return _listPostActorIdentity;
+}
+
+export function getUpsertPostActorIdentityUseCase(): UpsertPostActorIdentityUseCase {
+  if (!_upsertPostActorIdentity) {
+    _upsertPostActorIdentity = new UpsertPostActorIdentityUseCase(getRepo());
+  }
+  return _upsertPostActorIdentity;
 }
