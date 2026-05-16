@@ -1,5 +1,6 @@
 // Sub-panes for ClosureStep2: tab switcher + chats list + search input/results.
 import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { ClosureCandidate } from '@kc/application';
 import type { PickMode } from '../../store/closureStore';
@@ -14,6 +15,7 @@ export function ModeTabs({
   chatsCount: number;
   onChange: (m: PickMode) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View style={styles.tabs}>
       <Pressable
@@ -21,7 +23,7 @@ export function ModeTabs({
         style={[styles.tab, pickMode === 'chats' && styles.tabActive]}
       >
         <Text style={[styles.tabText, pickMode === 'chats' && styles.tabTextActive]}>
-          מצ&apos;אטים שלי{chatsCount > 0 ? `  (${chatsCount})` : ''}
+          {t('closure.pickModeChats')}{chatsCount > 0 ? `  (${chatsCount})` : ''}
         </Text>
       </Pressable>
       <Pressable
@@ -29,7 +31,7 @@ export function ModeTabs({
         style={[styles.tab, pickMode === 'search' && styles.tabActive]}
       >
         <Text style={[styles.tabText, pickMode === 'search' && styles.tabTextActive]}>
-          חיפוש כללי
+          {t('closure.pickModeSearch')}
         </Text>
       </Pressable>
     </View>
@@ -45,13 +47,11 @@ export function ChatsPane({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   if (candidates.length === 0) {
     return (
       <View style={styles.emptyPane}>
-        <Text style={styles.body}>
-          עדיין לא היה איתך צ&apos;אט עם אף אחד. עבור ל&quot;חיפוש כללי&quot; כדי לבחור מהרשימה
-          הכללית, או לחץ &quot;סגור בלי לסמן&quot;.
-        </Text>
+        <Text style={styles.body}>{t('closure.chatsEmpty')}</Text>
       </View>
     );
   }
@@ -84,11 +84,12 @@ export function SearchPane({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const { t } = useTranslation();
   return (
     <View>
       <TextInput
         style={styles.input}
-        placeholder="חפש לפי שם או handle"
+        placeholder={t('closure.searchPlaceholder')}
         placeholderTextColor={colors.textDisabled}
         value={query}
         onChangeText={onQueryChange}
