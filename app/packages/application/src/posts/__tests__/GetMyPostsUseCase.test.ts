@@ -36,4 +36,23 @@ describe('GetMyPostsUseCase', () => {
     const uc = new GetMyPostsUseCase(repo);
     await expect(uc.execute({ userId: 'u_1', status: [] })).rejects.toThrow(/status/);
   });
+
+  it('forwards nextCursor from the repo (audit §3.10)', async () => {
+    const repo = new FakePostRepository();
+    repo.myPostsNextCursor = 'eyJjcmVhdGVkQXQiOiIyMDI2In0=';
+    const uc = new GetMyPostsUseCase(repo);
+
+    const out = await uc.execute({ userId: 'u_1', status: ['open'] });
+
+    expect(out.nextCursor).toBe('eyJjcmVhdGVkQXQiOiIyMDI2In0=');
+  });
+
+  it('returns nextCursor=null when there are no more pages', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetMyPostsUseCase(repo);
+
+    const out = await uc.execute({ userId: 'u_1', status: ['open'] });
+
+    expect(out.nextCursor).toBeNull();
+  });
 });

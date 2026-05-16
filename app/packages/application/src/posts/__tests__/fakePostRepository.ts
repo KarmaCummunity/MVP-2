@@ -119,14 +119,15 @@ export class FakePostRepository implements IPostRepository {
     return this.closureCandidatesResult;
   };
 
+  myPostsNextCursor: string | null = null;
   getMyPosts = async (
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
-  ): Promise<Post[]> => {
+  ): Promise<{ posts: Post[]; nextCursor: string | null }> => {
     this.lastGetMyPostsArgs = { userId, status, limit, cursor };
-    return this.myPostsResult;
+    return { posts: this.myPostsResult, nextCursor: this.myPostsNextCursor };
   };
 
   countOpenByUser = async (userId: string): Promise<number> => {

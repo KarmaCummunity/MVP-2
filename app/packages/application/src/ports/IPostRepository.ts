@@ -152,13 +152,13 @@ export interface IPostRepository {
   /** Recipient picker source: distinct chat partners on this post, sorted by latest message recency. */
   getClosureCandidates(postId: string): Promise<ClosureCandidate[]>;
 
-  // User's own posts
+  // User's own posts (audit §3.10 — paginated; was Post[]).
   getMyPosts(
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
-  ): Promise<Post[]>;
+  ): Promise<{ posts: Post[]; nextCursor: string | null }>;
 
   /**
    * Closed-posts tab on a profile screen.
