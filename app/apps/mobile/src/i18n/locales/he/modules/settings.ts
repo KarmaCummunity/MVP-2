@@ -78,4 +78,9 @@ export const settingsHe = {
   simulateHardRefresh: 'סימולציית רענון מלא (דיבוג)',
   simulatingHardRefresh: 'מרענן...',
   version: 'KC - קהילת קארמה',
+  resetOnboardingFailed: 'האיפוס נכשל: {{msg}}',
+  resetOnboardingConfirmMsg: 'הפעולה תחזיר את מצב האונבורדינג להתחלה ותפתח את אשף ההרשמה מחדש. הפרופיל לא יימחק.\n\nלהמשיך?',
+  resetOnboardingConfirmTitle: 'איפוס אונבורדינג',
+  resetOnboardingBtn: 'איפוס',
+  signOutFailed: 'ההתנתקות נכשלה. נסה שוב.',
 } as const;

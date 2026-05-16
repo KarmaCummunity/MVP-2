@@ -50,4 +50,8 @@ export const profileHe = {
   emptyOtherOpenSubtitle: 'משתמש זה עוד לא פרסם פוסטים.',
   emptyOtherClosedSubtitle: 'משתמש זה עוד לא סגר ולא קיבל פוסט.',
   emptyOtherClosedSubtitleLegacy: 'משתמש זה עוד לא סיים מסירה.',
+  followCooldownTitle: 'לא ניתן לשלוח כרגע',
+  followCooldownDays: 'ניתן לשלוח שוב בעוד {{count}} ימים.',
+  followErrorTitle: 'שגיאה',
+  followErrorMessage: 'הפעולה נכשלה. נסו שוב.',
 } as const;
