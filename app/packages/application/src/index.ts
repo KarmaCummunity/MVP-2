@@ -43,6 +43,7 @@ export * from './posts/GetProfileClosedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
+export * from './posts/UnmarkRecipientSelfUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
 export * from './posts/AdminRemovePostUseCase';
 export * from './posts/SearchUsersForClosureUseCase';

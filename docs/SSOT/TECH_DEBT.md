@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-73 closed — dev branch protection enabled: no force-push, no deletion) |
+| **Last Updated** | 2026-05-16 (TD-120 closed — FR-CLOSURE-007 recipient un-mark self: RPC 0075 + use case + RecipientUnmarkBar) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -70,7 +70,7 @@
 | TD-64 | 🟠 | **Notification dispatcher has no operational alert when the outbox accumulates pending rows.** Add a daily check that fires if `count(*) where dispatched_at IS NULL AND created_at < now() - interval '15 minutes' > 10`. | Pre-launch |
 | TD-65 | 🟠 | **Web Push parity deferred from P1.5.** Implement VAPID + Service Worker; outbox + dispatcher pattern unchanged, only the adapter changes (Web Push HTTP API instead of Expo Push). | Post-MVP |
 | TD-119 | 🟠 | ~~**Notify recipient on mark.** FR-CLOSURE-006 — Critical-category notification ("[Owner] סימן אותך כמקבל של [post]") is not delivered when a recipient is marked.~~ Closed 2026-05-14 — Migration 0063 enqueues mark_recipient on `recipients` INSERT; dispatcher delivers as Critical with bypass_preferences. | Closed |
-| TD-120 | 🟠 | **Recipient un-marks self.** FR-CLOSURE-007 — recipient cannot remove their own credit. UI absent; use case absent; FR-NOTIF-013 (notify owner on un-mark) also depends on push. | P2.x |
+| TD-120 | ✅ | ~~**Recipient un-marks self.**~~ Closed 2026-05-16 — migration `0075_recipient_unmark_self.sql` (RPC validates caller is recipient, deletes row, decrements owner counter, transitions post→`deleted_no_recipient` + 7d window, audit event). `UnmarkRecipientSelfUseCase` + `RecipientUnmarkBar` component (ConfirmActionModal + error NotifyModal). Owner notification fires via existing `tg_recipients_enqueue_notifications` trigger. | Closed 2026-05-16 |
 | TD-121 | 🟠 | **Suspect flag at 5+ reopens.** FR-CLOSURE-010 — `posts.reopen_count` is incremented on every reopen (via 0015 RPC), but no moderation queue entry is created when the count reaches 5. Depends on FR-MOD-008 (P1.3). | P1.3 |
 | TD-122 | 🟠 | **Storage orphan reconciliation for closure cleanup.** When `closure_cleanup_expired` (cron in 0016) hard-deletes a `deleted_no_recipient` post, the FK cascade removes `media_assets` rows but the actual blobs in the `post-images` bucket are not deleted. Build a daily reconciliation Edge Function that lists bucket contents and removes objects whose owning post no longer exists. | Maintenance |
 | TD-123 | 🟢 | **Closure telemetry events.** FR-CLOSURE-002 AC3 specifies `closure_step1_completed`; the FR analytics map mentions further closure events. No telemetry infra exists in the repo yet. Defer until analytics pipeline lands. | Analytics |

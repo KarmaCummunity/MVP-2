@@ -170,6 +170,10 @@ export class SupabasePostRepository implements IPostRepository {
   reopen(postId: string): Promise<Post> {
     return reopenPostHelper(this.client, postId);
   }
+  async unmrkRecipientSelf(postId: string): Promise<void> {
+    const { error } = await this.client.rpc('rpc_recipient_unmark_self', { p_post_id: postId });
+    if (error) throw new Error(`unmrkRecipientSelf: ${error.message}`);
+  }
   getClosureCandidates(postId: string): Promise<ClosureCandidate[]> {
     return getClosureCandidatesHelper(this.client, postId);
   }

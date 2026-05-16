@@ -25,6 +25,7 @@ import {
   ListMyActivityTimelineUseCase,
   MarkAsDeliveredUseCase,
   ReopenPostUseCase,
+  UnmarkRecipientSelfUseCase,
   UpdatePostUseCase,
   type IFeedRealtime,
   type IPostRepository,
@@ -43,6 +44,7 @@ let _myPosts: GetMyPostsUseCase | null = null;
 let _profileClosedPosts: GetProfileClosedPostsUseCase | null = null;
 let _markDelivered: MarkAsDeliveredUseCase | null = null;
 let _reopen: ReopenPostUseCase | null = null;
+let _unmrkRecipientSelf: UnmarkRecipientSelfUseCase | null = null;
 let _getClosureCandidates: GetClosureCandidatesUseCase | null = null;
 let _getActivePostsCount: GetActivePostsCountUseCase | null = null;
 let _communityStatsSnapshot: GetCommunityStatsSnapshotUseCase | null = null;
@@ -107,6 +109,11 @@ export function getMarkAsDeliveredUseCase(): MarkAsDeliveredUseCase {
 export function getReopenPostUseCase(): ReopenPostUseCase {
   if (!_reopen) _reopen = new ReopenPostUseCase(getRepo());
   return _reopen;
+}
+
+export function getUnmarkRecipientSelfUseCase(): UnmarkRecipientSelfUseCase {
+  if (!_unmrkRecipientSelf) _unmrkRecipientSelf = new UnmarkRecipientSelfUseCase(getRepo());
+  return _unmrkRecipientSelf;
 }
 
 export function getGetClosureCandidatesUseCase(): GetClosureCandidatesUseCase {

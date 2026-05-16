@@ -28,6 +28,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 383 }],
   // Reduced 274→254 (TD-138 sweep: removed commented-out auth buttons + dead styles + Alert import). Remove once TD-29 splits the file.
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 254 }],
+  // 201 after FR-CLOSURE-007 RecipientUnmarkBar wiring. Remove once TD-29 splits post detail.
+  ['apps/mobile/app/post/[id].tsx', { td: 'TD-29', max: 201 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.

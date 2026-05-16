@@ -21,6 +21,7 @@ import { contactPoster } from '../../src/lib/contactPoster';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
+import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
@@ -113,6 +114,9 @@ export default function PostDetailScreen() {
           {post.status === 'closed_delivered' && post.recipientUser ? (
             <RecipientCallout postType={post.type} recipient={post.recipientUser} />
           ) : null}
+          {post.status === 'closed_delivered' && post.recipient?.recipientUserId === viewerId && viewerId != null
+            ? <RecipientUnmarkBar postId={post.postId} userId={viewerId} />
+            : null}
 
           <View style={styles.locationRow}>
             <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
