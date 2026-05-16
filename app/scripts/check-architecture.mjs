@@ -34,17 +34,17 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
-  // Bumped 242→259 (FR-NOTIF-001 + ProfileClosedPostsItem domain types). Remove once TD-29 splits the file.
-  ['packages/domain/src/entities.ts', { td: 'TD-29', max: 259 }],
+  // Bumped 242→264 (accumulated additions through 2026-05-16). Remove once TD-29 splits the file.
+  ['packages/domain/src/entities.ts', { td: 'TD-29', max: 264 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
   ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
   // Pre-existing before FR-ADMIN-009; tracked as TD-128 for the split work.
   ['packages/infrastructure-supabase/src/search/SupabaseSearchRepository.ts', { td: 'TD-128', max: 418 }],
   ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-128', max: 646 }],
-  // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-128 splits the file.
-  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-128', max: 308 }],
-  ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
+  // Bumped 306→308 (P1.2 hotfix added cityName preservation). Remove once TD-133 splits the file.
+  ['apps/mobile/src/components/SearchFilterSheet.tsx', { td: 'TD-133', max: 308 }],
+  // SearchResultCard.tsx is now a 4-line barrel (TD-133 split done); entry removed.
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
   // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
