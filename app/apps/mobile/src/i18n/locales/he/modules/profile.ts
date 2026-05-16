@@ -54,4 +54,12 @@ export const profileHe = {
   followCooldownDays: 'ניתן לשלוח שוב בעוד {{count}} ימים.',
   followErrorTitle: 'שגיאה',
   followErrorMessage: 'הפעולה נכשלה. נסו שוב.',
+
+  // Avatar editor (EditProfileAvatar — FR-PROFILE-007)
+  avatarChangeA11y: 'החלפת תמונת פרופיל',
+  avatarAddA11y: 'הוספת תמונת פרופיל',
+  avatarChangeHint: 'החלף תמונה',
+  avatarAddHint: 'הוסף תמונה',
+  avatarUploadFailedTitle: 'העלאת התמונה נכשלה',
+  avatarUploadRetry: 'נסה שוב.',
 } as const;

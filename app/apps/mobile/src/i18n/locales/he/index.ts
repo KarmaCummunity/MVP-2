@@ -49,6 +49,14 @@ const he = {
     verify: 'אמת',
     resendOtp: 'שלח שוב',
     bySigningUp: 'בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות שלנו.',
+    verifyTitle: 'בדוק את האימייל שלך',
+    verifyBodyBefore: 'שלחנו לינק לאימות אל ',
+    verifyBodyAfter: '. לחץ עליו כדי להמשיך.',
+    openMail: 'פתח אימייל',
+    resendWithCountdown: 'שלח שוב ({{count}})',
+    resendOk: 'נשלח. בדוק את תיבת הדואר.',
+    networkError: 'שגיאת רשת. נסה שוב.',
+    changeEmail: 'שנה אימייל',
   },
 
   // Onboarding
@@ -86,6 +94,10 @@ const he = {
     uploadFailed: 'העלאת התמונה נכשלה',
     uploadFailedBody: 'אפשר לדלג ולהוסיף תמונה מאוחר יותר.',
     removeFailed: 'הסרת התמונה נכשלה',
+    softGateTitle: 'נשלים פרטים בסיסיים',
+    fullNamePlaceholder: 'לדוגמה: רינה כהן',
+    unknownError: 'שגיאה לא ידועה',
+    saveAndContinue: 'שמור והמשך',
   },
 
   // Feed — see modules/feed.ts

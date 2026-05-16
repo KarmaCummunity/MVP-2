@@ -4,6 +4,7 @@
 // via `onChange` and is responsible for persisting on Save.
 import React, { useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, typography } from '@kc/ui';
 import { AvatarInitials } from './AvatarInitials';
 import { NotifyModal } from './NotifyModal';
@@ -19,6 +20,7 @@ interface Props {
 }
 
 export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, onChange }: Props) {
+  const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
@@ -34,7 +36,7 @@ export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, on
       onChange(url);
     } catch (err) {
       // TD-138: `Alert.alert` is a no-op on react-native-web@0.21.2 — use NotifyModal.
-      setErrorMsg(err instanceof Error ? err.message : 'נסה שוב.');
+      setErrorMsg(err instanceof Error ? err.message : t('profile.avatarUploadRetry'));
     } finally {
       setUploading(false);
     }
@@ -51,14 +53,14 @@ export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, on
         onPress={() => !busy && setSheetVisible(true)}
         disabled={busy}
         accessibilityRole="button"
-        accessibilityLabel={avatarUrl ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
+        accessibilityLabel={avatarUrl ? t('profile.avatarChangeA11y') : t('profile.avatarAddA11y')}
       >
-        <AvatarInitials name={displayName || 'משתמש'} avatarUrl={avatarUrl} size={104} />
+        <AvatarInitials name={displayName || t('profile.fallbackName')} avatarUrl={avatarUrl} size={104} />
         {uploading && (
           <View style={styles.spinner}><ActivityIndicator color={colors.textInverse} /></View>
         )}
       </TouchableOpacity>
-      <Text style={styles.hint}>{avatarUrl ? 'החלף תמונה' : 'הוסף תמונה'}</Text>
+      <Text style={styles.hint}>{avatarUrl ? t('profile.avatarChangeHint') : t('profile.avatarAddHint')}</Text>
       <PhotoSourceSheet
         visible={sheetVisible}
         canRemove={!!avatarUrl}
@@ -68,7 +70,7 @@ export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, on
       />
       <NotifyModal
         visible={!!errorMsg}
-        title="העלאת התמונה נכשלה"
+        title={t('profile.avatarUploadFailedTitle')}
         message={errorMsg ?? ''}
         onDismiss={() => setErrorMsg(null)}
       />
