@@ -21,6 +21,7 @@ interface Props {
 
 export function EditProfileAvatar({
   userId, displayName, avatarUrl, disabled, onChange }: Props) {
+  const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
   const [errorMsg, setErrorMsg] = useState<string | null>(null);
