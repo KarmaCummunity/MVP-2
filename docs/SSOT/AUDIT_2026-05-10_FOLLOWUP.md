@@ -36,7 +36,6 @@
 | 3.4 [HIGH] Session expiry uses device clock | ⏳ | Accept practical impact + document, OR derive clock skew from response `Date` header. Low priority in MVP. |
 | 3.7 [MEDIUM] No idempotency key on `Publish` | ⏳ | Add `posts.client_request_id` + unique constraint + adapter upsert. |
 | 3.8 [MEDIUM] Image-upload `Promise.all` failure leaks Storage objects | ⏳ | Best-effort cleanup of successful uploads on partial-failure. |
-| 3.10 [MEDIUM] `GetMyPostsUseCase` returns no `nextCursor` | ⏳ | Mirror `GetFeedUseCase` `{ posts, nextCursor }` shape. |
 | 3.11 [LOW] Home feed `onEndReached` not wired | ⏳ | Verify and wire. |
 
 ## 4. Mobile / FE security & correctness

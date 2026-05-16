@@ -179,13 +179,17 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   // ── User's own posts ────────────────────────────────────────────────────
+  // Audit §3.10 — return `{ posts, nextCursor }` so a power user with > 30
+  // posts on profile isn't silently truncated. Fetches `safeLimit + 1` rows
+  // to detect whether more pages exist; `nextCursor` encodes the last visible
+  // row's `created_at` for `<` comparison on the next call.
   async getMyPosts(
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
-  ): Promise<Post[]> {
-    if (status.length === 0) return [];
+  ): Promise<{ posts: Post[]; nextCursor: string | null }> {
+    if (status.length === 0) return { posts: [], nextCursor: null };
     const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
     const decoded = decodeCursor(cursor);
 
@@ -195,14 +199,19 @@ export class SupabasePostRepository implements IPostRepository {
       .eq('owner_id', userId)
       .in('status', status)
       .order('created_at', { ascending: false })
-      .limit(safeLimit);
+      .limit(safeLimit + 1);
 
     if (decoded) q = q.lt('created_at', decoded.createdAt);
 
     const { data, error } = await q;
     if (error) throw new Error(`getMyPosts: ${error.message}`);
     const rows = (data ?? []) as unknown as PostJoinedRow[];
-    return rows.map(mapPostRow);
+    const hasMore = rows.length > safeLimit;
+    const page = hasMore ? rows.slice(0, safeLimit) : rows;
+    const posts = page.map(mapPostRow);
+    const last = posts[posts.length - 1];
+    const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt }) : null;
+    return { posts, nextCursor };
   }
 
   // ── Profile closed posts (publisher ∪ respondent) ────────────────────────

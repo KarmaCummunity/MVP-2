@@ -11,6 +11,8 @@ export interface GetMyPostsInput {
 
 export interface GetMyPostsOutput {
   posts: Post[];
+  /** Audit §3.10 — null when no more pages; pass to the next call as `cursor`. */
+  nextCursor: string | null;
 }
 
 const DEFAULT_LIMIT = 20;
@@ -24,8 +26,7 @@ export class GetMyPostsUseCase {
       throw new Error('GetMyPostsUseCase: status must include at least one value');
     }
     const limit = clamp(input.limit ?? DEFAULT_LIMIT, 1, HARD_MAX);
-    const posts = await this.repo.getMyPosts(input.userId, input.status, limit, input.cursor);
-    return { posts };
+    return this.repo.getMyPosts(input.userId, input.status, limit, input.cursor);
   }
 }
 
