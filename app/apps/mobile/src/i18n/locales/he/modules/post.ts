@@ -44,7 +44,7 @@ export const postHe = {
   conditionGood: 'טוב',
   conditionFair: 'בינוני',
   photoRequired: 'תמונה נדרשת עבור פוסט "לתת"',
-  maxPhotos: 'מקסימום 5 תמונות',
+  maxPhotos: 'מקסימום {{max}} תמונות',
   maxPosts: 'הגעת למקסימום 20 פוסטים פעילים',
   imageZoom: 'הגדל תמונה',
   imageZoomNth: 'הגדל תמונה {{index}} מתוך {{total}}',
@@ -88,7 +88,7 @@ export const postHe = {
 
   // PhotoPicker
   photosRequiredSuffix: '* (חובה עבור "לתת")',
-  photosHint: 'בחר עד 5 תמונות מהגלריה.',
+  photosHint: 'בחר עד {{max}} תמונות מהגלריה.',
 
   // VisibilityChooser sub-labels
   visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',

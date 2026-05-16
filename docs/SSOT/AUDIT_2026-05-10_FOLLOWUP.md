@@ -67,7 +67,6 @@
 | 6.2 Settings 7 dead `onPress={() => {}}` (TD-107) | 🟡 | Many rows wired through Settings refactor; spot-verify remaining. |
 | 6.3 Edit Profile share button no-op (TD-106) | ⏳ | TD-106 still open. |
 | 6.4 Type toggle emoji `🔍`/`🎁` | ⏳ | Folded into §4.6. |
-| 6.5 Magic strings — limits hard-coded in `i18n/he.ts` | ⏳ | Reference `MAX_MEDIA_ASSETS` from `@kc/domain`. |
 | 6.6 Settings toggles component-state only | 🟡 | Same as §5.9. |
 
 ## 7. Architecture, code-quality, tooling

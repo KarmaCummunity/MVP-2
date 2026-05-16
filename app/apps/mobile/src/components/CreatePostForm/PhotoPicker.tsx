@@ -61,7 +61,7 @@ export function PhotoPicker({ uploads, isUploading, uploadingCount, required, on
         )}
       </View>
       {uploads.length === 0 && !isUploading && (
-        <Text style={styles.hint}>{t('post.photosHint')}</Text>
+        <Text style={styles.hint}>{t('post.photosHint', { max: MAX_MEDIA_ASSETS })}</Text>
       )}
     </View>
   );
