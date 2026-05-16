@@ -24,12 +24,7 @@ const FILE_SIZE_CAP = 300;
 // `max` is the current line count: the file cannot grow past it. Shrinking the file
 // below the cap triggers a STALE-ALLOWLIST error, prompting removal from this list.
 const FILE_SIZE_ALLOWLIST = new Map([
-  // Dropped 416→383 after 2026-05-16 styles split; bumped 383→387 (audit §3.8)
-  // and 387→393 (audit §4.6/§16.3 type-toggle Ionicons + a11y state).
-  // Bumped 393→450 by audit 2026-05-16 (TD-116) — VisibilityChooser + exposure wiring landed inline
-  // while lint:arch was bypassed. Exposure accordion extracted to CreatePostExposureSection.tsx (2026-05-16).
-  // TD-116 closes when LOC drops to ≤300 (300-LOC cap).
-  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-116', max: 433 }],
+  // Create post screen split: `useCreatePostPublish` + `CreatePostFormScrollContent` (2026-05-16); TD-116 closed.
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
   ["apps/mobile/app/(tabs)/search.tsx", { td: "TD-133", max: 634 }],
   // SearchFilterSheet.tsx split → 127 lines (TD-133); entry removed.
