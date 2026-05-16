@@ -1,6 +1,7 @@
 // FR-MOD-001 — Report modal opened from post-detail ⋮ menu. Mirror of ReportChatModal.
 import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
@@ -8,12 +9,12 @@ import { useAuthStore } from '../../store/authStore';
 import { colors } from '@kc/ui';
 import { NotifyModal } from '../NotifyModal';
 
-const REASONS: Array<{ value: ReportReason; label: string }> = [
-  { value: 'Spam', label: 'ספאם' },
-  { value: 'Offensive', label: 'תוכן פוגעני' },
-  { value: 'Misleading', label: 'מטעה' },
-  { value: 'Illegal', label: 'בלתי חוקי' },
-  { value: 'Other', label: 'אחר' },
+const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
+  { value: 'Spam', key: 'post.reportReasonSpam' },
+  { value: 'Offensive', key: 'post.reportReasonOffensive' },
+  { value: 'Misleading', key: 'post.reportReasonMisleading' },
+  { value: 'Illegal', key: 'post.reportReasonIllegal' },
+  { value: 'Other', key: 'post.reportReasonOther' },
 ];
 
 interface Props {
@@ -23,6 +24,7 @@ interface Props {
 }
 
 export function ReportPostModal({ postId, visible, onClose }: Props) {
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
@@ -52,13 +54,13 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
         note: note.trim() || undefined,
       });
       onClose();
-      setNotify({ title: 'הדיווח נשלח', message: 'תודה, נבחן את הדיווח.' });
+      setNotify({ title: t('post.reportSuccessTitle'), message: t('post.reportSuccessBody') });
     } catch (err) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
         onClose();
-        setNotify({ title: 'כבר דיווחת', message: 'דיווחת על הפוסט הזה ב-24 השעות האחרונות.' });
+        setNotify({ title: t('post.reportDuplicateTitle'), message: t('post.reportDuplicateBody') });
       } else {
-        setNotify({ title: 'שגיאה', message: 'נסה שוב מאוחר יותר.' });
+        setNotify({ title: t('general.error'), message: t('post.reportErrorBody') });
       }
     } finally {
       setSubmitting(false);
@@ -70,8 +72,8 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>דיווח על הפוסט</Text>
-          {REASONS.map((r) => (
+          <Text style={styles.title}>{t('post.reportTitle')}</Text>
+          {REASON_KEYS.map((r) => (
             <TouchableOpacity
               key={r.value}
               style={[styles.reasonRow, reason === r.value && styles.reasonRowActive]}
@@ -79,12 +81,12 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
               accessibilityRole="radio"
               accessibilityState={{ selected: reason === r.value }}
             >
-              <Text style={styles.reasonText}>{r.label}</Text>
+              <Text style={styles.reasonText}>{t(r.key)}</Text>
             </TouchableOpacity>
           ))}
           <TextInput
             style={styles.note}
-            placeholder="הערה (אופציונלי)"
+            placeholder={t('post.reportNotePlaceholder')}
             placeholderTextColor={colors.textSecondary}
             value={note}
             onChangeText={setNote}
@@ -98,7 +100,7 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
               onPress={onClose}
               disabled={submitting}
             >
-              <Text style={styles.btnGhostText}>ביטול</Text>
+              <Text style={styles.btnGhostText}>{t('general.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.btn, styles.btnPrimary, submitting && styles.btnDisabled]}
@@ -106,7 +108,7 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
               disabled={submitting}
               accessibilityState={{ disabled: submitting }}
             >
-              <Text style={styles.btnPrimaryText}>{submitting ? 'שולח...' : 'שלח דיווח'}</Text>
+              <Text style={styles.btnPrimaryText}>{submitting ? t('post.reportSubmitting') : t('post.reportSubmit')}</Text>
             </TouchableOpacity>
           </View>
         </View>

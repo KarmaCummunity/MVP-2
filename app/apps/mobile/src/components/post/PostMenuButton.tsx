@@ -2,6 +2,7 @@ import { useState } from 'react';
 import { Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
@@ -15,6 +16,7 @@ interface Props {
 }
 
 export function PostMenuButton({ post }: Props) {
+  const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
@@ -31,7 +33,7 @@ export function PostMenuButton({ post }: Props) {
       <Pressable
         style={styles.btn}
         onPress={() => setOpen(true)}
-        accessibilityLabel="תפריט פעולות"
+        accessibilityLabel={t('post.menuA11y')}
         accessibilityRole="button"
         hitSlop={8}
       >
