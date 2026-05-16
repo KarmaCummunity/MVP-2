@@ -57,7 +57,7 @@ export async function getProfileClosedPostsHelper(
   for (const r of rpcRows) {
     const post = byId.get(r.post_id);
     if (!post) continue;
-    items.push({ post, identityRole: r.identity_role });
+    items.push({ post, identityRole: r.identity_role, closedAt: r.closed_at });
   }
   return items;
 }
