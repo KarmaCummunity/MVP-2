@@ -107,7 +107,7 @@ export const RADIUS_OPTIONS_KM: readonly number[] = [5, 10, 25, 50, 100] as cons
 
 export interface Address {
   readonly city: string;   // city slug, e.g. "tel-aviv"
-  readonly cityName: string; // display name, e.g. "תל אביב"
+  readonly cityName: string; // display name (Hebrew label as stored), e.g. Tel Aviv
   readonly street: string;
   readonly streetNumber: string;
 }
