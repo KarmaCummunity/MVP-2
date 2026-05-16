@@ -111,6 +111,10 @@ const he = {
     emptyFilteredDesc: 'נסה לנקות את הפילטרים או להיות הראשון לשתף.',
     activeInCommunityWithCount: '{{count}} פוסטים פעילים בקהילה כרגע',
     sharePost: 'שתף פוסט',
+    giveTypeShort: 'לתת',
+    requestTypeShort: 'לבקש',
+    giverBadge: '📤 נתתי',
+    receiverBadge: '📥 קיבלתי',
   },
 
   // Post — see modules/post.ts

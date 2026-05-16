@@ -20,6 +20,7 @@ import {
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { PostWithOwner } from '@kc/application';
@@ -31,11 +32,6 @@ import { isOpaqueSystemShareHandle } from '../lib/shareHandleDisplay';
 /** Supabase Storage bucket where post images are stored (see imageUpload.ts). */
 const STORAGE_BUCKET = 'post-images';
 
-/**
- * Resolves a relative Storage path (e.g. "userId/batchId/0.jpg") to a full
- * public URL via the Supabase Storage SDK. This is the same pattern used in
- * PostCardGrid.tsx.
- */
 function getPostImageUrl(path: string): string {
   return getSupabaseClient()
     .storage.from(STORAGE_BUCKET)
@@ -46,6 +42,7 @@ function getPostImageUrl(path: string): string {
 
 export function UserResultCard({ user }: { user: UserSearchResult }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const showHandle = !isOpaqueSystemShareHandle(user.shareHandle);
   const a11yLabel = showHandle
     ? `${user.displayName} — @${user.shareHandle}`
@@ -84,7 +81,7 @@ export function UserResultCard({ user }: { user: UserSearchResult }) {
         <View style={styles.metaRow}>
           <View style={styles.metaChip}>
             <Ionicons name="people-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{user.followersCount} עוקבים</Text>
+            <Text style={styles.metaText}>{t('search.followers', { count: user.followersCount })}</Text>
           </View>
           <View style={styles.metaChip}>
             <Ionicons name="location-outline" size={12} color={colors.textSecondary} />
@@ -102,6 +99,7 @@ export function UserResultCard({ user }: { user: UserSearchResult }) {
 
 export function PostResultCard({ post }: { post: PostWithOwner }) {
   const router = useRouter();
+  const { t } = useTranslation();
   const isGive = post.type === 'Give';
 
   // Resolve the first image's Storage path to a full public URL.
@@ -151,7 +149,7 @@ export function PostResultCard({ post }: { post: PostWithOwner }) {
                 { color: isGive ? colors.giveTag : colors.requestTag },
               ]}
             >
-              {isGive ? '🎁 נתינה' : '🔍 בקשה'}
+              {isGive ? t('search.giveBadge') : t('search.requestBadge')}
             </Text>
           </View>
         </View>
