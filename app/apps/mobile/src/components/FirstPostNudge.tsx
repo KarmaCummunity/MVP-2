@@ -1,10 +1,11 @@
 // FirstPostNudge — the dismissible "share your first post" card at the top
 // of the feed. Mapped to FR-FEED-015 (with the three-tier dismissal added in
-// P1.2: primary CTA / soft session-dismiss / permanent "אל תציג לי שוב").
+// P1.2: primary CTA / soft session-dismiss / permanent dismiss link).
 
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 
 interface FirstPostNudgeProps {
@@ -14,24 +15,25 @@ interface FirstPostNudgeProps {
 }
 
 export function FirstPostNudge({ onShare, onRemindLater, onDismissForever }: FirstPostNudgeProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.card}>
       <View style={styles.headline}>
         <Ionicons name="gift-outline" size={20} color={colors.primary} />
-        <Text style={styles.title}>יש לך מוצר לתת? או משהו לבקש?</Text>
+        <Text style={styles.title}>{t('feed.nudgeTitle')}</Text>
       </View>
-      <Text style={styles.body}>שתף את הפוסט הראשון שלך עכשיו.</Text>
+      <Text style={styles.body}>{t('feed.nudgeBody')}</Text>
 
       <Pressable style={[styles.btn, styles.btnPrimary]} onPress={onShare}>
-        <Text style={[styles.btnText, styles.btnPrimaryText]}>שתף מוצר</Text>
+        <Text style={[styles.btnText, styles.btnPrimaryText]}>{t('feed.nudgeShare')}</Text>
       </Pressable>
 
       <Pressable style={[styles.btn, styles.btnSecondary]} onPress={onRemindLater}>
-        <Text style={[styles.btnText, styles.btnSecondaryText]}>תזכיר לי אחר כך</Text>
+        <Text style={[styles.btnText, styles.btnSecondaryText]}>{t('feed.nudgeRemindMe')}</Text>
       </Pressable>
 
       <Pressable style={styles.linkBtn} onPress={onDismissForever} hitSlop={8}>
-        <Text style={styles.linkText}>אל תציג לי שוב</Text>
+        <Text style={styles.linkText}>{t('feed.nudgeDontShow')}</Text>
       </Pressable>
     </View>
   );

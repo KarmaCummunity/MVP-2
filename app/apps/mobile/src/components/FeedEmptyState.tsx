@@ -4,6 +4,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { FeedCommunityCounter } from './FeedCommunityCounter';
 
@@ -18,26 +19,27 @@ export function FeedEmptyState({
   onClearFilters,
   onShare,
 }: FeedEmptyStateProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.wrap}>
       <Ionicons name="archive-outline" size={56} color={colors.textDisabled} />
       <Text style={styles.title}>
-        {hasActiveFilters ? 'אין פוסטים שתואמים לפילטרים שלך' : 'אין עדיין פוסטים בקהילה'}
+        {hasActiveFilters ? t('feed.emptyFiltered') : t('feed.empty')}
       </Text>
       <Text style={styles.body}>
-        {hasActiveFilters
-          ? 'נסה לנקות את הפילטרים או להיות הראשון לשתף.'
-          : 'תהיה הראשון לשתף משהו.'}
+        {hasActiveFilters ? t('feed.emptyFilteredDesc') : t('feed.emptyDesc')}
       </Text>
-      <FeedCommunityCounter template={(n) => `${n} פוסטים פעילים בקהילה כרגע`} />
+      <FeedCommunityCounter
+        template={(n) => t('feed.activeInCommunityWithCount', { count: n })}
+      />
       <View style={styles.actions}>
         {hasActiveFilters && (
           <Pressable style={[styles.btn, styles.btnSecondary]} onPress={onClearFilters}>
-            <Text style={styles.btnTextSecondary}>נקה פילטרים</Text>
+            <Text style={styles.btnTextSecondary}>{t('feed.clearFilters')}</Text>
           </Pressable>
         )}
         <Pressable style={[styles.btn, styles.btnPrimary]} onPress={onShare}>
-          <Text style={styles.btnTextPrimary}>שתף פוסט</Text>
+          <Text style={styles.btnTextPrimary}>{t('feed.sharePost')}</Text>
         </Pressable>
       </View>
     </View>

@@ -5,6 +5,7 @@
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 
 interface NewPostsBannerProps {
@@ -13,8 +14,9 @@ interface NewPostsBannerProps {
 }
 
 export function NewPostsBanner({ count, onPress }: NewPostsBannerProps) {
+  const { t } = useTranslation();
   if (count <= 0) return null;
-  const label = count === 1 ? 'פוסט חדש 1 — הקש לרענון' : `${count} פוסטים חדשים — הקש לרענון`;
+  const label = count === 1 ? t('feed.newPostsOne') : t('feed.newPostsMany', { count });
   return (
     <View style={styles.wrap}>
       <Pressable style={styles.pill} onPress={onPress} accessibilityRole="button" accessibilityLabel={label}>

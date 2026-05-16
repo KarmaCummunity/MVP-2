@@ -1,6 +1,7 @@
-// FeedCommunityCounter — small text counter for "{N} פוסטים פעילים בקהילה".
-// Used in the guest banner (FR-FEED-014 + FR-AUTH-014 AC3) and in the warm
-// empty state. Fetched on mount, refreshed every 60 seconds per FR-FEED-014.
+// FeedCommunityCounter — small text counter rendered via a caller-supplied
+// `template(count)` function so the i18n key lives at the call site (guest
+// banner, warm empty state). Mapped to FR-FEED-014 + FR-AUTH-014 AC3.
+// Fetched on mount, refreshed every 60 seconds per FR-FEED-014.
 
 import React from 'react';
 import { StyleSheet, Text } from 'react-native';

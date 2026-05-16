@@ -5,6 +5,7 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing } from '@kc/ui';
 
 interface FeedFilterIconProps {
@@ -13,13 +14,14 @@ interface FeedFilterIconProps {
 }
 
 export function FeedFilterIcon({ activeCount, onPress }: FeedFilterIconProps) {
+  const { t } = useTranslation();
   const display = activeCount > 9 ? '9+' : String(activeCount);
   return (
     <TouchableOpacity
       style={styles.btn}
       onPress={onPress}
-      accessibilityLabel="סינון ומיון פוסטים"
-      accessibilityHint="פותח חלון לסינון ולמיון של הפיד"
+      accessibilityLabel={t('feed.filterA11y')}
+      accessibilityHint={t('feed.filterA11yHint')}
     >
       <Ionicons name="options-outline" size={24} color={colors.textPrimary} />
       {activeCount > 0 && (
