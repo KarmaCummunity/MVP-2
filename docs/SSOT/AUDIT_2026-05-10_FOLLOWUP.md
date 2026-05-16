@@ -36,7 +36,6 @@
 | 3.4 [HIGH] Session expiry uses device clock | ⏳ | Accept practical impact + document, OR derive clock skew from response `Date` header. Low priority in MVP. |
 | 3.7 [MEDIUM] No idempotency key on `Publish` | ⏳ | Add `posts.client_request_id` + unique constraint + adapter upsert. |
 | 3.8 [MEDIUM] Image-upload `Promise.all` failure leaks Storage objects | ⏳ | Best-effort cleanup of successful uploads on partial-failure. |
-| 3.9 [MEDIUM] `activePostsCountInternal` cached before create | ⏳ | Invalidate auth/user query on delete; optimistic decrement. |
 | 3.10 [MEDIUM] `GetMyPostsUseCase` returns no `nextCursor` | ⏳ | Mirror `GetFeedUseCase` `{ posts, nextCursor }` shape. |
 | 3.11 [LOW] Home feed `onEndReached` not wired | ⏳ | Verify and wire. |
 
@@ -112,12 +111,7 @@
 
 | Section | Status | Closing slice |
 | ------- | ------ | ------------- |
-| 14.2 [HIGH] Settings "שם משתמש ופרטים" dead row | ⏳ | One-line `router.push('/edit-profile')`. (Re-verify — settings.tsx:76 currently routes; row may already be ✅.) |
-| 14.3 [HIGH] `chat/index.tsx` duplicate back button | ⏳ | Re-verify — current `chat/index.tsx` has no `headerLeft`/`useLayoutEffect`. Likely closed. |
-| 14.4 [HIGH] `chat/[id]` doesn't pre-check chat existence | ⏳ | One-shot `chatRepo.findById(chatId)` before subscribe (or render `<EmptyState>` when `chat=null` after findById). |
-| 14.5 [MEDIUM] Soft-gate destroys publish payload | ⏳ | Snapshot draft to AsyncStorage before redirect. |
 | 14.7 [MEDIUM] Apple SSO + Phone OTP placeholder | 🟡 | TD-24 + TD-151 (auth hardening). |
-| 14.8 [LOW] Search CTA wording | ⏳ | Re-verify — "חזור לעמוד הבית" not found in current source. Likely closed. |
 
 ## 15. RLS, triggers & SECURITY DEFINER (Round 2)
 
@@ -125,7 +119,6 @@
 | ------- | ------ | ------------- |
 | 15.7 [MEDIUM] Realtime publication on `users` exposes sensitive columns | ⏳ | Curated `users_public_view` or column-filter on publication. |
 | 15.9 [MEDIUM] `messages.sender_id ON DELETE SET NULL` keeps body | 🟡 | Documented intent per spec. Re-decide at GDPR pass. |
-| 15.12 [MEDIUM] `find_or_create_support_chat` (0005) race | ⏳ | Same shape as §15.3; verify RPC exposure first. |
 | 15.14 [LOW] `is_post_visible_to()` STABLE per-row evaluation | ⏳ | Profile EXPLAIN at scale. |
 | 15.15 [LOW] `cities` table has theatrical RLS | ⏳ | Disable RLS on `cities` OR add intent comment. |
 
@@ -136,10 +129,8 @@
 | 16.2 [HIGH] `PostImageCarousel` counter RTL position | ⏳ | `start: spacing.sm` instead of `left:`. |
 | 16.3 [HIGH] Type-toggle emoji in `(tabs)/create.tsx` | ⏳ | Folded into §4.6. |
 | 16.4 [HIGH] Icon-only TouchableOpacity missing `accessibilityLabel` | ⏳ | Mechanical sweep (~1h). |
-| 16.5 [HIGH] Create-post form clears on publish error | ⏳ | Don't clear in `onError`; only in `onSuccess`. |
 | 16.6 [MEDIUM] Soft-gate success alert emoji `✅` | ⏳ | Folded into §4.6. |
 | 16.8 [MEDIUM] Donations time composer no trim | ⏳ | Same shape as §16.7. |
-| 16.9 [MEDIUM] Sign-in / sign-up no client-side email format check | ⏳ | Folded into §3.3 — re-verify; should be closed. |
 | 16.10 [MEDIUM] Edit Profile no unsaved-changes warn on Back | ⏳ | `dirty` flag + confirm Alert. |
 | 16.11 [MEDIUM] PhotoPicker no pre-launch permission check | ⏳ | Mirror avatarUpload pattern. |
 | 16.12 [MEDIUM] Many screens lack loading skeletons | ⏳ | Shared `<ScreenLoading />`. |
