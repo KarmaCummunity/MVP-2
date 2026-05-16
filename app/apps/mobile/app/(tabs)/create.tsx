@@ -1,27 +1,30 @@
 // Create Post — wired to IPostRepository (P0.4-FE).
-// Mapped to: FR-POST-001..006 (incl. FR-POST-003 visibility + FR-POST-006 followers publish confirm), FR-POST-021 (D-31 partner-surface mask + collapsible exposure settings), FR-POST-010 (delete) lives elsewhere.
+// Mapped to: FR-POST-001..006 (incl. FR-POST-003 visibility + FR-POST-006 followers publish confirm), FR-POST-021 (D-31 partner-surface mask + collapsible exposure settings), FR-POST-007 (local draft autosave + resume), FR-POST-010 (delete) lives elsewhere.
 // FR-AUTH-015 soft-gate preserved from #12 — Publish wraps publish.mutate() with requestSoftGate.
 // FR-NOTIF-015 AC1: push pre-prompt fires after first post published.
-import React, { useEffect, useRef, useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { colors } from '@kc/ui';
-import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisibility } from '@kc/domain';
+import { Screen } from '../../src/components/ui/Screen';
 import { useAuthStore } from '../../src/store/authStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
 import { container } from '../../src/lib/container';
 import { useCreatePostAddressPrefill } from '../../src/hooks/useCreatePostAddressPrefill';
+import { useCreatePostFormState } from '../../src/hooks/useCreatePostFormState';
+import { usePostDraftAutosave } from '../../src/hooks/usePostDraftAutosave';
+import { usePostDraftHydration } from '../../src/hooks/usePostDraftHydration';
 import {
-  newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
+  newUploadBatchId, pickPostImages, resizeAndUploadImage,
 } from '../../src/services/imageUpload';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
+import { DraftResumeModal } from '../../src/components/post/DraftResumeModal';
 import { getUserRepo } from '../../src/services/userComposition';
 import { createPostStyles as styles } from './create.styles';
 import { useCreatePostPublish } from '../../src/hooks/useCreatePostPublish';
@@ -44,21 +47,25 @@ export default function CreatePostScreen() {
     setStreetNumber,
   } = useCreatePostAddressPrefill(ownerId);
 
-  const [type, setType] = useState<PostType>('Give');
-  const [title, setTitle] = useState('');
-  const [description, setDescription] = useState('');
-  const [category, setCategory] = useState<Category>('Other');
-  const [condition, setCondition] = useState<ItemCondition>('Good');
-  const [urgency, setUrgency] = useState('');
-  const [locationDisplayLevel, setLocationDisplayLevel] =
-    useState<LocationDisplayLevel>('CityAndStreet');
-  const [visibility, setVisibility] = useState<PostVisibility>('Public');
-  const visibilityRef = useRef<PostVisibility>(visibility);
-  visibilityRef.current = visibility;
+  const form = useCreatePostFormState();
 
-  const [publishFollowersOpen, setPublishFollowersOpen] = useState(false);
-  const [hideFromCounterparty, setHideFromCounterparty] = useState(false);
-  const [exposureSettingsOpen, setExposureSettingsOpen] = useState(false);
+  const draftHydration = usePostDraftHydration(ownerId);
+
+  usePostDraftAutosave({
+    ownerId,
+    isHydrating: draftHydration.status.phase === 'pending',
+    isResumePending: draftHydration.status.phase === 'ready',
+    type: form.type,
+    title: form.title,
+    description: form.description,
+    category: form.category,
+    condition: form.condition,
+    urgency: form.urgency,
+    locationDisplayLevel: form.locationDisplayLevel,
+    visibility: form.visibility,
+    hideFromCounterparty: form.hideFromCounterparty,
+    uploads: form.uploads,
+  });
 
   const userQuery = useQuery({
     queryKey: ['user-profile', ownerId],
@@ -71,34 +78,36 @@ export default function CreatePostScreen() {
   const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
 
   useEffect(() => {
-    if (profilePrivacy === 'Public' && visibility === 'FollowersOnly') {
-      setVisibility('Public');
+    if (profilePrivacy === 'Public' && form.visibility === 'FollowersOnly') {
+      form.setVisibility('Public');
     }
-  }, [profilePrivacy, visibility]);
+  }, [profilePrivacy, form]);
 
-  const [uploads, setUploads] = useState<UploadedAsset[]>([]);
+  const [publishFollowersOpen, setPublishFollowersOpen] = useState(false);
+  const [exposureSettingsOpen, setExposureSettingsOpen] = useState(false);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [batchId] = useState(() => newUploadBatchId());
   const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
+  const [missingDraftImagesNotified, setMissingDraftImagesNotified] = useState(false);
 
-  const isGive = type === 'Give';
+  const isGive = form.type === 'Give';
 
   const handlePick = async () => {
     if (!ownerId) {
       setNotify({ title: t('general.errorTitle'), message: t('post.reauthRequired') });
       return;
     }
-    const picked = await pickPostImages(uploads.length + uploadingCount);
+    const picked = await pickPostImages(form.uploads.length + uploadingCount);
     if (picked.length === 0) return;
 
     setUploadingCount((n) => n + picked.length);
     try {
-      const startOrdinal = uploads.length;
+      const startOrdinal = form.uploads.length;
       const r = await Promise.allSettled(
         picked.map((p, i) => resizeAndUploadImage(p, ownerId, batchId, startOrdinal + i)),
       );
       const ok = r.flatMap((x) => (x.status === 'fulfilled' ? [x.value] : []));
-      if (ok.length > 0) setUploads((prev) => [...prev, ...ok]);
+      if (ok.length > 0) form.setUploads((prev) => [...prev, ...ok]);
       if (ok.length < r.length) {
         const msg =
           ok.length === 0 ? t('post.uploadRetry') : t('post.uploadPartial', { ok: ok.length, total: r.length });
@@ -110,32 +119,42 @@ export default function CreatePostScreen() {
   };
 
   const handleRemove = (path: string) =>
-    setUploads((prev) => prev.filter((u) => u.path !== path));
+    form.setUploads((prev) => prev.filter((u) => u.path !== path));
 
   const { tryPublish, runPublishAfterGate, isPublishing } = useCreatePostPublish({
     ownerId,
-    type,
-    title,
-    description,
-    category,
+    type: form.type,
+    title: form.title,
+    description: form.description,
+    category: form.category,
     city,
     street,
     streetNumber,
-    locationDisplayLevel,
-    condition,
+    locationDisplayLevel: form.locationDisplayLevel,
+    condition: form.condition,
     isGive,
-    urgency,
-    uploads,
-    hideFromCounterparty,
-    visibilityRef,
+    urgency: form.urgency,
+    uploads: form.uploads,
+    hideFromCounterparty: form.hideFromCounterparty,
+    visibilityRef: form.visibilityRef,
     setPublishFollowersOpen,
     requestSoftGate,
     uploadingCount,
     presentPrePrompt,
   });
 
+  const handleDraftContinue = () => {
+    const hydrated = draftHydration.continueWithDraft();
+    if (!hydrated) return;
+    form.applyDraft(hydrated);
+    if (hydrated.missingCount > 0 && !missingDraftImagesNotified) {
+      setMissingDraftImagesNotified(true);
+      setNotify({ title: t('post.uploadFailedTitle'), message: t('post.draftMissingImage') });
+    }
+  };
+
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen blobs="off">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
@@ -156,40 +175,46 @@ export default function CreatePostScreen() {
       </View>
 
       <CreatePostFormScrollContent
-        type={type}
-        onTypeChange={setType}
-        title={title}
-        onTitleChange={setTitle}
+        type={form.type}
+        onTypeChange={form.setType}
+        title={form.title}
+        onTitleChange={form.setTitle}
         city={city}
         onCityChange={setCity}
         street={street}
         onStreetChange={setStreet}
         streetNumber={streetNumber}
         onStreetNumberChange={setStreetNumber}
-        category={category}
-        onCategoryChange={setCategory}
+        category={form.category}
+        onCategoryChange={form.setCategory}
         isGive={isGive}
-        condition={condition}
-        onConditionChange={setCondition}
-        description={description}
-        onDescriptionChange={setDescription}
+        condition={form.condition}
+        onConditionChange={form.setCondition}
+        description={form.description}
+        onDescriptionChange={form.setDescription}
         exposureSettingsOpen={exposureSettingsOpen}
         onToggleExposureSettings={() => setExposureSettingsOpen((o) => !o)}
-        locationDisplayLevel={locationDisplayLevel}
-        onLocationDisplayLevelChange={setLocationDisplayLevel}
+        locationDisplayLevel={form.locationDisplayLevel}
+        onLocationDisplayLevelChange={form.setLocationDisplayLevel}
         isPublishing={isPublishing}
-        urgency={urgency}
-        onUrgencyChange={setUrgency}
-        visibility={visibility}
-        onVisibilityChange={setVisibility}
+        urgency={form.urgency}
+        onUrgencyChange={form.setUrgency}
+        visibility={form.visibility}
+        onVisibilityChange={form.setVisibility}
         profilePrivacy={profilePrivacy}
-        hideFromCounterparty={hideFromCounterparty}
-        onHideFromCounterpartyChange={setHideFromCounterparty}
-        uploads={uploads}
+        hideFromCounterparty={form.hideFromCounterparty}
+        onHideFromCounterpartyChange={form.setHideFromCounterparty}
+        uploads={form.uploads}
         uploadingCount={uploadingCount}
         onAddPhotos={handlePick}
         onRemovePhoto={handleRemove}
         onPublishPress={tryPublish}
+      />
+
+      <DraftResumeModal
+        visible={draftHydration.status.phase === 'ready'}
+        onContinue={handleDraftContinue}
+        onStartFresh={draftHydration.startFresh}
       />
 
       <EnablePushModal
@@ -219,8 +244,8 @@ export default function CreatePostScreen() {
         cancelLabel={t('post.publishFollowersMakePublicCta')}
         onCancel={() => {
           setPublishFollowersOpen(false);
-          visibilityRef.current = 'Public';
-          setVisibility('Public');
+          form.visibilityRef.current = 'Public';
+          form.setVisibility('Public');
           runPublishAfterGate();
         }}
         onConfirm={() => {
@@ -228,6 +253,6 @@ export default function CreatePostScreen() {
           runPublishAfterGate();
         }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

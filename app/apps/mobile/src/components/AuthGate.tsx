@@ -18,6 +18,7 @@ import { getDevGhostSession, isDevGhostSessionEnabled } from '../services/devGho
 import { getOnboardingBootstrap } from '../services/userComposition';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
+import { usePostDraftStore } from '../store/postDraftStore';
 import { container } from '../lib/container';
 import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
 
@@ -130,6 +131,9 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     } else {
       useChatStore.getState().resetOnSignOut();
       queryClient.clear();
+      // FR-POST-007 AC5 — drop the local post draft so a different user
+      // signing in on the same device does not see the previous user's draft.
+      usePostDraftStore.getState().clearDraft();
     }
   }, [session, queryClient]);
 

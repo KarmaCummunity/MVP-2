@@ -56,11 +56,14 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   actions: { flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.base },
+  // Pill buttons that match the welcome screen's secondary surfaces — 48h,
+  // rounded lg, white card + border for secondary, solid primary for primary.
   btn: {
-    paddingVertical: spacing.sm + 2,
-    paddingHorizontal: spacing.lg,
-    borderRadius: radius.md,
+    height: 48,
+    paddingHorizontal: spacing.xl,
+    borderRadius: radius.lg,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   btnPrimary: { backgroundColor: colors.primary },
   btnSecondary: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },

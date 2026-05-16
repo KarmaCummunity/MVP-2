@@ -1,6 +1,6 @@
 # 2.4 Posts: Create, Edit, Discover
 
-> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. ⚠️ Audit 2026-05-16 (`docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md`): **FR-POST-007 (local draft autosave) is ⏳ unimplemented** — zero code references; status header above was inaccurate. **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
+> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
 
 
 
@@ -17,7 +17,7 @@ Includes:
 - Creating a "give" post and a "request" post (a single form with a prominent toggle).
 - Required and optional fields, including images, address, location-display level, and post visibility.
 - Post detail screen behavior across viewer/owner permutations.
-- Editing an existing post, including the upgrade-only visibility rule.
+- Editing an existing post, including visibility changes after publish (`FR-POST-009`).
 - Deleting a post.
 - Local draft autosave.
 - Post lifecycle states.
@@ -96,7 +96,7 @@ Fields that exist for one type only.
 
 **Acceptance Criteria.**
 - AC1. For `Give`: up to 5 images total (the first being required), and an `item_condition ∈ { New, LikeNew, Good, Fair, Damaged }` (UI: שבור/תקול for `Damaged`).
-- AC2. For `Request`: up to 5 images (all optional); a free-text `urgency` field (≤100 chars, e.g. "Need by Friday").
+- AC2. For `Request`: up to 5 images (all optional); a free-text `urgency` field (≤100 chars, e.g. "Need by Friday"). On the create screen, `urgency` is **not** grouped under the collapsible exposure section; it appears as its own field when type is Request (`FR-POST-003` address/visibility controls remain in exposure).
 - AC3. Switching the toggle clears these fields with a confirmation if any value is present (to avoid accidental loss).
 
 **Related.** Domain: `Post.item_condition`, `Post.urgency`.
@@ -133,7 +133,7 @@ Publishing a post confirms or warns based on chosen visibility.
 **Acceptance Criteria.**
 - AC1. Visibility `Public`: no extra confirmation; success toast "✅ Your post is live!".
 - AC2. Visibility `FollowersOnly`: an interstitial reminds the user how many approved followers will see it, with two CTAs ("Followers only" / "Make it public").
-- AC3. Visibility `OnlyMe`: an interstitial reminds the user the post is saved privately and that future visibility upgrades are allowed but not downgrades; two CTAs ("Save private" / "Cancel").
+- AC3. Visibility `OnlyMe`: an interstitial reminds the user the post is saved privately and that they can change visibility later from the post **⋮** menu or edit screen; two CTAs ("Save private" / "Cancel").
 - AC4. After successful publish, the user lands back on the Home Feed with the new post anchored at the top of the list.
 
 **Related.** Screens: 2.4 · Domain: `PostVisibility`.
@@ -142,7 +142,7 @@ Publishing a post confirms or warns based on chosen visibility.
 
 ## FR-POST-007 — Local draft autosave
 
-> **Status:** ⏳ Unimplemented (audit 2026-05-16). Tracked as TD-108; awaiting BACKLOG slot.
+> **Status:** ✅ Done — implemented under BACKLOG P2.22 (`feat/FR-POST-007-fe-draft-autosave`). Resolves TD-108. Design: [`docs/superpowers/specs/2026-05-17-post-draft-autosave-design.md`](../../superpowers/specs/2026-05-17-post-draft-autosave-design.md).
 
 **Description.**
 The form persists its state to local storage to survive accidental closure.
@@ -172,7 +172,7 @@ The post owner **or** the Super Admin (`users.is_super_admin = true`) can re-ope
 
 **Acceptance Criteria.**
 - AC0. **Authorization:** editing is allowed when `auth.uid()` is the post `owner_id` **or** `users.is_super_admin = true` for that session (re-checked by RLS on `posts` / `media_assets` updates; migration `0049_admin_post_edit_rls.sql`).
-- AC1. Editable fields: title, description, category, address, location-display level, item condition (give-only), urgency (request-only), images, **and** visibility (subject to the upgrade-only rule, `FR-POST-009`).
+- AC1. Editable fields: title, description, category, address, location-display level, item condition (give-only), urgency (request-only), images, **and** visibility (any level may be chosen; `FR-POST-009`).
 - AC2. The post `type` (Give vs Request) is **not** editable in MVP; the user must delete and recreate.
 - AC3. Edits do **not** bump the post to the top of the feed; `created_at` is immutable while `updated_at` advances.
 - AC4. Editing a post emits an `audit_event` (`R-MVP-Safety-3`) with the changed fields.
@@ -185,25 +185,21 @@ The post owner **or** the Super Admin (`users.is_super_admin = true`) can re-ope
 
 ---
 
-## FR-POST-009 — Visibility upgrade-only rule
+## FR-POST-009 — Post visibility may change after publish
 
 **Description.**
-Visibility changes after publish must move strictly toward greater exposure.
+The owner (or a closed-post participant for `surface_visibility`, `FR-POST-021`) may switch post audience among `Public`, `FollowersOnly`, and `OnlyMe` **at any time**, including restricting visibility after the post was already visible to others (e.g. moving from `Public` to `OnlyMe`). Product accepts that prior viewers may have cached or seen content; the control governs **current** discoverability in feeds and profile surfaces, not a retroactive erasure guarantee.
 
 **Source.**
-- PRD: `03_Core_Features.md` §3.2.4 (sub-section ו).
-- Constraints: `R-MVP-Privacy-9`, `R-MVP-Items-12`.
+- Prior PRD text (`03_Core_Features.md` §3.2.4 sub-section ו) required upgrade-only; **superseded** by PM decision **`D-32` (2026-05-17)**.
 
 **Acceptance Criteria.**
-- AC1. Allowed transitions:
-   - `OnlyMe → FollowersOnly` (only if `User.privacy_mode = Private`)
-   - `OnlyMe → Public`
-   - `FollowersOnly → Public`
-- AC2. Disallowed transitions are rejected at both UI and API layers; API returns `DOMAIN_ERROR { code: 'visibility_downgrade_forbidden' }`.
-- AC3. Disallowed targets in the edit form are rendered disabled with a tooltip: *"Lowering visibility is not allowed after publishing."*
-- AC4. Profile mode flipping mid-flight (`Private → Public`) does not retroactively change post visibility (`R-MVP-Privacy-13`).
+- AC1. Any transition `Public` ↔ `FollowersOnly` ↔ `OnlyMe` is allowed for `posts.visibility` on **open** posts (subject to `FR-POST-003` / `FR-PROFILE-*`: `FollowersOnly` remains unavailable when `User.privacy_mode = Public` — UI disables that option and surfaces the Settings → Privacy hint).
+- AC2. The same freedom applies to each participant's `post_actor_identity.surface_visibility` on **closed** posts (`FR-POST-021`), with the same `FollowersOnly` / public-profile gate.
+- AC3. Server and client must stay consistent: DB must **not** reject legal visibility writes solely for being a “downgrade”. Legacy `visibility_downgrade_forbidden` handling may remain in adapters for backwards compatibility with old DB snapshots but must not fire on current schema after migration `0093_posts_visibility_free_change.sql`.
+- AC4. Profile mode flipping mid-flight (`Private → Public`) does not retroactively rewrite stored post visibility (`R-MVP-Privacy-13`).
 
-**Related.** Domain: `Post.visibility`, `Post.upgradeVisibility()` invariant.
+**Related.** Domain: `Post.visibility`, `canUpgradeVisibility()` (non–no-op helper only), migration `0093_posts_visibility_free_change.sql`.
 
 ---
 
@@ -431,8 +427,8 @@ At publish time, an advisory check warns users against posting forbidden categor
 **Description.**
 Participants control **who may see the post** (audience), not a separate “identity chrome” tier in the MVP UI.
 
-- **Open posts (`status = open`, owner on post detail):** the same three-level control as `FR-POST-003` edits `posts.visibility` (subject to `FR-POST-009` upgrade-only). Shown on the post detail screen for quick changes.
-- **Closed posts (`status = closed_delivered`, owner or marked respondent):** each participant edits their own `post_actor_identity.surface_visibility` (`Public` / `FollowersOnly` / `OnlyMe`, default `Public`) — who, beyond the two participants, can discover the post **through that participant's surface** (their "פוסטים סגורים" profile tab and generic third-party fetch). Changes follow the same **upgrade-only** ordering as post visibility (`FR-POST-009`).
+- **Open posts (`status = open`, owner on post detail):** the same three-level control as `FR-POST-003` edits `posts.visibility` (subject to `FR-POST-009` free changes + public-profile gate for `FollowersOnly`). Shown in the post-detail **⋮** menu (open or closed) for quick changes.
+- **Closed posts (`status = closed_delivered`, owner or marked respondent):** each participant edits their own `post_actor_identity.surface_visibility` (`Public` / `FollowersOnly` / `OnlyMe`, default `Public`) — who, beyond the two participants, can discover the post **through that participant's surface** (their "פוסטים סגורים" profile tab and generic third-party fetch). Changes follow the same rules as open-post visibility (`FR-POST-009`, including the public-profile gate for `FollowersOnly`). UI: the post-detail **⋮** menu (same surface as open-post visibility controls).
 - **Third-party mask on the counterparty's profile surface (`hide_from_counterparty`):** when a marked respondent exists, each participant may toggle this flag so **non-participant viewers** who discover the post through the **counterparty's** "פוסטים סגורים" profile context see anonymous post chrome for that actor (name / avatar / profile link from the post row). The **counterparty** still sees the actor's real identity on post chrome (they already coordinate in chat, where identity stays real per `FR-POST-021` AC6). The historical column name `hide_from_counterparty` is retained in `public.post_actor_identity`; product semantics are defined in **`D-31`**.
 
 The column `identity_visibility` remains in `public.post_actor_identity` for projection compatibility and is **written as `Public` by the app**; migration `0092_post_actor_identity_public_chrome.sql` normalizes legacy non-`Public` values. Advanced identity-chrome rules (`FollowersOnly` / `Hidden` on chrome only) are **out of MVP UI scope** (`D-30`).
@@ -448,7 +444,7 @@ The column `identity_visibility` remains in `public.post_actor_identity` for pro
 - AC4. **Identity projection (pure domain).** `projectActorIdentityForViewer` runs per participant after fetch. The viewer sees full identity unless **(a)** `D-26` coupling: the viewer is the counterparty **and** the owner's `posts.visibility = OnlyMe` (owner anonymized to counterparty on post chrome), **(b)** `D-31` + `hide_from_counterparty`: the viewer is a **third party** (not actor, not counterparty) **and** the hydration context is the counterparty's closed-post profile surface (`identityListingHostUserId = counterparty`), **(c)** legacy non-`Public` `identity_visibility` rows until migration `0092` runs, or **(d)** surface-coupling rules where implemented in the projection pipeline / SQL (`D-28` addendum).
 - AC5. When projection marks an identity as anonymous, post-detail must not offer a one-tap profile deep-link from that row (`ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost = false`).
 - AC6. Chat headers and profile shells remain real-user surfaces; masking applies to **post chrome** only (`D-26`).
-- AC7. **Create-time preference.** The new-post screen lets the publisher set `hide_from_counterparty` before publish. When enabled, the client upserts the owner's `post_actor_identity` row at publish time with `surface_visibility = posts.visibility` (at publish), `identity_visibility = Public`, and `hide_from_counterparty = true` (semantics per **`D-31`** — third parties on the counterparty's closed-post profile surface, not hiding from the counterparty in chat). When disabled, no row is written at create unless the user later changes closed-post surface settings from post detail.
+- AC7. **Create-time preference.** The new-post screen lets the publisher set `hide_from_counterparty` before publish. When enabled, the client upserts the owner's `post_actor_identity` row at publish time with `surface_visibility = posts.visibility` (at publish), `identity_visibility = Public`, and `hide_from_counterparty = true` (semantics per **`D-31`** — third parties on the counterparty's closed-post profile surface, not hiding from the counterparty in chat). When disabled, no row is written at create unless the user later changes closed-post surface settings from the post-detail **⋮** menu.
 
 **Migrations.** `0083_post_actor_identity.sql`, `0085_post_actor_identity_audience_split.sql`, `0092_post_actor_identity_public_chrome.sql`.
 
@@ -480,6 +476,6 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
-| 0.5 | 2026-05-16 | `FR-POST-021` — MVP post-detail privacy: audience (`posts.visibility` / `surface_visibility`) + `hide_from_counterparty` only; `identity_visibility` not user-editable in UI (`D-30`, migration `0092`). |
+| 0.6 | 2026-05-17 | `FR-POST-009` — visibility may change freely after publish (incl. hide after exposure); `FR-POST-021`/`FR-POST-006`/`FR-POST-008` aligned; migration `0093_posts_visibility_free_change.sql`; decision `D-32`. |
 | 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
 | 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

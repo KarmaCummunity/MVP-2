@@ -11,6 +11,7 @@ import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { PostActorPrivacyBar } from '../../src/components/post-detail/PostActorPrivacyBar';
+import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
 import { styles } from './postDetailScreen.styles';
 
 export type PostDetailScrollContentProps = Readonly<{
@@ -38,60 +39,66 @@ export function PostDetailScrollContent({
 
   return (
     <ScrollView showsVerticalScrollIndicator={false}>
-      <View style={styles.imageWrap}>
-        <PostImageCarousel
-          mediaAssets={post.mediaAssets}
-          fallbackIcon={isGive ? 'gift-outline' : 'search-outline'}
-        />
-        <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
-          <Text style={styles.typeTagText}>{isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}</Text>
-        </View>
-        <View style={styles.menuOverlay} pointerEvents="box-none">
-          <PostMenuButton post={post} />
-        </View>
-      </View>
-
-      <View style={styles.content}>
-        <Text style={styles.title}>{post.title}</Text>
-        <Text style={styles.category}>{t(`post.category.${post.category}`)}</Text>
-
-        {isGive && post.itemCondition != null ? (
-          <View style={styles.conditionRow}>
-            <Text style={styles.conditionLabel}>{t('post.detail.conditionPrefix')}</Text>
-            <Text style={styles.conditionValue}>{t(`post.condition.${post.itemCondition}`)}</Text>
+      <MotionEntry variant="hero" delay={ENTRY_DELAY.hero}>
+        <View style={styles.imageWrap}>
+          <PostImageCarousel
+            mediaAssets={post.mediaAssets}
+            fallbackIcon={isGive ? 'gift-outline' : 'search-outline'}
+          />
+          <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
+            <Text style={styles.typeTagText}>{isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}</Text>
           </View>
-        ) : null}
-        {!isGive && post.urgency != null && post.urgency !== '' ? (
-          <View style={styles.conditionRow}>
-            <Text style={styles.conditionLabel}>{t('post.detail.urgencyPrefix')}</Text>
-            <Text style={styles.conditionValue}>{post.urgency}</Text>
+          <View style={styles.menuOverlay} pointerEvents="box-none">
+            <PostMenuButton post={post} />
           </View>
-        ) : null}
-
-        {post.description != null && post.description !== '' ? (
-          <Text style={styles.description}>{post.description}</Text>
-        ) : null}
-
-        <ClosedDeliveredExtras post={post} viewerId={viewerId} />
-
-        <View style={styles.locationRow}>
-          <Ionicons name="location-outline" size={16} color={colors.textSecondary} />
-          <Text style={styles.locationText}>{locationText}</Text>
         </View>
-        <Text style={styles.timeText}>{timeAgo}</Text>
+      </MotionEntry>
 
-        <View style={styles.divider} />
-        <PostDetailAuthorFooter
-          ownerNavigable={ownerNavigable}
-          ownerLabel={ownerLabel}
-          ownerAvatarUrl={post.ownerAvatarUrl}
-          cityName={post.address.cityName}
-          ownerHandle={post.ownerHandle}
-        />
-        {showActorPrivacy && viewerId != null ? (
-          <PostActorPrivacyBar post={post} viewerId={viewerId} />
-        ) : null}
-      </View>
+      <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
+        <View style={styles.content}>
+          <Text style={styles.category}>{t(`post.category.${post.category}`)}</Text>
+          <Text style={styles.title}>{post.title}</Text>
+
+          {isGive && post.itemCondition != null ? (
+            <View style={styles.conditionRow}>
+              <Text style={styles.conditionLabel}>{t('post.detail.conditionPrefix')}</Text>
+              <Text style={styles.conditionValue}>{t(`post.condition.${post.itemCondition}`)}</Text>
+            </View>
+          ) : null}
+          {!isGive && post.urgency != null && post.urgency !== '' ? (
+            <View style={styles.conditionRow}>
+              <Text style={styles.conditionLabel}>{t('post.detail.urgencyPrefix')}</Text>
+              <Text style={styles.conditionValue}>{post.urgency}</Text>
+            </View>
+          ) : null}
+
+          {post.description != null && post.description !== '' ? (
+            <Text style={styles.description}>{post.description}</Text>
+          ) : null}
+
+          <ClosedDeliveredExtras post={post} viewerId={viewerId} />
+
+          <View style={styles.locationRow}>
+            <View style={styles.locationIcon}>
+              <Ionicons name="location-outline" size={16} color={colors.primary} />
+            </View>
+            <Text style={styles.locationText}>{locationText}</Text>
+          </View>
+          <Text style={styles.timeText}>{timeAgo}</Text>
+
+          <View style={styles.divider} />
+          <PostDetailAuthorFooter
+            ownerNavigable={ownerNavigable}
+            ownerLabel={ownerLabel}
+            ownerAvatarUrl={post.ownerAvatarUrl}
+            cityName={post.address.cityName}
+            ownerHandle={post.ownerHandle}
+          />
+          {showActorPrivacy && viewerId != null ? (
+            <PostActorPrivacyBar post={post} viewerId={viewerId} />
+          ) : null}
+        </View>
+      </MotionEntry>
     </ScrollView>
   );
 }

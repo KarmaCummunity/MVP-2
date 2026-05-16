@@ -7,7 +7,7 @@
 // ─────────────────────────────────────────────
 
 import { Platform } from 'react-native';
-import AsyncStorage from '@react-native-async-storage/async-storage';
+import { createAuthSecureStorage } from './authSecureStorage';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
 import {
@@ -47,15 +47,22 @@ export const AUTH_VERIFY_URL =
   process.env.EXPO_PUBLIC_AUTH_VERIFY_URL ?? 'https://karma-community-kc.com/auth/verify';
 
 /**
- * Web localStorage exposes async-compatible sync methods; AsyncStorage is for native.
- * Without this, refreshing the web preview drops the session (FR-AUTH-013 regresses on web).
+ * Web localStorage exposes async-compatible sync methods (without this,
+ * refreshing the web preview drops the session — FR-AUTH-013 regresses).
+ * Native routes through SecureStore (Keychain/Keystore) per TD-101
+ * (BACKLOG P2.14); the adapter performs a one-time read-through migration
+ * from AsyncStorage so existing signed-in users aren't logged out by the
+ * swap. The Supabase client is a singleton — only the first
+ * `getSupabaseClient({ storage })` call's return value is consumed, so
+ * `pickStorage()` is also called by `apps/mobile/src/lib/container.ts`
+ * for loader-order independence.
  */
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
     if (typeof window === 'undefined' || !window.localStorage) return undefined;
     return window.localStorage;
   }
-  return AsyncStorage;
+  return createAuthSecureStorage();
 }
 
 function getAuthService(): IAuthService {

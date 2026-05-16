@@ -155,7 +155,12 @@ export default function RootLayout() {
                     screenOptions={{
                       headerShown: false,
                       contentStyle: { backgroundColor: colors.background },
-                      animation: Platform.OS === 'ios' ? 'default' : 'fade',
+                      // Subtle cross-fade across every platform so screen
+                      // changes feel like part of the same surface, not a
+                      // hard hand-off. 220 ms matches the welcome-screen
+                      // hero entry, giving the whole app one motion vocab.
+                      animation: 'fade',
+                      animationDuration: 220,
                     }}
                   >
                     <Stack.Screen name="(auth)" />
