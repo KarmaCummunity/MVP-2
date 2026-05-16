@@ -7,6 +7,7 @@ import {
   Pressable, StyleSheet, Text, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { MediaAsset } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -22,6 +23,7 @@ interface Props {
 }
 
 export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
+  const { t } = useTranslation();
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
 
@@ -44,7 +46,7 @@ export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
           style={styles.frame}
           onPress={() => setViewerOpen(true)}
           accessibilityRole="image"
-          accessibilityLabel="הגדל תמונה"
+          accessibilityLabel={t('post.imageZoom')}
         >
           <Image source={{ uri: urls[0] }} style={styles.image} resizeMode="cover" />
         </Pressable>
@@ -76,7 +78,7 @@ export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
             <Pressable
               onPress={() => setViewerOpen(true)}
               accessibilityRole="image"
-              accessibilityLabel={`הגדל תמונה ${index + 1} מתוך ${urls.length}`}
+              accessibilityLabel={t('post.imageZoomNth', { index: index + 1, total: urls.length })}
             >
               <Image source={{ uri: item }} style={styles.pageImage} resizeMode="cover" />
             </Pressable>

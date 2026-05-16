@@ -4,6 +4,7 @@
 // in the browser.
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@kc/ui';
 
 interface Props {
@@ -21,6 +22,7 @@ export function ChatActionMenu({
   deleteLabel,
   onDeleteFromInbox,
 }: Props) {
+  const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -41,11 +43,11 @@ export function ChatActionMenu({
             </>
           ) : null}
           <TouchableOpacity style={styles.item} onPress={onReport} accessibilityRole="button">
-            <Text style={styles.itemText}>דווח על השיחה</Text>
+            <Text style={styles.itemText}>{t('chat.menuReport')}</Text>
           </TouchableOpacity>
           <View style={styles.divider} />
           <TouchableOpacity style={styles.item} onPress={onClose} accessibilityRole="button">
-            <Text style={[styles.itemText, styles.itemCancel]}>ביטול</Text>
+            <Text style={[styles.itemText, styles.itemCancel]}>{t('general.cancel')}</Text>
           </TouchableOpacity>
         </Pressable>
       </Pressable>

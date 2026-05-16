@@ -13,6 +13,9 @@ import { postHe } from './modules/post';
 import { settingsHe } from './modules/settings';
 import { stats } from './stats';
 import { aboutContentMerged } from './modules/aboutContentBundle';
+import { tabsHe } from './modules/tabs';
+import { errorBoundaryHe, devBannerHe, optionsMenuHe } from './modules/ui';
+import { feedHe } from './modules/feed';
 
 const he = {
   // App
@@ -72,50 +75,11 @@ const he = {
     step3Title: 'תאם מסירה',
     step3Desc: 'שוחח ישירות עם הנותן/מקבל.',
     letsGo: 'יאללה, מתחילים!',
+    stepProgress: 'שלב {{step}} מתוך 4',
   },
 
-  // Feed
-  feed: {
-    title: 'פיד ראשי',
-    filters: 'סננים',
-    clearFilters: 'נקה סינון',
-    activeFilters: '{{count}} סננים פעילים',
-    giveType: '🎁 לתת',
-    requestType: '🔍 לבקש',
-    allTypes: 'הכל',
-    searchPlaceholder: 'חפש לפי מוצר, קטגוריה...',
-    noResults: 'לא נמצאו פוסטים',
-    noResultsDesc: 'נסה לשנות את הסינון או חפש בכל הערים.',
-    loadMore: 'טעון עוד',
-    guestBanner: 'הצטרף לקהילה כדי לראות את כל הפוסטים הפעילים באזור שלך',
-    guestBannerWithCount: 'הצטרף לקהילה כדי לראות עוד {{count}} פוסטים פעילים באזור שלך',
-    joinNow: 'הצטרף עכשיו',
-    firstPostNudge: 'פרסם את הפוסט הראשון שלך! 🎁',
-    closedTag: '🔒 נמסר',
-    followersTag: '👥 לעוקבים בלבד',
-    refreshSuccess: 'הפיד עודכן',
-    refreshFailed: 'הרענון נכשל — נסה שוב',
-    refreshA11y: 'רענן את הפיד (R)',
-    filterA11y: 'סינון ומיון פוסטים',
-    filterA11yHint: 'פותח חלון לסינון ולמיון של הפיד',
-    newPostsOne: 'פוסט חדש 1 — הקש לרענון',
-    newPostsMany: '{{count}} פוסטים חדשים — הקש לרענון',
-    nudgeTitle: 'יש לך מוצר לתת? או משהו לבקש?',
-    nudgeBody: 'שתף את הפוסט הראשון שלך עכשיו.',
-    nudgeShare: 'שתף מוצר',
-    nudgeRemindMe: 'תזכיר לי אחר כך',
-    nudgeDontShow: 'אל תציג לי שוב',
-    empty: 'אין עדיין פוסטים בקהילה',
-    emptyDesc: 'תהיה הראשון לשתף משהו.',
-    emptyFiltered: 'אין פוסטים שתואמים לפילטרים שלך',
-    emptyFilteredDesc: 'נסה לנקות את הפילטרים או להיות הראשון לשתף.',
-    activeInCommunityWithCount: '{{count}} פוסטים פעילים בקהילה כרגע',
-    sharePost: 'שתף פוסט',
-    giveTypeShort: 'לתת',
-    requestTypeShort: 'לבקש',
-    giverBadge: '📤 נתתי',
-    receiverBadge: '📥 קיבלתי',
-  },
+  // Feed — see modules/feed.ts
+  feed: feedHe,
 
   // Post — see modules/post.ts
   post: postHe,
@@ -171,6 +135,14 @@ const he = {
 
   // Search (D-16, FR-FEED-016) — see donations.ts
   search,
+
+  // Tab labels — see modules/tabs.ts
+  tabs: tabsHe,
+
+  // Misc chrome — see modules/ui.ts
+  errorBoundary: errorBoundaryHe,
+  devBanner: devBannerHe,
+  optionsMenu: optionsMenuHe,
 
   // General
   general: {
