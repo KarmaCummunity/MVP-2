@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CompleteBasicInfoUseCase } from '../CompleteBasicInfoUseCase';
+import { OnboardingError } from '../errors';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
 describe('CompleteBasicInfoUseCase', () => {
@@ -108,7 +109,23 @@ describe('CompleteBasicInfoUseCase', () => {
     ).rejects.toThrow('incomplete_profile_address');
   });
 
-  it('rejects invalid profile street number', async () => {
+  it('accepts profile street number with Hebrew letter suffix (audit §3.1)', async () => {
+    const repo = seed();
+    const useCase = new CompleteBasicInfoUseCase(repo);
+
+    await useCase.execute({
+      userId,
+      displayName: 'נווה',
+      cityId: '4000',
+      cityName: 'חיפה',
+      profileStreet: 'הרצל',
+      profileStreetNumber: '12א',
+    });
+
+    expect(repo.rows.get(userId)?.profileStreetNumber).toBe('12א');
+  });
+
+  it('rejects profile street number with punctuation (FR-PROFILE-007)', async () => {
     const useCase = new CompleteBasicInfoUseCase(seed());
 
     await expect(
@@ -118,8 +135,43 @@ describe('CompleteBasicInfoUseCase', () => {
         cityId: '4000',
         cityName: 'חיפה',
         profileStreet: 'הרצל',
-        profileStreetNumber: '12א',
+        profileStreetNumber: '12/3',
       }),
     ).rejects.toThrow('invalid_profile_street_number');
+  });
+
+  it('throws OnboardingError when invoked on a completed user (audit §17.3)', async () => {
+    const repo = makeFakeUserRepo({
+      [userId]: {
+        displayName: 'placeholder',
+        city: '5000',
+        cityName: 'תל אביב - יפו',
+        onboardingState: 'completed',
+      },
+    });
+    const useCase = new CompleteBasicInfoUseCase(repo);
+
+    await expect(
+      useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' }),
+    ).rejects.toMatchObject({
+      name: 'OnboardingError',
+      code: 'illegal_transition',
+    } satisfies Partial<OnboardingError>);
+  });
+
+  it('is idempotent — accepts a pending_avatar user re-running step 1', async () => {
+    const repo = makeFakeUserRepo({
+      [userId]: {
+        displayName: 'placeholder',
+        city: '5000',
+        cityName: 'תל אביב - יפו',
+        onboardingState: 'pending_avatar',
+      },
+    });
+    const useCase = new CompleteBasicInfoUseCase(repo);
+
+    await useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' });
+
+    expect(repo.rows.get(userId)?.onboardingState).toBe('pending_avatar');
   });
 });

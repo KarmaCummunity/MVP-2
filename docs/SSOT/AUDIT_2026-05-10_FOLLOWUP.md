@@ -222,7 +222,7 @@ The remaining audit findings (below) split into three classes:
 | ------- | ------ | ------------------------- |
 | 17.1 [HIGH] `RestoreSession` no `account_status` check | ✅ | `RestoreSession.ts:32-40` — `gate.checkAccountGate(userId)`. TD-68. |
 | 17.2 [HIGH] `mapAuthError` distinguishes invalid_credentials vs email_already_in_use | ⏳ | Open — collapse to unified `authentication_failed`. |
-| 17.3 [HIGH] No state-machine guard on `onboarding_state` transitions | ⏳ | Open — typed `OnboardingError('illegal_transition')` per use case + DB trigger. |
+| 17.3 [HIGH] No state-machine guard on `onboarding_state` transitions | ✅ | `OnboardingError('illegal_transition')` introduced. `CompleteBasicInfoUseCase` rejects when current state is `completed`; `CompleteOnboardingUseCase` rejects when current is `pending_basic_info`. Idempotent re-runs on the same step still pass. (DB-trigger defense-in-depth is deferred — app-level guard sufficient for the practical attack surface.) |
 | 17.4 [MEDIUM] `onboarding_state = 'completed'` can be rolled back | ⏳ | Open — remove "Reset onboarding" or restrict the grant. |
 | 17.5 [MEDIUM] Token expiry only at cold start | ⏳ | Open — subscribe to `onAuthStateChange('SIGNED_OUT')`. |
 | 17.6 [MEDIUM] Sign-out doesn't clear React Query cache | ✅ | `AuthGate.tsx` session-change effect now calls `queryClient.clear()` when `session` transitions to null. Covers Settings sign-out, account-gate enforcement sign-out, and delete-account sign-out via one location. |
