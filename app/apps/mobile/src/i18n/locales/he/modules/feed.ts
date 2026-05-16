@@ -42,4 +42,5 @@ export const feedHe = {
   requestTypeShort: 'לבקש',
   giverBadge: '📤 נתתי',
   receiverBadge: '📥 קיבלתי',
+  loadErrorTitle: 'שגיאה בטעינת הפוסטים',
 } as const;
