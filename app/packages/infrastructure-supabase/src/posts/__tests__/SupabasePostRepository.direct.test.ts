@@ -19,11 +19,21 @@ function makeFakeClient(opts: FakeOpts = {}): {
 } {
   const ops: Array<{ kind: string; args?: unknown[] }> = [];
   const rpcCalls: Array<{ name: string; params: any }> = [];
-  const result = () => ({
-    data: opts.data ?? null,
-    error: opts.error ?? null,
-    count: opts.count ?? null,
-  });
+  // Tables that always return an empty array under this fake (auxiliary reads
+  // such as the FR-POST-021 actor-identity projection batch). Without this the
+  // shared `data` payload bleeds into every join the repo issues.
+  const ARRAY_RETURN_TABLES = new Set(['post_actor_identity']);
+  let currentTable: string | null = null;
+  const result = () => {
+    if (currentTable && ARRAY_RETURN_TABLES.has(currentTable)) {
+      return { data: [], error: null, count: 0 };
+    }
+    return {
+      data: opts.data ?? null,
+      error: opts.error ?? null,
+      count: opts.count ?? null,
+    };
+  };
   function makeChain(): any {
     return new Proxy({}, {
       get(_t, prop: string) {
@@ -40,6 +50,7 @@ function makeFakeClient(opts: FakeOpts = {}): {
   }
   const client = {
     from: (table: string) => {
+      currentTable = table;
       ops.push({ kind: 'from', args: [table] });
       return makeChain();
     },

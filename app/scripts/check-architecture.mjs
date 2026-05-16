@@ -26,8 +26,10 @@ const FILE_SIZE_CAP = 200;
 const FILE_SIZE_ALLOWLIST = new Map([
   // Dropped 416→383 after 2026-05-16 styles split; bumped 383→387 (audit §3.8)
   // and 387→393 (audit §4.6/§16.3 type-toggle Ionicons + a11y state).
-  // Remove once TD-29 splits the form further.
-  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 393 }],
+  // Bumped 393→450 by audit 2026-05-16 (TD-116) — VisibilityChooser + PostActorExposurePicker
+  // wiring landed inline via 5035c36 / f84c4a6 while lint:arch was bypassed.
+  // Next change to this file MUST reduce LOC; TD-116 closes via hook extraction.
+  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-116', max: 450 }],
   // (auth)/index.tsx styles extracted to src/components/auth/welcomeScreen.styles.ts (TD-29); entry removed.
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
@@ -46,6 +48,10 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // UniversalSearch test suite split into UniversalSearchUseCase.test.ts (152 LOC)
   // + UniversalSearchUseCase.limitsAndFilters.test.ts (178 LOC) in PR #207; both
   // under cap, allowlist entry removed.
+  // i18n he/post bundle grew with FR-POST-021 actor-identity copy; bumped 200→216
+  // (audit 2026-05-16, TD-117). Next change MUST split into sub-modules
+  // (`post/actor.ts`, `post/menu.ts`, …) per TD-117.
+  ['apps/mobile/src/i18n/locales/he/modules/post.ts', { td: 'TD-117', max: 216 }],
 ]);
 
 const LAYER_RULES = [

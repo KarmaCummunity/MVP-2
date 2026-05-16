@@ -133,9 +133,15 @@ describe('mapUserRow', () => {
       expect(out.authProvider).toBe('apple');
     });
 
-    it('forwards the raw privacy_mode string', () => {
-      const out = mapUserRow(makeRow({ privacy_mode: 'Followers' }));
-      expect(out.privacyMode).toBe('Followers');
+    // TD-69 (audit 2026-05-16): privacy_mode narrowed to the D-21 union;
+    // unknown / legacy values collapse to 'Public'.
+    it.each([
+      ['Private', 'Private'],
+      ['Public', 'Public'],
+      ['Followers', 'Public'], // pre-D-21 legacy value
+      ['someUnexpectedValue', 'Public'],
+    ])('narrows privacy_mode %s → %s', (raw, expected) => {
+      expect(mapUserRow(makeRow({ privacy_mode: raw })).privacyMode).toBe(expected);
     });
 
     it('forwards the raw account_status string', () => {

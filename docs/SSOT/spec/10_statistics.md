@@ -1,6 +1,6 @@
 # 2.10 Personal & Community Statistics
 
-> **Status:** ✅ Done — Personal stats screen (`/stats`), counters from `users`, community panel from `community_stats`, activity timeline from `user_personal_activity_log` + `rpc_my_activity_timeline` (migrations `0044_personal_activity_log`, `0045_stats_recompute_nightly`). Nightly `stats_recompute_personal_counters_nightly` + `stats_drift_events` + pg_cron job `stats_recompute_nightly` satisfy **FR-STATS-005** (operator: enable `pg_cron`, see `OPERATOR_RUNBOOK.md`).
+> **Status:** ✅ Done — Personal stats screen (`/stats`), counters from `users`, community panel from `community_stats`, activity timeline from `user_personal_activity_log` + `rpc_my_activity_timeline` (migrations `0044_personal_activity_log`, `0045_stats_recompute_nightly`). Nightly `stats_recompute_personal_counters_nightly` + `stats_drift_events` + pg_cron job `stats_recompute_nightly` satisfy **FR-STATS-005** (operator: enable `pg_cron`, see `OPERATOR_RUNBOOK.md`). ⚠️ Audit 2026-05-16: FR-STATS-001 AC2 "reactive" is focus-only (no `users`-row Realtime); FR-STATS-006 AC2 says auth-only but view is granted to `anon` to satisfy FR-FEED-014 (spec contradiction); FR-STATS-003 AC1 caps at 30 but use case allows 50; section order on screen is community-first, spec is counters-first. TD-98. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`.
 
 
 

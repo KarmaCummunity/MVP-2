@@ -1,6 +1,6 @@
 # 2.7 Direct Messaging
 
-> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat, **personal inbox hide (FR-CHAT-016)** shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only).
+> **Status:** ✅ Core Complete — 1-on-1 chat, realtime, anchor card, close-from-chat, **personal inbox hide (FR-CHAT-016)** shipped. `users_select_chat_counterpart` RLS tightened in migration `0031` (active / pending_verification only). ⚠️ Audit 2026-05-16: `messages_insert_user` regression (lost `removed_at` guard + missing `has_blocked` — TD-67 / TD-75, BACKLOG P2.12); FR-CHAT-013 AC1 silent on deleted-counterpart dedupe; FR-CHAT-016 AC4 silent on tie-break. See `docs/SSOT/audit/2026-05-16/04_chat_notifications.md`.
 
 
 
