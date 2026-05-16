@@ -48,17 +48,24 @@ export function getSupabaseClient(options?: {
 }): SupabaseClient<Database> {
   if (_client) return _client;
 
+  // Audit 2026-05-10 §4.2: only EXPO_PUBLIC_* is inlined by Metro into the
+  // mobile bundle. A non-prefixed fallback (`SUPABASE_URL`) never fires
+  // on-device — but in a Node test/CI context it can resolve to a different
+  // secret than EXPO_PUBLIC_SUPABASE_URL, causing silent test↔prod divergence.
+  // Edge Functions create their own client via Deno.env directly and don't
+  // consume this factory, so dropping the fallback is safe.
   const url = options?.url ?? (typeof process !== 'undefined'
-    ? (process.env['EXPO_PUBLIC_SUPABASE_URL'] ?? process.env['SUPABASE_URL'] ?? '')
+    ? (process.env['EXPO_PUBLIC_SUPABASE_URL'] ?? '')
     : '');
 
   const anonKey = options?.anonKey ?? (typeof process !== 'undefined'
-    ? (process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'] ?? process.env['SUPABASE_ANON_KEY'] ?? '')
+    ? (process.env['EXPO_PUBLIC_SUPABASE_ANON_KEY'] ?? '')
     : '');
 
   if (!url || !anonKey) {
     throw new Error(
-      'Supabase: EXPO_PUBLIC_SUPABASE_URL and EXPO_PUBLIC_SUPABASE_ANON_KEY must be set.'
+      'Supabase configuration missing: both EXPO_PUBLIC_SUPABASE_URL and ' +
+      'EXPO_PUBLIC_SUPABASE_ANON_KEY must be set (or passed via options).',
     );
   }
 
