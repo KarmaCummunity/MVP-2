@@ -16,7 +16,7 @@ import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts'
 import { colors } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
-import { ProfileTabs, type ProfileTab } from '../../../src/components/profile/ProfileTabs';
+import { ProfileTabs, type ProfilePostsTab } from '../../../src/components/profile/ProfileTabs';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
 import { FollowButton } from '../../../src/components/profile/FollowButton';
@@ -37,7 +37,7 @@ export default function OtherProfileScreen() {
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
   const me = useAuthStore((s) => s.session?.userId);
-  const [activeTab, setActiveTab] = React.useState<ProfileTab>(() =>
+  const [activeTab, setActiveTab] = React.useState<ProfilePostsTab>(() =>
     getRestoredProfileTab({ otherHandle: handle ?? '' }),
   );
   // ✅ RULES OF HOOKS: must be declared here, before any early return.

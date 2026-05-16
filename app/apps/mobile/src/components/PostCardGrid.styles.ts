@@ -47,18 +47,13 @@ export const postCardGridStyles = StyleSheet.create({
   },
   giveTag: { backgroundColor: colors.giveTagBg },
   requestTag: { backgroundColor: colors.requestTagBg },
-  // Opposite corner to typeTag — visual chip so the icon stays readable over any image.
+  // Opposite corner to typeTag — icon-only hit target (no background chip).
   menuOverlay: {
     position: 'absolute',
     top: spacing.xs,
     left: spacing.xs,
-    backgroundColor: colors.surface,
-    borderRadius: radius.full,
-    width: 28,
-    height: 28,
     alignItems: 'center',
     justifyContent: 'center',
-    ...shadow.card,
   },
   typeTagText: { ...typography.label, fontSize: 10 },
   giveTagText: { color: colors.giveTag },

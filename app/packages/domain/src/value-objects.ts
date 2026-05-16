@@ -124,7 +124,7 @@ export function createAddress(raw: {
 }
 
 // Street number: digits + optional Latin/Hebrew letter (mirrors `0081`).
-export const STREET_NUMBER_PATTERN = /^[0-9]+[A-Za-zא-ת]?$/;
+export const STREET_NUMBER_PATTERN = /^[0-9]+[A-Za-z\u05D0-\u05EA]?$/;
 // Email: 2+ char alphabetic TLD; Supabase is the source of truth (audit §3.3).
 export const EMAIL_PATTERN = /^[A-Za-z0-9._%+-]+@[A-Za-z0-9.-]+\.[A-Za-z]{2,}$/;
 

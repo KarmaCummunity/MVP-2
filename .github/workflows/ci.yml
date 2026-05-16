@@ -55,6 +55,22 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+  hebrew-source-scan:
+    name: Hebrew source scan (no inline UI copy)
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Scan for Hebrew outside allowed paths
+        run: node scripts/extract-hebrew-text.mjs --check
+
   pr-hygiene:
     name: PR hygiene
     if: github.event_name == 'pull_request'

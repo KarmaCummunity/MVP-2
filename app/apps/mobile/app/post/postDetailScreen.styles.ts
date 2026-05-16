@@ -15,9 +15,9 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs, borderRadius: radius.full,
   },
   menuOverlay: {
-    position: 'absolute', top: spacing.sm, start: spacing.sm,
-    backgroundColor: 'rgba(255,255,255,0.9)',
-    borderRadius: radius.full,
+    position: 'absolute',
+    top: spacing.sm,
+    start: spacing.sm,
   },
   giveTag: { backgroundColor: colors.giveTagBg },
   requestTag: { backgroundColor: colors.requestTagBg },

@@ -35,7 +35,10 @@ export const profileHe = {
   // Tabs
   tabOpen: 'פוסטים פתוחים',
   tabClosed: 'פוסטים סגורים',
-  tabRemoved: 'הוסרו',
+
+  // My Profile top-bar ⋮ (admin-removed posts — FR-POST-008 owner list)
+  myProfileMenuA11y: 'אפשרויות פרופיל',
+  myProfileMenuRemovedPosts: 'פוסטים שהוסרו על ידי מנהל',
 
   // Stats row
   statsPostsLabel: 'פוסטים',
