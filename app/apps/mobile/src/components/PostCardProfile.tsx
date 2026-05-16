@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
 import { CATEGORY_LABELS } from '@kc/domain';
@@ -26,12 +27,13 @@ const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.xs * 2) / 3;
 interface PostCardProfileProps {
   post: Post;
   /**
-   * When set, an economic-role badge ("📤 נתתי" / "📥 קיבלתי") renders on
-   * the card. The role is derived from (post.type, identityRole):
-   *   publisher + Give    → giver  → 📤 נתתי
-   *   publisher + Request → receiver → 📥 קיבלתי
-   *   respondent + Give   → receiver → 📥 קיבלתי
-   *   respondent + Request→ giver   → 📤 נתתי
+   * When set, renders an economic-role badge (giver/receiver) on the card.
+   * Role is derived from (post.type, identityRole):
+   *   publisher + Give     → giver
+   *   publisher + Request  → receiver
+   *   respondent + Give    → receiver
+   *   respondent + Request → giver
+   * Label text comes from i18n (`feed.giverBadge` / `feed.receiverBadge`).
    */
   identityRole?: IdentityRoleForViewedProfile;
   onPressOverride?: () => void;
@@ -39,6 +41,7 @@ interface PostCardProfileProps {
 
 export function PostCardProfile({ post, identityRole, onPressOverride }: PostCardProfileProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const isGive = post.type === 'Give';
 
   const firstImageUrl = post.mediaAssets[0]
@@ -65,13 +68,13 @@ export function PostCardProfile({ post, identityRole, onPressOverride }: PostCar
         )}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
-            {isGive ? 'לתת' : 'לבקש'}
+            {isGive ? t('feed.giveTypeShort') : t('feed.requestTypeShort')}
           </Text>
         </View>
         {economicRole ? (
           <View style={styles.roleBadge}>
             <Text style={styles.roleBadgeText}>
-              {economicRole === 'giver' ? '📤 נתתי' : '📥 קיבלתי'}
+              {economicRole === 'giver' ? t('feed.giverBadge') : t('feed.receiverBadge')}
             </Text>
           </View>
         ) : null}

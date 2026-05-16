@@ -3,6 +3,7 @@ import { View, Text, TouchableOpacity, StyleSheet, Image, I18nManager, Platform 
 import { useRouter } from 'expo-router';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { CATEGORY_LABELS } from '@kc/domain';
@@ -20,6 +21,7 @@ interface PostCardProps {
 
 export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProps) {
   const router = useRouter();
+  const { t } = useTranslation();
 
   const isGive = post.type === 'Give';
 
@@ -60,7 +62,7 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
         {/* Type tag */}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
-            {isGive ? '🎁 לתת' : '🔍 לבקש'}
+            {isGive ? t('feed.giveType') : t('feed.requestType')}
           </Text>
         </View>
       </View>
@@ -94,7 +96,7 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
       {/* Visibility badge for own posts */}
       {post.visibility === 'FollowersOnly' && (
         <View style={styles.visibilityBadge}>
-          <Text style={styles.visibilityText}>👥 לעוקבים בלבד</Text>
+          <Text style={styles.visibilityText}>{t('feed.followersTag')}</Text>
         </View>
       )}
     </TouchableOpacity>

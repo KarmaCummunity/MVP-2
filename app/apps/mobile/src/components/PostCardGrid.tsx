@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { CATEGORY_LABELS } from '@kc/domain';
@@ -21,6 +22,7 @@ interface PostCardGridProps {
 
 export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
   const router = useRouter();
+  const { t } = useTranslation();
   const isGive = post.type === 'Give';
 
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), {
@@ -54,7 +56,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
         {/* Type tag overlay (top-right in RTL) */}
         <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
           <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
-            {isGive ? 'לתת' : 'לבקש'}
+            {isGive ? t('feed.giveTypeShort') : t('feed.requestTypeShort')}
           </Text>
         </View>
         {/* FR-POST-010 AC1 — ⋮ menu on the card, opposite the type tag.

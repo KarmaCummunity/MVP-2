@@ -167,6 +167,8 @@ export const search = {
   nationalLinks: 'מציג קישורים ארציים',
   give: 'נתינה',
   request: 'בקשה',
+  giveBadge: '🎁 נתינה',
+  requestBadge: '🔍 בקשה',
 
   // Post categories for filter
   categories: {
