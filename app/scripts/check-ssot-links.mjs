@@ -36,6 +36,11 @@ const EXCLUDE = [
   // what's being removed. Excluded so the lint doesn't recursively flag the
   // rows whose purpose is to document the dead refs themselves.
   ':!docs/SSOT/AUDIT_2026-05-10_FOLLOWUP.md',
+  // scripts/hebrew-text-report.md is a generated dump (extract-hebrew-text.mjs
+  // output) — not a curated doc. It legitimately contains every dead-doc
+  // mention that exists anywhere in the source tree, so excluding it as a
+  // whole is the right call.
+  ':!scripts/hebrew-text-report.md',
 ];
 
 const pattern = `(${DEAD_REFS.join('|')})`;
