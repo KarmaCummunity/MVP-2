@@ -32,7 +32,6 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
     d += 40;
     return cur;
   };
-  const initials = (t('aboutContent.teamLeadTitle') as string).slice(0, 2);
 
   return (
     <>
@@ -72,11 +71,11 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
             <Text style={styles.h}>{t('aboutContent.teamTitle')}</Text>
             <View style={styles.teamRow}>
               <View style={styles.avatar}>
-                <Text style={styles.avatarText}>נ"ס</Text>
+                <Text style={styles.avatarText}>{t('aboutContent.teamLeadInitials')}</Text>
               </View>
               <View style={styles.teamMeta}>
-                <Text style={styles.teamName}>נוח סרוסי</Text>
-                <Text style={styles.teamRole}>מייסד הפרויקט</Text>
+                <Text style={styles.teamName}>{t('aboutContent.teamLeadName')}</Text>
+                <Text style={styles.teamRole}>{t('aboutContent.teamLeadRole')}</Text>
               </View>
             </View>
             <Text style={styles.p}>{t('aboutContent.teamLeadBio')}</Text>

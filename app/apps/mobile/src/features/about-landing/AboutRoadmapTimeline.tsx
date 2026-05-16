@@ -4,18 +4,21 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@kc/ui';
 
+type PhaseSeverity = 'current' | 'soon' | 'future' | 'long-term';
+
 interface Phase {
   readonly label: string;
+  readonly severity: PhaseSeverity;
   readonly status: string;
   readonly title: string;
   readonly body: string;
 }
 
-const STATUS_COLOR: Record<string, string> = {
-  עכשיו: colors.primary,
-  בקרוב: colors.warning ?? '#F59E0B',
-  בעתיד: colors.textSecondary,
-  'טווח ארוך': colors.textDisabled,
+const SEVERITY_COLOR: Record<PhaseSeverity, string> = {
+  current: colors.primary,
+  soon: colors.warning ?? '#F59E0B',
+  future: colors.textSecondary,
+  'long-term': colors.textDisabled,
 };
 
 export function AboutRoadmapTimeline() {
@@ -26,7 +29,7 @@ export function AboutRoadmapTimeline() {
     <View style={styles.wrap}>
       {phases.map((p, i) => {
         const isLast = i === phases.length - 1;
-        const dot = STATUS_COLOR[p.status] ?? colors.textSecondary;
+        const dot = SEVERITY_COLOR[p.severity] ?? colors.textSecondary;
         return (
           <View key={p.label} style={styles.row}>
             <View style={styles.timeline}>
