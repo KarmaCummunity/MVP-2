@@ -91,4 +91,8 @@ export const postHe = {
   // VisibilityChooser sub-labels
   visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
   visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי; אפשר לפתוח לציבור בעריכה',
+  deleteError: 'המחיקה נכשלה, נסה שוב.',
+  deleteSuccess: 'הפוסט נמחק.',
+  adminRemoveError: 'ההסרה נכשלה, נסה שוב.',
+  adminRemoveSuccess: 'הפוסט הוסר.',
 } as const;

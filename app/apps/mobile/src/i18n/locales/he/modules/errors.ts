@@ -61,6 +61,10 @@ export const errorsHe = {
     cameraDeniedBodyAvatar: 'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קהילת קארמה → מצלמה.',
     openSettings: 'פתח הגדרות',
   },
+  chat: {
+    userUnavailableTitle: 'משתמש לא זמין',
+    userUnavailableMessage: 'המשתמש כבר לא קיים במערכת.',
+  },
   createPost: {
     fieldTitle: 'הכותרת',
     fieldCity: 'העיר',

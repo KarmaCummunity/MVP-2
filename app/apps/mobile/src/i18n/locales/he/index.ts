@@ -80,6 +80,12 @@ const he = {
     step3Desc: 'שוחח ישירות עם הנותן/מקבל.',
     letsGo: 'יאללה, מתחילים!',
     stepProgress: 'שלב {{step}} מתוך 4',
+    noActiveSession: 'אין סשן פעיל. נסה להתחבר שוב.',
+    fillNameAndCity: 'יש למלא שם ועיר',
+    saveFailed: 'שמירה נכשלה',
+    uploadFailed: 'העלאת התמונה נכשלה',
+    uploadFailedBody: 'אפשר לדלג ולהוסיף תמונה מאוחר יותר.',
+    removeFailed: 'הסרת התמונה נכשלה',
   },
 
   // Feed — see modules/feed.ts
@@ -164,6 +170,7 @@ const he = {
     minutesAgo: 'לפני {{count}} דקות',
     hoursAgo: 'לפני {{count}} שעות',
     daysAgo: 'לפני {{count}} ימים',
+    unknownError: 'שגיאה לא ידועה',
   },
 } as const;
 

@@ -1,5 +1,6 @@
 // FR-AUTH-011 — photo step state: pick/remove/finalize (keeps screen file under arch line cap).
 import { useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
@@ -15,6 +16,7 @@ import {
 } from '../services/avatarUpload';
 
 export function useOnboardingPhotoFlow() {
+  const { t } = useTranslation();
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const onboardingState = useAuthStore((s) => s.onboardingState);
@@ -37,8 +39,8 @@ export function useOnboardingPhotoFlow() {
       await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: url });
       setSession({ ...session, avatarUrl: url });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('העלאת התמונה נכשלה', `אפשר לדלג ולהוסיף תמונה מאוחר יותר.\n${msg}`);
+      const msg = err instanceof Error ? err.message : t('general.unknownError');
+      Alert.alert(t('onboarding.uploadFailed'), `${t('onboarding.uploadFailedBody')}\n${msg}`);
     } finally {
       setUploading(false);
     }
@@ -52,8 +54,8 @@ export function useOnboardingPhotoFlow() {
       await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: null });
       setSession({ ...session, avatarUrl: null });
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('הסרת התמונה נכשלה', msg);
+      const msg = err instanceof Error ? err.message : t('general.unknownError');
+      Alert.alert(t('onboarding.removeFailed'), msg);
     } finally {
       setUploading(false);
     }
@@ -69,8 +71,8 @@ export function useOnboardingPhotoFlow() {
       }
       router.replace('/(onboarding)/tour');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', msg);
+      const msg = err instanceof Error ? err.message : t('general.unknownError');
+      Alert.alert(t('onboarding.saveFailed'), msg);
     } finally {
       setFinalizing(false);
     }

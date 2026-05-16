@@ -1,6 +1,6 @@
 // FR-AUTH-010 — basic-info step state + save/skip (keeps screen file under arch line cap).
 import { useState } from 'react';
-import { Alert } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { useAuthStore } from '../store/authStore';
 import { useFeedSessionStore } from '../store/feedSessionStore';
@@ -9,6 +9,7 @@ import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
 import { getProfileAddressPairIssue } from '../lib/profileAddressFieldGate';
 
 export function useOnboardingBasicInfoFlow() {
+  const { t } = useTranslation();
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
@@ -39,14 +40,14 @@ export function useOnboardingBasicInfoFlow() {
   const handleContinue = async () => {
     if (!session) {
       useFeedSessionStore.getState().showEphemeralToast(
-        'אין סשן פעיל. נסה להתחבר שוב.',
+        t('onboarding.noActiveSession'),
         'error',
         2500,
       );
       return;
     }
     if (!hasRequiredFields || !city) {
-      Alert.alert('שגיאה', 'יש למלא שם ועיר');
+      useFeedSessionStore.getState().showEphemeralToast(t('onboarding.fillNameAndCity'), 'error', 2500);
       return;
     }
     if (!canSubmit) {
@@ -66,10 +67,9 @@ export function useOnboardingBasicInfoFlow() {
       setOnboardingState('pending_avatar');
       router.replace('/(onboarding)/photo');
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      const raw = err instanceof Error ? err.message : t('general.unknownError');
       const mapped = mapEditProfileSaveError(raw);
       useFeedSessionStore.getState().showEphemeralToast(mapped, 'error', 2800);
-      Alert.alert('שמירה נכשלה', mapped);
     } finally {
       setLoading(false);
     }
@@ -83,10 +83,9 @@ export function useOnboardingBasicInfoFlow() {
       useAuthStore.getState().setBasicInfoSkipped(true);
       router.replace('/(onboarding)/photo');
     } catch (err) {
-      const raw = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      const raw = err instanceof Error ? err.message : t('general.unknownError');
       const mapped = mapEditProfileSaveError(raw);
       useFeedSessionStore.getState().showEphemeralToast(mapped, 'error', 2800);
-      Alert.alert('שמירה נכשלה', mapped);
     } finally {
       setLoading(false);
     }
