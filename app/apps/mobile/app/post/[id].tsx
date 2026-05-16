@@ -129,9 +129,9 @@ export default function PostDetailScreen() {
             style={styles.authorRow}
             onPress={() => router.push(`/user/${post.ownerHandle}`)}
           >
-            <AvatarInitials name={post.ownerName} avatarUrl={post.ownerAvatarUrl} size={44} />
+            <AvatarInitials name={post.ownerName ?? t('common.deletedUser')} avatarUrl={post.ownerAvatarUrl} size={44} />
             <View style={styles.authorInfo}>
-              <Text style={styles.authorName}>{post.ownerName}</Text>
+              <Text style={styles.authorName}>{post.ownerName ?? t('common.deletedUser')}</Text>
               <Text style={styles.authorCity}>{post.address.cityName}</Text>
             </View>
             <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />

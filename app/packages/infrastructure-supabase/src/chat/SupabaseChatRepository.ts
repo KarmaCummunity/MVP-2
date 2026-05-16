@@ -14,7 +14,7 @@ import { findOrCreateDmChat, hideDmChatFromInbox } from './supabaseDmChat';
 
 type Counterpart = {
   userId: string | null;
-  displayName: string;
+  displayName: string | null;
   avatarUrl: string | null;
   shareHandle: string | null;
   isDeleted: boolean;
@@ -160,7 +160,7 @@ export class SupabaseChatRepository implements IChatRepository {
     if (otherId == null) {
       return {
         userId: null,
-        displayName: 'משתמש שנמחק',
+        displayName: null,
         avatarUrl: null,
         shareHandle: null,
         isDeleted: true,
@@ -175,7 +175,7 @@ export class SupabaseChatRepository implements IChatRepository {
     if (!data) {
       return {
         userId: null,
-        displayName: 'משתמש שנמחק',
+        displayName: null,
         avatarUrl: null,
         shareHandle: null,
         isDeleted: true,

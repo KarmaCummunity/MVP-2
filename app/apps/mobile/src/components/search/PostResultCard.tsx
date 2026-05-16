@@ -50,7 +50,7 @@ export function PostResultCard({ post }: { post: PostWithOwner }) {
         <View style={styles.metaRow}>
           <View style={styles.metaChip}>
             <Ionicons name="person-outline" size={12} color={colors.textSecondary} />
-            <Text style={styles.metaText}>{post.ownerName}</Text>
+            <Text style={styles.metaText}>{post.ownerName ?? t('common.deletedUser')}</Text>
           </View>
           <View style={styles.metaChip}>
             <Ionicons name="location-outline" size={12} color={colors.textSecondary} />

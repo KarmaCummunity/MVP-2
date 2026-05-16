@@ -97,17 +97,17 @@ function mapRecipientUser(row: PostJoinedRow): PostWithOwner['recipientUser'] {
 
 export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner {
   // Owner can be null when the user_id is orphaned in public.users (the FK
-  // posts_owner_id_fkey is ON DELETE cascading, but defensive coding still
+  // posts_owner_id_fkey is ON DELETE cascade, but defensive coding still
   // handles a stale join). Per D-21, users RLS no longer hides Private
   // profiles from non-followers, so privacy mode is no longer a reason for
-  // a null owner. Surface "משתמש שנמחק" placeholder rather than throwing —
-  // one orphan post must not crash the feed (FR-CHAT-013 placeholder
-  // convention).
+  // a null owner. Return ownerName: null so the UI renders the localized
+  // placeholder (FR-CHAT-013 convention); one orphan post must not crash
+  // the feed.
   const recipientUser = mapRecipientUser(row);
   if (!row.owner) {
     return {
       ...mapPostRow(row),
-      ownerName: 'משתמש שנמחק',
+      ownerName: null,
       ownerAvatarUrl: null,
       ownerHandle: '',
       ownerPrivacyMode: 'Public',
@@ -126,8 +126,9 @@ export function mapPostWithOwnerRow(row: PostWithOwnerJoinedRow): PostWithOwner 
   };
 }
 
-// `recipient` join nests the marked user so PostDetail can render
-// "נמסר ל-X" / "ניתן על-ידי X" with a profile link without a second round-trip.
+// `recipient` join nests the marked user so PostDetail can render the
+// "delivered to X" / "given by X" labels with a profile link without a
+// second round-trip.
 export const POST_SELECT_OWNER = `
   *,
   city_ref:cities!posts_city_fkey(name_he),

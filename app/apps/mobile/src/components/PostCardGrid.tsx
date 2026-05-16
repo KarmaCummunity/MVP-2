@@ -81,7 +81,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
           </View>
         </View>
         <Text style={styles.metaContainerText} numberOfLines={1}>
-          <Text style={styles.meta}>{post.ownerName}</Text>
+          <Text style={styles.meta}>{post.ownerName ?? t('common.deletedUser')}</Text>
           <Text style={styles.metaDot}> · </Text>
           <Text style={styles.meta}>{timeAgo}</Text>
         </Text>

@@ -97,7 +97,8 @@ export interface Chat {
   /**
    * Either participant may be null after an account deletion (migration 0028
    * — chats.participant_a/b are ON DELETE SET NULL so chats survive on the
-   * counterpart side). Display layer renders null participants as "משתמש שנמחק".
+   * counterpart side). Display layer renders null participants as the
+   * localized `common.deletedUser` placeholder (FR-CHAT-013).
    */
   readonly participantIds: [string | null, string | null];
   readonly anchorPostId: string | null;

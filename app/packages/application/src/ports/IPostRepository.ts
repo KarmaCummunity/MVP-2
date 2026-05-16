@@ -41,7 +41,7 @@ export interface FeedPage {
 }
 
 export interface PostWithOwner extends Post {
-  ownerName: string;
+  ownerName: string | null;
   ownerAvatarUrl: string | null;
   ownerHandle: string;
   ownerPrivacyMode: 'Public' | 'Private';
