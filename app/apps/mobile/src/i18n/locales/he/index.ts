@@ -20,6 +20,7 @@ import { feedHe } from './modules/feed';
 import { profileHe } from './modules/profile';
 import { closureHe } from './modules/closure';
 import { filtersHe } from './modules/filters';
+import { commonHe } from './modules/common';
 
 const he = {
   // App
@@ -161,6 +162,9 @@ const he = {
   errorBoundary: errorBoundaryHe,
   devBanner: devBannerHe,
   optionsMenu: optionsMenuHe,
+
+  // Cross-cutting placeholders — see modules/common.ts
+  common: commonHe,
 
   // General
   general: {

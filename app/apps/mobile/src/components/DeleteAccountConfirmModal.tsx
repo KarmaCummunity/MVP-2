@@ -137,7 +137,7 @@ export function DeleteAccountConfirmModal(props: DeleteAccountConfirmModalProps)
                 <Text style={styles.bullet}>{`• ${t('settings.deleteAccountModal.bullets.devices')}`}</Text>
               </View>
 
-              <Text style={styles.chatsRetention}>{t('settings.deleteAccountModal.chatsRetention')}</Text>
+              <Text style={styles.chatsRetention}>{t('settings.deleteAccountModal.chatsRetention', { deletedUserLabel: t('common.deletedUser') })}</Text>
               <Text style={styles.warning}>{t('settings.deleteAccountModal.warning')}</Text>
 
               {state.kind === 'error' && (
