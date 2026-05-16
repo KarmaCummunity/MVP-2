@@ -24,9 +24,10 @@ const FILE_SIZE_CAP = 200;
 // `max` is the current line count: the file cannot grow past it. Shrinking the file
 // below the cap triggers a STALE-ALLOWLIST error, prompting removal from this list.
 const FILE_SIZE_ALLOWLIST = new Map([
-  // Dropped 416→383 after 2026-05-16 styles split; bumped 383→387 by audit §3.8
-  // partial-failure handling. Remove once TD-29 splits the form further.
-  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 387 }],
+  // Dropped 416→383 after 2026-05-16 styles split; bumped 383→387 (audit §3.8)
+  // and 387→393 (audit §4.6/§16.3 type-toggle Ionicons + a11y state).
+  // Remove once TD-29 splits the form further.
+  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 393 }],
   // (auth)/index.tsx styles extracted to src/components/auth/welcomeScreen.styles.ts (TD-29); entry removed.
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],

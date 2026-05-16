@@ -35,7 +35,10 @@ export const createPostStyles = StyleSheet.create({
     borderColor: colors.border,
     overflow: 'hidden',
   },
-  typeBtn: { flex: 1, paddingVertical: spacing.md, alignItems: 'center' },
+  typeBtn: {
+    flex: 1, paddingVertical: spacing.md, alignItems: 'center',
+    flexDirection: 'row', justifyContent: 'center', gap: spacing.xs,
+  },
   typeBtnActive: { backgroundColor: colors.requestTagBg },
   typeBtnActiveGive: { backgroundColor: colors.giveTagBg },
   typeBtnText: { ...typography.button, color: colors.textSecondary },
