@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import type { FeedSortOrder } from '@kc/domain';
 import { colors, spacing, typography } from '@kc/ui';
 import { Chip } from './Chip';
@@ -12,10 +13,10 @@ interface SortSectionProps {
   onProximitySortCityChange: (c: { id: string; name: string } | null) => void;
 }
 
-const SORT_LABELS: Record<FeedSortOrder, string> = {
-  newest: '🆕 חדש קודם',
-  oldest: '🕓 ישן קודם',
-  distance: '📍 לפי מיקום',
+const SORT_KEYS: Record<FeedSortOrder, string> = {
+  newest: 'filters.sortNewest',
+  oldest: 'filters.sortOldest',
+  distance: 'filters.sortDistance',
 };
 
 const SORT_ORDER_ENTRIES: FeedSortOrder[] = ['newest', 'oldest', 'distance'];
@@ -26,14 +27,15 @@ export function SortSection({
   onSortOrderChange,
   onProximitySortCityChange,
 }: SortSectionProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.section}>
-      <Text style={styles.title}>מיון</Text>
+      <Text style={styles.title}>{t('filters.sectionSort')}</Text>
       <View style={styles.row}>
         {SORT_ORDER_ENTRIES.map((s) => (
           <Chip
             key={s}
-            label={SORT_LABELS[s]}
+            label={t(SORT_KEYS[s])}
             active={sortOrder === s}
             onPress={() => onSortOrderChange(s)}
           />
@@ -41,7 +43,7 @@ export function SortSection({
       </View>
       {sortOrder === 'distance' && (
         <View style={styles.cityWrap}>
-          <Text style={styles.subLabel}>מרכז המיון (ברירת מחדל: העיר שלך)</Text>
+          <Text style={styles.subLabel}>{t('filters.sortDistanceCenterHint')}</Text>
           <CityPicker value={proximitySortCity} onChange={onProximitySortCityChange} />
         </View>
       )}

@@ -10,7 +10,7 @@ describe('ReportChatUseCase', () => {
     await uc.execute({
       reporterId: 'u_reporter',
       chatId: 'c_target',
-      reason: 'Harassment',
+      reason: 'Offensive',
       note: 'מטריד באופן עקבי',
     });
 
@@ -19,7 +19,7 @@ describe('ReportChatUseCase', () => {
     expect(repo.lastSubmit!.input).toEqual({
       targetType: 'chat',
       targetId: 'c_target',
-      reason: 'Harassment',
+      reason: 'Offensive',
       note: 'מטריד באופן עקבי',
     });
   });
