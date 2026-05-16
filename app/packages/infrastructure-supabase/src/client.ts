@@ -8,6 +8,25 @@ import type { Database } from './database.types';
 
 let _client: SupabaseClient<Database> | null = null;
 
+// Singleton callback invoked when a PostgREST call returns 403 (RLS forbidden).
+// Bound by AuthGate after mount so the router is available. Provides near-instant
+// ban detection without waiting for the 60s poll (TD-149).
+const _onForbidden: { current: (() => void) | null } = { current: null };
+
+export function setOnForbiddenCallback(fn: (() => void) | null): void {
+  _onForbidden.current = fn;
+}
+
+function bannedFetch(input: RequestInfo | URL, init?: RequestInit): Promise<Response> {
+  return fetch(input, init).then((res) => {
+    if (res.status === 403) {
+      const url = typeof input === 'string' ? input : input instanceof URL ? input.href : (input as Request).url;
+      if (url.includes('/rest/v1/')) _onForbidden.current?.();
+    }
+    return res;
+  });
+}
+
 /** AsyncStorage-shaped adapter (RN) or compatible sync storage. */
 export type SupabaseAuthStorage = {
   getItem: (key: string) => Promise<string | null> | string | null;
@@ -53,6 +72,7 @@ export function getSupabaseClient(options?: {
       flowType: 'pkce',
       ...(options?.storage ? { storage: options.storage } : {}),
     },
+    global: { fetch: bannedFetch },
   });
 
   return _client;
