@@ -25,7 +25,7 @@ export const errorsHe = {
     street_number_invalid: 'מספר הבית לא תקין. השתמש בספרות בלבד (אפשר להוסיף אות אחת בסוף, למשל 12, 12B או 12א).',
     city_not_found: 'העיר שנבחרה לא נמצאה ברשימה. אנא בחר עיר מהרשימה.',
     image_required_for_give: 'פוסטים מסוג "לתת" חייבים לפחות תמונה אחת.',
-    too_many_media_assets: 'מותר עד 5 תמונות לפוסט.',
+    too_many_media_assets: 'מותר עד {{max}} תמונות לפוסט.',
     condition_required_for_give: 'יש לבחור מצב לחפץ שניתן.',
     urgency_only_for_request: 'דחיפות זמינה רק לפוסט "לבקש".',
     condition_only_for_give: 'מצב חפץ זמין רק לפוסט "לתת".',
