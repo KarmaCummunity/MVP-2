@@ -1,9 +1,9 @@
 /** FR-AUTH-010: Validate display_name + city; optional profile street/number (FR-PROFILE-007 shape);
  *  advance onboarding_state pending_basic_info → pending_avatar.
  *  City id+name come from the caller (CityPicker); DB FK is the final guard. */
+import { STREET_NUMBER_PATTERN } from '@kc/domain';
 import type { IUserRepository } from '../ports/IUserRepository';
-
-const STREET_NUM_RE = /^\d+[A-Za-z]?$/;
+import { OnboardingError } from './errors';
 
 export interface CompleteBasicInfoInput {
   readonly userId: string;
@@ -36,7 +36,19 @@ export class CompleteBasicInfoUseCase {
     }
     if (st.length > 0) {
       if (st.length < 1 || st.length > 80) throw new Error('invalid_profile_street');
-      if (!STREET_NUM_RE.test(num)) throw new Error('invalid_profile_street_number');
+      if (!STREET_NUMBER_PATTERN.test(num)) throw new Error('invalid_profile_street_number');
+    }
+
+    // Audit §17.3 — reject illegal onboarding state transitions. Allowed
+    // source states: pending_basic_info (normal flow) and pending_avatar
+    // (idempotent re-run from the same step). 'completed' would be a
+    // rollback and is rejected.
+    const { state } = await this.users.getOnboardingBootstrap(input.userId);
+    if (state === 'completed') {
+      throw new OnboardingError(
+        'illegal_transition',
+        `cannot rerun basic info from state '${state}'`,
+      );
     }
 
     await this.users.setBasicInfo(input.userId, {

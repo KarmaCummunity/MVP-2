@@ -60,3 +60,29 @@ export class DeleteAccountError extends Error {
 export function isDeleteAccountError(value: unknown): value is DeleteAccountError {
   return value instanceof DeleteAccountError;
 }
+
+// ─────────────────────────────────────────────
+// Onboarding state-machine error
+// Audit 2026-05-10 §17.3 — illegal transitions on users.onboarding_state.
+// Mapped to SRS: FR-AUTH-010, FR-AUTH-012.
+// ─────────────────────────────────────────────
+
+export type OnboardingErrorCode =
+  | 'illegal_transition';
+
+export class OnboardingError extends Error {
+  readonly code: OnboardingErrorCode;
+  readonly cause?: unknown;
+
+  constructor(code: OnboardingErrorCode, message: string, cause?: unknown) {
+    super(message);
+    this.name = 'OnboardingError';
+    this.code = code;
+    this.cause = cause;
+    Object.setPrototypeOf(this, OnboardingError.prototype);
+  }
+}
+
+export function isOnboardingError(value: unknown): value is OnboardingError {
+  return value instanceof OnboardingError;
+}
