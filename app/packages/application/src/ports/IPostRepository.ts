@@ -147,6 +147,8 @@ export interface IPostRepository {
   //   current status closed_delivered      → RPC `reopen_post_marked` (delete recipient row + status)
   //   current status deleted_no_recipient  → UPDATE status='open', delete_after=null
   reopen(postId: string): Promise<Post>;
+  // FR-CLOSURE-007: recipient removes their own credit (→ deleted_no_recipient, 7d window).
+  unmrkRecipientSelf(postId: string): Promise<void>;
   /** Recipient picker source: distinct chat partners on this post, sorted by latest message recency. */
   getClosureCandidates(postId: string): Promise<ClosureCandidate[]>;
 

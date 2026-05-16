@@ -1007,6 +1007,8 @@ export type Database = {
         }
       }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
+      // FR-CLOSURE-007 (0075) — manually added until next typegen run.
+      rpc_recipient_unmark_self: { Args: { p_post_id: string }; Returns: void }
       // P0.6 closure RPCs (0015) — manually added until next typegen run.
       close_post_with_recipient: {
         Args: { p_post_id: string; p_recipient_user_id: string }

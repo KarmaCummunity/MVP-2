@@ -112,6 +112,8 @@ export class FakePostRepository implements IPostRepository {
     return this.reopenResult;
   };
 
+  unmrkRecipientSelf = async (_postId: string): Promise<void> => {};
+
   getClosureCandidates = async (postId: string): Promise<ClosureCandidate[]> => {
     this.lastGetClosureCandidatesPostId = postId;
     return this.closureCandidatesResult;
