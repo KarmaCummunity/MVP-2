@@ -54,6 +54,7 @@ export const profileHe = {
   followCooldownDays: 'ניתן לשלוח שוב בעוד {{count}} ימים.',
   followErrorTitle: 'שגיאה',
   followErrorMessage: 'הפעולה נכשלה. נסו שוב.',
+<<<<<<< Updated upstream
   addressLabel: 'כתובת',
   streetPlaceholder: 'רחוב',
   streetNumberPlaceholder: 'מס׳',

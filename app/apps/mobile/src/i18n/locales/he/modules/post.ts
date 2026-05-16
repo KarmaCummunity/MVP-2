@@ -95,6 +95,7 @@ export const postHe = {
   deleteSuccess: 'הפוסט נמחק.',
   adminRemoveError: 'ההסרה נכשלה, נסה שוב.',
   adminRemoveSuccess: 'הפוסט הוסר.',
+<<<<<<< Updated upstream
 
   cityPickerA11y: 'בחר עיר',
   cityPickerPlaceholder: 'בחר עיר',
