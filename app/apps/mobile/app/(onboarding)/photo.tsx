@@ -117,7 +117,7 @@ export default function OnboardingPhotoScreen() {
         </AnimatedEntry>
 
         <AnimatedEntry delay={staggerDelay(5)}>
-          <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בהגדרות.</Text>
+          <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בפרופיל.</Text>
         </AnimatedEntry>
       </View>
 
