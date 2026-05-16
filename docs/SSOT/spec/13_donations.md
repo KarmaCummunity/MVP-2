@@ -99,7 +99,7 @@ A coming-soon screen for the Time modality that links out to `Lev Echad / we-me`
    - Disabled when the trimmed text is empty.
    - On press (authed user, non-empty text): the message is appended to a local `volunteer_intent_log` in `AsyncStorage` (FIFO, capped to 50 entries). An alert is shown: *"תודה! ההודעה התקבלה. ניצור איתך קשר בקרוב דרך הצ'אט."* The textbox is cleared.
    - The screen is auth-required in MVP-core (`FR-DONATE-005`); guest interaction is N/A.
-- AC6. **TD-114 (FE) — post P0.5 wiring.** When P0.5 chat ships, replace the local-only behavior with a `sendVolunteerMessageToAdmin` use-case that resolves the Super Admin (canonical email `karmacommunity2.0@gmail.com`), opens-or-creates the support thread (`is_support_thread=true`), sends the message body **prefixed** with *"התנדבות בארגון: "*, and navigates to `/chat/[adminChatId]`. Pending entries from `volunteer_intent_log` are flushed to the thread on first migration (oldest first).
+- AC6. ✅ **TD-114 closed (2026-05-16).** Composer uses `GetSupportThreadUseCase` + `SendMessageUseCase` with body prefixed `"התנדבות בארגון: "`; navigates to `/chat/[chatId]` on success. AsyncStorage local log removed.
 - AC7. AsyncStorage write failure is silent; the alert is still shown so the user gets feedback.
 - AC6. The use-case **resolves** the Super Admin user record by canonical email `karmacommunity2.0@gmail.com` (identical to `FR-CHAT-007 AC1`) and **finds-or-creates** the support `Chat` (`is_support_thread = true`). It **does not** create a second support thread when one already exists.
 - AC7. The first message body is the user's text **prefixed** with the literal string *"התנדבות בארגון: "*. The prefix is contractual and is not localized in MVP.

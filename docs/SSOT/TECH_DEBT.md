@@ -3,7 +3,7 @@
 | Field | Value |
 | ----- | ----- |
 | **Owner** | Engineering (auto-updated by agents) |
-| **Last Updated** | 2026-05-16 (TD-138 closed — all Alert.alert call sites swept; `(auth)/index.tsx` final site → NotifyModal; dead styles + commented auth buttons removed; allowlist 274→254) |
+| **Last Updated** | 2026-05-16 (TD-114 closed — volunteer composer wired to support thread + SendMessageUseCase; navigates to /chat/[id] on success; inline retry on failure) |
 | **How agents use this** | Before opening a PR, scan the area you're touching. Closing adjacent debt in the same PR is encouraged when scope is small. |
 
 > Live execution state lives in [`BACKLOG.md`](./BACKLOG.md). Per-feature status lives in [`spec/*.md`](./spec/). This file is the active debt register.
@@ -64,7 +64,7 @@
 | TD-106 | 🟠 | ~~**FR-PROFILE-001 — Edit Profile + Share buttons dead.**~~ Edit Profile button now navigates to `app/edit-profile.tsx` (FR-PROFILE-007 partial — name + city + biography + avatar editable; persists via `UpdateProfileUseCase`). Share button still no-op (deferred — needs deep-link generator). | Closed 2026-05-09 (Edit Profile portion); Share row remains a P2.4 nit |
 | TD-107 | ✅ | ~~**PARTIAL → STILL OPEN for non-delete rows.**~~ Closed 2026-05-15 — post-merge verification of `app/settings.tsx`: every row navigates to a real route or action (`edit-profile`, `settings/notifications`, `settings/privacy`, `settings/follow-requests`, `stats`, `settings/report-issue`, `legal`, `about`, dev-tools reset + simulate-hard-refresh, logout, delete-account). Repo-wide grep for `בקרוב` in `app/apps/mobile/` returns zero hits. | Closed 2026-05-15 |
 | TD-108 | ✅ | ~~**FR-AUTH-011 AC4 — avatar removal leaks Storage object.**~~ Closed 2026-05-15 — `removeUploadedAvatar(userId)` in `src/services/avatarUpload.ts` deletes `avatars/<userId>/avatar.jpg` (best-effort, warn-on-error). Wired into both the onboarding `remove()` flow (`useOnboardingPhotoFlow.ts`) and the Edit Profile Save handler (`app/edit-profile.tsx`) — called before the `avatar_url = null` persist. | Closed 2026-05-15 |
-| TD-114 | 🟠 | **Donations · Time → support thread wire-up.** **P0.5 ready** — `OpenOrCreateChatUseCase` + `GetSupportThreadUseCase` + the `/chat/[id]` route now exist. Wire-up in `app/(tabs)/donations/time.tsx`'s volunteer composer to navigate to the support thread is a separate post-P0.5 PR. | Post-P0.5 follow-up |
+| TD-114 | ✅ | ~~**Donations · Time → support thread wire-up.**~~ Closed 2026-05-16 — `donations/time.tsx` volunteer composer replaced AsyncStorage local log with `getSupportThread` + `sendMessage` (prefix `"התנדבות בארגון: "`); navigates to `/chat/[chatId]` on success; inline retry row on failure per FR-DONATE-004 AC6-AC8. | Closed 2026-05-16 |
 | TD-62 | 🟢 | **FR-NOTIF-004 (message_undeliverable) — deferred from P1.5 PR-1.** Requires sender-side detection of recipient account state change. Surface via a daily cron that scans outgoing messages where the recipient's `account_status` flipped to suspended/deleted within 24h. | Post-MVP |
 | TD-63 | 🟢 | **Notification icon placeholder.** `app/apps/mobile/assets/notification-icon.png` is a 96×96 placeholder. Replace with a designed icon (white shape on transparent, Android adaptive guidelines). | Pre-launch |
 | TD-64 | 🟠 | **Notification dispatcher has no operational alert when the outbox accumulates pending rows.** Add a daily check that fires if `count(*) where dispatched_at IS NULL AND created_at < now() - interval '15 minutes' > 10`. | Pre-launch |
