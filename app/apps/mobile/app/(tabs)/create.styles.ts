@@ -130,8 +130,8 @@ export const createPostStyles = StyleSheet.create({
     borderColor: colors.border,
     backgroundColor: colors.surface,
   },
-  counterpartyPrivacyHeader: { alignItems: 'flex-end' },
-  counterpartyPrivacyTitle: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  counterpartyPrivacyHeader: { alignItems: 'flex-start' },
+  counterpartyPrivacyTitle: { ...typography.label, color: colors.textSecondary, textAlign: 'center' },
   counterpartyPrivacyRow: {
     flexDirection: 'row-reverse',
     alignItems: 'center',

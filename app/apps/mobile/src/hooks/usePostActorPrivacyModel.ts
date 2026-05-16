@@ -1,10 +1,7 @@
-// FR-POST-003 + FR-POST-021 — post detail: who may see this post (open → posts.visibility;
-// closed participant → surface_visibility) + optional counterparty identity mask (closed only).
+// FR-POST-003, FR-POST-009, FR-POST-021 — shared state for post exposure / actor privacy (open visibility + closed surface).
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { PlatformSwitch, colors, spacing, typography } from '@kc/ui';
 import type { PostVisibility } from '@kc/domain';
 import type { PostWithOwner } from '@kc/application';
 import { isPostError } from '@kc/application';
@@ -12,18 +9,12 @@ import {
   getListPostActorIdentityUseCase,
   getUpdatePostUseCase,
   getUpsertPostActorIdentityUseCase,
-} from '../../services/postsComposition';
-import { getUserRepo } from '../../services/userComposition';
-import { VisibilityChooser } from '../CreatePostForm/VisibilityChooser';
-import { useFeedSessionStore } from '../../store/feedSessionStore';
-import { mapPostErrorToHebrew } from '../../services/postMessages';
+} from '../services/postsComposition';
+import { getUserRepo } from '../services/userComposition';
+import { useFeedSessionStore } from '../store/feedSessionStore';
+import { mapPostErrorToHebrew } from '../services/postMessages';
 
-interface Props {
-  readonly post: PostWithOwner;
-  readonly viewerId: string;
-}
-
-function hasMarkedCounterparty(post: PostWithOwner): boolean {
+export function hasMarkedCounterparty(post: PostWithOwner): boolean {
   return Boolean(post.recipientUser ?? post.recipient?.recipientUserId);
 }
 
@@ -32,7 +23,28 @@ function inferredClosedSurface(post: PostWithOwner, viewerId: string): PostVisib
   return 'Public';
 }
 
-export function PostActorPrivacyBar({ post, viewerId }: Props) {
+export function shouldShowPostExposureControls(viewerId: string | null, post: PostWithOwner): boolean {
+  if (viewerId == null) return false;
+  const isOwner = post.ownerId === viewerId;
+  const isRecipientMarked = post.recipient?.recipientUserId === viewerId;
+  return isOwner || (post.status === 'closed_delivered' && isRecipientMarked);
+}
+
+export interface PostActorPrivacyModel {
+  readonly profilePrivacy: 'Public' | 'Private';
+  readonly audienceValue: PostVisibility;
+  readonly hide: boolean;
+  readonly saving: boolean;
+  readonly showCounterpartyRow: boolean;
+  readonly isOpenOwner: boolean;
+  onAudienceChange: (next: PostVisibility) => void;
+  onHideChange: (next: boolean) => void;
+}
+
+export function usePostActorPrivacyModel(
+  post: PostWithOwner,
+  viewerId: string,
+): PostActorPrivacyModel {
   const { t } = useTranslation();
   const qc = useQueryClient();
   const isOwner = post.ownerId === viewerId;
@@ -65,7 +77,7 @@ export function PostActorPrivacyBar({ post, viewerId }: Props) {
 
   const invalidateAfterPrivacyChange = async () => {
     await qc.invalidateQueries({ queryKey: ['post-actor-identity', post.postId] });
-      await qc.invalidateQueries({ queryKey: ['post', post.postId] });
+    await qc.invalidateQueries({ queryKey: ['post', post.postId] });
     await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
     await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
     await qc.invalidateQueries({ queryKey: ['feed'] });
@@ -124,51 +136,19 @@ export function PostActorPrivacyBar({ post, viewerId }: Props) {
     persistClosed({ surfaceVisibility: next });
   };
 
-  return (
-    <View style={styles.outer}>
-      <VisibilityChooser
-        value={audienceValue}
-        onChange={onAudienceChange}
-        profilePrivacy={profilePrivacy}
-        disabled={saving}
-        onFollowersOnlyBlockedPress={() =>
-          useFeedSessionStore.getState().showEphemeralToast(t('post.visibilityFollowersLockedSub'), 'success', 3200)
-        }
-      />
-      {showCounterpartyRow ? (
-        <View style={styles.partnerRow}>
-          <Text style={styles.partnerLabel}>{t('post.counterpartyMaskLabel')}</Text>
-          <PlatformSwitch
-            value={hide}
-            onValueChange={(v) => {
-              setHide(v);
-              persistClosed({ hideFromCounterparty: v });
-            }}
-            disabled={saving}
-          />
-        </View>
-      ) : null}
-    </View>
-  );
-}
+  const onHideChange = (next: boolean) => {
+    setHide(next);
+    persistClosed({ hideFromCounterparty: next });
+  };
 
-const styles = StyleSheet.create({
-  outer: {
-    marginTop: spacing.md,
-    paddingTop: spacing.md,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-  },
-  partnerRow: {
-    marginTop: spacing.md,
-    padding: spacing.base,
-    backgroundColor: colors.surface,
-    borderRadius: 8,
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  partnerLabel: { ...typography.bodySmall, flex: 1, color: colors.textPrimary, textAlign: 'right' },
-});
+  return {
+    profilePrivacy,
+    audienceValue,
+    hide,
+    saving,
+    showCounterpartyRow,
+    isOpenOwner,
+    onAudienceChange,
+    onHideChange,
+  };
+}

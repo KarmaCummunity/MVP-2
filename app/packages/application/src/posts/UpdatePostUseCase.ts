@@ -1,12 +1,7 @@
-/** FR-POST-008 + FR-POST-009: edit an existing post; visibility upgrade-only. */
+/** FR-POST-008 + FR-POST-009: edit an existing post; visibility may change freely (D-32). */
 import type { IPostRepository, UpdatePostInput } from '../ports/IPostRepository';
 import type { Post } from '@kc/domain';
-import {
-  canUpgradeVisibility,
-  TITLE_MAX_CHARS,
-  DESCRIPTION_MAX_CHARS,
-  MAX_MEDIA_ASSETS,
-} from '@kc/domain';
+import { TITLE_MAX_CHARS, DESCRIPTION_MAX_CHARS, MAX_MEDIA_ASSETS } from '@kc/domain';
 import { PostError } from './errors';
 
 export interface UpdatePostUseCaseInput {
@@ -61,11 +56,6 @@ export class UpdatePostUseCase {
     if (patch.address) {
       if (!patch.address.city || !patch.address.street || !patch.address.streetNumber)
         throw new PostError('address_required', 'address_required');
-    }
-
-    if (patch.visibility && patch.visibility !== current.visibility) {
-      if (!canUpgradeVisibility(current.visibility, patch.visibility))
-        throw new PostError('visibility_downgrade_forbidden', 'visibility_downgrade_forbidden');
     }
 
     if (patch.mediaAssets !== undefined) {

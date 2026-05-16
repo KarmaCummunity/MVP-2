@@ -10,14 +10,12 @@ import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
-import { PostActorPrivacyBar } from '../../src/components/post-detail/PostActorPrivacyBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
 import { styles } from './postDetailScreen.styles';
 
 export type PostDetailScrollContentProps = Readonly<{
   post: PostWithOwner;
   isGive: boolean;
-  showActorPrivacy: boolean;
   viewerId: string | null;
   ownerNavigable: boolean;
   ownerLabel: string;
@@ -28,7 +26,6 @@ export type PostDetailScrollContentProps = Readonly<{
 export function PostDetailScrollContent({
   post,
   isGive,
-  showActorPrivacy,
   viewerId,
   ownerNavigable,
   ownerLabel,
@@ -94,9 +91,6 @@ export function PostDetailScrollContent({
             cityName={post.address.cityName}
             ownerHandle={post.ownerHandle}
           />
-          {showActorPrivacy && viewerId != null ? (
-            <PostActorPrivacyBar post={post} viewerId={viewerId} />
-          ) : null}
         </View>
       </MotionEntry>
     </ScrollView>

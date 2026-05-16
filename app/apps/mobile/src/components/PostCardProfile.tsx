@@ -2,7 +2,14 @@
 // Renders the first uploaded image; falls back to an Ionicons gift/search glyph.
 import React from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, Image,
+  View,
+  Text,
+  TouchableOpacity,
+  StyleSheet,
+  Dimensions,
+  Image,
+  I18nManager,
+  Platform,
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -10,8 +17,8 @@ import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
-
-import { I18nManager, Platform } from 'react-native';
+import { PostMenuButton } from './post/PostMenuButton';
+import { postWithOwnerFromPost } from '../lib/postWithOwnerFromPost';
 
 const STORAGE_BUCKET = 'post-images';
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -19,6 +26,8 @@ const isRTL = I18nManager.isRTL;
 const isWeb = Platform.OS === 'web';
 const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
 const tagPosition = (isRTL && !isWeb) ? { left: spacing.xs } : { right: spacing.xs };
+/** Opposite corner from type tag — matches PostCardGrid menu placement (FR-POST-010 AC1). */
+const menuPosition = (isRTL && !isWeb) ? { right: spacing.xs } : { left: spacing.xs };
 
 // 3 columns, spacing.base (16) padding each side, spacing.xs (4) gap × 2.
 const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.xs * 2) / 3;
@@ -90,6 +99,13 @@ export function PostCardProfile({ post, identityRole, onPressOverride, closedPos
             </Text>
           </View>
         ) : null}
+        <View
+          style={[styles.menuOverlay, menuPosition]}
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={(e) => e.stopPropagation()}
+        >
+          <PostMenuButton post={postWithOwnerFromPost(post)} />
+        </View>
       </View>
       <View style={styles.titleRow}>
         <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
@@ -173,5 +189,11 @@ const styles = StyleSheet.create({
     ...typography.label,
     fontSize: 10,
     color: '#fff',
+  },
+  menuOverlay: {
+    position: 'absolute',
+    top: spacing.xs,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
 });

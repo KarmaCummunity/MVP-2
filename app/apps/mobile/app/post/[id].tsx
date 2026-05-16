@@ -43,15 +43,6 @@ function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string
   return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
 }
 
-function postDetailShowActorPrivacy(
-  viewerId: string | null,
-  isOwner: boolean,
-  post: PostWithOwner,
-  isRecipientMarked: boolean,
-): boolean {
-  return viewerId != null && (isOwner || (post.status === 'closed_delivered' && isRecipientMarked));
-}
-
 export default function PostDetailScreen() {
   const { id: rawId, fromProfile: rawFromProfile } = useLocalSearchParams<{
     id?: string | string[];
@@ -131,9 +122,6 @@ export default function PostDetailScreen() {
 
   const showViewerContactCta = !isOwner && post.status === 'open';
 
-  const isRecipientMarked =
-    viewerId != null && post.recipient?.recipientUserId === viewerId;
-  const showActorPrivacy = postDetailShowActorPrivacy(viewerId, isOwner, post, isRecipientMarked);
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
   const ownerLabel = postOwnerDisplayLabel(post, t);
 
@@ -142,7 +130,6 @@ export default function PostDetailScreen() {
       <PostDetailScrollContent
         post={post}
         isGive={isGive}
-        showActorPrivacy={showActorPrivacy}
         viewerId={viewerId}
         ownerNavigable={ownerNavigable}
         ownerLabel={ownerLabel}
