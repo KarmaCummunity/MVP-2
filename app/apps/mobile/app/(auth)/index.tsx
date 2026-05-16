@@ -12,7 +12,6 @@ import {
   ScrollView,
   Image,
   ActivityIndicator,
-  Alert,
 } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -24,12 +23,14 @@ import {
   getSignInWithGoogleUseCase,
 } from '../../src/services/authComposition';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
+import { NotifyModal } from '../../src/components/NotifyModal';
 
 export default function WelcomeScreen() {
   const router = useRouter();
   const setGuest = useAuthStore((s) => s.setGuest);
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
+  const [googleError, setGoogleError] = useState<string | null>(null);
 
   const isExecutingRef = React.useRef(false);
 
@@ -52,7 +53,7 @@ export default function WelcomeScreen() {
             ? mapAuthErrorToHebrew(code)
             : 'שגיאת רשת. נסה שוב.';
       if (message && !useAuthStore.getState().isAuthenticated) {
-        Alert.alert('כניסה עם Google נכשלה', `${message} (${isAuthError(err) ? err.message : String(err)})`);
+        setGoogleError(`${message} (${isAuthError(err) ? err.message : String(err)})`);
       }
     } finally {
       setGoogleLoading(false);
@@ -109,24 +110,6 @@ export default function WelcomeScreen() {
             loading={googleLoading}
           />
           
-          {/* TODO: Add phone and email buttons */}
-{/* 
-          <AuthButton
-            label="המשך עם מספר טלפון"
-            emoji="📱"
-            style={styles.phoneBtn}
-            textStyle={styles.phoneBtnText}
-            onPress={() => router.push('/(auth)/sign-in')}
-          />
-
-          <AuthButton
-            label='המשך עם דוא"ל'
-            emoji="✉️"
-            style={styles.emailBtn}
-            textStyle={styles.emailBtnText}
-            onPress={() => router.push('/(auth)/sign-in')}
-          /> */}
-
           {/* Guest preview */}
           <TouchableOpacity
             style={styles.guestBtn}
@@ -143,6 +126,7 @@ export default function WelcomeScreen() {
           בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות.
         </Text>
       </ScrollView>
+      <NotifyModal visible={googleError !== null} title="כניסה עם Google נכשלה" message={googleError ?? ''} onDismiss={() => setGoogleError(null)} />
     </SafeAreaView>
   );
 }
@@ -250,11 +234,7 @@ const styles = StyleSheet.create({
   appleBtnText: { color: '#FFFFFF' },
   googleBtn: { backgroundColor: colors.primary, borderWidth: 1.5, borderColor: colors.border },
   googleBtnText: { color: colors.textPrimary },
-  phoneBtn: { backgroundColor: colors.primary },
-  phoneBtnText: { color: colors.textInverse },
   authBtnDisabled: { opacity: 0.7 },
-  emailBtn: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },
-  emailBtnText: { color: colors.textPrimary },
   guestBtn: {
     marginTop: spacing.xs,
     alignItems: 'center',
