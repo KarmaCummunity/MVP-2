@@ -9,7 +9,6 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { colors, spacing, radius, shadow, typography } from '@kc/ui';
 import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
-import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 
 import { I18nManager, Platform } from 'react-native';
@@ -81,7 +80,7 @@ export function PostCardProfile({ post, identityRole, onPressOverride }: PostCar
       </View>
       <View style={styles.titleRow}>
         <Text style={styles.title} numberOfLines={1}>{post.title}</Text>
-        <Text style={styles.categoryText} numberOfLines={1}>{CATEGORY_LABELS[post.category]}</Text>
+        <Text style={styles.categoryText} numberOfLines={1}>{t(`post.category.${post.category}`)}</Text>
       </View>
     </TouchableOpacity>
   );

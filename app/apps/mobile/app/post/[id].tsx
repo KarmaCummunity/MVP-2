@@ -8,8 +8,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
+import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
-import { CATEGORY_LABELS, ITEM_CONDITION_LABELS_HE } from '@kc/domain';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { EmptyState } from '../../src/components/EmptyState';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
@@ -25,6 +25,7 @@ import { styles } from './postDetailScreen.styles';
 export default function PostDetailScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
+  const { t } = useTranslation();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
 
   const query = useQuery({
@@ -93,12 +94,12 @@ export default function PostDetailScreen() {
 
         <View style={styles.content}>
           <Text style={styles.title}>{post.title}</Text>
-          <Text style={styles.category}>{CATEGORY_LABELS[post.category]}</Text>
+          <Text style={styles.category}>{t(`post.category.${post.category}`)}</Text>
 
           {isGive && post.itemCondition && (
             <View style={styles.conditionRow}>
               <Text style={styles.conditionLabel}>מצב: </Text>
-              <Text style={styles.conditionValue}>{ITEM_CONDITION_LABELS_HE[post.itemCondition]}</Text>
+              <Text style={styles.conditionValue}>{t(`post.condition.${post.itemCondition}`)}</Text>
             </View>
           )}
           {!isGive && post.urgency && (

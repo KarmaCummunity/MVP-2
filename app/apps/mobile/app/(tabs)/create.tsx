@@ -14,7 +14,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { colors } from '@kc/ui';
 import {
-  ALL_CATEGORIES, CATEGORY_LABELS, ITEM_CONDITIONS, ITEM_CONDITION_LABELS_HE,
+  ALL_CATEGORIES, ITEM_CONDITIONS,
 } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType } from '@kc/domain';
 import { isPostError } from '@kc/application';
@@ -294,7 +294,7 @@ export default function CreatePostScreen() {
                 onPress={() => setCategory(cat)}
               >
                 <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>
-                  {CATEGORY_LABELS[cat]}
+                  {t(`post.category.${cat}`)}
                 </Text>
               </TouchableOpacity>
             ))}
@@ -312,7 +312,7 @@ export default function CreatePostScreen() {
                   onPress={() => setCondition(c)}
                 >
                   <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
-                    {ITEM_CONDITION_LABELS_HE[c]}
+                    {t(`post.condition.${c}`)}
                   </Text>
                 </TouchableOpacity>
               ))}
