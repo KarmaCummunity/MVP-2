@@ -2,29 +2,35 @@
 // Mapped to SRS: FR-AUTH-001 (splash), FR-AUTH-002 (auth entry, all methods),
 // FR-AUTH-014 (guest preview entry point).
 // docs/SSOT/spec/01_auth_and_onboarding.md
-import React, { useState } from 'react';
-import {
-  View,
-  Text,
-  TouchableOpacity,
-  Platform,
-  ScrollView,
-  Image,
-  ActivityIndicator,
-} from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, Text, TouchableOpacity, Platform, ScrollView, Image, ActivityIndicator } from 'react-native';
 import { useRouter, type Href } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
+import Animated, {
+  useSharedValue,
+  useAnimatedStyle,
+  withTiming,
+  withSpring,
+  withDelay,
+  withRepeat,
+  withSequence,
+} from 'react-native-reanimated';
 import { colors } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
-import {
-  getOAuthRedirectUri,
-  getSignInWithGoogleUseCase,
-} from '../../src/services/authComposition';
+import { getOAuthRedirectUri, getSignInWithGoogleUseCase } from '../../src/services/authComposition';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { AuthBackground } from '../../src/components/auth/AuthBackground';
 import { welcomeScreenStyles as styles } from '../../src/components/auth/welcomeScreen.styles';
+
+const VALUE_PROPS: Array<{ icon: React.ComponentProps<typeof Ionicons>['name']; key: string }> = [
+  { icon: 'gift-outline', key: 'welcomeValueProp1' },
+  { icon: 'search-outline', key: 'welcomeValueProp2' },
+  { icon: 'chatbubbles-outline', key: 'welcomeValueProp3' },
+];
 
 export default function WelcomeScreen() {
   const router = useRouter();
@@ -33,24 +39,76 @@ export default function WelcomeScreen() {
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
-
   const isExecutingRef = React.useRef(false);
+
+  // ── Animation values ──────────────────────────────────────────────────
+  const heroOpacity = useSharedValue(0);
+  const heroTranslateY = useSharedValue(28);
+  const propsOpacity = useSharedValue(0);
+  const propsTranslateX = useSharedValue(24);
+  const buttonsOpacity = useSharedValue(0);
+  const buttonsTranslateY = useSharedValue(24);
+  const ringScale = useSharedValue(1);
+  const ringOpacity = useSharedValue(0.4);
+
+  useEffect(() => {
+    heroOpacity.value = withTiming(1, { duration: 500 });
+    heroTranslateY.value = withSpring(0, { damping: 18, stiffness: 90 });
+
+    propsOpacity.value = withDelay(300, withTiming(1, { duration: 450 }));
+    propsTranslateX.value = withDelay(300, withSpring(0, { damping: 20, stiffness: 100 }));
+
+    buttonsOpacity.value = withDelay(520, withTiming(1, { duration: 400 }));
+    buttonsTranslateY.value = withDelay(520, withSpring(0, { damping: 18 }));
+
+    ringScale.value = withDelay(
+      600,
+      withRepeat(
+        withSequence(withTiming(1.18, { duration: 1600 }), withTiming(1, { duration: 1600 })),
+        -1,
+        false,
+      ),
+    );
+    ringOpacity.value = withDelay(
+      600,
+      withRepeat(
+        withSequence(withTiming(0.1, { duration: 1600 }), withTiming(0.45, { duration: 1600 })),
+        -1,
+        false,
+      ),
+    );
+  }, []);
+
+  const heroStyle = useAnimatedStyle(() => ({
+    opacity: heroOpacity.value,
+    transform: [{ translateY: heroTranslateY.value }],
+  }));
+  const propsStyle = useAnimatedStyle(() => ({
+    opacity: propsOpacity.value,
+    transform: [{ translateX: propsTranslateX.value }],
+  }));
+  const buttonsStyle = useAnimatedStyle(() => ({
+    opacity: buttonsOpacity.value,
+    transform: [{ translateY: buttonsTranslateY.value }],
+  }));
+  const ringStyle = useAnimatedStyle(() => ({
+    transform: [{ scale: ringScale.value }],
+    opacity: ringOpacity.value,
+  }));
 
   const handleGoogle = async () => {
     if (isExecutingRef.current) return;
     isExecutingRef.current = true;
     setGoogleLoading(true);
     try {
-      const { session } = await getSignInWithGoogleUseCase().execute({
-        redirectTo: getOAuthRedirectUri(),
-      });
+      const { session } = await getSignInWithGoogleUseCase().execute({ redirectTo: getOAuthRedirectUri() });
       setSession(session);
       router.replace('/(tabs)');
     } catch (err) {
       const code = isAuthError(err) ? err.code : 'unknown';
       const message =
         isAuthError(err) && err.message === 'oauth_dismissed'
-          ? null // user closed the browser — silent
+          ? null
           : isAuthError(err)
             ? mapAuthErrorToHebrew(code)
             : t('auth.networkError');
@@ -65,97 +123,105 @@ export default function WelcomeScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
+      <AuthBackground />
       <ScrollView contentContainerStyle={styles.scroll} bounces={false}>
-        {/* Logo / Brand */}
-        <View style={styles.hero}>
-          <Image
-            source={require('../../assets/logo.png')}
-            style={styles.logo}
-            resizeMode="contain"
-          />
+
+        {/* Hero */}
+        <Animated.View style={[styles.hero, heroStyle]}>
+          <View style={styles.logoRingWrapper}>
+            <Animated.View style={[styles.logoRing, ringStyle]} />
+            <Image source={require('../../assets/logo.png')} style={styles.logo} resizeMode="contain" />
+          </View>
           <Text style={styles.appName}>{t('auth.welcomeAppName')}</Text>
           <Text style={styles.tagline}>{t('auth.tagline')}</Text>
-        </View>
+        </Animated.View>
 
         {/* Value props */}
-        <View style={styles.valueProps}>
-          {[
-            { emoji: '🎁', text: t('auth.welcomeValueProp1') },
-            { emoji: '🔍', text: t('auth.welcomeValueProp2') },
-            { emoji: '💬', text: t('auth.welcomeValueProp3') },
-          ].map((item) => (
-            <View key={item.text} style={styles.valuePropRow}>
-              <Text style={styles.valuePropEmoji}>{item.emoji}</Text>
-              <Text style={styles.valuePropText}>{item.text}</Text>
+        <Animated.View style={[styles.valueProps, propsStyle]}>
+          {VALUE_PROPS.map(({ icon, key }) => (
+            <View key={key} style={styles.valuePropRow}>
+              <Text style={styles.valuePropText}>{t(`auth.${key}`)}</Text>
+              <View style={styles.valuePropIconWrap}>
+                <Ionicons name={icon} size={22} color="#F97316" />
+              </View>
             </View>
           ))}
-        </View>
+        </Animated.View>
 
         {/* Auth buttons */}
-        <View style={styles.buttons}>
+        <Animated.View style={[styles.buttons, buttonsStyle]}>
           {Platform.OS === 'ios' && (
             <AuthButton
               label={t('auth.continueWithApple')}
-              emoji="🍎"
-              style={styles.appleBtn}
+              btnStyle={styles.appleBtn}
               textStyle={styles.appleBtnText}
               onPress={() => router.push('/(auth)/sign-in')}
+              icon={<Ionicons name="logo-apple" size={20} color="#FFFFFF" />}
             />
           )}
-
           <AuthButton
             label={t('auth.continueWithGoogle')}
-            emoji="G"
-            style={styles.googleBtn}
+            btnStyle={styles.googleBtn}
             textStyle={styles.googleBtnText}
             onPress={handleGoogle}
             loading={googleLoading}
+            icon={<Text style={styles.googleGLetter}>G</Text>}
           />
-
-          {/* Guest preview */}
           <TouchableOpacity
             style={styles.guestBtn}
-            onPress={() => {
-              setGuest(true);
-              router.replace('/(guest)/feed' as Href);
-            }}
+            onPress={() => { setGuest(true); router.replace('/(guest)/feed' as Href); }}
           >
             <Text style={styles.guestBtnText}>{t('auth.guestPreviewCta')}</Text>
           </TouchableOpacity>
-        </View>
+        </Animated.View>
 
         <Text style={styles.legal}>{t('auth.legalConsentShort')}</Text>
       </ScrollView>
-      <NotifyModal visible={googleError !== null} title={t('auth.googleSignInFailedTitle')} message={googleError ?? ''} onDismiss={() => setGoogleError(null)} />
+      <NotifyModal
+        visible={googleError !== null}
+        title={t('auth.googleSignInFailedTitle')}
+        message={googleError ?? ''}
+        onDismiss={() => setGoogleError(null)}
+      />
     </SafeAreaView>
   );
 }
 
 interface AuthButtonProps {
   label: string;
-  emoji: string;
-  style: object;
+  icon: React.ReactNode;
+  btnStyle: object;
   textStyle: object;
   onPress: () => void;
   loading?: boolean;
 }
 
-function AuthButton({ label, emoji, style, textStyle, onPress, loading }: Readonly<AuthButtonProps>) {
+function AuthButton({ label, icon, btnStyle, textStyle, onPress, loading }: Readonly<AuthButtonProps>) {
+  const scale = useSharedValue(1);
+  const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
+
+  const handlePressIn = () => { scale.value = withTiming(0.97, { duration: 100 }); };
+  const handlePressOut = () => { scale.value = withSpring(1, { damping: 15 }); };
+
   return (
-    <TouchableOpacity
-      style={[styles.authBtn, style, loading && styles.authBtnDisabled]}
-      onPress={onPress}
-      activeOpacity={0.85}
-      disabled={loading}
-    >
-      {loading ? (
-        <ActivityIndicator color={(textStyle as { color?: string }).color ?? colors.textPrimary} />
-      ) : (
-        <>
-          <Text style={styles.authBtnEmoji}>{emoji}</Text>
-          <Text style={[styles.authBtnText, textStyle]}>{label}</Text>
-        </>
-      )}
-    </TouchableOpacity>
+    <Animated.View style={pressStyle}>
+      <TouchableOpacity
+        style={[styles.authBtn, btnStyle, loading && styles.authBtnDisabled]}
+        onPress={onPress}
+        onPressIn={handlePressIn}
+        onPressOut={handlePressOut}
+        activeOpacity={1}
+        disabled={loading}
+      >
+        {loading ? (
+          <ActivityIndicator color={(textStyle as { color?: string }).color ?? colors.textPrimary} />
+        ) : (
+          <>
+            <Text style={[styles.authBtnText, textStyle]}>{label}</Text>
+            <View style={styles.authBtnIconWrap}>{icon}</View>
+          </>
+        )}
+      </TouchableOpacity>
+    </Animated.View>
   );
 }
