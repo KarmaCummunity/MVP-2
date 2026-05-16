@@ -16,7 +16,12 @@
 
 begin;
 
-do $$
+-- The outer DO block uses `$mig$` so its closing tag can't collide with the
+-- inner cron-body `$$ ... $$` string literal (Supabase CLI's local parser was
+-- closing the outer quote on the first inner `$$` and failing with
+-- "syntax error at or near 'do'"). Postgres tolerated the nesting on prod via
+-- Management API, but the fresh-local-DB CI check uses the CLI tokenizer.
+do $mig$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     if exists (select 1 from cron.job where jobname = 'storage_orphan_reconciliation') then
@@ -26,7 +31,7 @@ begin
     perform cron.schedule(
       'storage_orphan_reconciliation',
       '0 5 * * *',
-      $$
+      $cron$
       do $body$
       declare
         functions_url text := current_setting('app.settings.functions_url', true);
@@ -46,10 +51,10 @@ begin
         );
       end;
       $body$;
-      $$
+      $cron$
     );
   end if;
 end;
-$$;
+$mig$;
 
 commit;
