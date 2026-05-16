@@ -26,33 +26,19 @@ const FILE_SIZE_CAP = 300;
 const FILE_SIZE_ALLOWLIST = new Map([
   // Dropped 416→383 after 2026-05-16 styles split; bumped 383→387 (audit §3.8)
   // and 387→393 (audit §4.6/§16.3 type-toggle Ionicons + a11y state).
-  // Bumped 393→450 by audit 2026-05-16 (TD-116) — VisibilityChooser + post-detail privacy wiring
-  // wiring landed inline via 5035c36 / f84c4a6 while lint:arch was bypassed.
-  // Next change to this file MUST reduce LOC; TD-116 closes via hook extraction.
-  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-116', max: 467 }],
-  // (auth)/index.tsx styles extracted to src/components/auth/welcomeScreen.styles.ts (TD-29); entry removed.
-  // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Bumped 254→264 (FR-POST-021 surface upsert payload).
-  // Remove once TD-50 splits the file.
-  ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 264 }],
-  // PostCard.tsx styles extracted to PostCard.styles.ts → 101 lines (TD-29); entry removed.
-  // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
-  ['packages/infrastructure-supabase/src/users/SupabaseUserRepository.ts', { td: 'TD-112', max: 270 }],
+  // Bumped 393→450 by audit 2026-05-16 (TD-116) — VisibilityChooser + exposure wiring landed inline
+  // while lint:arch was bypassed. Exposure accordion extracted to CreatePostExposureSection.tsx (2026-05-16).
+  // TD-116 closes when LOC drops to ≤300 (300-LOC cap).
+  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-116', max: 433 }],
   // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
   ["apps/mobile/app/(tabs)/search.tsx", { td: "TD-133", max: 634 }],
   // SearchFilterSheet.tsx split → 127 lines (TD-133); entry removed.
   // SearchResultCard.tsx barrel (TD-133); entry removed.
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 417 }],
-  // Edit-profile — large single-screen form; bumped 193→215 by audit §16.10
-  // unsaved-changes guard (isDirty memo). TD-29 broader split tracks shrinking.
-  ['apps/mobile/app/edit-profile.tsx', { td: 'TD-29', max: 215 }],
   // UniversalSearch test suite split into UniversalSearchUseCase.test.ts (152 LOC)
   // + UniversalSearchUseCase.limitsAndFilters.test.ts (178 LOC) in PR #207; both
   // under cap, allowlist entry removed.
-  // IPostRepository — split `postActorIdentity` ports / feed ports into dedicated files (TD-29).
-  ['packages/application/src/ports/IPostRepository.ts', { td: 'TD-29', max: 205 }],
-  // Chat transcript screen — extract header/composer blocks (TD-29).
-  ['apps/mobile/app/chat/[id].tsx', { td: 'TD-29', max: 205 }],
 ]);
 
 const LAYER_RULES = [

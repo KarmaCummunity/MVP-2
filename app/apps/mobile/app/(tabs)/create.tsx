@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, PlatformSwitch } from '@kc/ui';
+import { colors } from '@kc/ui';
 import {
   ALL_CATEGORIES, ITEM_CONDITIONS,
 } from '@kc/domain';
@@ -32,9 +32,8 @@ import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
 import { CityPicker } from '../../src/components/CityPicker';
-import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
+import { CreatePostExposureSection } from '../../src/components/CreatePostForm/CreatePostExposureSection';
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
-import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { invalidatePersonalStatsCaches } from '../../src/lib/invalidatePersonalStatsCaches';
 import { invalidateMyProfilePostQueries } from '../../src/lib/invalidateMyProfilePostQueries';
@@ -349,9 +348,7 @@ export default function CreatePostScreen() {
             </View>
           </View>
         )}
-
-
-<View style={styles.section}>
+        <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('post.description')}</Text>
           <TextInput
             style={[styles.input, styles.textarea]}
@@ -366,74 +363,21 @@ export default function CreatePostScreen() {
           <Text style={styles.charCount}>{description.length}/500</Text>
         </View>
 
-        <View style={styles.exposureAccordion}>
-          <TouchableOpacity
-            style={styles.exposureAccordionHeader}
-            onPress={() => setExposureSettingsOpen((o) => !o)}
-            accessibilityRole="button"
-            accessibilityState={{ expanded: exposureSettingsOpen }}
-            accessibilityLabel={t('post.exposureSettingsSectionTitle')}
-          >
-            <Text style={styles.exposureAccordionTitle}>{t('post.exposureSettingsSectionTitle')}</Text>
-            <Ionicons
-              name={exposureSettingsOpen ? 'chevron-up' : 'chevron-down'}
-              size={22}
-              color={colors.textSecondary}
-            />
-          </TouchableOpacity>
-          {exposureSettingsOpen ? (
-            <View style={styles.exposureAccordionBody}>
-              <LocationDisplayLevelChooser
-                value={locationDisplayLevel}
-                onChange={setLocationDisplayLevel}
-                disabled={isPublishing}
-              />
-
-              {!isGive && (
-                <View style={styles.section}>
-                  <Text style={styles.sectionLabel}>{t('post.urgency')}</Text>
-                  <TextInput
-                    style={styles.input}
-                    value={urgency}
-                    onChangeText={setUrgency}
-                    placeholder={t('post.urgencyPlaceholder')}
-                    placeholderTextColor={colors.textDisabled}
-                    textAlign="right"
-                    maxLength={100}
-                  />
-                </View>
-              )}
-
-              <VisibilityChooser
-                value={visibility}
-                onChange={setVisibility}
-                profilePrivacy={profilePrivacy}
-                onFollowersOnlyBlockedPress={() =>
-                  useFeedSessionStore.getState().showEphemeralToast(
-                    t('post.visibilityFollowersLockedSub'),
-                    'success',
-                    3200,
-                  )
-                }
-              />
-
-              <View style={styles.counterpartyPrivacy}>
-                <View style={styles.counterpartyPrivacyHeader}>
-                  <Text style={styles.counterpartyPrivacyTitle}>{t('post.createCounterpartyPrivacyTitle')}</Text>
-                </View>
-                <View style={styles.counterpartyPrivacyRow}>
-                  <Text style={styles.counterpartyPrivacyLabel}>{t('post.counterpartyMaskLabel')}</Text>
-                  <PlatformSwitch
-                    value={hideFromCounterparty}
-                    onValueChange={setHideFromCounterparty}
-                    disabled={isPublishing}
-                  />
-                </View>
-                <Text style={styles.counterpartyPrivacyHint}>{t('post.createCounterpartyPrivacyHint')}</Text>
-              </View>
-            </View>
-          ) : null}
-        </View>
+        <CreatePostExposureSection
+          open={exposureSettingsOpen}
+          onToggleOpen={() => setExposureSettingsOpen((o) => !o)}
+          locationDisplayLevel={locationDisplayLevel}
+          onLocationDisplayLevelChange={setLocationDisplayLevel}
+          isPublishing={isPublishing}
+          isGive={isGive}
+          urgency={urgency}
+          onUrgencyChange={setUrgency}
+          visibility={visibility}
+          onVisibilityChange={setVisibility}
+          profilePrivacy={profilePrivacy}
+          hideFromCounterparty={hideFromCounterparty}
+          onHideFromCounterpartyChange={setHideFromCounterparty}
+        />
 
         <TouchableOpacity
           style={[styles.publishBtn, styles.publishBtnFooter]}
