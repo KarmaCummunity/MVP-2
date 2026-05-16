@@ -10,7 +10,11 @@
 
 begin;
 
-do $$
+-- Same dollar-quote nesting issue as 0079: outer `do $$` collides with the
+-- inner cron-body `$$` and the Supabase CLI's local parser closes the outer
+-- quote prematurely. Outer uses `$mig$` and the inner cron body uses `$cron$`
+-- so neither tag collides.
+do $mig$
 begin
   if exists (select 1 from pg_extension where extname = 'pg_cron') then
     if exists (select 1 from cron.job where jobname = 'strip_exif_daily') then
@@ -20,7 +24,7 @@ begin
     perform cron.schedule(
       'strip_exif_daily',
       '30 2 * * *',
-      $$
+      $cron$
       do $body$
       declare
         functions_url text := current_setting('app.settings.functions_url', true);
@@ -40,10 +44,10 @@ begin
         );
       end;
       $body$;
-      $$
+      $cron$
     );
   end if;
 end;
-$$;
+$mig$;
 
 commit;
