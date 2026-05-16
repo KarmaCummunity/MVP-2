@@ -1,4 +1,11 @@
--- 0080_street_number_allow_hebrew_suffix | Closes audit 2026-05-10 §3.1.
+-- 0081_street_number_allow_hebrew_suffix | Closes audit 2026-05-10 §3.1.
+--
+-- Renumbered from 0080 → 0081 to resolve a parallel-PR collision: PR #195
+-- shipped 0080_strip_exif_cron.sql on the same dev iteration as PR #196's
+-- 0080_street_number_allow_hebrew_suffix.sql. Both files merged with the same
+-- version prefix; `schema_migrations.version` is the PK so only one can ever
+-- be recorded. Renaming the later-merged file fixes the duplicate without
+-- mutating the strip_exif sequence. (TD-54-class.)
 --
 -- The original CHECK on `posts.street_number` (migration 0002) and the
 -- compound CHECK on `users.profile_street_number` (migration 0043) only
@@ -56,4 +63,4 @@ alter table public.users
     )
   );
 
--- end 0080_street_number_allow_hebrew_suffix
+-- end 0081_street_number_allow_hebrew_suffix

@@ -66,7 +66,7 @@ The remaining audit findings (below) split into three classes:
 
 | Section | Status | Closed by / closing slice |
 | ------- | ------ | ------------------------- |
-| 3.1 [HIGH] `street_number` regex rejects Hebrew suffixes (5א, 12ב) | ✅ | `0080_street_number_allow_hebrew_suffix` — pattern now `^[0-9]+[A-Za-zא-ת]?$` in domain + posts + users.profile_street_number CHECKs. Spec FR-POST-019 AC3 updated. |
+| 3.1 [HIGH] `street_number` regex rejects Hebrew suffixes (5א, 12ב) | ✅ | `0081_street_number_allow_hebrew_suffix` (renumbered from 0080 to clear TD-54-class collision with `0080_strip_exif_cron`). Pattern now `^[0-9]+[A-Za-zא-ת]?$` in domain + posts + users.profile_street_number CHECKs. Spec FR-POST-019 AC3 updated. |
 | 3.2 [HIGH] Trim discrepancy on `title` / `description` | ✅ | `CreatePostUseCase.ts:21,26` — both fields trimmed before validation. |
 | 3.3 [HIGH] Email regex permissive in `SignUpWithEmailUseCase` | ⏳ | Open — replace regex or remove and rely on Supabase `invalid_email` code. |
 | 3.4 [HIGH] Session expiry uses device clock | ⏳ | Open — accept practical impact + document, OR derive clock skew from response `Date` header. Low priority in MVP. |
