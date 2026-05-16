@@ -64,6 +64,7 @@ export const donations = {
     sendButton: 'שלח הודעה',
     sendError: 'לא נשלח. נסו שוב.',
     sendRetry: 'נסה שוב',
+    volunteerPrefix: 'התנדבות בארגון: ',
   },
   // FR-DONATE-007/008/009 — community-curated NGO link list.
   links: {

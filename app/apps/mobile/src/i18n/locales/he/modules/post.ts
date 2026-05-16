@@ -122,6 +122,20 @@ export const postHe = {
     Damaged: 'שבור/תקול',
   },
 
+  // PR5d (UI sweep, Pattern #1) — header titles + create-screen literals
+  // not covered by the existing keys above. Add a new key only when no
+  // sibling already covers the exact Hebrew string.
+  detailTitle: 'פרטי פוסט',
+  streetNumberShort: 'מס׳',
+  categoryLabel: 'קטגוריה',
+  conditionLabel: 'מצב החפץ',
+  reauthRequired: 'יש להתחבר מחדש לפני פרסום פוסט.',
+  uploadFailedTitle: 'העלאת התמונה נכשלה',
+  uploadRetry: 'נסה שוב.',
+  uploadPartial: '{{ok}}/{{total}} הועלו — נסה שוב את היתר.',
+  networkError: 'שגיאת רשת. נסה שוב.',
+  publishFailed: 'פרסום נכשל: {{message}}',
+
   // Post detail screen (post/[id].tsx) — PR5b i18n sweep.
   detail: {
     loadErrorTitle: 'שגיאה בטעינת הפוסט',

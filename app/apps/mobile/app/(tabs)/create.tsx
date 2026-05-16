@@ -81,7 +81,7 @@ export default function CreatePostScreen() {
 
   const handlePick = async () => {
     if (!ownerId) {
-      setNotify({ title: 'שגיאה', message: 'יש להתחבר מחדש לפני פרסום פוסט.' });
+      setNotify({ title: t('general.errorTitle'), message: t('post.reauthRequired') });
       return;
     }
     const picked = await pickPostImages(uploads.length + uploadingCount);
@@ -97,8 +97,8 @@ export default function CreatePostScreen() {
       const ok = r.flatMap((x) => (x.status === 'fulfilled' ? [x.value] : []));
       if (ok.length > 0) setUploads((prev) => [...prev, ...ok]);
       if (ok.length < r.length) {
-        const msg = ok.length === 0 ? 'נסה שוב.' : `${ok.length}/${r.length} הועלו — נסה שוב את היתר.`;
-        setNotify({ title: 'העלאת התמונה נכשלה', message: msg });
+        const msg = ok.length === 0 ? t('post.uploadRetry') : t('post.uploadPartial', { ok: ok.length, total: r.length });
+        setNotify({ title: t('post.uploadFailedTitle'), message: msg });
       }
     } finally {
       setUploadingCount((n) => Math.max(0, n - picked.length));
@@ -163,8 +163,8 @@ export default function CreatePostScreen() {
       router.replace('/(tabs)');
     },
     onError: (err) => {
-      const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : 'שגיאת רשת. נסה שוב.';
-      useFeedSessionStore.getState().showEphemeralToast(`פרסום נכשל: ${message}`, 'error');
+      const message = isPostError(err) ? mapPostErrorToHebrew(err.code) : t('post.networkError');
+      useFeedSessionStore.getState().showEphemeralToast(t('post.publishFailed', { message }), 'error');
     },
   });
 
@@ -196,7 +196,7 @@ export default function CreatePostScreen() {
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
         </TouchableOpacity>
-        <Text style={styles.headerTitle}>פוסט חדש</Text>
+        <Text style={styles.headerTitle}>{t('tabs.newPost')}</Text>
         <TouchableOpacity
           style={styles.publishBtn}
           onPress={tryPublish}
@@ -206,7 +206,7 @@ export default function CreatePostScreen() {
           {isPublishing ? (
             <ActivityIndicator color={colors.textInverse} size="small" />
           ) : (
-            <Text style={styles.publishBtnText}>פרסם</Text>
+            <Text style={styles.publishBtnText}>{t('post.publish')}</Text>
           )}
         </TouchableOpacity>
       </View>
@@ -247,12 +247,12 @@ export default function CreatePostScreen() {
         />
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>כותרת <Text style={styles.required}>*</Text></Text>
+          <Text style={styles.sectionLabel}>{t('post.title')} <Text style={styles.required}>*</Text></Text>
           <TextInput
             style={styles.input}
             value={title}
             onChangeText={setTitle}
-            placeholder="מה אתה נותן/מבקש?"
+            placeholder={t('post.titlePlaceholder')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             maxLength={80}
@@ -261,14 +261,14 @@ export default function CreatePostScreen() {
         </View>
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>כתובת <Text style={styles.required}>*</Text></Text>
+          <Text style={styles.sectionLabel}>{t('post.address')} <Text style={styles.required}>*</Text></Text>
           <CityPicker value={city} onChange={setCity} disabled={isPublishing} />
           <View style={styles.streetRow}>
             <TextInput
               style={[styles.input, styles.streetInputStreet]}
               value={street}
               onChangeText={setStreet}
-              placeholder="רחוב"
+              placeholder={t('post.streetLabel')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
             />
@@ -276,7 +276,7 @@ export default function CreatePostScreen() {
               style={[styles.input, styles.streetInputHouse]}
               value={streetNumber}
               onChangeText={setStreetNumber}
-              placeholder="מס׳"
+              placeholder={t('post.streetNumberShort')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
             />
@@ -285,7 +285,7 @@ export default function CreatePostScreen() {
 
 
         <View style={styles.section}>
-          <Text style={styles.sectionLabel}>קטגוריה</Text>
+          <Text style={styles.sectionLabel}>{t('post.categoryLabel')}</Text>
           <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
             {ALL_CATEGORIES.map((cat) => (
               <TouchableOpacity
@@ -303,7 +303,7 @@ export default function CreatePostScreen() {
 
         {isGive && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>מצב החפץ</Text>
+            <Text style={styles.sectionLabel}>{t('post.conditionLabel')}</Text>
             <View style={styles.conditionRow}>
               {ITEM_CONDITIONS.map((c) => (
                 <TouchableOpacity
@@ -322,12 +322,12 @@ export default function CreatePostScreen() {
 
 
 <View style={styles.section}>
-          <Text style={styles.sectionLabel}>תיאור (אופציונלי)</Text>
+          <Text style={styles.sectionLabel}>{t('post.description')}</Text>
           <TextInput
             style={[styles.input, styles.textarea]}
             value={description}
             onChangeText={setDescription}
-            placeholder="פרטים נוספים על החפץ..."
+            placeholder={t('post.descPlaceholder')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             multiline
@@ -343,12 +343,12 @@ export default function CreatePostScreen() {
 
         {!isGive && (
           <View style={styles.section}>
-            <Text style={styles.sectionLabel}>דחיפות (אופציונלי)</Text>
+            <Text style={styles.sectionLabel}>{t('post.urgency')}</Text>
             <TextInput
               style={styles.input}
               value={urgency}
               onChangeText={setUrgency}
-              placeholder="לדוגמה: צריך עד שישי"
+              placeholder={t('post.urgencyPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
               maxLength={100}
@@ -367,7 +367,7 @@ export default function CreatePostScreen() {
           {isPublishing ? (
             <ActivityIndicator color={colors.textInverse} size="small" />
           ) : (
-            <Text style={styles.publishBtnText}>פרסם</Text>
+            <Text style={styles.publishBtnText}>{t('post.publish')}</Text>
           )}
         </TouchableOpacity>
       </ScrollView>

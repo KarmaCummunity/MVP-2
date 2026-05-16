@@ -170,6 +170,7 @@ const he = {
   general: {
     loading: 'טוען...',
     error: 'אירעה שגיאה',
+    errorTitle: 'שגיאה',
     retry: 'נסה שוב',
     cancel: 'ביטול',
     confirm: 'אישור',
