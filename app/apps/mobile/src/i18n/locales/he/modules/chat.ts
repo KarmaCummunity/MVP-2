@@ -6,7 +6,6 @@ export const chatHe = {
   inputPlaceholder: 'כתוב הודעה...',
   send: 'שלח',
   read: 'נקרא',
-  defaultFirstMessage: 'היי! ראיתי את הפוסט שלך על {{title}}. מעוניין/ת לדעת עוד.',
   report: 'דווח על שיחה',
   menuDeleteFromInbox: 'הסר מהאינבוקס שלי',
   hideFromInboxTitle: 'להסיר את השיחה מהאינבוקס?',
