@@ -22,7 +22,6 @@ import { container } from '../../../src/lib/container';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
 
 const COMPOSER_MAX_CHARS = 2000;
-const VOLUNTEER_PREFIX = 'התנדבות בארגון: ';
 
 export default function DonationsTimeScreen() {
   const { t } = useTranslation();
@@ -44,7 +43,7 @@ export default function DonationsTimeScreen() {
       await container.sendMessage.execute({
         chatId: chat.chatId,
         senderId: userId,
-        body: `${VOLUNTEER_PREFIX}${body}`,
+        body: `${t('donations.timeScreen.volunteerPrefix')}${body}`,
       });
       router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
     } catch (err) {

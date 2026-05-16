@@ -84,6 +84,9 @@ export const settingsHe = {
   resetOnboardingBtn: 'איפוס',
   signOutFailed: 'ההתנתקות נכשלה. נסה שוב.',
 
+  // PR5d (UI sweep, Pattern #1) — Stack header title for /edit-profile.
+  editProfileTitle: 'עריכת פרופיל',
+
   // Follow-requests inbox (FR-FOLLOW-007)
   followRequestsScreen: {
     headerTitle: 'בקשות עוקבים',
