@@ -2,6 +2,7 @@
 // Extracted to keep PostMenuSheet under the 200-LOC cap and to make
 // the state machine testable in isolation if/when we add tests.
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { isPostError } from '@kc/application';
 import { container } from '../lib/container';
@@ -29,6 +30,7 @@ interface PostMenuActions {
 }
 
 export function usePostMenuActions({ post, onAfterRemoval, onSettle }: Args): PostMenuActions {
+  const { t } = useTranslation();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
@@ -59,8 +61,8 @@ export function usePostMenuActions({ post, onAfterRemoval, onSettle }: Args): Po
   const handleOwnerDelete = useCallback(
     () =>
       run(() => container.deletePost.execute({ postId: post.postId }), {
-        errorCopy: 'המחיקה נכשלה, נסה שוב.',
-        successToast: 'הפוסט נמחק.',
+        errorCopy: t('post.deleteError'),
+        successToast: t('post.deleteSuccess'),
       }),
     [run, post.postId],
   );
@@ -68,8 +70,8 @@ export function usePostMenuActions({ post, onAfterRemoval, onSettle }: Args): Po
   const handleAdminRemove = useCallback(
     () =>
       run(() => container.adminRemovePost.execute({ postId: post.postId }), {
-        errorCopy: 'ההסרה נכשלה, נסה שוב.',
-        successToast: 'הפוסט הוסר.',
+        errorCopy: t('post.adminRemoveError'),
+        successToast: t('post.adminRemoveSuccess'),
       }),
     [run, post.postId],
   );

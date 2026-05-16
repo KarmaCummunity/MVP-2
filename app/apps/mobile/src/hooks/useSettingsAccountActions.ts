@@ -1,5 +1,6 @@
 // Async actions + modal state for `app/settings.tsx` (keeps screen under arch line cap).
 import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
 import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
 import { getSignOutUseCase } from '../services/authComposition';
@@ -7,6 +8,7 @@ import { getDeleteAccountUseCase, setOnboardingStateDirect } from '../services/u
 import { useAuthStore } from '../store/authStore';
 
 export function useSettingsAccountActions() {
+  const { t } = useTranslation();
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
@@ -40,11 +42,11 @@ export function useSettingsAccountActions() {
       useAuthStore.getState().setBasicInfoSkipped(false);
       router.replace('/(onboarding)/about-intro');
     } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
+      const msg = err instanceof Error ? err.message : t('general.unknownError');
       if (Platform.OS === 'web') {
         const w = globalThis as unknown as { alert: (m: string) => void };
-        w.alert(`האיפוס נכשל: ${msg}`);
-      } else Alert.alert('האיפוס נכשל', msg);
+        w.alert(t('settings.resetOnboardingFailed', { msg }));
+      } else Alert.alert(t('settings.resetOnboardingFailed', { msg: '' }), msg);
     } finally {
       setResettingOnboarding(false);
     }
@@ -52,16 +54,15 @@ export function useSettingsAccountActions() {
 
   const handleResetOnboarding = useCallback(() => {
     if (!session || resettingOnboarding) return;
-    const msg =
-      'הפעולה תחזיר את מצב האונבורדינג להתחלה ותפתח את אשף ההרשמה מחדש. הפרופיל לא יימחק.\n\nלהמשיך?';
+    const msg = t('settings.resetOnboardingConfirmMsg');
     if (Platform.OS === 'web') {
       const w = globalThis as unknown as { confirm: (m: string) => boolean };
       if (w.confirm(msg)) void performReset();
       return;
     }
-    Alert.alert('איפוס אונבורדינג', msg, [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'איפוס', style: 'destructive', onPress: () => void performReset() },
+    Alert.alert(t('settings.resetOnboardingConfirmTitle'), msg, [
+      { text: t('general.cancel'), style: 'cancel' },
+      { text: t('settings.resetOnboardingBtn'), style: 'destructive', onPress: () => void performReset() },
     ]);
   }, [performReset, resettingOnboarding, session]);
 
@@ -73,7 +74,7 @@ export function useSettingsAccountActions() {
       signOutLocal();
       router.replace('/(auth)');
     } catch {
-      Alert.alert('שגיאה', 'ההתנתקות נכשלה. נסה שוב.');
+      Alert.alert(t('general.error'), t('settings.signOutFailed'));
     } finally {
       setSigningOut(false);
     }

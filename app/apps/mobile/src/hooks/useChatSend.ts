@@ -7,6 +7,7 @@ import { randomUUID } from 'expo-crypto';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
 import { useChatStore, type OptimisticMessage } from '../store/chatStore';
+import i18n from '../i18n';
 import { container } from '../lib/container';
 
 interface UseChatSendArgs {
@@ -71,7 +72,7 @@ export function useChatSend({
     } catch (err) {
       useChatStore.getState().markFailed(chatId, clientId);
       if (err instanceof ChatError && err.code === 'send_to_deleted_user') {
-        setNotify({ title: 'משתמש לא זמין', message: 'המשתמש כבר לא קיים במערכת.' });
+        setNotify({ title: i18n.t('errors.chat.userUnavailableTitle'), message: i18n.t('errors.chat.userUnavailableMessage') });
       }
     }
   };

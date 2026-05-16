@@ -8,6 +8,7 @@
 // react-native-web 0.21.2).
 
 import { useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { isFollowError, type FollowState, type FollowStateInfo } from '@kc/application';
 import type { User } from '@kc/domain';
 import {
@@ -37,6 +38,7 @@ export function useOptimisticFollowAction({
   viewerId, target, handle, onError,
 }: UseOptimisticFollowActionParams) {
   const qc = useQueryClient();
+  const { t } = useTranslation();
 
   return async (action: FollowAction): Promise<void> => {
     if (!viewerId) return;
@@ -94,9 +96,9 @@ export function useOptimisticFollowAction({
         const days = err.cooldownUntil ? Math.max(0, Math.ceil(
           (new Date(err.cooldownUntil).getTime() - Date.now()) / (1000 * 60 * 60 * 24),
         )) : 0;
-        onError({ title: 'לא ניתן לשלוח כרגע', message: `ניתן לשלוח שוב בעוד ${days} ימים.` });
+        onError({ title: t('profile.followCooldownTitle'), message: t('profile.followCooldownDays', { count: days }) });
       } else {
-        onError({ title: 'שגיאה', message: 'הפעולה נכשלה. נסו שוב.' });
+        onError({ title: t('profile.followErrorTitle'), message: t('profile.followErrorMessage') });
       }
     }
   };
