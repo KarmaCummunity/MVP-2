@@ -1,6 +1,6 @@
 # 2.2 Profile & Privacy Mode
 
-> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped.
+> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped. ⚠️ Audit 2026-05-16: 🔴 `mapUserRow.privacyMode` blind cast (TD-69, BACKLOG P2.12). 🟠 FR-PROFILE-007 AC2 no read-only email/phone block on Edit Profile; FR-PROFILE-009 AC5 followers list non-paginated; FR-PROFILE-012 AC1 lock icon tappable on other-user profile; FR-PROFILE-015 AC1 SSO avatar never copied to our bucket; FR-PROFILE-013 AC5 counters not Realtime-subscribed. TD-104 / TD-105. See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
 
 
 

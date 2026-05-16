@@ -1,6 +1,6 @@
 # 2.5 Posts: Closure & Reopen
 
-> **Status:** ✅ Core Complete — Close with/without recipient, reopen, chat fan-out shipped.
+> **Status:** ✅ Core Complete — Close with/without recipient, reopen, chat fan-out shipped. ⚠️ Audit 2026-05-16: counter drift on `rpc_recipient_unmark_self` + `reopen_post_deleted_no_recipient` (TD-71, BACKLOG P2.16); FR-CLOSURE-007 silent on whether `closed_delivered → deleted_no_recipient` from unmark should emit a system message in anchored chats (see `docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md` POST-16).
 
 
 

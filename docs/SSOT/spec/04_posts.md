@@ -1,6 +1,6 @@
 # 2.4 Posts: Create, Edit, Discover
 
-> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility, draft autosave shipped.
+> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. ⚠️ Audit 2026-05-16 (`docs/SSOT/audit/2026-05-16/03_posts_closure_feed.md`): **FR-POST-007 (local draft autosave) is ⏳ unimplemented** — zero code references; status header above was inaccurate. **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
 
 
 
@@ -141,6 +141,8 @@ Publishing a post confirms or warns based on chosen visibility.
 ---
 
 ## FR-POST-007 — Local draft autosave
+
+> **Status:** ⏳ Unimplemented (audit 2026-05-16). Tracked as TD-108; awaiting BACKLOG slot.
 
 **Description.**
 The form persists its state to local storage to survive accidental closure.
