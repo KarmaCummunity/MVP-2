@@ -40,6 +40,58 @@ describe('UpdatePostUseCase', () => {
     expect(repo.lastUpdateArgs?.patch.visibility).toBe('Public');
   });
 
+  it('allows visibility upgrade (OnlyMe → FollowersOnly)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ visibility: 'OnlyMe' });
+    repo.updateResult = makePostWithOwner({ visibility: 'FollowersOnly' });
+    const uc = new UpdatePostUseCase(repo);
+
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'FollowersOnly' } });
+    expect(repo.lastUpdateArgs?.patch.visibility).toBe('FollowersOnly');
+  });
+
+  it('allows visibility upgrade (FollowersOnly → Public)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ visibility: 'FollowersOnly' });
+    repo.updateResult = makePostWithOwner({ visibility: 'Public' });
+    const uc = new UpdatePostUseCase(repo);
+
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'Public' } });
+    expect(repo.lastUpdateArgs?.patch.visibility).toBe('Public');
+  });
+
+  it('rejects visibility downgrade (FollowersOnly → OnlyMe)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ visibility: 'FollowersOnly' });
+    const uc = new UpdatePostUseCase(repo);
+
+    await expect(
+      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'OnlyMe' } }),
+    ).rejects.toMatchObject({ code: 'visibility_downgrade_forbidden' });
+    expect(repo.lastUpdateArgs).toBeNull();
+  });
+
+  it('rejects visibility downgrade (Public → FollowersOnly)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ visibility: 'Public' });
+    const uc = new UpdatePostUseCase(repo);
+
+    await expect(
+      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'FollowersOnly' } }),
+    ).rejects.toMatchObject({ code: 'visibility_downgrade_forbidden' });
+    expect(repo.lastUpdateArgs).toBeNull();
+  });
+
+  it('treats same-value visibility patch as a no-op (Public → Public)', async () => {
+    const repo = new FakePostRepository();
+    repo.findByIdResult = makePostWithOwner({ visibility: 'Public' });
+    repo.updateResult = makePostWithOwner({ visibility: 'Public' });
+    const uc = new UpdatePostUseCase(repo);
+
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'Public' } });
+    expect(repo.lastUpdateArgs?.patch.visibility).toBe('Public');
+  });
+
   it('rejects title > 80 chars in patch', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = makePostWithOwner();
