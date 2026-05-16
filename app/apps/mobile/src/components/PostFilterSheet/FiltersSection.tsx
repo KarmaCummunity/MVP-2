@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import {
   ALL_CATEGORIES,
   CATEGORY_LABELS,
@@ -24,24 +25,18 @@ interface FiltersSectionProps {
   onFollowersOnlyChange: (v: boolean) => void;
 }
 
-const TYPE_LABELS: Record<'all' | PostType, string> = {
-  all: 'הכל',
-  Give: '🎁 נתינה',
-  Request: '🔍 בקשה',
+const ITEM_CONDITION_KEYS: Record<ItemCondition, string> = {
+  New: 'filters.conditionNew',
+  LikeNew: 'filters.conditionLikeNew',
+  Good: 'filters.conditionGood',
+  Fair: 'filters.conditionFair',
+  Damaged: 'filters.conditionDamaged',
 };
 
-const ITEM_CONDITION_LABELS: Record<ItemCondition, string> = {
-  New: 'חדש',
-  LikeNew: 'כמו חדש',
-  Good: 'טוב',
-  Fair: 'סביר',
-  Damaged: 'שבור/תקול',
-};
-
-const STATUS_LABELS: Record<FeedStatusFilter, string> = {
-  all: 'הכל',
-  open: 'רק פתוחים',
-  closed: 'רק סגורים',
+const STATUS_KEYS: Record<FeedStatusFilter, string> = {
+  all: 'filters.all',
+  open: 'filters.statusOpenOnly',
+  closed: 'filters.statusClosedOnly',
 };
 
 const ITEM_CONDITIONS: ItemCondition[] = ['New', 'LikeNew', 'Good', 'Fair', 'Damaged'];
@@ -62,22 +57,23 @@ export function FiltersSection({
   onStatusFilterChange,
   onFollowersOnlyChange,
 }: FiltersSectionProps) {
+  const { t } = useTranslation();
   return (
     <>
       <View style={styles.section}>
-        <Text style={styles.title}>סוג פוסט</Text>
+        <Text style={styles.title}>{t('filters.sectionType')}</Text>
         <View style={styles.row}>
-          <Chip label={TYPE_LABELS.all} active={type === null} onPress={() => onTypeChange(null)} />
-          <Chip label={TYPE_LABELS.Give} active={type === 'Give'} onPress={() => onTypeChange('Give')} />
-          <Chip label={TYPE_LABELS.Request} active={type === 'Request'} onPress={() => onTypeChange('Request')} />
+          <Chip label={t('filters.all')} active={type === null} onPress={() => onTypeChange(null)} />
+          <Chip label={t('filters.typeGive')} active={type === 'Give'} onPress={() => onTypeChange('Give')} />
+          <Chip label={t('filters.typeRequest')} active={type === 'Request'} onPress={() => onTypeChange('Request')} />
         </View>
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.title}>קטגוריה</Text>
+        <Text style={styles.title}>{t('filters.sectionCategory')}</Text>
         <View style={styles.row}>
           <Chip
-            label="הכל"
+            label={t('filters.all')}
             active={categories.length === 0}
             onPress={() => onCategoriesChange([])}
           />
@@ -94,17 +90,17 @@ export function FiltersSection({
 
       {type === 'Give' && (
         <View style={styles.section}>
-          <Text style={styles.title}>מצב המוצר</Text>
+          <Text style={styles.title}>{t('filters.sectionCondition')}</Text>
           <View style={styles.row}>
             <Chip
-              label="הכל"
+              label={t('filters.all')}
               active={itemConditions.length === 0}
               onPress={() => onItemConditionsChange([])}
             />
             {ITEM_CONDITIONS.map((i) => (
               <Chip
                 key={i}
-                label={ITEM_CONDITION_LABELS[i]}
+                label={t(ITEM_CONDITION_KEYS[i])}
                 active={itemConditions.includes(i)}
                 onPress={() => onItemConditionsChange(toggleInArray(itemConditions, i))}
               />
@@ -114,12 +110,12 @@ export function FiltersSection({
       )}
 
       <View style={styles.section}>
-        <Text style={styles.title}>סטטוס פוסט</Text>
+        <Text style={styles.title}>{t('filters.sectionStatus')}</Text>
         <View style={styles.row}>
           {(['all', 'open', 'closed'] as FeedStatusFilter[]).map((s) => (
             <Chip
               key={s}
-              label={STATUS_LABELS[s]}
+              label={t(STATUS_KEYS[s])}
               active={statusFilter === s}
               onPress={() => onStatusFilterChange(s)}
             />
@@ -128,15 +124,15 @@ export function FiltersSection({
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.title}>מקור הפוסטים</Text>
+        <Text style={styles.title}>{t('filters.sectionSource')}</Text>
         <View style={styles.row}>
           <Chip
-            label="הכל"
+            label={t('filters.all')}
             active={!followersOnly}
             onPress={() => onFollowersOnlyChange(false)}
           />
           <Chip
-            label="👥 רק ממי שאני עוקב"
+            label={t('filters.followersOnly')}
             active={followersOnly}
             onPress={() => onFollowersOnlyChange(true)}
           />

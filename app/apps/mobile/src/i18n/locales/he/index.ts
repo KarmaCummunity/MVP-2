@@ -19,6 +19,7 @@ import { errorBoundaryHe, devBannerHe, optionsMenuHe } from './modules/ui';
 import { feedHe } from './modules/feed';
 import { profileHe } from './modules/profile';
 import { closureHe } from './modules/closure';
+import { filtersHe } from './modules/filters';
 
 const he = {
   // App
@@ -92,6 +93,9 @@ const he = {
 
   // Closure (FR-CLOSURE-001..005) — see modules/closure.ts
   closure: closureHe,
+
+  // Filters (FR-FEED-004/005/006/018/020) — see modules/filters.ts
+  filters: filtersHe,
 
   // Chat — see modules/chat.ts (FR-CHAT-016)
   chat: chatHe,
