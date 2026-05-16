@@ -1,5 +1,6 @@
 import React from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 
 interface Props {
@@ -7,16 +8,17 @@ interface Props {
   onChange: (next: 'Public' | 'OnlyMe') => void;
 }
 
-const ROWS: { v: 'Public' | 'OnlyMe'; label: string; sub?: string }[] = [
-  { v: 'Public', label: '🌍 כולם', sub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים' },
-  { v: 'OnlyMe', label: '🔒 רק אני', sub: 'הפוסט נשמר באופן פרטי; אפשר לפתוח לציבור בעריכה' },
+const ROW_KEYS: { v: 'Public' | 'OnlyMe'; labelKey: string; subKey: string }[] = [
+  { v: 'Public', labelKey: 'post.visibilityPublic', subKey: 'post.visibilityPublicSub' },
+  { v: 'OnlyMe', labelKey: 'post.visibilityOnlyMe', subKey: 'post.visibilityOnlyMeSub' },
 ];
 
 export function VisibilityChooser({ value, onChange }: Props) {
+  const { t } = useTranslation();
   return (
     <View style={styles.section}>
-      <Text style={styles.sectionLabel}>מי יראה את הפוסט</Text>
-      {ROWS.map(({ v, label, sub }) => (
+      <Text style={styles.sectionLabel}>{t('post.visibility')}</Text>
+      {ROW_KEYS.map(({ v, labelKey, subKey }) => (
         <TouchableOpacity
           key={v}
           style={[styles.row, value === v && styles.rowActive]}
@@ -24,8 +26,8 @@ export function VisibilityChooser({ value, onChange }: Props) {
         >
           <View style={[styles.radio, value === v && styles.radioActive]} />
           <View style={{ flex: 1 }}>
-            <Text style={styles.label}>{label}</Text>
-            {sub ? <Text style={styles.sub}>{sub}</Text> : null}
+            <Text style={styles.label}>{t(labelKey)}</Text>
+            <Text style={styles.sub}>{t(subKey)}</Text>
           </View>
         </TouchableOpacity>
       ))}
