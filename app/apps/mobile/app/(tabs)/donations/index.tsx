@@ -66,6 +66,7 @@ export default function DonationsHubScreen() {
     <Screen blobs="content">
       <TopBar />
       <ScrollView
+        style={styles.scrollView}
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
@@ -82,13 +83,15 @@ export default function DonationsHubScreen() {
             accessibilityRole="button"
             accessibilityLabel={`${t(FEATURED.titleKey)} — ${t(FEATURED.subtitleKey)}`}
           >
-            <Card padding="lg" style={styles.featuredCard} testID={FEATURED.testID}>
-              <View style={styles.featuredIcon}>
-                <IconTile icon={FEATURED.icon} size="lg" />
-              </View>
+            <Card padding="base" style={styles.featuredCard} testID={FEATURED.testID}>
+              <IconTile icon={FEATURED.icon} size="lg" />
               <View style={styles.featuredText}>
-                <Text style={styles.featuredTitle}>{t(FEATURED.titleKey)}</Text>
-                <Text style={styles.featuredSubtitle}>{t(FEATURED.subtitleKey)}</Text>
+                <Text style={styles.featuredTitle} numberOfLines={1}>
+                  {t(FEATURED.titleKey)}
+                </Text>
+                <Text style={styles.featuredSubtitle} numberOfLines={2}>
+                  {t(FEATURED.subtitleKey)}
+                </Text>
               </View>
               <Ionicons name="chevron-back" size={22} color={colors.primary} />
             </Card>
@@ -138,43 +141,53 @@ export default function DonationsHubScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: { flex: 1 },
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing['3xl'],
-    maxWidth: 480,
+    maxWidth: 580,
     width: '100%',
     alignSelf: 'center',
   },
 
   // Hero — large title + subtitle, mirrors the welcome screen scale.
-  heroBlock: { paddingTop: spacing.lg, paddingBottom: spacing.xl, alignItems: 'flex-end' },
+  // `width: '100%'` lets `textAlign: 'right'` reach the gutter; avoiding
+  // `alignItems: 'flex-end'` keeps the block predictable on web RTL.
+  heroBlock: {
+    width: '100%',
+    paddingTop: spacing.base,
+    paddingBottom: spacing.lg,
+  },
   heroTitle: {
     ...typography.h1,
-    fontSize: 30,
+    fontSize: 26,
     color: '#1C1917',
-    letterSpacing: -0.5,
+    letterSpacing: -0.4,
     textAlign: 'right',
-    lineHeight: 38,
+    lineHeight: 34,
+    width: '100%',
   },
   heroSubtitle: {
     ...typography.bodyLarge,
     color: colors.textSecondary,
     textAlign: 'right',
     marginTop: spacing.xs,
+    width: '100%',
   },
 
-  // Featured items row — bigger surface, chevron in primary so it feels like a primary CTA.
+  // Featured items row — IconTile on the start edge, chevron on the end edge.
+  // `flexDirection: 'row'` lets RTL flip the order natively, matching the
+  // SettingsScreenRow / DonationLinkRow conventions used elsewhere.
   featuredCard: {
-    minHeight: 96,
-    flexDirection: 'row-reverse',
+    minHeight: 88,
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.base,
     borderRadius: radius.xl,
     borderWidth: 1.5,
     borderColor: colors.primarySurface,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
-  featuredIcon: { marginEnd: spacing.xs },
   featuredText: { flex: 1 },
   featuredTitle: {
     ...typography.h2,
@@ -193,17 +206,20 @@ const styles = StyleSheet.create({
     ...typography.h3,
     color: '#1C1917',
     textAlign: 'right',
+    width: '100%',
+    marginTop: spacing.sm,
     marginBottom: spacing.base,
   },
   grid: { gap: spacing.base },
-  row: { flexDirection: 'row-reverse', gap: spacing.base },
+  row: { flexDirection: 'row', gap: spacing.base },
   gridPressable: { flex: 1 },
   gridCard: {
-    minHeight: 156,
+    minHeight: 140,
     alignItems: 'center',
     justifyContent: 'flex-start',
-    gap: spacing.sm,
-    paddingTop: spacing.lg,
+    gap: spacing.xs,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.base,
   },
   gridTitle: {
     ...typography.body,
@@ -211,6 +227,7 @@ const styles = StyleSheet.create({
     color: '#1C1917',
     textAlign: 'center',
     fontSize: 16,
+    marginTop: spacing.xs,
   },
   gridSubtitle: {
     ...typography.caption,
