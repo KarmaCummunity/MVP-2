@@ -1,18 +1,21 @@
 // FR-PROFILE-007 — Edit Profile (getEditableProfile + UpdateProfileUseCase).
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, Alert, KeyboardAvoidingView, Platform, ScrollView,
-  StyleSheet, Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import { EditProfileAddressBlock } from '../src/components/EditProfileAddressBlock';
 import { EditProfileAvatar } from '../src/components/EditProfileAvatar';
+import { NotifyModal } from '../src/components/NotifyModal';
 import { useAuthStore } from '../src/store/authStore';
 import { getEditableProfile, getUpdateProfileUseCase } from '../src/services/userComposition';
+import { removeUploadedAvatar } from '../src/services/avatarUpload';
 import { mapEditProfileSaveError } from '../src/lib/editProfileSaveErrors';
+import { editProfileStyles as styles } from './edit-profile.styles';
 
 interface InitialState {
   readonly displayName: string;
@@ -39,6 +42,9 @@ export default function EditProfileScreen() {
   const [biography, setBiography] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initial, setInitial] = useState<InitialState | null>(null);
+  // TD-138 — Alert.alert is a no-op on react-native-web; surface every
+  // validation / load / save failure via NotifyModal instead.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   useEffect(() => {
     if (!session) return;
@@ -63,7 +69,7 @@ export default function EditProfileScreen() {
           avatarUrl: p.avatarUrl ?? session.avatarUrl ?? null,
         });
       } catch (err) {
-        Alert.alert('טעינה נכשלה', err instanceof Error ? err.message : 'שגיאה לא ידועה');
+        setNotify({ title: 'טעינה נכשלה', message: err instanceof Error ? err.message : 'שגיאה לא ידועה' });
       } finally {
         if (!cancelled) setLoading(false);
       }
@@ -74,21 +80,21 @@ export default function EditProfileScreen() {
   const handleSave = async () => {
     if (!session || !initial) return;
     if (displayName.trim().length === 0 || displayName.trim().length > 50) {
-      Alert.alert('שם לא תקין', 'נא להזין שם בין 1 ל־50 תווים.');
+      setNotify({ title: 'שם לא תקין', message: 'נא להזין שם בין 1 ל־50 תווים.' });
       return;
     }
     if (!city) {
-      Alert.alert('עיר חסרה', 'נא לבחור עיר.');
+      setNotify({ title: 'עיר חסרה', message: 'נא לבחור עיר.' });
       return;
     }
     const ts = street.trim();
     const tn = streetNumber.trim();
     if (ts.length > 0 && tn.length === 0) {
-      Alert.alert('כתובת לא מלאה', 'נא למלא גם מספר בית, או למחוק את שם הרחוב.');
+      setNotify({ title: 'כתובת לא מלאה', message: 'נא למלא גם מספר בית, או למחוק את שם הרחוב.' });
       return;
     }
     if (tn.length > 0 && ts.length === 0) {
-      Alert.alert('כתובת לא מלאה', 'נא למלא שם רחוב, או למחוק את מספר הבית.');
+      setNotify({ title: 'כתובת לא מלאה', message: 'נא למלא שם רחוב, או למחוק את מספר הבית.' });
       return;
     }
     setSaving(true);
@@ -111,6 +117,8 @@ export default function EditProfileScreen() {
       }
       const includeBasicInfo = nameChanged || cityChanged;
       const profileAddress = addrChanged ? { street: nextStreet, streetNumber: nextNum } : undefined;
+      // TD-108: drop the Storage object before persisting null on remove.
+      if (avatarChanged && avatarUrl === null && initial.avatarUrl) await removeUploadedAvatar(session.userId);
       await getUpdateProfileUseCase().execute({
         userId: session.userId,
         ...(includeBasicInfo
@@ -125,7 +133,7 @@ export default function EditProfileScreen() {
       router.back();
     } catch (err) {
       const code = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', mapEditProfileSaveError(code));
+      setNotify({ title: 'שמירה נכשלה', message: mapEditProfileSaveError(code) });
     } finally {
       setSaving(false);
     }
@@ -173,24 +181,13 @@ export default function EditProfileScreen() {
           </TouchableOpacity>
         </ScrollView>
       </KeyboardAvoidingView>
+      <NotifyModal
+        visible={notify !== null}
+        title={notify?.title ?? ''}
+        message={notify?.message ?? ''}
+        onDismiss={() => setNotify(null)}
+      />
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', backgroundColor: colors.background },
-  scroll: { padding: spacing.lg, gap: spacing.base, paddingBottom: spacing['3xl'] },
-  field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  input: {
-    backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md, ...typography.body, color: colors.textPrimary, minHeight: 48,
-  },
-  textarea: { minHeight: 90, textAlignVertical: 'top', paddingTop: spacing.md },
-  count: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
-  saveBtn: {
-    height: 52, backgroundColor: colors.primary, borderRadius: radius.md, justifyContent: 'center', alignItems: 'center', marginTop: spacing.base,
-  },
-  saveText: { ...typography.button, color: colors.textInverse },
-});

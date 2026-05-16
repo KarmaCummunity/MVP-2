@@ -6,7 +6,8 @@
 // Avatar pipeline lives in ./avatarUpload.ts.
 // ─────────────────────────────────────────────
 
-import { Alert, Linking } from 'react-native';
+import { Linking } from 'react-native';
+import { confirmAction } from './platformConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import * as Crypto from 'expo-crypto';
@@ -40,14 +41,12 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (result.granted) return true;
   if (result.canAskAgain) return false;
-  Alert.alert(
+  const openSettings = await confirmAction(
     'גישה לגלריה נדחתה',
-    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קארמה קהילה → תמונות.',
-    [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
-    ],
+    'כדי לבחור תמונות יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
+    { confirmLabel: 'פתח הגדרות' },
   );
+  if (openSettings) void Linking.openSettings();
   return false;
 }
 

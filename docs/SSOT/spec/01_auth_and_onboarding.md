@@ -15,7 +15,7 @@ Everything from app launch through the moment the user lands on the Home Feed fo
 - Splash / Welcome screen
 - Sign-up & sign-in entry points
 - Three core authentication methods (Google SSO, Phone OTP, Email + password) plus Apple SSO on iOS
-- 3-step onboarding wizard (basic info → profile photo → tour)
+- 4-step onboarding wizard (mini about → basic info → profile photo → tour)
 - Returning-user session resumption
 - Guest preview
 - Account deletion & re-registration cooldown
@@ -219,10 +219,25 @@ The MVP does not allow linking multiple authentication methods to the same accou
 
 ---
 
-## FR-AUTH-010 — Onboarding step 1: Basic Info
+## FR-AUTH-018 — Onboarding: Mini About (first screen)
 
 **Description.**
-Captures `display_name`, `city` (canonical picker), and optionally `profile_street` + `profile_street_number` as the first onboarding step.
+Before collecting profile data, the user sees a short “about us” teaser (value proposition + one paragraph). Copy directs users to the full About content under **Settings → About** after signup. Optional link opens the existing full-screen About route (`/about`) and returns via the screen back affordance.
+
+**Acceptance Criteria.**
+- AC1. When `onboarding_state = pending_basic_info`, AuthGate routes to this screen before Basic Info (not directly to `FR-AUTH-010`).
+- AC2. Primary **Continue** and header **Skip** both advance to Basic Info (`FR-AUTH-010`).
+- AC3. Header **Back** returns the user to the auth welcome surface (`FR-AUTH-001` / `FR-AUTH-002` group).
+- AC4. Onboarding step indicator shows **step 1 of 4** on this screen; subsequent wizard screens use 2–4 of 4.
+
+**Related.** Screens: onboarding flow · Settings About: `11_settings.md` (About entry).
+
+---
+
+## FR-AUTH-010 — Onboarding step 2: Basic Info
+
+**Description.**
+Captures `display_name`, `city` (canonical picker), and optionally `profile_street` + `profile_street_number` as the second onboarding step (after `FR-AUTH-018`).
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.1.2, `05_Screen_UI_Mapping.md` §1.4.
@@ -232,7 +247,7 @@ Captures `display_name`, `city` (canonical picker), and optionally `profile_stre
 - AC1. `display_name` accepts up to 50 characters; whitespace-only is rejected.
 - AC2. `city` is a dropdown of the canonical Israeli city list seeded by the system. No free-text city.
 - AC2.b. **Optional full address (MVP+):** After choosing a city, the user may enter free-text `profile_street` (1–80 chars) and `profile_street_number` (same pattern as posts: digits with optional single Latin letter suffix, e.g. `12` or `12B`). Both must be filled together or both left empty; values persist to `users.profile_street` / `users.profile_street_number` (`FR-PROFILE-007`). Omitting them keeps city-only residence.
-- AC3. A "Skip" option exists. Skipping advances to step 2 but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`). The system also persists `users.basic_info_skipped = true` on Skip so returning sessions (cold start, app update, re-auth) **land on the Home Feed** instead of forcing the full-screen wizard again; the deferred fields are still collected only via `FR-AUTH-015` until saved.
+- AC3. A "Skip" option exists. Skipping advances to step 3 (Profile Photo, `FR-AUTH-011`) but marks `User.onboarding_state = pending_basic_info`. The first attempt at a meaningful action (post creation, follow, sending the first chat message) re-prompts to fill these fields (see `FR-AUTH-015`). The system also persists `users.basic_info_skipped = true` on Skip so returning sessions (cold start, app update, re-auth) **land on the Home Feed** instead of forcing the full-screen wizard again; the deferred fields are still collected only via `FR-AUTH-015` until saved.
 - AC4. SSO-prefilled values are editable and persisted upon "Continue".
 
 **Edge Cases.**
@@ -242,7 +257,7 @@ Captures `display_name`, `city` (canonical picker), and optionally `profile_stre
 
 ---
 
-## FR-AUTH-011 — Onboarding step 2: Profile Photo
+## FR-AUTH-011 — Onboarding step 3: Profile Photo
 
 **Description.**
 Captures an optional profile photo.
@@ -261,7 +276,7 @@ Captures an optional profile photo.
 
 ---
 
-## FR-AUTH-012 — Onboarding step 3: Welcome Tour
+## FR-AUTH-012 — Onboarding step 4: Welcome Tour
 
 **Description.**
 A 3-slide explanation of the core value loop, followed by entry to the Home Feed.
@@ -332,7 +347,7 @@ A user whose `onboarding_state` is `pending_basic_info` and who attempts to crea
 - PRD: `03_Core_Features.md` §3.1.2 (in spirit).
 
 **Acceptance Criteria.**
-- AC1. The modal contains the same fields as Onboarding step 1 (`display_name`, city picker, optional street + house number) and a single "Save and continue" button.
+- AC1. The modal contains the same fields as the Basic Info onboarding step (`display_name`, city picker, optional street + house number) and a single "Save and continue" button.
 - AC2. Cancelling the modal returns the user to the previous screen with no side effects.
 - AC3. After save, the system continues into the originally attempted action.
 
@@ -388,3 +403,4 @@ The user can log out from the Settings screen, terminating the local session.
 | 0.2 | 2026-05-12 | `auth_check_account_gate` (migration `0046`) must treat `account_status = pending_verification` as gate-allowed so first-time Google sign-in reaches onboarding (`FR-AUTH-003`); client guard + support `mailto` template on account-blocked web. |
 | 0.3 | 2026-05-12 | `FR-AUTH-010` / `FR-AUTH-015`: optional profile street + number on step 1 and soft-gate (city picker unchanged). |
 | 0.4 | 2026-05-14 | Migration `0067`: `account_status` lifecycle simplified — email/password sign-up blocked at Supabase Auth boundary until verification link clicked; Google/Apple/phone are `active` on first INSERT; new `auth.users` trigger syncs `email_confirmed_at` → `account_status`; one-time backfill clears legacy stuck rows. FR-AUTH-006 AC2 rewritten. FR-AUTH-007 AC6 added. Supersedes `0046_auth_gate_allow_pending_verification`. |
+| 0.5 | 2026-05-15 | Migration `0068`: closes verification-status gap from `0067`. Phone-only OTP users never set `auth.users.email_confirmed_at` (they set `phone_confirmed_at`), so the previous trigger never promoted them and they stayed stuck in `pending_verification` — the `auth_check_account_gate` then signed them out on every sign-in. Fix: (a) `handle_new_user` picks the initial status from the provider — `google`/`apple` land directly as `active` (no transient state), `phone` is `active` iff `phone_confirmed_at` was set at INSERT, `email` keeps existing semantics; (b) the verified trigger now watches both `email_confirmed_at` and `phone_confirmed_at` and is renamed `on_auth_user_verified`; (c) one-time backfill flips any row already verified at the auth layer. `FR-AUTH-005` AC4 and `FR-AUTH-007` AC1 are unchanged at the user level; only the implementation note expands. |

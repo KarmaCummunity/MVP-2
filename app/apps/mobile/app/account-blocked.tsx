@@ -5,7 +5,7 @@ import React from 'react';
 import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { colors, spacing, typography } from '@kc/ui';
-import he from '../src/i18n/he';
+import he from '../src/i18n/locales/he';
 
 const SUPPORT_EMAIL = 'karmacommunity2.0@gmail.com';
 

@@ -1,6 +1,6 @@
 // Chat list (Inbox) — FR-CHAT-001, FR-CHAT-016.
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -13,6 +13,7 @@ import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { EmptyState } from '../../src/components/EmptyState';
 import { HideChatConfirmModal } from '../../src/components/HideChatConfirmModal';
 import { InboxChatRow, InboxChatRowSeparator } from '../../src/components/chat/InboxChatRow';
+import { NotifyModal } from '../../src/components/NotifyModal';
 
 const PAGE = 30;
 
@@ -27,6 +28,8 @@ export default function ChatListScreen() {
   );
   const [hideBusy, setHideBusy] = useState(false);
   const [refreshing, setRefreshing] = useState(false);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [hideErrorMsg, setHideErrorMsg] = useState<string | null>(null);
 
   const onRefresh = useCallback(async () => {
     if (!userId) return;
@@ -118,12 +121,13 @@ export default function ChatListScreen() {
               err instanceof ChatError && err.code === 'support_thread_not_hideable'
                 ? 'לא ניתן להסיר את שיחת התמיכה.'
                 : 'לא הצלחנו להסיר את השיחה. נסה שוב.';
-            Alert.alert('שגיאה', msg);
+            setHideErrorMsg(msg);
           } finally {
             setHideBusy(false);
           }
         }}
       />
+      <NotifyModal visible={hideErrorMsg !== null} title="שגיאה" message={hideErrorMsg ?? ''} onDismiss={() => setHideErrorMsg(null)} />
     </SafeAreaView>
   );
 }

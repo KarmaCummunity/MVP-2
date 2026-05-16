@@ -4,7 +4,7 @@
 // FR-NOTIF-015 AC1: push pre-prompt fires after first post published.
 import React, { useRef, useState } from 'react';
 import {
-  ActivityIndicator, Alert, ScrollView, StyleSheet,
+  ActivityIndicator, ScrollView,
   Text, TextInput, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -12,7 +12,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import {
   ALL_CATEGORIES, CATEGORY_LABELS, ITEM_CONDITIONS, ITEM_CONDITION_LABELS_HE,
 } from '@kc/domain';
@@ -37,6 +37,8 @@ import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { VisibilityChooser } from '../../src/components/CreatePostForm/VisibilityChooser';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { invalidatePersonalStatsCaches } from '../../src/lib/invalidatePersonalStatsCaches';
+import { NotifyModal } from '../../src/components/NotifyModal';
+import { createPostStyles as styles } from './create.styles';
 
 export default function CreatePostScreen() {
   const { t } = useTranslation();
@@ -70,12 +72,16 @@ export default function CreatePostScreen() {
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [batchId] = useState(() => newUploadBatchId());
+  // TD-138 — Alert.alert is a no-op on react-native-web; route both
+  // "must re-auth" and upload-failure feedback through NotifyModal so
+  // web users get the same message as iOS / Android.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const isGive = type === 'Give';
 
   const handlePick = async () => {
     if (!ownerId) {
-      Alert.alert('שגיאה', 'יש להתחבר מחדש לפני פרסום פוסט.');
+      setNotify({ title: 'שגיאה', message: 'יש להתחבר מחדש לפני פרסום פוסט.' });
       return;
     }
     const picked = await pickPostImages(uploads.length + uploadingCount);
@@ -89,7 +95,7 @@ export default function CreatePostScreen() {
       );
       setUploads((prev) => [...prev, ...results]);
     } catch (err) {
-      Alert.alert('העלאת התמונה נכשלה', err instanceof Error ? err.message : 'נסה שוב.');
+      setNotify({ title: 'העלאת התמונה נכשלה', message: err instanceof Error ? err.message : 'נסה שוב.' });
     } finally {
       setUploadingCount((n) => Math.max(0, n - picked.length));
     }
@@ -366,51 +372,12 @@ export default function CreatePostScreen() {
         }}
         onDecline={handleDecline}
       />
+      <NotifyModal
+        visible={notify !== null}
+        title={notify?.title ?? ''}
+        message={notify?.message ?? ''}
+        onDismiss={() => setNotify(null)}
+      />
     </SafeAreaView>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  header: {
-    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
-    paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
-    backgroundColor: colors.surface, borderBottomWidth: 1, borderBottomColor: colors.border,
-  },
-  headerClose: { padding: spacing.xs },
-  headerTitle: { ...typography.h3, color: colors.textPrimary },
-  publishBtn: { backgroundColor: colors.primary, paddingHorizontal: spacing.base, paddingVertical: spacing.sm, borderRadius: radius.md, minWidth: 60, alignItems: 'center' },
-  publishBtnFooter: { alignSelf: 'stretch', marginTop: spacing.md },
-  publishBtnText: { ...typography.button, color: colors.textInverse },
-  scroll: { flex: 1 },
-  scrollContent: { padding: spacing.base, gap: spacing.base, paddingBottom: spacing['3xl'] },
-  typeToggle: { flexDirection: 'row', backgroundColor: colors.background, borderRadius: radius.lg, borderWidth: 1.5, borderColor: colors.border, overflow: 'hidden' },
-  typeBtn: { flex: 1, paddingVertical: spacing.md, alignItems: 'center' },
-  typeBtnActive: { backgroundColor: colors.requestTagBg },
-  typeBtnActiveGive: { backgroundColor: colors.giveTagBg },
-  typeBtnText: { ...typography.button, color: colors.textSecondary },
-  typeBtnTextActive: { color: colors.textPrimary },
-  section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  required: { color: colors.error },
-  input: {
-    backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
-    paddingHorizontal: spacing.base, paddingVertical: spacing.md,
-    ...typography.body, color: colors.textPrimary, minHeight: 48,
-  },
-  textarea: { minHeight: 100, textAlignVertical: 'top', paddingTop: spacing.md },
-  charCount: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
-  streetRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
-  streetInputStreet: { flex: 2, minWidth: 0 },
-  streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120 },
-  chips: { flexDirection: 'row' },
-  chip: { paddingHorizontal: spacing.md, paddingVertical: spacing.sm, borderRadius: radius.full, borderWidth: 1.5, borderColor: colors.border, marginLeft: spacing.sm, backgroundColor: colors.surface },
-  chipActive: { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText: { ...typography.label, color: colors.textSecondary },
-  chipTextActive: { color: colors.textInverse },
-  conditionRow: { flexDirection: 'row', gap: spacing.sm },
-  conditionBtn: { flex: 1, paddingVertical: spacing.sm, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border, alignItems: 'center', backgroundColor: colors.surface },
-  conditionBtnActive: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
-  conditionText: { ...typography.label, color: colors.textSecondary },
-  conditionTextActive: { color: colors.primary },
-});

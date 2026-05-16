@@ -3,7 +3,6 @@
 // TD-114 (post-P0.5): replace local intent log with a real sendVolunteerMessageToAdmin use-case + chat navigation.
 import React, { useState } from 'react';
 import {
-  Alert,
   Pressable,
   ScrollView,
   StyleSheet,
@@ -17,6 +16,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
+import { NotifyModal } from '../../../src/components/NotifyModal';
 
 
 const INTENT_LOG_KEY = 'volunteer_intent_log';
@@ -43,14 +43,15 @@ async function appendVolunteerIntent(body: string): Promise<void> {
 export default function DonationsTimeScreen() {
   const { t } = useTranslation();
   const [text, setText] = useState('');
-
+  // TD-138: Alert.alert is a no-op on react-native-web — surface via NotifyModal.
+  const [successOpen, setSuccessOpen] = useState(false);
 
   const onSend = async () => {
     const body = text.trim();
     if (!body) return;
     await appendVolunteerIntent(body);
     setText('');
-    Alert.alert(t('donations.timeScreen.sendSuccessTitle'), t('donations.timeScreen.sendSuccessBody'));
+    setSuccessOpen(true);
   };
 
   const sendDisabled = text.trim().length === 0;
@@ -102,6 +103,12 @@ export default function DonationsTimeScreen() {
 
         <DonationLinksList categorySlug="time" />
       </ScrollView>
+      <NotifyModal
+        visible={successOpen}
+        title={t('donations.timeScreen.sendSuccessTitle')}
+        message={t('donations.timeScreen.sendSuccessBody')}
+        onDismiss={() => setSuccessOpen(false)}
+      />
     </SafeAreaView>
   );
 }

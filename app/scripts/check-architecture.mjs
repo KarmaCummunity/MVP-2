@@ -24,16 +24,14 @@ const FILE_SIZE_CAP = 200;
 // `max` is the current line count: the file cannot grow past it. Shrinking the file
 // below the cap triggers a STALE-ALLOWLIST error, prompting removal from this list.
 const FILE_SIZE_ALLOWLIST = new Map([
-  // Bumped 386→416 (FR-NOTIF-015 AC1 push-gate wired in). Remove once TD-29 splits the file.
-  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 416 }],
+  // Dropped 416→383 after 2026-05-16 styles split. Remove once TD-29 splits the form further.
+  ['apps/mobile/app/(tabs)/create.tsx', { td: 'TD-29', max: 383 }],
   // Bumped 266→272 (P1.1 follow surface + delete-account flow). Remove once TD-29 splits the file.
   ['apps/mobile/app/(auth)/index.tsx', { td: 'TD-29', max: 274 }],
   // Bumped from 245→254 (FR-ADMIN-009 added adminRemove method). Remove once TD-50 splits the file.
   ['packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts', { td: 'TD-50', max: 254 }],
   // Bumped 212→215 (P1.1 RTL + category tag fixes). Remove once TD-29 splits the file.
   ['apps/mobile/src/components/PostCard.tsx', { td: 'TD-29', max: 215 }],
-  // Bumped 272→280 (FR-NOTIF-001 push modal Hebrew strings + P1.5 notification strings). Remove once TD-35 splits the file.
-  ['apps/mobile/src/i18n/he.ts', { td: 'TD-35', max: 280 }],
   // Bumped 242→259 (FR-NOTIF-001 + ProfileClosedPostsItem domain types). Remove once TD-29 splits the file.
   ['packages/domain/src/entities.ts', { td: 'TD-29', max: 259 }],
   // Bumped to 270 (P1.1 follow surface added ~50 lines). Remove once TD-128 splits the file.
@@ -47,10 +45,6 @@ const FILE_SIZE_ALLOWLIST = new Map([
   ['apps/mobile/src/components/SearchResultCard.tsx', { td: 'TD-128', max: 354 }],
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.
   ['apps/mobile/app/edit-post/[id].tsx', { td: 'TD-130', max: 415 }],
-  // Chat screen bumped 195→220 (FR-NOTIF-015 AC1 push-gate wired in). Split tracked as TD-140.
-  ['apps/mobile/app/chat/[id].tsx', { td: 'TD-140', max: 220 }],
-  // Bumped 215→216 (FR-AUTH-006 auth/verify Stack.Screen registration). Remove once TD-29 splits the file.
-  ['apps/mobile/app/_layout.tsx', { td: 'TD-29', max: 216 }],
   // Other-profile screen grew to 217 (Task 10/11 closed-posts tab swap). Remove once TD-29 splits the file.
   ['apps/mobile/app/user/[handle]/index.tsx', { td: 'TD-29', max: 217 }],
 ]);

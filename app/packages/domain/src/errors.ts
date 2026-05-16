@@ -5,7 +5,7 @@
  *
  * Subclasses declare a stable `code` for machine-readable handling at the UI
  * layer (e.g. mapping to a localized toast). Domain code never produces
- * user-facing copy: translation happens in `apps/mobile/src/i18n/he.ts`.
+ * user-facing copy: translation happens in `apps/mobile/src/i18n/locales/he/`.
  */
 export abstract class DomainError extends Error {
   abstract readonly code: string;

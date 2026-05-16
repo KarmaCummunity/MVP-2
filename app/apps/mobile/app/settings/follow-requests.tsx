@@ -5,6 +5,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
+import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { FollowRequestWithUser } from '@kc/application';
@@ -66,7 +67,9 @@ export default function FollowRequestsScreen() {
 
   return (
     <SafeAreaView style={styles.container}>
-      <Stack.Screen options={{ headerTitle: 'בקשות עוקבים' }} />
+      <Stack.Screen
+        options={{ ...detailStackScreenOptions, headerTitle: 'בקשות עוקבים' }}
+      />
       {requestsQuery.isLoading ? (
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
       ) : (requestsQuery.data?.requests.length ?? 0) === 0 ? (

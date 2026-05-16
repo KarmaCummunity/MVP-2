@@ -87,24 +87,13 @@ export async function reopenPost(
     const { error } = await client.rpc('reopen_post_marked', { p_post_id: postId });
     if (error) throw mapClosurePgError(error);
   } else if (current.status === 'deleted_no_recipient') {
-    // Single-table UPDATE gated on status='deleted_no_recipient' to prevent a
-    // race where the post moved to a different state between the SELECT and
-    // the UPDATE (e.g. admin removed, or the cleanup cron hard-deleted) (B8).
-    // The trigger handles items_given −1.
-    const { data: updated, error } = await client
-      .from('posts')
-      .update({
-        status: 'open',
-        delete_after: null,
-        reopen_count: (current.reopen_count ?? 0) + 1,
-      })
-      .eq('post_id', postId)
-      .eq('status', 'deleted_no_recipient')
-      .select('post_id');
+    // RPC (0068): owner-gated flip back to open + reopen_count++. Replaces a
+    // direct client UPDATE because reopen_count is no longer in the posts
+    // column grant (audit §15.5 — column was inflatable to game the queue).
+    const { error } = await client.rpc('reopen_post_deleted_no_recipient', {
+      p_post_id: postId,
+    });
     if (error) throw mapClosurePgError(error);
-    if (!updated || updated.length === 0) {
-      throw new PostError('closure_wrong_status', 'closure_wrong_status');
-    }
   } else {
     throw new PostError('closure_wrong_status', 'closure_wrong_status');
   }

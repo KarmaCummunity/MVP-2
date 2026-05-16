@@ -1,31 +1,18 @@
 // app/apps/mobile/src/components/PostCardGrid.tsx
 import React from 'react';
-import {
-  View, Text, TouchableOpacity, StyleSheet, Dimensions, Image,
-  I18nManager, Platform
-} from 'react-native';
+import { View, Text, TouchableOpacity, Image } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
-import { colors, spacing, radius, shadow, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { CATEGORY_LABELS } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
+import { PostMenuButton } from './post/PostMenuButton';
+import { isRtlLayout as isRTL, postCardGridStyles as styles } from './PostCardGrid.styles';
 
 const STORAGE_BUCKET = 'post-images';
-
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
-// 2 columns, spacing.base (16) padding on each side, spacing.sm (8) gap between columns
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.sm) / 2;
-
-const isRTL = I18nManager.isRTL;
-const isWeb = Platform.OS === 'web';
-
-// The original alignStart was perfectly calibrated for React Native's RTL mirroring quirks:
-// On Web RTL, we explicitly need 'right'. On Native RTL, 'left' is mirrored to visual right.
-const alignStart: any = isWeb ? (isRTL ? 'left' : 'right') : (isRTL ? 'left' : 'right');
-const tagPosition = { right: spacing.xs };
 
 interface PostCardGridProps {
   post: PostWithOwner;
@@ -70,6 +57,16 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
             {isGive ? 'לתת' : 'לבקש'}
           </Text>
         </View>
+        {/* FR-POST-010 AC1 — ⋮ menu on the card, opposite the type tag.
+            Claim the touch responder so the wrapping card TouchableOpacity
+            doesn't also navigate to the post detail. */}
+        <View
+          style={styles.menuOverlay}
+          onStartShouldSetResponder={() => true}
+          onResponderRelease={(e) => e.stopPropagation()}
+        >
+          <PostMenuButton post={post} />
+        </View>
       </View>
 
       {/* Text content */}
@@ -95,87 +92,3 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  card: {
-    width: CARD_WIDTH,
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    overflow: 'hidden',
-    ...shadow.card,
-  },
-  imageArea: {
-    width: '100%',
-    height: CARD_WIDTH * 0.7,
-    backgroundColor: colors.skeleton,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-  },
-  typeTag: {
-    position: 'absolute',
-    top: spacing.xs,
-    ...tagPosition,
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 2,
-    borderRadius: radius.sm,
-  },
-  giveTag: { backgroundColor: colors.giveTagBg },
-  requestTag: { backgroundColor: colors.requestTagBg },
-  typeTagText: {
-    ...typography.label,
-    fontSize: 10,
-  },
-  giveTagText: { color: colors.giveTag },
-  requestTagText: { color: colors.requestTag },
-  content: {
-    padding: spacing.sm,
-    gap: 2,
-  },
-  titleRow: {
-    flexDirection: isRTL ? 'row' : 'row-reverse',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
-    gap: spacing.xs,
-  },
-  title: {
-    ...typography.body,
-    fontWeight: '600',
-    color: colors.textPrimary,
-    textAlign: alignStart,
-    fontSize: 13,
-    flex: 1,
-  },
-  categoryTag: {
-    paddingHorizontal: spacing.xs,
-    paddingVertical: 1,
-    borderRadius: radius.sm,
-    backgroundColor: colors.primaryLight,
-    flexShrink: 0,
-  },
-  categoryTagText: {
-    ...typography.label,
-    fontSize: 10,
-    color: colors.primary,
-  },
-  metaContainerText: {
-    textAlign: alignStart,
-    marginTop: 2,
-  },
-  meta: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  metaDot: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  location: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    textAlign: alignStart,
-  },
-});

@@ -1003,6 +1003,12 @@ export type Database = {
         Args: { p_post_id: string }
         Returns: Database["public"]["Tables"]["posts"]["Row"]
       }
+      // 0068 security hardening — replaces the direct client UPDATE that
+      // previously inflated reopen_count from the deleted_no_recipient path.
+      reopen_post_deleted_no_recipient: {
+        Args: { p_post_id: string }
+        Returns: Database["public"]["Tables"]["posts"]["Row"]
+      }
       // P0.6 cleanup cron (0016) — manually added until next typegen run.
       closure_cleanup_expired: { Args: Record<string, never>; Returns: number }
       closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }

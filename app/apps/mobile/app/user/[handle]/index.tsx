@@ -1,5 +1,8 @@
 // app/apps/mobile/app/user/[handle]/index.tsx
-// Other-user profile — three modes (Public / Private-approved / Private-not-approved).
+// Other-user profile — uniform render for Public and Private profiles.
+// Per D-21 the Private mode no longer hides posts/counters/lists; the only
+// user-facing differences are the lock icon (FR-PROFILE-012) and the
+// "Send Follow Request" CTA (FR-FOLLOW-006).
 // Mapped to SRS: FR-PROFILE-002, 003, 004; FR-FOLLOW-001..006, 011, 012.
 
 import React from 'react';
@@ -14,7 +17,6 @@ import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow
 import { ProfileTabs, type ProfileTab } from '../../../src/components/profile/ProfileTabs';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
-import { LockedPanel } from '../../../src/components/profile/LockedPanel';
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
@@ -60,7 +62,6 @@ export default function OtherProfileScreen() {
   });
 
   const isMe = me === u?.userId;
-  const allowed = isMe || followInfo?.state === 'following' || u?.privacyMode === 'Public';
 
   // ✅ RULES OF HOOKS: useOptimisticFollowAction must be called here, before any early return.
   // When `u` is null (still loading), we pass a safe fallback so the hook is always called.
@@ -81,7 +82,7 @@ export default function OtherProfileScreen() {
       status: ['open'],
       limit: 30,
     }),
-    enabled: Boolean(allowed && u?.userId) && activeTab === 'open',
+    enabled: Boolean(u?.userId) && activeTab === 'open',
   });
 
   const closedPostsQuery = useQuery({
@@ -92,7 +93,7 @@ export default function OtherProfileScreen() {
         viewerUserId: me ?? null,
         limit: 30,
       }),
-    enabled: Boolean(allowed && u?.userId) && activeTab === 'closed',
+    enabled: Boolean(u?.userId) && activeTab === 'closed',
   });
 
   if (!handle || userQuery.isLoading)
@@ -125,7 +126,6 @@ export default function OtherProfileScreen() {
     router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
   };
 
-  const showLocked = u.privacyMode === 'Private' && followInfo?.state !== 'following' && !isMe;
   // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
   const followState = followInfo?.state ?? 'not_following_public';
   // Show the button for any non-self authenticated user.
@@ -153,7 +153,7 @@ export default function OtherProfileScreen() {
             followersCount={u.followersCount}
             followingCount={u.followingCount}
             postsCount={postsCountQuery.data ?? 0}
-            enabled={!showLocked}
+            enabled
             onPressFollowers={() => router.push({ pathname: '/user/[handle]/followers' as never, params: { handle } } as never)}
             onPressFollowing={() => router.push({ pathname: '/user/[handle]/following' as never, params: { handle } } as never)}
           />
@@ -179,31 +179,25 @@ export default function OtherProfileScreen() {
           ) : null}
         </View>
 
-        {showLocked ? (
-          <LockedPanel />
+        <ProfileTabs
+          active={activeTab}
+          onChange={(t) => {
+            if (handle) persistProfileTab({ otherHandle: handle }, t);
+            setActiveTab(t);
+          }}
+        />
+        {activeTab === 'open' ? (
+          <ProfilePostsGrid
+            posts={postsQuery.data?.posts ?? []}
+            isLoading={postsQuery.isLoading}
+            empty="other_open"
+          />
         ) : (
-          <>
-            <ProfileTabs
-              active={activeTab}
-              onChange={(t) => {
-                if (handle) persistProfileTab({ otherHandle: handle }, t);
-                setActiveTab(t);
-              }}
-            />
-            {activeTab === 'open' ? (
-              <ProfilePostsGrid
-                posts={postsQuery.data?.posts ?? []}
-                isLoading={postsQuery.isLoading}
-                empty="other_open"
-              />
-            ) : (
-              <ProfileClosedPostsGrid
-                items={closedPostsQuery.data?.items ?? []}
-                isLoading={closedPostsQuery.isLoading}
-                empty="other_closed"
-              />
-            )}
-          </>
+          <ProfileClosedPostsGrid
+            items={closedPostsQuery.data?.items ?? []}
+            isLoading={closedPostsQuery.isLoading}
+            empty="other_closed"
+          />
         )}
       </ScrollView>
       <NotifyModal

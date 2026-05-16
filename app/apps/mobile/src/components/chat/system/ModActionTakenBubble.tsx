@@ -3,7 +3,7 @@
 // template-with-blanks if the body is empty.
 import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
-import he from '../../../i18n/he';
+import he from '../../../i18n/locales/he';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 export function ModActionTakenBubble({ body, createdAt }: SystemMessageBubbleProps) {

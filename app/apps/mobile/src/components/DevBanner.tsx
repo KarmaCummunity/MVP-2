@@ -1,22 +1,34 @@
-// Visible warning shown at the top of every screen when a dev-only auth
-// shortcut is active. Renders nothing in production (gated by `__DEV__`,
-// dead-code-eliminated by Metro/Expo).
+// Visible warning shown at the top of every screen.
+//
+// Trigger paths:
+//   1. EXPO_PUBLIC_ENVIRONMENT === 'development' — any client bundle (e.g.
+//      Railway dev web) built with that env baked in.
+//   2. Metro dev bundle (__DEV__) — local `expo start` without duplicating
+//      the env var still shows the generic DEV strip.
+//   3. __DEV__ ghost session / auto-sign-in — extra copy when those
+//      shortcuts are enabled.
+// All strips use the same styling so the warning is recognizable.
 import React from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
-import {
-  isDevGhostSessionEnabled,
-} from '../services/devGhostSession';
+import { isDevGhostSessionEnabled } from '../services/devGhostSession';
 import { isDevAutoSignInEnabled } from '../services/devAutoSignIn';
+import { isDevEnvironment } from '../config/environment';
 
 export function DevBanner() {
-  if (!__DEV__) return null;
-  const ghost = isDevGhostSessionEnabled();
-  const auto = isDevAutoSignInEnabled();
-  if (!ghost && !auto) return null;
+  const envDev = isDevEnvironment();
+  const metroDev = typeof __DEV__ !== 'undefined' && __DEV__;
+  const ghost = metroDev && isDevGhostSessionEnabled();
+  const auto = metroDev && isDevAutoSignInEnabled();
 
+  if (!envDev && !metroDev) return null;
+
+  // Priority: explicit dev shortcuts > env signal (devs already know they're
+  // local; the shortcut warning is more actionable).
   const label = ghost
     ? 'DEV GHOST SESSION — fake JWT, Supabase queries will 401'
-    : 'DEV AUTO SIGN-IN — real test user';
+    : auto
+    ? 'DEV AUTO SIGN-IN — real test user'
+    : 'סביבת פיתוח · DEV — לא הפרודקשן';
 
   return (
     <View style={styles.bar} pointerEvents="box-none">

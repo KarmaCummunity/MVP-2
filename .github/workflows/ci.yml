@@ -4,9 +4,9 @@ name: CI
 # jobs to be green before squash-merging.
 on:
   pull_request:
-    branches: [main]
+    branches: [main, dev]
   push:
-    branches: [main]
+    branches: [main, dev]
 
 # Cancel previous runs on the same ref when a new commit is pushed.
 concurrency:

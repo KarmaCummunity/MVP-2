@@ -1,142 +1,124 @@
-// Onboarding step 2 — FR-AUTH-011 (full slice B: camera + gallery + resize + upload).
-// AC1 camera+gallery · AC2 resize 1024 + JPEG q=0.85 · AC3 skip → silhouette ·
-// AC4 SSO-prefilled, replaceable/removable · AC5 errors recoverable.
+// Onboarding step 3 — FR-AUTH-011 (camera+gallery, resize+upload, skip→silhouette).
 import React, { useState } from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, ActivityIndicator, Alert } from 'react-native';
-import { useRouter } from 'expo-router';
+import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { PhotoSourceSheet } from '../../src/components/PhotoSourceSheet';
-import { useAuthStore } from '../../src/store/authStore';
-import { getCompleteOnboardingUseCase, getSetAvatarUseCase } from '../../src/services/userComposition';
-import { pickAvatarImage, resizeAndUploadAvatar, type AvatarSource } from '../../src/services/avatarUpload';
+import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
+import { HeroHalo } from '../../src/components/animations/HeroHalo';
+import { PressableScale } from '../../src/components/animations/PressableScale';
+import { staggerDelay } from '../../src/lib/animations/motion';
+import { useOnboardingPhotoFlow } from '../../src/hooks/useOnboardingPhotoFlow';
+
+const HALO_SIZE = 196;
+const AVATAR_SIZE = 128;
 
 export default function OnboardingPhotoScreen() {
-  const router = useRouter();
-  const session = useAuthStore((s) => s.session);
-  const onboardingState = useAuthStore((s) => s.onboardingState);
-  const setSession = useAuthStore((s) => s.setSession);
-  const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [sheetVisible, setSheetVisible] = useState(false);
-  const [uploading, setUploading] = useState(false);
-  const [finalizing, setFinalizing] = useState(false);
+  const {
+    session, avatarUrl, hasAvatar,
+    uploading, finalizing, busy,
+    pick, remove, finalize, goBack,
+  } = useOnboardingPhotoFlow();
 
-  const avatarUrl = session?.avatarUrl ?? null;
-  const hasAvatar = !!avatarUrl;
-  const busy = uploading || finalizing;
-
-  const handlePick = async (source: AvatarSource) => {
+  const handlePick = async (source: Parameters<typeof pick>[0]) => {
     setSheetVisible(false);
-    if (!session) return;
-    setUploading(true);
-    try {
-      const picked = await pickAvatarImage(source);
-      if (!picked) return; // user cancelled or denied permission
-      const url = await resizeAndUploadAvatar(picked, session.userId);
-      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: url });
-      setSession({ ...session, avatarUrl: url });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('העלאת התמונה נכשלה', `אפשר לדלג ולהוסיף תמונה מאוחר יותר.\n${msg}`);
-    } finally {
-      setUploading(false);
-    }
+    await pick(source);
   };
-
   const handleRemove = async () => {
     setSheetVisible(false);
-    if (!session) return;
-    setUploading(true);
-    try {
-      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: null });
-      setSession({ ...session, avatarUrl: null });
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('הסרת התמונה נכשלה', msg);
-    } finally {
-      setUploading(false);
-    }
+    await remove();
   };
-
-  const finalize = async () => {
-    if (!session) return;
-    setFinalizing(true);
-    try {
-      if (onboardingState === 'pending_avatar') {
-        await getCompleteOnboardingUseCase().execute({ userId: session.userId });
-        setOnboardingState('completed');
-      }
-      router.replace('/(onboarding)/tour');
-    } catch (err) {
-      const msg = err instanceof Error ? err.message : 'שגיאה לא ידועה';
-      Alert.alert('שמירה נכשלה', msg);
-    } finally {
-      setFinalizing(false);
-    }
-  };
-
-  const handleBack = () => {
-    if (busy) return;
-    router.replace('/(onboarding)/basic-info');
-  };
+  const openSheet = () => !busy && setSheetVisible(true);
 
   return (
     <SafeAreaView style={styles.container}>
       <View style={styles.content}>
         <OnboardingStepHeader
-          step={2}
+          step={3}
           onSkip={finalize}
-          onBack={handleBack}
+          onBack={goBack}
           skipDisabled={busy}
           backDisabled={busy}
         />
-        <Text style={styles.title}>תמונת פרופיל</Text>
-        <Text style={styles.subtitle}>אפשר להוסיף עכשיו או בהמשך</Text>
 
-        <TouchableOpacity
-          style={styles.avatarWrap}
-          onPress={() => !busy && setSheetVisible(true)}
-          disabled={busy}
-          accessibilityRole="button"
-          accessibilityLabel={hasAvatar ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
-        >
-          <AvatarInitials
-            name={session?.displayName ?? 'משתמש'}
-            avatarUrl={avatarUrl}
-            size={120}
-          />
-          {uploading && (
-            <View style={styles.avatarSpinner}>
-              <ActivityIndicator color={colors.textInverse} size="large" />
+        <AnimatedEntry delay={staggerDelay(0)} style={styles.avatarWrap}>
+          <PressableScale
+            onPress={openSheet}
+            disabled={busy}
+            accessibilityRole="button"
+            accessibilityLabel={hasAvatar ? 'החלפת תמונת פרופיל' : 'הוספת תמונת פרופיל'}
+          >
+            <HeroHalo size={HALO_SIZE}>
+              <AvatarInitials
+                name={session?.displayName ?? 'משתמש'}
+                avatarUrl={avatarUrl}
+                size={AVATAR_SIZE}
+              />
+            </HeroHalo>
+            <View style={styles.cameraBadge}>
+              <Ionicons name="camera" size={18} color={colors.textInverse} />
             </View>
-          )}
-        </TouchableOpacity>
+            {uploading && (
+              <View style={styles.avatarSpinner}>
+                <ActivityIndicator color={colors.textInverse} size="large" />
+              </View>
+            )}
+          </PressableScale>
+        </AnimatedEntry>
 
-        <TouchableOpacity
-          style={[styles.changeBtn, busy && { opacity: 0.5 }]}
-          onPress={() => setSheetVisible(true)}
-          disabled={busy}
-        >
-          <Text style={styles.changeBtnText}>
-            {hasAvatar ? 'החלף תמונה' : 'בחר תמונה'}
-          </Text>
-        </TouchableOpacity>
+        <AnimatedEntry delay={staggerDelay(1)}>
+          <Text style={styles.title}>תמונת פרופיל</Text>
+        </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(2)}>
+          <Text style={styles.subtitle}>פנים מוכרות עוזרות לבנות אמון בקהילה.</Text>
+        </AnimatedEntry>
+
+        <AnimatedEntry delay={staggerDelay(3)} style={styles.changeBtnWrap}>
+          <PressableScale
+            style={[styles.changeBtn, busy && { opacity: 0.5 }]}
+            onPress={openSheet}
+            disabled={busy}
+          >
+            <Ionicons
+              name={hasAvatar ? 'swap-horizontal-outline' : 'image-outline'}
+              size={18}
+              color={colors.primary}
+            />
+            <Text style={styles.changeBtnText}>
+              {hasAvatar ? 'החלף תמונה' : 'בחר תמונה'}
+            </Text>
+          </PressableScale>
+        </AnimatedEntry>
 
         <View style={{ flex: 1 }} />
 
-        <TouchableOpacity style={[styles.cta, busy && { opacity: 0.7 }]} onPress={finalize} disabled={busy}>
-          {finalizing ? (
-            <ActivityIndicator color={colors.textInverse} />
-          ) : (
-            <Text style={styles.ctaText}>
-              {hasAvatar ? 'המשך עם התמונה הנוכחית' : 'המשך ללא תמונה'}
-            </Text>
-          )}
-        </TouchableOpacity>
+        <AnimatedEntry delay={staggerDelay(4)}>
+          <PressableScale
+            style={[styles.cta, busy && { opacity: 0.7 }]}
+            onPress={finalize}
+            disabled={busy}
+          >
+            {finalizing ? (
+              <ActivityIndicator color={colors.textInverse} />
+            ) : (
+              <>
+                <Text style={styles.ctaText}>
+                  {hasAvatar ? 'המשך עם התמונה' : 'המשך ללא תמונה'}
+                </Text>
+                <Ionicons name="arrow-back" size={20} color={colors.textInverse} />
+              </>
+            )}
+          </PressableScale>
+        </AnimatedEntry>
 
-        <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בהגדרות.</Text>
+        <AnimatedEntry delay={staggerDelay(5)}>
+          <Text style={styles.hint}>אפשר להחליף תמונה מאוחר יותר בהגדרות.</Text>
+        </AnimatedEntry>
       </View>
 
       <PhotoSourceSheet
@@ -159,23 +141,38 @@ const styles = StyleSheet.create({
     paddingBottom: spacing.base,
     gap: spacing.base,
   },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right' },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    marginBottom: spacing.lg,
+  avatarWrap: { alignItems: 'center', marginTop: spacing.base, marginBottom: spacing.xs },
+  cameraBadge: {
+    position: 'absolute',
+    bottom: 12, right: 12,
+    width: 36, height: 36, borderRadius: 18,
+    backgroundColor: colors.primary,
+    alignItems: 'center', justifyContent: 'center',
+    borderWidth: 3, borderColor: colors.surface,
   },
-  avatarWrap: { alignItems: 'center', marginVertical: spacing.lg },
   avatarSpinner: {
     position: 'absolute',
-    width: 120, height: 120,
-    borderRadius: 60,
+    width: AVATAR_SIZE, height: AVATAR_SIZE,
+    borderRadius: AVATAR_SIZE / 2,
     backgroundColor: 'rgba(0,0,0,0.4)',
     justifyContent: 'center', alignItems: 'center',
   },
+  title: {
+    ...typography.h1,
+    color: colors.textPrimary,
+    textAlign: 'center',
+  },
+  subtitle: {
+    ...typography.bodyLarge,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    paddingHorizontal: spacing.sm,
+  },
+  changeBtnWrap: { alignItems: 'center' },
   changeBtn: {
-    alignSelf: 'center',
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
     paddingVertical: spacing.sm,
     paddingHorizontal: spacing.lg,
     borderRadius: radius.full,
@@ -184,17 +181,18 @@ const styles = StyleSheet.create({
   },
   changeBtnText: { ...typography.button, color: colors.primary },
   cta: {
-    height: 52,
+    height: 56,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.lg,
+    flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
+    gap: spacing.sm,
   },
-  ctaText: { ...typography.button, color: colors.textInverse },
+  ctaText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
   hint: {
     ...typography.caption,
     color: colors.textDisabled,
     textAlign: 'center',
-    marginTop: spacing.sm,
   },
 });

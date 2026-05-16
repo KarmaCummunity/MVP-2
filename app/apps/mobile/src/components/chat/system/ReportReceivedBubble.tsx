@@ -7,7 +7,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/he';
+import he from '../../../i18n/locales/he';
 import { confirmAndRun, showAdminToast } from './adminActions';
 import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
@@ -22,6 +22,13 @@ export function ReportReceivedBubble({
   const reportId = payload?.report_id as string | undefined;
   const targetType = payload?.target_type as string | undefined;
   const reason = payload?.reason as string | undefined;
+  // The trigger writes the raw `Report.reason` enum (PascalCase). The Hebrew
+  // mapping is keyed by lowercase — case-fold then look up, with the original
+  // enum as a safe fallback for unknown values (e.g. a future-added reason
+  // not yet translated).
+  const reasonLabel = reason
+    ? (t.reasons as Record<string, string>)[reason.toLowerCase()] ?? reason
+    : undefined;
   const showActions = isAdmin && !handledByLaterAction && !!reportId;
 
   const linkTarget = readLinkTarget(payload);
@@ -33,7 +40,7 @@ export function ReportReceivedBubble({
     <View style={[styles.bubble, handledByLaterAction && styles.dimmed]}>
       <Text style={styles.title}>{t.bubble.reportReceived.title}</Text>
       {showChatNote ? <Text style={styles.note}>{t.bubble.targetPreview.chatNote}</Text> : null}
-      {reason ? <Text style={styles.body}>{reason}</Text> : null}
+      {reasonLabel ? <Text style={styles.body}>{reasonLabel}</Text> : null}
 
       {showRichPreview && linkTarget && preview ? (
         <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor="#e0d8b0" />

@@ -1,5 +1,6 @@
 // app/apps/mobile/app/user/[handle]/followers.tsx
-// Followers list — accessible when target is Public, or self, or Private-approved follower.
+// Followers list — visible to any signed-in viewer. Per D-21 a target's
+// `privacy_mode` no longer hides this list; it only governs follow approval.
 // FR-PROFILE-009 / FR-PROFILE-010. Each row carries dynamic Follow + ⋮ "Remove follower" if self.
 
 import React from 'react';
@@ -11,14 +12,12 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import type { User } from '@kc/domain';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
-import { LockedPanel } from '../../../src/components/profile/LockedPanel';
 import { ConfirmActionModal } from '../../../src/components/post/ConfirmActionModal';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getUserRepo } from '../../../src/services/userComposition';
 import {
   getListFollowersUseCase,
   getRemoveFollowerUseCase,
-  getGetFollowStateUseCase,
 } from '../../../src/services/followComposition';
 
 export default function FollowersListScreen() {
@@ -38,29 +37,14 @@ export default function FollowersListScreen() {
   const owner = userQuery.data;
   const isMe = me === owner?.userId;
 
-  const stateQuery = useQuery({
-    queryKey: ['follow-state', me, owner?.userId],
-    queryFn: () => getGetFollowStateUseCase().execute({ viewerId: me!, targetUserId: owner!.userId }),
-    enabled: Boolean(me && owner?.userId && !isMe),
-  });
-  const allowed = isMe || owner?.privacyMode === 'Public' || stateQuery.data?.state === 'following';
-
   const followersQuery = useQuery({
     queryKey: ['followers', owner?.userId],
     queryFn: () => getListFollowersUseCase().execute({ userId: owner!.userId, limit: 50 }),
-    enabled: Boolean(allowed && owner?.userId),
+    enabled: Boolean(owner?.userId),
   });
 
   if (!owner) {
     return <SafeAreaView style={styles.container} edges={['bottom']}><ActivityIndicator color={colors.primary} /></SafeAreaView>;
-  }
-  if (!allowed) {
-    return (
-      <SafeAreaView style={styles.container} edges={['bottom']}>
-        <Stack.Screen options={{ headerTitle: 'עוקבים' }} />
-        <LockedPanel />
-      </SafeAreaView>
-    );
   }
 
   const filtered = (followersQuery.data?.users ?? []).filter((u) =>

@@ -4,7 +4,8 @@
 // → upload to `avatars` bucket at <userId>/avatar.jpg → return public URL.
 // ─────────────────────────────────────────────
 
-import { Alert, Linking, Platform } from 'react-native';
+import { Linking, Platform } from 'react-native';
+import { confirmAction } from './platformConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -32,14 +33,12 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   const result = await ImagePicker.requestMediaLibraryPermissionsAsync();
   if (result.granted) return true;
   if (result.canAskAgain) return false;
-  Alert.alert(
+  const openSettings = await confirmAction(
     'גישה לגלריה נדחתה',
-    'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קארמה קהילה → תמונות.',
-    [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
-    ],
+    'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
+    { confirmLabel: 'פתח הגדרות' },
   );
+  if (openSettings) void Linking.openSettings();
   return false;
 }
 
@@ -47,14 +46,12 @@ async function ensureCameraPermission(): Promise<boolean> {
   const result = await ImagePicker.requestCameraPermissionsAsync();
   if (result.granted) return true;
   if (result.canAskAgain) return false;
-  Alert.alert(
+  const openSettings = await confirmAction(
     'גישה למצלמה נדחתה',
-    'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קארמה קהילה → מצלמה.',
-    [
-      { text: 'ביטול', style: 'cancel' },
-      { text: 'פתח הגדרות', onPress: () => { void Linking.openSettings(); } },
-    ],
+    'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קהילת קארמה → מצלמה.',
+    { confirmLabel: 'פתח הגדרות' },
   );
+  if (openSettings) void Linking.openSettings();
   return false;
 }
 
@@ -125,4 +122,16 @@ export async function resizeAndUploadAvatar(picked: PickedImage, userId: string)
   if (error) throw new Error(`avatar_upload: ${error.message}`);
   const { data } = client.storage.from(AVATAR_BUCKET).getPublicUrl(path);
   return `${data.publicUrl}?v=${Date.now()}`;
+}
+
+/**
+ * TD-108: delete the Storage object before persisting `avatar_url = null`.
+ * Best-effort — Storage failures are logged and swallowed so the user-visible
+ * "avatar gone" action still succeeds; the metadata wipe is the source of truth.
+ */
+export async function removeUploadedAvatar(userId: string): Promise<void> {
+  if (!userId) return;
+  const client = getSupabaseClient();
+  const { error } = await client.storage.from(AVATAR_BUCKET).remove([`${userId}/avatar.jpg`]);
+  if (error) console.warn(`avatar_remove: ${error.message}`);
 }

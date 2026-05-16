@@ -22,7 +22,6 @@ interface Props {
   readonly onChange: (selection: { id: string; name: string }) => void;
   readonly disabled?: boolean;
 }
-
 export function CityPicker({ value, onChange, disabled }: Props) {
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
@@ -84,7 +83,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
               <TextInput
                 ref={searchInputRef}
                 style={styles.search}
-                placeholder="חיפוש עיר…"
+                placeholder="...חיפוש עיר"
                 placeholderTextColor={colors.textDisabled}
                 value={query}
                 onChangeText={setQuery}
@@ -167,7 +166,8 @@ const styles = StyleSheet.create({
     marginBottom: spacing.sm,
   },
   search: {
-    height: 44,
+    minHeight: 44,
+    textAlign: 'right',
     backgroundColor: colors.background,
     borderRadius: radius.md,
     borderWidth: 1,

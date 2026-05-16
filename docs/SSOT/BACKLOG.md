@@ -30,6 +30,7 @@
 | P1.3.2 | Chat mark-read covers system messages (FR-CHAT-011 AC4) — migrations `0054` + `0055` (`delivered_at` back-fill + defensive RPC) deployed to prod + dev; pull-to-refresh on inbox + dev-tools "סימולציית רענון מלא" | agent-be + agent-fe | ✅ Done | `spec/07_chat.md` |
 | P1.5 | Push notifications | agent-be + agent-fe | ✅ Done | `spec/09_notifications.md` |
 | P1.6 | MVP email verification gate (migration 0067 + verify route + verify-pending panel) | agent-be + agent-fe | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-006 / FR-AUTH-007; `DECISIONS.md` D-20 |
+| P1.6.1 | Verification status follow-up: phone OTP + Apple-hide-email path leaves `account_status='pending_verification'`; trigger only watched `email_confirmed_at` (migration 0068 — provider-aware INSERT + dual-column verified trigger + backfill) | agent-be | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-005 / FR-AUTH-006; `DECISIONS.md` D-20 |
 
 ## P2 — Stats, Admin & Polish
 
@@ -37,9 +38,12 @@
 |----|------|-------|--------|------|
 | P2.1 | Personal & community statistics screen | agent-fe | ✅ Done | `spec/10_statistics.md` |
 | P2.2 | Full super-admin moderation queue | agent-be + agent-fe | ✅ Done | `spec/12_super_admin.md` |
-| P2.3 | Guest preview polish | agent-fe | ⏳ Planned | `spec/01_auth_and_onboarding.md` FR-AUTH-014 |
+| P2.3 | Guest preview polish | agent-fe | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-014 |
 | P2.4 | Owner delete closed-without-recipient posts (RLS + FR-POST-010) | agent-be + agent-fe | ✅ Done | `spec/04_posts.md` FR-POST-010, `DECISIONS.md` D-18 |
 | P2.5 | Closed posts on both profiles (D-19) | agent-be + agent-fe | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-001 AC4, FR-PROFILE-002 AC2; `spec/04_posts.md` FR-POST-017 AC1+AC5 |
+| P2.6 | About landing (full vision narrative, section menu, Instagram embed, `/about-site`, query chrome for web shells) | agent-fe | ✅ Done | `spec/11_settings.md` (About under Settings) |
+| P2.7 | Privacy-mode reframe to follow-approval flag only (migration `0069`, FR-PROFILE-003/004/010 rewrite, `LockedPanel` deletion) | agent-be + agent-fe | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-003, 004, 010; `DECISIONS.md` D-21 |
+| P2.8 | BE security hardening — closes 7 CRITICAL/HIGH from audit 2026-05-10 (anon grants, RPC enumeration, support-thread race, inject_system_message forgery, server-managed column writes) | agent-be | ✅ Done | `docs/SSOT/archive/AUDIT_2026-05-10_full_codebase_review.md` §1.1, §1.2, §15.1, §15.2, §15.3, §15.5, §15.11; migration `0070_security_hardening.sql` |
 
 ## P3 — Post-MVP (Deferred)
 
@@ -48,6 +52,12 @@
 | P3.1 | Block / unblock + visibility restoration | ⏳ Deferred (EXEC-9) | `spec/08_moderation.md` FR-MOD-003/004/009 |
 | P3.2 | Apple SSO (iOS only) | ⏳ Deferred | `spec/01_auth_and_onboarding.md` FR-AUTH-004 |
 | P3.3 | Quiet hours / DND | ⏳ Deferred | `spec/09_notifications.md` FR-NOTIF-016 |
+
+## INFRA — Tooling & Environment
+
+| ID | Task | Owner | Status | Spec |
+|----|------|-------|--------|------|
+| INFRA-DEV-BRANCH-RESTORE | Restore `dev` branch + auto-sync from `main`; in-app DEV environment banner; document env topology | infra | ✅ Done | `docs/SSOT/ENVIRONMENTS.md` |
 
 ---
 

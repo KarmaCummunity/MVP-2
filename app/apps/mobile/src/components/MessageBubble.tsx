@@ -9,7 +9,7 @@ import { SystemMessageBubble } from './chat/system/SystemMessageBubble';
 import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
 import { container } from '../lib/container';
 import { confirmAndRun, showAdminToast } from './chat/system/adminActions';
-import he from '../i18n/he';
+import he from '../i18n/locales/he';
 
 const KNOWN_MOD_KINDS = [
   'report_received',

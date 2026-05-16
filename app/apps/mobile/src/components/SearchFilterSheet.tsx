@@ -22,7 +22,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { ALL_CATEGORIES, DONATION_CATEGORY_SLUGS } from '@kc/domain';
 import type { Category, DonationCategorySlug, PostType, SearchSortBy } from '@kc/domain';
-import { search as t } from '../i18n/donations';
+import { search as t } from '../i18n/locales/he/donations';
 import { useSearchStore } from '../store/searchStore';
 import { CityPicker } from './CityPicker';
 

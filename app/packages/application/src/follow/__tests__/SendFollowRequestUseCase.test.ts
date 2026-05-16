@@ -1,11 +1,11 @@
 import { describe, it, expect } from 'vitest';
 import { SendFollowRequestUseCase } from '../SendFollowRequestUseCase';
-import { FakeUserRepository } from './FakeUserRepository';
+import { FollowFakeUserRepository } from './followFakeUserRepository';
 import { FollowError } from '../errors';
 
 describe('SendFollowRequestUseCase', () => {
   it('creates a pending request', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new SendFollowRequestUseCase(repo);
 
     const out = await uc.execute({ viewerId: 'u_a', targetUserId: 'u_b' });
@@ -15,7 +15,7 @@ describe('SendFollowRequestUseCase', () => {
   });
 
   it('rejects self-request', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     const uc = new SendFollowRequestUseCase(repo);
 
     await expect(
@@ -24,7 +24,7 @@ describe('SendFollowRequestUseCase', () => {
   });
 
   it('treats pending_request_exists as idempotent success', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.sendRequestError = new FollowError('pending_request_exists', 'exists');
     const uc = new SendFollowRequestUseCase(repo);
 
@@ -33,7 +33,7 @@ describe('SendFollowRequestUseCase', () => {
   });
 
   it('propagates cooldown_active with cooldownUntil', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.sendRequestError = new FollowError('cooldown_active', 'cooldown', {
       cooldownUntil: '2026-06-01T00:00:00Z',
     });

@@ -7,7 +7,7 @@ import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { colors } from '@kc/ui';
-import he from '../../i18n/he';
+import he from '../../i18n/locales/he';
 
 const t = he.moderation;
 

@@ -464,6 +464,43 @@ Web Push parity is deferred — only the adapter changes, the pipeline is shared
 
 **Affected docs.** FR-AUTH-006 AC2 (rewritten), FR-AUTH-007 AC6 (new), FR-AUTH-003 (no change), migrations `0067_mvp_email_verification_gate.sql` (supersedes `0046_auth_gate_allow_pending_verification.sql`).
 
+**Follow-up (2026-05-15).** The original premise — "Google / Apple / phone users are `active` on first INSERT because the provider returns `email_confirmed_at` immediately" — is correct for Google but wrong for phone-only OTP, where the verification flag lives on `auth.users.phone_confirmed_at` and `email_confirmed_at` is never set. With the 0067 trigger watching only `UPDATE OF email_confirmed_at`, phone users were written as `pending_verification` at INSERT and never promoted; `auth_check_account_gate` then signed them out on every sign-in. Migration `0068_verification_status_provider_aware_and_phone.sql` closes this by making `handle_new_user` provider-aware (Google/Apple set `active` from the `provider` field alone, eliminating the transient state for OAuth), extending the verified trigger to also watch `phone_confirmed_at`, and backfilling any rows already verified at the auth layer. D-20's enforcement contract (gate denies `pending_verification`; no in-app middle state) is unchanged.
+
+---
+
+## D-21 — Privacy mode is a follow-approval flag only (2026-05-15)
+
+**Decision.** `User.privacy_mode = Private` means **one thing**: new follow attempts create a `pending` follow request that the target must approve. It has no other effect on visibility — the profile header, biography, counters, post lists (subject to per-post `visibility`), and followers/following lists are visible to all signed-in viewers, exactly as for a `Public` profile. The lock indicator (`FR-PROFILE-011` / `FR-PROFILE-012`) plus the "Send Follow Request" CTA are the only user-facing differences.
+
+**Rationale.** The original "Private profile hides everything from non-followers" semantics created two user-visible bugs that surfaced in production:
+1. `Public`-visibility posts authored by a Private user appeared in feed/search with the publisher rendered as "משתמש שנמחק", because `posts` RLS doesn't check author privacy but the join to the `users` row was filtered by `users_select_public` (which requires `privacy_mode = 'Public'`).
+2. Private users were absent from search-users results entirely, because the same RLS policy filtered them out for all non-followers.
+
+These weren't bugs to patch — they were symptoms of a privacy model the product never intended. The PM-validated intent is: a user marking themselves "Private" wants *control over who follows them*, not invisibility. Public posts stay public; the user's identity stays discoverable. Hiding posts behind a follow gate is what per-post `visibility = FollowersOnly` is for — that mechanism is unchanged and remains follow-edge-driven (independent of profile privacy).
+
+**Alternatives rejected.**
+- *Tighten `posts` RLS to drop posts authored by Private users for non-followers.* Preserves the original spec but makes Public-visibility posts hidden in a way that's invisible to the author (and inconsistent with `visibility = Public` semantics). Rejected: the per-post visibility flag is the single source of truth for who-can-see-this-post.
+- *Add a minimal public users projection (id, name, avatar, handle) joinable through posts.* Fixes the "deleted user" leak without touching the spec, but leaves the search-invisibility bug unresolved and creates a second, weaker visibility tier nobody asked for.
+
+**Trade-offs accepted.**
+- Followers and following lists of a Private user are now visible to everyone (subject to per-row block when block is reintroduced post-MVP, EXEC-9). This is the intended product behavior.
+- The `LockedPanel` component and `showLocked` / `allowed`-by-privacy gating are removed from the three profile routes. Anyone relying on those code paths externally would need updating — none found in audit.
+
+**Affected docs.** `spec/02_profile_and_privacy.md` (v0.4 — FR-PROFILE-003, FR-PROFILE-004, FR-PROFILE-010 rewritten). `spec/03_following.md` is unchanged — the follow-approval logic was already independent of profile visibility. `spec/06_feed_and_search.md` is unchanged at the AC level; the search-results visibility shift is a behavioral consequence, not a contract change.
+
+**Implementation.** Migration `0069_privacy_mode_follow_approval_only.sql` drops `users_select_public` + `users_select_private_approved_follower` and replaces them with a single `users_select_active` policy: `account_status = 'active' AND NOT public.is_blocked(auth.uid(), user_id)`. Mobile routes `app/user/[handle]/{index,followers,following}.tsx` drop the `allowed` / `showLocked` privacy gating; `LockedPanel.tsx` is deleted. `mapPostRow.ts` keeps the orphan-owner fallback but its comment is updated — RLS will no longer null the owner for the privacy reason.
+
+---
+
+## D-22 — Auth error messages must not enumerate registered emails (2026-05-16)
+
+**Decision.** The email/password sign-in and sign-up surfaces present the same generic outcome regardless of whether the email is registered.
+- **Sign-in failure** (wrong password OR unknown email) → single `authentication_failed` code → Hebrew message: `"לא הצלחנו להתחבר עם הפרטים האלו. בדקו את הדוא"ל והסיסמה ונסו שוב."`
+- **Sign-up** against an email that is already registered → the adapter swallows the underlying `email_already_in_use` error and returns a `null` session, which the use case maps to `pendingVerification: true` and the screen renders the existing "check your email" panel. The user sees the same path they would on a fresh sign-up.
+
+**Rationale.** `SupabaseAuthService.mapAuthError` previously returned distinct `invalid_credentials` vs `email_already_in_use` codes (TD-69, audit 2026-05-10 §17.2). A scripted attacker could probe any address and learn whether it was registered — straightforward email-enumeration oracle. Cost of the fix: a legitimate user who mistypes their email on sign-in no longer sees "this email isn't registered, try sign-up" guidance. UX trade-off accepted because (a) the same outcome on sign-up still routes the user to the verification flow, (b) password reset flow is the canonical "I might not have an account" path, and (c) the alternative leaks security-relevant data on every wrong attempt.
+
+**Implementation.** New `'authentication_failed'` value on `AuthErrorCode` (`packages/application/src/auth/errors.ts`). Adapter `SupabaseAuthService.signInWithEmail` rewrites `invalid_credentials` / `email_already_in_use` to `authentication_failed`. Adapter `signUpWithEmail` short-circuits on `email_already_in_use` and returns `null` (no throw). Hebrew copy added in `services/authMessages.ts`. Closes `TD-69`.
 ---
 
 ## Change Log
@@ -481,3 +518,4 @@ Web Push parity is deferred — only the adapter changes, the pipeline is shared
 | 0.9 | 2026-05-13 | Added `D-19` (closed posts surface on both publisher and respondent profiles; reverses D-7 respondent-privacy carve-out). |
 | 1.0 | 2026-05-14 | Added `EXEC-10` (push notifications outbox + database-webhook + Edge Function pattern; P1.5 complete). |
 | 1.1 | 2026-05-14 | Added `D-20` (MVP email verification at the auth boundary; supersedes `0046`). |
+| 1.2 | 2026-05-15 | `D-20` follow-up: migration `0068` closes the phone-OTP / provider-aware gap left by `0067`. Trigger now watches both `email_confirmed_at` and `phone_confirmed_at`; OAuth providers (google/apple) skip the transient `pending_verification` state. |

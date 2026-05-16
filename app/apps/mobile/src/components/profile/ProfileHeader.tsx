@@ -1,6 +1,6 @@
 // app/apps/mobile/src/components/profile/ProfileHeader.tsx
 // Shared profile header — avatar + display name + privacy lock + bio.
-// Used by (tabs)/profile.tsx and user/[handle]/index.tsx.
+// Used by My Profile tab routes and user/[handle]/index.tsx.
 // Mapped to: FR-PROFILE-001 AC1, FR-PROFILE-002 AC1, FR-PROFILE-011, 012.
 
 import React from 'react';
@@ -8,6 +8,7 @@ import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, spacing, typography } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
+import { isOpaqueSystemShareHandle } from '../../lib/shareHandleDisplay';
 
 export interface ProfileHeaderProps {
   displayName: string;
@@ -41,7 +42,9 @@ export function ProfileHeader({
           </TouchableOpacity>
         ) : null}
       </View>
-      {handle ? <Text style={styles.handle}>@{handle}</Text> : null}
+      {handle && !isOpaqueSystemShareHandle(handle) ? (
+        <Text style={styles.handle}>@{handle}</Text>
+      ) : null}
       {locationLine ? <Text style={styles.location}>{locationLine}</Text> : null}
       {biography ? <Text style={styles.bio}>{biography}</Text> : null}
     </View>

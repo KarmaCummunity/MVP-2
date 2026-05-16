@@ -10,7 +10,9 @@
 //    the links query is broadened to include ALL links in that category so the
 //    user can discover links by semantic topic rather than only by literal text.
 // 4. Users are NOT filtered by account_status at the app level — RLS policies
-//    (`users_select_public`, `users_select_self`) handle visibility correctly.
+//    (`users_select_active`, `users_select_self`) handle visibility correctly.
+//    Per D-21, `privacy_mode` is a follow-approval flag only, so Private
+//    profiles appear in search results identically to Public ones.
 // 5. An "explore" mode (query = '') returns trending/recent content for the
 //    discovery feed.
 // ─────────────────────────────────────────────

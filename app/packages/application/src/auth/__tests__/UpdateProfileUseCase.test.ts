@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { UpdateProfileUseCase } from '../UpdateProfileUseCase';
-import { makeFakeUserRepo } from './fakeUserRepository';
+import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
 const seed = () =>
   makeFakeUserRepo({

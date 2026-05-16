@@ -1,11 +1,12 @@
 // FR-MOD-001 — Report modal opened from post-detail ⋮ menu. Mirror of ReportChatModal.
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { colors } from '@kc/ui';
+import { NotifyModal } from '../NotifyModal';
 
 const REASONS: Array<{ value: ReportReason; label: string }> = [
   { value: 'Spam', label: 'ספאם' },
@@ -26,6 +27,8 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   // Reset to defaults when the modal closes so the next open starts fresh
   // (otherwise reason/note persist across openings on the same mounted
@@ -49,13 +52,13 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
         note: note.trim() || undefined,
       });
       onClose();
-      Alert.alert('הדיווח נשלח', 'תודה, נבחן את הדיווח.');
+      setNotify({ title: 'הדיווח נשלח', message: 'תודה, נבחן את הדיווח.' });
     } catch (err) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        Alert.alert('כבר דיווחת', 'דיווחת על הפוסט הזה ב-24 השעות האחרונות.');
         onClose();
+        setNotify({ title: 'כבר דיווחת', message: 'דיווחת על הפוסט הזה ב-24 השעות האחרונות.' });
       } else {
-        Alert.alert('שגיאה', 'נסה שוב מאוחר יותר.');
+        setNotify({ title: 'שגיאה', message: 'נסה שוב מאוחר יותר.' });
       }
     } finally {
       setSubmitting(false);
@@ -63,6 +66,7 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
   };
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
@@ -108,6 +112,8 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
         </View>
       </View>
     </Modal>
+    <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
+    </>
   );
 }
 

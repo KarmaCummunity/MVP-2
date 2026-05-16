@@ -75,33 +75,33 @@ Viewing the profile of another user whose `privacy_mode = Public` shows their id
 ## FR-PROFILE-003 — Other-user profile (private mode, not an approved follower)
 
 **Description.**
-Viewing the profile of another user whose `privacy_mode = Private` and to whom I am not an approved follower yields a restricted view.
+Viewing the profile of another user whose `privacy_mode = Private` and to whom I am not an approved follower renders **identically to a Public profile** (`FR-PROFILE-002`); the only differences are the follow CTA and the lock indicator.
 
 **Source.**
-- PRD: `03_Core_Features.md` §3.2.2.
-- Constraints: `R-MVP-Privacy-11`.
+- PRD: `03_Core_Features.md` §3.2.2 (revised by D-21 — see `DECISIONS.md`).
+- Constraints: `R-MVP-Privacy-11` (superseded by D-21).
 
 **Acceptance Criteria.**
-- AC1. Visible: avatar, `display_name`, location line (**`city` only**; full saved address is not shown), biography, and the three counter numbers (no list expansion).
-- AC2. The two tabs are replaced by a single locked panel with the message: *"This profile is private. Send a follow request to see posts, followers and following."*
-- AC3. Action buttons: "Send Follow Request" or "Cancel Request" depending on state (see `FR-FOLLOW-006`); "Send Message" remains available (a private profile does not block DMs).
-- AC4. Tapping the counters does **not** open the followers/following lists (which are restricted), but reveals the same locked panel message.
+- AC1. Header, counters, tabs, and post lists behave exactly as in `FR-PROFILE-002`. There is no locked panel; followers/following lists are reachable from the counters per `FR-PROFILE-010`.
+- AC2. Per-post visibility still applies: `FollowersOnly` posts are hidden from non-approved followers regardless of profile privacy; `OnlyMe` posts are hidden from everyone except the owner.
+- AC3. Action buttons replace "Follow" with "Send Follow Request" / "Cancel Request" depending on state (see `FR-FOLLOW-006`); "Send Message" remains available (a private profile does not block DMs).
+- AC4. The lock icon next to the display name (`FR-PROFILE-012`) is the single user-facing signal that this profile is private.
 
-**Related.** Screens: 3.3.
+**Related.** Screens: 3.3 · D-21.
 
 ---
 
 ## FR-PROFILE-004 — Other-user profile (private mode, approved follower)
 
 **Description.**
-Viewing a `Private` profile when I am an approved follower behaves like the `Public` view, with one exception.
+Viewing a `Private` profile when I am an approved follower is identical to viewing a `Public` profile where I am an approved follower.
 
 **Source.**
-- PRD: `03_Core_Features.md` §3.2.2.
+- PRD: `03_Core_Features.md` §3.2.2 (revised by D-21).
 
 **Acceptance Criteria.**
 - AC1. Lists, tabs, and counters behave exactly as in `FR-PROFILE-002`.
-- AC2. `Followers-only` posts of the profile owner are **included** in the "Active Posts" tab.
+- AC2. `Followers-only` posts of the profile owner are **included** in the "Active Posts" tab. This is per-post follow-edge logic and is unaffected by the owner's profile privacy.
 - AC3. `Only-me` posts of the profile owner are **never** included, even for approved followers.
 - AC4. The "Closed Posts" tab is included; behaves as in `FR-PROFILE-002` AC2.
 
@@ -223,12 +223,11 @@ Visibility of another user's followers/following lists depends on their privacy 
 - Constraints: `R-MVP-Privacy-11`.
 
 **Acceptance Criteria.**
-- AC1. If the target's profile is `Public`: both lists are visible.
-- AC2. If the target's profile is `Private` and I am an approved follower: both lists are visible.
-- AC3. If the target's profile is `Private` and I am not an approved follower: lists are hidden; only the counter values are shown on the profile.
-- AC4. The actions on each row (Follow/Following/Send Message) respect the row target's privacy mode independently.
+- AC1. Followers and Following lists of any active user are visible to any signed-in viewer, regardless of the target's `privacy_mode`. Blocked counterparts are filtered out per `FR-MOD-009` (when block is reintroduced post-MVP per EXEC-9). Revised by D-21.
+- AC2. The actions on each row (Follow / Following / Send Follow Request / Send Message) respect the row target's privacy mode independently — a row representing a Private user shows "Send Follow Request" instead of "Follow".
+- AC3. Lists remain paginated server-side at 50 rows per page.
 
-**Related.** Screens: 3.4.
+**Related.** Screens: 3.4 · D-21.
 
 ---
 
@@ -325,3 +324,4 @@ At sign-up via Google or Apple, if the SSO provides a profile photo URL, the sys
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.2, §3.5, and Decisions D-10. |
 | 0.2 | 2026-05-11 | FR-PROFILE-002 AC2 + FR-PROFILE-004 AC4 updated: closed posts now shown on other-user profiles (Public / Private-approved-follower). Reverses prior PRD §3.2.2 carveout; see EXEC-7. |
 | 0.3 | 2026-05-11 | Implementation note: FR-PROFILE-006 AC2 auto-approve-on-Public is enforced at the DB layer by `users_after_privacy_mode_change` (migration 0023). No application-level fan-out required; the existing on-accept trigger handles edge creation per row. |
+| 0.4 | 2026-05-15 | D-21: Privacy mode reframed as a **follow-approval flag only**. FR-PROFILE-003 rewritten to match FR-PROFILE-002 (no locked panel, no hidden counters/lists). FR-PROFILE-010 ACs collapsed — lists visible to all viewers. FR-PROFILE-004 simplified — per-post `FollowersOnly` follow-edge rule is unchanged but no longer entangled with profile privacy. Implementation: migration `0069_privacy_mode_follow_approval_only.sql` drops `users_select_public` + `users_select_private_approved_follower`; replaces them with `users_select_active`. |

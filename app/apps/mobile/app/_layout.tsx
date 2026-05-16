@@ -1,6 +1,6 @@
 import '../src/i18n';
 import React, { useEffect } from 'react';
-import { Stack, usePathname, useSegments } from 'expo-router';
+import { Stack, usePathname } from 'expo-router';
 import { I18nManager, Platform, View } from 'react-native';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
@@ -64,10 +64,11 @@ import {
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
-import { BackButton } from '../src/components/BackButton';
+import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
+import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -76,17 +77,6 @@ const queryClient = new QueryClient({
     queries: { staleTime: 1000 * 60 * 2, retry: 2 },
   },
 });
-
-const detailHeader = {
-  headerShown: true,
-  headerLeft: BackButton,
-  headerBackVisible: false,
-  headerTintColor: colors.primary,
-  headerStyle: { backgroundColor: colors.surface },
-  // Native iOS already centers the title; Android + RN-Web default to start-aligned
-  // which under forced RTL pushes the title to the right edge. Center everywhere.
-  headerTitleAlign: 'center',
-} as const;
 
 function NotificationsBridge(): null {
   const userId = useAuthStore((s) => s.session?.userId ?? null);
@@ -115,28 +105,7 @@ function NotificationsBridge(): null {
 }
 
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
-  const segments = useSegments() as string[];
-  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
-  const isLoading = useAuthStore((s) => s.isLoading);
-
-  // Global tab bar is the single bottom-bar implementation in the app — it
-  // shows on every post-auth, post-onboarding screen, including (tabs). The
-  // (tabs) layout suppresses its own RN BottomTabBar (tabBar={() => null}),
-  // so we render exactly one bar everywhere and there is nothing to keep in
-  // sync between two implementations.
-  // We deliberately do NOT gate on `onboardingState === 'completed'` because
-  // AuthGate already redirects pending users to (onboarding); checking it here
-  // creates a flicker window where the bar is hidden until the async DB read
-  // resolves, even though we're definitely past auth.
-  const head = segments[0] as string | undefined;
-  const isAuthLanding = head === 'auth' && (segments[1] === 'callback' || segments[1] === 'verify');
-  const showTabBar =
-    !isLoading &&
-    isAuthenticated &&
-    head !== '(auth)' &&
-    head !== '(guest)' &&
-    head !== '(onboarding)' &&
-    !isAuthLanding;
+  const showTabBar = useShellTabBarVisibility();
 
   // RN-Web's flex layout doesn't reliably split height between a flex:1 child
   // and an intrinsic-height sibling — the inner View ends up at full height
@@ -197,11 +166,11 @@ export default function RootLayout() {
                     {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
                     <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
                     <Stack.Screen name="settings" />
-                    <Stack.Screen name="edit-profile" options={{ ...detailHeader, headerTitle: 'עריכת פרופיל' }} />
-                    <Stack.Screen name="post/[id]" options={{ ...detailHeader, headerTitle: 'פרטי פוסט' }} />
+                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: 'עריכת פרופיל' }} />
+                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: 'פרטי פוסט' }} />
                     {/* user/[handle]/* owns its own header via the nested _layout */}
                     <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    <Stack.Screen name="chat/[id]" options={detailHeader} />
+                    <Stack.Screen name="chat/[id]" options={detailStackScreenOptions} />
                     {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
                     <Stack.Screen name="chat/index" options={{ headerShown: false }} />
                   </Stack>

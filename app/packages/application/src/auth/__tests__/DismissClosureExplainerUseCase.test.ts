@@ -1,6 +1,6 @@
 import { describe, it, expect } from 'vitest';
 import { DismissClosureExplainerUseCase } from '../DismissClosureExplainerUseCase';
-import { makeFakeUserRepo } from './fakeUserRepository';
+import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
 describe('DismissClosureExplainerUseCase', () => {
   it('flips the dismissed flag on the user row', async () => {

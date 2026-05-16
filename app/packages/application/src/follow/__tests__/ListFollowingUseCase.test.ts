@@ -1,10 +1,10 @@
 import { describe, it, expect } from 'vitest';
 import { ListFollowingUseCase } from '../ListFollowingUseCase';
-import { FakeUserRepository, makeUser } from './FakeUserRepository';
+import { FollowFakeUserRepository, makeUser } from './followFakeUserRepository';
 
 describe('ListFollowingUseCase', () => {
   it('forwards and paginates', async () => {
-    const repo = new FakeUserRepository();
+    const repo = new FollowFakeUserRepository();
     repo.following = [makeUser({ userId: 'u_x' })];
     const uc = new ListFollowingUseCase(repo);
 
