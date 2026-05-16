@@ -83,7 +83,7 @@ function recipientActorFrom(post: PostWithOwner): ActorIdentityInput | null {
   if (!r) return null;
   return {
     userId: r.userId,
-    displayName: r.displayName,
+    displayName: r.displayName ?? '',
     shareHandle: r.shareHandle,
     avatarUrl: r.avatarUrl,
   };
