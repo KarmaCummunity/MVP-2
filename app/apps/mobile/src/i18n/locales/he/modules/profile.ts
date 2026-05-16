@@ -62,4 +62,24 @@ export const profileHe = {
   avatarAddHint: 'הוסף תמונה',
   avatarUploadFailedTitle: 'העלאת התמונה נכשלה',
   avatarUploadRetry: 'נסה שוב.',
+
+  // PhotoSourceSheet (FR-AUTH-011 AC1)
+  photoSourceTitle: 'תמונת פרופיל',
+  photoSourceCameraOption: '📷  צלם תמונה',
+  photoSourceCameraA11y: 'צילום במצלמה',
+  photoSourceGalleryOption: '🖼️  בחר מהגלריה',
+  photoSourceGalleryA11y: 'בחירה מהגלריה',
+  photoSourceRemoveOption: '🗑️  הסר תמונה',
+  photoSourceRemoveA11y: 'הסרת התמונה הנוכחית',
+
+  // CityPicker (FR-AUTH-010 AC2 — also reused by EditProfileAddressBlock)
+  cityPickerTitle: 'בחר עיר',
+  cityPickerSearchPlaceholder: '...חיפוש עיר',
+  cityPickerError: 'שגיאה בטעינת רשימת הערים. נסה שוב.',
+  cityPickerEmpty: 'לא נמצאו ערים תואמות.',
+  cityPickerCloseA11y: 'סגור',
+
+  // EditProfileAddressBlock
+  addressLabel: 'כתובת',
+  streetNumberShort: 'מס׳',
 } as const;

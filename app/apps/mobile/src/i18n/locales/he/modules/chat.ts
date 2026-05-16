@@ -24,4 +24,10 @@ export const chatHe = {
   anchoredOpenA11y: 'פתח את הפוסט',
   anchoredTypeGive: 'נותן',
   anchoredTypeRequest: 'מבקש',
+
+  // ReportChatModal (FR-CHAT-010)
+  reportChatTitle: 'דיווח על השיחה',
+  reportChatNotePlaceholder: 'תיאור (אופציונלי, עד 500 תווים)',
+  reportChatDuplicateBody: 'דיווחת על השיחה הזו ב-24 השעות האחרונות.',
+  reportChatSubmitting: '...',
 } as const;

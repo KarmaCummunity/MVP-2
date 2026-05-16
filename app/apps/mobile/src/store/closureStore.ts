@@ -23,7 +23,7 @@ export type ClosureInitiator = 'post-detail' | 'chat' | null;
 interface ClosureState {
   postId: string | null;
   /** Drives Hebrew copy in every step — Give vs Request flips the directional
-   *  language ("מסרת ל" vs "קיבלת מ") and the Step-1 question. */
+   *  language ("delivered to" vs "received from") and the Step-1 question. */
   postType: PostType | null;
   step: ClosureStep;
   /** Tracks where the closure flow was initiated so each entry-point's
@@ -55,7 +55,7 @@ interface ClosureActions {
   closeWith(recipientUserId: string | null, ownerId: string): Promise<void>;
   dismissExplainer(stayDismissed: boolean, userId: string): Promise<void>;
   /** Skip the explainer step and signal success — used when the user has already
-   *  ticked "אל תציג שוב". Sets step='done' so subscribers (OwnerActionsBar)
+   *  ticked "don't show again". Sets step='done' so subscribers (OwnerActionsBar)
    *  can react and refetch their data. */
   completeWithoutExplainer(): void;
   reset(): void;
@@ -88,8 +88,8 @@ export const useClosureStore = create<ClosureState & ClosureActions>((set, get) 
     // When the entry-point already knows the recipient (e.g. the chat anchored
     // to this post), pre-select them AND jump straight to the picker step so
     // the user confirms with a single tap. They can still pick a different
-    // recipient from the chat list, or hit "סגור בלי לסמן" to take the no-
-    // recipient branch.
+    // recipient from the chat list, or hit "close without marking" to take
+    // the no-recipient branch.
     set({
       ...INITIAL,
       postId,
