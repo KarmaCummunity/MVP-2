@@ -27,6 +27,8 @@ export const colors = {
   background: '#F9FAFB',
   surface: '#FFFFFF',
   surfaceRaised: '#FFFFFF',
+  // Warm cream — main-screen backdrop in the redesigned auth/tab idiom.
+  surfaceCream: '#FFFBF7',
 
   // Borders
   border: '#E5E7EB',

@@ -4,12 +4,12 @@
 // FR-NOTIF-015 AC1: push pre-prompt fires after first post published.
 import React, { useEffect, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { colors } from '@kc/ui';
+import { Screen } from '../../src/components/ui/Screen';
 import { useAuthStore } from '../../src/store/authStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
@@ -154,7 +154,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen blobs="off">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
@@ -253,6 +253,6 @@ export default function CreatePostScreen() {
           runPublishAfterGate();
         }}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }

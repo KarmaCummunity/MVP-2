@@ -1,11 +1,10 @@
 // My Profile — closed-posts tab. Sibling route: ./index.tsx.
 // Mapped to: FR-PROFILE-001 AC4 (closed lane), FR-CLOSURE-005 AC4, FR-CLOSURE-008.
 import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors } from '@kc/ui';
+import { ScrollView } from 'react-native';
 import { MyProfileChrome } from '../../../src/components/profile/MyProfileChrome';
 import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
+import { Screen } from '../../../src/components/ui/Screen';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
 
@@ -14,7 +13,7 @@ export default function MyProfileClosedScreen() {
   const closed = useProfileClosedPosts({ profileUserId: userId, viewerUserId: userId ?? null });
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen blobs="content">
       <ScrollView showsVerticalScrollIndicator={false}>
         <MyProfileChrome activeTab="closed" />
         <ProfileClosedPostsGrid
@@ -27,10 +26,6 @@ export default function MyProfileClosedScreen() {
           profileUserId={userId!}
         />
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-});

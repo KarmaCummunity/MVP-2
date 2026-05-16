@@ -25,8 +25,9 @@ const FILE_SIZE_CAP = 300;
 // below the cap triggers a STALE-ALLOWLIST error, prompting removal from this list.
 const FILE_SIZE_ALLOWLIST = new Map([
   // Create post screen split: `useCreatePostPublish` + `CreatePostFormScrollContent` (2026-05-16); TD-116 closed.
-  // Search mechanism (merged in #44…#50 stack on main without arch-lint pass).
-  ["apps/mobile/app/(tabs)/search.tsx", { td: "TD-133", max: 634 }],
+  // Search screen: styles extracted to search.styles.ts in this PR (was 634).
+  // Further split into result-section subcomponents is still open under TD-133.
+  ['apps/mobile/app/(tabs)/search.tsx', { td: 'TD-133', max: 398 }],
   // SearchFilterSheet.tsx split → 127 lines (TD-133); entry removed.
   // SearchResultCard.tsx barrel (TD-133); entry removed.
   // Edit-post screen — large form, acceptable as single screen. Bumped 404→415 (P1.1 merged from main). Closes TD-130.

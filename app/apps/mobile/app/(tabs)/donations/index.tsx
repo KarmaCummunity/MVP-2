@@ -1,14 +1,16 @@
 // Donations Hub — items + 8 categorized tiles in a 2-column grid.
 // Mapped to: FR-DONATE-001 / FR-DONATE-006 / D-16.
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, spacing, typography } from '@kc/ui';
+import { spacing } from '@kc/ui';
 import type { Ionicons } from '@expo/vector-icons';
 import { DonationTile } from '../../../src/components/DonationTile';
 import { TopBar } from '../../../src/components/TopBar';
+import { Screen } from '../../../src/components/ui/Screen';
+import { SectionHeading } from '../../../src/components/ui/SectionHeading';
+import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
 
 interface CategoryTile {
   key: string;
@@ -42,47 +44,56 @@ export default function DonationsHubScreen() {
   }
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen blobs="content">
       <TopBar />
-      <ScrollView contentContainerStyle={styles.scroll}>
+      <ScrollView
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <MotionEntry variant="hero" delay={ENTRY_DELAY.hero} style={styles.headingWrap}>
+          <SectionHeading title={t('donations.tabLabel')} align="right" />
+        </MotionEntry>
+
         <View style={styles.grid}>
           {rows.map((pair, rowIdx) => (
-            <View key={rowIdx} style={styles.row}>
-              {pair.map((cat) => (
-                <DonationTile
-                  key={cat.key}
-                  icon={cat.icon}
-                  title={t(cat.titleKey)}
-                  subtitle={t(cat.subtitleKey)}
-                  onPress={() => router.push(cat.href as Parameters<typeof router.push>[0])}
-                  compact
-                  testID={cat.testID}
-                />
-              ))}
-              {pair.length === 1 ? <View style={styles.spacer} /> : null}
-            </View>
+            <MotionEntry
+              key={rowIdx}
+              variant="bottom"
+              delay={ENTRY_DELAY.section + rowIdx * 80}
+            >
+              <View style={styles.row}>
+                {pair.map((cat) => (
+                  <DonationTile
+                    key={cat.key}
+                    icon={cat.icon}
+                    title={t(cat.titleKey)}
+                    subtitle={t(cat.subtitleKey)}
+                    onPress={() => router.push(cat.href as Parameters<typeof router.push>[0])}
+                    compact
+                    testID={cat.testID}
+                  />
+                ))}
+                {pair.length === 1 ? <View style={styles.spacer} /> : null}
+              </View>
+            </MotionEntry>
           ))}
         </View>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
   scroll: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
+    paddingBottom: spacing['3xl'],
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center',
   },
-  title: {
-    ...typography.h1,
-    color: colors.textPrimary,
-    marginBottom: spacing.xl,
-    textAlign: 'right',
+  headingWrap: {
+    paddingTop: spacing.lg,
+    paddingBottom: spacing.xl,
   },
   grid: { gap: spacing.base },
   row: { flexDirection: 'row-reverse', gap: spacing.base },
