@@ -34,7 +34,6 @@ interface Props {
 }
 
 export function PostFeedList({
-  const { t } = useTranslation();
   data,
   isLoading,
   isRefetching,
