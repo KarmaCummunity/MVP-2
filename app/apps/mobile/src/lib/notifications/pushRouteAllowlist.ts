@@ -1,0 +1,63 @@
+// app/apps/mobile/src/lib/notifications/pushRouteAllowlist.ts
+//
+// TD-102 (audit 2026-05-16, BACKLOG P2.14): the prior tapHandler fed
+// data.route straight into router.push. A compromised push-dispatch
+// path (or any future external sender) could navigate the app to any
+// route with attacker-controlled params. We derive the route from
+// data.kind (typed enum) against a closed map and shape-check any
+// id-like params. data.route is intentionally ignored.
+//
+// New kinds: extend KIND_ROUTES below + add a test case in
+// __tests__/pushRouteAllowlist.test.ts.
+
+import type { PushData, NotificationKind } from '@kc/domain';
+
+type ResolvedRoute = { pathname: string; params: Record<string, string> };
+
+// RFC 4122 UUID shape, version-agnostic. Sole gatekeeper on id params.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+type KindHandler = (data: Partial<PushData>) => ResolvedRoute | null;
+
+const requireUuid = (raw: string | undefined): string | null =>
+  raw && UUID_RE.test(raw) ? raw : null;
+
+const KIND_ROUTES: Record<NotificationKind, KindHandler> = {
+  chat_message: (d) => {
+    const id = requireUuid(d.chat_id ?? d.params?.id);
+    return id ? { pathname: '/chat/[id]', params: { id } } : null;
+  },
+  support_message: (d) => {
+    const id = requireUuid(d.chat_id ?? d.params?.id);
+    return id ? { pathname: '/chat/[id]', params: { id } } : null;
+  },
+  system_message: (d) => {
+    const id = requireUuid(d.chat_id ?? d.params?.id);
+    return id ? { pathname: '/chat/[id]', params: { id } } : null;
+  },
+  post_expiring: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/post/[id]', params: { id } } : null;
+  },
+  mark_recipient: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/post/[id]', params: { id } } : null;
+  },
+  unmark_recipient: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/post/[id]', params: { id } } : null;
+  },
+  auto_removed: () => ({ pathname: '/settings/audit', params: {} }),
+  follow_request: () => ({ pathname: '/settings/follow-requests', params: {} }),
+  // TD-73 (folded into P2.13) replaces these two handlers once the trigger
+  // payload carries handle instead of user_id. Until then they land on the
+  // requests screen, which is a safer default than "user not found".
+  follow_started: () => ({ pathname: '/settings/follow-requests', params: {} }),
+  follow_approved: () => ({ pathname: '/settings/follow-requests', params: {} }),
+};
+
+export function resolvePushRoute(data: Partial<PushData>): ResolvedRoute | null {
+  const kind = data.kind;
+  if (!kind || !(kind in KIND_ROUTES)) return null;
+  return KIND_ROUTES[kind](data);
+}
