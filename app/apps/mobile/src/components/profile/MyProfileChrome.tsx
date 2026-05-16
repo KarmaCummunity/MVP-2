@@ -44,7 +44,9 @@ export function MyProfileChrome({ activeTab }: { activeTab: ProfileTab }) {
 
   const goToTab = (next: ProfileTab) => {
     if (next === activeTab) return;
-    router.replace(next === 'closed' ? '/(tabs)/profile/closed' : '/(tabs)/profile');
+    if (next === 'closed') router.replace('/(tabs)/profile/closed');
+    else if (next === 'removed') router.replace('/(tabs)/profile/removed' as never);
+    else router.replace('/(tabs)/profile');
   };
 
   return (
