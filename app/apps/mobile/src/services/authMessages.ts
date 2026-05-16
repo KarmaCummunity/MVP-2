@@ -1,31 +1,9 @@
 import type { AuthErrorCode } from '@kc/application';
+import i18n from '../i18n';
 
+// TD-69: generic credentialed-sign-in failure — do NOT distinguish between
+// wrong password and unregistered email (enumeration oracle risk).
 export function mapAuthErrorToHebrew(code: AuthErrorCode): string {
-  switch (code) {
-    case 'authentication_failed':
-      // TD-69: generic credentialed-sign-in failure. Do NOT distinguish between
-      // wrong password and unregistered email — that's an enumeration oracle.
-      return 'לא הצלחנו להתחבר עם הפרטים האלו. בדקו את הדוא"ל והסיסמה ונסו שוב.';
-    case 'invalid_credentials':
-      return 'דוא"ל או סיסמה שגויים.';
-    case 'email_already_in_use':
-      return 'הדוא"ל הזה כבר רשום. נסה להתחבר או לאפס סיסמה.';
-    case 'weak_password':
-      return 'הסיסמה חלשה מדי. צריך לפחות 8 תווים, אות וספרה.';
-    case 'invalid_email':
-      return 'הדוא"ל אינו תקין.';
-    case 'email_not_verified':
-      return 'יש לאשר את הדוא"ל לפני הכניסה. בדוק את תיבת הדואר.';
-    case 'session_expired':
-      return 'פג תוקף הסשן. יש להתחבר מחדש.';
-    case 'rate_limited':
-      return 'יותר מדי ניסיונות. נסה שוב בעוד כמה דקות.';
-    case 'cooldown_active':
-      return 'החשבון בתקופת המתנה לאחר מחיקה.';
-    case 'network':
-      return 'שגיאת רשת. בדוק את החיבור לאינטרנט.';
-    case 'unknown':
-    default:
-      return 'אירעה שגיאה. נסה שוב.';
-  }
+  const key = `errors.auth.${code}`;
+  return i18n.t(key, { defaultValue: i18n.t('errors.auth.unknown') });
 }

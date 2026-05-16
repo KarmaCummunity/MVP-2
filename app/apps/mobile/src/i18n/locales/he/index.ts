@@ -6,6 +6,7 @@
 // ─────────────────────────────────────────────
 
 import { donations, search } from './donations';
+import { errorsHe } from './modules/errors';
 import { chatHe } from './modules/chat';
 import { notificationsHe } from './modules/notifications';
 import { moderationHe, auditHe, accountBlockedHe } from './modules/moderation';
@@ -130,6 +131,9 @@ const he = {
 
   // Tab labels — see modules/tabs.ts
   tabs: tabsHe,
+
+  // Error messages (auth/post/profile/media/createPost) — see modules/errors.ts
+  errors: errorsHe,
 
   // Misc chrome — see modules/ui.ts
   errorBoundary: errorBoundaryHe,

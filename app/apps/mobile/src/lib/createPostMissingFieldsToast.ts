@@ -1,3 +1,5 @@
+import i18n from '../i18n';
+
 export interface CreatePostFieldSnapshot {
   readonly isGive: boolean;
   readonly title: string;
@@ -7,15 +9,15 @@ export interface CreatePostFieldSnapshot {
   readonly uploadsLength: number;
 }
 
-/** Hebrew toast when publish is tapped but required fields are incomplete. */
+/** Toast when publish is tapped but required fields are incomplete. */
 export function buildCreatePostMissingFieldsToastMessage(s: CreatePostFieldSnapshot): string {
   const missing: string[] = [];
-  if (s.title.trim().length === 0) missing.push('הכותרת');
-  if (s.city === null) missing.push('העיר');
-  if (s.street.trim().length === 0) missing.push('הרחוב');
-  if (s.streetNumber.trim().length === 0) missing.push('מספר הבית');
-  if (s.isGive && s.uploadsLength === 0) missing.push('לפחות תמונה אחת');
+  if (s.title.trim().length === 0) missing.push(i18n.t('errors.createPost.fieldTitle'));
+  if (s.city === null) missing.push(i18n.t('errors.createPost.fieldCity'));
+  if (s.street.trim().length === 0) missing.push(i18n.t('errors.createPost.fieldStreet'));
+  if (s.streetNumber.trim().length === 0) missing.push(i18n.t('errors.createPost.fieldStreetNumber'));
+  if (s.isGive && s.uploadsLength === 0) missing.push(i18n.t('errors.createPost.fieldPhoto'));
   if (missing.length === 0) return '';
-  if (missing.length === 1) return `נא למלא את ${missing[0]} לפני פרסום`;
-  return `נא למלא את השדות הבאים לפני פרסום: ${missing.join(', ')}`;
+  if (missing.length === 1) return i18n.t('errors.createPost.missingOne', { field: missing[0] });
+  return i18n.t('errors.createPost.missingMany', { fields: missing.join(', ') });
 }
