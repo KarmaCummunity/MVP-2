@@ -1,6 +1,7 @@
 // FR-PROFILE-007 — city (required) + optional street / number (same shape as create-post address).
 import React from 'react';
 import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { CityPicker } from './CityPicker';
 
@@ -17,10 +18,11 @@ export interface EditProfileAddressBlockProps {
 export function EditProfileAddressBlock({
   city, onCityChange, street, streetNumber, onStreetChange, onStreetNumberChange, disabled,
 }: EditProfileAddressBlockProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.field}>
-        <Text style={styles.label}>כתובת</Text>
+        <Text style={styles.label}>{t('profile.addressLabel')}</Text>
         <CityPicker value={city} onChange={onCityChange} disabled={disabled} />
       </View>
       <View style={styles.field}>
@@ -29,7 +31,7 @@ export function EditProfileAddressBlock({
             style={[styles.input, styles.streetInputStreet]}
             value={street}
             onChangeText={onStreetChange}
-            placeholder="רחוב"
+            placeholder={t('post.streetLabel')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             maxLength={80}
@@ -39,7 +41,7 @@ export function EditProfileAddressBlock({
             style={[styles.input, styles.streetInputHouse]}
             value={streetNumber}
             onChangeText={onStreetNumberChange}
-            placeholder="מס׳"
+            placeholder={t('profile.streetNumberShort')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             editable={!disabled}

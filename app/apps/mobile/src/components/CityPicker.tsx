@@ -13,6 +13,7 @@ import {
   ActivityIndicator,
 } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import type { City } from '@kc/domain';
 import { listCities } from '../services/userComposition';
@@ -23,14 +24,15 @@ interface Props {
   readonly disabled?: boolean;
 }
 export function CityPicker({ value, onChange, disabled }: Props) {
+  const { t } = useTranslation();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);
 
   useEffect(() => {
     if (!open) return;
-    const t = setTimeout(() => searchInputRef.current?.focus(), 100);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
   }, [open]);
 
   const { data: cities, isLoading, error } = useQuery<City[]>({
@@ -52,15 +54,10 @@ export function CityPicker({ value, onChange, disabled }: Props) {
         style={[styles.field, disabled && { opacity: 0.5 }]}
         onPress={() => !disabled && setOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel="בחר עיר"
+        accessibilityLabel={t('profile.cityPickerTitle')}
       >
-        <Text
-          style={[
-            styles.value,
-            !value && { color: colors.textDisabled },
-          ]}
-        >
-          {value ? value.name : 'בחר עיר'}
+        <Text style={[styles.value, !value && { color: colors.textDisabled }]}>
+          {value ? value.name : t('profile.cityPickerTitle')}
         </Text>
       </TouchableOpacity>
 
@@ -75,15 +72,15 @@ export function CityPicker({ value, onChange, disabled }: Props) {
             style={styles.backdropPressable}
             onPress={() => setOpen(false)}
             accessibilityRole="button"
-            accessibilityLabel="סגור"
+            accessibilityLabel={t('profile.cityPickerCloseA11y')}
           />
           <View style={styles.sheetOuter} pointerEvents="box-none">
             <View style={styles.sheet}>
-              <Text style={styles.sheetTitle}>בחר עיר</Text>
+              <Text style={styles.sheetTitle}>{t('profile.cityPickerTitle')}</Text>
               <TextInput
                 ref={searchInputRef}
                 style={styles.search}
-                placeholder="...חיפוש עיר"
+                placeholder={t('profile.cityPickerSearchPlaceholder')}
                 placeholderTextColor={colors.textDisabled}
                 value={query}
                 onChangeText={setQuery}
@@ -97,7 +94,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
                 </View>
               )}
               {error && (
-                <Text style={styles.errorText}>שגיאה בטעינת רשימת הערים. נסה שוב.</Text>
+                <Text style={styles.errorText}>{t('profile.cityPickerError')}</Text>
               )}
               {!isLoading && !error && (
                 <FlatList
@@ -105,7 +102,7 @@ export function CityPicker({ value, onChange, disabled }: Props) {
                   keyExtractor={(c) => c.cityId}
                   keyboardShouldPersistTaps="handled"
                   ListEmptyComponent={
-                    <Text style={styles.emptyText}>לא נמצאו ערים תואמות.</Text>
+                    <Text style={styles.emptyText}>{t('profile.cityPickerEmpty')}</Text>
                   }
                   renderItem={({ item }) => (
                     <TouchableOpacity
