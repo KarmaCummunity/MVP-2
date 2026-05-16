@@ -5,6 +5,7 @@
 import { useState } from 'react';
 import { Pressable, StyleSheet, Text } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
+import { useTranslation } from 'react-i18next';
 import { colors, radius, spacing, typography } from '@kc/ui';
 import { ConfirmActionModal } from '../post/ConfirmActionModal';
 import { NotifyModal } from '../NotifyModal';
@@ -16,6 +17,7 @@ interface Props {
 }
 
 export function RecipientUnmarkBar({ postId, userId }: Props) {
+  const { t } = useTranslation();
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
   const [notify, setNotify] = useState<string | null>(null);
@@ -30,25 +32,26 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
     },
     onError: () => {
       setConfirmOpen(false);
-      setNotify('לא הצלחנו להסיר את הסימון. נסה שוב.');
+      setNotify(t('closure.unmarkErrorBody'));
     },
   });
 
+  const cta = t('closure.unmarkSelfCta');
   return (
     <>
       <Pressable
         style={styles.btn}
         onPress={() => setConfirmOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel="הסר סימון שלי"
+        accessibilityLabel={cta}
       >
-        <Text style={styles.btnText}>הסר סימון שלי</Text>
+        <Text style={styles.btnText}>{cta}</Text>
       </Pressable>
       <ConfirmActionModal
         visible={confirmOpen}
-        title="הסרת סימון"
-        message="לא תקבל קרדיט על פריט זה, ובעל הפוסט יקבל הודעה. הפוסט יישמר 7 ימים לפני מחיקה."
-        confirmLabel="הסר"
+        title={t('closure.unmarkConfirmTitle')}
+        message={t('closure.unmarkConfirmBody')}
+        confirmLabel={t('closure.unmarkConfirmCta')}
         destructive
         isBusy={mutation.isPending}
         onCancel={() => setConfirmOpen(false)}
@@ -56,7 +59,7 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
       />
       <NotifyModal
         visible={notify !== null}
-        title="שגיאה"
+        title={t('general.error')}
         message={notify ?? ''}
         onDismiss={() => setNotify(null)}
       />
