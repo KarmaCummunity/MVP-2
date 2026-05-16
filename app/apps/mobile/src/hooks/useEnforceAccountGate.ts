@@ -1,13 +1,11 @@
-// FR-MOD-010 AC4 — sign-in + periodic mid-session enforcement.
-//
-// Periodic recheck (60s) handles the case where an admin bans a user mid-session.
-// A future hardening pass should add a fetch-interceptor for instant 401/403
-// detection — Supabase JS v2 doesn't expose that hook cleanly, so we go with
-// the periodic poll for the MVP. Tracked as TD alongside this slice.
+// FR-MOD-010 AC4 — sign-in + periodic mid-session enforcement + fetch-level ban detection.
+// Two-tier approach: (1) instant 403 interception via setOnForbiddenCallback wired to
+// the Supabase client's global.fetch (TD-149); (2) 60s poll as belt-and-suspenders.
 import { useEffect, useRef } from 'react';
 import { useRouter, type Href } from 'expo-router';
 import { container, supabase } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
+import { setOnForbiddenCallback } from '@kc/infrastructure-supabase';
 
 const RECHECK_MS = 60_000;
 
@@ -19,6 +17,7 @@ export function useEnforceAccountGate(userId: string | null) {
   useEffect(() => {
     if (!userId) {
       enforcingRef.current = false;
+      setOnForbiddenCallback(null);
       return;
     }
 
@@ -58,12 +57,16 @@ export function useEnforceAccountGate(userId: string | null) {
       }
     };
 
+    // Instant detection: on any 403 from PostgREST, run check immediately.
+    setOnForbiddenCallback(() => { void check(); });
+
     void check();
     const id = setInterval(() => void check(), RECHECK_MS);
 
     return () => {
       cancelled = true;
       clearInterval(id);
+      setOnForbiddenCallback(null);
     };
   }, [userId, signOut, router]);
 }

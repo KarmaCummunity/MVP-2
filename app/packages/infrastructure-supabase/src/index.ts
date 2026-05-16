@@ -1,4 +1,4 @@
-export { getSupabaseClient, resetSupabaseClient } from './client';
+export { getSupabaseClient, resetSupabaseClient, setOnForbiddenCallback } from './client';
 export type { SupabaseAuthStorage } from './client';
 export type { Database } from './database.types';
 
