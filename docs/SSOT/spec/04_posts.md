@@ -303,10 +303,11 @@ The screen rendered when any non-owner viewer opens a post they are allowed to s
 
 **Acceptance Criteria.**
 - AC1. Renders: image carousel (or large category icon if a request without images), type badge `🎁`/`🔍`, title, category, owner row (avatar + name + city, tap → profile), full description, type-specific fields, computed location string per `location_display_level`, relative timestamp.
-- AC2. Primary CTA: "💬 Send Message to Poster" — opens chat with the contextual auto-message (`FR-CHAT-005`).
+- AC2. When `Post.status === 'open'`, the primary CTA is "💬 Send Message to Poster" — opens chat with the contextual auto-message (`FR-CHAT-005`). See AC6 for non-open posts.
 - AC3. Secondary CTA: dynamic follow button per `FR-FOLLOW-011`.
 - AC4. `⋮` menu: "Report" (`FR-MOD-001`). (Per `EXEC-9`, the "Block User" item is removed from MVP scope.)
 - AC5. If the post is no longer visible to the viewer (e.g., follower removed, post auto-removed) the screen renders an empty state: *"This post is no longer available. It may have been removed or limited to followers only."*
+- AC6. The primary "Send Message to Poster" CTA (`FR-CHAT-005`) is shown only when `Post.status === 'open'`; it is hidden for any non-open lifecycle state (including `closed_delivered`, `expired`, `removed_admin`, etc.).
 
 **Related.** Screens: 2.3 · Domain: `Post`, `LocationDisplayLevel`.
 
@@ -420,6 +421,26 @@ At publish time, an advisory check warns users against posting forbidden categor
 - AC3. False negatives are expected; the moderator pipeline (`FR-MOD-*`) is the authoritative enforcement layer.
 
 **Related.** Domain: `ContentAdvisory`.
+
+---
+
+## FR-POST-021 — Per-actor identity exposure on a post
+
+**Description.**
+After closure, each **participant** (publisher and marked respondent) may control how their **identity** (name, avatar, profile link from post surfaces) is shown to viewers — independently from `Post.visibility`, which still governs **who can see the post listing/content** in community surfaces (`FR-POST-009`).
+
+**Source.**
+- Design: `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md`
+- Decision: `D-26`
+
+**Acceptance Criteria.**
+- AC1. Table `public.post_actor_identity` stores per `(post_id, user_id)` policy: `exposure ∈ {Public, FollowersOnly, Hidden}` and `hide_from_counterparty`. RLS allows read when the viewer may read the post (`is_post_visible_to`); write only by the participant for their own row.
+- AC2. `GetPostById` / feed hydration applies a pure projection so owner and respondent fields are evaluated **independently** for viewer `V` (third parties included).
+- AC3. If `Post.visibility === OnlyMe`, the owner is always shown **anonymously** to the counterparty on post surfaces (coupling rule).
+- AC4. When projection marks an identity as anonymous, post-detail must not offer a one-tap profile deep-link from that row (`ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost`).
+- AC5. Chat headers and profile shells remain real-user surfaces; masking applies to **post chrome** only (`D-26`).
+
+**Related.** `FR-POST-014`, `FR-POST-017`, `FR-CLOSURE-005`, `FR-CLOSURE-007`, migration `0083_post_actor_identity.sql`.
 
 ---
 

@@ -12,6 +12,8 @@ import type {
   PostVisibility,
 } from '@kc/domain';
 
+import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from './postActorIdentity';
+
 /**
  * Filter shape consumed by IPostRepository.getFeed.
  * Mapped to FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
@@ -65,6 +67,10 @@ export interface PostWithOwner extends Post {
    * `null` otherwise (or when either side lacks coordinates).
    */
   distanceKm: number | null;
+  /** When false, post-detail must not deep-link to the owner's profile from this post surface. */
+  ownerProfileNavigableFromPost?: boolean;
+  /** When false, post-detail must not deep-link to the recipient's profile from this post surface. */
+  recipientProfileNavigableFromPost?: boolean;
 }
 
 /** FR-CLOSURE-003 AC1/AC2 — chat-partner candidate for the recipient picker. */
@@ -181,6 +187,10 @@ export interface IPostRepository {
     limit: number,
     cursor?: string,
   ): Promise<ProfileClosedPostsItem[]>;
+
+  /** FR-POST-021 — per-actor identity exposure rows for a post. */
+  listPostActorIdentities(postId: string): Promise<PostActorIdentityRow[]>;
+  upsertPostActorIdentity(input: UpsertPostActorIdentityInput): Promise<void>;
 
   // Stats
   countOpenByUser(userId: string): Promise<number>;

@@ -9,3 +9,4 @@ export * from './searchTypes';
 export * from './geo';
 export * from './personalActivity';
 export * from './notifications';
+export * from './postActorIdentity';

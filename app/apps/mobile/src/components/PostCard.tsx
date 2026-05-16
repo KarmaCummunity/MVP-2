@@ -82,11 +82,11 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
         </View>
 
         {/* Action buttons */}
-        {onMessagePress && (
+        {onMessagePress && post.status === 'open' ? (
           <TouchableOpacity style={styles.messageBtn} onPress={onMessagePress}>
             <Text style={styles.messageBtnText}>💬</Text>
           </TouchableOpacity>
-        )}
+        ) : null}
       </View>
 
       {/* Visibility badge for own posts */}

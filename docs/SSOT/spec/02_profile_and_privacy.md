@@ -26,6 +26,10 @@ Out of scope here:
 - Per-post visibility level → [`04_posts.md`](./04_posts.md)
 - Posts list within the profile → linked from [`04_posts.md`](./04_posts.md)
 
+### Cross-reference — closed post detail
+
+Taps from the profile **Closed Posts** tab open Post Detail per `FR-PROFILE-001 AC5`. When `post.status === 'closed_delivered'`, counterparty identity masking and whether the author/recipient rows deep-link to `/user/{handle}` are specified in **`FR-POST-021`** ([`04_posts.md`](./04_posts.md)) via `PostWithOwner.ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost` and `public.post_actor_identity`. This is **orthogonal** to profile privacy mode (`FR-PROFILE-002` / `FR-PROFILE-003`); see **`D-26`** in [`../DECISIONS.md`](../DECISIONS.md) (visibility vs per-actor identity).
+
 ---
 
 ## FR-PROFILE-001 — My Profile screen
@@ -322,7 +326,8 @@ At sign-up via Google or Apple, if the SSO provides a profile photo URL, the sys
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 0.1 | 2026-05-05 | Initial draft from PRD §3.2, §3.5, and Decisions D-10. |
-| 0.2 | 2026-05-11 | FR-PROFILE-002 AC2 + FR-PROFILE-004 AC4 updated: closed posts now shown on other-user profiles (Public / Private-approved-follower). Reverses prior PRD §3.2.2 carveout; see EXEC-7. |
-| 0.3 | 2026-05-11 | Implementation note: FR-PROFILE-006 AC2 auto-approve-on-Public is enforced at the DB layer by `users_after_privacy_mode_change` (migration 0023). No application-level fan-out required; the existing on-accept trigger handles edge creation per row. |
+| 0.5 | 2026-05-16 | Cross-reference: closed-post detail navigability and counterparty masking (`FR-POST-021`, `D-26`) linked from Scope; profile tabs unchanged. |
 | 0.4 | 2026-05-15 | D-21: Privacy mode reframed as a **follow-approval flag only**. FR-PROFILE-003 rewritten to match FR-PROFILE-002 (no locked panel, no hidden counters/lists). FR-PROFILE-010 ACs collapsed — lists visible to all viewers. FR-PROFILE-004 simplified — per-post `FollowersOnly` follow-edge rule is unchanged but no longer entangled with profile privacy. Implementation: migration `0069_privacy_mode_follow_approval_only.sql` drops `users_select_public` + `users_select_private_approved_follower`; replaces them with `users_select_active`. |
+| 0.3 | 2026-05-11 | Implementation note: FR-PROFILE-006 AC2 auto-approve-on-Public is enforced at the DB layer by `users_after_privacy_mode_change` (migration 0023). No application-level fan-out required; the existing on-accept trigger handles edge creation per row. |
+| 0.2 | 2026-05-11 | FR-PROFILE-002 AC2 + FR-PROFILE-004 AC4 updated: closed posts now shown on other-user profiles (Public / Private-approved-follower). Reverses prior PRD §3.2.2 carveout; see EXEC-7. |
+| 0.1 | 2026-05-05 | Initial draft from PRD §3.2, §3.5, and Decisions D-10. |

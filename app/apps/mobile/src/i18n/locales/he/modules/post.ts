@@ -149,6 +149,8 @@ export const postHe = {
     urgencyPrefix: '⚡ דחיפות: ',
     contactA11y: 'שלח הודעה למפרסם',
     contactCta: '💬 שלח הודעה למפרסם',
+    anonymousUser: 'אנונימי',
+    identityHidePartner: 'הסתר את שמי מהפוסט של השותף',
   },
 
   // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.

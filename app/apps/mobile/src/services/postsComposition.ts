@@ -23,10 +23,12 @@ import {
   GetProfileClosedPostsUseCase,
   GetPostByIdUseCase,
   ListMyActivityTimelineUseCase,
+  ListPostActorIdentityUseCase,
   MarkAsDeliveredUseCase,
   ReopenPostUseCase,
   UnmarkRecipientSelfUseCase,
   UpdatePostUseCase,
+  UpsertPostActorIdentityUseCase,
   type IFeedRealtime,
   type IPostRepository,
   type IStatsRepository,
@@ -50,6 +52,8 @@ let _getActivePostsCount: GetActivePostsCountUseCase | null = null;
 let _communityStatsSnapshot: GetCommunityStatsSnapshotUseCase | null = null;
 let _listMyActivityTimeline: ListMyActivityTimelineUseCase | null = null;
 let _dismissFirstPostNudge: DismissFirstPostNudgeUseCase | null = null;
+let _listPostActorIdentity: ListPostActorIdentityUseCase | null = null;
+let _upsertPostActorIdentity: UpsertPostActorIdentityUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -162,4 +166,18 @@ export function getDismissFirstPostNudgeUseCase(): DismissFirstPostNudgeUseCase 
     _dismissFirstPostNudge = new DismissFirstPostNudgeUseCase(getUserRepo());
   }
   return _dismissFirstPostNudge;
+}
+
+export function getListPostActorIdentityUseCase(): ListPostActorIdentityUseCase {
+  if (!_listPostActorIdentity) {
+    _listPostActorIdentity = new ListPostActorIdentityUseCase(getRepo());
+  }
+  return _listPostActorIdentity;
+}
+
+export function getUpsertPostActorIdentityUseCase(): UpsertPostActorIdentityUseCase {
+  if (!_upsertPostActorIdentity) {
+    _upsertPostActorIdentity = new UpsertPostActorIdentityUseCase(getRepo());
+  }
+  return _upsertPostActorIdentity;
 }

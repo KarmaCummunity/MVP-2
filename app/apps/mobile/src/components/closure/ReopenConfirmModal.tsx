@@ -38,7 +38,7 @@ export function ReopenConfirmModal({
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
       <Pressable style={styles.backdrop} onPress={onCancel}>
         <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-          <Text style={styles.title}>{t('closure.reopenTitle')}</Text>
+          <Text style={styles.title}>{t('closure.itemNotDeliveredModalTitle')}</Text>
           {variant === 'closed_delivered' ? (
             <View>
               <Text style={styles.body}>{t('closure.reopenBodyClosedDelivered')}</Text>

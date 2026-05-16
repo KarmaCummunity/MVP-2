@@ -1,17 +1,21 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity, Linking } from 'react-native';
+import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
+import { useTranslation } from 'react-i18next';
 import { colors, typography, spacing, radius } from '@kc/ui';
 import { Ionicons } from '@expo/vector-icons';
-
-const INSTAGRAM_PROFILE = 'https://www.instagram.com/karma_community_/';
-const INSTAGRAM_EMBED = 'https://www.instagram.com/karma_community_/embed/';
+import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
+import { MOTION, staggerDelay } from '../../lib/animations/motion';
+import { ABOUT_INSTAGRAM_EMBED_URL, ABOUT_INSTAGRAM_PROFILE_URL } from './aboutExternalLinks';
+import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
+import { aboutWebTextRtl } from './aboutWebRtlStyle';
 
 export interface AboutInstagramEmbedProps {
   readonly title: string;
   readonly caption: string;
   readonly openLabel: string;
   readonly embedNote: string;
+  readonly webFallbackTitle?: string;
 }
 
 export function AboutInstagramEmbed({
@@ -19,43 +23,64 @@ export function AboutInstagramEmbed({
   caption,
   openLabel,
   embedNote,
+  webFallbackTitle: _webFallbackTitle,
 }: AboutInstagramEmbedProps) {
+  const { t } = useTranslation();
   const [embedFailed, setEmbedFailed] = useState(false);
+
+  const openProfile = () =>
+    void aboutOpenExternalUrl(ABOUT_INSTAGRAM_PROFILE_URL, t('aboutContent.contactLinkError'));
 
   return (
     <View style={styles.wrap}>
-      <Text style={styles.title}>{title}</Text>
-      <Text style={styles.caption}>{caption}</Text>
+      <AnimatedEntry delay={staggerDelay(0)} duration={MOTION.duration.base} distance={10} scaleEntrance={0.98}>
+        <Text style={styles.title}>{title}</Text>
+      </AnimatedEntry>
+      <AnimatedEntry delay={staggerDelay(1)} duration={MOTION.duration.base} distance={8} scaleEntrance={0.99}>
+        <Text style={styles.caption}>{caption}</Text>
+      </AnimatedEntry>
       {!embedFailed ? (
-        <View style={styles.frame}>
-          <WebView
-            source={{ uri: INSTAGRAM_EMBED }}
-            style={styles.web}
-            scrollEnabled
-            onError={() => setEmbedFailed(true)}
-            onHttpError={() => setEmbedFailed(true)}
-            accessibilityLabel={title}
-          />
-        </View>
+        <AnimatedEntry delay={staggerDelay(2)} duration={MOTION.duration.base} distance={6}>
+          <View style={styles.frame}>
+            <WebView
+              source={{ uri: ABOUT_INSTAGRAM_EMBED_URL }}
+              style={styles.web}
+              scrollEnabled
+              onError={() => setEmbedFailed(true)}
+              onHttpError={() => setEmbedFailed(true)}
+              accessibilityLabel={title}
+            />
+          </View>
+        </AnimatedEntry>
       ) : (
-        <Text style={styles.note}>{embedNote}</Text>
+        <AnimatedEntry delay={staggerDelay(2)} duration={MOTION.duration.slow} distance={4}>
+          <Text style={styles.note}>{embedNote}</Text>
+        </AnimatedEntry>
       )}
-      <TouchableOpacity
-        style={styles.cta}
-        onPress={() => Linking.openURL(INSTAGRAM_PROFILE)}
-        accessibilityRole="link"
-      >
-        <Ionicons name="logo-instagram" size={22} color={colors.textInverse} />
-        <Text style={styles.ctaText}>{openLabel}</Text>
-      </TouchableOpacity>
+      <AnimatedEntry delay={staggerDelay(3)} duration={MOTION.duration.base} distance={8} scaleEntrance={0.97}>
+        <Pressable
+          style={({ pressed }) => [styles.cta, pressed && styles.ctaPressed]}
+          onPress={openProfile}
+          accessibilityRole="link"
+        >
+          <Ionicons name="logo-instagram" size={22} color={colors.textInverse} />
+          <Text style={styles.ctaText}>{openLabel}</Text>
+        </Pressable>
+      </AnimatedEntry>
     </View>
   );
 }
 
 const styles = StyleSheet.create({
   wrap: { gap: spacing.md },
-  title: { ...typography.h4, color: colors.textPrimary, textAlign: 'right' },
-  caption: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
+  title: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', ...aboutWebTextRtl },
+  caption: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'right',
+    ...aboutWebTextRtl,
+    lineHeight: 24,
+  },
   frame: {
     height: 420,
     borderRadius: radius.lg,
@@ -65,7 +90,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   web: { flex: 1, backgroundColor: colors.surface },
-  note: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  note: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', ...aboutWebTextRtl },
   cta: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -75,5 +100,6 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.md,
     borderRadius: radius.md,
   },
-  ctaText: { ...typography.button, color: colors.textInverse },
+  ctaPressed: { opacity: 0.9 },
+  ctaText: { ...typography.button, color: colors.textInverse, ...aboutWebTextRtl },
 });

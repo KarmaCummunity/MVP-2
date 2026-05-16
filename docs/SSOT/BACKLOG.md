@@ -44,7 +44,8 @@
 | P2.6 | About landing (full vision narrative, section menu, Instagram embed, `/about-site`, query chrome for web shells) | agent-fe | ✅ Done | `spec/11_settings.md` (About under Settings) |
 | P2.7 | Privacy-mode reframe to follow-approval flag only (migration `0069`, FR-PROFILE-003/004/010 rewrite, `LockedPanel` deletion) | agent-be + agent-fe | ✅ Done | `spec/02_profile_and_privacy.md` FR-PROFILE-003, 004, 010; `DECISIONS.md` D-21 |
 | P2.8 | BE security hardening — closes 7 CRITICAL/HIGH from audit 2026-05-10 (anon grants, RPC enumeration, support-thread race, inject_system_message forgery, server-managed column writes) | agent-be | ✅ Done | `docs/SSOT/archive/AUDIT_2026-05-10_full_codebase_review.md` §1.1, §1.2, §15.1, §15.2, §15.3, §15.5, §15.11; migration `0070_security_hardening.sql` |
-| P2.9 | Post close/reopen: TanStack `profile-closed-posts` sync; post-detail close shows toast + navigates back; reopen refetches in place | agent-fe | ✅ Done | `spec/05_closure_and_reopen.md` FR-CLOSURE-001 AC5 |
+| P2.10 | About landing UX refresh (vision hierarchy, MVP/Vision toggles, mission+team block, roadmap expand rows, contact channels, Instagram web split) | agent-fe | ✅ Done | `spec/11_settings.md` (About under Settings) |
+| P2.11 | Post actor identity + closed-post privacy UX (FR-POST-021, FR-POST-014 AC6, closure copy) | agent-be + agent-fe | ✅ Done | `spec/04_posts.md`, `spec/05_closure_and_reopen.md`, `DECISIONS.md` D-26; migration `0083_post_actor_identity.sql` |
 
 ## P3 — Post-MVP (Deferred)
 

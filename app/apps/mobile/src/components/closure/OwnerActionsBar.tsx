@@ -122,9 +122,9 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
               setReopenError(null);
               setReopenOpen(true);
             }}
-            accessibilityLabel={t('closure.reopenA11y')}
+            accessibilityLabel={t('closure.itemNotDeliveredA11y')}
           >
-            <Text style={styles.btnPrimaryText}>{t('closure.reopenCta')}</Text>
+            <Text style={styles.btnPrimaryText}>{t('closure.itemNotDeliveredCta')}</Text>
           </Pressable>
         )}
       </View>

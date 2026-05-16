@@ -4,6 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
+import { aboutWebTextRtl } from './aboutWebRtlStyle';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -64,13 +65,20 @@ const styles = StyleSheet.create({
   },
   tileActive: { backgroundColor: colors.primarySurface, borderColor: colors.primaryLight },
   tileSoon: { backgroundColor: colors.background, borderColor: colors.border },
-  label: { ...typography.caption, textAlign: 'center', fontWeight: '600', lineHeight: 16 },
+  label: {
+    ...typography.caption,
+    textAlign: 'right',
+    ...aboutWebTextRtl,
+    fontWeight: '600',
+    lineHeight: 16,
+    width: '100%',
+  },
   labelActive: { color: colors.textPrimary },
   labelSoon: { color: colors.textDisabled },
   badge: { borderRadius: 10, paddingHorizontal: spacing.sm, paddingVertical: 2 },
   badgeActive: { backgroundColor: colors.primary },
   badgeSoon: { backgroundColor: colors.border },
-  badgeText: { fontSize: 10, fontWeight: '700' },
+  badgeText: { fontSize: 10, fontWeight: '700', ...aboutWebTextRtl },
   badgeTextActive: { color: colors.textInverse },
   badgeTextSoon: { color: colors.textDisabled },
 });

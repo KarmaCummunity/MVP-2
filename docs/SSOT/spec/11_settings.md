@@ -20,6 +20,7 @@ The Settings screen and its sub-pages:
 - Logout.
 - Account deletion.
 - **About (in-app):** long-form narrative (vision beyond MVP, roadmap, FAQ, team, Instagram embed) with section navigation; marketing alias route `/about-site` and optional `hideTopBar` / `hideBottomBar` query flags for embedded web shells.
+  - **AC (About refresh, 2026-05-16):** Problems / Features / Goals share a synchronized MVP↔Vision scope toggle (default MVP on each screen visit; not persisted). Vision uses a short lead plus a single expandable block for deeper KPI-style prose. Roadmap phases show a summary with independently expandable per-phase details. Mission and Team are one scroll target (dual section anchors). Values copy reflects product transparency plus optional user anonymity (no “privacy by default” product framing). Contact lists WhatsApp (community + personal), two mailto links, in-app report CTA, and an explicit out-of-app Bit/PayBox note with the published phone number. Instagram on web uses no embedded browser module—static card + external open only.
 
 ---
 

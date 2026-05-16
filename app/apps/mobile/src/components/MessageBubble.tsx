@@ -9,6 +9,7 @@ import { SystemMessageBubble } from './chat/system/SystemMessageBubble';
 import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
 import { container } from '../lib/container';
 import { confirmAndRun, showAdminToast } from './chat/system/adminActions';
+import { formatMessageBubbleTime } from '../lib/chatMessageDisplayTime';
 import he from '../i18n/locales/he';
 
 const KNOWN_MOD_KINDS = [
@@ -84,7 +85,7 @@ export function MessageBubble({
           {mine && !m.failed && <Text style={styles.readReceipt}>{m.status === 'read' ? '✓✓' : '✓'}</Text>}
           {showTime && (
             <Text style={[styles.timeText, mine && { color: 'rgba(255,255,255,0.7)' }]}>
-              {new Date(m.createdAt).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })}
+              {formatMessageBubbleTime(m.createdAt)}
             </Text>
           )}
         </View>

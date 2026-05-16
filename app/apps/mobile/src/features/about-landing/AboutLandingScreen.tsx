@@ -5,20 +5,24 @@ import {
   StyleSheet,
   ScrollView,
   TouchableOpacity,
+  Platform,
 } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useRouter, useLocalSearchParams, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { colors, typography, spacing } from '@kc/ui';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { AboutNavDrawer } from './AboutNavDrawer';
 import { AboutSectionBlocksTop } from './AboutSectionBlocksTop';
 import { AboutSectionBlocksBottom } from './AboutSectionBlocksBottom';
+import { AboutContentScopeProvider } from './AboutContentScopeContext';
+import { AboutHero } from './AboutHero';
 import { ABOUT_NAV_LABEL_KEYS, type AboutSectionId } from './aboutSectionModel';
 import { parseTruthyQueryParam } from '../../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from '../../navigation/aboutMarketingPaths';
 import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../navigation/useShellTabBarVisibility';
+import { aboutWebTextRtl, aboutWebViewRtl } from './aboutWebRtlStyle';
 
 export function AboutLandingScreen() {
   const router = useRouter();
@@ -69,19 +73,22 @@ export function AboutLandingScreen() {
         ref={scrollRef}
         contentContainerStyle={[
           styles.scroll,
-          { paddingBottom: spacing['4xl'] + tabPad, paddingHorizontal: spacing.base, gap: spacing.lg },
+          {
+            paddingBottom: spacing['4xl'] + tabPad,
+            paddingHorizontal: spacing.base,
+            gap: spacing.lg,
+            ...aboutWebViewRtl,
+          },
         ]}
         showsVerticalScrollIndicator={false}
       >
-        <AnimatedEntry delay={0}>
-          <View style={styles.hero}>
-            <Text style={styles.heroEyebrow}>{t('aboutContent.heroEyebrow')}</Text>
-            <Text style={styles.heroTitle}>{t('aboutContent.heroTitle')}</Text>
-            <Text style={styles.heroSubtitle}>{t('aboutContent.heroSubtitle')}</Text>
-          </View>
-        </AnimatedEntry>
-        <AboutSectionBlocksTop onSectionY={onSectionY} />
-        <AboutSectionBlocksBottom onSectionY={onSectionY} delayStart={360} />
+        <AboutContentScopeProvider>
+          <AnimatedEntry delay={0}>
+            <AboutHero />
+          </AnimatedEntry>
+          <AboutSectionBlocksTop onSectionY={onSectionY} />
+          <AboutSectionBlocksBottom onSectionY={onSectionY} delayStart={360} />
+        </AboutContentScopeProvider>
         <View style={styles.footer}>
           <Text style={styles.footerV}>{t('aboutContent.footerVersion')}</Text>
           <Text style={styles.footerR}>{t('aboutContent.footerRights')}</Text>
@@ -122,26 +129,28 @@ const styles = StyleSheet.create({
     borderBottomColor: colors.border,
   },
   back: { padding: spacing.xs },
-  title: { ...typography.h3, color: colors.textPrimary },
+  title: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    flex: 1,
+    ...aboutWebTextRtl,
+    ...(Platform.OS === 'web' ? { textAlign: 'right' as const } : {}),
+  },
   scroll: { flexGrow: 1 },
-  hero: {
-    backgroundColor: colors.primary,
-    borderRadius: radius.xl,
-    paddingVertical: spacing['2xl'],
-    paddingHorizontal: spacing.xl,
-    alignItems: 'center',
+  footer: { alignItems: 'stretch', marginTop: spacing.xl, ...aboutWebViewRtl },
+  footerV: {
+    ...typography.label,
+    color: colors.textSecondary,
+    marginBottom: spacing.xs,
+    textAlign: 'right',
+    ...aboutWebTextRtl,
   },
-  heroEyebrow: { ...typography.caption, color: 'rgba(255,255,255,0.85)', marginBottom: spacing.xs },
-  heroTitle: { ...typography.h1, color: colors.textInverse, marginBottom: spacing.sm },
-  heroSubtitle: {
-    ...typography.body,
-    color: 'rgba(255,255,255,0.92)',
-    textAlign: 'center',
-    lineHeight: 24,
+  footerR: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    textAlign: 'right',
+    ...aboutWebTextRtl,
   },
-  footer: { alignItems: 'center', marginTop: spacing.xl },
-  footerV: { ...typography.label, color: colors.textSecondary, marginBottom: spacing.xs },
-  footerR: { ...typography.caption, color: colors.textDisabled },
   fab: {
     position: 'absolute',
     left: spacing.base,

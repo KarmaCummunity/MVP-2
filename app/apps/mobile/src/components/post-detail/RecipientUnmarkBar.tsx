@@ -37,13 +37,14 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
   });
 
   const cta = t('closure.unmarkSelfCta');
+  const ctaA11y = t('closure.unmarkSelfA11y');
   return (
     <>
       <Pressable
         style={styles.btn}
         onPress={() => setConfirmOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={cta}
+        accessibilityLabel={ctaA11y}
       >
         <Text style={styles.btnText}>{cta}</Text>
       </Pressable>

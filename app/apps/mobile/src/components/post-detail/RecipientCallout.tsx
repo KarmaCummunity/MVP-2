@@ -2,7 +2,7 @@
 // post. Label depends on post.type:
 //   • Give    → "delivered to X" (owner gave; marked user is the receiver)
 //   • Request → "given by X"     (owner asked for help; marked user is the giver)
-// Tapping the row opens the marked user's profile.
+// Tapping the row opens the marked user's profile when profileNavigable is true.
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
@@ -20,31 +20,49 @@ interface Props {
     shareHandle: string;
     avatarUrl: string | null;
   };
+  /** FR-POST-021 — when false, do not navigate to profile from this row. */
+  profileNavigable?: boolean;
 }
 
-export function RecipientCallout({ postType, recipient }: Props) {
+export function RecipientCallout({ postType, recipient, profileNavigable = true }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const labelLeft = postType === 'Give' ? t('closure.calloutGiveLabel') : t('closure.calloutRequestLabel');
   const sublabel = postType === 'Give' ? t('closure.calloutGiveSublabel') : t('closure.calloutRequestSublabel');
-  const name = recipient.displayName ?? t('profile.fallbackName');
+  const displayName = profileNavigable
+    ? (recipient.displayName ?? t('profile.fallbackName'))
+    : (recipient.displayName || t('post.detail.anonymousUser'));
 
-  return (
-    <Pressable
-      style={styles.row}
-      onPress={() => router.push(`/user/${recipient.shareHandle}`)}
-      accessibilityLabel={`${labelLeft} ${name}`}
-    >
+  const inner = (
+    <>
       <Ionicons name="checkmark-circle" size={22} color={colors.success} />
       <View style={styles.text}>
         <Text style={styles.sublabel}>{sublabel}</Text>
         <Text style={styles.label} numberOfLines={1}>
           {labelLeft}{' '}
-          <Text style={styles.name}>{name}</Text>
+          <Text style={styles.name}>{displayName}</Text>
         </Text>
       </View>
-      <AvatarInitials name={name} avatarUrl={recipient.avatarUrl} size={36} />
-      <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
+      <AvatarInitials name={displayName} avatarUrl={profileNavigable ? recipient.avatarUrl : null} size={36} />
+      {profileNavigable ? <Ionicons name="chevron-back" size={18} color={colors.textSecondary} /> : null}
+    </>
+  );
+
+  if (!profileNavigable) {
+    return (
+      <View style={styles.row} accessibilityLabel={`${labelLeft} ${displayName}`}>
+        {inner}
+      </View>
+    );
+  }
+
+  return (
+    <Pressable
+      style={styles.row}
+      onPress={() => router.push(`/user/${recipient.shareHandle}`)}
+      accessibilityLabel={`${labelLeft} ${displayName}`}
+    >
+      {inner}
     </Pressable>
   );
 }

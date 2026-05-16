@@ -8,9 +8,11 @@ import type {
   CreatePostInput,
   FeedPage,
   IPostRepository,
+  PostActorIdentityRow,
   PostFeedFilter,
   PostWithOwner,
   UpdatePostInput,
+  UpsertPostActorIdentityInput,
 } from '@kc/application';
 import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
 import type { Database } from '../database.types';
@@ -23,7 +25,7 @@ import {
   type PostWithOwnerJoinedRow,
 } from './mapPostRow';
 import { mapInsertError } from './mapInsertError';
-import { decodeCursor, encodeCursor } from './cursor';
+import { encodeCursor } from './cursor';
 import { buildFeedQuery } from './feedQuery';
 import { fetchRankedFeedPage, needsRankedPath } from './feedQueryRanked';
 import {
@@ -33,6 +35,12 @@ import {
 } from './closureMethods';
 import { executePostUpdate } from './executePostUpdate';
 import { getProfileClosedPostsHelper } from './getProfileClosedPostsHelper';
+import { applyPostActorIdentityProjectionBatch } from './applyPostActorIdentityProjection';
+import {
+  listPostActorIdentitiesForPost,
+  upsertPostActorIdentityRow,
+} from './postActorIdentityMethods';
+import { getMyPostsPage } from './getMyPostsPage';
 
 const FEED_HARD_MAX = 100;
 
@@ -66,13 +74,14 @@ export class SupabasePostRepository implements IPostRepository {
     const hasMore = rows.length > safeLimit;
     const page = hasMore ? rows.slice(0, safeLimit) : rows;
     const posts = page.map(mapPostWithOwnerRow);
-    const last = posts[posts.length - 1];
+    const projected = await applyPostActorIdentityProjectionBatch(this.client, posts, viewerId);
+    const last = projected[projected.length - 1];
     const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt }) : null;
-    return { posts, nextCursor };
+    return { posts: projected, nextCursor };
   }
 
   // ── Single post ─────────────────────────────────────────────────────────
-  async findById(postId: string, _viewerId: string | null): Promise<PostWithOwner | null> {
+  async findById(postId: string, viewerId: string | null): Promise<PostWithOwner | null> {
     const { data, error } = await this.client
       .from('posts')
       .select(POST_SELECT_OWNER)
@@ -80,7 +89,9 @@ export class SupabasePostRepository implements IPostRepository {
       .maybeSingle();
     if (error) throw new Error(`findById: ${error.message}`);
     if (!data) return null;
-    return mapPostWithOwnerRow(data as unknown as PostWithOwnerJoinedRow);
+    const mapped = mapPostWithOwnerRow(data as unknown as PostWithOwnerJoinedRow);
+    const [out] = await applyPostActorIdentityProjectionBatch(this.client, [mapped], viewerId);
+    return out ?? null;
   }
 
   // ── Mutations ───────────────────────────────────────────────────────────
@@ -179,39 +190,13 @@ export class SupabasePostRepository implements IPostRepository {
   }
 
   // ── User's own posts ────────────────────────────────────────────────────
-  // Audit §3.10 — return `{ posts, nextCursor }` so a power user with > 30
-  // posts on profile isn't silently truncated. Fetches `safeLimit + 1` rows
-  // to detect whether more pages exist; `nextCursor` encodes the last visible
-  // row's `created_at` for `<` comparison on the next call.
-  async getMyPosts(
+  getMyPosts(
     userId: string,
     status: PostStatus[],
     limit: number,
     cursor?: string,
   ): Promise<{ posts: Post[]; nextCursor: string | null }> {
-    if (status.length === 0) return { posts: [], nextCursor: null };
-    const safeLimit = Math.max(1, Math.min(limit, FEED_HARD_MAX));
-    const decoded = decodeCursor(cursor);
-
-    let q = this.client
-      .from('posts')
-      .select(POST_SELECT_BARE)
-      .eq('owner_id', userId)
-      .in('status', status)
-      .order('created_at', { ascending: false })
-      .limit(safeLimit + 1);
-
-    if (decoded) q = q.lt('created_at', decoded.createdAt);
-
-    const { data, error } = await q;
-    if (error) throw new Error(`getMyPosts: ${error.message}`);
-    const rows = (data ?? []) as unknown as PostJoinedRow[];
-    const hasMore = rows.length > safeLimit;
-    const page = hasMore ? rows.slice(0, safeLimit) : rows;
-    const posts = page.map(mapPostRow);
-    const last = posts[posts.length - 1];
-    const nextCursor = hasMore && last ? encodeCursor({ createdAt: last.createdAt }) : null;
-    return { posts, nextCursor };
+    return getMyPostsPage(this.client, userId, status, limit, cursor);
   }
 
   // ── Profile closed posts (publisher ∪ respondent) ────────────────────────
@@ -222,6 +207,14 @@ export class SupabasePostRepository implements IPostRepository {
     cursor?: string,
   ): Promise<ProfileClosedPostsItem[]> {
     return getProfileClosedPostsHelper(this.client, profileUserId, viewerUserId, limit, cursor);
+  }
+
+  async listPostActorIdentities(postId: string): Promise<PostActorIdentityRow[]> {
+    return listPostActorIdentitiesForPost(this.client, postId);
+  }
+
+  async upsertPostActorIdentity(input: UpsertPostActorIdentityInput): Promise<void> {
+    return upsertPostActorIdentityRow(this.client, input);
   }
 
   // ── Stats ───────────────────────────────────────────────────────────────

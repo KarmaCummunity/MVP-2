@@ -16,6 +16,8 @@ import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
 import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { MessageBubble } from '../../src/components/MessageBubble';
+import { ChatDaySeparator } from '../../src/components/chat/ChatDaySeparator';
+import { buildChatThreadRowsNewestFirst } from '../../src/lib/chatThreadListRows';
 import { computeHandledIds } from '../../src/components/chat/system/handledIds';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
@@ -72,6 +74,7 @@ export default function ChatScreen() {
   // Precompute O(1) lookup of message ids handled by a later mod_action_taken
   // bubble (FR-MOD-010). Built once per messages render; O(1) per row.
   const handledIds = useMemo(() => computeHandledIds(reversedMessages), [reversedMessages]);
+  const listRows = useMemo(() => buildChatThreadRowsNewestFirst(reversedMessages), [reversedMessages]);
 
   const confirmHideFromInbox = async () => {
     setHideBusy(true);
@@ -117,18 +120,21 @@ export default function ChatScreen() {
           />
         ) : null}
         <FlatList
-          data={reversedMessages}
+          data={listRows}
           inverted
-          keyExtractor={(m) => m.clientId}
+          keyExtractor={(row) => (row.rowType === 'message' ? row.message.clientId : row.rowKey)}
           contentContainerStyle={styles.messageList}
-          renderItem={({ item }) => (
-            <MessageBubble
-              m={item}
-              mine={item.senderId === userId}
-              onRetry={() => send(item.clientId, item.body)}
-              handledByLaterAction={handledIds.has(item.messageId)}
-            />
-          )}
+          renderItem={({ item }) =>
+            item.rowType === 'day' ? (
+              <ChatDaySeparator anchorIso={item.anchorIso} />
+            ) : (
+              <MessageBubble
+                m={item.message}
+                mine={item.message.senderId === userId}
+                onRetry={() => send(item.message.clientId, item.message.body)}
+                handledByLaterAction={handledIds.has(item.message.messageId)}
+              />
+            )}
         />
 
         <View style={styles.inputBar}>

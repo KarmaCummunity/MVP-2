@@ -60,7 +60,7 @@ The list of all of my conversations, sorted by latest activity.
 
 **Acceptance Criteria.**
 - AC1. Header: back button, counterpart avatar + name, `⋮` menu (`View profile`, `Block`, `Report conversation`).
-- AC2. Body: message bubbles (mine right-aligned in LTR, left-aligned in RTL; opposite for counterpart). Each bubble shows timestamp on tap.
+- AC2. Body: message bubbles (mine right-aligned in LTR, left-aligned in RTL; opposite for counterpart). Each bubble shows timestamp on tap (includes a short date when the message is not from the current local calendar day). A centered **day separator** (today / yesterday / full weekday date) is shown between messages when the thread crosses into a new local calendar day so the hour-only default is not ambiguous.
 - AC3. Composer: single-line auto-growing text input + send button. **No** attachment buttons (`R-MVP-Chat-2`).
 - AC4. Read receipt: a `✓✓` indicator is shown next to a sent message once the counterpart's client confirms reading. Read receipts cannot be turned off in MVP (`R-MVP-Chat-5`).
 - AC5. Maximum message length: 2,000 characters. Inputs longer are blocked with an inline counter.

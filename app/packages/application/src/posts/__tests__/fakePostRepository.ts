@@ -7,6 +7,7 @@ import type {
   PostWithOwner,
   UpdatePostInput,
 } from '../../ports/IPostRepository';
+import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from '../../ports/postActorIdentity';
 import type { Post, PostStatus, ProfileClosedPostsItem } from '@kc/domain';
 import type { PostError } from '../errors';
 
@@ -34,7 +35,10 @@ export class FakePostRepository implements IPostRepository {
     limit: number;
     cursor?: string;
   } | null = null;
+  lastListPostActorIdentityPostId: string | null = null;
+  lastUpsertPostActorIdentityArgs: UpsertPostActorIdentityInput | null = null;
   profileClosedPostsResult: ProfileClosedPostsItem[] = [];
+  listPostActorIdentitiesResult: PostActorIdentityRow[] = [];
 
   // Stubs / errors
   createResult: Post | null = null;
@@ -144,45 +148,15 @@ export class FakePostRepository implements IPostRepository {
     this.lastGetProfileClosedPostsArgs = { profileUserId, viewerUserId, limit, cursor };
     return this.profileClosedPostsResult;
   };
-}
 
-export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostWithOwner {
-  return {
-    postId: 'p_1',
-    ownerId: 'u_1',
-    ownerName: 'Test User',
-    ownerAvatarUrl: null,
-    ownerHandle: 'test-user',
-    ownerPrivacyMode: 'Public',
-    type: 'Give',
-    status: 'open',
-    visibility: 'Public',
-    title: 'Test Post',
-    description: null,
-    category: 'Other',
-    address: { city: 'tel-aviv', cityName: 'תל אביב', street: 'Allenby', streetNumber: '10' },
-    locationDisplayLevel: 'CityAndStreet',
-    itemCondition: 'Good',
-    urgency: null,
-    mediaAssets: [],
-    recipient: null,
-    recipientUser: null,
-    distanceKm: null,
-    reopenCount: 0,
-    deleteAfter: null,
-    createdAt: '2026-05-08T10:00:00.000Z',
-    updatedAt: '2026-05-08T10:00:00.000Z',
-    ...overrides,
+  listPostActorIdentities = async (postId: string): Promise<PostActorIdentityRow[]> => {
+    this.lastListPostActorIdentityPostId = postId;
+    return this.listPostActorIdentitiesResult;
+  };
+
+  upsertPostActorIdentity = async (input: UpsertPostActorIdentityInput): Promise<void> => {
+    this.lastUpsertPostActorIdentityArgs = input;
   };
 }
 
-export function makeClosureCandidate(overrides: Partial<ClosureCandidate> = {}): ClosureCandidate {
-  return {
-    userId: 'u_recipient',
-    fullName: 'דנה לוי',
-    avatarUrl: null,
-    cityName: 'תל אביב',
-    lastMessageAt: '2026-05-10T10:00:00.000Z',
-    ...overrides,
-  };
-}
+export { makePostWithOwner, makeClosureCandidate } from './fakePostRepositoryFactories';

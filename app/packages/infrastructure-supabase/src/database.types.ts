@@ -510,6 +510,45 @@ export type Database = {
           },
         ]
       }
+      post_actor_identity: {
+        Row: {
+          exposure: string
+          hide_from_counterparty: boolean
+          post_id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          exposure: string
+          hide_from_counterparty?: boolean
+          post_id: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          exposure?: string
+          hide_from_counterparty?: boolean
+          post_id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_actor_identity_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "post_actor_identity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           category: string

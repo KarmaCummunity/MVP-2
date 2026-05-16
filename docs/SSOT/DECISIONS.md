@@ -559,6 +559,26 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
+## D-26 — Post visibility vs per-actor identity on posts (2026-05-16)
+
+**Decision.** Keep `Post.visibility` / `is_post_visible_to` as the **community audience** control for post listings (`FR-POST-009`). Add a separate per-`(post_id, user_id)` policy (`post_actor_identity`) for **how that user's identity is rendered on post surfaces** (feed cards, post detail author/recipient rows) including **counterparty-only** masking and the coupling rule: when the post is `OnlyMe` for the owner, the owner is always anonymous to the counterparty on those surfaces. **Profiles and chat participants** stay real-user shells; chat anchors remain **open posts only** (existing anchor lifecycle).
+
+**Rationale.** Product requires independent axes: a post can be broadly visible while a participant hides from the partner, and vice versa. Collapsing both into `visibility` would break `FR-POST-009` invariants and blur UX.
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021`), `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md`, migration `0083_post_actor_identity.sql`.
+
+---
+
+## D-27 — About narrative: product transparency vs optional user anonymity (2026-05-16)
+
+**Decision.** In-app About / marketing copy should **not** claim “privacy by default” as a *product value chip* when the product stance is **transparent operation by default** (what the system measures, why, and how safety works). **User-controlled anonymity** (e.g. profile/post visibility choices) is described as an **optional user preference**, not a substitute for product transparency.
+
+**Rationale.** The prior phrasing created cognitive tension with the “open community / transparency” story. Separating *platform transparency* from *personal anonymity choices* keeps trust messaging coherent while still honoring legitimate privacy needs.
+
+**Affected docs.** `docs/SSOT/spec/11_settings.md` (About scope ACs), Hebrew `aboutContent` bundles + FAQ alignment.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
@@ -579,3 +599,4 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 | 1.4 | 2026-05-16 | Added `D-23` (display strings live in the mobile composition root; `INFRA-I18N-PROD-CODE` ✅). |
 | 1.5 | 2026-05-16 | Added `D-24` (bilingual MVP `he`+`en`; locale-backed copy contract includes migrations/SQL — implementation deferred). |
 | 1.6 | 2026-05-16 | Added `D-25` (`users.display_name`/`city`/`city_name` nullable; migration `0084` removes the Hebrew defaults — first concrete delivery against `D-24`). |
+| 1.7 | 2026-05-16 | Added `D-26` (Post visibility vs per-actor identity on posts; `FR-POST-021`) and `D-27` (About copy: transparency vs optional anonymity). |

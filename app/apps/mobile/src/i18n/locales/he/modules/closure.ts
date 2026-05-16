@@ -7,6 +7,9 @@ export const closureHe = {
   detailReopenSuccessToast: 'הפוסט נפתח מחדש בהצלחה.',
   markGiveCta: 'סמן כנמסר ✓',
   markRequestCta: 'סמן שקיבלתי ✓',
+  /** Shared CTA copy — owner reopen + recipient un-mark (FR-CLOSURE-005 / FR-CLOSURE-007). */
+  itemNotDeliveredCta: 'החפץ לא נמסר בסוף',
+  itemNotDeliveredA11y: 'החפץ לא נמסר בסוף',
   reopenCta: '📤 פתח מחדש',
   reopenA11y: 'פתח מחדש',
 
@@ -53,6 +56,7 @@ export const closureHe = {
   errorDefault: 'לא הצלחנו להתחיל את תהליך הסגירה. נסה שוב עוד רגע.',
 
   // FR-CLOSURE-005 — reopen confirm (ReopenConfirmModal)
+  itemNotDeliveredModalTitle: 'החפץ לא נמסר בסוף?',
   reopenTitle: '📤  לפתוח את הפוסט מחדש?',
   reopenBodyClosedDelivered: 'הפוסט יחזור להיות פעיל בפיד.',
   reopenBodyDeletedNoRecipient: 'הפוסט יחזור להיות פעיל בפיד והוא לא יימחק.',
@@ -72,8 +76,9 @@ export const closureHe = {
   calloutRequestSublabel: 'הבקשה נענתה',
 
   // RecipientUnmarkBar (FR-CLOSURE-007)
-  unmarkSelfCta: 'הסר סימון שלי',
-  unmarkConfirmTitle: 'הסרת סימון',
+  unmarkSelfCta: 'החפץ לא נמסר בסוף',
+  unmarkSelfA11y: 'החפץ לא נמסר בסוף',
+  unmarkConfirmTitle: 'החפץ לא נמסר בסוף?',
   unmarkConfirmBody:
     'לא תקבל קרדיט על פריט זה, ובעל הפוסט יקבל הודעה. הפוסט יישמר 7 ימים לפני מחיקה.',
   unmarkConfirmCta: 'הסר',

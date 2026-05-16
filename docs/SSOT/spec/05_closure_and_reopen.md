@@ -103,7 +103,7 @@ The owner can return a `closed_delivered` post (or a `deleted_no_recipient` post
 - Decisions: `D-6`.
 
 **Acceptance Criteria.**
-- AC1. The "📤 Reopen" CTA is visible on the owner's view of a closed post.
+- AC1. The primary CTA for reopening uses the shared *"item not delivered"* framing (`closure.itemNotDeliveredCta`); behavior remains reopen per AC3–AC7.
 - AC2. Confirmation modal warns about consequences and (when relevant) that the recipient mark will be removed.
 - AC3. On confirm, the post's status returns to `open`. If the post was `closed_delivered`:
    - The associated `Recipient` row is deleted.
@@ -151,6 +151,7 @@ The recipient can remove their recipient mark from a post they were credited wit
 
 **Acceptance Criteria.**
 - AC1. Available only on the recipient's view of `FR-POST-017` for posts in `closed_delivered`.
+- AC1b. The primary CTA label matches the shared *"item not delivered"* copy (`closure.unmarkSelfCta`); behavior remains un-mark per AC3–AC4.
 - AC2. Confirmation modal explains the consequences: *"You will no longer be credited for this item, and the post owner will be notified that you removed your mark."*
 - AC3. On confirm:
    - The `Recipient` row is deleted.
