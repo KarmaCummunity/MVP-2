@@ -20,12 +20,11 @@ import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGr
 import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
-import { container } from '../../../src/lib/container';
-import { consumePreferNewThread } from '../../../src/lib/chatNavigationPrefs';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
+import { useOtherProfileActions } from '../../../src/hooks/useOtherProfileActions';
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
@@ -102,33 +101,12 @@ export default function OtherProfileScreen() {
     </SafeAreaView>
   );
 
-  // (hooks moved above — see top of component)
-  const onFollowPress = () => {
-    const s = followInfo?.state;
-    if (s === 'not_following_public') dispatchFollowAction('follow');
-    else if (s === 'following') dispatchFollowAction('unfollow');
-    else if (s === 'not_following_private_no_request') dispatchFollowAction('send');
-    else if (s === 'request_pending') dispatchFollowAction('cancel');
-  };
+  const { onFollowPress, startChat } = useOtherProfileActions({ me, target: u, dispatchFollowAction });
 
-  const startChat = async () => {
-    if (!me) return;
-    const preferNewThread = consumePreferNewThread(u.userId);
-    const chat = await container.openOrCreateChat.execute({
-      viewerId: me,
-      otherUserId: u.userId,
-      preferNewThread,
-    });
-    router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
-  };
-
-  // Default to "+ עקוב" while stateQuery is in flight so the CTA paints immediately.
+  // CTA paints immediately during stateQuery flight. On error we keep the button
+  // visible but busy/disabled so a transient failure can't double-tap-fire.
   const followState = followInfo?.state ?? 'not_following_public';
-  // Show the button for any non-self authenticated user.
-  // If the query errored, we keep the button visible but in busy/disabled state
-  // — hiding it entirely is confusing UX.
   const showFollowButton = Boolean(me) && !isMe;
-  // Busy = loading OR error (prevent double-tap on transient failure).
   const followBusy = stateQuery.isLoading || stateQuery.isError;
 
   return (
@@ -161,7 +139,7 @@ export default function OtherProfileScreen() {
                   <FollowButton
                     state={followState}
                     cooldownUntil={followInfo?.cooldownUntil}
-                    onPress={onFollowPress}
+                    onPress={() => onFollowPress(followInfo?.state)}
                     busy={followBusy}
                     interactionDisabled={followInfo?.followInteractionDisabled}
                   />
