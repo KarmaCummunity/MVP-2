@@ -395,7 +395,7 @@ Address fields are validated for shape only, not against a geocoder.
 **Acceptance Criteria.**
 - AC1. `city` is selected from the canonical seeded list (no free text).
 - AC2. `street` is free text (1–80 chars), trimmed.
-- AC3. `street_number` accepts digits and an optional letter suffix (e.g., `12A`).
+- AC3. `street_number` accepts digits and an optional single-letter suffix. The suffix may be a Latin letter (`12A`, `12B`) or a Hebrew letter (`12א`, `15ב`) to support Israeli street numbering conventions. Punctuation and multi-character suffixes are rejected.
 - AC4. Geocoding to lat/lon is **not** performed in MVP.
 - AC5. The composed display string follows `location_display_level`:
    - `CityOnly` → "Tel Aviv"

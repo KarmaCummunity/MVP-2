@@ -22,7 +22,7 @@ export const errorsHe = {
     description_too_long: 'התיאור ארוך מ-500 תווים.',
     address_required: 'יש להזין עיר, רחוב ומספר בית.',
     address_invalid: 'הכתובת שהוזנה אינה תקינה.',
-    street_number_invalid: 'מספר הבית לא תקין. השתמש בספרות בלבד (אפשר אות לועזית בסוף, למשל 12 או 12B).',
+    street_number_invalid: 'מספר הבית לא תקין. השתמש בספרות בלבד (אפשר להוסיף אות אחת בסוף, למשל 12, 12B או 12א).',
     city_not_found: 'העיר שנבחרה לא נמצאה ברשימה. אנא בחר עיר מהרשימה.',
     image_required_for_give: 'פוסטים מסוג "לתת" חייבים לפחות תמונה אחת.',
     too_many_media_assets: 'מותר עד 5 תמונות לפוסט.',
