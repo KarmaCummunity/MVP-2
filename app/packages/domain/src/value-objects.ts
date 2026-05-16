@@ -147,7 +147,7 @@ export function createAddress(raw: {
 
 // Street number must be digits, optionally followed by a single Latin or Hebrew
 // letter (Israeli addressing uses suffixes like `12א`, `15ב`).
-// Mirrors the DB CHECK in `0080_street_number_allow_hebrew_suffix.sql`.
+// Mirrors the DB CHECK in `0081_street_number_allow_hebrew_suffix.sql`.
 // Keep these two definitions in sync.
 export const STREET_NUMBER_PATTERN = /^[0-9]+[A-Za-zא-ת]?$/;
 
