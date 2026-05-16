@@ -16,9 +16,9 @@ export interface EditProfileAddressBlockProps {
 }
 
 export function EditProfileAddressBlock({
-  const { t } = useTranslation();
   city, onCityChange, street, streetNumber, onStreetChange, onStreetNumberChange, disabled,
 }: EditProfileAddressBlockProps) {
+  const { t } = useTranslation();
   return (
     <View style={styles.container}>
       <View style={styles.field}>
