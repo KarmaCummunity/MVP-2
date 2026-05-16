@@ -15,4 +15,5 @@ export const chatHe = {
   hideFromInboxCancel: 'ביטול',
   hideFromInboxConfirm: 'הסר',
   menuReport: 'דווח על השיחה',
+  minutesAgoShort: "לפני {{count}} דק'",
 } as const;

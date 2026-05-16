@@ -5,6 +5,7 @@
 // ─────────────────────────────────────────────
 
 import { Linking, Platform } from 'react-native';
+import i18n from '../i18n';
 import { confirmAction } from './platformConfirm';
 import * as ImagePicker from 'expo-image-picker';
 import * as ImageManipulator from 'expo-image-manipulator';
@@ -34,9 +35,9 @@ async function ensureMediaLibraryPermission(): Promise<boolean> {
   if (result.granted) return true;
   if (result.canAskAgain) return false;
   const openSettings = await confirmAction(
-    'גישה לגלריה נדחתה',
-    'כדי לבחור תמונה מהגלריה יש לאפשר גישה בהגדרות → קהילת קארמה → תמונות.',
-    { confirmLabel: 'פתח הגדרות' },
+    i18n.t('errors.media.galleryDeniedTitle'),
+    i18n.t('errors.media.galleryDeniedBodyAvatar'),
+    { confirmLabel: i18n.t('errors.media.openSettings') },
   );
   if (openSettings) void Linking.openSettings();
   return false;
@@ -47,9 +48,9 @@ async function ensureCameraPermission(): Promise<boolean> {
   if (result.granted) return true;
   if (result.canAskAgain) return false;
   const openSettings = await confirmAction(
-    'גישה למצלמה נדחתה',
-    'כדי לצלם תמונה יש לאפשר גישה בהגדרות → קהילת קארמה → מצלמה.',
-    { confirmLabel: 'פתח הגדרות' },
+    i18n.t('errors.media.cameraDeniedTitle'),
+    i18n.t('errors.media.cameraDeniedBodyAvatar'),
+    { confirmLabel: i18n.t('errors.media.openSettings') },
   );
   if (openSettings) void Linking.openSettings();
   return false;
