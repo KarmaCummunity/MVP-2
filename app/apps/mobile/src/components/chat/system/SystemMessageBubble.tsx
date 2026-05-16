@@ -7,6 +7,7 @@ import { AutoRemovedBubble } from './AutoRemovedBubble';
 import { ModActionTakenBubble } from './ModActionTakenBubble';
 import { OwnerAutoRemovedBubble } from './OwnerAutoRemovedBubble';
 import { DonationLinkReportedBubble } from './DonationLinkReportedBubble';
+import { SupportIssueBubble } from './SupportIssueBubble';
 
 export interface SystemMessageBubbleProps {
   messageId: string;
@@ -29,6 +30,8 @@ export function SystemMessageBubble(props: SystemMessageBubbleProps): React.Reac
       return <OwnerAutoRemovedBubble {...props} />;
     case 'donation_link_reported':
       return <DonationLinkReportedBubble {...props} />;
+    case 'support_issue':
+      return <SupportIssueBubble {...props} />;
     default:
       return null;
   }

@@ -102,6 +102,21 @@ export class SupabaseChatRepository implements IChatRepository {
     return Number(data ?? 0);
   }
 
+  async submitSupportIssue(category: string | null, description: string): Promise<Chat> {
+    const { data, error } = await this.client.rpc('rpc_submit_support_issue', {
+      p_category: category ?? null,
+      p_description: description,
+    });
+    if (error) throw mapChatError(error);
+    const row = (Array.isArray(data) ? data[0] : data) as
+      | Database['public']['Tables']['chats']['Row']
+      | undefined;
+    if (!row) {
+      throw new ChatError('super_admin_not_found', 'super_admin_not_found');
+    }
+    return rowToChat(row);
+  }
+
   async getOrCreateSupportThread(_userId: string): Promise<Chat> {
     const { data, error } = await this.client.rpc(
       'rpc_get_or_create_support_thread',

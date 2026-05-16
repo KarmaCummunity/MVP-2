@@ -993,6 +993,19 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rpc_submit_support_issue: {
+        Args: { p_category: string | null; p_description: string }
+        Returns: {
+          anchor_post_id: string | null
+          chat_id: string
+          created_at: string
+          is_support_thread: boolean
+          last_message_at: string
+          participant_a: string
+          participant_b: string
+          removed_at: string | null
+        }
+      }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
       // P0.6 closure RPCs (0015) — manually added until next typegen run.
       close_post_with_recipient: {

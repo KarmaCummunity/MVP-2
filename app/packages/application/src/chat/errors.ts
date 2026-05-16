@@ -9,6 +9,7 @@ export type ChatErrorCode =
   | 'send_to_deleted_user'
   | 'super_admin_not_found'
   | 'support_thread_not_hideable'
+  | 'description_too_short'
   | 'unknown';
 
 export class ChatError extends Error {
