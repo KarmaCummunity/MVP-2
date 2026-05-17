@@ -19,6 +19,11 @@ export function useShellTabBarVisibility(): boolean {
 
   const head = segments[0] as string | undefined;
   const isAuthLanding = head === 'auth' && (segments[1] === 'callback' || segments[1] === 'verify');
+  // Chat conversation screen renders its own message composer at the bottom
+  // edge of the viewport, so the floating pill would overlap the input. The
+  // list screen at `chat` (segments[1] is undefined) keeps the bar — only the
+  // dynamic `[id]` route hides it.
+  const onChatConversation = head === 'chat' && segments[1] === '[id]';
   const onAboutSurface = isAboutMarketingPath(pathname);
   const hideBottomBar = onAboutSurface && parseTruthyQueryParam(params.hideBottomBar);
 
@@ -28,7 +33,8 @@ export function useShellTabBarVisibility(): boolean {
     head !== '(auth)' &&
     head !== '(guest)' &&
     head !== '(onboarding)' &&
-    !isAuthLanding;
+    !isAuthLanding &&
+    !onChatConversation;
 
   return base && !hideBottomBar;
 }
