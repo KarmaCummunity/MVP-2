@@ -29,6 +29,36 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     link.href = '/favicon.ico';
     document.head.appendChild(link);
   }
+  // Lock the mobile-web viewport to device width so the app behaves like a
+  // native app: no pinch-zoom, no horizontal pan, no iOS input auto-zoom.
+  // Expo's `web.output: "single"` template hard-codes a permissive viewport
+  // (`width=device-width, initial-scale=1, shrink-to-fit=no`) and ignores
+  // `+html.tsx`, so we patch the tag at runtime.
+  let viewportMeta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+  if (!viewportMeta) {
+    viewportMeta = document.createElement('meta');
+    viewportMeta.name = 'viewport';
+    document.head.appendChild(viewportMeta);
+  }
+  viewportMeta.content =
+    'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+
+  // Belt-and-braces: even with the viewport locked, an absolutely-positioned
+  // child with a negative offset (e.g. a decorative blob) can extend the
+  // document past the viewport on web. Clip html/body horizontally.
+  const noHScrollId = 'kc-no-horizontal-scroll';
+  if (!document.getElementById(noHScrollId)) {
+    const style = document.createElement('style');
+    style.id = noHScrollId;
+    style.textContent = `html, body {
+  margin: 0;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+}`;
+    document.head.appendChild(style);
+  }
+
   // iOS Safari (and WebKit-based mobile browsers) zoom the viewport when a
   // focused text control's font-size is under 16px. RN-Web maps TextInput to
   // <input>/<textarea>; cap only on narrow viewports so desktop web typography
