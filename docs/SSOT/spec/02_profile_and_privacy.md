@@ -339,6 +339,7 @@ The signed-in user opens a dedicated list of posts they have bookmarked from the
 - AC3. The grid lists bookmarked posts the viewer can still read; posts that became invisible (visibility change, unfollow, block, etc.) are omitted from the list but remain stored until unsave or post delete (`D-29`).
 - AC4. Tapping a card opens Post Detail with the same navigation as other profile grids.
 - AC5. Empty state when the user has no visible saved posts: warm copy directing them to save from the feed or post detail.
+- AC6. The Saved screen renders a banner plus two sections — "פוסטים פתוחים" and "פוסטים סגורים" — mirroring `/profile/hidden`. Posts are partitioned client-side by `status` (`open` vs `closed_delivered` / `deleted_no_recipient`). Each section has its own empty-state copy.
 
 **Related.** Screens: 3.1 · `FR-POST-022`.
 
@@ -346,6 +347,7 @@ The signed-in user opens a dedicated list of posts they have bookmarked from the
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.9 | 2026-05-17 | `FR-PROFILE-016` AC6 — Saved screen splits into open/closed sections (mirrors `/profile/hidden`). |
 | 0.8 | 2026-05-16 | Saved / hidden / removed owner lists: nested stack header + back; no profile chrome on those routes (`FR-PROFILE-001` AC4, `FR-PROFILE-016` AC2). |
 | 0.7 | 2026-05-16 | `FR-PROFILE-016` — My Profile ⋮ → saved posts list (`FR-POST-022`). |
 | 0.6 | 2026-05-16 | `D-28` follow-up: `FR-PROFILE-001 AC4` and `FR-PROFILE-002 AC2` now cite **the profile owner's** per-post `surface_visibility` as the third-party gate for the Closed Posts tab (publisher's `posts.visibility` no longer applies); Scope cross-reference expanded to the three-axis model (surface / identity / counterparty). |
