@@ -176,6 +176,7 @@ The post owner **or** the Super Admin (`users.is_super_admin = true`) can re-ope
 - AC2. The post `type` (Give vs Request) is **not** editable in MVP; the user must delete and recreate.
 - AC3. Edits do **not** bump the post to the top of the feed; `created_at` is immutable while `updated_at` advances.
 - AC4. Editing a post emits an `audit_event` (`R-MVP-Safety-3`) with the changed fields.
+- AC5. When the post transitions to `removed_admin` (via `admin_remove_post`), the prior status is captured in `posts.status_before_admin_removal`. The owner's "פוסטים שהוסרו על ידי מנהל" overflow screen uses this field to split the list into prior-open and prior-closed sections (`D-35`). Legacy rows (NULL) render under the prior-open section.
 
 **Edge Cases.**
 - A post that has expired (`Post.status = expired`) cannot be edited; the form is disabled with a hint to "Republish".
@@ -477,6 +478,7 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
+| 0.8 | 2026-05-17 | `FR-POST-008` AC5 + `D-35` — `posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status. |
 | 0.7 | 2026-05-17 | `FR-POST-009` AC5 + `D-34` — owner-driven Hide on `closed_delivered` / `deleted_no_recipient` writes `posts.visibility`; mobile fans out to owner's `surface_visibility`. |
 | 0.6 | 2026-05-17 | `FR-POST-009` — visibility may change freely after publish (incl. hide after exposure); `FR-POST-021`/`FR-POST-006`/`FR-POST-008` aligned; migration `0094_posts_visibility_free_change.sql`; decision `D-32`. |
 | 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
