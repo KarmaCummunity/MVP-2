@@ -52,15 +52,12 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   if (!document.getElementById(layoutWebId)) {
     const style = document.createElement('style');
     style.id = layoutWebId;
-    // `overscroll-behavior: contain` blocks Chrome Android's native
-    // pull-to-refresh (which would reload the whole page) so that the in-app
-    // `WebPullToRefresh` component can own the gesture — FR-FEED-010 AC2.
     style.textContent = `html, body {
   margin: 0;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: none;
   -webkit-text-size-adjust: 100%;
 }
 #root {
@@ -113,10 +110,7 @@ import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOpt
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
-import {
-  SHELL_TAB_BAR_SURFACE_PX,
-  useShellTabBarVisibility,
-} from '../src/navigation/useShellTabBarVisibility';
+import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -160,28 +154,15 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
   // and squeezes TabBar past the viewport. Positioning TabBar absolutely at
   // the bottom is robust across iOS / Android / web. The Stack content gets
   // bottom padding so the chat composer / scrollable list don't sit under it.
-  // On mobile browsers, `fixed` keeps the bar flush to the visual viewport when
-  // the URL chrome shows/hides; `absolute` can leave a gap on Android Web.
-  const tabBarSlotStyle =
-    Platform.OS === 'web'
-      ? ({
-          position: 'fixed' as const,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          zIndex: 1000,
-          maxWidth: '100%',
-        } as const)
-      : { position: 'absolute' as const, bottom: 0, left: 0, right: 0, zIndex: 1000 };
+  const TAB_BAR_HEIGHT = 68;
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, paddingBottom: showTabBar ? SHELL_TAB_BAR_SURFACE_PX : 0 }}>
+      <View style={{ flex: 1, paddingBottom: showTabBar ? TAB_BAR_HEIGHT : 0 }}>
         {children}
       </View>
       <EphemeralToast />
       {showTabBar && (
-        <View style={tabBarSlotStyle}>
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
           <TabBar />
         </View>
       )}

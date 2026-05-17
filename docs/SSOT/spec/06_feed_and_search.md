@@ -247,21 +247,18 @@ A new public post created elsewhere appears in the feed without manual refresh, 
 
 ---
 
-## FR-FEED-010 — Pull-to-refresh (all platforms)
+## FR-FEED-010 — Pull-to-refresh (mobile) and refresh button (Web)
 
 **Description.**
-Manual refresh affordances coexist with realtime updates. The gesture is
-consistent across native and web — pull-down from the top of the feed
-re-queries it.
+Manual refresh affordances coexist with realtime updates.
 
 **Source.**
 - PRD: (UX baseline for mobile).
 
 **Acceptance Criteria.**
-- AC1. Native (iOS / Android): standard pull-to-refresh gesture (FlatList `RefreshControl`) re-queries the feed.
-- AC2. Web (mobile-web Android / iOS, including standalone PWA): a custom in-app pull-to-refresh gesture re-queries the feed. The browser's native pull-to-refresh is suppressed (`overscroll-behavior: contain`) so the gesture never reloads the page and never resets app state.
-- AC3. Web (desktop): keyboard shortcut `R` (configurable in `06_cross_cutting/03_i18n_rtl.md`) triggers the same refresh and surfaces an ephemeral success / failure toast.
-- AC4. Refresh resets the pagination cursor to the top.
+- AC1. Mobile: standard pull-to-refresh gesture re-queries the feed.
+- AC2. Web: a refresh button is provided next to the search bar; keyboard shortcut `R` (configurable in `06_cross_cutting/03_i18n_rtl.md`) triggers it.
+- AC3. Refresh resets the pagination cursor to the top.
 
 **Related.** Domain: `Feed`.
 

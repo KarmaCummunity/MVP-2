@@ -1,22 +1,18 @@
 import { useTranslation } from 'react-i18next';
-import React, { useCallback, useRef } from 'react';
+import React from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
   RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
-  type NativeScrollEvent,
-  type NativeSyntheticEvent,
 } from 'react-native';
 import { colors, spacing, typography } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { PostCardGrid } from './PostCardGrid';
 import { EmptyState } from './EmptyState';
-import { WebPullToRefresh } from './WebPullToRefresh';
 
 interface Props {
   data: PostWithOwner[] | undefined;
@@ -52,14 +48,6 @@ export function PostFeedList({
   listRef,
 }: Props) {
   const { t } = useTranslation();
-  // RN-Web ignores `RefreshControl`; track scroll Y so `WebPullToRefresh` can
-  // arm only when the user is at the top. `useRef` (not state) avoids a
-  // re-render on every scroll frame.
-  const scrollYRef = useRef(0);
-  const handleScroll = useCallback((e: NativeSyntheticEvent<NativeScrollEvent>) => {
-    scrollYRef.current = e.nativeEvent.contentOffset.y;
-  }, []);
-
   if (isLoading && !data) {
     return (
       <View style={styles.center}>
@@ -77,7 +65,7 @@ export function PostFeedList({
       </View>
     );
   }
-  const list = (
+  return (
     <FlatList
       ref={listRef}
       data={data ?? []}
@@ -108,36 +96,18 @@ export function PostFeedList({
           </View>
         ) : null
       }
-      // Native: `RefreshControl` drives FR-FEED-010 AC1 pull-to-refresh.
-      // Web: ignored by RN-Web — `WebPullToRefresh` below owns the gesture.
       refreshControl={
-        Platform.OS !== 'web' ? (
-          <RefreshControl
-            refreshing={isRefetching}
-            onRefresh={onRefresh}
-            tintColor={colors.primary}
-          />
-        ) : undefined
+        <RefreshControl
+          refreshing={isRefetching}
+          onRefresh={onRefresh}
+          tintColor={colors.primary}
+        />
       }
-      onScroll={Platform.OS === 'web' ? handleScroll : undefined}
-      scrollEventThrottle={Platform.OS === 'web' ? 16 : undefined}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
       showsVerticalScrollIndicator={false}
     />
   );
-  if (Platform.OS === 'web') {
-    return (
-      <WebPullToRefresh
-        onRefresh={onRefresh}
-        isRefreshing={isRefetching}
-        getScrollY={() => scrollYRef.current}
-      >
-        {list}
-      </WebPullToRefresh>
-    );
-  }
-  return list;
 }
 
 const styles = StyleSheet.create({
