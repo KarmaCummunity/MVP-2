@@ -51,19 +51,6 @@ export interface IAuthService {
   exchangeCodeForSession(code: string): Promise<AuthSession>;
 
   /**
-   * FR-AUTH-003 / FR-AUTH-007 (web in-app sign-in path): exchange a Google-issued
-   * id_token (obtained client-side via Google Identity Services) for a Supabase
-   * session. `nonce` is the **raw** value originally hashed (sha256) and passed
-   * to GIS `initialize({ nonce })` — Supabase verifies that hash matches the
-   * `nonce` claim in the id_token.
-   */
-  signInWithIdToken(input: {
-    provider: 'google';
-    idToken: string;
-    nonce: string;
-  }): Promise<AuthSession>;
-
-  /**
    * FR-AUTH-006 (MVP gate): resend the signup verification email to `email`.
    * `emailRedirectTo` controls where the link lands after Supabase verifies the
    * token. Throws AuthError('rate_limited', ...) on too-frequent calls.
