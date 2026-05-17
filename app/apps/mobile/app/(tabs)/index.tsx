@@ -9,13 +9,11 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { TopBar } from '../../src/components/TopBar';
 import { FeedFilterIcon } from '../../src/components/FeedFilterIcon';
-import { WebRefreshButton } from '../../src/components/WebRefreshButton';
 import { NewPostsBanner } from '../../src/components/NewPostsBanner';
 import { FirstPostNudge } from '../../src/components/FirstPostNudge';
 import { FeedEmptyState } from '../../src/components/FeedEmptyState';
@@ -30,7 +28,6 @@ import { getFeedUseCase } from '../../src/services/postsComposition';
 
 export default function HomeFeedScreen() {
   const router = useRouter();
-  const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
@@ -77,18 +74,6 @@ export default function HomeFeedScreen() {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, [feedQuery, resetNewPosts]);
 
-  const refetchFromToolbarWithToast = useCallback(async () => {
-    resetNewPosts();
-    listRef.current?.scrollToOffset({ offset: 0, animated: true });
-    const result = await feedQuery.refetch();
-    const toast = useFeedSessionStore.getState().showEphemeralToast;
-    if (result.isError) {
-      toast(t('feed.refreshFailed'), 'error');
-    } else {
-      toast(t('feed.refreshSuccess'), 'success');
-    }
-  }, [feedQuery, resetNewPosts, t]);
-
   useFeedRealtime(refetchAndReset);
 
   const nudge = useFirstPostNudge(viewerId);
@@ -131,12 +116,7 @@ export default function HomeFeedScreen() {
   return (
     <Screen blobs="content">
       <TopBar
-        extraIcon={
-          <>
-            <WebRefreshButton onPress={refetchFromToolbarWithToast} isLoading={feedQuery.isRefetching} />
-            <FeedFilterIcon activeCount={activeCount} onPress={() => setSheetOpen(true)} />
-          </>
-        }
+        extraIcon={<FeedFilterIcon activeCount={activeCount} onPress={() => setSheetOpen(true)} />}
       />
 
       <PostFeedList

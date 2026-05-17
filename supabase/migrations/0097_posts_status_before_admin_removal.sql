@@ -1,65 +1,69 @@
--- 0097_posts_status_before_admin_removal | FR-POST-008 owner list + D-35
--- Track the prior status when a post transitions to 'removed_admin' so the
--- /profile/removed screen can split open- and closed-pre-removal lanes,
--- mirroring /profile/hidden. Legacy 'removed_admin' rows (NULL) render under
--- the open lane by default in the UI (no backfill: actual prior status is
--- unknown and inferring from audit history is fragile).
+-- 0097_posts_status_before_admin_removal | FR-ADMIN-002 / FR-MOD-006
+-- Persist the pre-removal lifecycle status when a post transitions to
+-- `removed_admin`, so Super Admin restore can return the row to its prior state.
+--
+-- Idempotent: safe for `supabase db reset` and for environments where this
+-- migration was already applied remotely before the SQL file landed in git.
 
-ALTER TABLE public.posts
-  ADD COLUMN IF NOT EXISTS status_before_admin_removal text
-  CHECK (
-    status_before_admin_removal IS NULL
-    OR status_before_admin_removal IN ('open', 'closed_delivered', 'deleted_no_recipient')
-  );
+alter table public.posts
+  add column if not exists status_before_admin_removal text;
 
-COMMENT ON COLUMN public.posts.status_before_admin_removal IS
-  'Snapshot of posts.status taken by admin_remove_post() before flipping to removed_admin. NULL for legacy rows or for posts not in removed_admin. Drives the open/closed split on /profile/removed (FR-POST-008, D-35).';
+do $body$
+begin
+  if not exists (
+    select 1
+    from pg_constraint c
+    where c.conrelid = 'public.posts'::regclass
+      and c.conname = 'posts_status_before_admin_removal_check'
+  ) then
+    alter table public.posts
+      add constraint posts_status_before_admin_removal_check
+      check (
+        status_before_admin_removal is null
+        or status_before_admin_removal in (
+          'open',
+          'closed_delivered',
+          'deleted_no_recipient'
+        )
+      );
+  end if;
+end;
+$body$;
 
--- Update admin_remove_post to capture the prior status atomically with the
--- transition. Idempotent: re-running on an already-removed post is a quiet
--- no-op (status_before_admin_removal preserved from the first call).
-CREATE OR REPLACE FUNCTION public.admin_remove_post(p_post_id uuid)
-RETURNS void
-LANGUAGE plpgsql
-SECURITY DEFINER
-SET search_path = public
-AS $$
-DECLARE
+-- Manual admin removal: snapshot prior lifecycle status for future restore UX / logic.
+create or replace function public.admin_remove_post(p_post_id uuid)
+returns void
+language plpgsql
+security definer
+set search_path = public
+as $$
+declare
   v_actor uuid := auth.uid();
-BEGIN
-  IF v_actor IS NULL THEN
-    RAISE EXCEPTION 'forbidden' USING errcode = '42501';
-  END IF;
+begin
+  if v_actor is null then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
 
-  IF NOT public.is_admin(v_actor) THEN
-    RAISE EXCEPTION 'forbidden' USING errcode = '42501';
-  END IF;
+  if not public.is_admin(v_actor) then
+    raise exception 'forbidden' using errcode = '42501';
+  end if;
 
-  UPDATE public.posts
-     SET status_before_admin_removal = status,
+  update public.posts
+     set status_before_admin_removal = status,
          status = 'removed_admin',
          updated_at = now()
-   WHERE post_id = p_post_id
-     AND status <> 'removed_admin'
-     AND status IN ('open', 'closed_delivered', 'deleted_no_recipient');
+   where post_id = p_post_id
+     and status <> 'removed_admin'
+     and status in ('open', 'closed_delivered', 'deleted_no_recipient');
 
-  IF NOT FOUND THEN
+  if not found then
     -- Either the post does not exist, is already removed_admin, or is in a
     -- terminal state (expired) we don't admin-remove. Quiet no-op preserves
     -- legacy idempotency contract.
-    RETURN;
-  END IF;
+    return;
+  end if;
 
-  INSERT INTO public.audit_events (actor_id, action, target_type, target_id, metadata)
-  VALUES (v_actor, 'manual_remove_target', 'post', p_post_id, '{}'::jsonb);
-END;
+  insert into public.audit_events (actor_id, action, target_type, target_id, metadata)
+  values (v_actor, 'manual_remove_target', 'post', p_post_id, '{}'::jsonb);
+end;
 $$;
-
-REVOKE EXECUTE ON FUNCTION public.admin_remove_post(uuid) FROM public;
-GRANT EXECUTE ON FUNCTION public.admin_remove_post(uuid) TO authenticated;
-
--- admin_restore_target (migration 0035) flips status back to 'open' and we
--- intentionally KEEP status_before_admin_removal — it has no meaning once
--- status <> 'removed_admin' but preserving it adds zero risk and avoids a
--- second function-replace migration. UI logic ignores the column unless
--- status = 'removed_admin'. If we revisit, drop it in a follow-up.
