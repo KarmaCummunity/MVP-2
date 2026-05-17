@@ -652,10 +652,30 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
+## D-33 — Web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native (2026-05-17)
+
+**Decision.** On Web, "Continue with Google" performs a **top-level same-tab navigation** to `accounts.google.com`. The browser then redirects to `/auth/callback?code=…`, which the existing callback handler exchanges for a Supabase session. No `window.open` popup, no embedded picker UI. Native (iOS/Android) continues to use `WebBrowser.openAuthSessionAsync` for now; the bottom-sheet, in-app account picker UX requested in product will be delivered on native via `@react-native-google-signin/google-signin` in a follow-up PR.
+
+**Rationale.**
+- **Popups are blocked on mobile Safari.** Both `window.open` (the previous web flow's expo-web-browser polyfill) and Google Identity Services' fallback popup hit Safari's popup-blocker because they fire after async setup, outside the user-gesture window. PM confirmed the bug: clicking "Continue with Google" shows "Popup window was blocked".
+- **Google forbids iframe-embedding `accounts.google.com`** (`X-Frame-Options: DENY`). The PM-requested vision of an in-app account-picker bottom sheet on Web is technically blocked by Google's anti-phishing policy. The closest possible web approximation — GIS + FedCM — falls back to popups on non-Chrome browsers and was rejected after the previous attempt failed in Safari.
+- **Same-tab redirect is the industry standard** (Notion, Linear, GitHub, Vercel, Supabase's own dashboard). It is the only web Google flow that avoids `window.open` entirely. The Google account picker still renders at the URL in the PM's reference screenshot (`accounts.google.com/v3/signin/accountchooser`) — it just renders as a full-tab navigation instead of a popup. The visual experience is preserved.
+- **The bottom-sheet vision lives on native.** iOS and Android can use the official Google Sign-In SDK, which renders an OS-native account-picker bottom sheet inside the app (no browser involved). That delivers the requested UX where Google's policy permits it.
+
+**Rejected alternatives.**
+- GIS button + FedCM inside a bottom sheet — previous attempt (`D-32` first-claim, then `P2.24`). Reverted because Safari fallback is the same popup-block.
+- Same-tab redirect wrapped in a bottom-sheet UI — adds an extra tap with no compensating benefit (the picker is not inside the sheet anyway).
+- Custom Google account-picker UI proxied through our backend — breaks Google's Terms of Service.
+
+**Affected.** `apps/mobile/src/services/authComposition.ts` (`redirectToGoogleSignInWeb`), `apps/mobile/app/(auth)/index.tsx` (`handleGoogle` web branch), `docs/SSOT/spec/01_auth_and_onboarding.md`. Reverts of the previous attempt: PR #311.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native via Google Sign-In SDK). |
 | 2.2 | 2026-05-17 | Added `D-32` (free visibility changes after publish; supersedes legacy upgrade-only `FR-POST-009` trigger); migration `0093`. |
 | 2.1 | 2026-05-16 | Added `D-31` (`hide_from_counterparty` third-party-on-partner-surface semantics); refined `D-30` + `D-28` hide-flag wording. |
 | 2.0 | 2026-05-16 | Added `D-30` (MVP post-detail privacy: audience + counterparty mask; `FR-POST-021`, migration `0092`). |
