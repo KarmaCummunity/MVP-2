@@ -1,13 +1,15 @@
 // FR-CHAT-014 + FR-CHAT-015 — sticky anchored-post card; ClosureSheet + explainer render here for chat-initiated closure.
 import { useEffect, useMemo } from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Pressable, StyleSheet, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { Ionicons } from '@expo/vector-icons';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import type { GestureResponderEvent } from 'react-native';
 import type { PostType } from '@kc/domain';
 import { getPostByIdUseCase } from '../../services/postsComposition';
+import { getUserRepo } from '../../services/userComposition';
 import { useChatStore } from '../../store/chatStore';
 import { useClosureStore } from '../../store/closureStore';
 import { ClosureSheet } from '../closure/ClosureSheet';
@@ -44,6 +46,15 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     queryFn: () => getPostByIdUseCase().execute({ postId: anchorPostId!, viewerId }),
     enabled: Boolean(anchorPostId),
   });
+
+  // FR-CHAT-014 AC7 — surface counterpart's optional contact phone as a tel: link.
+  const counterpartQuery = useQuery({
+    queryKey: ['user', counterpartId],
+    queryFn: () => getUserRepo().findById(counterpartId!),
+    enabled: Boolean(counterpartId),
+    staleTime: 60_000,
+  });
+  const counterpartPhone = counterpartQuery.data?.contactPhone ?? null;
 
   // When a `post_closed` system message lands in this chat, invalidate the
   // post query so the card hides — but only when there is no active closure
@@ -101,6 +112,12 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     router.push({ pathname: '/post/[id]', params: { id: post.postId } });
   };
 
+  const handleCall = (e: GestureResponderEvent) => {
+    e.stopPropagation();
+    if (!counterpartPhone) return;
+    void Linking.openURL(`tel:${counterpartPhone}`);
+  };
+
   const handleClose = (e: GestureResponderEvent) => {
     e.stopPropagation();
     if (!post) return;
@@ -132,6 +149,20 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
             <Text style={styles.title} numberOfLines={1}>
               {post!.title}
             </Text>
+            {counterpartPhone ? (
+              <Pressable
+                onPress={handleCall}
+                style={styles.phoneRow}
+                accessibilityRole="link"
+                accessibilityLabel={t('chat.anchoredCallCounterpartA11y', { phone: counterpartPhone })}
+                hitSlop={6}
+              >
+                <Ionicons name="call" size={14} color={colors.primary} />
+                <Text style={styles.phoneText} numberOfLines={1}>
+                  {counterpartPhone}
+                </Text>
+              </Pressable>
+            ) : null}
           </View>
           {isOwner ? (
             <Pressable
@@ -187,6 +218,18 @@ const styles = StyleSheet.create({
     color: colors.textPrimary,
     textAlign: 'right',
     fontWeight: '600',
+  },
+  phoneRow: {
+    flexDirection: 'row-reverse',
+    alignItems: 'center',
+    gap: 4,
+    alignSelf: 'flex-end',
+  },
+  phoneText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600',
+    textDecorationLine: 'underline',
   },
   cta: {
     paddingHorizontal: spacing.md,

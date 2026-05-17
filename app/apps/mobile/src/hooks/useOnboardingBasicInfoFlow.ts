@@ -17,6 +17,7 @@ export function useOnboardingBasicInfoFlow() {
   const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [loading, setLoading] = useState(false);
 
   const addressIssue = getProfileAddressPairIssue(street, streetNumber);
@@ -63,6 +64,7 @@ export function useOnboardingBasicInfoFlow() {
         cityName: city.name,
         profileStreet: street,
         profileStreetNumber: streetNumber,
+        contactPhone,
       });
       setOnboardingState('pending_avatar');
       router.replace('/(onboarding)/photo');
@@ -100,6 +102,8 @@ export function useOnboardingBasicInfoFlow() {
     setStreet,
     streetNumber,
     setStreetNumber,
+    contactPhone,
+    setContactPhone,
     loading,
     hasRequiredFields,
     canSubmit,

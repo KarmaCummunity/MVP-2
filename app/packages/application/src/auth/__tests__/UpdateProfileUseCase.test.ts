@@ -134,6 +134,36 @@ describe('UpdateProfileUseCase', () => {
     expect(repo.rows.get('u-1')?.profileStreetNumber).toBe('12א');
   });
 
+  it('persists trimmed contact phone (FR-PROFILE-007 AC1)', async () => {
+    const repo = seed();
+    const uc = new UpdateProfileUseCase(repo);
+    await uc.execute({ userId: 'u-1', contactPhone: '  050-1234567 ' });
+    expect(repo.rows.get('u-1')?.contactPhone).toBe('050-1234567');
+  });
+
+  it('clears contact phone when given empty string', async () => {
+    const repo = seed();
+    repo.rows.set('u-1', { ...repo.rows.get('u-1')!, contactPhone: '050-1234567' });
+    const uc = new UpdateProfileUseCase(repo);
+    await uc.execute({ userId: 'u-1', contactPhone: '' });
+    expect(repo.rows.get('u-1')?.contactPhone).toBeNull();
+  });
+
+  it('clears contact phone when given null', async () => {
+    const repo = seed();
+    repo.rows.set('u-1', { ...repo.rows.get('u-1')!, contactPhone: '050-1234567' });
+    const uc = new UpdateProfileUseCase(repo);
+    await uc.execute({ userId: 'u-1', contactPhone: null });
+    expect(repo.rows.get('u-1')?.contactPhone).toBeNull();
+  });
+
+  it('rejects contact phone longer than 20 chars after trim', async () => {
+    const uc = new UpdateProfileUseCase(seed());
+    await expect(
+      uc.execute({ userId: 'u-1', contactPhone: '1234567890123456789012' }),
+    ).rejects.toThrow('invalid_contact_phone');
+  });
+
   it('throws ProfileError (typed) instead of raw Error for invalid display_name (audit §3.6)', async () => {
     const uc = new UpdateProfileUseCase(seed());
     await expect(uc.execute({ userId: 'u-1', displayName: '   ' })).rejects.toMatchObject({

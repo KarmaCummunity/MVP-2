@@ -36,6 +36,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [saving, setSaving] = useState(false);
   const [saveErrorMsg, setSaveErrorMsg] = useState<string | null>(null);
 
@@ -68,6 +69,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
         cityName: city.name,
         profileStreet: street,
         profileStreetNumber: streetNumber,
+        contactPhone,
       });
       setOnboardingState('pending_avatar');
       onSaved();
@@ -127,6 +129,21 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                 onStreetNumberChange={setStreetNumber}
                 disabled={saving}
               />
+
+              <View style={styles.field}>
+                <Text style={styles.label}>{t('onboarding.contactPhoneLabel')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={contactPhone}
+                  onChangeText={setContactPhone}
+                  placeholder={t('onboarding.contactPhonePlaceholder')}
+                  placeholderTextColor={colors.textDisabled}
+                  maxLength={20}
+                  keyboardType="phone-pad"
+                  textAlign="right"
+                  editable={!saving}
+                />
+              </View>
 
               <TouchableOpacity
                 style={[

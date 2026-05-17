@@ -35,7 +35,52 @@ describe('CompleteBasicInfoUseCase', () => {
       basicInfoSkipped: false,
       profileStreet: null,
       profileStreetNumber: null,
+      contactPhone: null,
     });
+  });
+
+  it('persists trimmed optional contact phone (FR-AUTH-010 AC2.c)', async () => {
+    const repo = seed();
+    const useCase = new CompleteBasicInfoUseCase(repo);
+
+    await useCase.execute({
+      userId,
+      displayName: 'נווה',
+      cityId: '4000',
+      cityName: 'חיפה',
+      contactPhone: '  050-1234567 ',
+    });
+
+    expect(repo.rows.get(userId)?.contactPhone).toBe('050-1234567');
+  });
+
+  it('clears contact phone when whitespace-only is submitted', async () => {
+    const repo = seed();
+    const useCase = new CompleteBasicInfoUseCase(repo);
+
+    await useCase.execute({
+      userId,
+      displayName: 'נווה',
+      cityId: '4000',
+      cityName: 'חיפה',
+      contactPhone: '   ',
+    });
+
+    expect(repo.rows.get(userId)?.contactPhone).toBeNull();
+  });
+
+  it('rejects contact phone longer than 20 chars after trim', async () => {
+    const useCase = new CompleteBasicInfoUseCase(seed());
+
+    await expect(
+      useCase.execute({
+        userId,
+        displayName: 'נווה',
+        cityId: '4000',
+        cityName: 'חיפה',
+        contactPhone: '1234567890123456789012',
+      }),
+    ).rejects.toThrow('invalid_contact_phone');
   });
 
   it('rejects whitespace-only display_name (FR-AUTH-010 AC1)', async () => {
