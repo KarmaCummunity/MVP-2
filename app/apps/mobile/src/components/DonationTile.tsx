@@ -15,6 +15,7 @@ import { colors, radius, spacing, typography } from '@kc/ui';
 import { PressableScale } from './animations/PressableScale';
 import { Card } from './ui/Card';
 import { IconTile } from './ui/IconTile';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface DonationTileProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -87,8 +88,8 @@ const styles = StyleSheet.create({
   },
   compactIcon: { marginBottom: spacing.xs },
   textBlock: { flex: 1 },
-  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2, textAlign: 'right' },
-  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2, textAlign: rtlTextAlignStart },
+  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   titleCompact: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', fontSize: 16 },
   subtitleCompact: {
     ...typography.bodySmall,

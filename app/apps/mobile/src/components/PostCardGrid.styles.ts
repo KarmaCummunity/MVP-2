@@ -1,4 +1,4 @@
-import { Dimensions, I18nManager, Platform, StyleSheet } from 'react-native';
+import { Dimensions, I18nManager, StyleSheet } from 'react-native';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
@@ -6,19 +6,9 @@ const { width: SCREEN_WIDTH } = Dimensions.get('window');
 export const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.sm) / 2;
 
 const isRTL = I18nManager.isRTL;
-const isWeb = Platform.OS === 'web';
 
-// The original alignStart was perfectly calibrated for React Native's RTL mirroring quirks:
-// On Web RTL, we explicitly need 'right'. On Native RTL, 'left' is mirrored to visual right.
-export const alignStart: 'left' | 'right' = isWeb
-  ? isRTL
-    ? 'left'
-    : 'right'
-  : isRTL
-    ? 'left'
-    : 'right';
-
-export const isRtlLayout = isRTL;
+/** Text alignment toward reading start; mirrors native RTL via I18nManager. */
+export const alignStart: 'left' | 'right' = isRTL ? 'left' : 'right';
 
 export const postCardGridStyles = StyleSheet.create({
   card: {
@@ -59,8 +49,12 @@ export const postCardGridStyles = StyleSheet.create({
   giveTagText: { color: colors.giveTag },
   requestTagText: { color: colors.requestTag },
   content: { padding: spacing.sm, gap: 2 },
+  // Always `row`: title first in DOM = flex-start, category = flex-end.
+  // Native RTL mirrors `row`; web uses `document.documentElement.dir` (`_layout.tsx`).
+  // `row-reverse` while `I18nManager.isRTL` is false at StyleSheet load + `dir=rtl`
+  // on web double-flips — category chip sticks to the visual right (see TabBar note).
   titleRow: {
-    flexDirection: isRTL ? 'row' : 'row-reverse',
+    flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
     gap: spacing.xs,

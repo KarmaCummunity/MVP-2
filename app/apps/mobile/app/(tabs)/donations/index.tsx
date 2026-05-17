@@ -21,6 +21,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 interface CategoryTile {
   key: string;
@@ -151,8 +152,7 @@ const styles = StyleSheet.create({
   },
 
   // Hero — large title + subtitle, mirrors the welcome screen scale.
-  // `width: '100%'` lets `textAlign: 'right'` reach the gutter; avoiding
-  // `alignItems: 'flex-end'` keeps the block predictable on web RTL.
+  // `width: '100%'` + `rtlTextAlignStart` keeps Hebrew flush to visual right on web + native.
   heroBlock: {
     width: '100%',
     paddingTop: spacing.base,
@@ -163,14 +163,14 @@ const styles = StyleSheet.create({
     fontSize: 26,
     color: '#1C1917',
     letterSpacing: -0.4,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 34,
     width: '100%',
   },
   heroSubtitle: {
     ...typography.bodyLarge,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginTop: spacing.xs,
     width: '100%',
   },
@@ -192,20 +192,20 @@ const styles = StyleSheet.create({
   featuredTitle: {
     ...typography.h2,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 2,
   },
   featuredSubtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
 
   // Grid — section heading then 2-col cards.
   gridHeading: {
     ...typography.h3,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     width: '100%',
     marginTop: spacing.sm,
     marginBottom: spacing.base,

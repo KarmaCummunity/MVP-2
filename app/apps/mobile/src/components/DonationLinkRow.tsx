@@ -6,6 +6,7 @@ import { useTranslation } from 'react-i18next';
 import type { DonationLink } from '@kc/domain';
 import { colors, radius, shadow, spacing, typography } from '@kc/ui';
 import { openExternalUrl } from '../utils/openExternalUrl';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface Props {
   link: DonationLink;
@@ -107,9 +108,9 @@ const styles = StyleSheet.create({
   },
   favicon: { width: 28, height: 28 },
   body: { flex: 1, gap: 2 },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
-  description: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
-  host: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  description: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
+  host: { ...typography.caption, color: colors.textDisabled, textAlign: rtlTextAlignStart },
   menuBtn: {
     width: 32,
     height: 32,

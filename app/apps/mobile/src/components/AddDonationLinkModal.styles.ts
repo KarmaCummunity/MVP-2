@@ -1,6 +1,7 @@
 // Styles for AddDonationLinkModal — extracted to keep the component file under 200 LOC.
 import { StyleSheet } from 'react-native';
 import { colors, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 export const modalStyles = StyleSheet.create({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
@@ -11,8 +12,8 @@ export const modalStyles = StyleSheet.create({
     maxHeight: '90%',
   },
   scroll: { padding: spacing.lg, gap: spacing.sm },
-  title: { ...typography.h2, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
-  label: { ...typography.body, color: colors.textSecondary, textAlign: 'right', marginTop: spacing.sm },
+  title: { ...typography.h2, color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: spacing.sm },
+  label: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart, marginTop: spacing.sm },
   input: {
     backgroundColor: colors.background,
     borderRadius: radius.md,
@@ -22,7 +23,7 @@ export const modalStyles = StyleSheet.create({
     paddingHorizontal: spacing.md,
     ...typography.body,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     writingDirection: 'rtl',
   },
   inputUrl: {
@@ -30,11 +31,11 @@ export const modalStyles = StyleSheet.create({
     writingDirection: 'ltr',
   },
   inputMulti: { minHeight: 80 },
-  helper: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
+  helper: { ...typography.caption, color: colors.textDisabled, textAlign: rtlTextAlignStart },
   errorText: {
     ...typography.body,
     color: '#B91C1C',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginTop: spacing.sm,
   },
   actions: {

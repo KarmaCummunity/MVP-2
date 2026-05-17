@@ -8,6 +8,7 @@ import { DonationLinksList } from '../../../src/components/DonationLinksList';
 import { Screen } from '../../../src/components/ui/Screen';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 export default function DonationsMoneyScreen() {
   const { t } = useTranslation();
@@ -48,7 +49,7 @@ const styles = StyleSheet.create({
   body: {
     ...typography.bodyLarge,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 26,
     width: '100%',
   },

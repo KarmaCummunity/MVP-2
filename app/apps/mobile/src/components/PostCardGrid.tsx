@@ -11,7 +11,7 @@ import type { PostWithOwner } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { PostMenuButton } from './post/PostMenuButton';
-import { isRtlLayout as isRTL, postCardGridStyles as styles } from './PostCardGrid.styles';
+import { postCardGridStyles as styles } from './PostCardGrid.styles';
 
 const STORAGE_BUCKET = 'post-images';
 
@@ -87,7 +87,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
           <Text style={styles.meta}>{timeAgo}</Text>
         </Text>
         <Text style={styles.location} numberOfLines={1}>
-          {isRTL ? `${locationText}` : `${locationText}`}
+          {locationText}
         </Text>
       </View>
     </TouchableOpacity>
