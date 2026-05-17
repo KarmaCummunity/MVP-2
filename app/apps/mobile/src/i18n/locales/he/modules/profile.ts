@@ -53,8 +53,15 @@ export const profileHe = {
   emptyHiddenClosedTitle: 'אין פוסטים מוסתרים סגורים',
   emptyHiddenClosedSubtitle: 'פוסטים מוסתרים שסגרת יופיעו כאן.',
   myProfileMenuSavedPosts: 'שמורים',
+  savedBanner: 'פוסטים ששמרת. אם פוסט אינו זמין עוד (נמחק, הוסר, או חזר להיות פרטי) הוא לא יוצג כאן.',
+  savedSectionOpen: 'פוסטים פתוחים',
+  savedSectionClosed: 'פוסטים סגורים',
   emptySavedTitle: 'אין פוסטים שמורים',
   emptySavedSubtitle: 'שמרי פוסטים מהפיד או ממסך הפוסט כדי לראות אותם כאן.',
+  emptySavedOpenTitle: 'אין פוסטים פתוחים בשמורים',
+  emptySavedOpenSubtitle: 'שמרי פוסט פתוח מהפיד כדי לראות אותו כאן.',
+  emptySavedClosedTitle: 'אין פוסטים סגורים בשמורים',
+  emptySavedClosedSubtitle: 'פוסטים סגורים ששמרת יופיעו כאן.',
 
   // Stats row
   statsPostsLabel: 'פוסטים',
