@@ -1,0 +1,100 @@
+import { StyleSheet } from 'react-native';
+import { colors } from '@kc/ui';
+
+export const googleAuthSheetStyles = StyleSheet.create({
+  fill: { ...StyleSheet.absoluteFillObject },
+  backdrop: {
+    ...StyleSheet.absoluteFillObject,
+    backgroundColor: '#000',
+  },
+  sheet: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+    paddingTop: 12,
+    paddingHorizontal: 24,
+    paddingBottom: 32,
+    shadowColor: '#000',
+    shadowOpacity: 0.15,
+    shadowRadius: 24,
+    shadowOffset: { width: 0, height: -8 },
+    elevation: 16,
+  },
+  handleRow: {
+    alignItems: 'center',
+    paddingVertical: 6,
+  },
+  handle: {
+    width: 44,
+    height: 5,
+    borderRadius: 3,
+    backgroundColor: '#D8D8D8',
+  },
+  content: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    flexGrow: 1,
+  },
+  logo: {
+    width: 64,
+    height: 64,
+    marginBottom: 16,
+  },
+  title: {
+    fontSize: 22,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    textAlign: 'center',
+    marginBottom: 8,
+  },
+  subtitle: {
+    fontSize: 14,
+    color: colors.textSecondary,
+    textAlign: 'center',
+    marginBottom: 32,
+    paddingHorizontal: 12,
+  },
+  buttonHost: {
+    width: '100%',
+    alignItems: 'center',
+    justifyContent: 'center',
+    minHeight: 56,
+    marginBottom: 16,
+  },
+  loadingOverlay: {
+    position: 'absolute',
+    inset: 0,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: 'rgba(255,255,255,0.85)',
+    borderTopLeftRadius: 24,
+    borderTopRightRadius: 24,
+  },
+  loadingText: {
+    marginTop: 12,
+    fontSize: 16,
+    color: colors.textPrimary,
+  },
+  errorText: {
+    color: '#B91C1C',
+    fontSize: 14,
+    textAlign: 'center',
+    marginBottom: 12,
+    paddingHorizontal: 12,
+  },
+  retryBtn: {
+    paddingVertical: 10,
+    paddingHorizontal: 24,
+    borderRadius: 999,
+    backgroundColor: '#F97316',
+  },
+  retryBtnText: {
+    color: '#FFF',
+    fontWeight: '600',
+    fontSize: 14,
+  },
+});

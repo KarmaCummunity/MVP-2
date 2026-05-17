@@ -64,4 +64,12 @@ export const authHe = {
   verifyExpired: 'הקישור פג תוקף או כבר מומש. נסה להתחבר.',
   verifyFailedTitle: 'האימות לא הצליח',
   verifyingProgress: 'מאמת…',
+  // Google bottom-sheet (web). FR-AUTH-002 implementation note.
+  googleSheetTitle: 'המשך עם חשבון Google',
+  googleSheetSubtitle: 'בחר חשבון Google בלי לצאת מהאפליקציה',
+  googleSheetDismissA11y: 'סגור',
+  googleSheetSigningIn: 'מתחבר…',
+  googleSheetConfigError: 'הגדרת Google חסרה. צרו קשר עם הצוות.',
+  googleSheetSdkError: 'לא ניתן לטעון את Google. בדקו חיבור ונסו שוב.',
+  googleSheetRetry: 'נסה שוב',
 } as const;

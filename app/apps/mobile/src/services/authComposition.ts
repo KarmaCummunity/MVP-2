@@ -20,6 +20,7 @@ import {
   RestoreSessionUseCase,
   SignInWithEmailUseCase,
   SignInWithGoogleUseCase,
+  SignInWithGoogleIdTokenUseCase,
   SignOutUseCase,
   SignUpWithEmailUseCase,
   ResendVerificationEmailUseCase,
@@ -33,6 +34,7 @@ let _authService: IAuthService | null = null;
 let _signUp: SignUpWithEmailUseCase | null = null;
 let _signIn: SignInWithEmailUseCase | null = null;
 let _signInGoogle: SignInWithGoogleUseCase | null = null;
+let _signInGoogleIdToken: SignInWithGoogleIdTokenUseCase | null = null;
 let _signOut: SignOutUseCase | null = null;
 let _restore: RestoreSessionUseCase | null = null;
 let _resend: ResendVerificationEmailUseCase | null = null;
@@ -102,6 +104,17 @@ export function getSignInWithGoogleUseCase(): SignInWithGoogleUseCase {
   }
   return _signInGoogle;
 }
+
+export function getSignInWithGoogleIdTokenUseCase(): SignInWithGoogleIdTokenUseCase {
+  if (!_signInGoogleIdToken) {
+    _signInGoogleIdToken = new SignInWithGoogleIdTokenUseCase(getAuthService());
+  }
+  return _signInGoogleIdToken;
+}
+
+/** FR-AUTH-002 web in-app sheet — Google OAuth Web Client ID for GIS. */
+export const GOOGLE_WEB_CLIENT_ID: string | undefined =
+  process.env.EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID || undefined;
 
 export function getSignOutUseCase(): SignOutUseCase {
   if (!_signOut) _signOut = new SignOutUseCase(getAuthService());

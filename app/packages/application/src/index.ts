@@ -22,6 +22,7 @@ export { ResendVerificationEmailUseCase, type ResendVerificationEmailInput } fro
 export { VerifyEmailUseCase, type VerifyEmailInput, type VerifyEmailOutput } from './auth/VerifyEmail';
 export * from './auth/SignInWithEmail';
 export * from './auth/SignInWithGoogle';
+export * from './auth/SignInWithGoogleIdToken';
 export * from './auth/SignOut';
 export * from './auth/RestoreSession';
 export * from './auth/CompleteBasicInfoUseCase';

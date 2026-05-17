@@ -59,6 +59,21 @@ export class FakeAuthService implements IAuthService {
     return this.exchangeResult;
   };
 
+  idTokenResult: AuthSession | null = null;
+  idTokenError: Error | null = null;
+  lastIdTokenInput: { provider: 'google'; idToken: string; nonce: string } | null = null;
+
+  signInWithIdToken = async (input: {
+    provider: 'google';
+    idToken: string;
+    nonce: string;
+  }): Promise<AuthSession> => {
+    this.lastIdTokenInput = input;
+    if (this.idTokenError) throw this.idTokenError;
+    if (!this.idTokenResult) throw new Error('no idTokenResult configured');
+    return this.idTokenResult;
+  };
+
   async resendVerificationEmail(
     email: string,
     options?: { emailRedirectTo?: string },
