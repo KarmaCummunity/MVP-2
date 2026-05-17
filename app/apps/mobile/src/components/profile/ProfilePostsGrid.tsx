@@ -14,7 +14,6 @@ import { EmptyState } from '../EmptyState';
 export type EmptyVariant =
   | 'self_open'
   | 'self_closed'
-  | 'self_saved'
   | 'self_saved_open'
   | 'self_saved_closed'
   | 'self_hidden_open'
@@ -39,11 +38,6 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
       title: t('profile.emptyClosedTitleSelf'),
       subtitle: t('profile.emptySelfClosedSubtitleLegacy'),
       icon: 'archive-outline',
-    },
-    self_saved: {
-      title: t('profile.emptySavedTitle'),
-      subtitle: t('profile.emptySavedSubtitle'),
-      icon: 'bookmark-outline',
     },
     self_saved_open: {
       title: t('profile.emptySavedOpenTitle'),
