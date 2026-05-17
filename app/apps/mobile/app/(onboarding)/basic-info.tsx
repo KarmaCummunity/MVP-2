@@ -19,6 +19,7 @@ export default function OnboardingBasicInfoScreen() {
   const { t } = useTranslation();
   const {
     displayName, setDisplayName, city, setCity, street, setStreet, streetNumber, setStreetNumber,
+    contactPhone, setContactPhone,
     loading, hasRequiredFields, canSubmit, handleBack, handleContinue, handleSkip,
   } = useOnboardingBasicInfoFlow();
 
@@ -84,9 +85,26 @@ export default function OnboardingBasicInfoScreen() {
                 disabled={loading}
               />
             </AnimatedEntry>
+
+            <AnimatedEntry delay={staggerDelay(5)}>
+              <View style={styles.field}>
+                <Text style={styles.label}>{t('onboarding.contactPhoneLabel')}</Text>
+                <TextInput
+                  style={styles.input}
+                  value={contactPhone}
+                  onChangeText={setContactPhone}
+                  placeholder={t('onboarding.contactPhonePlaceholder')}
+                  placeholderTextColor={colors.textDisabled}
+                  maxLength={20}
+                  keyboardType="phone-pad"
+                  textAlign="right"
+                  editable={!loading}
+                />
+              </View>
+            </AnimatedEntry>
           </ScrollView>
 
-          <AnimatedEntry delay={staggerDelay(5)}>
+          <AnimatedEntry delay={staggerDelay(6)}>
             <PressableScale
               style={[
                 styles.cta,

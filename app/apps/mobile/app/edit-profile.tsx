@@ -27,6 +27,7 @@ interface InitialState {
   readonly cityName: string | null;
   readonly profileStreet: string | null;
   readonly profileStreetNumber: string | null;
+  readonly contactPhone: string | null;
   readonly biography: string | null;
   readonly avatarUrl: string | null;
 }
@@ -44,6 +45,7 @@ export default function EditProfileScreen() {
   const [city, setCity] = useState<{ id: string; name: string } | null>(null);
   const [street, setStreet] = useState('');
   const [streetNumber, setStreetNumber] = useState('');
+  const [contactPhone, setContactPhone] = useState('');
   const [biography, setBiography] = useState('');
   const [avatarUrl, setAvatarUrl] = useState<string | null>(null);
   const [initial, setInitial] = useState<InitialState | null>(null);
@@ -62,6 +64,7 @@ export default function EditProfileScreen() {
         setCity(p.city && p.cityName ? { id: p.city, name: p.cityName } : null);
         setStreet(p.profileStreet ?? '');
         setStreetNumber(p.profileStreetNumber ?? '');
+        setContactPhone(p.contactPhone ?? '');
         setBiography(p.biography ?? '');
         setAvatarUrl(p.avatarUrl ?? session.avatarUrl ?? null);
         setInitial({
@@ -70,6 +73,7 @@ export default function EditProfileScreen() {
           cityName: p.cityName,
           profileStreet: p.profileStreet,
           profileStreetNumber: p.profileStreetNumber,
+          contactPhone: p.contactPhone,
           biography: p.biography,
           avatarUrl: p.avatarUrl ?? session.avatarUrl ?? null,
         });
@@ -89,15 +93,17 @@ export default function EditProfileScreen() {
     const ts = street.trim() || null;
     const tn = streetNumber.trim() || null;
     const newBio = biography.trim() || null;
+    const newPhone = contactPhone.trim() || null;
     return (
       displayName.trim() !== (initial.displayName ?? '') ||
       (city?.id ?? '') !== (initial.cityId ?? '') ||
       newBio !== initial.biography ||
       avatarUrl !== initial.avatarUrl ||
       ts !== (initial.profileStreet ?? null) ||
-      tn !== (initial.profileStreetNumber ?? null)
+      tn !== (initial.profileStreetNumber ?? null) ||
+      newPhone !== (initial.contactPhone ?? null)
     );
-  }, [initial, displayName, city, biography, avatarUrl, street, streetNumber]);
+  }, [initial, displayName, city, biography, avatarUrl, street, streetNumber, contactPhone]);
   useUnsavedChangesGuard({
     isDirty: isDirty && !saving,
     title: t('profile.editScreen.unsavedChangesTitle'), message: t('profile.editScreen.unsavedChangesMessage'),
@@ -125,6 +131,14 @@ export default function EditProfileScreen() {
       setNotify({ title: addrTitle, message: t('profile.editScreen.incompleteAddressMessageStreet') });
       return;
     }
+    const tp = contactPhone.trim();
+    if (tp.length > 20) {
+      setNotify({
+        title: t('profile.editScreen.invalidContactPhoneTitle'),
+        message: t('profile.editScreen.invalidContactPhoneMessage'),
+      });
+      return;
+    }
     setSaving(true);
     try {
       const trimmedName = displayName.trim();
@@ -139,7 +153,9 @@ export default function EditProfileScreen() {
       const addrChanged =
         (nextStreet ?? null) !== (initial.profileStreet ?? null) ||
         (nextNum ?? null) !== (initial.profileStreetNumber ?? null);
-      if (!nameChanged && !cityChanged && !bioChanged && !avatarChanged && !addrChanged) {
+      const nextPhone = tp.length === 0 ? null : tp;
+      const phoneChanged = (nextPhone ?? null) !== (initial.contactPhone ?? null);
+      if (!nameChanged && !cityChanged && !bioChanged && !avatarChanged && !addrChanged && !phoneChanged) {
         router.back();
         return;
       }
@@ -153,6 +169,7 @@ export default function EditProfileScreen() {
           ? { displayName: trimmedName, city: city.id, cityName: city.name }
           : {}),
         ...(profileAddress !== undefined ? { profileAddress } : {}),
+        ...(phoneChanged ? { contactPhone: nextPhone } : {}),
         ...(bioChanged ? { biography: newBio } : {}),
         ...(avatarChanged ? { avatarUrl } : {}),
       });
@@ -187,6 +204,12 @@ export default function EditProfileScreen() {
           <EditProfileAddressBlock city={city} onCityChange={setCity} street={street}
             streetNumber={streetNumber} onStreetChange={setStreet}
             onStreetNumberChange={setStreetNumber} disabled={saving} />
+          <View style={styles.field}>
+            <Text style={styles.label}>{t('profile.editScreen.contactPhoneLabel')}</Text>
+            <TextInput style={styles.input} value={contactPhone} onChangeText={setContactPhone}
+              maxLength={20} keyboardType="phone-pad" textAlign="right" editable={!saving}
+              placeholder={t('profile.editScreen.contactPhonePlaceholder')} />
+          </View>
           <View style={styles.field}>
             <Text style={styles.label}>{t('profile.editScreen.biographyLabel')}</Text>
             <TextInput style={[styles.input, styles.textarea]} value={biography} onChangeText={setBiography}

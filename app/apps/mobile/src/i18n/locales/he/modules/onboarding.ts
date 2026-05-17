@@ -16,6 +16,8 @@ export const onboardingHe = {
     ' וודא את השם ומלא את הכתובת שלך — כדי שנוכל להתאים פוסטים אליך. אפשר להשלים גם בהמשך.',
   displayName: 'שם מלא',
   city: 'עיר מגורים',
+  contactPhoneLabel: 'טלפון ליצירת קשר (אופציונלי)',
+  contactPhonePlaceholder: 'לדוגמה: 050-1234567',
   stepPhoto: 'תמונת פרופיל',
   uploadPhoto: 'העלה תמונה',
   skip: 'דלג',

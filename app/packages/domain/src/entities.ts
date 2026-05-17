@@ -35,6 +35,12 @@ export interface User {
   /** Optional home address line on profile; null = city-only (FR-PROFILE-007). */
   profileStreet: string | null;
   profileStreetNumber: string | null;
+  /**
+   * Optional contact phone for display in profile + chat banner (FR-PROFILE-007 AC1, FR-CHAT-014 AC7).
+   * Free-form, 1–20 chars after trim, non-verified. Distinct from the auth phone (`auth.users.phone`)
+   * used for FR-AUTH-005 OTP sign-in. Null = unset.
+   */
+  contactPhone: string | null;
   biography: string | null;
   avatarUrl: string | null;
   privacyMode: PrivacyMode;
