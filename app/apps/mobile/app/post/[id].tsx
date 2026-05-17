@@ -2,7 +2,7 @@
 // Mapped to: FR-POST-014, FR-POST-015, FR-POST-021, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -17,6 +17,7 @@ import { contactPoster } from '../../src/lib/contactPoster';
 import { postOwnerDisplayLabel } from '../../src/lib/postOwnerDisplayLabel';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
+import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
 import { styles } from './postDetailScreen.styles';
 
@@ -139,6 +140,7 @@ export default function PostDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <Stack.Screen options={{ headerRight: () => <PostMenuButton post={post} /> }} />
       <PostDetailScrollContent
         post={post}
         isGive={isGive}
