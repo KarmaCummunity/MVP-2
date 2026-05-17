@@ -7,7 +7,6 @@ import { colors } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
-import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
@@ -44,9 +43,6 @@ export function PostDetailScrollContent({
           />
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
             <Text style={styles.typeTagText}>{isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}</Text>
-          </View>
-          <View style={styles.menuOverlay} pointerEvents="box-none">
-            <PostMenuButton post={post} />
           </View>
         </View>
       </MotionEntry>

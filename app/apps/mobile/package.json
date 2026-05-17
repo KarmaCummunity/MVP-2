@@ -10,7 +10,8 @@
     "start:go:tunnel": "expo start --go --tunnel",
     "ios": "expo run:ios",
     "android": "JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home expo run:android",
-    "web": "expo start --web",
+    "web": "node ../../../scripts/generate-web-manifest.mjs && expo start --web",
+    "build:web": "node ../../../scripts/generate-web-manifest.mjs && expo export --platform web",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
