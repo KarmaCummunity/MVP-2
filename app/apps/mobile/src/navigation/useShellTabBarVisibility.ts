@@ -3,7 +3,11 @@ import { useAuthStore } from '../store/authStore';
 import { parseTruthyQueryParam } from '../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from './aboutMarketingPaths';
 
-const TAB_BAR_HEIGHT = 68;
+// Effective visual height of the floating-pill bar above the safe area
+// (pill 64 + one 12 floating-offset). Consumers that position screen-local
+// elements like FABs already add `insets.bottom` themselves, so the inset
+// itself is not folded into this constant.
+const TAB_BAR_HEIGHT = 76;
 
 /** Whether the global shell should render the bottom tab bar + reserve padding. */
 export function useShellTabBarVisibility(): boolean {
