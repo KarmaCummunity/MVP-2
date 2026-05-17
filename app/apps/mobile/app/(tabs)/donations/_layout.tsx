@@ -21,7 +21,13 @@ export default function DonationsLayout() {
     <Stack
       screenOptions={{
         headerShown: false,
-        contentStyle: { backgroundColor: colors.background },
+        contentStyle: {
+          backgroundColor: colors.background,
+          flex: 1,
+          width: '100%',
+          minWidth: '100%',
+          alignSelf: 'stretch',
+        },
         // Same subtle cross-fade as the root stack so navigating into a
         // donation sub-screen feels continuous with the rest of the app.
         animation: 'fade',

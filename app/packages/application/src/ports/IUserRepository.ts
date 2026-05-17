@@ -91,7 +91,7 @@ export interface IUserRepository {
   setPrivacyMode(userId: string, mode: import('@kc/domain').PrivacyMode): Promise<User>;
 
   /**
-   * FR-PROFILE-007: read the four editable fields for the Edit Profile form.
+   * FR-PROFILE-007: read the editable fields for the Edit Profile form.
    * Avoids needing the full `findById` (which depends on follower / counter
    * mappings deferred to P2.4). Throws if the row is missing.
    */
@@ -101,6 +101,7 @@ export interface IUserRepository {
     cityName: string | null;
     profileStreet: string | null;
     profileStreetNumber: string | null;
+    contactPhone: string | null;
     biography: string | null;
     avatarUrl: string | null;
   }>;
@@ -116,11 +117,18 @@ export interface IUserRepository {
   ): Promise<void>;
 
   /**
+   * FR-AUTH-010 AC2.c / FR-PROFILE-007 AC1 — optional contact phone (null clears).
+   * Free-form 1–20 chars after trim. Non-verified; caller validates upstream and
+   * DB CHECK is defence in depth.
+   */
+  setContactPhone(userId: string, contactPhone: string | null): Promise<void>;
+
+  /**
    * FR-PROFILE-007 — atomic multi-field edit (audit §3.5). All present fields
    * land in one `UPDATE users SET ...` statement, so a transport-layer failure
    * never leaves the user with a half-applied edit (e.g. new name + old city).
    * Undefined fields are not written; null fields clear nullable columns
-   * (biography, avatar_url, profile_street, profile_street_number).
+   * (biography, avatar_url, profile_street, profile_street_number, contact_phone).
    */
   updateEditableProfile(
     userId: string,
@@ -130,6 +138,7 @@ export interface IUserRepository {
       cityName?: string;
       profileStreet?: string | null;
       profileStreetNumber?: string | null;
+      contactPhone?: string | null;
       biography?: string | null;
       avatarUrl?: string | null;
     },

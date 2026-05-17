@@ -14,8 +14,11 @@ import { EmptyState } from '../EmptyState';
 export type EmptyVariant =
   | 'self_open'
   | 'self_closed'
-  | 'self_saved'
+  | 'self_saved_open'
+  | 'self_saved_closed'
   | 'self_hidden_open'
+  | 'self_removed_open'
+  | 'self_removed_closed'
   | 'other_open'
   | 'other_closed';
 
@@ -38,15 +41,30 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
       subtitle: t('profile.emptySelfClosedSubtitleLegacy'),
       icon: 'archive-outline',
     },
-    self_saved: {
-      title: t('profile.emptySavedTitle'),
-      subtitle: t('profile.emptySavedSubtitle'),
+    self_saved_open: {
+      title: t('profile.emptySavedOpenTitle'),
+      subtitle: t('profile.emptySavedOpenSubtitle'),
+      icon: 'bookmark-outline',
+    },
+    self_saved_closed: {
+      title: t('profile.emptySavedClosedTitle'),
+      subtitle: t('profile.emptySavedClosedSubtitle'),
       icon: 'bookmark-outline',
     },
     self_hidden_open: {
       title: t('profile.emptyHiddenOpenTitle'),
       subtitle: t('profile.emptyHiddenOpenSubtitle'),
       icon: 'eye-off-outline',
+    },
+    self_removed_open: {
+      title: t('profile.emptyRemovedOpenTitle'),
+      subtitle: t('profile.emptyRemovedOpenSubtitle'),
+      icon: 'shield-outline',
+    },
+    self_removed_closed: {
+      title: t('profile.emptyRemovedClosedTitle'),
+      subtitle: t('profile.emptyRemovedClosedSubtitle'),
+      icon: 'shield-outline',
     },
     other_open: {
       title: t('profile.emptyOpenTitle'),

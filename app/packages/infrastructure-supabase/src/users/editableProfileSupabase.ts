@@ -6,6 +6,7 @@ export type EditableProfileDTO = {
   cityName: string | null;
   profileStreet: string | null;
   profileStreetNumber: string | null;
+  contactPhone: string | null;
   biography: string | null;
   avatarUrl: string | null;
 };
@@ -16,7 +17,7 @@ export async function supabaseGetEditableProfile(
 ): Promise<EditableProfileDTO> {
   const { data, error } = await client
     .from('users')
-    .select('display_name, city, city_name, profile_street, profile_street_number, biography, avatar_url')
+    .select('display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url')
     .eq('user_id', userId)
     .single();
   if (error) throw new Error(`getEditableProfile: ${error.message}`);
@@ -27,6 +28,7 @@ export async function supabaseGetEditableProfile(
     city_name: string | null;
     profile_street: string | null;
     profile_street_number: string | null;
+    contact_phone: string | null;
     biography: string | null;
     avatar_url: string | null;
   };
@@ -36,6 +38,7 @@ export async function supabaseGetEditableProfile(
     cityName: row.city_name,
     profileStreet: row.profile_street,
     profileStreetNumber: row.profile_street_number,
+    contactPhone: row.contact_phone,
     biography: row.biography,
     avatarUrl: row.avatar_url,
   };
@@ -60,6 +63,7 @@ export type EditableProfilePatch = {
   cityName?: string;
   profileStreet?: string | null;
   profileStreetNumber?: string | null;
+  contactPhone?: string | null;
   biography?: string | null;
   avatarUrl?: string | null;
 };
@@ -77,9 +81,22 @@ export async function supabaseUpdateEditableProfile(
   if (patch.cityName !== undefined) row.city_name = patch.cityName;
   if (patch.profileStreet !== undefined) row.profile_street = patch.profileStreet;
   if (patch.profileStreetNumber !== undefined) row.profile_street_number = patch.profileStreetNumber;
+  if (patch.contactPhone !== undefined) row.contact_phone = patch.contactPhone;
   if (patch.biography !== undefined) row.biography = patch.biography;
   if (patch.avatarUrl !== undefined) row.avatar_url = patch.avatarUrl;
   if (Object.keys(row).length === 0) return; // empty patch — caller is expected to validate
   const { error } = await client.from('users').update(row).eq('user_id', userId);
   if (error) throw new Error(`updateEditableProfile: ${error.message}`);
+}
+
+export async function supabaseSetContactPhone(
+  client: SupabaseClient,
+  userId: string,
+  contactPhone: string | null,
+): Promise<void> {
+  const { error } = await client
+    .from('users')
+    .update({ contact_phone: contactPhone })
+    .eq('user_id', userId);
+  if (error) throw new Error(`setContactPhone: ${error.message}`);
 }

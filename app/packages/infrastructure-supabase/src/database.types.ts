@@ -565,6 +565,7 @@ export type Database = {
           post_id: string
           reopen_count: number
           status: string
+          status_before_admin_removal: string | null
           street: string
           street_number: string
           title: string
@@ -585,6 +586,7 @@ export type Database = {
           post_id?: string
           reopen_count?: number
           status?: string
+          status_before_admin_removal?: string | null
           street: string
           street_number: string
           title: string
@@ -605,6 +607,7 @@ export type Database = {
           post_id?: string
           reopen_count?: number
           status?: string
+          status_before_admin_removal?: string | null
           street?: string
           street_number?: string
           title?: string

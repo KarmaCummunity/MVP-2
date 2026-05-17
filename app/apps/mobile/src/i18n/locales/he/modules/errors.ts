@@ -52,6 +52,7 @@ export const errorsHe = {
     incomplete_profile_address: 'נא למלא רחוב ומספר בית, או להשאיר את שניהם ריקים.',
     invalid_profile_street: 'שם רחוב לא תקין (1–80 תווים).',
     invalid_profile_street_number: 'מספר בית לא תקין (ספרות, אות אחת בסוף אופציונלי).',
+    invalid_contact_phone: 'מספר טלפון לא תקין (עד 20 תווים).',
   },
   media: {
     galleryDeniedTitle: 'גישה לגלריה נדחתה',

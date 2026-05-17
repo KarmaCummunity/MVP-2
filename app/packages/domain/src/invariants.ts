@@ -9,19 +9,16 @@ import type { PostVisibility } from './value-objects';
 // ── Visibility / Privacy ──────────────────────
 
 /**
- * INV-V3: Post visibility can only be upgraded (more public), never downgraded.
- * Mapped to: R-MVP-Privacy-9, FR-POST-009
+ * Whether a post visibility change should be applied (non–no-op).
+ * Revised FR-POST-009 / D-32 (2026-05-17): any transition between visibility levels is allowed;
+ * callers use this only to skip redundant updates. DB no longer enforces upgrade-only
+ * (`0094_posts_visibility_free_change.sql`).
  */
 export function canUpgradeVisibility(
   current: PostVisibility,
   next: PostVisibility,
 ): boolean {
-  const rank: Record<PostVisibility, number> = {
-    OnlyMe: 0,
-    FollowersOnly: 1,
-    Public: 2,
-  };
-  return rank[next] > rank[current];
+  return current !== next;
 }
 
 /**

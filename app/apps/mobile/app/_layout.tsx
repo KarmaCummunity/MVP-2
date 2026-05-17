@@ -29,6 +29,47 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     link.href = '/favicon.ico';
     document.head.appendChild(link);
   }
+  // Lock the mobile-web viewport to device width so the app behaves like a
+  // native app: no pinch-zoom, no horizontal pan, no iOS input auto-zoom.
+  // Expo's `web.output: "single"` template hard-codes a permissive viewport
+  // (`width=device-width, initial-scale=1, shrink-to-fit=no`) and ignores
+  // `+html.tsx`, so we patch the tag at runtime.
+  let viewportMeta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+  if (!viewportMeta) {
+    viewportMeta = document.createElement('meta');
+    viewportMeta.name = 'viewport';
+    document.head.appendChild(viewportMeta);
+  }
+  viewportMeta.content =
+    'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+
+  // Belt-and-braces: even with the viewport locked, an absolutely-positioned
+  // child with a negative offset (e.g. a decorative blob) can extend the
+  // document past the viewport on web. Clip html/body horizontally.
+  // RN-Web + `dir=rtl`: also force full viewport width on `#root` (see Screen.tsx).
+  document.getElementById('kc-no-horizontal-scroll')?.remove();
+  const layoutWebId = 'kc-web-viewport-layout';
+  if (!document.getElementById(layoutWebId)) {
+    const style = document.createElement('style');
+    style.id = layoutWebId;
+    style.textContent = `html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+}
+#root {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex: 1;
+}`;
+    document.head.appendChild(style);
+  }
+
   // iOS Safari (and WebKit-based mobile browsers) zoom the viewport when a
   // focused text control's font-size is under 16px. RN-Web maps TextInput to
   // <input>/<textarea>; cap only on narrow viewports so desktop web typography
@@ -47,7 +88,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
-import { SafeAreaProvider } from 'react-native-safe-area-context';
+import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
@@ -67,7 +108,7 @@ import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
-import { TabBar } from '../src/components/TabBar';
+import { TabBar, TAB_BAR_HEIGHT } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
 import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
 
@@ -105,23 +146,37 @@ function NotificationsBridge(): null {
   return null;
 }
 
+// TabBar geometry. The pill is flush with the platform safe area on every
+// platform (sits directly above the iOS home indicator / Android gesture bar;
+// touches the viewport bottom on web where there's no inset). Screen content
+// fills the full viewport — the translucent pill floats over it so the user
+// sees real content through the bar, not a reserved blank strip. Scrollable
+// screens add their own bottom inset (via `shellTabBarHeightPx`) so the last
+// list item lands above the pill when scrolled to the end.
+const HORIZONTAL_INSET = 16;
+
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
   const showTabBar = useShellTabBarVisibility();
+  const insets = useSafeAreaInsets();
 
-  // RN-Web's flex layout doesn't reliably split height between a flex:1 child
-  // and an intrinsic-height sibling — the inner View ends up at full height
-  // and squeezes TabBar past the viewport. Positioning TabBar absolutely at
-  // the bottom is robust across iOS / Android / web. The Stack content gets
-  // bottom padding so the chat composer / scrollable list don't sit under it.
-  const TAB_BAR_HEIGHT = 68;
+  // Outer wrapper carries the app background so the translucent pill reveals
+  // the app surface even on routes whose own content stops short.
   return (
-    <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, paddingBottom: showTabBar ? TAB_BAR_HEIGHT : 0 }}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <View style={{ flex: 1 }}>
         {children}
       </View>
       <EphemeralToast />
       {showTabBar && (
-        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
+        <View
+          pointerEvents="box-none"
+          style={{
+            position: 'absolute',
+            bottom: insets.bottom,
+            left: HORIZONTAL_INSET,
+            right: HORIZONTAL_INSET,
+          }}
+        >
           <TabBar />
         </View>
       )}
@@ -141,7 +196,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, width: '100%', alignSelf: 'stretch' }}>
       <SafeAreaProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>

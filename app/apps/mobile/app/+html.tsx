@@ -12,11 +12,12 @@ export default function Root({ children }: PropsWithChildren) {
           content="width=device-width, initial-scale=1, shrink-to-fit=no"
         />
 
-        {/* PWA / home-screen icon — served from public/ so the path exists after web build */}
+        {/* PWA / home-screen — high-res icons for Android/Chrome live in public/manifest.json */}
+        <link rel="manifest" href="/manifest.json" />
         <link rel="apple-touch-icon" href="/apple-touch-icon.png" />
         <link rel="apple-touch-icon" sizes="180x180" href="/apple-touch-icon.png" />
-
-        {/* Android / Chrome PWA icons are declared in the auto-generated manifest.json */}
+        <link rel="icon" type="image/png" sizes="192x192" href="/pwa-icon-192.png" />
+        <link rel="icon" type="image/png" sizes="512x512" href="/pwa-icon-512.png" />
 
         {/* iOS standalone display */}
         <meta name="apple-mobile-web-app-capable" content="yes" />

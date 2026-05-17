@@ -12,6 +12,8 @@ export interface UpdateProfileInput {
   readonly cityName?: string;
   /** When present, persists or clears (`{ street: null, streetNumber: null }`) profile address lines. */
   readonly profileAddress?: { readonly street: string | null; readonly streetNumber: string | null };
+  /** When present, persists (trimmed) or clears (null) the non-verified contact phone (FR-PROFILE-007 AC1). */
+  readonly contactPhone?: string | null;
   readonly biography?: string | null;
   readonly avatarUrl?: string | null;
 }
@@ -61,12 +63,28 @@ export class UpdateProfileUseCase {
       }
     }
 
+    let normalizedContactPhone: string | null | undefined;
+    if (input.contactPhone !== undefined) {
+      if (input.contactPhone === null) {
+        normalizedContactPhone = null;
+      } else {
+        const trimmed = input.contactPhone.trim();
+        if (trimmed.length === 0) {
+          normalizedContactPhone = null;
+        } else {
+          if (trimmed.length > 20) throw new ProfileError('invalid_contact_phone');
+          normalizedContactPhone = trimmed;
+        }
+      }
+    }
+
     const patch: Parameters<IUserRepository['updateEditableProfile']>[1] = {};
     if (input.displayName !== undefined) patch.displayName = input.displayName.trim();
     if (input.city !== undefined) patch.city = input.city;
     if (input.cityName !== undefined) patch.cityName = input.cityName;
     if (normalizedStreet !== undefined) patch.profileStreet = normalizedStreet;
     if (normalizedNumber !== undefined) patch.profileStreetNumber = normalizedNumber;
+    if (normalizedContactPhone !== undefined) patch.contactPhone = normalizedContactPhone;
     if (input.biography !== undefined) patch.biography = input.biography;
     if (input.avatarUrl !== undefined) patch.avatarUrl = input.avatarUrl;
 

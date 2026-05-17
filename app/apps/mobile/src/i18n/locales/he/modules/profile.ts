@@ -53,8 +53,13 @@ export const profileHe = {
   emptyHiddenClosedTitle: 'אין פוסטים מוסתרים סגורים',
   emptyHiddenClosedSubtitle: 'פוסטים מוסתרים שסגרת יופיעו כאן.',
   myProfileMenuSavedPosts: 'שמורים',
-  emptySavedTitle: 'אין פוסטים שמורים',
-  emptySavedSubtitle: 'שמרי פוסטים מהפיד או ממסך הפוסט כדי לראות אותם כאן.',
+  savedBanner: 'פוסטים ששמרת. אם פוסט אינו זמין עוד (נמחק, הוסר, או חזר להיות פרטי) הוא לא יוצג כאן.',
+  savedSectionOpen: 'פוסטים פתוחים',
+  savedSectionClosed: 'פוסטים סגורים',
+  emptySavedOpenTitle: 'אין פוסטים פתוחים בשמורים',
+  emptySavedOpenSubtitle: 'שמרי פוסט פתוח מהפיד כדי לראות אותו כאן.',
+  emptySavedClosedTitle: 'אין פוסטים סגורים בשמורים',
+  emptySavedClosedSubtitle: 'פוסטים סגורים ששמרת יופיעו כאן.',
 
   // Stats row
   statsPostsLabel: 'פוסטים',
@@ -104,6 +109,12 @@ export const profileHe = {
 
   // Removed-tab banner (FR-POST-008 owner-view of removed_admin posts)
   removedBanner: 'פוסטים אלה הוסרו על ידי מנהל הקהילה. הם גלויים רק לך.',
+  removedSectionOpen: 'פוסטים שהיו פתוחים',
+  removedSectionClosed: 'פוסטים שהיו סגורים',
+  emptyRemovedOpenTitle: 'אין פוסטים פתוחים שהוסרו',
+  emptyRemovedOpenSubtitle: 'פוסטים פתוחים שיוסרו על ידי מנהל יופיעו כאן.',
+  emptyRemovedClosedTitle: 'אין פוסטים סגורים שהוסרו',
+  emptyRemovedClosedSubtitle: 'פוסטים סגורים שיוסרו על ידי מנהל יופיעו כאן.',
 
   // Edit Profile screen (FR-PROFILE-007)
   editScreen: {
@@ -123,6 +134,10 @@ export const profileHe = {
     incompleteAddressMessageStreet: 'נא למלא שם רחוב, או למחוק את מספר הבית.',
     fullNameLabel: 'שם מלא',
     fullNamePlaceholder: 'לדוגמה: רינה כהן',
+    contactPhoneLabel: 'טלפון ליצירת קשר (אופציונלי)',
+    contactPhonePlaceholder: 'לדוגמה: 050-1234567',
+    invalidContactPhoneTitle: 'מספר טלפון לא תקין',
+    invalidContactPhoneMessage: 'יש להזין עד 20 תווים.',
     biographyLabel: 'ביוגרפיה (אופציונלי)',
     biographyPlaceholder: 'קצת עליך — בלי קישורים',
     save: 'שמור',

@@ -618,13 +618,13 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ## D-30 — MVP post-detail privacy: audience + counterparty mask only (2026-05-16)
 
-**Decision.** The post-detail privacy block is **audience-first**: for **open** posts the owner edits `posts.visibility` (`FR-POST-003` / `FR-POST-009`); for **closed** posts each participant edits their own `surface_visibility` (`D-28`). The **only** user-facing identity toggle in MVP besides audience is `hide_from_counterparty`, whose **product semantics** are defined in **`D-31`** (third parties on the counterparty's closed-post profile — not hiding from the counterparty; see also `D-30` supersession note). Per-participant `identity_visibility` (`FollowersOnly` / `Hidden` chrome) is **not** exposed in the mobile UI; client upserts normalize `identity_visibility` to `Public`, and migration `0092_post_actor_identity_public_chrome.sql` clears legacy non-`Public` rows.
+**Decision.** The post-detail privacy block is **audience-first**: for **open** posts the owner edits `posts.visibility` (`FR-POST-003` / `FR-POST-009`, `D-32`); for **closed** posts each participant edits their own `surface_visibility` (`D-28`). The **only** user-facing identity toggle in MVP besides audience is `hide_from_counterparty`, whose **product semantics** are defined in **`D-31`** (third parties on the counterparty's closed-post profile — not hiding from the counterparty; see also `D-30` supersession note). Per-participant `identity_visibility` (`FollowersOnly` / `Hidden` chrome) is **not** exposed in the mobile UI; client upserts normalize `identity_visibility` to `Public`, and migration `0092_post_actor_identity_public_chrome.sql` clears legacy non-`Public` rows.
 
 **Rationale.** The prior three-level control duplicated the visibility affordance (🌍/👥/🔒) but changed chrome, not audience — users consistently misread it as “who sees the post”. Collapsing MVP UX to audience + one identity toggle matches the mental model while preserving `D-28` closed-post surface rules and `D-26` post-chrome rules. **`D-31`** corrects the original reading of `hide_from_counterparty` as “hide from the partner” — partners already recognize each other in chat; the risk is **other users** browsing the partner's profile.
 
 **Supersedes (in part).** MVP UX scope of the `identity_visibility` axis described in `D-28`'s addendum table; server columns and projection hooks remain for future refinement / surface-coupling. **`D-30`'s** prior sentence that described `hide_from_counterparty` as hiding from the counterparty on post chrome is superseded by **`D-31`**.
 
-**Affected docs.** `spec/04_posts.md` (`FR-POST-021`); `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (PM revision note); migration `0092_post_actor_identity_public_chrome.sql`; mobile `PostActorPrivacyBar`, `VisibilityChooser`.
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021`); `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (PM revision note); migration `0092_post_actor_identity_public_chrome.sql`; mobile `PostMenuExposureBlock`, `VisibilityChooser`.
 
 ---
 
@@ -640,10 +640,71 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
+## D-32 — Post visibility may move in any direction after publish (2026-05-17)
+
+**Decision.** Owners (and closed-post participants for `surface_visibility`, `FR-POST-021`) may set `Public`, `FollowersOnly`, or `OnlyMe` **at any time**, including restricting a post after it was already public (e.g. `Public → OnlyMe`). The product does **not** promise retroactive removal from other users' memory, screenshots, or off-platform shares; the control governs **current** in-app discoverability (feeds, profile closed-post surfaces, eligibility rules).
+
+**Rationale.** PM override: users need a safety valve to retract broad exposure without deleting the post. Prior upgrade-only rule (`FR-POST-009` as originally written, RLS/trigger in `0002_init_posts.sql`) is removed in favor of explicit user control.
+
+**Supersedes (in part).** PRD §3.2.4 sub-section ו as reflected in legacy `FR-POST-009` upgrade-only ACs; database trigger `posts_visibility_upgrade_only` (dropped in `0094_posts_visibility_free_change.sql`).
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-009`, `FR-POST-021`, `FR-POST-006` AC3, `FR-POST-008` AC1); `packages/domain/src/invariants.ts` (`canUpgradeVisibility` semantics); `UpdatePostUseCase`, `UpsertPostActorIdentityUseCase`; mobile `PostMenuExposureBlock`, `PostMenuSheet`, `edit-post/[id].tsx`; migration `0094_posts_visibility_free_change.sql`.
+
+---
+
+## D-33 — Web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native (2026-05-17)
+
+**Decision.** On Web, "Continue with Google" performs a **top-level same-tab navigation** to `accounts.google.com`. The browser then redirects to `/auth/callback?code=…`, which the existing callback handler exchanges for a Supabase session. No `window.open` popup, no embedded picker UI. Native (iOS/Android) continues to use `WebBrowser.openAuthSessionAsync` for now; the bottom-sheet, in-app account picker UX requested in product will be delivered on native via `@react-native-google-signin/google-signin` in a follow-up PR.
+
+**Rationale.**
+- **Popups are blocked on mobile Safari.** Both `window.open` (the previous web flow's expo-web-browser polyfill) and Google Identity Services' fallback popup hit Safari's popup-blocker because they fire after async setup, outside the user-gesture window. PM confirmed the bug: clicking "Continue with Google" shows "Popup window was blocked".
+- **Google forbids iframe-embedding `accounts.google.com`** (`X-Frame-Options: DENY`). The PM-requested vision of an in-app account-picker bottom sheet on Web is technically blocked by Google's anti-phishing policy. The closest possible web approximation — GIS + FedCM — falls back to popups on non-Chrome browsers and was rejected after the previous attempt failed in Safari.
+- **Same-tab redirect is the industry standard** (Notion, Linear, GitHub, Vercel, Supabase's own dashboard). It is the only web Google flow that avoids `window.open` entirely. The Google account picker still renders at the URL in the PM's reference screenshot (`accounts.google.com/v3/signin/accountchooser`) — it just renders as a full-tab navigation instead of a popup. The visual experience is preserved.
+- **The bottom-sheet vision lives on native.** iOS and Android can use the official Google Sign-In SDK, which renders an OS-native account-picker bottom sheet inside the app (no browser involved). That delivers the requested UX where Google's policy permits it.
+
+**Rejected alternatives.**
+- GIS button + FedCM inside a bottom sheet — previous attempt (`D-32` first-claim, then `P2.24`). Reverted because Safari fallback is the same popup-block.
+- Same-tab redirect wrapped in a bottom-sheet UI — adds an extra tap with no compensating benefit (the picker is not inside the sheet anyway).
+- Custom Google account-picker UI proxied through our backend — breaks Google's Terms of Service.
+
+**Affected.** `apps/mobile/src/services/authComposition.ts` (`redirectToGoogleSignInWeb`), `apps/mobile/app/(auth)/index.tsx` (`handleGoogle` web branch), `docs/SSOT/spec/01_auth_and_onboarding.md`. Reverts of the previous attempt: PR #311.
+
+---
+
+## D-34 — Closed-post Hide fans out to `posts.visibility` + `surface_visibility` (2026-05-17)
+
+**Context.** `FR-PROFILE-001 AC4` defines the Hidden overflow screen as "the owner's `Only me` posts (`open` and `closed` lanes)" and excludes those rows from the Closed Posts tab. The owner's "פוסטים סגורים" tab spec (FR-PROFILE-001 AC4) explicitly excludes rows "where the owner published at `posts.visibility = OnlyMe`". The supporting RPC `profile_closed_posts` (migration 0088) keys both lanes on `posts.visibility = 'OnlyMe'`. Meanwhile `D-28` introduced per-participant `post_actor_identity.surface_visibility` to govern third-party access via each participant's profile tab.
+
+The mobile ⋮ exposure block (`PostMenuExposureBlock`) previously routed the "הסתר (רק אני)" action for closed posts to `surface_visibility` only. Result: the Hidden-screen / Closed-tab routing never fired, so closed-post hide was effectively dead.
+
+**Decision.** When the post **owner** triggers Hide on a `closed_delivered` or `deleted_no_recipient` post, the client writes both `posts.visibility = 'OnlyMe'` (so own-profile routing flips: Closed-tab excludes, Hidden Closed includes) and the owner's `surface_visibility = 'OnlyMe'` (so third-party views of the owner's Closed Posts tab also drop the row). Recipients on closed posts continue to write only their own row's `surface_visibility` — they cannot mutate the publisher's `posts.visibility`.
+
+**Implication.** `FR-POST-009` is clarified: `posts.visibility` may change on `closed_delivered` / `deleted_no_recipient` (owner only, visibility-only patch). All other fields remain locked on non-open statuses. `removed_admin` and `expired` stay fully read-only.
+
+**Implementation.** `UpdatePostUseCase` now accepts a visibility-only patch on closed states (Phase 1 Task 1.1, commit `f3fcf1a`). `usePostActorPrivacyModel.onAudienceChange` fans out for closed-post owners (Phase 1 Task 1.2, commit `b684306`).
+
+---
+
+## D-35 — Track `status_before_admin_removal` for the removed-posts screen split (2026-05-17)
+
+**Context.** `/profile/removed` lists posts where `posts.status = 'removed_admin'`. PM wants the screen to mirror `/profile/hidden`'s two-section layout (open / closed lanes). Once admin removal flips the row, the original status is unknown — we don't reconstruct from audit logs because the linkage is fragile.
+
+**Decision.** Add nullable `posts.status_before_admin_removal text`. `admin_remove_post` RPC captures the prior status atomically with the transition. The column is meaningful only when `status = 'removed_admin'`; outside that, it's stale state with no behavior. `admin_restore_target` does not clear it (cost-of-change vs. zero risk).
+
+**Legacy rows.** Already-removed posts stay NULL. The mobile UI groups NULL under the open lane by default. We accept the inaccuracy: no admin-removed-pre-2026-05-17 user has flagged the misclassification, and a precise backfill would require audit-trail joins of uncertain quality.
+
+**Implementation.** Migration `0097_posts_status_before_admin_removal.sql`. Domain `Post` gains `statusBeforeAdminRemoval`. Infra adapter selects + maps. Mobile `/profile/removed` partitions client-side.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.5 | 2026-05-17 | Added `D-35` (`posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status). |
+| 2.4 | 2026-05-17 | Added `D-34` (closed-post Hide fans out to `posts.visibility` + owner's `surface_visibility`; FR-POST-009 + FR-PROFILE-001 AC4 clarified). |
+| 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native via Google Sign-In SDK). |
+| 2.2 | 2026-05-17 | Added `D-32` (free visibility changes after publish; supersedes legacy upgrade-only `FR-POST-009` trigger); migration `0093`. |
 | 2.1 | 2026-05-16 | Added `D-31` (`hide_from_counterparty` third-party-on-partner-surface semantics); refined `D-30` + `D-28` hide-flag wording. |
 | 2.0 | 2026-05-16 | Added `D-30` (MVP post-detail privacy: audience + counterparty mask; `FR-POST-021`, migration `0092`). |
 | 1.9 | 2026-05-16 | Added `D-29` (saved-posts list filters by current `is_post_visible_to`; `FR-POST-022`, `FR-PROFILE-016`). |

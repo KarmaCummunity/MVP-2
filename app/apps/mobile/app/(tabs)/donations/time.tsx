@@ -22,6 +22,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 const COMPOSER_MAX_CHARS = 2000;
 
@@ -142,7 +143,7 @@ const styles = StyleSheet.create({
   body: {
     ...typography.bodyLarge,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 26,
     width: '100%',
   },
@@ -151,7 +152,7 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600' as const,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 22,
   },
   input: {
@@ -163,7 +164,7 @@ const styles = StyleSheet.create({
     padding: spacing.md,
     ...typography.body,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     writingDirection: 'rtl',
   },
   send: {
@@ -178,6 +179,6 @@ const styles = StyleSheet.create({
   sendText: { ...typography.button, color: colors.textInverse },
   sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
   errorRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm },
-  errorText: { ...typography.bodySmall, color: colors.error, textAlign: 'right' },
+  errorText: { ...typography.bodySmall, color: colors.error, textAlign: rtlTextAlignStart },
   retryText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' as const },
 });

@@ -30,11 +30,6 @@ export const styles = StyleSheet.create({
     paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full,
     shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2,
   },
-  menuOverlay: {
-    position: 'absolute',
-    top: spacing.sm,
-    start: spacing.sm,
-  },
   giveTag: { backgroundColor: colors.giveTagBg },
   requestTag: { backgroundColor: colors.requestTagBg },
   typeTagText: { ...typography.label, color: colors.textPrimary, fontWeight: '700' },

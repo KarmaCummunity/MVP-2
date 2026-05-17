@@ -7,3 +7,6 @@ expo-env.d.ts
 
 # Expo web export output (built by Cloudflare Pages on each deploy)
 dist/
+
+# Generated at build time from locale file by scripts/generate-web-manifest.mjs (D-24)
+public/manifest.json

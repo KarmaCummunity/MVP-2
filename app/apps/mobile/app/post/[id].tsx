@@ -2,14 +2,14 @@
 // Mapped to: FR-POST-014, FR-POST-015, FR-POST-021, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
-import { colors } from '@kc/ui';
+import { colors, spacing } from '@kc/ui';
 import { EmptyState } from '../../src/components/EmptyState';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
@@ -17,8 +17,10 @@ import { contactPoster } from '../../src/lib/contactPoster';
 import { postOwnerDisplayLabel } from '../../src/lib/postOwnerDisplayLabel';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
+import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
 import { styles } from './postDetailScreen.styles';
+import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../src/navigation/useShellTabBarVisibility';
 
 function normalizeRoutePostId(raw: string | string[] | undefined): string | undefined {
   const id = Array.isArray(raw) ? raw[0] : raw;
@@ -41,15 +43,6 @@ function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string
   if (post.locationDisplayLevel === 'CityAndStreet')
     return `${post.address.cityName}, ${t('post.detail.streetPrefix')} ${post.address.street}`;
   return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
-}
-
-function postDetailShowActorPrivacy(
-  viewerId: string | null,
-  isOwner: boolean,
-  post: PostWithOwner,
-  isRecipientMarked: boolean,
-): boolean {
-  return viewerId != null && (isOwner || (post.status === 'closed_delivered' && isRecipientMarked));
 }
 
 export default function PostDetailScreen() {
@@ -86,6 +79,9 @@ export default function PostDetailScreen() {
       setContactPosterBusy(false);
     }
   }, [viewerId, query.data?.post, router]);
+
+  const showShellTabBar = useShellTabBarVisibility();
+  const tabBarPad = shellTabBarHeightPx(showShellTabBar);
 
   const exitAfterOwnerMutation = (messageKey: 'closure.detailCloseSuccessToast' | 'closure.detailReopenSuccessToast') => {
     useFeedSessionStore.getState().showEphemeralToast(t(messageKey), 'success', 2200);
@@ -131,36 +127,35 @@ export default function PostDetailScreen() {
 
   const showViewerContactCta = !isOwner && post.status === 'open';
 
-  const isRecipientMarked =
-    viewerId != null && post.recipient?.recipientUserId === viewerId;
-  const showActorPrivacy = postDetailShowActorPrivacy(viewerId, isOwner, post, isRecipientMarked);
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
   const ownerLabel = postOwnerDisplayLabel(post, t);
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
+      <Stack.Screen options={{ headerRight: () => <PostMenuButton post={post} /> }} />
       <PostDetailScrollContent
         post={post}
         isGive={isGive}
-        showActorPrivacy={showActorPrivacy}
         viewerId={viewerId}
         ownerNavigable={ownerNavigable}
         ownerLabel={ownerLabel}
         locationText={locationText}
         timeAgo={timeAgo}
+        scrollBottomInset={tabBarPad}
       />
 
       {isOwner && viewerId ? (
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
+          tabBarOverlayInset={tabBarPad}
           // onClosed / onReopened: toast + leave detail (lists invalidated in OwnerActionsBar).
           onClosed={() => exitAfterOwnerMutation('closure.detailCloseSuccessToast')}
           onReopened={() => exitAfterOwnerMutation('closure.detailReopenSuccessToast')}
         />
       ) : null}
       {showViewerContactCta ? (
-        <View style={styles.cta}>
+        <View style={[styles.cta, { paddingBottom: spacing.base + tabBarPad }]}>
           <TouchableOpacity
             style={styles.messageBtn}
             onPress={() => void onOpenPosterChat()}

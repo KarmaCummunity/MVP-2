@@ -11,6 +11,7 @@ interface Row {
   cityName: string;
   profileStreet?: string | null;
   profileStreetNumber?: string | null;
+  contactPhone?: string | null;
   onboardingState: OnboardingState;
   basicInfoSkipped?: boolean;
   avatarUrl?: string | null;
@@ -126,6 +127,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         cityName: row.cityName,
         profileStreet: row.profileStreet ?? null,
         profileStreetNumber: row.profileStreetNumber ?? null,
+        contactPhone: row.contactPhone ?? null,
         biography: row.biography ?? null,
         avatarUrl: row.avatarUrl ?? null,
       };
@@ -138,6 +140,15 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
         onboardingState: 'pending_basic_info' as OnboardingState,
       };
       rows.set(userId, { ...row, profileStreet: street, profileStreetNumber: streetNumber });
+    },
+    async setContactPhone(userId, contactPhone) {
+      const row = rows.get(userId) ?? {
+        displayName: '',
+        city: '',
+        cityName: '',
+        onboardingState: 'pending_basic_info' as OnboardingState,
+      };
+      rows.set(userId, { ...row, contactPhone });
     },
     async updateEditableProfile(userId, patch) {
       const row = rows.get(userId) ?? {
@@ -152,6 +163,7 @@ export function makeFakeUserRepo(seed: Record<string, Row> = {}): FakeUserRepo {
       if (patch.cityName !== undefined) next.cityName = patch.cityName;
       if (patch.profileStreet !== undefined) next.profileStreet = patch.profileStreet;
       if (patch.profileStreetNumber !== undefined) next.profileStreetNumber = patch.profileStreetNumber;
+      if (patch.contactPhone !== undefined) next.contactPhone = patch.contactPhone;
       if (patch.biography !== undefined) next.biography = patch.biography;
       if (patch.avatarUrl !== undefined) next.avatarUrl = patch.avatarUrl;
       rows.set(userId, next);

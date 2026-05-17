@@ -6,6 +6,8 @@ export const postMenuHe = {
   menuUnsave: 'הסר מהשמורים',
   menuDelete: 'מחק את הפוסט',
   menuAdminRemove: 'הסר כאדמין',
+  exposureOnlyMeActive: 'הפוסט מוסתר (רק אני). להגדלת החשיפה:',
+  exposureHideOnlyMe: 'הסתר (רק אני)',
   saveSuccess: 'הפוסט נשמר.',
   saveError: 'השמירה נכשלה, נסה שוב.',
   unsaveSuccess: 'הוסר מהשמורים.',

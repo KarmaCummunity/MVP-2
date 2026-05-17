@@ -1,6 +1,6 @@
 # 2.2 Profile & Privacy Mode
 
-> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped. ⚠️ Audit 2026-05-16: 🔴 `mapUserRow.privacyMode` blind cast (TD-69, BACKLOG P2.12). 🟠 FR-PROFILE-007 AC2 no read-only email/phone block on Edit Profile; FR-PROFILE-009 AC5 followers list non-paginated; FR-PROFILE-012 AC1 lock icon tappable on other-user profile; FR-PROFILE-015 AC1 SSO avatar never copied to our bucket; FR-PROFILE-013 AC5 counters not Realtime-subscribed. TD-104 / TD-105. See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
+> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped. ⏳ `FR-PROFILE-017` (optional add-phone on main shell) — **spec only** until implemented. ⚠️ Audit 2026-05-16: 🔴 `mapUserRow.privacyMode` blind cast (TD-69, BACKLOG P2.12). 🟠 FR-PROFILE-009 AC5 followers list non-paginated; FR-PROFILE-012 AC1 lock icon tappable on other-user profile; FR-PROFILE-015 AC1 SSO avatar never copied to our bucket; FR-PROFILE-013 AC5 counters not Realtime-subscribed. TD-104 / TD-105. See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
 
 
 
@@ -47,9 +47,9 @@ The signed-in user's own profile, displaying identity, three headline counters, 
 - AC3. Two action buttons: "Edit Profile" → `FR-PROFILE-007`, "Share Profile" → produces a deep-link URL.
 - AC4. Two tabs:
    - **Active Posts** (Hebrew label: *"פוסטים פתוחים"*): lists `open` posts authored by the user at visibility `Public` or `Followers only` only — **not** `Only me`. Each card carries a visual badge showing its visibility.
-   - **Hidden posts (owner-only, not a tab):** overflow entry labeled *"מוסתרים"* (locale key) routes to a dedicated stack screen (`/(tabs)/profile/hidden`) with the standard app header (back + title) and lists the owner's `Only me` posts (`open` and `closed` lanes), mirroring the `removed_admin` overflow pattern.
+   - **Hidden posts (owner-only, not a tab):** overflow entry labeled *"מוסתרים"* (locale key) routes to a dedicated stack screen (`/(tabs)/profile/hidden`) with the standard app header (back + title) and lists the owner's `Only me` posts (`open` and `closed` lanes), mirroring the `removed_admin` overflow pattern. The closed lane is populated by `posts.visibility = 'OnlyMe'` set by the owner via the ⋮ exposure block (`D-34`); third-party views of the owner's Closed Posts tab are additionally gated by the owner's `post_actor_identity.surface_visibility` (`D-28`).
    - **Closed Posts** (Hebrew label: *"פוסטים סגורים"*): lists posts where the user is **either the publisher or the respondent**, excluding rows where the owner published at `posts.visibility = OnlyMe` (those appear only under **Hidden**). The publisher side covers status `closed_delivered` and (for the user's own view) `deleted_no_recipient` within the 7-day grace window so they can still reopen — FR-CLOSURE-005 AC4, FR-CLOSURE-008. The respondent side covers only `closed_delivered`. Ordered by `closed_at` desc. Each card shows an economic-role badge derived from `(post.type, identity-role)`: 📤 נתתי when the profile owner is the giver, 📥 קיבלתי when the profile owner is the receiver. On *my own* profile every row is included regardless of `surface_visibility` (counterparty-read invariant + self-read). (Established 2026-05-13 per D-19; clarified 2026-05-16 per D-28.)
-   - **Admin-removed posts (owner-only, not a tab):** on *My Profile*, the `⋮` control anchored to the top-start corner of the profile summary card (visual top-right in RTL / top-left in LTR) opens an overflow that mirrors the profile-adjacent Settings destinations from `app/settings.tsx` (account details → `/edit-profile`, notifications → `/settings/notifications`, private profile → `/settings/privacy`, follow requests → `/settings/follow-requests` when relevant, stats → `/stats`) and adds entries for **Saved** (`FR-PROFILE-016`), **Hidden** (see above), and the dedicated `removed_admin` posts list (owner visibility per `FR-POST-008` / moderation). Those three lists are not profile posts tabs; each opens as a nested stack screen under `/(tabs)/profile/{saved|hidden|removed}` with the standard app header (back + title).
+   - **Admin-removed posts (owner-only, not a tab):** on *My Profile*, the `⋮` control anchored to the top-start corner of the profile summary card (visual top-right in RTL / top-left in LTR) opens an overflow that mirrors the profile-adjacent Settings destinations from `app/settings.tsx` (account details → `/edit-profile`, notifications → `/settings/notifications`, private profile → `/settings/privacy`, follow requests → `/settings/follow-requests` when relevant, stats → `/stats`) and adds entries for **Saved** (`FR-PROFILE-016`), **Hidden** (see above), and the dedicated `removed_admin` posts list (owner visibility per `FR-POST-008` / moderation). The removed-posts screen splits into prior-open and prior-closed sections per `D-35`. Those three lists are not profile posts tabs; each opens as a nested stack screen under `/(tabs)/profile/{saved|hidden|removed}` with the standard app header (back + title).
 - AC5. Tapping a post opens Post Detail in "owner mode" (see `FR-POST-016`).
 - AC6. **Counters fallback (MVP, pre-DB-schema)**: until `FR-FOLLOW-*` and `FR-POST-*` ship (see `spec/03_following.md` + `spec/04_posts.md`), the three headline counters render as `0` rather than mock values. They begin reflecting reality from `FR-FOLLOW-*` and `FR-POST-*` onward.
 
@@ -165,15 +165,15 @@ The user toggles their profile privacy mode from `Private` to `Public`.
 ## FR-PROFILE-007 — Edit Profile
 
 **Description.**
-The user can change avatar, display name, city, optional street and building number (full address), and biography.
+The user can change avatar, display name, city, optional street and building number (full address), optional contact phone, and biography.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.2.5, `05_Screen_UI_Mapping.md` §3.2.
 - Constraints: `R-MVP-Profile-1`, `R-MVP-Profile-6`.
 
 **Acceptance Criteria.**
-- AC1. Editable fields: avatar (replace / remove), `display_name` (1–50 chars), `city` (dropdown), optional `street` (1–80 chars) + `street_number` (same pattern as post pickup addresses: digits with optional trailing letter), `biography` (≤200 chars). Street fields are optional as a pair: both empty keeps a city-only profile; when either is filled, both must be valid.
-- AC2. Email/phone/Google ID/Apple ID are **read-only** in MVP; the screen shows them but the controls are disabled with a note pointing to Support.
+- AC1. Editable fields: avatar (replace / remove), `display_name` (1–50 chars), `city` (dropdown), optional `street` (1–80 chars) + `street_number` (same pattern as post pickup addresses: digits with optional trailing letter), optional `contact_phone` (1–20 chars after trim, free-form, non-verified — distinct from the OTP `auth.users.phone`), `biography` (≤200 chars). Street fields are optional as a pair: both empty keeps a city-only profile; when either is filled, both must be valid. Contact phone is unconditionally optional and clears to null on empty submit.
+- AC2. **Auth identifiers** — the auth-layer email / phone (`auth.users.email` / `auth.users.phone`) / Google ID / Apple ID — are **read-only** in MVP; the screen shows them but the controls are disabled with a note pointing to Support. The optional `users.contact_phone` introduced in AC1 is a separate display field and IS editable.
 - AC3. Biography validation rejects content matching a configurable URL regex (anti-spam, `R-MVP-Profile-6`); the error is shown inline.
 - AC4. Save is atomic: avatar upload completes before the textual fields are persisted; on partial failure, the previous state is preserved.
 - AC5. The `display_name` change emits a `profile_updated` analytics event but **no** push notification to followers (privacy / spam control).
@@ -339,13 +339,37 @@ The signed-in user opens a dedicated list of posts they have bookmarked from the
 - AC3. The grid lists bookmarked posts the viewer can still read; posts that became invisible (visibility change, unfollow, block, etc.) are omitted from the list but remain stored until unsave or post delete (`D-29`).
 - AC4. Tapping a card opens Post Detail with the same navigation as other profile grids.
 - AC5. Empty state when the user has no visible saved posts: warm copy directing them to save from the feed or post detail.
+- AC6. The Saved screen renders a banner plus two sections — "פוסטים פתוחים" and "פוסטים סגורים" — mirroring `/profile/hidden`. Posts are partitioned client-side by `status` (`open` vs `closed_delivered` / `deleted_no_recipient`). Each section has its own empty-state copy.
 
 **Related.** Screens: 3.1 · `FR-POST-022`.
 
 ---
 
+## FR-PROFILE-017 — Optional add verified phone (main shell)
+
+**Description.**
+Signed-in users whose account has **no verified phone** may optionally add an Israeli mobile number **from the same screen layer as the floating bottom tab bar** (`ShellWithTabBar` + `TabBar` in `app/apps/mobile/app/_layout.tsx` / `app/apps/mobile/src/components/TabBar.tsx`): a compact, **non-blocking** affordance (e.g. slim row or chip **above** the tab pill). Adding a phone is **never required** to navigate or use core tabs.
+
+**Source.**
+- PM request (2026-05-17); decision `D-34`.
+
+**Acceptance Criteria.**
+- AC1. The affordance is shown only when: the user is authenticated, the shell tab bar is visible (`useShellTabBarVisibility`), and the session has **no verified phone** per Supabase Auth (same notion as “empty phone” elsewhere in the app).
+- AC2. The user may **dismiss** the affordance without entering a number; dismissal is remembered on-device (e.g. async storage) until the user adds a verified phone or clears app data — must not reappear every cold start unless product explicitly resets (default: **remember dismiss**).
+- AC3. **Flow:** collect normalized **E.164** IL mobile → SMS OTP verification aligned with `FR-AUTH-005` / existing Supabase phone verification APIs; only after successful verification is the phone persisted. Canonical store: **Supabase Auth** (`auth.users`); any `public.users` mirror continues to follow existing sync/trigger rules.
+- AC4. After a verified phone exists, the shell affordance is **hidden**; the number is **read-only** on Edit Profile per `FR-PROFILE-007` AC2. **Replacing** an already-verified phone or email remains out of scope for self-service (`FR-SETTINGS-013`).
+- AC5. Layout must **not** shrink or block the five tab targets; optional UI sits in the reserved bottom overlay **above** the pill or as a dismissible strip with `pointerEvents` compatible with `box-none` so scrolling content behind remains reachable where applicable.
+- AC6. All new user-visible strings use locale modules (`R-MVP-Core-4` / `D-23`).
+
+**Related.** Screens: root shell · Auth: `FR-AUTH-005` · Settings: `FR-SETTINGS-013`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 1.0 | 2026-05-17 | `FR-PROFILE-016` AC6 — Saved screen splits into open/closed sections (mirrors `/profile/hidden`). |
+| 0.10 | 2026-05-17 | `FR-ADMIN-002` / `FR-MOD-006` / `D-35`: migration `0097_posts_status_before_admin_removal` — persist prior lifecycle `status` when transitioning to `removed_admin`; `/profile/removed` splits into prior-open and prior-closed sections (`FR-PROFILE-001 AC4` cross-ref). |
+| 0.9 | 2026-05-17 | `FR-PROFILE-007` AC1+AC2: optional `contact_phone` becomes editable (1–20 chars, non-verified, distinct from `auth.users.phone`); AC2 now distinguishes auth identifiers (read-only) from the new display field (editable). Migration `0096_contact_phone`. `FR-PROFILE-017` (optional verified phone on main shell; `D-34`) remains specified below. |
 | 0.8 | 2026-05-16 | Saved / hidden / removed owner lists: nested stack header + back; no profile chrome on those routes (`FR-PROFILE-001` AC4, `FR-PROFILE-016` AC2). |
 | 0.7 | 2026-05-16 | `FR-PROFILE-016` — My Profile ⋮ → saved posts list (`FR-POST-022`). |
 | 0.6 | 2026-05-16 | `D-28` follow-up: `FR-PROFILE-001 AC4` and `FR-PROFILE-002 AC2` now cite **the profile owner's** per-post `surface_visibility` as the third-party gate for the Closed Posts tab (publisher's `posts.visibility` no longer applies); Scope cross-reference expanded to the three-axis model (surface / identity / counterparty). |

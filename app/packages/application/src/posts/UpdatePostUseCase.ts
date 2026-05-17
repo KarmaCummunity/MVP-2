@@ -1,12 +1,7 @@
-/** FR-POST-008 + FR-POST-009: edit an existing post; visibility upgrade-only. */
+/** FR-POST-008 + FR-POST-009: edit an existing post; visibility may change freely (D-32). */
 import type { IPostRepository, UpdatePostInput } from '../ports/IPostRepository';
 import type { Post } from '@kc/domain';
-import {
-  canUpgradeVisibility,
-  TITLE_MAX_CHARS,
-  DESCRIPTION_MAX_CHARS,
-  MAX_MEDIA_ASSETS,
-} from '@kc/domain';
+import { TITLE_MAX_CHARS, DESCRIPTION_MAX_CHARS, MAX_MEDIA_ASSETS } from '@kc/domain';
 import { PostError } from './errors';
 
 export interface UpdatePostUseCaseInput {
@@ -27,7 +22,18 @@ export class UpdatePostUseCase {
     if (!current) throw new Error(`UpdatePostUseCase: post ${input.postId} not found`);
 
     if (current.status !== 'open') {
-      throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+      // FR-POST-009 + D-34: on closed_delivered / deleted_no_recipient, only a
+      // visibility-only patch is allowed (owner-driven Hide / Unhide).
+      // removed_admin and expired remain fully locked.
+      const isClosedHideable =
+        current.status === 'closed_delivered' || current.status === 'deleted_no_recipient';
+      const patchKeys = Object.keys(input.patch).filter(
+        (k) => (input.patch as Record<string, unknown>)[k] !== undefined,
+      );
+      const isVisibilityOnly = patchKeys.length === 1 && patchKeys[0] === 'visibility';
+      if (!(isClosedHideable && isVisibilityOnly)) {
+        throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+      }
     }
 
     const patch = this.validate(input.patch, current);
@@ -61,11 +67,6 @@ export class UpdatePostUseCase {
     if (patch.address) {
       if (!patch.address.city || !patch.address.street || !patch.address.streetNumber)
         throw new PostError('address_required', 'address_required');
-    }
-
-    if (patch.visibility && patch.visibility !== current.visibility) {
-      if (!canUpgradeVisibility(current.visibility, patch.visibility))
-        throw new PostError('visibility_downgrade_forbidden', 'visibility_downgrade_forbidden');
     }
 
     if (patch.mediaAssets !== undefined) {

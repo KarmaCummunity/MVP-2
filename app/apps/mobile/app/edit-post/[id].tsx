@@ -12,7 +12,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { colors } from '@kc/ui';
-import { ALL_CATEGORIES, canUpgradeVisibility, ITEM_CONDITIONS } from '@kc/domain';
+import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
@@ -222,20 +222,11 @@ export default function EditPostScreen() {
     streetNumber.trim().length > 0 &&
     (!isGive || uploads.length > 0);
 
-  // FR-POST-009: visibility upgrade-only.
+  // FR-POST-009 / D-32: visibility may change freely (except Followers-only requires private profile — server + create flow).
   function handleVisibilityChange(next: PostVisibility) {
-    if (next === post!.visibility) { setVisibility(next); return; }
-    if (!canUpgradeVisibility(post!.visibility, next)) return;
     setVisibility(next);
   }
 
-  // FR-POST-009: visibility is upgrade-only. A row is enabled when it's the
-  // current value (no-op tap) or when `canUpgradeVisibility(current, row)` is
-  // true. Disabled rows render greyed with a brief reason in the subtitle.
-  const isVisibilityRowEnabled = (v: PostVisibility): boolean =>
-    v === post.visibility || canUpgradeVisibility(post.visibility, v);
-
-  const DOWNGRADE_SUB = t('post.editPost.visibilityDowngradeSub');
   const VISIBILITY_ROWS: Array<{ v: PostVisibility; label: string; openSub: string }> = [
     { v: 'Public', label: t('post.editPost.visibilityPublicLabel'), openSub: t('post.editPost.visibilityPublicSub') },
     { v: 'FollowersOnly', label: t('post.editPost.visibilityFollowersLabel'), openSub: t('post.editPost.visibilityFollowersSub') },
@@ -388,27 +379,22 @@ export default function EditPostScreen() {
           </View>
         )}
 
-        {/* Visibility — upgrade-only (FR-POST-009) */}
+        {/* Visibility — FR-POST-009 / D-32 */}
         <View style={styles.section}>
           <Text style={styles.sectionLabel}>{t('post.editPost.sectionVisibility')}</Text>
-          {VISIBILITY_ROWS.map(({ v, label, openSub }) => {
-            const enabled = isVisibilityRowEnabled(v);
-            const sub = enabled ? openSub : DOWNGRADE_SUB;
-            return (
+          {VISIBILITY_ROWS.map(({ v, label, openSub }) => (
               <TouchableOpacity
                 key={v}
-                style={[styles.visRow, visibility === v && styles.visRowActive, !enabled && styles.visRowDisabled]}
-                onPress={() => enabled && handleVisibilityChange(v)}
-                disabled={!enabled}
+                style={[styles.visRow, visibility === v && styles.visRowActive]}
+                onPress={() => handleVisibilityChange(v)}
               >
                 <View style={[styles.radio, visibility === v && styles.radioActive]} />
                 <View style={{ flex: 1 }}>
-                  <Text style={[styles.visLabel, !enabled && { color: colors.textDisabled }]}>{label}</Text>
-                  <Text style={styles.visSub}>{sub}</Text>
+                  <Text style={styles.visLabel}>{label}</Text>
+                  <Text style={styles.visSub}>{openSub}</Text>
                 </View>
               </TouchableOpacity>
-            );
-          })}
+          ))}
         </View>
       </ScrollView>
       <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />

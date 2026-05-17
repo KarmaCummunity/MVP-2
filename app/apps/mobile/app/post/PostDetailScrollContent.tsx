@@ -7,38 +7,40 @@ import { colors } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
-import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
-import { PostActorPrivacyBar } from '../../src/components/post-detail/PostActorPrivacyBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
 import { styles } from './postDetailScreen.styles';
 
 export type PostDetailScrollContentProps = Readonly<{
   post: PostWithOwner;
   isGive: boolean;
-  showActorPrivacy: boolean;
   viewerId: string | null;
   ownerNavigable: boolean;
   ownerLabel: string;
   locationText: string;
   timeAgo: string;
+  /** Clears last scroll content above the floating shell tab bar (see `shellTabBarHeightPx`). */
+  scrollBottomInset: number;
 }>;
 
 export function PostDetailScrollContent({
   post,
   isGive,
-  showActorPrivacy,
   viewerId,
   ownerNavigable,
   ownerLabel,
   locationText,
   timeAgo,
+  scrollBottomInset,
 }: PostDetailScrollContentProps) {
   const { t } = useTranslation();
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={scrollBottomInset > 0 ? { paddingBottom: scrollBottomInset } : undefined}
+    >
       <MotionEntry variant="hero" delay={ENTRY_DELAY.hero}>
         <View style={styles.imageWrap}>
           <PostImageCarousel
@@ -47,9 +49,6 @@ export function PostDetailScrollContent({
           />
           <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
             <Text style={styles.typeTagText}>{isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}</Text>
-          </View>
-          <View style={styles.menuOverlay} pointerEvents="box-none">
-            <PostMenuButton post={post} />
           </View>
         </View>
       </MotionEntry>
@@ -94,9 +93,6 @@ export function PostDetailScrollContent({
             cityName={post.address.cityName}
             ownerHandle={post.ownerHandle}
           />
-          {showActorPrivacy && viewerId != null ? (
-            <PostActorPrivacyBar post={post} viewerId={viewerId} />
-          ) : null}
         </View>
       </MotionEntry>
     </ScrollView>

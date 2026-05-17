@@ -104,6 +104,7 @@ export type ProfileErrorCode =
   | 'incomplete_profile_address'
   | 'invalid_profile_street'
   | 'invalid_profile_street_number'
+  | 'invalid_contact_phone'
   | 'empty_patch';
 
 export class ProfileError extends Error {
