@@ -652,10 +652,29 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
+## D-33 — Web Google sign-in via GIS + FedCM wrapped in a draggable bottom sheet (2026-05-17)
+
+**Decision.** On Web, the "Continue with Google" entry point on the welcome screen opens a draggable 90%-height bottom sheet (`apps/mobile/src/components/auth/GoogleAuthSheet.tsx`). The sheet renders the Google Identity Services (GIS) button, and on success exchanges the returned id_token for a Supabase session via `IAuthService.signInWithIdToken` (`supabase.auth.signInWithIdToken({ provider: 'google', token, nonce })`). Native (iOS / Android) is **unchanged** — it continues to use `WebBrowser.openAuthSessionAsync` (ASWebAuthenticationSession on iOS, Chrome Custom Tabs on Android), which already presents in-app.
+
+**Rationale.** The previous web flow opened a separate `window.open` popup window for the Google account picker, breaking the "in-app" feel that new sign-ups expect from a modern SPA. The natural alternative — embedding `accounts.google.com` in an iframe — is blocked by Google's anti-phishing policy (`X-Frame-Options: DENY`). Google Identity Services with FedCM (`use_fedcm_for_prompt: true`) is the most "in-app" path that still complies: on FedCM-capable browsers (Chrome / Edge / Brave / Arc) the account picker renders as a browser-managed overlay rather than a separate OS window; on Safari / Firefox GIS falls back to a small centered popup, which is still smaller and less jarring than the prior full popup. Wrapping the entry in our own bottom sheet provides the requested swipe-to-dismiss UX framing and gives a clear branded surface for "signing in…" / error states.
+
+**Rejected alternatives.**
+- Embedding `accounts.google.com` in an iframe — blocked by Google policy.
+- Same-tab redirect to Google then back — full navigation away from the SPA defeats the "stay in app" goal.
+- A custom Google login UI proxied through our backend — increases attack surface, breaks Google's Terms of Service.
+- Migrating native (iOS/Android) to GIS as well — native flows already feel in-app via ASWebAuth / Custom Tabs, and the native Google Sign-In SDK is a separate, larger migration.
+
+**Configuration prerequisite.** Requires a Web-type OAuth Client ID in Google Cloud Console (Authorized JavaScript origins for each web origin), set in `apps/mobile/.env` as `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID`, and registered as an allowed audience under the same Google provider in Supabase Auth so the id_token's `aud` claim verifies.
+
+**Affected.** `apps/mobile/app/(auth)/index.tsx`, `apps/mobile/app/_layout.tsx` (GIS script inject), `apps/mobile/src/services/googleIdentityServices.web.ts` (+ native stub), `apps/mobile/src/services/authComposition.ts`, `apps/mobile/src/components/auth/GoogleAuthSheet.tsx`, `packages/application/src/ports/IAuthService.ts`, `packages/application/src/auth/SignInWithGoogleIdToken.ts`, `packages/infrastructure-supabase/src/auth/SupabaseAuthService.ts`, `docs/SSOT/spec/01_auth_and_onboarding.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via GIS + FedCM wrapped in a draggable bottom sheet; `FR-AUTH-002` web UX). |
 | 2.2 | 2026-05-17 | Added `D-32` (free visibility changes after publish; supersedes legacy upgrade-only `FR-POST-009` trigger); migration `0093`. |
 | 2.1 | 2026-05-16 | Added `D-31` (`hide_from_counterparty` third-party-on-partner-surface semantics); refined `D-30` + `D-28` hide-flag wording. |
 | 2.0 | 2026-05-16 | Added `D-30` (MVP post-detail privacy: audience + counterparty mask; `FR-POST-021`, migration `0092`). |

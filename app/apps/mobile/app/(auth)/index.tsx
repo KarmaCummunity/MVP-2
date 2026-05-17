@@ -20,10 +20,15 @@ import Animated, {
 import { colors } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
-import { getOAuthRedirectUri, getSignInWithGoogleUseCase } from '../../src/services/authComposition';
+import {
+  GOOGLE_WEB_CLIENT_ID,
+  getOAuthRedirectUri,
+  getSignInWithGoogleUseCase,
+} from '../../src/services/authComposition';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { AuthBackground } from '../../src/components/auth/AuthBackground';
+import { GoogleAuthSheet } from '../../src/components/auth/GoogleAuthSheet';
 import { welcomeScreenStyles as styles } from '../../src/components/auth/welcomeScreen.styles';
 
 const VALUE_PROPS: Array<{ icon: React.ComponentProps<typeof Ionicons>['name']; key: string }> = [
@@ -39,6 +44,7 @@ export default function WelcomeScreen() {
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [showGoogleSheet, setShowGoogleSheet] = useState(false);
   const isExecutingRef = React.useRef(false);
 
   // ── Animation values ──────────────────────────────────────────────────
@@ -98,6 +104,12 @@ export default function WelcomeScreen() {
 
   const handleGoogle = async () => {
     if (isExecutingRef.current) return;
+    // FR-AUTH-002 (web): tap opens the in-app sheet instead of a popup window.
+    // Native keeps the existing ASWebAuth/Chrome Custom Tabs flow.
+    if (Platform.OS === 'web') {
+      setShowGoogleSheet(true);
+      return;
+    }
     isExecutingRef.current = true;
     setGoogleLoading(true);
     try {
@@ -182,6 +194,15 @@ export default function WelcomeScreen() {
         title={t('auth.googleSignInFailedTitle')}
         message={googleError ?? ''}
         onDismiss={() => setGoogleError(null)}
+      />
+      <GoogleAuthSheet
+        visible={showGoogleSheet}
+        onClose={() => setShowGoogleSheet(false)}
+        onSuccess={() => {
+          setShowGoogleSheet(false);
+          router.replace('/(tabs)');
+        }}
+        clientId={GOOGLE_WEB_CLIENT_ID}
       />
     </SafeAreaView>
   );

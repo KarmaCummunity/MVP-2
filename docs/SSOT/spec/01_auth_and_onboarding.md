@@ -72,6 +72,8 @@ A single screen exposes all available authentication methods. The set of methods
 
 **MVP implementation note (2026-05-12).** The mobile welcome surface (`app/(auth)/index.tsx`) does **not** render the full-width Phone or Email method rows: they were display-only stubs (Phone routed users into the email/password screen without an OTP flow). Current ship: Google SSO, guest preview (`FR-AUTH-014`), an iOS-only Apple **button shell** (still incomplete per `TD-24`), and a tertiary text link to email/password sign-in. Restoring `FR-AUTH-002` AC1–AC2 fidelity is tracked as **`TD-151`** in [`TECH_DEBT.md`](../TECH_DEBT.md).
 
+**Implementation note — web in-app Google sheet (2026-05-17).** On Web, "Continue with Google" no longer opens a separate `window.open` popup. The button opens a draggable bottom sheet at 90% of viewport height (`apps/mobile/src/components/auth/GoogleAuthSheet.tsx`) that renders the Google Identity Services button and exchanges the returned id_token for a Supabase session via `SignInWithGoogleIdTokenUseCase` → `supabase.auth.signInWithIdToken`. On FedCM-capable browsers (Chrome / Edge / Brave / Arc) Google's account picker appears as a browser-managed overlay rather than a separate window; on Safari / Firefox GIS falls back to a small popup. Native (iOS ASWebAuthSession, Android Chrome Custom Tabs) is unchanged. Decision recorded in [`DECISIONS.md`](../DECISIONS.md) as `D-33`. Requires env var `EXPO_PUBLIC_GOOGLE_WEB_CLIENT_ID` plus the same Google OAuth client registered as an allowed audience in Supabase Auth.
+
 ---
 
 ## FR-AUTH-003 — Sign up via Google SSO
