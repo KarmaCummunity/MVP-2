@@ -31,6 +31,7 @@ export interface Post {
   readonly ownerId: string;
   readonly type: PostType;
   status: PostStatus;
+  readonly statusBeforeAdminRemoval: 'open' | 'closed_delivered' | 'deleted_no_recipient' | null;
   visibility: PostVisibility;
   title: string;
   description: string | null;

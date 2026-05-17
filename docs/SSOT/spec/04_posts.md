@@ -176,6 +176,7 @@ The post owner **or** the Super Admin (`users.is_super_admin = true`) can re-ope
 - AC2. The post `type` (Give vs Request) is **not** editable in MVP; the user must delete and recreate.
 - AC3. Edits do **not** bump the post to the top of the feed; `created_at` is immutable while `updated_at` advances.
 - AC4. Editing a post emits an `audit_event` (`R-MVP-Safety-3`) with the changed fields.
+- AC5. When the post transitions to `removed_admin` (via `admin_remove_post`), the prior status is captured in `posts.status_before_admin_removal`. The owner's "פוסטים שהוסרו על ידי מנהל" overflow screen uses this field to split the list into prior-open and prior-closed sections (`D-35`). Legacy rows (NULL) render under the prior-open section.
 
 **Edge Cases.**
 - A post that has expired (`Post.status = expired`) cannot be edited; the form is disabled with a hint to "Republish".
@@ -198,6 +199,7 @@ The owner (or a closed-post participant for `surface_visibility`, `FR-POST-021`)
 - AC2. The same freedom applies to each participant's `post_actor_identity.surface_visibility` on **closed** posts (`FR-POST-021`), with the same `FollowersOnly` / public-profile gate.
 - AC3. Server and client must stay consistent: DB must **not** reject legal visibility writes solely for being a “downgrade”. Legacy `visibility_downgrade_forbidden` handling may remain in adapters for backwards compatibility with old DB snapshots but must not fire on current schema after migration `0094_posts_visibility_free_change.sql`.
 - AC4. Profile mode flipping mid-flight (`Private → Public`) does not retroactively rewrite stored post visibility (`R-MVP-Privacy-13`).
+- AC5. On `closed_delivered` and `deleted_no_recipient`, the owner may flip `posts.visibility` via a visibility-only patch through `UpdatePostUseCase`. Triggered by the ⋮ exposure block's "הסתר (רק אני)" toggle so the closed lane of the Hidden screen (`FR-PROFILE-001 AC4`) routes correctly. `removed_admin` and `expired` remain locked (`D-34`).
 
 **Related.** Domain: `Post.visibility`, `canUpgradeVisibility()` (non–no-op helper only), migration `0094_posts_visibility_free_change.sql`.
 
@@ -476,6 +478,8 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
+| 0.8 | 2026-05-17 | `FR-POST-008` AC5 + `D-35` — `posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status. |
+| 0.7 | 2026-05-17 | `FR-POST-009` AC5 + `D-34` — owner-driven Hide on `closed_delivered` / `deleted_no_recipient` writes `posts.visibility`; mobile fans out to owner's `surface_visibility`. |
 | 0.6 | 2026-05-17 | `FR-POST-009` — visibility may change freely after publish (incl. hide after exposure); `FR-POST-021`/`FR-POST-006`/`FR-POST-008` aligned; migration `0094_posts_visibility_free_change.sql`; decision `D-32`. |
 | 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
 | 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

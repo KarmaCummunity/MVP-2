@@ -133,6 +133,15 @@ export function usePostActorPrivacyModel(
       updatePostVisibility.mutate(next);
       return;
     }
+    // FR-POST-009 + D-34: for closed-post owners, fan out to both
+    // posts.visibility (drives Hidden screen + own Closed-tab exclusion) and
+    // surface_visibility (drives third-party views of the owner's Closed tab).
+    if (isOwner && (post.status === 'closed_delivered' || post.status === 'deleted_no_recipient')) {
+      updatePostVisibility.mutate(next);
+      persistClosed({ surfaceVisibility: next });
+      return;
+    }
+    // Recipients (not owner) on closed posts: surface_visibility only.
     persistClosed({ surfaceVisibility: next });
   };
 

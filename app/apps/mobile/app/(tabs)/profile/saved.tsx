@@ -1,15 +1,19 @@
-// My Profile — saved posts list. Stack header from `profile/_layout.tsx`.
+// My Profile — saved posts list, split into open and closed lanes
+// mirroring /profile/hidden. Stack header from `profile/_layout.tsx`.
 // Mapped to: FR-PROFILE-016, FR-POST-022.
-import React from 'react';
-import { ScrollView, StyleSheet } from 'react-native';
+import React, { useMemo } from 'react';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
+import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { colors } from '@kc/ui';
+import { useTranslation } from 'react-i18next';
+import { colors, spacing, typography } from '@kc/ui';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getListSavedPostsUseCase } from '../../../src/services/savedPostsComposition';
 
 export default function MyProfileSavedScreen() {
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
 
   const savedPostsQuery = useQuery({
@@ -18,13 +22,34 @@ export default function MyProfileSavedScreen() {
     enabled: Boolean(userId),
   });
 
+  const { openPosts, closedPosts } = useMemo(() => {
+    const all = savedPostsQuery.data?.posts ?? [];
+    return {
+      openPosts: all.filter((p) => p.status === 'open'),
+      closedPosts: all.filter(
+        (p) => p.status === 'closed_delivered' || p.status === 'deleted_no_recipient',
+      ),
+    };
+  }, [savedPostsQuery.data?.posts]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
+        <View style={styles.banner}>
+          <Ionicons name="bookmark-outline" size={18} color={colors.textSecondary} />
+          <Text style={styles.bannerText}>{t('profile.savedBanner')}</Text>
+        </View>
+        <Text style={styles.sectionTitle}>{t('profile.savedSectionOpen')}</Text>
         <ProfilePostsGrid
-          posts={savedPostsQuery.data?.posts ?? []}
+          posts={openPosts}
           isLoading={savedPostsQuery.isLoading}
-          empty="self_saved"
+          empty="self_saved_open"
+        />
+        <Text style={styles.sectionTitle}>{t('profile.savedSectionClosed')}</Text>
+        <ProfilePostsGrid
+          posts={closedPosts}
+          isLoading={savedPostsQuery.isLoading}
+          empty="self_saved_closed"
         />
       </ScrollView>
     </SafeAreaView>
@@ -33,4 +58,31 @@ export default function MyProfileSavedScreen() {
 
 const styles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
+  banner: {
+    flexDirection: 'row-reverse',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    backgroundColor: colors.surface,
+    borderRadius: 8,
+    borderLeftWidth: 3,
+    borderLeftColor: colors.textSecondary,
+  },
+  bannerText: {
+    flex: 1,
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    textAlign: 'right',
+    lineHeight: 20,
+  },
+  sectionTitle: {
+    ...typography.semiBold,
+    color: colors.textPrimary,
+    textAlign: 'right',
+    marginHorizontal: spacing.base,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+  },
 });

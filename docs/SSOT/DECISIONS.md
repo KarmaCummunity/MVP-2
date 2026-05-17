@@ -671,10 +671,38 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
+## D-34 — Closed-post Hide fans out to `posts.visibility` + `surface_visibility` (2026-05-17)
+
+**Context.** `FR-PROFILE-001 AC4` defines the Hidden overflow screen as "the owner's `Only me` posts (`open` and `closed` lanes)" and excludes those rows from the Closed Posts tab. The owner's "פוסטים סגורים" tab spec (FR-PROFILE-001 AC4) explicitly excludes rows "where the owner published at `posts.visibility = OnlyMe`". The supporting RPC `profile_closed_posts` (migration 0088) keys both lanes on `posts.visibility = 'OnlyMe'`. Meanwhile `D-28` introduced per-participant `post_actor_identity.surface_visibility` to govern third-party access via each participant's profile tab.
+
+The mobile ⋮ exposure block (`PostMenuExposureBlock`) previously routed the "הסתר (רק אני)" action for closed posts to `surface_visibility` only. Result: the Hidden-screen / Closed-tab routing never fired, so closed-post hide was effectively dead.
+
+**Decision.** When the post **owner** triggers Hide on a `closed_delivered` or `deleted_no_recipient` post, the client writes both `posts.visibility = 'OnlyMe'` (so own-profile routing flips: Closed-tab excludes, Hidden Closed includes) and the owner's `surface_visibility = 'OnlyMe'` (so third-party views of the owner's Closed Posts tab also drop the row). Recipients on closed posts continue to write only their own row's `surface_visibility` — they cannot mutate the publisher's `posts.visibility`.
+
+**Implication.** `FR-POST-009` is clarified: `posts.visibility` may change on `closed_delivered` / `deleted_no_recipient` (owner only, visibility-only patch). All other fields remain locked on non-open statuses. `removed_admin` and `expired` stay fully read-only.
+
+**Implementation.** `UpdatePostUseCase` now accepts a visibility-only patch on closed states (Phase 1 Task 1.1, commit `f3fcf1a`). `usePostActorPrivacyModel.onAudienceChange` fans out for closed-post owners (Phase 1 Task 1.2, commit `b684306`).
+
+---
+
+## D-35 — Track `status_before_admin_removal` for the removed-posts screen split (2026-05-17)
+
+**Context.** `/profile/removed` lists posts where `posts.status = 'removed_admin'`. PM wants the screen to mirror `/profile/hidden`'s two-section layout (open / closed lanes). Once admin removal flips the row, the original status is unknown — we don't reconstruct from audit logs because the linkage is fragile.
+
+**Decision.** Add nullable `posts.status_before_admin_removal text`. `admin_remove_post` RPC captures the prior status atomically with the transition. The column is meaningful only when `status = 'removed_admin'`; outside that, it's stale state with no behavior. `admin_restore_target` does not clear it (cost-of-change vs. zero risk).
+
+**Legacy rows.** Already-removed posts stay NULL. The mobile UI groups NULL under the open lane by default. We accept the inaccuracy: no admin-removed-pre-2026-05-17 user has flagged the misclassification, and a precise backfill would require audit-trail joins of uncertain quality.
+
+**Implementation.** Migration `0097_posts_status_before_admin_removal.sql`. Domain `Post` gains `statusBeforeAdminRemoval`. Infra adapter selects + maps. Mobile `/profile/removed` partitions client-side.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.5 | 2026-05-17 | Added `D-35` (`posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status). |
+| 2.4 | 2026-05-17 | Added `D-34` (closed-post Hide fans out to `posts.visibility` + owner's `surface_visibility`; FR-POST-009 + FR-PROFILE-001 AC4 clarified). |
 | 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native via Google Sign-In SDK). |
 | 2.2 | 2026-05-17 | Added `D-32` (free visibility changes after publish; supersedes legacy upgrade-only `FR-POST-009` trigger); migration `0093`. |
 | 2.1 | 2026-05-16 | Added `D-31` (`hide_from_counterparty` third-party-on-partner-surface semantics); refined `D-30` + `D-28` hide-flag wording. |

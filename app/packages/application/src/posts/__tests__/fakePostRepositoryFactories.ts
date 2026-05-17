@@ -10,6 +10,7 @@ export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostW
     ownerPrivacyMode: 'Public',
     type: 'Give',
     status: 'open',
+    statusBeforeAdminRemoval: null,
     visibility: 'Public',
     title: 'Test Post',
     description: null,
