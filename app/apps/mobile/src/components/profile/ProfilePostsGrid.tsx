@@ -17,6 +17,8 @@ export type EmptyVariant =
   | 'self_saved_open'
   | 'self_saved_closed'
   | 'self_hidden_open'
+  | 'self_removed_open'
+  | 'self_removed_closed'
   | 'other_open'
   | 'other_closed';
 
@@ -53,6 +55,16 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
       title: t('profile.emptyHiddenOpenTitle'),
       subtitle: t('profile.emptyHiddenOpenSubtitle'),
       icon: 'eye-off-outline',
+    },
+    self_removed_open: {
+      title: t('profile.emptyRemovedOpenTitle'),
+      subtitle: t('profile.emptyRemovedOpenSubtitle'),
+      icon: 'shield-outline',
+    },
+    self_removed_closed: {
+      title: t('profile.emptyRemovedClosedTitle'),
+      subtitle: t('profile.emptyRemovedClosedSubtitle'),
+      icon: 'shield-outline',
     },
     other_open: {
       title: t('profile.emptyOpenTitle'),

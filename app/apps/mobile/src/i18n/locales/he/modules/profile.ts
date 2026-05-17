@@ -109,6 +109,12 @@ export const profileHe = {
 
   // Removed-tab banner (FR-POST-008 owner-view of removed_admin posts)
   removedBanner: 'פוסטים אלה הוסרו על ידי מנהל הקהילה. הם גלויים רק לך.',
+  removedSectionOpen: 'פוסטים שהיו פתוחים',
+  removedSectionClosed: 'פוסטים שהיו סגורים',
+  emptyRemovedOpenTitle: 'אין פוסטים פתוחים שהוסרו',
+  emptyRemovedOpenSubtitle: 'פוסטים פתוחים שיוסרו על ידי מנהל יופיעו כאן.',
+  emptyRemovedClosedTitle: 'אין פוסטים סגורים שהוסרו',
+  emptyRemovedClosedSubtitle: 'פוסטים סגורים שיוסרו על ידי מנהל יופיעו כאן.',
 
   // Edit Profile screen (FR-PROFILE-007)
   editScreen: {

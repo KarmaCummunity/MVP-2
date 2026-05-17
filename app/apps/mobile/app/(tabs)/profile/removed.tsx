@@ -1,7 +1,9 @@
-// My Profile — admin-removed posts. Stack header + title from `profile/_layout.tsx`.
-// Mapped to: FR-POST-008 edge-case (owner sees removed_admin posts), TD-131.
+// My Profile — admin-removed posts, split into prior-open and prior-closed
+// lanes mirroring /profile/hidden. Stack header from `profile/_layout.tsx`.
+// Mapped to: FR-POST-008 edge-case (owner sees removed_admin posts),
+// D-35 (status_before_admin_removal).
 // RLS allows this: is_post_visible_to() returns true when owner_id = viewer.
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
@@ -27,19 +29,39 @@ export default function MyProfileRemovedScreen() {
     enabled: Boolean(userId),
   });
 
+  const { openLane, closedLane } = useMemo(() => {
+    const all = removedPostsQuery.data?.posts ?? [];
+    // Legacy rows (NULL prior status) default to the open lane (D-35).
+    return {
+      openLane: all.filter(
+        (p) => p.statusBeforeAdminRemoval === 'open' || p.statusBeforeAdminRemoval === null,
+      ),
+      closedLane: all.filter(
+        (p) =>
+          p.statusBeforeAdminRemoval === 'closed_delivered' ||
+          p.statusBeforeAdminRemoval === 'deleted_no_recipient',
+      ),
+    };
+  }, [removedPostsQuery.data?.posts]);
+
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.banner}>
           <Ionicons name="shield-outline" size={18} color={colors.textSecondary} />
-          <Text style={styles.bannerText}>
-            {t('profile.removedBanner')}
-          </Text>
+          <Text style={styles.bannerText}>{t('profile.removedBanner')}</Text>
         </View>
+        <Text style={styles.sectionTitle}>{t('profile.removedSectionOpen')}</Text>
         <ProfilePostsGrid
-          posts={removedPostsQuery.data?.posts ?? []}
+          posts={openLane}
           isLoading={removedPostsQuery.isLoading}
-          empty="self_open"
+          empty="self_removed_open"
+        />
+        <Text style={styles.sectionTitle}>{t('profile.removedSectionClosed')}</Text>
+        <ProfilePostsGrid
+          posts={closedLane}
+          isLoading={removedPostsQuery.isLoading}
+          empty="self_removed_closed"
         />
       </ScrollView>
     </SafeAreaView>
@@ -66,5 +88,13 @@ const styles = StyleSheet.create({
     color: colors.textSecondary,
     textAlign: 'right',
     lineHeight: 20,
+  },
+  sectionTitle: {
+    ...typography.semiBold,
+    color: colors.textPrimary,
+    textAlign: 'right',
+    marginHorizontal: spacing.base,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
   },
 });
