@@ -87,21 +87,6 @@ export class SupabaseAuthService implements IAuthService {
     return data.url;
   }
 
-  async signInWithIdToken(input: {
-    provider: 'google';
-    idToken: string;
-    nonce: string;
-  }): Promise<AuthSession> {
-    const { data, error } = await this.client.auth.signInWithIdToken({
-      provider: input.provider,
-      token: input.idToken,
-      nonce: input.nonce,
-    });
-    if (error) throw mapAuthError(error);
-    if (!data.session) throw new AuthError('unknown', 'id_token_no_session');
-    return toSession(data.session);
-  }
-
   async exchangeCodeForSession(code: string): Promise<AuthSession> {
     if (this.activeExchangeCode === code && this.activeExchangePromise) {
       return this.activeExchangePromise;

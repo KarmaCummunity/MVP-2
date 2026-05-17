@@ -29,18 +29,6 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     link.href = '/favicon.ico';
     document.head.appendChild(link);
   }
-  // FR-AUTH-002 (web sheet) — load Google Identity Services SDK early so the
-  // in-app sign-in sheet can `renderButton` without a perceptible delay. Safe
-  // to inject unconditionally: GIS only initializes when our adapter calls
-  // `window.google.accounts.id.initialize(...)`.
-  if (!document.querySelector('script[data-gis-script]')) {
-    const gis = document.createElement('script');
-    gis.src = 'https://accounts.google.com/gsi/client';
-    gis.async = true;
-    gis.defer = true;
-    gis.setAttribute('data-gis-script', 'true');
-    document.head.appendChild(gis);
-  }
   // iOS Safari (and WebKit-based mobile browsers) zoom the viewport when a
   // focused text control's font-size is under 16px. RN-Web maps TextInput to
   // <input>/<textarea>; cap only on narrow viewports so desktop web typography
