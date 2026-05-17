@@ -24,6 +24,8 @@ import { ReopenConfirmModal } from './ReopenConfirmModal';
 interface Props {
   post: Post;
   ownerId: string;
+  /** Extra bottom padding when the global shell tab bar overlays this bar (post detail). */
+  tabBarOverlayInset?: number;
   /** Called after caches are invalidated following a successful "mark as delivered".
    * Parent typically shows confirmation and navigates away from post detail. */
   onClosed: () => void | Promise<void>;
@@ -32,7 +34,8 @@ interface Props {
   onReopened: () => void | Promise<void>;
 }
 
-export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) {
+export function OwnerActionsBar(props: Readonly<Props>) {
+  const { post, ownerId, tabBarOverlayInset = 0, onClosed, onReopened } = props;
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
@@ -101,7 +104,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
 
   return (
     <>
-      <View style={styles.bar}>
+      <View style={[styles.bar, { paddingBottom: spacing.base + tabBarOverlayInset }]}>
         {isOpen ? (
           <Pressable
             style={[styles.btnPrimary, (closureBusy || closureStep !== 'idle') && styles.btnDisabled]}
@@ -155,7 +158,8 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
 
 const styles = StyleSheet.create({
   bar: {
-    padding: spacing.base,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.base,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,

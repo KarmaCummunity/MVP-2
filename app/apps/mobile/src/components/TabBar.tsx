@@ -23,7 +23,7 @@ const webGlass: ViewStyle =
 type TabKey = 'home' | 'create' | 'profile' | 'search' | 'donations';
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
-export const TAB_BAR_HEIGHT = 64;
+export const TAB_BAR_HEIGHT = 50;
 
 function activeTab(segments: string[]): TabKey | null {
   if (segments[0] === '(tabs)') {

@@ -20,6 +20,8 @@ export type PostDetailScrollContentProps = Readonly<{
   ownerLabel: string;
   locationText: string;
   timeAgo: string;
+  /** Clears last scroll content above the floating shell tab bar (see `shellTabBarHeightPx`). */
+  scrollBottomInset: number;
 }>;
 
 export function PostDetailScrollContent({
@@ -30,11 +32,15 @@ export function PostDetailScrollContent({
   ownerLabel,
   locationText,
   timeAgo,
+  scrollBottomInset,
 }: PostDetailScrollContentProps) {
   const { t } = useTranslation();
 
   return (
-    <ScrollView showsVerticalScrollIndicator={false}>
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentContainerStyle={scrollBottomInset > 0 ? { paddingBottom: scrollBottomInset } : undefined}
+    >
       <MotionEntry variant="hero" delay={ENTRY_DELAY.hero}>
         <View style={styles.imageWrap}>
           <PostImageCarousel

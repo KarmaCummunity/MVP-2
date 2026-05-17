@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
-import { colors } from '@kc/ui';
+import { colors, spacing } from '@kc/ui';
 import { EmptyState } from '../../src/components/EmptyState';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
@@ -20,6 +20,7 @@ import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
 import { styles } from './postDetailScreen.styles';
+import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../src/navigation/useShellTabBarVisibility';
 
 function normalizeRoutePostId(raw: string | string[] | undefined): string | undefined {
   const id = Array.isArray(raw) ? raw[0] : raw;
@@ -79,6 +80,9 @@ export default function PostDetailScreen() {
     }
   }, [viewerId, query.data?.post, router]);
 
+  const showShellTabBar = useShellTabBarVisibility();
+  const tabBarPad = shellTabBarHeightPx(showShellTabBar);
+
   const exitAfterOwnerMutation = (messageKey: 'closure.detailCloseSuccessToast' | 'closure.detailReopenSuccessToast') => {
     useFeedSessionStore.getState().showEphemeralToast(t(messageKey), 'success', 2200);
     if (router.canGoBack()) router.back();
@@ -137,19 +141,21 @@ export default function PostDetailScreen() {
         ownerLabel={ownerLabel}
         locationText={locationText}
         timeAgo={timeAgo}
+        scrollBottomInset={tabBarPad}
       />
 
       {isOwner && viewerId ? (
         <OwnerActionsBar
           post={post}
           ownerId={viewerId}
+          tabBarOverlayInset={tabBarPad}
           // onClosed / onReopened: toast + leave detail (lists invalidated in OwnerActionsBar).
           onClosed={() => exitAfterOwnerMutation('closure.detailCloseSuccessToast')}
           onReopened={() => exitAfterOwnerMutation('closure.detailReopenSuccessToast')}
         />
       ) : null}
       {showViewerContactCta ? (
-        <View style={styles.cta}>
+        <View style={[styles.cta, { paddingBottom: spacing.base + tabBarPad }]}>
           <TouchableOpacity
             style={styles.messageBtn}
             onPress={() => void onOpenPosterChat()}
