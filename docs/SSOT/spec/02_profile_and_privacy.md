@@ -1,6 +1,6 @@
 # 2.2 Profile & Privacy Mode
 
-> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped. ⚠️ Audit 2026-05-16: 🔴 `mapUserRow.privacyMode` blind cast (TD-69, BACKLOG P2.12). 🟠 FR-PROFILE-007 AC2 no read-only email/phone block on Edit Profile; FR-PROFILE-009 AC5 followers list non-paginated; FR-PROFILE-012 AC1 lock icon tappable on other-user profile; FR-PROFILE-015 AC1 SSO avatar never copied to our bucket; FR-PROFILE-013 AC5 counters not Realtime-subscribed. TD-104 / TD-105. See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
+> **Status:** ✅ Core Complete — Edit profile, privacy toggle, avatar upload all shipped. ⏳ `FR-PROFILE-017` (optional add-phone on main shell) — **spec only** until implemented. ⚠️ Audit 2026-05-16: 🔴 `mapUserRow.privacyMode` blind cast (TD-69, BACKLOG P2.12). 🟠 FR-PROFILE-009 AC5 followers list non-paginated; FR-PROFILE-012 AC1 lock icon tappable on other-user profile; FR-PROFILE-015 AC1 SSO avatar never copied to our bucket; FR-PROFILE-013 AC5 counters not Realtime-subscribed. TD-104 / TD-105. See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
 
 
 
@@ -344,9 +344,30 @@ The signed-in user opens a dedicated list of posts they have bookmarked from the
 
 ---
 
+## FR-PROFILE-017 — Optional add verified phone (main shell)
+
+**Description.**
+Signed-in users whose account has **no verified phone** may optionally add an Israeli mobile number **from the same screen layer as the floating bottom tab bar** (`ShellWithTabBar` + `TabBar` in `app/apps/mobile/app/_layout.tsx` / `app/apps/mobile/src/components/TabBar.tsx`): a compact, **non-blocking** affordance (e.g. slim row or chip **above** the tab pill). Adding a phone is **never required** to navigate or use core tabs.
+
+**Source.**
+- PM request (2026-05-17); decision `D-34`.
+
+**Acceptance Criteria.**
+- AC1. The affordance is shown only when: the user is authenticated, the shell tab bar is visible (`useShellTabBarVisibility`), and the session has **no verified phone** per Supabase Auth (same notion as “empty phone” elsewhere in the app).
+- AC2. The user may **dismiss** the affordance without entering a number; dismissal is remembered on-device (e.g. async storage) until the user adds a verified phone or clears app data — must not reappear every cold start unless product explicitly resets (default: **remember dismiss**).
+- AC3. **Flow:** collect normalized **E.164** IL mobile → SMS OTP verification aligned with `FR-AUTH-005` / existing Supabase phone verification APIs; only after successful verification is the phone persisted. Canonical store: **Supabase Auth** (`auth.users`); any `public.users` mirror continues to follow existing sync/trigger rules.
+- AC4. After a verified phone exists, the shell affordance is **hidden**; the number is **read-only** on Edit Profile per `FR-PROFILE-007` AC2. **Replacing** an already-verified phone or email remains out of scope for self-service (`FR-SETTINGS-013`).
+- AC5. Layout must **not** shrink or block the five tab targets; optional UI sits in the reserved bottom overlay **above** the pill or as a dismissible strip with `pointerEvents` compatible with `box-none` so scrolling content behind remains reachable where applicable.
+- AC6. All new user-visible strings use locale modules (`R-MVP-Core-4` / `D-23`).
+
+**Related.** Screens: root shell · Auth: `FR-AUTH-005` · Settings: `FR-SETTINGS-013`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 0.9 | 2026-05-17 | `FR-PROFILE-007` AC1+AC2: optional `contact_phone` becomes editable (1–20 chars, non-verified, distinct from `auth.users.phone`); AC2 now distinguishes auth identifiers (read-only) from the new display field (editable). Migration `0096`. |
+| 0.9 | 2026-05-17 | `FR-PROFILE-007` AC1+AC2: optional `contact_phone` becomes editable (1–20 chars, non-verified, distinct from `auth.users.phone`); AC2 now distinguishes auth identifiers (read-only) from the new display field (editable). Migration `0096_contact_phone`. `FR-PROFILE-017` (optional verified phone on main shell; `D-34`) remains specified below. |
+| 0.10 | 2026-05-17 | `FR-ADMIN-002` / `FR-MOD-006`: migration `0097_posts_status_before_admin_removal` — persist prior lifecycle `status` when transitioning to `removed_admin` for Super Admin restore. |
 | 0.8 | 2026-05-16 | Saved / hidden / removed owner lists: nested stack header + back; no profile chrome on those routes (`FR-PROFILE-001` AC4, `FR-PROFILE-016` AC2). |
 | 0.7 | 2026-05-16 | `FR-PROFILE-016` — My Profile ⋮ → saved posts list (`FR-POST-022`). |
 | 0.6 | 2026-05-16 | `D-28` follow-up: `FR-PROFILE-001 AC4` and `FR-PROFILE-002 AC2` now cite **the profile owner's** per-post `surface_visibility` as the third-party gate for the Closed Posts tab (publisher's `posts.visibility` no longer applies); Scope cross-reference expanded to the three-axis model (surface / identity / counterparty). |
