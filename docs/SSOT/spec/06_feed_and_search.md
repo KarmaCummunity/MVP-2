@@ -259,7 +259,7 @@ re-queries it.
 
 **Acceptance Criteria.**
 - AC1. Native (iOS / Android): standard pull-to-refresh gesture (FlatList `RefreshControl`) re-queries the feed.
-- AC2. Web (mobile-web Android / iOS, including standalone PWA): a custom in-app pull-to-refresh gesture re-queries the feed. The browser's native pull-to-refresh is suppressed (`overscroll-behavior: contain`) so the gesture never reloads the page and never resets app state.
+- AC2. Web (all input types — touch on mobile-web Android / iOS standalone PWA, mouse on desktop, pen): a custom in-app pull-down gesture re-queries the feed. The gesture is driven by Pointer Events so a desktop click-and-drag from the top of the feed works the same as a finger drag on mobile. The browser's native pull-to-refresh is suppressed (`overscroll-behavior: contain`) so the gesture never reloads the page and never resets app state. The indicator auto-resets after 15 s if the parent never clears `isRefreshing`, so the user is never stuck on a permanent spinner.
 - AC3. Web (desktop): keyboard shortcut `R` (configurable in `06_cross_cutting/03_i18n_rtl.md`) triggers the same refresh and surfaces an ephemeral success / failure toast.
 - AC4. Refresh resets the pagination cursor to the top.
 

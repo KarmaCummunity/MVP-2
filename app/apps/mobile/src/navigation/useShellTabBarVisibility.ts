@@ -3,7 +3,8 @@ import { useAuthStore } from '../store/authStore';
 import { parseTruthyQueryParam } from '../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from './aboutMarketingPaths';
 
-const TAB_BAR_HEIGHT = 68;
+/** Outer surface height of `TabBar` (padding + row). Safe-area inset is applied inside the bar. */
+export const SHELL_TAB_BAR_SURFACE_PX = 68;
 
 /** Whether the global shell should render the bottom tab bar + reserve padding. */
 export function useShellTabBarVisibility(): boolean {
@@ -30,5 +31,5 @@ export function useShellTabBarVisibility(): boolean {
 }
 
 export function shellTabBarHeightPx(visible: boolean): number {
-  return visible ? TAB_BAR_HEIGHT : 0;
+  return visible ? SHELL_TAB_BAR_SURFACE_PX : 0;
 }
