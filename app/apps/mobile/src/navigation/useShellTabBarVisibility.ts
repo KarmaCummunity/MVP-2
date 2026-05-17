@@ -3,7 +3,11 @@ import { useAuthStore } from '../store/authStore';
 import { parseTruthyQueryParam } from '../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from './aboutMarketingPaths';
 
-const TAB_BAR_HEIGHT = 68;
+// Effective visual height of the floating-pill bar above the safe area
+// (pill 64 + one 12 floating-offset). Consumers that position screen-local
+// elements like FABs already add `insets.bottom` themselves, so the inset
+// itself is not folded into this constant.
+const TAB_BAR_HEIGHT = 76;
 
 /** Whether the global shell should render the bottom tab bar + reserve padding. */
 export function useShellTabBarVisibility(): boolean {
@@ -15,6 +19,11 @@ export function useShellTabBarVisibility(): boolean {
 
   const head = segments[0] as string | undefined;
   const isAuthLanding = head === 'auth' && (segments[1] === 'callback' || segments[1] === 'verify');
+  // Chat conversation screen renders its own message composer at the bottom
+  // edge of the viewport, so the floating pill would overlap the input. The
+  // list screen at `chat` (segments[1] is undefined) keeps the bar — only the
+  // dynamic `[id]` route hides it.
+  const onChatConversation = head === 'chat' && segments[1] === '[id]';
   const onAboutSurface = isAboutMarketingPath(pathname);
   const hideBottomBar = onAboutSurface && parseTruthyQueryParam(params.hideBottomBar);
 
@@ -24,7 +33,8 @@ export function useShellTabBarVisibility(): boolean {
     head !== '(auth)' &&
     head !== '(guest)' &&
     head !== '(onboarding)' &&
-    !isAuthLanding;
+    !isAuthLanding &&
+    !onChatConversation;
 
   return base && !hideBottomBar;
 }

@@ -23,6 +23,9 @@ export const chatHe = {
   anchoredOpenA11y: 'פתח את הפוסט',
   anchoredTypeGive: 'נותן',
   anchoredTypeRequest: 'מבקש',
+  // AnchoredPostCard contact-phone quick-call (FR-CHAT-014 AC7)
+  anchoredCallCounterpartA11y: 'התקשר אל {{phone}}',
+  anchoredCallLabel: 'התקשר',
 
   // ReportChatModal (FR-CHAT-010)
   reportChatTitle: 'דיווח על השיחה',

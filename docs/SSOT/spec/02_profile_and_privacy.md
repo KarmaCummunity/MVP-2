@@ -165,15 +165,15 @@ The user toggles their profile privacy mode from `Private` to `Public`.
 ## FR-PROFILE-007 — Edit Profile
 
 **Description.**
-The user can change avatar, display name, city, optional street and building number (full address), and biography.
+The user can change avatar, display name, city, optional street and building number (full address), optional contact phone, and biography.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.2.5, `05_Screen_UI_Mapping.md` §3.2.
 - Constraints: `R-MVP-Profile-1`, `R-MVP-Profile-6`.
 
 **Acceptance Criteria.**
-- AC1. Editable fields: avatar (replace / remove), `display_name` (1–50 chars), `city` (dropdown), optional `street` (1–80 chars) + `street_number` (same pattern as post pickup addresses: digits with optional trailing letter), `biography` (≤200 chars). Street fields are optional as a pair: both empty keeps a city-only profile; when either is filled, both must be valid.
-- AC2. Email/phone/Google ID/Apple ID are **read-only** in MVP; the screen shows them but the controls are disabled with a note pointing to Support.
+- AC1. Editable fields: avatar (replace / remove), `display_name` (1–50 chars), `city` (dropdown), optional `street` (1–80 chars) + `street_number` (same pattern as post pickup addresses: digits with optional trailing letter), optional `contact_phone` (1–20 chars after trim, free-form, non-verified — distinct from the OTP `auth.users.phone`), `biography` (≤200 chars). Street fields are optional as a pair: both empty keeps a city-only profile; when either is filled, both must be valid. Contact phone is unconditionally optional and clears to null on empty submit.
+- AC2. **Auth identifiers** — the auth-layer email / phone (`auth.users.email` / `auth.users.phone`) / Google ID / Apple ID — are **read-only** in MVP; the screen shows them but the controls are disabled with a note pointing to Support. The optional `users.contact_phone` introduced in AC1 is a separate display field and IS editable.
 - AC3. Biography validation rejects content matching a configurable URL regex (anti-spam, `R-MVP-Profile-6`); the error is shown inline.
 - AC4. Save is atomic: avatar upload completes before the textual fields are persisted; on partial failure, the previous state is preserved.
 - AC5. The `display_name` change emits a `profile_updated` analytics event but **no** push notification to followers (privacy / spam control).
@@ -347,7 +347,8 @@ The signed-in user opens a dedicated list of posts they have bookmarked from the
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 0.9 | 2026-05-17 | `FR-PROFILE-016` AC6 — Saved screen splits into open/closed sections (mirrors `/profile/hidden`). |
+| 1.0 | 2026-05-17 | `FR-PROFILE-016` AC6 — Saved screen splits into open/closed sections (mirrors `/profile/hidden`). |
+| 0.9 | 2026-05-17 | `FR-PROFILE-007` AC1+AC2: optional `contact_phone` becomes editable (1–20 chars, non-verified, distinct from `auth.users.phone`); AC2 now distinguishes auth identifiers (read-only) from the new display field (editable). Migration `0096`. |
 | 0.8 | 2026-05-16 | Saved / hidden / removed owner lists: nested stack header + back; no profile chrome on those routes (`FR-PROFILE-001` AC4, `FR-PROFILE-016` AC2). |
 | 0.7 | 2026-05-16 | `FR-PROFILE-016` — My Profile ⋮ → saved posts list (`FR-POST-022`). |
 | 0.6 | 2026-05-16 | `D-28` follow-up: `FR-PROFILE-001 AC4` and `FR-PROFILE-002 AC2` now cite **the profile owner's** per-post `surface_visibility` as the third-party gate for the Closed Posts tab (publisher's `posts.visibility` no longer applies); Scope cross-reference expanded to the three-axis model (surface / identity / counterparty). |

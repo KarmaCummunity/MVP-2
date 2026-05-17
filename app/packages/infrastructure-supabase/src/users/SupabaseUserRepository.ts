@@ -17,6 +17,7 @@ import {
 } from './onboardingSupabase';
 import {
   supabaseGetEditableProfile,
+  supabaseSetContactPhone,
   supabaseSetProfileAddressLines,
   supabaseUpdateEditableProfile,
   type EditableProfilePatch,
@@ -127,6 +128,10 @@ export class SupabaseUserRepository implements IUserRepository {
     streetNumber: string | null,
   ): Promise<void> {
     return supabaseSetProfileAddressLines(this.client, userId, street, streetNumber);
+  }
+
+  setContactPhone(userId: string, contactPhone: string | null): Promise<void> {
+    return supabaseSetContactPhone(this.client, userId, contactPhone);
   }
 
   updateEditableProfile(userId: string, patch: EditableProfilePatch): Promise<void> {

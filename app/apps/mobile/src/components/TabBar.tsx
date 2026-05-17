@@ -1,24 +1,31 @@
-// Single global tab bar — rendered at the root layout for every post-auth,
-// post-onboarding route OUTSIDE (tabs) (i.e. detail screens like chat/[id],
-// post/[id], user/[handle], settings). Inside (tabs), the native expo-router
-// <Tabs> in (tabs)/_layout.tsx owns its own bar; the root layout hides this
-// global bar there to avoid doubling. Both bars use Ionicons (TD-109) — emoji
-// literals were unreliable on iOS simulator and produced "?" tofu boxes.
+// Floating glass-pill bottom navigation — rendered once at the root layout
+// (ShellWithTabBar). The visible bar lives here; expo-router's <Tabs> in
+// (tabs)/_layout.tsx suppresses its built-in bar so there is exactly one
+// implementation across iOS / Android / Web.
 // Mapped to: SRS §6.1 — 5 tabs (RTL: Profile | Search | Plus | Donations | Home), per D-16.
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
-import { colors, shadow } from '@kc/ui';
+import { colors } from '@kc/ui';
+
+// Glassmorphism on web — RN-Web forwards unknown style keys to CSS. RN's
+// ViewStyle type doesn't include backdrop-filter, so cast through unknown.
+const webGlass: ViewStyle =
+  Platform.OS === 'web'
+    ? ({
+        backdropFilter: 'blur(20px) saturate(180%)',
+        WebkitBackdropFilter: 'blur(20px) saturate(180%)',
+      } as unknown as ViewStyle)
+    : ({} as ViewStyle);
 
 type TabKey = 'home' | 'create' | 'profile' | 'search' | 'donations';
-
 type IoniconName = keyof typeof Ionicons.glyphMap;
 
+export const TAB_BAR_HEIGHT = 64;
+
 function activeTab(segments: string[]): TabKey | null {
-  // segments[0] is the route group / first path segment.
   if (segments[0] === '(tabs)') {
     if (segments[1] === 'profile') return 'profile';
     if (segments[1] === 'create') return 'create';
@@ -26,7 +33,6 @@ function activeTab(segments: string[]): TabKey | null {
     if (segments[1] === 'donations') return 'donations';
     return 'home';
   }
-  // Detail screens: highlight nothing — they're modal-ish to the tab flow.
   return null;
 }
 
@@ -40,12 +46,39 @@ interface IconBtnProps {
 
 function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnProps) {
   return (
-    <Pressable onPress={onPress} accessibilityRole="button" accessibilityLabel={label} style={styles.tabBtn}>
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.tabBtn, pressed && styles.tabBtnPressed]}
+    >
       <Ionicons
         name={active ? iconActive : iconInactive}
         size={26}
-        color={active ? colors.primary : colors.textSecondary}
+        color={active ? colors.primary : colors.tabInactive}
       />
+      <View style={[styles.activeDot, active && styles.activeDotShown]} />
+    </Pressable>
+  );
+}
+
+interface PlusBtnProps {
+  active: boolean;
+  onPress: () => void;
+  label: string;
+}
+
+function PlusBtn({ active, onPress, label }: PlusBtnProps) {
+  return (
+    <Pressable
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+      style={({ pressed }) => [styles.tabBtn, pressed && styles.tabBtnPressed]}
+    >
+      <View style={[styles.plusCircle, active && styles.plusCircleActive]}>
+        <Ionicons name="add" size={26} color={colors.textInverse} />
+      </View>
     </Pressable>
   );
 }
@@ -54,12 +87,13 @@ export function TabBar() {
   const router = useRouter();
   const { t } = useTranslation();
   const segments = useSegments() as string[];
-  const insets = useSafeAreaInsets();
   const active = activeTab(segments);
 
   return (
-    <View style={[styles.tabBar, { paddingBottom: Math.max(insets.bottom, 8) }]}>
-      {/* RTL: Profile (right) | Search | Plus (center) | Donations | Home (left) */}
+    <View style={styles.tabBar}>
+      {/* RTL reading order: Profile (right) | Search | Plus (center) | Donations | Home (left).
+          With dir=rtl on web and I18nManager.isRTL on native, default `row` lays them out
+          right-to-left. `row-reverse` would double-flip on web → LTR visual. */}
       <IconBtn
         active={active === 'profile'}
         onPress={() => router.push('/(tabs)/profile')}
@@ -74,16 +108,11 @@ export function TabBar() {
         iconActive="search"
         iconInactive="search-outline"
       />
-      <Pressable
+      <PlusBtn
+        active={active === 'create'}
         onPress={() => router.push('/(tabs)/create')}
-        accessibilityRole="button"
-        accessibilityLabel={t('tabs.newPost')}
-        style={styles.plusTabBtn}
-      >
-        <View style={[styles.plusCircle, active === 'create' && styles.plusCircleActive]}>
-          <Text style={[styles.plusText, active === 'create' && styles.plusTextActive]}>+</Text>
-        </View>
-      </Pressable>
+        label={t('tabs.newPost')}
+      />
       <IconBtn
         active={active === 'donations'}
         onPress={() => router.push('/(tabs)/donations')}
@@ -104,31 +133,51 @@ export function TabBar() {
 
 const styles = StyleSheet.create({
   tabBar: {
-    backgroundColor: colors.surface,
-    borderTopWidth: 1,
-    borderTopColor: colors.border,
-    // Children are written in RTL reading order (Profile, Search, +, Donations, Home).
-    // With dir=rtl on web and I18nManager.isRTL on native, default `row` lays them
-    // out right-to-left. `row-reverse` would double-flip on web → LTR visual.
     flexDirection: 'row',
-    height: 68, // explicit — without this, RN-Web collapses the row to 0px
-    paddingTop: 8,
-    overflow: 'visible', // allow the plus circle to protrude above the bar
-    ...shadow.card,
+    height: TAB_BAR_HEIGHT,
+    borderRadius: TAB_BAR_HEIGHT / 2,
+    backgroundColor: 'rgba(255, 255, 255, 0.72)',
+    alignItems: 'center',
+    width: '100%',
+    maxWidth: 480,
+    alignSelf: 'center',
+    overflow: 'hidden',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 8 },
+    shadowOpacity: 0.10,
+    shadowRadius: 24,
+    elevation: 12,
+    ...webGlass,
   },
-  tabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center' },
-  plusTabBtn: { flex: 1, alignItems: 'center', justifyContent: 'center', overflow: 'visible' },
-  plusCircle: {
-    width: 64,
-    height: 64,
-    borderRadius: 32,
-    backgroundColor: colors.primaryLight,
+  tabBtn: {
+    flex: 1,
+    height: TAB_BAR_HEIGHT,
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: -16, // protrude above the tab bar; negative margin keeps touch target aligned
-    ...shadow.card,
   },
-  plusCircleActive: { backgroundColor: colors.primary },
-  plusText: { fontSize: 32, color: colors.primary, lineHeight: 36, fontWeight: '700' },
-  plusTextActive: { color: colors.surface },
+  tabBtnPressed: { opacity: 0.6 },
+  // Dot is absolute so the icon stays perfectly centered regardless of state.
+  activeDot: {
+    position: 'absolute',
+    bottom: 10,
+    width: 4,
+    height: 4,
+    borderRadius: 2,
+    backgroundColor: 'transparent',
+  },
+  activeDotShown: { backgroundColor: colors.primary },
+  plusCircle: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    backgroundColor: colors.primary,
+    alignItems: 'center',
+    justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.30,
+    shadowRadius: 8,
+    elevation: 4,
+  },
+  plusCircleActive: { backgroundColor: colors.primaryDark },
 });

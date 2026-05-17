@@ -1,4 +1,4 @@
--- 0096_posts_status_before_admin_removal | FR-POST-008 owner list + D-35
+-- 0097_posts_status_before_admin_removal | FR-POST-008 owner list + D-35
 -- Track the prior status when a post transitions to 'removed_admin' so the
 -- /profile/removed screen can split open- and closed-pre-removal lanes,
 -- mirroring /profile/hidden. Legacy 'removed_admin' rows (NULL) render under

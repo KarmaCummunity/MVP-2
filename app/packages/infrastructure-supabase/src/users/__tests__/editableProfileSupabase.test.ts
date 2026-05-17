@@ -40,12 +40,13 @@ const FULL_ROW = {
   city_name: 'Tel Aviv',
   profile_street: 'Allenby',
   profile_street_number: '12',
+  contact_phone: '050-1234567',
   biography: 'I give books.',
   avatar_url: 'https://cdn.example.com/u_1.jpg',
 };
 
 describe('supabaseGetEditableProfile', () => {
-  it('selects exactly the seven editable columns from users for the given user_id (single-row)', async () => {
+  it('selects exactly the eight editable columns from users for the given user_id (single-row)', async () => {
     const { client, calls } = makeFakeClient({ data: FULL_ROW });
 
     await supabaseGetEditableProfile(client, 'u_me');
@@ -54,7 +55,7 @@ describe('supabaseGetEditableProfile', () => {
     expect(calls[0]).toEqual({
       table: 'users',
       selected:
-        'display_name, city, city_name, profile_street, profile_street_number, biography, avatar_url',
+        'display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url',
       eqCol: 'user_id',
       eqVal: 'u_me',
     });
@@ -71,17 +72,19 @@ describe('supabaseGetEditableProfile', () => {
       cityName: 'Tel Aviv',
       profileStreet: 'Allenby',
       profileStreetNumber: '12',
+      contactPhone: '050-1234567',
       biography: 'I give books.',
       avatarUrl: 'https://cdn.example.com/u_1.jpg',
     });
   });
 
-  it('preserves null for the four nullable columns', async () => {
+  it('preserves null for the five nullable columns', async () => {
     const { client } = makeFakeClient({
       data: {
         ...FULL_ROW,
         profile_street: null,
         profile_street_number: null,
+        contact_phone: null,
         biography: null,
         avatar_url: null,
       },
@@ -91,6 +94,7 @@ describe('supabaseGetEditableProfile', () => {
 
     expect(out.profileStreet).toBeNull();
     expect(out.profileStreetNumber).toBeNull();
+    expect(out.contactPhone).toBeNull();
     expect(out.biography).toBeNull();
     expect(out.avatarUrl).toBeNull();
   });

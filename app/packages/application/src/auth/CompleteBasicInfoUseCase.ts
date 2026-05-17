@@ -13,6 +13,8 @@ export interface CompleteBasicInfoInput {
   /** Optional; both trimmed non-empty required to persist (same rules as UpdateProfileUseCase). */
   readonly profileStreet?: string;
   readonly profileStreetNumber?: string;
+  /** Optional; trimmed value 1–20 chars persists, empty clears. Non-verified (FR-AUTH-010 AC2.c). */
+  readonly contactPhone?: string;
 }
 
 export class CompleteBasicInfoUseCase {
@@ -39,6 +41,9 @@ export class CompleteBasicInfoUseCase {
       if (!STREET_NUMBER_PATTERN.test(num)) throw new Error('invalid_profile_street_number');
     }
 
+    const phone = (input.contactPhone ?? '').trim();
+    if (phone.length > 20) throw new Error('invalid_contact_phone');
+
     // Audit §17.3 — reject illegal onboarding state transitions. Allowed
     // source states: pending_basic_info (normal flow) and pending_avatar
     // (idempotent re-run from the same step). 'completed' would be a
@@ -61,6 +66,7 @@ export class CompleteBasicInfoUseCase {
     } else {
       await this.users.setProfileAddressLines(input.userId, null, null);
     }
+    await this.users.setContactPhone(input.userId, phone.length > 0 ? phone : null);
     await this.users.setOnboardingState(input.userId, 'pending_avatar');
   }
 }

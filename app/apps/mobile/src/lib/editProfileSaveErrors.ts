@@ -9,6 +9,7 @@ export function mapEditProfileSaveError(code: string): string {
     invalid_profile_street_number: 'errors.profile.invalid_profile_street_number',
     invalid_profile_street: 'errors.profile.invalid_profile_street',
     incomplete_profile_address: 'errors.profile.incomplete_profile_address',
+    invalid_contact_phone: 'errors.profile.invalid_contact_phone',
     invalid_display_name: 'errors.profile.invalid_display_name',
     biography_too_long: 'errors.profile.biography_too_long',
     biography_url_forbidden: 'errors.profile.biography_url_forbidden',

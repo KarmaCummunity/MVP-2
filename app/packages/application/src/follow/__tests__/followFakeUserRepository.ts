@@ -132,6 +132,7 @@ export class FollowFakeUserRepository implements IUserRepository {
   setAvatar = N('setAvatar') as IUserRepository['setAvatar'];
   setBiography = N('setBiography') as IUserRepository['setBiography'];
   setProfileAddressLines = N('setProfileAddressLines') as IUserRepository['setProfileAddressLines'];
+  setContactPhone = N('setContactPhone') as IUserRepository['setContactPhone'];
   updateEditableProfile = N('updateEditableProfile') as IUserRepository['updateEditableProfile'];
   dismissClosureExplainer = N('dismissClosureExplainer') as IUserRepository['dismissClosureExplainer'];
   dismissFirstPostNudge = N('dismissFirstPostNudge') as IUserRepository['dismissFirstPostNudge'];
@@ -156,6 +157,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     cityName: 'תל אביב',
     profileStreet: null,
     profileStreetNumber: null,
+    contactPhone: null,
     biography: null,
     avatarUrl: null,
     privacyMode: 'Public',
