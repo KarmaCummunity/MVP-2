@@ -68,6 +68,8 @@ export default function DonationsHubScreen() {
       <TopBar />
       <ScrollView
         style={styles.scrollView}
+        // RN-Web + `dir=rtl`: content can shrink-wrap and hug the inline-start
+        // edge (visual right), leaving empty space on the left — stretch to viewport.
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
@@ -78,11 +80,12 @@ export default function DonationsHubScreen() {
         </MotionEntry>
 
         {/* ── Featured: items ──────────────── */}
-        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
+        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section} style={styles.blockStretch}>
           <PressableScale
             onPress={() => router.push(FEATURED.href as Parameters<typeof router.push>[0])}
             accessibilityRole="button"
             accessibilityLabel={`${t(FEATURED.titleKey)} — ${t(FEATURED.subtitleKey)}`}
+            style={styles.blockStretch}
           >
             <Card padding="base" style={styles.featuredCard} testID={FEATURED.testID}>
               <IconTile icon={FEATURED.icon} size="lg" />
@@ -100,41 +103,44 @@ export default function DonationsHubScreen() {
         </MotionEntry>
 
         {/* ── Category grid ────────────────── */}
-        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 80}>
-          <Text style={styles.gridHeading}>{t('donations.hubCategoriesSectionTitle')}</Text>
-        </MotionEntry>
+        <View style={styles.categoriesSection}>
+          <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 80} style={styles.blockStretch}>
+            <Text style={styles.gridHeading}>{t('donations.hubCategoriesSectionTitle')}</Text>
+          </MotionEntry>
 
-        <View style={styles.grid}>
-          {rows.map((pair, rowIdx) => (
-            <MotionEntry
-              key={rowIdx}
-              variant="bottom"
-              delay={ENTRY_DELAY.buttons + rowIdx * 80}
-            >
-              <View style={styles.row}>
-                {pair.map((cat) => (
-                  <PressableScale
-                    key={cat.key}
-                    onPress={() => router.push(cat.href as Parameters<typeof router.push>[0])}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t(cat.titleKey)} — ${t(cat.subtitleKey)}`}
-                    style={styles.gridPressable}
-                  >
-                    <Card padding="md" style={styles.gridCard} testID={cat.testID}>
-                      <IconTile icon={cat.icon} size="lg" />
-                      <Text style={styles.gridTitle} numberOfLines={1}>
-                        {t(cat.titleKey)}
-                      </Text>
-                      <Text style={styles.gridSubtitle} numberOfLines={2}>
-                        {t(cat.subtitleKey)}
-                      </Text>
-                    </Card>
-                  </PressableScale>
-                ))}
-                {pair.length === 1 ? <View style={styles.spacer} /> : null}
-              </View>
-            </MotionEntry>
-          ))}
+          <View style={styles.grid}>
+            {rows.map((pair, rowIdx) => (
+              <MotionEntry
+                key={pair.map((c) => c.key).join('-')}
+                variant="bottom"
+                delay={ENTRY_DELAY.buttons + rowIdx * 80}
+                style={[styles.gridRowMotion, styles.blockStretch]}
+              >
+                <View style={styles.row}>
+                  {pair.map((cat) => (
+                    <PressableScale
+                      key={cat.key}
+                      onPress={() => router.push(cat.href as Parameters<typeof router.push>[0])}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t(cat.titleKey)} — ${t(cat.subtitleKey)}`}
+                      style={styles.gridPressable}
+                    >
+                      <Card padding="md" style={styles.gridCard} testID={cat.testID}>
+                        <IconTile icon={cat.icon} size="lg" />
+                        <Text style={styles.gridTitle} numberOfLines={1}>
+                          {t(cat.titleKey)}
+                        </Text>
+                        <Text style={styles.gridSubtitle} numberOfLines={2}>
+                          {t(cat.subtitleKey)}
+                        </Text>
+                      </Card>
+                    </PressableScale>
+                  ))}
+                  {pair.length === 1 ? <View style={styles.spacer} /> : null}
+                </View>
+              </MotionEntry>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </Screen>
@@ -142,13 +148,14 @@ export default function DonationsHubScreen() {
 }
 
 const styles = StyleSheet.create({
-  scrollView: { flex: 1 },
+  scrollView: { flex: 1, width: '100%', alignSelf: 'stretch' },
   scroll: {
+    flexGrow: 1,
+    alignSelf: 'stretch',
+    minWidth: '100%',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing['3xl'],
-    maxWidth: 580,
     width: '100%',
-    alignSelf: 'center',
   },
 
   // Hero — large title + subtitle, mirrors the welcome screen scale.
@@ -180,6 +187,8 @@ const styles = StyleSheet.create({
   // SettingsScreenRow / DonationLinkRow conventions used elsewhere.
   featuredCard: {
     minHeight: 88,
+    width: '100%',
+    alignSelf: 'stretch',
     flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.base,
@@ -210,16 +219,32 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
     marginBottom: spacing.base,
   },
-  grid: { gap: spacing.base },
-  row: { flexDirection: 'row', gap: spacing.base },
-  gridPressable: { flex: 1 },
+  // RN-Web + RTL: nested blocks can shrink-wrap to inline-start without explicit stretch.
+  blockStretch: { width: '100%', alignSelf: 'stretch' },
+
+  // Fills leftover viewport below hero + featured so category rows share height.
+  categoriesSection: { flex: 1, width: '100%', alignSelf: 'stretch' },
+  grid: { flex: 1, gap: spacing.base, width: '100%', alignSelf: 'stretch' },
+  gridRowMotion: { flex: 1, minHeight: 0 },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.base,
+    minHeight: 112,
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  gridPressable: { flex: 1, alignSelf: 'stretch' },
   gridCard: {
-    minHeight: 140,
+    flex: 1,
+    minHeight: 112,
     alignItems: 'center',
-    justifyContent: 'flex-start',
+    justifyContent: 'center',
     gap: spacing.xs,
     paddingTop: spacing.base,
     paddingBottom: spacing.base,
+    alignSelf: 'stretch',
   },
   gridTitle: {
     ...typography.body,

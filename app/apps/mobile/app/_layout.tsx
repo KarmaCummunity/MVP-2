@@ -46,15 +46,26 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   // Belt-and-braces: even with the viewport locked, an absolutely-positioned
   // child with a negative offset (e.g. a decorative blob) can extend the
   // document past the viewport on web. Clip html/body horizontally.
-  const noHScrollId = 'kc-no-horizontal-scroll';
-  if (!document.getElementById(noHScrollId)) {
+  // RN-Web + `dir=rtl`: also force full viewport width on `#root` (see Screen.tsx).
+  document.getElementById('kc-no-horizontal-scroll')?.remove();
+  const layoutWebId = 'kc-web-viewport-layout';
+  if (!document.getElementById(layoutWebId)) {
     const style = document.createElement('style');
-    style.id = noHScrollId;
+    style.id = layoutWebId;
     style.textContent = `html, body {
   margin: 0;
+  width: 100%;
+  height: 100%;
   overflow-x: hidden;
   overscroll-behavior-x: none;
   -webkit-text-size-adjust: 100%;
+}
+#root {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex: 1;
 }`;
     document.head.appendChild(style);
   }
@@ -171,7 +182,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, width: '100%', alignSelf: 'stretch' }}>
       <SafeAreaProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>

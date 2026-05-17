@@ -1,5 +1,5 @@
 import React from 'react';
-import { Pressable, ViewStyle, StyleProp, AccessibilityProps } from 'react-native';
+import { Pressable, StyleSheet, ViewStyle, StyleProp, AccessibilityProps } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -43,6 +43,10 @@ export function PressableScale({
 
   const animated = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 
+  // Apply `style` on `Pressable`, not only the inner `Animated.View`. Layout
+  // props like `flex: 1` / `width: '100%'` must live on the outer node so row
+  // parents (e.g. donations grid) size the hit target; RN-Web + RTL otherwise
+  // shrink-wraps to content and leaves empty space on the opposite edge.
   return (
     <Pressable
       onPress={handlePress}
@@ -50,9 +54,14 @@ export function PressableScale({
       onPressOut={handlePressOut}
       disabled={disabled}
       hitSlop={hitSlop}
+      style={style}
       {...a11y}
     >
-      <Animated.View style={[style, animated]}>{children}</Animated.View>
+      <Animated.View style={[styles.inner, animated]}>{children}</Animated.View>
     </Pressable>
   );
 }
+
+const styles = StyleSheet.create({
+  inner: { width: '100%', alignSelf: 'stretch' },
+});
