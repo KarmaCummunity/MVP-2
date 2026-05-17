@@ -2,15 +2,19 @@
 // Mapped to: FR-DONATE-001 AC2 / FR-DONATE-006 / D-16.
 //
 // Two layouts:
-//   - default (`compact={false}`): full-width row with icon on right, chevron on left.
-//     Used historically for items/time/money.
-//   - compact (`compact={true}`): square-ish card optimised for a 2-column grid.
-//     Icon top-center, title + subtitle stacked below. Used by the Hub now that
-//     all 9 categories live in the same grid (FR-DONATE-006).
+//   - default (`compact={false}`): full-width row, IconTile on right, chevron on left.
+//   - compact (`compact={true}`):  square card optimised for a 2-column grid.
+//
+// Visual idiom matches the welcome screen: white Card surface with a soft
+// shadow, orange-tinted IconTile, RTL-aware row layout, and a haptic
+// scale-press handled by the Card / PressableScale primitives.
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { colors, radius, spacing, typography } from '@kc/ui';
+import { PressableScale } from './animations/PressableScale';
+import { Card } from './ui/Card';
+import { IconTile } from './ui/IconTile';
 
 interface DonationTileProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -31,92 +35,61 @@ export function DonationTile({
 }: DonationTileProps) {
   if (compact) {
     return (
-      <Pressable
+      <PressableScale
         onPress={onPress}
         accessibilityRole="button"
         accessibilityLabel={`${title} — ${subtitle}`}
-        style={({ pressed }) => [styles.tileCompact, pressed && styles.tilePressed]}
-        testID={testID}
+        style={styles.compactWrap}
       >
-        <View style={styles.iconWrapCompact}>
-          <Ionicons name={icon} size={28} color={colors.primary} />
-        </View>
-        <Text style={styles.titleCompact} numberOfLines={1}>{title}</Text>
-        <Text style={styles.subtitleCompact} numberOfLines={2}>{subtitle}</Text>
-      </Pressable>
+        <Card padding="md" style={styles.compactCard} testID={testID}>
+          <View style={styles.compactIcon}>
+            <IconTile icon={icon} size="lg" />
+          </View>
+          <Text style={styles.titleCompact} numberOfLines={1}>{title}</Text>
+          <Text style={styles.subtitleCompact} numberOfLines={2}>{subtitle}</Text>
+        </Card>
+      </PressableScale>
     );
   }
 
   return (
-    <Pressable
+    <PressableScale
       onPress={onPress}
       accessibilityRole="button"
       accessibilityLabel={`${title} — ${subtitle}`}
-      style={({ pressed }) => [styles.tile, pressed && styles.tilePressed]}
-      testID={testID}
     >
-      <View style={styles.iconWrap}>
-        <Ionicons name={icon} size={32} color={colors.primary} />
-      </View>
-      <View style={styles.textBlock}>
-        <Text style={styles.title}>{title}</Text>
-        <Text style={styles.subtitle}>{subtitle}</Text>
-      </View>
-      <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
-    </Pressable>
+      <Card padding="lg" style={styles.row} testID={testID}>
+        <IconTile icon={icon} size="md" />
+        <View style={styles.textBlock}>
+          <Text style={styles.title}>{title}</Text>
+          <Text style={styles.subtitle}>{subtitle}</Text>
+        </View>
+        <Ionicons name="chevron-back" size={22} color={colors.textSecondary} />
+      </Card>
+    </PressableScale>
   );
 }
 
 const styles = StyleSheet.create({
-  tile: {
+  row: {
     minHeight: 96,
-    flexDirection: 'row-reverse', // RTL: icon right, chevron left
+    flexDirection: 'row-reverse',
     alignItems: 'center',
-    backgroundColor: colors.surface,
-    borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
     gap: spacing.lg,
-    ...shadow.card,
-  },
-  tileCompact: {
-    flex: 1,
-    minHeight: 132,
-    backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
+  },
+  compactWrap: { flex: 1 },
+  compactCard: {
+    minHeight: 148,
     alignItems: 'center',
     justifyContent: 'flex-start',
     gap: spacing.xs,
-    ...shadow.card,
   },
-  tilePressed: { backgroundColor: colors.background, transform: [{ scale: 0.99 }] },
-  iconWrap: {
-    width: 56,
-    height: 56,
-    borderRadius: 28,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  iconWrapCompact: {
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    marginBottom: spacing.xs,
-  },
+  compactIcon: { marginBottom: spacing.xs },
   textBlock: { flex: 1 },
-  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2 },
-  subtitle: { ...typography.body, color: colors.textSecondary },
-  titleCompact: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2, textAlign: 'right' },
+  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  titleCompact: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', fontSize: 16 },
   subtitleCompact: {
     ...typography.bodySmall,
     color: colors.textSecondary,

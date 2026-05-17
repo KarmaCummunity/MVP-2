@@ -4,6 +4,11 @@
 export const donations = {
   tabLabel: 'תרומות',
   hubTitle: 'תרומות של:',
+  hubHeroTitle: 'תן. קבל. תרום מה שיש לך.',
+  hubHeroSubtitle: 'בחר תחום שמדבר אליך והפוך אותו לפעולה.',
+  hubItemsFeaturedTitle: 'חפצים',
+  hubItemsFeaturedSubtitle: 'תרומה ובקשת חפצים — הפעולה המרכזית באפליקציה',
+  hubCategoriesSectionTitle: 'תחומי תרומה נוספים',
   items: { title: 'חפצים', subtitle: 'תרומה ובקשת חפצים' },
   time: { title: 'זמן', subtitle: 'התנדבות וזמן פנוי' },
   money: { title: 'כסף', subtitle: 'תרומה כספית' },

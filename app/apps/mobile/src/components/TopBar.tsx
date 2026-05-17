@@ -52,9 +52,9 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
+    // Cream backdrop + no bottom border so the header floats over the screen,
+    // mirroring the welcome screen where the content sits directly on the cream.
+    backgroundColor: colors.surfaceCream,
   },
   iconBtn: { padding: spacing.xs, position: 'relative' },
   rightGroup: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },

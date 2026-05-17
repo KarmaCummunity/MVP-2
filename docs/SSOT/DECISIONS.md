@@ -618,13 +618,13 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ## D-30 — MVP post-detail privacy: audience + counterparty mask only (2026-05-16)
 
-**Decision.** The post-detail privacy block is **audience-first**: for **open** posts the owner edits `posts.visibility` (`FR-POST-003` / `FR-POST-009`); for **closed** posts each participant edits their own `surface_visibility` (`D-28`). The **only** user-facing identity toggle in MVP besides audience is `hide_from_counterparty`, whose **product semantics** are defined in **`D-31`** (third parties on the counterparty's closed-post profile — not hiding from the counterparty; see also `D-30` supersession note). Per-participant `identity_visibility` (`FollowersOnly` / `Hidden` chrome) is **not** exposed in the mobile UI; client upserts normalize `identity_visibility` to `Public`, and migration `0092_post_actor_identity_public_chrome.sql` clears legacy non-`Public` rows.
+**Decision.** The post-detail privacy block is **audience-first**: for **open** posts the owner edits `posts.visibility` (`FR-POST-003` / `FR-POST-009`, `D-32`); for **closed** posts each participant edits their own `surface_visibility` (`D-28`). The **only** user-facing identity toggle in MVP besides audience is `hide_from_counterparty`, whose **product semantics** are defined in **`D-31`** (third parties on the counterparty's closed-post profile — not hiding from the counterparty; see also `D-30` supersession note). Per-participant `identity_visibility` (`FollowersOnly` / `Hidden` chrome) is **not** exposed in the mobile UI; client upserts normalize `identity_visibility` to `Public`, and migration `0092_post_actor_identity_public_chrome.sql` clears legacy non-`Public` rows.
 
 **Rationale.** The prior three-level control duplicated the visibility affordance (🌍/👥/🔒) but changed chrome, not audience — users consistently misread it as “who sees the post”. Collapsing MVP UX to audience + one identity toggle matches the mental model while preserving `D-28` closed-post surface rules and `D-26` post-chrome rules. **`D-31`** corrects the original reading of `hide_from_counterparty` as “hide from the partner” — partners already recognize each other in chat; the risk is **other users** browsing the partner's profile.
 
 **Supersedes (in part).** MVP UX scope of the `identity_visibility` axis described in `D-28`'s addendum table; server columns and projection hooks remain for future refinement / surface-coupling. **`D-30`'s** prior sentence that described `hide_from_counterparty` as hiding from the counterparty on post chrome is superseded by **`D-31`**.
 
-**Affected docs.** `spec/04_posts.md` (`FR-POST-021`); `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (PM revision note); migration `0092_post_actor_identity_public_chrome.sql`; mobile `PostActorPrivacyBar`, `VisibilityChooser`.
+**Affected docs.** `spec/04_posts.md` (`FR-POST-021`); `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (PM revision note); migration `0092_post_actor_identity_public_chrome.sql`; mobile `PostMenuExposureBlock`, `VisibilityChooser`.
 
 ---
 
@@ -640,7 +640,19 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
-## D-32 — Web Google sign-in via GIS + FedCM wrapped in a draggable bottom sheet (2026-05-17)
+## D-32 — Post visibility may move in any direction after publish (2026-05-17)
+
+**Decision.** Owners (and closed-post participants for `surface_visibility`, `FR-POST-021`) may set `Public`, `FollowersOnly`, or `OnlyMe` **at any time**, including restricting a post after it was already public (e.g. `Public → OnlyMe`). The product does **not** promise retroactive removal from other users' memory, screenshots, or off-platform shares; the control governs **current** in-app discoverability (feeds, profile closed-post surfaces, eligibility rules).
+
+**Rationale.** PM override: users need a safety valve to retract broad exposure without deleting the post. Prior upgrade-only rule (`FR-POST-009` as originally written, RLS/trigger in `0002_init_posts.sql`) is removed in favor of explicit user control.
+
+**Supersedes (in part).** PRD §3.2.4 sub-section ו as reflected in legacy `FR-POST-009` upgrade-only ACs; database trigger `posts_visibility_upgrade_only` (dropped in `0094_posts_visibility_free_change.sql`).
+
+**Affected docs.** `spec/04_posts.md` (`FR-POST-009`, `FR-POST-021`, `FR-POST-006` AC3, `FR-POST-008` AC1); `packages/domain/src/invariants.ts` (`canUpgradeVisibility` semantics); `UpdatePostUseCase`, `UpsertPostActorIdentityUseCase`; mobile `PostMenuExposureBlock`, `PostMenuSheet`, `edit-post/[id].tsx`; migration `0094_posts_visibility_free_change.sql`.
+
+---
+
+## D-33 — Web Google sign-in via GIS + FedCM wrapped in a draggable bottom sheet (2026-05-17)
 
 **Decision.** On Web, the "Continue with Google" entry point on the welcome screen opens a draggable 90%-height bottom sheet (`apps/mobile/src/components/auth/GoogleAuthSheet.tsx`). The sheet renders the Google Identity Services (GIS) button, and on success exchanges the returned id_token for a Supabase session via `IAuthService.signInWithIdToken` (`supabase.auth.signInWithIdToken({ provider: 'google', token, nonce })`). Native (iOS / Android) is **unchanged** — it continues to use `WebBrowser.openAuthSessionAsync` (ASWebAuthenticationSession on iOS, Chrome Custom Tabs on Android), which already presents in-app.
 
@@ -662,7 +674,8 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 2.2 | 2026-05-17 | Added `D-32` (web Google sign-in via GIS + FedCM wrapped in a draggable bottom sheet; `FR-AUTH-002` web UX). |
+| 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via GIS + FedCM wrapped in a draggable bottom sheet; `FR-AUTH-002` web UX). |
+| 2.2 | 2026-05-17 | Added `D-32` (free visibility changes after publish; supersedes legacy upgrade-only `FR-POST-009` trigger); migration `0093`. |
 | 2.1 | 2026-05-16 | Added `D-31` (`hide_from_counterparty` third-party-on-partner-surface semantics); refined `D-30` + `D-28` hide-flag wording. |
 | 2.0 | 2026-05-16 | Added `D-30` (MVP post-detail privacy: audience + counterparty mask; `FR-POST-021`, migration `0092`). |
 | 1.9 | 2026-05-16 | Added `D-29` (saved-posts list filters by current `is_post_visible_to`; `FR-POST-022`, `FR-PROFILE-016`). |

@@ -196,10 +196,10 @@ The owner (or a closed-post participant for `surface_visibility`, `FR-POST-021`)
 **Acceptance Criteria.**
 - AC1. Any transition `Public` ↔ `FollowersOnly` ↔ `OnlyMe` is allowed for `posts.visibility` on **open** posts (subject to `FR-POST-003` / `FR-PROFILE-*`: `FollowersOnly` remains unavailable when `User.privacy_mode = Public` — UI disables that option and surfaces the Settings → Privacy hint).
 - AC2. The same freedom applies to each participant's `post_actor_identity.surface_visibility` on **closed** posts (`FR-POST-021`), with the same `FollowersOnly` / public-profile gate.
-- AC3. Server and client must stay consistent: DB must **not** reject legal visibility writes solely for being a “downgrade”. Legacy `visibility_downgrade_forbidden` handling may remain in adapters for backwards compatibility with old DB snapshots but must not fire on current schema after migration `0093_posts_visibility_free_change.sql`.
+- AC3. Server and client must stay consistent: DB must **not** reject legal visibility writes solely for being a “downgrade”. Legacy `visibility_downgrade_forbidden` handling may remain in adapters for backwards compatibility with old DB snapshots but must not fire on current schema after migration `0094_posts_visibility_free_change.sql`.
 - AC4. Profile mode flipping mid-flight (`Private → Public`) does not retroactively rewrite stored post visibility (`R-MVP-Privacy-13`).
 
-**Related.** Domain: `Post.visibility`, `canUpgradeVisibility()` (non–no-op helper only), migration `0093_posts_visibility_free_change.sql`.
+**Related.** Domain: `Post.visibility`, `canUpgradeVisibility()` (non–no-op helper only), migration `0094_posts_visibility_free_change.sql`.
 
 ---
 
@@ -476,6 +476,6 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
-| 0.6 | 2026-05-17 | `FR-POST-009` — visibility may change freely after publish (incl. hide after exposure); `FR-POST-021`/`FR-POST-006`/`FR-POST-008` aligned; migration `0093_posts_visibility_free_change.sql`; decision `D-32`. |
+| 0.6 | 2026-05-17 | `FR-POST-009` — visibility may change freely after publish (incl. hide after exposure); `FR-POST-021`/`FR-POST-006`/`FR-POST-008` aligned; migration `0094_posts_visibility_free_change.sql`; decision `D-32`. |
 | 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
 | 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

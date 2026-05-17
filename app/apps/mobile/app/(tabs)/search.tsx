@@ -22,17 +22,15 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import type { SearchResultType, SearchSortBy } from '@kc/domain';
 import { search as t } from '../../src/i18n/locales/he/donations';
 
@@ -46,6 +44,9 @@ import {
 } from '../../src/components/SearchResultCard';
 import { SearchFilterSheet } from '../../src/components/SearchFilterSheet';
 import { TopBar } from '../../src/components/TopBar';
+import { Screen } from '../../src/components/ui/Screen';
+import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
+import { searchStyles as styles } from './search.styles';
 
 // ── Constants ─────────────────────────────────
 /** Debounce delay for search input to avoid excessive queries. */
@@ -153,12 +154,12 @@ export default function SearchScreen() {
   // ── Render ──────────────────────────────────
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen blobs="content">
       {/* ── Header ──────────────────────────── */}
       <TopBar />
 
       {/* ── Search bar + filter button ──────── */}
-      <View style={styles.searchRow}>
+      <MotionEntry variant="hero" delay={ENTRY_DELAY.hero} style={styles.searchRow}>
         <View style={styles.searchInput}>
           <Ionicons name="search" size={18} color={colors.textSecondary} style={styles.searchIcon} />
           <TextInput
@@ -195,7 +196,7 @@ export default function SearchScreen() {
             </View>
           )}
         </TouchableOpacity>
-      </View>
+      </MotionEntry>
 
       {/* ── Category type chips ─────────────── */}
       <ScrollView
@@ -392,243 +393,6 @@ export default function SearchScreen() {
 
       {/* ── Filter sheet (modal) ───────────── */}
       <SearchFilterSheet visible={filterVisible} onClose={() => setFilterVisible(false)} />
-    </SafeAreaView>
+    </Screen>
   );
 }
-
-// ── Styles ────────────────────────────────────
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-
-  // ── Header ──────────────────────────────────
-  // (searchHeader removed in favor of TopBar)
-
-  // ── Search bar ──────────────────────────────
-  searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  searchInput: {
-    flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    paddingHorizontal: spacing.sm,
-    height: 44,
-    gap: spacing.xs,
-  },
-  searchIcon: { marginLeft: spacing.xs },
-  searchText: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-
-  // ── Filter button ───────────────────────────
-  filterBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.md,
-    backgroundColor: colors.background,
-    justifyContent: 'center',
-    alignItems: 'center',
-    borderWidth: 1.5,
-    borderColor: colors.border,
-  },
-  filterBtnActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  filterBadge: {
-    position: 'absolute',
-    top: -4,
-    right: -4,
-    width: 18,
-    height: 18,
-    borderRadius: 9,
-    backgroundColor: colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  filterBadgeText: {
-    ...typography.caption,
-    color: colors.textInverse,
-    fontSize: 10,
-  },
-
-  // ── Category / sort chips ───────────────────
-  chipContainer: {
-    backgroundColor: colors.surface,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-    maxHeight: 52,
-  },
-  chipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.sm,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.sm,
-  },
-  chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.sm,
-    borderRadius: radius.full,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  chipActive: {
-    backgroundColor: colors.primary,
-    borderColor: colors.primary,
-  },
-  chipText: {
-    ...typography.caption,
-    fontWeight: '600' as const,
-    color: colors.textPrimary,
-  },
-  chipTextActive: {
-    color: colors.textInverse,
-  },
-  chipDivider: {
-    width: 1,
-    height: 24,
-    backgroundColor: colors.border,
-    marginHorizontal: spacing.xs,
-  },
-  sortChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.xs,
-    borderRadius: radius.full,
-    borderWidth: 1,
-    borderColor: colors.borderStrong,
-    backgroundColor: colors.surface,
-  },
-  sortChipActive: {
-    backgroundColor: colors.secondary,
-    borderColor: colors.secondary,
-  },
-  sortChipText: {
-    fontSize: 10,
-    fontWeight: '500' as const,
-    color: colors.textSecondary,
-  },
-  sortChipTextActive: {
-    color: colors.textInverse,
-  },
-
-  // ── Content area ────────────────────────────
-  content: { flex: 1 },
-  contentInner: {
-    padding: spacing.base,
-    paddingBottom: spacing['2xl'],
-  },
-
-  // ── Section headers ─────────────────────────
-  section: {
-    marginBottom: spacing.lg,
-  },
-  sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    marginBottom: spacing.sm,
-  },
-  sectionTitleRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: spacing.xs,
-  },
-  sectionTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-  },
-  sectionCount: {
-    ...typography.caption,
-    color: colors.textSecondary,
-  },
-  showAllText: {
-    ...typography.caption,
-    color: colors.primary,
-    fontWeight: '600' as const,
-  },
-
-  // ── Recent searches ─────────────────────────
-  recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: colors.border,
-    gap: spacing.sm,
-  },
-  recentRowPressed: {
-    backgroundColor: colors.background,
-  },
-  recentText: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-    textAlign: 'right',
-  },
-  clearRecentText: {
-    ...typography.caption,
-    color: colors.error,
-    fontWeight: '500' as const,
-  },
-
-  // ── Empty / loading states ──────────────────
-  emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-    gap: spacing.md,
-  },
-  emptyTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-  },
-  emptySubtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    maxWidth: 260,
-  },
-  loadingWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: spacing['3xl'],
-    gap: spacing.md,
-  },
-  loadingText: {
-    ...typography.body,
-    color: colors.textSecondary,
-  },
-
-  // ── National links note ─────────────────────
-  nationalNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    gap: spacing.xs,
-    marginBottom: spacing.sm,
-  },
-  nationalNoteText: {
-    ...typography.caption,
-    color: colors.textSecondary,
-    fontStyle: 'italic',
-  },
-});

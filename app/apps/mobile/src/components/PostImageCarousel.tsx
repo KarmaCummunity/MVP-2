@@ -86,13 +86,13 @@ export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
           onScroll={onScroll}
           scrollEventThrottle={16}
         />
-        <View style={styles.counter} pointerEvents="none">
-          <Text style={styles.counterText}>{activeIndex + 1} / {urls.length}</Text>
-        </View>
         <View style={styles.dots} pointerEvents="none">
           {urls.map((_, i) => (
             <View key={i} style={[styles.dot, i === activeIndex && styles.dotActive]} />
           ))}
+        </View>
+        <View style={styles.counter} pointerEvents="none">
+          <Text style={styles.counterText}>{activeIndex + 1} / {urls.length}</Text>
         </View>
       </View>
       <PostImageViewerModal
@@ -111,16 +111,25 @@ const styles = StyleSheet.create({
   image: { width: '100%', height: '100%' },
   pageImage: { width: SCREEN_WIDTH, height: HEIGHT },
   counter: {
-    // Audit §16.2 — `start` flips automatically under RTL; raw `left` keeps the
-    // chip pinned to the screen-left edge instead of the image-left edge.
-    position: 'absolute', top: spacing.sm, start: spacing.sm,
-    paddingHorizontal: spacing.sm, paddingVertical: 2,
-    backgroundColor: 'rgba(0,0,0,0.55)', borderRadius: radius.full,
+    // Physical `left` keeps the chip opposite the type pill (`right` on detail)
+    // and clear of the ⋮ menu (`top` + `start` on detail). `start` would move to
+    // the visual right under RTL and collide with the type tag.
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: radius.full,
   },
   counterText: { ...typography.caption, color: colors.textInverse, fontWeight: '600' },
   dots: {
-    position: 'absolute', bottom: spacing.sm, alignSelf: 'center',
-    flexDirection: 'row', gap: 6,
+    // Slightly above the counter row so both stay readable on multi-image posts.
+    position: 'absolute',
+    bottom: spacing.sm + 26,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 6,
   },
   dot: {
     width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)',

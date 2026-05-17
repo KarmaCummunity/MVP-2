@@ -34,9 +34,16 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: spacing.xs,
     backgroundColor: colors.primary,
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.lg,
+    paddingVertical: spacing.sm,
     borderRadius: radius.full,
+    // Match the elevated press surfaces from the welcome screen so the pill
+    // feels like it's floating on top of the cream feed.
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.25,
+    shadowRadius: 10,
+    elevation: 4,
   },
   text: { ...typography.caption, color: colors.textInverse, fontWeight: '700' as const },
 });

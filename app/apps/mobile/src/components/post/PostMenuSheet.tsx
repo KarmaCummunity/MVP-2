@@ -2,13 +2,15 @@
 // Bottom-sheet menu opened from PostMenuButton on PostDetail.
 // Items shown depend on viewer role (see spec §3).
 import { useState } from 'react';
-import { Modal, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { colors } from '@kc/ui';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { ReportPostModal } from './ReportPostModal';
 import { usePostMenuActions } from '../../hooks/usePostMenuActions';
+import { shouldShowPostExposureControls } from '../../hooks/usePostActorPrivacyModel';
+import { PostMenuExposureBlock } from './PostMenuExposureBlock';
 
 interface Props {
   visible: boolean;
@@ -50,6 +52,7 @@ export function PostMenuSheet({
 
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const canEditPost = (isOwner || isSuperAdmin) && post.status === 'open';
+  const showExposureBlock = viewerId !== null && shouldShowPostExposureControls(viewerId, post);
 
   function openModal(name: Exclude<ActiveModal, null>) {
     clearError();
@@ -68,45 +71,50 @@ export function PostMenuSheet({
       <Modal visible={visible} animationType="slide" transparent onRequestClose={onClose}>
         <Pressable style={styles.backdrop} onPress={onClose}>
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
-            {isOwner ? null : (
-              <MenuItem icon="🚩" label={t('post.report')} onPress={() => openModal('report')} />
-            )}
-            <MenuItem
-              icon={isSaved ? '🔖' : '📌'}
-              label={isSaved ? t('post.menuUnsave') : t('post.menuSave')}
-              onPress={() => {
-                if (saveBusy) return;
-                onToggleSave();
-                onClose();
-              }}
-            />
-            {canEditPost ? (
+            <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
+              {isOwner ? null : (
+                <MenuItem icon="🚩" label={t('post.report')} onPress={() => openModal('report')} />
+              )}
               <MenuItem
-                icon="✏️"
-                label={t('post.menuEdit')}
+                icon={isSaved ? '🔖' : '📌'}
+                label={isSaved ? t('post.menuUnsave') : t('post.menuSave')}
                 onPress={() => {
+                  if (saveBusy) return;
+                  onToggleSave();
                   onClose();
-                  onEdit();
                 }}
               />
-            ) : null}
-            {isOwner ? (
-              <MenuItem
-                icon="🗑️"
-                label={t('post.menuDelete')}
-                destructive
-                onPress={() => openModal('delete-owner')}
-              />
-            ) : null}
-            {isSuperAdmin ? (
-              <MenuItem
-                icon="🛡️"
-                label={t('post.menuAdminRemove')}
-                destructive
-                onPress={() => openModal('admin-remove')}
-              />
-            ) : null}
-            <MenuItem icon="✕" label={t('general.cancel')} onPress={onClose} muted />
+              {canEditPost ? (
+                <MenuItem
+                  icon="✏️"
+                  label={t('post.menuEdit')}
+                  onPress={() => {
+                    onClose();
+                    onEdit();
+                  }}
+                />
+              ) : null}
+              {isOwner ? (
+                <MenuItem
+                  icon="🗑️"
+                  label={t('post.menuDelete')}
+                  destructive
+                  onPress={() => openModal('delete-owner')}
+                />
+              ) : null}
+              {isSuperAdmin ? (
+                <MenuItem
+                  icon="🛡️"
+                  label={t('post.menuAdminRemove')}
+                  destructive
+                  onPress={() => openModal('admin-remove')}
+                />
+              ) : null}
+              {showExposureBlock && viewerId ? (
+                <PostMenuExposureBlock post={post} viewerId={viewerId} />
+              ) : null}
+              <MenuItem icon="✕" label={t('general.cancel')} onPress={onClose} muted />
+            </ScrollView>
           </Pressable>
         </Pressable>
       </Modal>
@@ -135,7 +143,7 @@ export function PostMenuSheet({
         onConfirm={handleAdminRemove}
       />
 
-<ReportPostModal
+      <ReportPostModal
         postId={post.postId}
         visible={active === 'report'}
         onClose={closeModal}

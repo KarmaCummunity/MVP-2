@@ -1,78 +1,55 @@
 // Donations · Money — coming-soon copy + external link to jgive.com + community NGO links list.
 // Mapped to: FR-DONATE-003 (top section) / FR-DONATE-007..009 (list section) / D-16.
 import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
-import { SafeAreaView } from 'react-native-safe-area-context';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors, spacing, typography } from '@kc/ui';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
-import { openExternalUrl } from '../../../src/utils/openExternalUrl';
+import { Screen } from '../../../src/components/ui/Screen';
+import { IconTile } from '../../../src/components/ui/IconTile';
+import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
 
 export default function DonationsMoneyScreen() {
   const { t } = useTranslation();
 
   return (
-    <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView style={styles.scrollView} contentContainerStyle={styles.scroll}>
-        <View style={styles.iconWrap}>
-          <Ionicons name="cash-outline" size={48} color={colors.primary} />
-        </View>
-        <Text style={styles.body}>{t('donations.moneyScreen.body')}</Text>
-        <View style={styles.divider} />
-        <DonationLinksList categorySlug="money" />
+    <Screen blobs="content" edges={['bottom']}>
+      <ScrollView
+        style={styles.scrollView}
+        contentContainerStyle={styles.scroll}
+        showsVerticalScrollIndicator={false}
+      >
+        <MotionEntry variant="hero" delay={ENTRY_DELAY.hero} style={styles.hero}>
+          <View style={styles.heroIcon}><IconTile icon="cash-outline" size="lg" /></View>
+          <Text style={styles.body}>{t('donations.moneyScreen.body')}</Text>
+        </MotionEntry>
+
+        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
+          <DonationLinksList categorySlug="money" />
+        </MotionEntry>
       </ScrollView>
-    </SafeAreaView>
+    </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
   scrollView: { flex: 1 },
   scroll: {
     paddingHorizontal: spacing.lg,
-    paddingTop: spacing.xl,
+    paddingTop: spacing.lg,
     paddingBottom: spacing['2xl'],
     maxWidth: 580,
     width: '100%',
     alignSelf: 'center',
     gap: spacing.lg,
   },
-  iconWrap: {
-    width: 80,
-    height: 80,
-    borderRadius: 40,
-    backgroundColor: colors.primaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
-    alignSelf: 'center',
-    marginBottom: spacing.md,
-  },
+  hero: { alignItems: 'center', gap: spacing.md },
+  heroIcon: { marginBottom: spacing.xs },
   body: {
     ...typography.bodyLarge,
-    color: colors.textPrimary,
+    color: '#1C1917',
     textAlign: 'right',
     lineHeight: 26,
-  },
-  cta: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'center',
-    gap: spacing.sm,
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    borderRadius: radius.lg,
-    marginTop: spacing.md,
-  },
-  ctaPressed: { backgroundColor: colors.primaryDark },
-  ctaText: {
-    ...typography.button,
-    color: colors.textInverse,
-  },
-  divider: {
-    height: 1,
-    backgroundColor: colors.border,
-    marginVertical: spacing.md,
+    width: '100%',
   },
 });

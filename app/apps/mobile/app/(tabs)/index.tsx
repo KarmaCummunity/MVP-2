@@ -7,13 +7,11 @@
 // counter; tapping the pill refetches + scrolls to top.
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, StyleSheet, View } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
-import { colors } from '@kc/ui';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { TopBar } from '../../src/components/TopBar';
 import { FeedFilterIcon } from '../../src/components/FeedFilterIcon';
@@ -22,6 +20,7 @@ import { NewPostsBanner } from '../../src/components/NewPostsBanner';
 import { FirstPostNudge } from '../../src/components/FirstPostNudge';
 import { FeedEmptyState } from '../../src/components/FeedEmptyState';
 import { PostFilterSheet, type PostFilterValue } from '../../src/components/PostFilterSheet';
+import { Screen } from '../../src/components/ui/Screen';
 import { useAuthStore } from '../../src/store/authStore';
 import { useFilterStore } from '../../src/store/filterStore';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
@@ -130,7 +129,7 @@ export default function HomeFeedScreen() {
   );
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <Screen blobs="content">
       <TopBar
         extraIcon={
           <>
@@ -166,10 +165,6 @@ export default function HomeFeedScreen() {
         onClear={() => filter.clearAll()}
         onClose={() => setSheetOpen(false)}
       />
-    </SafeAreaView>
+    </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-});
