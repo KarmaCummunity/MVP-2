@@ -22,7 +22,18 @@ export class UpdatePostUseCase {
     if (!current) throw new Error(`UpdatePostUseCase: post ${input.postId} not found`);
 
     if (current.status !== 'open') {
-      throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+      // FR-POST-009 + D-33: on closed_delivered / deleted_no_recipient, only a
+      // visibility-only patch is allowed (owner-driven Hide / Unhide).
+      // removed_admin and expired remain fully locked.
+      const isClosedHideable =
+        current.status === 'closed_delivered' || current.status === 'deleted_no_recipient';
+      const patchKeys = Object.keys(input.patch).filter(
+        (k) => (input.patch as Record<string, unknown>)[k] !== undefined,
+      );
+      const isVisibilityOnly = patchKeys.length === 1 && patchKeys[0] === 'visibility';
+      if (!(isClosedHideable && isVisibilityOnly)) {
+        throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+      }
     }
 
     const patch = this.validate(input.patch, current);
