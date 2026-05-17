@@ -22,6 +22,7 @@ export const feedHe = {
   followersTag: '👥 לעוקבים בלבד',
   refreshSuccess: 'הפיד עודכן',
   refreshFailed: 'הרענון נכשל — נסה שוב',
+  refreshA11y: 'רענן את הפיד (R)',
   filterA11y: 'סינון ומיון פוסטים',
   filterA11yHint: 'פותח חלון לסינון ולמיון של הפיד',
   newPostsOne: 'פוסט חדש 1 — הקש לרענון',

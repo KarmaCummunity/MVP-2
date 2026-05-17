@@ -52,15 +52,12 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
   if (!document.getElementById(layoutWebId)) {
     const style = document.createElement('style');
     style.id = layoutWebId;
-    // `overscroll-behavior: contain` blocks Chrome Android's native
-    // pull-to-refresh (which would reload the whole page) so that the in-app
-    // `WebPullToRefresh` component can own the gesture — FR-FEED-010 AC2.
     style.textContent = `html, body {
   margin: 0;
   width: 100%;
   height: 100%;
   overflow-x: hidden;
-  overscroll-behavior: contain;
+  overscroll-behavior-x: none;
   -webkit-text-size-adjust: 100%;
 }
 #root {
@@ -91,7 +88,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
@@ -111,7 +108,7 @@ import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
-import { TabBar, PILL_HEIGHT } from '../src/components/TabBar';
+import { TabBar } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
 import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
 
@@ -151,49 +148,21 @@ function NotificationsBridge(): null {
 
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
   const showTabBar = useShellTabBarVisibility();
-  const insets = useSafeAreaInsets();
 
   // RN-Web's flex layout doesn't reliably split height between a flex:1 child
   // and an intrinsic-height sibling — the inner View ends up at full height
   // and squeezes TabBar past the viewport. Positioning TabBar absolutely at
   // the bottom is robust across iOS / Android / web. The Stack content gets
   // bottom padding so the chat composer / scrollable list don't sit under it.
-  // On mobile browsers, `fixed` keeps the bar flush to the visual viewport when
-  // the URL chrome shows/hides; `absolute` can leave a gap on Android Web.
-  const tabBarSlotStyle =
-    Platform.OS === 'web'
-      ? ({
-          position: 'fixed' as const,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          width: '100%',
-          maxWidth: '100%',
-          zIndex: 1000,
-          backgroundColor: 'transparent',
-          overflow: 'visible',
-        } as const)
-      : ({
-          position: 'absolute' as const,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          backgroundColor: 'transparent',
-          overflow: 'visible',
-        } as const);
-
-  // Pill space = pill height + safe area inset (exact, dynamic).
-  const tabBarSpace = showTabBar ? PILL_HEIGHT + insets.bottom : 0;
-
+  const TAB_BAR_HEIGHT = 68;
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, paddingBottom: tabBarSpace }}>
+      <View style={{ flex: 1, paddingBottom: showTabBar ? TAB_BAR_HEIGHT : 0 }}>
         {children}
       </View>
       <EphemeralToast />
       {showTabBar && (
-        <View style={tabBarSlotStyle}>
+        <View style={{ position: 'absolute', bottom: 0, left: 0, right: 0 }}>
           <TabBar />
         </View>
       )}

@@ -6,8 +6,8 @@
 // `feedSessionStore` (in-memory). Realtime INSERTs of public posts bump the
 // counter; tapping the pill refetches + scrolls to top.
 
-import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Platform, View } from 'react-native';
+import React, { useCallback, useMemo, useRef, useState } from 'react';
+import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery } from '@tanstack/react-query';
@@ -15,6 +15,7 @@ import type { PostWithOwner } from '@kc/application';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { TopBar } from '../../src/components/TopBar';
 import { FeedFilterIcon } from '../../src/components/FeedFilterIcon';
+import { WebRefreshButton } from '../../src/components/WebRefreshButton';
 import { NewPostsBanner } from '../../src/components/NewPostsBanner';
 import { FirstPostNudge } from '../../src/components/FirstPostNudge';
 import { FeedEmptyState } from '../../src/components/FeedEmptyState';
@@ -90,24 +91,6 @@ export default function HomeFeedScreen() {
 
   useFeedRealtime(refetchAndReset);
 
-  // FR-FEED-010 AC2: keep the "R" desktop shortcut. The web button itself was
-  // removed in favour of pull-to-refresh (mobile-web parity with native).
-  useEffect(() => {
-    if (Platform.OS !== 'web') return;
-    const handler = (e: KeyboardEvent) => {
-      if (e.key !== 'r' && e.key !== 'R') return;
-      const target = e.target as HTMLElement | null;
-      const tag = target?.tagName?.toLowerCase();
-      const isEditable =
-        tag === 'input' || tag === 'textarea' || (target?.isContentEditable ?? false);
-      if (isEditable || e.metaKey || e.ctrlKey || e.altKey) return;
-      e.preventDefault();
-      void refetchFromToolbarWithToast();
-    };
-    window.addEventListener('keydown', handler);
-    return () => window.removeEventListener('keydown', handler);
-  }, [refetchFromToolbarWithToast]);
-
   const nudge = useFirstPostNudge(viewerId);
 
   const sheetInitial: PostFilterValue = {
@@ -148,7 +131,12 @@ export default function HomeFeedScreen() {
   return (
     <Screen blobs="content">
       <TopBar
-        extraIcon={<FeedFilterIcon activeCount={activeCount} onPress={() => setSheetOpen(true)} />}
+        extraIcon={
+          <>
+            <WebRefreshButton onPress={refetchFromToolbarWithToast} isLoading={feedQuery.isRefetching} />
+            <FeedFilterIcon activeCount={activeCount} onPress={() => setSheetOpen(true)} />
+          </>
+        }
       />
 
       <PostFeedList
