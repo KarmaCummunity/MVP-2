@@ -51,7 +51,7 @@ export const settingsHe = {
       subtitle: 'תודה שהיית חלק מקארמה.',
     },
   },
-  privateProfileToggle: '🔒 פרופיל פרטי',
+  privateProfileToggle: 'פרופיל פרטי',
   followRequests: 'בקשות עקיבה',
   reportIssue: 'דווח על בעיה',
   reportIssueScreen: {

@@ -51,7 +51,14 @@ export function Screen({
 }
 
 const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.surfaceCream },
-  flex: { flex: 1 },
-  scrollContent: { flexGrow: 1 },
+  // RN-Web + `dir=rtl`: without explicit width the tree can shrink-wrap to
+  // content and hug the inline-start edge, leaving empty space on the other side.
+  container: {
+    flex: 1,
+    width: '100%',
+    alignSelf: 'stretch',
+    backgroundColor: colors.surfaceCream,
+  },
+  flex: { flex: 1, width: '100%', alignSelf: 'stretch', minWidth: 0 },
+  scrollContent: { flexGrow: 1, alignSelf: 'stretch', minWidth: '100%' },
 });

@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 export interface SettingsScreenRowProps {
   readonly label: string;
@@ -63,5 +64,10 @@ const styles = StyleSheet.create({
     gap: spacing.md,
   },
   rowIcon: { width: 24 },
-  rowLabel: { ...typography.body, color: colors.textPrimary, flex: 1, textAlign: 'right' },
+  rowLabel: {
+    ...typography.body,
+    color: colors.textPrimary,
+    flex: 1,
+    textAlign: rtlTextAlignStart,
+  },
 });

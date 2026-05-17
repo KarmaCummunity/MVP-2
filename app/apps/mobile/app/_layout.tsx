@@ -29,6 +29,47 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     link.href = '/favicon.ico';
     document.head.appendChild(link);
   }
+  // Lock the mobile-web viewport to device width so the app behaves like a
+  // native app: no pinch-zoom, no horizontal pan, no iOS input auto-zoom.
+  // Expo's `web.output: "single"` template hard-codes a permissive viewport
+  // (`width=device-width, initial-scale=1, shrink-to-fit=no`) and ignores
+  // `+html.tsx`, so we patch the tag at runtime.
+  let viewportMeta = document.querySelector('meta[name="viewport"]') as HTMLMetaElement | null;
+  if (!viewportMeta) {
+    viewportMeta = document.createElement('meta');
+    viewportMeta.name = 'viewport';
+    document.head.appendChild(viewportMeta);
+  }
+  viewportMeta.content =
+    'width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no, viewport-fit=cover';
+
+  // Belt-and-braces: even with the viewport locked, an absolutely-positioned
+  // child with a negative offset (e.g. a decorative blob) can extend the
+  // document past the viewport on web. Clip html/body horizontally.
+  // RN-Web + `dir=rtl`: also force full viewport width on `#root` (see Screen.tsx).
+  document.getElementById('kc-no-horizontal-scroll')?.remove();
+  const layoutWebId = 'kc-web-viewport-layout';
+  if (!document.getElementById(layoutWebId)) {
+    const style = document.createElement('style');
+    style.id = layoutWebId;
+    style.textContent = `html, body {
+  margin: 0;
+  width: 100%;
+  height: 100%;
+  overflow-x: hidden;
+  overscroll-behavior-x: none;
+  -webkit-text-size-adjust: 100%;
+}
+#root {
+  width: 100%;
+  min-width: 100%;
+  min-height: 100%;
+  display: flex;
+  flex: 1;
+}`;
+    document.head.appendChild(style);
+  }
+
   // iOS Safari (and WebKit-based mobile browsers) zoom the viewport when a
   // focused text control's font-size is under 16px. RN-Web maps TextInput to
   // <input>/<textarea>; cap only on narrow viewports so desktop web typography
@@ -141,7 +182,7 @@ export default function RootLayout() {
   }, []);
 
   return (
-    <GestureHandlerRootView style={{ flex: 1 }}>
+    <GestureHandlerRootView style={{ flex: 1, width: '100%', alignSelf: 'stretch' }}>
       <SafeAreaProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>

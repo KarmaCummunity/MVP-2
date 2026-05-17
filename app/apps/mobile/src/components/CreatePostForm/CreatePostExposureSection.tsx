@@ -1,5 +1,5 @@
 import React from 'react';
-import { Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, PlatformSwitch } from '@kc/ui';
@@ -15,9 +15,6 @@ export interface CreatePostExposureSectionProps {
   locationDisplayLevel: LocationDisplayLevel;
   onLocationDisplayLevelChange: (next: LocationDisplayLevel) => void;
   isPublishing: boolean;
-  isGive: boolean;
-  urgency: string;
-  onUrgencyChange: (next: string) => void;
   visibility: PostVisibility;
   onVisibilityChange: (next: PostVisibility) => void;
   profilePrivacy: 'Public' | 'Private';
@@ -31,9 +28,6 @@ export function CreatePostExposureSection({
   locationDisplayLevel,
   onLocationDisplayLevelChange,
   isPublishing,
-  isGive,
-  urgency,
-  onUrgencyChange,
   visibility,
   onVisibilityChange,
   profilePrivacy,
@@ -65,21 +59,6 @@ export function CreatePostExposureSection({
             onChange={onLocationDisplayLevelChange}
             disabled={isPublishing}
           />
-
-          {!isGive && (
-            <View style={styles.section}>
-              <Text style={styles.sectionLabel}>{t('post.urgency')}</Text>
-              <TextInput
-                style={styles.input}
-                value={urgency}
-                onChangeText={onUrgencyChange}
-                placeholder={t('post.urgencyPlaceholder')}
-                placeholderTextColor={colors.textDisabled}
-                textAlign="right"
-                maxLength={100}
-              />
-            </View>
-          )}
 
           <VisibilityChooser
             value={visibility}

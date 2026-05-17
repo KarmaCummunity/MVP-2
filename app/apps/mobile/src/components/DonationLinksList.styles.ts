@@ -1,15 +1,25 @@
 import { StyleSheet } from 'react-native';
 import { colors, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 export const donationLinksListStyles = StyleSheet.create({
   container: { gap: spacing.md },
+  // `row` + parent RTL: title (first child) at inline-start (visual right), + at end.
+  // `row-reverse` + native/web RTL quirks pinned the section title to the wrong edge.
   header: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: spacing.sm,
+    width: '100%',
   },
-  headerTitle: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
+  headerTitle: {
+    ...typography.h2,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    flex: 1,
+    minWidth: 0,
+  },
   plusBtn: {
     width: 32,
     height: 32,

@@ -14,6 +14,7 @@ import { DonationLinksList } from '../../../../src/components/DonationLinksList'
 import { Screen } from '../../../../src/components/ui/Screen';
 import { IconTile } from '../../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../../src/components/ui/MotionEntry';
+import { rtlTextAlignStart } from '../../../../src/lib/rtlTextAlignStart';
 
 const ICON_BY_SLUG: Record<DonationCategorySlug, keyof typeof Ionicons.glyphMap> = {
   time: 'time-outline',
@@ -110,7 +111,7 @@ const styles = StyleSheet.create({
   body: {
     ...typography.bodyLarge,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 26,
     width: '100%',
   },

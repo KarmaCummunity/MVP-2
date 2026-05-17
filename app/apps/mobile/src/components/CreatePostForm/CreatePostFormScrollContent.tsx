@@ -226,15 +226,27 @@ export function CreatePostFormScrollContent({
         <Text style={styles.charCount}>{description.length}/500</Text>
       </View>
 
+      {!isGive && (
+        <View style={styles.section}>
+          <Text style={styles.sectionLabel}>{t('post.urgency')}</Text>
+          <TextInput
+            style={styles.input}
+            value={urgency}
+            onChangeText={onUrgencyChange}
+            placeholder={t('post.urgencyPlaceholder')}
+            placeholderTextColor={colors.textDisabled}
+            textAlign="right"
+            maxLength={100}
+          />
+        </View>
+      )}
+
       <CreatePostExposureSection
         open={exposureSettingsOpen}
         onToggleOpen={onToggleExposureSettings}
         locationDisplayLevel={locationDisplayLevel}
         onLocationDisplayLevelChange={onLocationDisplayLevelChange}
         isPublishing={isPublishing}
-        isGive={isGive}
-        urgency={urgency}
-        onUrgencyChange={onUrgencyChange}
         visibility={visibility}
         onVisibilityChange={onVisibilityChange}
         profilePrivacy={profilePrivacy}

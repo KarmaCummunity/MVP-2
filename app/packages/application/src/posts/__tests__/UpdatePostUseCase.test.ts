@@ -19,15 +19,14 @@ describe('UpdatePostUseCase', () => {
     expect(repo.lastUpdateArgs?.patch.title).toBe('חדש');
   });
 
-  it('rejects visibility downgrade (Public → OnlyMe)', async () => {
+  it('allows visibility change (Public → OnlyMe)', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = makePostWithOwner({ visibility: 'Public' });
+    repo.updateResult = makePostWithOwner({ visibility: 'OnlyMe' });
     const uc = new UpdatePostUseCase(repo);
 
-    await expect(
-      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'OnlyMe' } }),
-    ).rejects.toMatchObject({ code: 'visibility_downgrade_forbidden' });
-    expect(repo.lastUpdateArgs).toBeNull();
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'OnlyMe' } });
+    expect(repo.lastUpdateArgs?.patch.visibility).toBe('OnlyMe');
   });
 
   it('allows visibility upgrade (OnlyMe → Public)', async () => {
@@ -60,26 +59,24 @@ describe('UpdatePostUseCase', () => {
     expect(repo.lastUpdateArgs?.patch.visibility).toBe('Public');
   });
 
-  it('rejects visibility downgrade (FollowersOnly → OnlyMe)', async () => {
+  it('allows visibility change (FollowersOnly → OnlyMe)', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = makePostWithOwner({ visibility: 'FollowersOnly' });
+    repo.updateResult = makePostWithOwner({ visibility: 'OnlyMe' });
     const uc = new UpdatePostUseCase(repo);
 
-    await expect(
-      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'OnlyMe' } }),
-    ).rejects.toMatchObject({ code: 'visibility_downgrade_forbidden' });
-    expect(repo.lastUpdateArgs).toBeNull();
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'OnlyMe' } });
+    expect(repo.lastUpdateArgs?.patch.visibility).toBe('OnlyMe');
   });
 
-  it('rejects visibility downgrade (Public → FollowersOnly)', async () => {
+  it('allows visibility change (Public → FollowersOnly)', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = makePostWithOwner({ visibility: 'Public' });
+    repo.updateResult = makePostWithOwner({ visibility: 'FollowersOnly' });
     const uc = new UpdatePostUseCase(repo);
 
-    await expect(
-      uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'FollowersOnly' } }),
-    ).rejects.toMatchObject({ code: 'visibility_downgrade_forbidden' });
-    expect(repo.lastUpdateArgs).toBeNull();
+    await uc.execute({ postId: 'p_1', viewerId: 'u_1', patch: { visibility: 'FollowersOnly' } });
+    expect(repo.lastUpdateArgs?.patch.visibility).toBe('FollowersOnly');
   });
 
   it('treats same-value visibility patch as a no-op (Public → Public)', async () => {

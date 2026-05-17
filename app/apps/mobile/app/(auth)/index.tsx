@@ -20,7 +20,11 @@ import Animated, {
 import { colors } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
-import { getOAuthRedirectUri, getSignInWithGoogleUseCase } from '../../src/services/authComposition';
+import {
+  getOAuthRedirectUri,
+  getSignInWithGoogleUseCase,
+  redirectToGoogleSignInWeb,
+} from '../../src/services/authComposition';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { AuthBackground } from '../../src/components/auth/AuthBackground';
@@ -101,6 +105,15 @@ export default function WelcomeScreen() {
     isExecutingRef.current = true;
     setGoogleLoading(true);
     try {
+      // FR-AUTH-002 web fix: same-tab redirect to accounts.google.com.
+      // Safari blocks the `window.open` popup that `WebBrowser` used on web;
+      // a top-level navigation has no such restriction. The JS context here
+      // is destroyed by the navigation, so the use case path below only
+      // runs on native (iOS ASWebAuth / Android Chrome Custom Tabs).
+      if (Platform.OS === 'web') {
+        await redirectToGoogleSignInWeb();
+        return;
+      }
       const { session } = await getSignInWithGoogleUseCase().execute({ redirectTo: getOAuthRedirectUri() });
       setSession(session);
       router.replace('/(tabs)');

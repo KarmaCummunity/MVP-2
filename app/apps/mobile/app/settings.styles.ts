@@ -1,5 +1,6 @@
 import { StyleSheet } from 'react-native';
 import { colors, typography, spacing } from '@kc/ui';
+import { rtlTextAlignStart } from '../src/lib/rtlTextAlignStart';
 
 export const settingsScreenStyles = StyleSheet.create({
   container: { flex: 1, backgroundColor: colors.background },
@@ -13,11 +14,12 @@ export const settingsScreenStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  title: { ...typography.h3, color: colors.textPrimary },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   scrollContent: { paddingBottom: spacing.xl * 2 },
   sectionTitle: {
     ...typography.label,
     color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
     paddingBottom: spacing.xs,

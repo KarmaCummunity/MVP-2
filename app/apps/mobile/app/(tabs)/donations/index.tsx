@@ -21,6 +21,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 interface CategoryTile {
   key: string;
@@ -66,6 +67,9 @@ export default function DonationsHubScreen() {
     <Screen blobs="content">
       <TopBar />
       <ScrollView
+        style={styles.scrollView}
+        // RN-Web + `dir=rtl`: content can shrink-wrap and hug the inline-start
+        // edge (visual right), leaving empty space on the left — stretch to viewport.
         contentContainerStyle={styles.scroll}
         showsVerticalScrollIndicator={false}
       >
@@ -76,19 +80,22 @@ export default function DonationsHubScreen() {
         </MotionEntry>
 
         {/* ── Featured: items ──────────────── */}
-        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
+        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section} style={styles.blockStretch}>
           <PressableScale
             onPress={() => router.push(FEATURED.href as Parameters<typeof router.push>[0])}
             accessibilityRole="button"
             accessibilityLabel={`${t(FEATURED.titleKey)} — ${t(FEATURED.subtitleKey)}`}
+            style={styles.blockStretch}
           >
-            <Card padding="lg" style={styles.featuredCard} testID={FEATURED.testID}>
-              <View style={styles.featuredIcon}>
-                <IconTile icon={FEATURED.icon} size="lg" />
-              </View>
+            <Card padding="base" style={styles.featuredCard} testID={FEATURED.testID}>
+              <IconTile icon={FEATURED.icon} size="lg" />
               <View style={styles.featuredText}>
-                <Text style={styles.featuredTitle}>{t(FEATURED.titleKey)}</Text>
-                <Text style={styles.featuredSubtitle}>{t(FEATURED.subtitleKey)}</Text>
+                <Text style={styles.featuredTitle} numberOfLines={1}>
+                  {t(FEATURED.titleKey)}
+                </Text>
+                <Text style={styles.featuredSubtitle} numberOfLines={2}>
+                  {t(FEATURED.subtitleKey)}
+                </Text>
               </View>
               <Ionicons name="chevron-back" size={22} color={colors.primary} />
             </Card>
@@ -96,41 +103,44 @@ export default function DonationsHubScreen() {
         </MotionEntry>
 
         {/* ── Category grid ────────────────── */}
-        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 80}>
-          <Text style={styles.gridHeading}>{t('donations.hubCategoriesSectionTitle')}</Text>
-        </MotionEntry>
+        <View style={styles.categoriesSection}>
+          <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 80} style={styles.blockStretch}>
+            <Text style={styles.gridHeading}>{t('donations.hubCategoriesSectionTitle')}</Text>
+          </MotionEntry>
 
-        <View style={styles.grid}>
-          {rows.map((pair, rowIdx) => (
-            <MotionEntry
-              key={rowIdx}
-              variant="bottom"
-              delay={ENTRY_DELAY.buttons + rowIdx * 80}
-            >
-              <View style={styles.row}>
-                {pair.map((cat) => (
-                  <PressableScale
-                    key={cat.key}
-                    onPress={() => router.push(cat.href as Parameters<typeof router.push>[0])}
-                    accessibilityRole="button"
-                    accessibilityLabel={`${t(cat.titleKey)} — ${t(cat.subtitleKey)}`}
-                    style={styles.gridPressable}
-                  >
-                    <Card padding="md" style={styles.gridCard} testID={cat.testID}>
-                      <IconTile icon={cat.icon} size="lg" />
-                      <Text style={styles.gridTitle} numberOfLines={1}>
-                        {t(cat.titleKey)}
-                      </Text>
-                      <Text style={styles.gridSubtitle} numberOfLines={2}>
-                        {t(cat.subtitleKey)}
-                      </Text>
-                    </Card>
-                  </PressableScale>
-                ))}
-                {pair.length === 1 ? <View style={styles.spacer} /> : null}
-              </View>
-            </MotionEntry>
-          ))}
+          <View style={styles.grid}>
+            {rows.map((pair, rowIdx) => (
+              <MotionEntry
+                key={pair.map((c) => c.key).join('-')}
+                variant="bottom"
+                delay={ENTRY_DELAY.buttons + rowIdx * 80}
+                style={[styles.gridRowMotion, styles.blockStretch]}
+              >
+                <View style={styles.row}>
+                  {pair.map((cat) => (
+                    <PressableScale
+                      key={cat.key}
+                      onPress={() => router.push(cat.href as Parameters<typeof router.push>[0])}
+                      accessibilityRole="button"
+                      accessibilityLabel={`${t(cat.titleKey)} — ${t(cat.subtitleKey)}`}
+                      style={styles.gridPressable}
+                    >
+                      <Card padding="md" style={styles.gridCard} testID={cat.testID}>
+                        <IconTile icon={cat.icon} size="lg" />
+                        <Text style={styles.gridTitle} numberOfLines={1}>
+                          {t(cat.titleKey)}
+                        </Text>
+                        <Text style={styles.gridSubtitle} numberOfLines={2}>
+                          {t(cat.subtitleKey)}
+                        </Text>
+                      </Card>
+                    </PressableScale>
+                  ))}
+                  {pair.length === 1 ? <View style={styles.spacer} /> : null}
+                </View>
+              </MotionEntry>
+            ))}
+          </View>
         </View>
       </ScrollView>
     </Screen>
@@ -138,72 +148,103 @@ export default function DonationsHubScreen() {
 }
 
 const styles = StyleSheet.create({
+  scrollView: { flex: 1, width: '100%', alignSelf: 'stretch' },
   scroll: {
+    flexGrow: 1,
+    alignSelf: 'stretch',
+    minWidth: '100%',
     paddingHorizontal: spacing.lg,
     paddingBottom: spacing['3xl'],
-    maxWidth: 480,
     width: '100%',
-    alignSelf: 'center',
   },
 
   // Hero — large title + subtitle, mirrors the welcome screen scale.
-  heroBlock: { paddingTop: spacing.lg, paddingBottom: spacing.xl, alignItems: 'flex-end' },
+  // `width: '100%'` + `rtlTextAlignStart` keeps Hebrew flush to visual right on web + native.
+  heroBlock: {
+    width: '100%',
+    paddingTop: spacing.base,
+    paddingBottom: spacing.lg,
+  },
   heroTitle: {
     ...typography.h1,
-    fontSize: 30,
+    fontSize: 26,
     color: '#1C1917',
-    letterSpacing: -0.5,
-    textAlign: 'right',
-    lineHeight: 38,
+    letterSpacing: -0.4,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 34,
+    width: '100%',
   },
   heroSubtitle: {
     ...typography.bodyLarge,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginTop: spacing.xs,
+    width: '100%',
   },
 
-  // Featured items row — bigger surface, chevron in primary so it feels like a primary CTA.
+  // Featured items row — IconTile on the start edge, chevron on the end edge.
+  // `flexDirection: 'row'` lets RTL flip the order natively, matching the
+  // SettingsScreenRow / DonationLinkRow conventions used elsewhere.
   featuredCard: {
-    minHeight: 96,
-    flexDirection: 'row-reverse',
+    minHeight: 88,
+    width: '100%',
+    alignSelf: 'stretch',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.base,
     borderRadius: radius.xl,
     borderWidth: 1.5,
     borderColor: colors.primarySurface,
-    marginBottom: spacing.xl,
+    marginBottom: spacing.lg,
   },
-  featuredIcon: { marginEnd: spacing.xs },
   featuredText: { flex: 1 },
   featuredTitle: {
     ...typography.h2,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 2,
   },
   featuredSubtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
 
   // Grid — section heading then 2-col cards.
   gridHeading: {
     ...typography.h3,
     color: '#1C1917',
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
+    width: '100%',
+    marginTop: spacing.sm,
     marginBottom: spacing.base,
   },
-  grid: { gap: spacing.base },
-  row: { flexDirection: 'row-reverse', gap: spacing.base },
-  gridPressable: { flex: 1 },
+  // RN-Web + RTL: nested blocks can shrink-wrap to inline-start without explicit stretch.
+  blockStretch: { width: '100%', alignSelf: 'stretch' },
+
+  // Fills leftover viewport below hero + featured so category rows share height.
+  categoriesSection: { flex: 1, width: '100%', alignSelf: 'stretch' },
+  grid: { flex: 1, gap: spacing.base, width: '100%', alignSelf: 'stretch' },
+  gridRowMotion: { flex: 1, minHeight: 0 },
+  row: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'stretch',
+    gap: spacing.base,
+    minHeight: 112,
+    width: '100%',
+    alignSelf: 'stretch',
+  },
+  gridPressable: { flex: 1, alignSelf: 'stretch' },
   gridCard: {
-    minHeight: 156,
+    flex: 1,
+    minHeight: 112,
     alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: spacing.sm,
-    paddingTop: spacing.lg,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingTop: spacing.base,
+    paddingBottom: spacing.base,
+    alignSelf: 'stretch',
   },
   gridTitle: {
     ...typography.body,
@@ -211,6 +252,7 @@ const styles = StyleSheet.create({
     color: '#1C1917',
     textAlign: 'center',
     fontSize: 16,
+    marginTop: spacing.xs,
   },
   gridSubtitle: {
     ...typography.caption,
