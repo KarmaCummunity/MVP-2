@@ -91,7 +91,7 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
@@ -111,9 +111,12 @@ import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
-import { TabBar, PILL_HEIGHT } from '../src/components/TabBar';
+import { TabBar } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
-import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
+import {
+  SHELL_TAB_BAR_SURFACE_PX,
+  useShellTabBarVisibility,
+} from '../src/navigation/useShellTabBarVisibility';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -151,7 +154,6 @@ function NotificationsBridge(): null {
 
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
   const showTabBar = useShellTabBarVisibility();
-  const insets = useSafeAreaInsets();
 
   // RN-Web's flex layout doesn't reliably split height between a flex:1 child
   // and an intrinsic-height sibling — the inner View ends up at full height
@@ -168,27 +170,13 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
           left: 0,
           right: 0,
           width: '100%',
+          zIndex: 1000,
           maxWidth: '100%',
-          zIndex: 1000,
-          backgroundColor: 'transparent',
-          overflow: 'visible',
         } as const)
-      : ({
-          position: 'absolute' as const,
-          bottom: 0,
-          left: 0,
-          right: 0,
-          zIndex: 1000,
-          backgroundColor: 'transparent',
-          overflow: 'visible',
-        } as const);
-
-  // Pill space = pill height + safe area inset (exact, dynamic).
-  const tabBarSpace = showTabBar ? PILL_HEIGHT + insets.bottom : 0;
-
+      : { position: 'absolute' as const, bottom: 0, left: 0, right: 0, zIndex: 1000 };
   return (
     <View style={{ flex: 1 }}>
-      <View style={{ flex: 1, paddingBottom: tabBarSpace }}>
+      <View style={{ flex: 1, paddingBottom: showTabBar ? SHELL_TAB_BAR_SURFACE_PX : 0 }}>
         {children}
       </View>
       <EphemeralToast />

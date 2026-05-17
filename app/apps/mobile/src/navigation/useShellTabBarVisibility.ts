@@ -3,8 +3,8 @@ import { useAuthStore } from '../store/authStore';
 import { parseTruthyQueryParam } from '../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from './aboutMarketingPaths';
 
-/** Outer surface height of the pill tab bar (row height only; safe-area inset handled inside the bar). */
-export const SHELL_TAB_BAR_SURFACE_PX = 62;
+/** Outer surface height of `TabBar` (padding + row). Safe-area inset is applied inside the bar. */
+export const SHELL_TAB_BAR_SURFACE_PX = 68;
 
 /** Whether the global shell should render the bottom tab bar + reserve padding. */
 export function useShellTabBarVisibility(): boolean {
