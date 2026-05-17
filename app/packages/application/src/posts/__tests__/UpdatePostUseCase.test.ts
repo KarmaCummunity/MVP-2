@@ -127,7 +127,7 @@ describe('UpdatePostUseCase', () => {
     expect(repo.lastUpdateArgs).toBeNull();
   });
 
-  it('allows visibility-only patch on closed_delivered (FR-POST-009 + D-33)', async () => {
+  it('allows visibility-only patch on closed_delivered (FR-POST-009 + D-34)', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = makePostWithOwner({ status: 'closed_delivered', visibility: 'Public' });
     repo.updateResult = makePostWithOwner({ status: 'closed_delivered', visibility: 'OnlyMe' });

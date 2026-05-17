@@ -22,7 +22,7 @@ export class UpdatePostUseCase {
     if (!current) throw new Error(`UpdatePostUseCase: post ${input.postId} not found`);
 
     if (current.status !== 'open') {
-      // FR-POST-009 + D-33: on closed_delivered / deleted_no_recipient, only a
+      // FR-POST-009 + D-34: on closed_delivered / deleted_no_recipient, only a
       // visibility-only patch is allowed (owner-driven Hide / Unhide).
       // removed_admin and expired remain fully locked.
       const isClosedHideable =
