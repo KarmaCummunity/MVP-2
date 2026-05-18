@@ -1,0 +1,153 @@
+#!/usr/bin/env node
+// Generates supabase/migrations/0101_seed_streets.sql from the canonical
+// data.gov.il streets resource (package 321, resource 9ad3862c...).
+//
+// Run manually when a fresh snapshot is wanted:
+//     node scripts/generate-streets-seed.mjs
+//
+// Output is deterministic for a given source snapshot. The script ALSO
+// synthesizes a code-9000 sentinel row for any city present in
+// supabase/migrations/0008_seed_all_cities.sql but absent from the source
+// (city IDs 3729, 3758) so every settlement in our cities table has at
+// least one street option in the picker.
+//
+// Zero filtering of the source: code 9000 ("the village itself" — only
+// canonical entry for 486 small settlements) is kept, and code 9477 (a
+// legitimate Jerusalem street) is kept. PM directive 2026-05-18: do not
+// suppress streets or cities from the source data.
+
+import fs from 'node:fs/promises';
+import path from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const HERE = path.dirname(fileURLToPath(import.meta.url));
+const REPO = path.resolve(HERE, '..');
+const RESOURCE = '9ad3862c-8391-4b2f-84a4-2d4c68625f4b';
+const PAGE = 32000;
+
+// data.gov.il API field names (Hebrew column names from the government dataset).
+// These must match the external API response exactly and are not user-facing strings.
+// Encoded as Unicode escapes to keep Hebrew codepoints out of source (D-24).
+const FIELD_CITY_ID = '\u05e1\u05de\u05dc_\u05d9\u05e9\u05d5\u05d1';     // samekh-mem-lamed_yod-shin-vav-bet
+const FIELD_STREET_CODE = '\u05e1\u05de\u05dc_\u05e8\u05d7\u05d5\u05d1'; // samekh-mem-lamed_resh-het-vav-bet
+const FIELD_STREET_NAME = '\u05e9\u05dd_\u05e8\u05d7\u05d5\u05d1';       // shin-final-mem_resh-het-vav-bet
+
+async function fetchAll() {
+  const out = [];
+  let offset = 0;
+  let total = null;
+  while (true) {
+    const url = `https://data.gov.il/api/3/action/datastore_search?resource_id=${RESOURCE}&limit=${PAGE}&offset=${offset}`;
+    const res = await fetch(url, { headers: { 'User-Agent': 'kc-streets-seed/1.0' } });
+    if (!res.ok) throw new Error(`CKAN HTTP ${res.status} at offset ${offset}`);
+    const body = await res.json();
+    if (!body.success) throw new Error(`CKAN error: ${JSON.stringify(body.error)}`);
+    if (total === null) {
+      total = body.result.total;
+      process.stderr.write(`Total source rows: ${total}\n`);
+    }
+    const recs = body.result.records ?? [];
+    if (!recs.length) break;
+    out.push(...recs);
+    process.stderr.write(`  fetched ${out.length}/${total}\n`);
+    offset += recs.length;
+    if (offset >= total) break;
+  }
+  return out;
+}
+
+async function loadOurCityIds() {
+  const sql = await fs.readFile(
+    path.join(REPO, 'supabase/migrations/0008_seed_all_cities.sql'),
+    'utf8',
+  );
+  const map = new Map();
+  // City name can contain SQL-escaped apostrophes (''), e.g.
+  //   ('967', '<Hebrew city name>', 'ABU JUWEI''ID'),
+  // so we need to match either a non-apostrophe char OR a doubled apostrophe.
+  const re = /^\s*\('(\d+)',\s*'((?:[^']|'')+)',/;
+  for (const line of sql.split('\n')) {
+    const m = line.match(re);
+    if (m) map.set(m[1], m[2].replace(/''/g, "'"));
+  }
+  return map;
+}
+
+function sqlQuote(s) {
+  return `'${String(s).replace(/'/g, "''")}'`;
+}
+
+async function main() {
+  process.stderr.write('Fetching streets from data.gov.il...\n');
+  const records = await fetchAll();
+  process.stderr.write(`Got ${records.length} rows\n`);
+
+  const cities = await loadOurCityIds();
+  process.stderr.write(`Our cities seed has ${cities.size} entries\n`);
+
+  // Bucket by city_id, preserving every street row.
+  const byCity = new Map();
+  let skippedEmptyNames = 0;
+  for (const r of records) {
+    const cid = String(r[FIELD_CITY_ID]);
+    const code = Number(r[FIELD_STREET_CODE]);
+    const name = String(r[FIELD_STREET_NAME] ?? '').trim();
+    if (!name) { skippedEmptyNames++; continue; }
+    if (!byCity.has(cid)) byCity.set(cid, []);
+    byCity.get(cid).push([code, name]);
+  }
+  if (skippedEmptyNames > 0) {
+    process.stderr.write(`Skipped ${skippedEmptyNames} rows with empty street_name (data quality)\n`);
+  }
+
+  // Synthesize sentinels for cities in our seed but absent from the source.
+  const synthesized = [];
+  for (const [cid, cname] of cities.entries()) {
+    if (!byCity.has(cid)) {
+      byCity.set(cid, [[9000, cname]]);
+      synthesized.push(`${cid}=${cname}`);
+    }
+  }
+  if (synthesized.length > 0) {
+    process.stderr.write(`Synthesized 9000-sentinel for: ${synthesized.join(', ')}\n`);
+  }
+
+  // Deterministic ordering: city_id numeric asc, then street_id numeric asc.
+  const ordered = [...byCity.entries()].sort(
+    (a, b) => Number(a[0]) - Number(b[0]),
+  );
+  let totalRows = 0;
+  for (const [, list] of ordered) {
+    list.sort((a, b) => a[0] - b[0]);
+    totalRows += list.length;
+  }
+
+  // Emit SQL.
+  const header = [
+    '-- 0101_seed_streets | Bulk-seed Israeli street list from data.gov.il package 321',
+    '-- (resource 9ad3862c-8391-4b2f-84a4-2d4c68625f4b). Generated by',
+    '-- scripts/generate-streets-seed.mjs from the snapshot fetched at script run time.',
+    '--',
+    `-- Total rows seeded: ${totalRows}`,
+    `-- Source cities: ${byCity.size - synthesized.length}. Synthesized 9000-sentinel rows: ${synthesized.length}.`,
+    '-- Code 9000 = "the village itself" sentinel (kept). Code 9477 in Jerusalem = real',
+    '-- street (al-Baroudi), not a sentinel — kept as-is.',
+    '--',
+    '-- Idempotent via on-conflict; safe to re-run when refreshing from a newer source.',
+    '',
+    'insert into public.streets (city_id, street_id, name_he) values',
+  ];
+  const lines = [];
+  for (const [cid, list] of ordered) {
+    for (const [code, name] of list) {
+      lines.push(`  (${sqlQuote(cid)}, ${code}, ${sqlQuote(name)})`);
+    }
+  }
+  const body = lines.join(',\n') + '\non conflict (city_id, street_id) do nothing;\n';
+
+  const target = path.join(REPO, 'supabase/migrations/0101_seed_streets.sql');
+  await fs.writeFile(target, header.join('\n') + '\n' + body, 'utf8');
+  process.stderr.write(`Wrote ${totalRows} rows to ${target}\n`);
+}
+
+main().catch((err) => { console.error(err); process.exit(1); });
