@@ -23,6 +23,8 @@ import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
 import { CityPicker } from '../../src/components/CityPicker';
+import { StreetPicker } from '../../src/components/StreetPicker';
+import { useAddressStateWithCityReset } from '../../src/hooks/useAddressStateWithCityReset';
 import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { EmptyState } from '../../src/components/EmptyState';
@@ -56,9 +58,9 @@ export default function EditPostScreen() {
   const [category, setCategory] = useState<Category>('Other');
   const [condition, setCondition] = useState<ItemCondition>('Good');
   const [urgency, setUrgency] = useState('');
-  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
-  const [street, setStreet] = useState('');
-  const [streetNumber, setStreetNumber] = useState('');
+  const {
+    city, street, streetNumber, setCity, setStreet, setStreetNumber,
+  } = useAddressStateWithCityReset({});
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
   const [visibility, setVisibility] = useState<PostVisibility>('Public');
@@ -288,21 +290,22 @@ export default function EditPostScreen() {
           <Text style={styles.sectionLabel}>{t('post.editPost.sectionAddress')} <Text style={styles.required}>*</Text></Text>
           <CityPicker value={city} onChange={setCity} disabled={isSaving} />
           <View style={styles.streetRow}>
+            <View style={styles.streetInputStreet}>
+              <StreetPicker
+                cityId={city?.id ?? null}
+                value={street ? { id: '', name: street } : null}
+                onChange={(sel) => setStreet(sel.name)}
+                disabled={isSaving}
+              />
+            </View>
             <TextInput
-              style={[styles.input, styles.streetInputStreet]}
-              value={street}
-              onChangeText={setStreet}
-              placeholder={t('post.editPost.streetPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-            />
-            <TextInput
-              style={[styles.input, styles.streetInputHouse]}
+              style={[styles.input, styles.streetInputHouse, !city ? { opacity: 0.5 } : null]}
               value={streetNumber}
               onChangeText={setStreetNumber}
               placeholder={t('post.editPost.streetNumberPlaceholder')}
               placeholderTextColor={colors.textDisabled}
               textAlign="right"
+              editable={!isSaving && !!city}
             />
           </View>
         </View>

@@ -9,6 +9,7 @@ import { colors } from '@kc/ui';
 import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisibility } from '@kc/domain';
 import { CityPicker } from '../CityPicker';
+import { StreetPicker } from '../StreetPicker';
 import { CreatePostExposureSection } from './CreatePostExposureSection';
 import { PhotoPicker } from './PhotoPicker';
 import type { UploadedAsset } from '../../services/imageUpload';
@@ -156,21 +157,22 @@ export function CreatePostFormScrollContent({
         </Text>
         <CityPicker value={city} onChange={onCityChange} disabled={isPublishing} />
         <View style={styles.streetRow}>
+          <View style={styles.streetInputStreet}>
+            <StreetPicker
+              cityId={city?.id ?? null}
+              value={street ? { id: '', name: street } : null}
+              onChange={(sel) => onStreetChange(sel.name)}
+              disabled={isPublishing}
+            />
+          </View>
           <TextInput
-            style={[styles.input, styles.streetInputStreet]}
-            value={street}
-            onChangeText={onStreetChange}
-            placeholder={t('post.streetLabel')}
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-          />
-          <TextInput
-            style={[styles.input, styles.streetInputHouse]}
+            style={[styles.input, styles.streetInputHouse, !city ? { opacity: 0.5 } : null]}
             value={streetNumber}
             onChangeText={onStreetNumberChange}
             placeholder={t('post.streetNumberShort')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
+            editable={!isPublishing && !!city}
           />
         </View>
       </View>

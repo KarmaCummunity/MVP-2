@@ -1,21 +1,16 @@
-/** CityPicker: `public.cities` modal per FR-AUTH-010 AC2; searchable list. */
+/**
+ * CityPicker — public.cities-backed modal per FR-AUTH-010 AC2.
+ *
+ * Implementation delegates to SearchablePicker so City and Street pickers
+ * stay identical in look and behavior. All filtering / free-text logic is
+ * unit tested via searchablePickerLogic.test.ts.
+ */
 
-import React, { useEffect, useMemo, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  TextInput,
-  TouchableOpacity,
-  Pressable,
-  Modal,
-  FlatList,
-  StyleSheet,
-  ActivityIndicator,
-} from 'react-native';
+import React from 'react';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
 import type { City } from '@kc/domain';
+import { SearchablePicker } from './SearchablePicker/SearchablePicker';
 import { listCities } from '../services/userComposition';
 
 interface Props {
@@ -23,175 +18,35 @@ interface Props {
   readonly onChange: (selection: { id: string; name: string }) => void;
   readonly disabled?: boolean;
 }
+
+// Module-scope helpers — referentially stable so the SearchablePicker doesn't
+// invalidate its memoized filter list on every render.
+const matchCity = (c: City, q: string): boolean =>
+  c.nameHe.includes(q) || c.nameEn.toLowerCase().includes(q.toLowerCase());
+const renderCity = (c: City) => ({ id: c.cityId, name: c.nameHe });
+
 export function CityPicker({ value, onChange, disabled }: Props) {
   const { t } = useTranslation();
-  const [open, setOpen] = useState(false);
-  const [query, setQuery] = useState('');
-  const searchInputRef = useRef<TextInput>(null);
-
-  useEffect(() => {
-    if (!open) return;
-    const timer = setTimeout(() => searchInputRef.current?.focus(), 100);
-    return () => clearTimeout(timer);
-  }, [open]);
-
-  const { data: cities, isLoading, error } = useQuery<City[]>({
+  const { data, isLoading, error } = useQuery<City[]>({
     queryKey: ['cities'],
     queryFn: listCities,
-    staleTime: 1000 * 60 * 60, // 1h — cities rarely change
+    staleTime: 1000 * 60 * 60, // 1h — cities rarely change.
   });
 
-  const filtered = useMemo(() => {
-    if (!cities) return [];
-    const q = query.trim();
-    if (!q) return cities;
-    return cities.filter((c) => c.nameHe.includes(q) || c.nameEn.toLowerCase().includes(q.toLowerCase()));
-  }, [cities, query]);
-
   return (
-    <>
-      <TouchableOpacity
-        style={[styles.field, disabled && { opacity: 0.5 }]}
-        onPress={() => !disabled && setOpen(true)}
-        accessibilityRole="button"
-        accessibilityLabel={t('profile.cityPickerTitle')}
-      >
-        <Text style={[styles.value, !value && { color: colors.textDisabled }]}>
-          {value ? value.name : t('profile.cityPickerTitle')}
-        </Text>
-      </TouchableOpacity>
-
-      <Modal
-        visible={open}
-        transparent
-        animationType="slide"
-        onRequestClose={() => setOpen(false)}
-      >
-        <View style={styles.modalRoot}>
-          <Pressable
-            style={styles.backdropPressable}
-            onPress={() => setOpen(false)}
-            accessibilityRole="button"
-            accessibilityLabel={t('profile.cityPickerCloseA11y')}
-          />
-          <View style={styles.sheetOuter} pointerEvents="box-none">
-            <View style={styles.sheet}>
-              <Text style={styles.sheetTitle}>{t('profile.cityPickerTitle')}</Text>
-              <TextInput
-                ref={searchInputRef}
-                style={styles.search}
-                placeholder={t('profile.cityPickerSearchPlaceholder')}
-                placeholderTextColor={colors.textDisabled}
-                value={query}
-                onChangeText={setQuery}
-                textAlign="right"
-                autoCorrect={false}
-                autoCapitalize="none"
-              />
-              {isLoading && (
-                <View style={styles.statusRow}>
-                  <ActivityIndicator color={colors.primary} />
-                </View>
-              )}
-              {error && (
-                <Text style={styles.errorText}>{t('profile.cityPickerError')}</Text>
-              )}
-              {!isLoading && !error && (
-                <FlatList
-                  data={filtered}
-                  keyExtractor={(c) => c.cityId}
-                  keyboardShouldPersistTaps="handled"
-                  ListEmptyComponent={
-                    <Text style={styles.emptyText}>{t('profile.cityPickerEmpty')}</Text>
-                  }
-                  renderItem={({ item }) => (
-                    <TouchableOpacity
-                      style={styles.row}
-                      onPress={() => {
-                        onChange({ id: item.cityId, name: item.nameHe });
-                        setOpen(false);
-                        setQuery('');
-                      }}
-                    >
-                      <Text style={styles.rowText}>{item.nameHe}</Text>
-                    </TouchableOpacity>
-                  )}
-                />
-              )}
-            </View>
-          </View>
-        </View>
-      </Modal>
-    </>
+    <SearchablePicker<City>
+      title={t('profile.cityPickerTitle')}
+      placeholder={t('profile.cityPickerSearchPlaceholder')}
+      value={value}
+      items={data ?? null}
+      isLoading={isLoading}
+      error={error}
+      disabled={disabled}
+      onSelect={onChange}
+      matchItem={matchCity}
+      renderRow={renderCity}
+      emptyText={t('profile.cityPickerEmpty')}
+      errorText={t('profile.cityPickerError')}
+    />
   );
 }
-
-const styles = StyleSheet.create({
-  field: {
-    height: 50,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.base,
-    justifyContent: 'center',
-  },
-  value: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  modalRoot: {
-    flex: 1,
-  },
-  backdropPressable: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheetOuter: {
-    flex: 1,
-    justifyContent: 'flex-end',
-  },
-  sheet: {
-    height: '70%',
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    paddingTop: spacing.base,
-    paddingHorizontal: spacing.base,
-  },
-  sheetTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  search: {
-    minHeight: 44,
-    textAlign: 'right',
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  statusRow: { paddingVertical: spacing.lg, alignItems: 'center' },
-  errorText: {
-    ...typography.body,
-    color: colors.error,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-  row: {
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  rowText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-});

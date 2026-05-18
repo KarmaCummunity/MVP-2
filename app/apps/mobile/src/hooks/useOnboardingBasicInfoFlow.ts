@@ -7,6 +7,7 @@ import { useFeedSessionStore } from '../store/feedSessionStore';
 import { getCompleteBasicInfoUseCase, markBasicInfoSkipped } from '../services/userComposition';
 import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
 import { getProfileAddressPairIssue } from '../lib/profileAddressFieldGate';
+import { useAddressStateWithCityReset } from './useAddressStateWithCityReset';
 
 export function useOnboardingBasicInfoFlow() {
   const { t } = useTranslation();
@@ -14,9 +15,9 @@ export function useOnboardingBasicInfoFlow() {
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const [displayName, setDisplayName] = useState(session?.displayName ?? '');
-  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
-  const [street, setStreet] = useState('');
-  const [streetNumber, setStreetNumber] = useState('');
+  const {
+    city, street, streetNumber, setCity, setStreet, setStreetNumber,
+  } = useAddressStateWithCityReset({});
   const [contactPhone, setContactPhone] = useState('');
   const [loading, setLoading] = useState(false);
 

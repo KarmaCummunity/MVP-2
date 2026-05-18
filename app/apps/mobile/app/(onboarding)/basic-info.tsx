@@ -8,7 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { colors, typography, spacing, radius } from '@kc/ui';
-import { EditProfileAddressBlock } from '../../src/components/EditProfileAddressBlock';
+import { CityPicker } from '../../src/components/CityPicker';
+import { StreetPicker } from '../../src/components/StreetPicker';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { useOnboardingBasicInfoFlow } from '../../src/hooks/useOnboardingBasicInfoFlow';
 import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
@@ -75,16 +76,38 @@ export default function OnboardingBasicInfoScreen() {
             </AnimatedEntry>
 
             <AnimatedEntry delay={staggerDelay(4)}>
-              <EditProfileAddressBlock
-                city={city}
-                onCityChange={setCity}
-                street={street}
-                streetNumber={streetNumber}
-                onStreetChange={setStreet}
-                onStreetNumberChange={setStreetNumber}
-                disabled={loading}
-              />
+              <View style={styles.field}>
+                <Text style={styles.label}>{t('profile.addressLabel')}</Text>
+                <CityPicker value={city} onChange={setCity} disabled={loading} />
+              </View>
             </AnimatedEntry>
+
+            {city ? (
+              <AnimatedEntry delay={0}>
+                <View style={styles.field}>
+                  <View style={styles.streetRow}>
+                    <View style={styles.streetCol}>
+                      <StreetPicker
+                        cityId={city.id}
+                        value={street ? { id: '', name: street } : null}
+                        onChange={(sel) => setStreet(sel.name)}
+                        disabled={loading}
+                      />
+                    </View>
+                    <TextInput
+                      style={[styles.input, styles.streetInputHouse]}
+                      value={streetNumber}
+                      onChangeText={setStreetNumber}
+                      placeholder={t('profile.streetNumberShort')}
+                      placeholderTextColor={colors.textDisabled}
+                      textAlign="right"
+                      editable={!loading}
+                      maxLength={10}
+                    />
+                  </View>
+                </View>
+              </AnimatedEntry>
+            ) : null}
 
             <AnimatedEntry delay={staggerDelay(5)}>
               <View style={styles.field}>
@@ -170,6 +193,14 @@ const styles = StyleSheet.create({
     gap: spacing.xs,
   },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  streetRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  streetCol: { flex: 2, minWidth: 0 },
+  streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120, height: 50 },
   input: {
     height: 54,
     backgroundColor: colors.background,

@@ -395,7 +395,7 @@ Address fields are validated for shape only, not against a geocoder.
 
 **Acceptance Criteria.**
 - AC1. `city` is selected from the canonical seeded list (no free text).
-- AC2. `street` is free text (1–80 chars), trimmed.
+- AC2. `street` is 1–80 chars, trimmed. On Create Post + Edit Post the UI is a city-dependent canonical picker over `public.streets` (`D-36`) with a free-text fallback row for new construction / source gaps; the picker is disabled with helper text "בחרו עיר תחילה" until a city is selected, and tapping the disabled field surfaces an ephemeral toast. Switching the city resets street + number so a Tel Aviv street can never accompany a Jerusalem submission. The DB column remains `text` — what the UI saves is what the user picked or typed.
 - AC3. `street_number` accepts digits and an optional single-letter suffix. The suffix may be a Latin letter (`12A`, `12B`) or a Hebrew letter (`12א`, `15ב`) to support Israeli street numbering conventions. Punctuation and multi-character suffixes are rejected.
 - AC4. Geocoding to lat/lon is **not** performed in MVP.
 - AC5. The composed display string follows `location_display_level`:
