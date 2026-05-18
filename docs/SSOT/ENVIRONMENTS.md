@@ -66,3 +66,14 @@ Checklist in order:
 - Concurrency: `sync-main-to-dev` group with `cancel-in-progress: false` — back-to-back pushes queue rather than skip.
 - Strategy: `git merge --no-edit origin/main` on `dev`. Fast-forward when possible; merge commit otherwise.
 - Failure mode: merge conflict → workflow fails, operator resolves manually. Do not auto-resolve.
+
+## DB deploy automation
+
+`.github/workflows/db-deploy.yml` has two trigger modes:
+
+- **Auto** — on push to `dev` that touches `supabase/migrations/**`, `supabase/seed.sql`, `supabase/config.toml`, or the workflow file itself. Applies pending migrations to the `supabase-dev` environment (`roeefqpdbftlndzsvhfj`) so the dev Supabase project tracks the `dev` branch without manual button presses.
+- **Manual** — `workflow_dispatch` lets an operator target `supabase-prod` or `supabase-dev`. Defaults to dry-run on the prod environment; flip `apply` to true to push.
+
+Production is never deployed automatically — promoting to `supabase-prod` always requires `Actions → DB deploy → Run workflow` with `apply=true` after merging `dev` → `main`.
+
+Concurrency group `db-deploy-<environment>` (with `cancel-in-progress: false`) ensures back-to-back migration pushes queue rather than race.
