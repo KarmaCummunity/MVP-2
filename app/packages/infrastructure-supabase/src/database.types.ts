@@ -848,6 +848,32 @@ export type Database = {
         }
         Relationships: []
       }
+      streets: {
+        Row: {
+          city_id: string
+          name_he: string
+          street_id: number
+        }
+        Insert: {
+          city_id: string
+          name_he: string
+          street_id: number
+        }
+        Update: {
+          city_id?: string
+          name_he?: string
+          street_id?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "streets_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+        ]
+      }
       user_personal_activity_log: {
         Row: {
           actor_display_name: string | null

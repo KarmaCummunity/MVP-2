@@ -103,6 +103,14 @@ export const profileHe = {
   cityPickerEmpty: 'לא נמצאו ערים תואמות.',
   cityPickerCloseA11y: 'סגור',
 
+  // StreetPicker (FR-PROFILE-007 AC1 — city-dependent canonical streets)
+  streetPickerTitle: 'בחרו רחוב',
+  streetPickerSearchPlaceholder: '...חיפוש רחוב',
+  streetPickerError: 'שגיאה בטעינת רשימת הרחובות. נסו שוב.',
+  streetPickerEmpty: 'לא נמצאו רחובות תואמים.',
+  streetPickerNeedCity: 'בחרו עיר תחילה',
+  streetPickerUseMyText: 'השתמשו ב־"{{value}}"',
+
   // EditProfileAddressBlock
   addressLabel: 'כתובת',
   streetNumberShort: 'מס׳',
