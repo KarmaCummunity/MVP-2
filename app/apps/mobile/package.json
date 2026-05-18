@@ -65,6 +65,6 @@
     "@babel/core": "^7.25.0",
     "@types/react": "~19.1.17",
     "typescript": "^5.9.3",
-    "vitest": "^2.1.0"
+    "vitest": "^4.1.6"
   }
 }
