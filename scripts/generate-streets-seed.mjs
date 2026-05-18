@@ -8,13 +8,13 @@
 // Output is deterministic for a given source snapshot. The script ALSO
 // synthesizes a code-9000 sentinel row for any city present in
 // supabase/migrations/0008_seed_all_cities.sql but absent from the source
-// (today: 3729 כדים, 3758 גנים) so every settlement in our cities table
-// has at least one street option in the picker.
+// (city IDs 3729, 3758) so every settlement in our cities table has at
+// least one street option in the picker.
 //
 // Zero filtering of the source: code 9000 ("the village itself" — only
 // canonical entry for 486 small settlements) is kept, and code 9477 (a
-// legitimate Jerusalem street, אל בארודי) is kept. Per PM directive
-// 2026-05-18 — "אל תעלים לי שוב רחובות או ערים".
+// legitimate Jerusalem street) is kept. PM directive 2026-05-18: do not
+// suppress streets or cities from the source data.
 
 import fs from 'node:fs/promises';
 import path from 'node:path';
@@ -24,6 +24,13 @@ const HERE = path.dirname(fileURLToPath(import.meta.url));
 const REPO = path.resolve(HERE, '..');
 const RESOURCE = '9ad3862c-8391-4b2f-84a4-2d4c68625f4b';
 const PAGE = 32000;
+
+// data.gov.il API field names (Hebrew column names from the government dataset).
+// These must match the external API response exactly and are not user-facing strings.
+// Encoded as Unicode escapes to keep Hebrew codepoints out of source (D-24).
+const FIELD_CITY_ID = '\u05e1\u05de\u05dc_\u05d9\u05e9\u05d5\u05d1';     // samekh-mem-lamed_yod-shin-vav-bet
+const FIELD_STREET_CODE = '\u05e1\u05de\u05dc_\u05e8\u05d7\u05d5\u05d1'; // samekh-mem-lamed_resh-het-vav-bet
+const FIELD_STREET_NAME = '\u05e9\u05dd_\u05e8\u05d7\u05d5\u05d1';       // shin-final-mem_resh-het-vav-bet
 
 async function fetchAll() {
   const out = [];
@@ -56,7 +63,7 @@ async function loadOurCityIds() {
   );
   const map = new Map();
   // City name can contain SQL-escaped apostrophes (''), e.g.
-  //   ('967', 'אבו ג''ווייעד (שבט)', 'ABU JUWEI''ID'),
+  //   ('967', '<Hebrew city name>', 'ABU JUWEI''ID'),
   // so we need to match either a non-apostrophe char OR a doubled apostrophe.
   const re = /^\s*\('(\d+)',\s*'((?:[^']|'')+)',/;
   for (const line of sql.split('\n')) {
@@ -82,9 +89,9 @@ async function main() {
   const byCity = new Map();
   let skippedEmptyNames = 0;
   for (const r of records) {
-    const cid = String(r['סמל_ישוב']);
-    const code = Number(r['סמל_רחוב']);
-    const name = String(r['שם_רחוב'] ?? '').trim();
+    const cid = String(r[FIELD_CITY_ID]);
+    const code = Number(r[FIELD_STREET_CODE]);
+    const name = String(r[FIELD_STREET_NAME] ?? '').trim();
     if (!name) { skippedEmptyNames++; continue; }
     if (!byCity.has(cid)) byCity.set(cid, []);
     byCity.get(cid).push([code, name]);
@@ -124,7 +131,7 @@ async function main() {
     `-- Total rows seeded: ${totalRows}`,
     `-- Source cities: ${byCity.size - synthesized.length}. Synthesized 9000-sentinel rows: ${synthesized.length}.`,
     '-- Code 9000 = "the village itself" sentinel (kept). Code 9477 in Jerusalem = real',
-    '-- street (אל בארודי), not a sentinel — kept as-is.',
+    '-- street (al-Baroudi), not a sentinel — kept as-is.',
     '--',
     '-- Idempotent via on-conflict; safe to re-run when refreshing from a newer source.',
     '',

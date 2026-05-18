@@ -11,12 +11,17 @@
       "persistent": true
     },
     "lint": {
+      "dependsOn": ["typecheck"],
       "outputs": []
     },
     "typecheck": {
       "dependsOn": ["^build"]
     },
     "test": {
+      "outputs": ["coverage/**"],
+      "cache": false
+    },
+    "test:coverage": {
       "outputs": ["coverage/**"],
       "cache": false
     }

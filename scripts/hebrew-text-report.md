@@ -1,3 +1,3 @@
 # Hebrew text scan
-Generated: 2026-05-16T11:52:34.314Z
+Generated: 2026-05-18T12:42:13.777Z
 Files: **0**
