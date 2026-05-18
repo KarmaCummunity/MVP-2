@@ -50,7 +50,20 @@ jobs:
         run: pnpm typecheck
 
       - name: Test
-        run: pnpm test
+        run: pnpm test:coverage
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.run_id }}
+          path: |
+            app/packages/domain/coverage/
+            app/packages/application/coverage/
+            app/packages/infrastructure-supabase/coverage/
+            app/packages/ui/coverage/
+            app/apps/mobile/coverage/
+          retention-days: 14
 
       - name: Lint
         run: pnpm lint

@@ -11,6 +11,18 @@ export default defineConfig({
         inline: ['react-native'],
       },
     },
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      exclude: ['src/**/__tests__/**'],
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
+      reporter: ['text', 'json-summary', 'lcov'],
+    },
   },
   resolve: {
     alias: {
