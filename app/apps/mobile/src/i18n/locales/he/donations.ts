@@ -95,6 +95,18 @@ export const donations = {
     confirmRemoveOk: 'מחק',
     confirmRemoveCancel: 'ביטול',
   },
+  // FR-DONATE-010 — platform-support CTA card embedded on About + Settings.
+  supportUs: {
+    title: 'תורמים אהבה? תרמו גם לקהילה',
+    tagline:
+      'קארמה היא קהילה חופשית שרצה על האהבה והנדיבות שלכם. כל תרומה עוזרת לנו להמשיך לבנות מקום של נתינה לכולם.',
+    ctaBit: 'תרומה דרך ביט',
+    ctaPaybox: 'תרומה דרך פייבוקס',
+    ctaBitA11y: 'פתח את אפליקציית ביט לתרומה לקהילת קארמה',
+    ctaPayboxA11y: 'פתח את אפליקציית פייבוקס לתרומה לקהילת קארמה',
+    linkErrorTitle: 'לא הצלחנו לפתוח את הקישור',
+    linkErrorBody: 'נסו לעדכן את האפליקציה או לפתוח את הקישור בדפדפן.',
+  },
   addLinkModal: {
     title: 'הוספת קישור חדש',
     editTitle: 'עריכת קישור',
