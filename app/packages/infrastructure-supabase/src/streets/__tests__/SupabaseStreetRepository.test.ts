@@ -190,7 +190,7 @@ describe('SupabaseStreetRepository', () => {
       expect(out).toEqual([{ cityId: '3729', streetId: 9000, nameHe: 'כדים' }]);
     });
 
-    it('honors MAX_PAGES — never loops indefinitely if the server returns full pages forever', async () => {
+    it('throws when MAX_PAGES is exhausted without a short page (truncation guard)', async () => {
       const data = Array.from({ length: 100000 }, (_, i) => ({
         city_id: '5000',
         street_id: i + 1,
@@ -199,10 +199,11 @@ describe('SupabaseStreetRepository', () => {
       const { client, calls } = makeFakeClient({ data });
       const repo = new SupabaseStreetRepository(client);
 
-      const out = await repo.listByCity('5000');
+      await expect(repo.listByCity('5000')).rejects.toThrow(
+        'listByCity streets truncated: reached MAX_PAGES page cap',
+      );
 
       expect(calls.length).toBeLessThanOrEqual(10);
-      expect(out.length).toBeLessThanOrEqual(10 * 1000);
     });
   });
 });

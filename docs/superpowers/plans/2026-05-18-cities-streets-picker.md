@@ -462,9 +462,9 @@ comment on table public.streets is
 
 - [ ] **Step 2.2.2: Apply the migration to the dev Supabase project**
 
-Via Supabase MCP — apply 0097 first, then 0098:
+Via Supabase MCP — apply **0100** (`create_streets`) first, then **0101** (`seed_streets`):
 
-```
+```text
 Run mcp__supabase__apply_migration with name="0100_create_streets" and the SQL body above.
 Run mcp__supabase__apply_migration with name="0101_seed_streets" using the body of supabase/migrations/0101_seed_streets.sql.
 ```

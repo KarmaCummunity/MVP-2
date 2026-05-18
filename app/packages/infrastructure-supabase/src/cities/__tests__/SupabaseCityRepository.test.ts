@@ -196,9 +196,10 @@ describe('SupabaseCityRepository', () => {
       expect(calls).toHaveLength(1);
     });
 
-    it('honors MAX_PAGES — never loops indefinitely if the server returns full pages forever', async () => {
+    it('throws when MAX_PAGES is exhausted without a short page (truncation guard)', async () => {
       // Pathological server: every .range() call returns 1000 rows so the
-      // "short page" exit never triggers. We must cap at MAX_PAGES (10).
+      // "short page" exit never triggers. We must cap at MAX_PAGES (10) and
+      // surface an error instead of returning partial data.
       const data = Array.from({ length: 100000 }, (_, i) => ({
         city_id: String(i + 1),
         name_he: `c${i}`,
@@ -207,10 +208,11 @@ describe('SupabaseCityRepository', () => {
       const { client, calls } = makeFakeClient({ data });
       const repo = new SupabaseCityRepository(client);
 
-      const out = await repo.listAll();
+      await expect(repo.listAll()).rejects.toThrow(
+        'listAll cities truncated: reached MAX_PAGES page cap',
+      );
 
       expect(calls.length).toBeLessThanOrEqual(10);
-      expect(out.length).toBeLessThanOrEqual(10 * 1000);
     });
   });
 });

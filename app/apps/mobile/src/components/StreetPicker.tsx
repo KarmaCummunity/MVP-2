@@ -11,7 +11,7 @@
  */
 
 import React, { useCallback } from 'react';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import type { Street } from '@kc/domain';
 import { SearchablePicker } from './SearchablePicker/SearchablePicker';
@@ -30,6 +30,7 @@ const renderStreet = (s: Street) => ({ id: String(s.streetId), name: s.nameHe })
 
 export function StreetPicker({ cityId, value, onChange, disabled }: Props) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const effectivelyDisabled = Boolean(disabled) || cityId == null;
 
   const { data, isLoading, error } = useQuery<Street[]>({
@@ -45,6 +46,11 @@ export function StreetPicker({ cityId, value, onChange, disabled }: Props) {
       .getState()
       .showEphemeralToast(t('profile.streetPickerNeedCity'), 'error', 2500);
   }, [cityId, t]);
+
+  const handleStreetsRetry = useCallback(() => {
+    if (!cityId) return;
+    queryClient.invalidateQueries({ queryKey: ['streets', cityId] }).catch(() => {});
+  }, [cityId, queryClient]);
 
   return (
     <SearchablePicker<Street>
@@ -63,6 +69,7 @@ export function StreetPicker({ cityId, value, onChange, disabled }: Props) {
       allowFreeText
       emptyText={t('profile.streetPickerEmpty')}
       errorText={t('profile.streetPickerError')}
+      onErrorRetry={handleStreetsRetry}
     />
   );
 }

@@ -39,12 +39,14 @@ export class SupabaseStreetRepository implements IStreetRepository {
       if (error) throw new Error(`listByCity streets: ${error.message}`);
       const rows = (data ?? []) as Row[];
       out.push(...rows);
-      if (rows.length < PAGE_SIZE) break;
+      if (rows.length < PAGE_SIZE) {
+        return out.map((r) => ({
+          cityId: r.city_id,
+          streetId: r.street_id,
+          nameHe: r.name_he,
+        }));
+      }
     }
-    return out.map((r) => ({
-      cityId: r.city_id,
-      streetId: r.street_id,
-      nameHe: r.name_he,
-    }));
+    throw new Error('listByCity streets truncated: reached MAX_PAGES page cap');
   }
 }

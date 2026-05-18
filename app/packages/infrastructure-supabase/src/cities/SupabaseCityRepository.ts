@@ -39,12 +39,14 @@ export class SupabaseCityRepository implements ICityRepository {
       if (error) throw new Error(`listAll cities: ${error.message}`);
       const rows = (data ?? []) as Row[];
       out.push(...rows);
-      if (rows.length < PAGE_SIZE) break;
+      if (rows.length < PAGE_SIZE) {
+        return out.map((r) => ({
+          cityId: r.city_id,
+          nameHe: r.name_he,
+          nameEn: r.name_en,
+        }));
+      }
     }
-    return out.map((r) => ({
-      cityId: r.city_id,
-      nameHe: r.name_he,
-      nameEn: r.name_en,
-    }));
+    throw new Error('listAll cities truncated: reached MAX_PAGES page cap');
   }
 }

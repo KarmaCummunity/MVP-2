@@ -4,9 +4,8 @@
  * config. That gives us the WebSwitch branch (since `Platform.OS === 'web'`),
  * which is the variant we actually ship on web.
  */
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, vi, afterEach } from 'vitest';
 import { render, fireEvent, cleanup } from '@testing-library/react';
-import { afterEach } from 'vitest';
 import { PlatformSwitch } from '../index';
 
 afterEach(() => {

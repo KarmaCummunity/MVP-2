@@ -71,10 +71,6 @@ export default tseslint.config(
       // We don't ban it monorepo-wide; flag it at `warn` for visibility.
       '@typescript-eslint/no-require-imports': 'warn',
       'prefer-const': 'warn',
-      // First-pass policy: real hook-order bugs exist in the codebase
-      // (e.g. early returns before hooks). Downgrade to `warn` so CI is
-      // unblocked; track each occurrence as tech debt and fix per file.
-      'react-hooks/rules-of-hooks': 'warn',
     },
   },
   // CommonJS config files (babel.config.js, metro.config.js, *.config.cjs).

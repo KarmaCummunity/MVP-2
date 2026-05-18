@@ -9,20 +9,20 @@ import {
   FlatList,
   Modal,
   Pressable,
-  StyleSheet,
   Text,
   TextInput,
   TouchableOpacity,
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { colors } from '@kc/ui';
 import {
   filterItems,
   freeTextSelection,
   shouldShowFreeTextRow,
   type SearchablePickerItemDescriptor,
 } from './searchablePickerLogic';
+import { searchablePickerStyles as styles } from './searchablePickerStyles';
 
 export interface SearchablePickerProps<T> {
   readonly title: string;
@@ -40,6 +40,8 @@ export interface SearchablePickerProps<T> {
   readonly allowFreeText?: boolean;
   readonly emptyText?: string;
   readonly errorText?: string;
+  /** When set, error state shows a retry control (e.g. refetch streets). */
+  readonly onErrorRetry?: () => void;
 }
 
 export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
@@ -59,6 +61,7 @@ export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
     allowFreeText,
     emptyText,
     errorText,
+    onErrorRetry,
   } = props;
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -89,13 +92,17 @@ export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
     setOpen(true);
   }, [disabled, onDisabledPress]);
 
+  const closeModal = useCallback(() => {
+    setOpen(false);
+    setQuery('');
+  }, []);
+
   const handleRowPress = useCallback(
     (selection: SearchablePickerItemDescriptor) => {
       onSelect(selection);
-      setOpen(false);
-      setQuery('');
+      closeModal();
     },
-    [onSelect],
+    [onSelect, closeModal],
   );
 
   const handleFreeTextPress = useCallback(() => {
@@ -127,12 +134,12 @@ export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
         visible={open}
         transparent
         animationType="slide"
-        onRequestClose={() => setOpen(false)}
+        onRequestClose={closeModal}
       >
         <View style={styles.modalRoot}>
           <Pressable
             style={styles.backdropPressable}
-            onPress={() => setOpen(false)}
+            onPress={closeModal}
             accessibilityRole="button"
             accessibilityLabel={t('profile.cityPickerCloseA11y')}
           />
@@ -155,7 +162,19 @@ export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
                   <ActivityIndicator color={colors.primary} />
                 </View>
               ) : error != null ? (
-                <Text style={styles.errorText}>{resolvedErrorText}</Text>
+                <View style={styles.errorBlock}>
+                  <Text style={styles.errorText}>{resolvedErrorText}</Text>
+                  {onErrorRetry ? (
+                    <TouchableOpacity
+                      style={styles.retryButton}
+                      onPress={onErrorRetry}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('general.retry')}
+                    >
+                      <Text style={styles.retryLabel}>{t('general.retry')}</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
               ) : (
                 <FlatList
                   data={filtered as T[]}
@@ -200,83 +219,3 @@ export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  field: {
-    height: 50,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.base,
-    justifyContent: 'center',
-  },
-  fieldDisabled: { opacity: 0.5 },
-  disabledHelper: {
-    ...typography.label,
-    color: colors.textSecondary,
-    textAlign: 'right',
-    marginTop: spacing.xs,
-  },
-  value: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  valuePlaceholder: { color: colors.textDisabled },
-  modalRoot: { flex: 1 },
-  backdropPressable: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
-  },
-  sheetOuter: { flex: 1, justifyContent: 'flex-end' },
-  sheet: {
-    height: '70%',
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    paddingTop: spacing.base,
-    paddingHorizontal: spacing.base,
-  },
-  sheetTitle: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center',
-    marginBottom: spacing.sm,
-  },
-  search: {
-    minHeight: 44,
-    textAlign: 'right',
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.base,
-    marginBottom: spacing.sm,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-  statusRow: { paddingVertical: spacing.lg, alignItems: 'center' },
-  errorText: {
-    ...typography.body,
-    color: colors.error,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-  emptyText: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-    paddingVertical: spacing.lg,
-  },
-  row: {
-    paddingVertical: spacing.base,
-    paddingHorizontal: spacing.sm,
-    borderBottomWidth: 1,
-    borderBottomColor: colors.border,
-  },
-  rowText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  freeTextRow: { backgroundColor: colors.primarySurface },
-  freeTextLabel: {
-    ...typography.body,
-    color: colors.primary,
-    textAlign: 'right',
-    fontWeight: '600',
-  },
-});
