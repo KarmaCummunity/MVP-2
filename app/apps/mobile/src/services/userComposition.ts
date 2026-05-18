@@ -10,6 +10,7 @@ import {
   getSupabaseClient,
   SupabaseUserRepository,
   SupabaseCityRepository,
+  SupabaseStreetRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -21,12 +22,14 @@ import {
   SetAvatarUseCase,
   UpdateProfileUseCase,
   type ICityRepository,
+  type IStreetRepository,
   type IUserRepository,
 } from '@kc/application';
-import type { City, OnboardingState } from '@kc/domain';
+import type { City, OnboardingState, Street } from '@kc/domain';
 
 let _userRepo: IUserRepository | null = null;
 let _cityRepo: ICityRepository | null = null;
+let _streetRepo: IStreetRepository | null = null;
 let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
 let _completeOnboarding: CompleteOnboardingUseCase | null = null;
 let _setAvatar: SetAvatarUseCase | null = null;
@@ -53,6 +56,12 @@ function getCityRepo(): ICityRepository {
   if (_cityRepo) return _cityRepo;
   _cityRepo = new SupabaseCityRepository(getSupabaseClient({ storage: pickStorage() }));
   return _cityRepo;
+}
+
+function getStreetRepo(): IStreetRepository {
+  if (_streetRepo) return _streetRepo;
+  _streetRepo = new SupabaseStreetRepository(getSupabaseClient({ storage: pickStorage() }));
+  return _streetRepo;
 }
 
 export function getCompleteBasicInfoUseCase(): CompleteBasicInfoUseCase {
@@ -112,6 +121,11 @@ export async function setOnboardingStateDirect(
 /** Lists every Israeli city from `public.cities` ordered by Hebrew name. */
 export function listCities(): Promise<City[]> {
   return getCityRepo().listAll();
+}
+
+/** Lists every street for a city from `public.streets` ordered by Hebrew name. */
+export function listStreets(cityId: string): Promise<Street[]> {
+  return getStreetRepo().listByCity(cityId);
 }
 
 /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */

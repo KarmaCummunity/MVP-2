@@ -5,6 +5,7 @@ export * from './ports/postActorIdentity';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
+export * from './ports/IStreetRepository';
 export type {
   IChatRealtime,
   InboxStreamCallbacks,
