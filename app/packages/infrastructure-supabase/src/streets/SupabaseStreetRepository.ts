@@ -35,6 +35,7 @@ export class SupabaseStreetRepository implements IStreetRepository {
         .select('city_id, street_id, name_he')
         .eq('city_id', cityId)
         .order('name_he', { ascending: true })
+        .order('street_id', { ascending: true })
         .range(from, to);
       if (error) throw new Error(`listByCity streets: ${error.message}`);
       const rows = (data ?? []) as Row[];

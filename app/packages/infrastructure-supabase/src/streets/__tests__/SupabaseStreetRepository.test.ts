@@ -8,7 +8,7 @@ interface FromCall {
   table: string;
   select?: string;
   eq?: { column: string; value: unknown };
-  order?: { column: string; ascending: boolean };
+  orders: { column: string; ascending: boolean }[];
   range?: { from: number; to: number };
 }
 
@@ -20,7 +20,7 @@ function makeFakeClient(opts: {
   const all = opts.data;
   const client = {
     from: (table: string) => {
-      const call: FromCall = { table };
+      const call: FromCall = { table, orders: [] };
       calls.push(call);
       const chain = {
         select: (cols: string) => {
@@ -32,7 +32,7 @@ function makeFakeClient(opts: {
           return chain;
         },
         order: (column: string, opt: { ascending: boolean }) => {
-          call.order = { column, ascending: opt.ascending };
+          call.orders.push({ column, ascending: opt.ascending });
           return chain;
         },
         range: (from: number, to: number) => {
@@ -57,7 +57,7 @@ function makeFakeClient(opts: {
 
 describe('SupabaseStreetRepository', () => {
   describe('listByCity', () => {
-    it('queries streets for the given city_id, sorted by name_he asc', async () => {
+    it('queries streets for the given city_id, sorted by name_he asc with street_id tie-break', async () => {
       const { client, calls } = makeFakeClient({ data: [] });
       const repo = new SupabaseStreetRepository(client);
 
@@ -67,7 +67,10 @@ describe('SupabaseStreetRepository', () => {
       expect(calls[0]?.table).toBe('streets');
       expect(calls[0]?.select).toBe('city_id, street_id, name_he');
       expect(calls[0]?.eq).toEqual({ column: 'city_id', value: '5000' });
-      expect(calls[0]?.order).toEqual({ column: 'name_he', ascending: true });
+      expect(calls[0]?.orders).toEqual([
+        { column: 'name_he', ascending: true },
+        { column: 'street_id', ascending: true },
+      ]);
     });
 
     it('maps rows from snake_case to camelCase Street entities', async () => {
