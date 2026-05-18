@@ -5,6 +5,8 @@
   "main": "expo-router/entry",
   "scripts": {
     "test": "vitest run",
+    "test:coverage": "vitest run --coverage",
+    "lint": "eslint .",
     "start": "expo start --dev-client",
     "start:go": "expo start --go",
     "start:go:tunnel": "expo start --go --tunnel",

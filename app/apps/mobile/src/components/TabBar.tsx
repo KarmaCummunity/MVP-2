@@ -57,7 +57,6 @@ function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnPr
         size={26}
         color={active ? colors.primary : colors.tabInactive}
       />
-      <View style={[styles.activeDot, active && styles.activeDotShown]} />
     </Pressable>
   );
 }
@@ -156,16 +155,6 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   tabBtnPressed: { opacity: 0.6 },
-  // Dot is absolute so the icon stays perfectly centered regardless of state.
-  activeDot: {
-    position: 'absolute',
-    bottom: 10,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'transparent',
-  },
-  activeDotShown: { backgroundColor: colors.primary },
   plusCircle: {
     width: 40,
     height: 40,

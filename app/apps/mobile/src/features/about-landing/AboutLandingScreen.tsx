@@ -18,6 +18,7 @@ import { AboutSectionBlocksTop } from './AboutSectionBlocksTop';
 import { AboutSectionBlocksBottom } from './AboutSectionBlocksBottom';
 import { AboutContentScopeProvider } from './AboutContentScopeContext';
 import { AboutHero } from './AboutHero';
+import { DonationSupportCard } from '../../components/DonationSupportCard';
 import { ABOUT_NAV_LABEL_KEYS, type AboutSectionId } from './aboutSectionModel';
 import { parseTruthyQueryParam } from '../../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from '../../navigation/aboutMarketingPaths';
@@ -85,6 +86,9 @@ export function AboutLandingScreen() {
         <AboutContentScopeProvider>
           <AnimatedEntry delay={0}>
             <AboutHero />
+          </AnimatedEntry>
+          <AnimatedEntry delay={240}>
+            <DonationSupportCard />
           </AnimatedEntry>
           <AboutSectionBlocksTop onSectionY={onSectionY} />
           <AboutSectionBlocksBottom onSectionY={onSectionY} delayStart={360} />

@@ -10,6 +10,7 @@ import { AboutValuesGrid } from './AboutValuesGrid';
 import { AboutVisionSection } from './AboutVisionSection';
 import { AboutScopedSection } from './AboutScopedSection';
 import { AboutMissionTeamSection } from './AboutMissionTeamSection';
+import { DonationSupportCard } from '../../components/DonationSupportCard';
 
 function SectionCard({
   children,
@@ -77,6 +78,14 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           </SectionCard>
         </AnimatedEntry>
       </View>
+      <AnimatedEntry
+        delay={next()}
+        duration={MOTION.duration.slow}
+        distance={12}
+        scaleEntrance={0.985}
+      >
+        <DonationSupportCard />
+      </AnimatedEntry>
       <View onLayout={track('problems', onSectionY)} collapsable={false}>
         <AnimatedEntry
           delay={next()}

@@ -17,16 +17,36 @@ export class SupabaseCityRepository implements ICityRepository {
   constructor(private readonly client: SupabaseClient) {}
 
   async listAll(): Promise<City[]> {
-    const { data, error } = await this.client
-      .from('cities')
-      .select('city_id, name_he, name_en')
-      .order('name_he', { ascending: true });
-    if (error) throw new Error(`listAll cities: ${error.message}`);
-    const rows = (data ?? []) as Row[];
-    return rows.map((r) => ({
-      cityId: r.city_id,
-      nameHe: r.name_he,
-      nameEn: r.name_en,
-    }));
+    // PostgREST `db-max-rows` is 1000 on this Supabase project, so a single
+    // SELECT cannot return more than 1000 rows even with .limit(2000). The
+    // seed (0008_seed_all_cities.sql) ships 1306 settlements, so without
+    // pagination the list silently truncates partway through (e.g., Tel Aviv,
+    // Petah Tikva disappear). We page via .range() until a short page
+    // (<PAGE_SIZE) is returned. With 1306 rows + PAGE_SIZE=1000 this is two
+    // round-trips, gated to <= MAX_PAGES so a misconfigured server cannot
+    // loop forever.
+    const PAGE_SIZE = 1000;
+    const MAX_PAGES = 10;
+    const out: Row[] = [];
+    for (let page = 0; page < MAX_PAGES; page += 1) {
+      const from = page * PAGE_SIZE;
+      const to = from + PAGE_SIZE - 1;
+      const { data, error } = await this.client
+        .from('cities')
+        .select('city_id, name_he, name_en')
+        .order('name_he', { ascending: true })
+        .range(from, to);
+      if (error) throw new Error(`listAll cities: ${error.message}`);
+      const rows = (data ?? []) as Row[];
+      out.push(...rows);
+      if (rows.length < PAGE_SIZE) {
+        return out.map((r) => ({
+          cityId: r.city_id,
+          nameHe: r.name_he,
+          nameEn: r.name_en,
+        }));
+      }
+    }
+    throw new Error('listAll cities truncated: reached MAX_PAGES page cap');
   }
 }

@@ -172,6 +172,18 @@ export interface City {
   readonly nameEn: string;
 }
 
+// ── Street (reference) ─────────────────────────
+// Canonical Israeli streets sourced from data.gov.il package 321.
+// (cityId, streetId) is the natural key; streetId is unique per city only.
+// Code 9000 represents "the village itself" — the only canonical entry for
+// 486 small settlements that have no named streets.
+
+export interface Street {
+  readonly cityId: string;
+  readonly streetId: number;
+  readonly nameHe: string;
+}
+
 // ── ReportSubmission (FR-MOD-001 minimal — submission only) ───────────────
 
 export interface ReportSubmission {

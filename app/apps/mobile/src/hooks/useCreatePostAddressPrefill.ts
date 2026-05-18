@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { mergeCreatePostAddressPrefill, type ProfileAddressPrefillSource } from '../lib/mergeCreatePostAddressPrefill';
+import { applyAddressResetOnCityChange } from '../lib/addressResetOnCityChange';
 import { getEditableProfile } from '../services/userComposition';
 import { useLastAddressStore } from '../store/lastAddressStore';
 
@@ -38,7 +39,16 @@ export function useCreatePostAddressPrefill(ownerId: string | undefined) {
   const setCity = useCallback(
     (next: CityOpt) => {
       markAddressDirty();
-      setAddr((a) => ({ ...a, city: next }));
+      setAddr((a) => {
+        // Switching the city invalidates the previously typed street + number.
+        const reset = applyAddressResetOnCityChange({
+          prevCityId: a.city?.id,
+          nextCityId: next?.id,
+          street: a.street,
+          streetNumber: a.streetNumber,
+        });
+        return { city: next, street: reset.street, streetNumber: reset.streetNumber };
+      });
     },
     [markAddressDirty],
   );

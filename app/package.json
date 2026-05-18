@@ -10,6 +10,7 @@
     "lint:arch": "node scripts/check-architecture.mjs && node scripts/check-ssot-links.mjs",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
+    "test:coverage": "turbo run test:coverage",
     "deps": "npx pnpm@9.0.0 install",
     "mobile": "npx pnpm@9.0.0 --filter @kc/mobile start",
     "mobile:go": "npx pnpm@9.0.0 --filter @kc/mobile run start:go",
@@ -20,7 +21,14 @@
     "preview:web": "npx serve apps/mobile/dist --single"
   },
   "devDependencies": {
+    "@eslint/js": "^9.20.0",
+    "@vitest/coverage-v8": "^2.1.9",
+    "eslint": "^9.20.0",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^5.1.0",
+    "globals": "^15.0.0",
     "turbo": "^2.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.0.0"
   }
 }

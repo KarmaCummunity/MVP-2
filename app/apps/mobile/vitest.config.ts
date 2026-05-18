@@ -11,6 +11,53 @@ export default defineConfig({
         inline: ['react-native'],
       },
     },
+    coverage: {
+      provider: 'v8',
+      include: ['src/**/*.{ts,tsx}'],
+      // Mobile is mostly UI surfaces; there is no RNTL/jest infrastructure
+      // here yet (tracked as TD-150). Limit coverage scope to the slices we
+      // *do* unit-test (config/lib/store/hooks/services) and exclude raw UI
+      // screens + composition wiring until TD-150 is closed.
+      exclude: [
+        'src/**/__tests__/**',
+        'src/**/*.d.ts',
+        // UI surfaces — covered (or not) via RNTL slice TD-150
+        'src/components/**',
+        'src/features/**',
+        'src/navigation/**',
+        // React-bound hooks need RNTL infra — out of scope until TD-150
+        'src/hooks/**',
+        // Localization bundles (string maps, no runtime branches)
+        'src/i18n/**',
+        // Composition roots — exercised end-to-end, not unit-tested
+        'src/services/*Composition.ts',
+        'src/services/devAutoSignIn.ts',
+        'src/services/avatarUpload.ts',
+        'src/services/imageUpload.ts',
+        'src/services/mediaEncoding.ts',
+        'src/services/postMessages.ts',
+        'src/services/authMessages.ts',
+        'src/services/postFormConfirm.ts',
+        'src/services/hostPostSession.ts',
+        // Zustand stores that are just facades over services
+        'src/store/authStore.ts',
+        'src/store/chatStore.ts',
+        'src/store/chatStoreTypes.ts',
+        'src/store/allStoresReset.ts',
+        // Misc one-liners
+        'src/utils/openExternalUrl.ts',
+        'src/lib/container.ts',
+        'src/lib/tapHandler.ts',
+        'src/lib/permissionGate.ts',
+      ],
+      thresholds: {
+        lines: 60,
+        functions: 60,
+        branches: 60,
+        statements: 60,
+      },
+      reporter: ['text', 'json-summary', 'lcov'],
+    },
   },
   resolve: {
     alias: {

@@ -9,20 +9,8 @@ name: DB validate
 on:
   pull_request:
     branches: [main, dev]
-    paths:
-      - 'supabase/migrations/**'
-      - 'supabase/seed.sql'
-      - 'supabase/tests/**'
-      - 'supabase/config.toml'
-      - '.github/workflows/db-validate.yml'
   push:
     branches: [main, dev]
-    paths:
-      - 'supabase/migrations/**'
-      - 'supabase/seed.sql'
-      - 'supabase/tests/**'
-      - 'supabase/config.toml'
-      - '.github/workflows/db-validate.yml'
 
 concurrency:
   group: db-validate-${{ github.ref }}

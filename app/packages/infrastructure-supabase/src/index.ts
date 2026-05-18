@@ -5,6 +5,7 @@ export type { Database } from './database.types';
 export { SupabaseAuthService } from './auth/SupabaseAuthService';
 export { SupabaseUserRepository } from './users/SupabaseUserRepository';
 export { SupabaseCityRepository } from './cities/SupabaseCityRepository';
+export { SupabaseStreetRepository } from './streets/SupabaseStreetRepository';
 export { SupabasePostRepository } from './posts/SupabasePostRepository';
 export { SupabaseSavedPostsRepository } from './posts/SupabaseSavedPostsRepository';
 export { SupabaseChatRepository } from './chat/SupabaseChatRepository';

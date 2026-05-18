@@ -17,8 +17,6 @@ interface UserHit { userId: string; displayName: string; }
 export default function AuditScreen() {
   const isAdmin = useIsSuperAdmin();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
-  if (!isAdmin) return <Redirect href="/settings" />;
-
   const t = he.audit;
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<UserHit[]>([]);
@@ -67,6 +65,8 @@ export default function AuditScreen() {
       setLoadingEvents(false);
     }
   }, []);
+
+  if (!isAdmin) return <Redirect href="/settings" />;
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
