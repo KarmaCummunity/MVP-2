@@ -28,15 +28,21 @@ export function DonationSupportCard({ style, testID }: DonationSupportCardProps)
 
   const openUrl = useCallback(
     async (url: string) => {
-      try {
-        const supported = await Linking.canOpenURL(url);
-        if (!supported) throw new Error('not-supported');
-        await Linking.openURL(url);
-      } catch {
+      const showError = () =>
         Alert.alert(
           t('donations.supportUs.linkErrorTitle'),
           t('donations.supportUs.linkErrorBody'),
         );
+      try {
+        const supported = await Linking.canOpenURL(url);
+        if (!supported) {
+          showError();
+          return;
+        }
+        await Linking.openURL(url);
+      } catch (err) {
+        console.warn('[DonationSupportCard] failed to open url', url, err);
+        showError();
       }
     },
     [t],

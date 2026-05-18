@@ -201,7 +201,7 @@ Each row's overflow (`…`) menu opens an action sheet with: *"פתח"*, *"דו�
 ## FR-DONATE-010 — Platform-support donation card
 
 **Description.**
-A reusable presentational card prompting the signed-in user to back the platform itself by tapping through to **Bit** or **Paybox**. The destination URLs are stable, app-wide constants — not a community-curated list. Embedded in the About screen (twice — directly after the hero, and after the Vision section) and at the very top of the Settings screen.
+A reusable presentational card prompting the viewer (guest or signed-in — see AC5) to back the platform itself by tapping through to **Bit** or **Paybox**. The destination URLs are stable, app-wide constants — not a community-curated list. Embedded in the About screen (twice — directly after the hero, and after the Vision section) and at the very top of the Settings screen.
 
 **Source.**
 - Product request 2026-05-18 (PM).
