@@ -75,6 +75,10 @@ export default function OtherProfileScreen() {
     onError: setError,
   });
 
+  // ✅ RULES OF HOOKS: useOtherProfileActions must be called before any early return.
+  // The hook accepts `target: User | null` so passing `u` (possibly null) is safe.
+  const { onFollowPress, startChat } = useOtherProfileActions({ me, target: u, dispatchFollowAction });
+
   // /user/[my-handle] redirects to the My Profile tab.
   React.useEffect(() => { if (isMe) router.replace('/(tabs)/profile'); }, [isMe, router]);
 
@@ -105,8 +109,6 @@ export default function OtherProfileScreen() {
       </View>
     </SafeAreaView>
   );
-
-  const { onFollowPress, startChat } = useOtherProfileActions({ me, target: u, dispatchFollowAction });
 
   // CTA paints immediately during stateQuery flight. On error we keep the button
   // visible but busy/disabled so a transient failure can't double-tap-fire.
