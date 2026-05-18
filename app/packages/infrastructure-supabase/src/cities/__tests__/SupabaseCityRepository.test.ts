@@ -8,13 +8,20 @@ interface FromCall {
   table: string;
   select?: string;
   order?: { column: string; ascending: boolean };
+  range?: { from: number; to: number };
 }
 
+/**
+ * Fake client whose .range(from, to) returns the requested slice of the
+ * supplied `data` array. Exposes the captured chain calls so tests can assert
+ * the pagination semantics.
+ */
 function makeFakeClient(opts: {
-  data?: unknown;
+  data?: unknown[];
   error?: { message: string } | null;
 }): { client: SupabaseClient<any>; calls: FromCall[] } {
   const calls: FromCall[] = [];
+  const all = opts.data;
   const client = {
     from: (table: string) => {
       const call: FromCall = { table };
@@ -26,9 +33,19 @@ function makeFakeClient(opts: {
         },
         order: (column: string, opt: { ascending: boolean }) => {
           call.order = { column, ascending: opt.ascending };
+          return chain;
+        },
+        range: (from: number, to: number) => {
+          call.range = { from, to };
+          if (opts.error) {
+            return Promise.resolve({ data: null, error: opts.error });
+          }
+          if (all === undefined) {
+            return Promise.resolve({ data: null, error: null });
+          }
           return Promise.resolve({
-            data: opts.data ?? null,
-            error: opts.error ?? null,
+            data: all.slice(from, to + 1),
+            error: null,
           });
         },
       };
@@ -46,7 +63,7 @@ describe('SupabaseCityRepository', () => {
 
       await repo.listAll();
 
-      expect(calls).toHaveLength(1);
+      expect(calls.length).toBeGreaterThanOrEqual(1);
       expect(calls[0]?.table).toBe('cities');
       expect(calls[0]?.select).toBe('city_id, name_he, name_en');
       expect(calls[0]?.order).toEqual({ column: 'name_he', ascending: true });
@@ -96,7 +113,7 @@ describe('SupabaseCityRepository', () => {
       // Supabase contracts: data is null when no rows match, but some
       // transport edge cases also flip data to null. The mapper guards
       // against this so callers never see a TypeError.
-      const { client } = makeFakeClient({ data: null });
+      const { client } = makeFakeClient({ data: undefined });
       const repo = new SupabaseCityRepository(client);
 
       expect(await repo.listAll()).toEqual([]);
@@ -104,7 +121,7 @@ describe('SupabaseCityRepository', () => {
 
     it('throws with a prefixed "listAll cities: " message when the response carries an error', async () => {
       const { client } = makeFakeClient({
-        data: null,
+        data: [],
         error: { message: 'connection reset by peer' },
       });
       const repo = new SupabaseCityRepository(client);
@@ -114,12 +131,86 @@ describe('SupabaseCityRepository', () => {
 
     it('throws even when the error object carries an empty message', async () => {
       const { client } = makeFakeClient({
-        data: null,
+        data: [],
         error: { message: '' },
       });
       const repo = new SupabaseCityRepository(client);
 
       await expect(repo.listAll()).rejects.toThrow('listAll cities: ');
+    });
+
+    it('paginates with .range(from, to) in 1000-row pages to bypass server db-max-rows cap', async () => {
+      // The dev/prod Supabase project enforces db-max-rows=1000 server-side,
+      // so a single SELECT cannot exceed that even with .limit(2000). The
+      // repo must page via .range() until a short page is returned.
+      // Builds 1306 mock rows (matches production seed) and asserts the
+      // pagination calls have the expected (from, to) shape.
+      const data = Array.from({ length: 1306 }, (_, i) => ({
+        city_id: String(i + 1),
+        name_he: `עיר ${i + 1}`,
+        name_en: `City ${i + 1}`,
+      }));
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseCityRepository(client);
+
+      await repo.listAll();
+
+      // Expect exactly 2 calls: page 1 (0..999, full 1000) and page 2
+      // (1000..1999, partial 306 — short page stops the loop).
+      expect(calls).toHaveLength(2);
+      expect(calls[0]?.range).toEqual({ from: 0, to: 999 });
+      expect(calls[1]?.range).toEqual({ from: 1000, to: 1999 });
+    });
+
+    it('returns every row across pages — no client-side truncation (1306-row regression)', async () => {
+      const data = Array.from({ length: 1306 }, (_, i) => ({
+        city_id: String(i + 1),
+        name_he: `עיר ${i + 1}`,
+        name_en: `City ${i + 1}`,
+      }));
+      const { client } = makeFakeClient({ data });
+      const repo = new SupabaseCityRepository(client);
+
+      const out = await repo.listAll();
+
+      expect(out).toHaveLength(1306);
+      expect(out[0]).toEqual({ cityId: '1', nameHe: 'עיר 1', nameEn: 'City 1' });
+      expect(out[1305]).toEqual({ cityId: '1306', nameHe: 'עיר 1306', nameEn: 'City 1306' });
+    });
+
+    it('stops paginating after a short page (<PAGE_SIZE) is returned', async () => {
+      // 500 rows → first page is short (500 < 1000), so the loop exits
+      // after a single round-trip. Guards against any future off-by-one
+      // that would issue a second redundant request.
+      const data = Array.from({ length: 500 }, (_, i) => ({
+        city_id: String(i + 1),
+        name_he: `c${i}`,
+        name_en: `c${i}`,
+      }));
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseCityRepository(client);
+
+      const out = await repo.listAll();
+
+      expect(out).toHaveLength(500);
+      expect(calls).toHaveLength(1);
+    });
+
+    it('honors MAX_PAGES — never loops indefinitely if the server returns full pages forever', async () => {
+      // Pathological server: every .range() call returns 1000 rows so the
+      // "short page" exit never triggers. We must cap at MAX_PAGES (10).
+      const data = Array.from({ length: 100000 }, (_, i) => ({
+        city_id: String(i + 1),
+        name_he: `c${i}`,
+        name_en: `c${i}`,
+      }));
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseCityRepository(client);
+
+      const out = await repo.listAll();
+
+      expect(calls.length).toBeLessThanOrEqual(10);
+      expect(out.length).toBeLessThanOrEqual(10 * 1000);
     });
   });
 });
