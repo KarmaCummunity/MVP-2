@@ -170,7 +170,7 @@ Same toast text everywhere for consistency. Lives in `he.profile.streetPickerNee
 
 ## 7. Database
 
-### 7.1 New table (`0097_create_streets.sql`)
+### 7.1 New table (`0100_create_streets.sql`)
 ```sql
 create table public.streets (
   city_id   text     not null references public.cities(city_id) on delete cascade,
@@ -188,7 +188,7 @@ comment on table public.streets is
   'Canonical Israeli street list sourced from data.gov.il package 321 (resource 9ad3862c...). Refreshed manually via migration when a new snapshot is needed. Code 9000 = "the village itself" sentinel (kept).';
 ```
 
-### 7.2 Seed (`0098_seed_streets.sql`)
+### 7.2 Seed (`0101_seed_streets.sql`)
 - 63,565 `INSERT` rows generated offline by a one-shot Node script that downloads the source via CKAN API, normalizes, synthesizes the 2 missing-city sentinels, and emits SQL.
 - The script lives at `scripts/generate-streets-seed.mjs` and is committed alongside the migration so the next refresh is reproducible.
 - Idempotent via `on conflict (city_id, street_id) do nothing`.

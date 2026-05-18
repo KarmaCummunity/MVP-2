@@ -1,6 +1,6 @@
--- 0097_create_streets | Canonical Israeli street list, keyed by city.
+-- 0100_create_streets | Canonical Israeli street list, keyed by city.
 -- Sourced from data.gov.il package 321 (resource 9ad3862c-8391-4b2f-84a4-2d4c68625f4b).
--- Seeded in 0098_seed_streets.sql.
+-- Seeded in 0101_seed_streets.sql.
 --
 -- Notes:
 --   * (city_id, street_id) is the natural key — street_id is unique per city,
