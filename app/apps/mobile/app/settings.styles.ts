@@ -31,4 +31,5 @@ export const settingsScreenStyles = StyleSheet.create({
     borderColor: colors.border,
   },
   version: { ...typography.caption, color: colors.textDisabled, textAlign: 'center', padding: spacing.xl },
+  supportCardWrap: { paddingHorizontal: spacing.base, paddingTop: spacing.base },
 });

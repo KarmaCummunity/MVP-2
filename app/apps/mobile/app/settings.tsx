@@ -15,6 +15,7 @@ import { useAuthStore } from '../src/store/authStore';
 import { useChatStore } from '../src/store/chatStore';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
+import { DonationSupportCard } from '../src/components/DonationSupportCard';
 import { SettingsScreenRow } from '../src/components/SettingsScreenRow';
 import { settingsScreenStyles as styles } from './settings.styles';
 import { getUserRepo } from '../src/services/userComposition';
@@ -76,6 +77,10 @@ export default function SettingsScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
+        <View style={styles.supportCardWrap}>
+          <DonationSupportCard />
+        </View>
+
         <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
