@@ -9,14 +9,15 @@ interface FromCall {
   select?: string;
   eq?: { column: string; value: unknown };
   order?: { column: string; ascending: boolean };
-  limit?: number;
+  range?: { from: number; to: number };
 }
 
 function makeFakeClient(opts: {
-  data?: unknown;
+  data?: unknown[];
   error?: { message: string } | null;
 }): { client: SupabaseClient<any>; calls: FromCall[] } {
   const calls: FromCall[] = [];
+  const all = opts.data;
   const client = {
     from: (table: string) => {
       const call: FromCall = { table };
@@ -34,11 +35,17 @@ function makeFakeClient(opts: {
           call.order = { column, ascending: opt.ascending };
           return chain;
         },
-        limit: (n: number) => {
-          call.limit = n;
+        range: (from: number, to: number) => {
+          call.range = { from, to };
+          if (opts.error) {
+            return Promise.resolve({ data: null, error: opts.error });
+          }
+          if (all === undefined) {
+            return Promise.resolve({ data: null, error: null });
+          }
           return Promise.resolve({
-            data: opts.data ?? null,
-            error: opts.error ?? null,
+            data: all.slice(from, to + 1),
+            error: null,
           });
         },
       };
@@ -50,21 +57,17 @@ function makeFakeClient(opts: {
 
 describe('SupabaseStreetRepository', () => {
   describe('listByCity', () => {
-    it('queries streets for the given city_id, sorted by name_he asc, with a >= 5000 row cap', async () => {
-      // 5000 covers Jerusalem (4384 rows) with margin. No silent truncation
-      // even for the largest city.
+    it('queries streets for the given city_id, sorted by name_he asc', async () => {
       const { client, calls } = makeFakeClient({ data: [] });
       const repo = new SupabaseStreetRepository(client);
 
       await repo.listByCity('5000');
 
-      expect(calls).toHaveLength(1);
+      expect(calls.length).toBeGreaterThanOrEqual(1);
       expect(calls[0]?.table).toBe('streets');
       expect(calls[0]?.select).toBe('city_id, street_id, name_he');
       expect(calls[0]?.eq).toEqual({ column: 'city_id', value: '5000' });
       expect(calls[0]?.order).toEqual({ column: 'name_he', ascending: true });
-      expect(calls[0]?.limit).toBeDefined();
-      expect(calls[0]!.limit!).toBeGreaterThanOrEqual(5000);
     });
 
     it('maps rows from snake_case to camelCase Street entities', async () => {
@@ -91,14 +94,12 @@ describe('SupabaseStreetRepository', () => {
     });
 
     it('returns [] when the response data is null (defensive coalesce)', async () => {
-      const { client } = makeFakeClient({ data: null });
+      const { client } = makeFakeClient({ data: undefined });
       const repo = new SupabaseStreetRepository(client);
       expect(await repo.listByCity('5000')).toEqual([]);
     });
 
     it('preserves the order returned by the database (no client-side re-sort)', async () => {
-      // The repo trusts the ORDER BY in the query, so the mapper must be a
-      // stable map(), not a re-sort.
       const { client } = makeFakeClient({
         data: [
           { city_id: '5000', street_id: 2, name_he: 'ב' },
@@ -106,15 +107,13 @@ describe('SupabaseStreetRepository', () => {
         ],
       });
       const repo = new SupabaseStreetRepository(client);
-
       const out = await repo.listByCity('5000');
-
       expect(out.map((s) => s.streetId)).toEqual([2, 1]);
     });
 
     it('throws with a prefixed "listByCity streets: " message when the response carries an error', async () => {
       const { client } = makeFakeClient({
-        data: null,
+        data: [],
         error: { message: 'connection reset by peer' },
       });
       const repo = new SupabaseStreetRepository(client);
@@ -126,7 +125,7 @@ describe('SupabaseStreetRepository', () => {
 
     it('throws even when the error object carries an empty message', async () => {
       const { client } = makeFakeClient({
-        data: null,
+        data: [],
         error: { message: '' },
       });
       const repo = new SupabaseStreetRepository(client);
@@ -139,6 +138,71 @@ describe('SupabaseStreetRepository', () => {
       const repo = new SupabaseStreetRepository(client);
       await repo.listByCity('  9999  ');
       expect(calls[0]?.eq).toEqual({ column: 'city_id', value: '  9999  ' });
+    });
+
+    it('paginates with .range(from, to) in 1000-row pages — Jerusalem (4384 rows) takes 5 round trips', async () => {
+      // PostgREST db-max-rows is 1000 server-side, so a single SELECT cannot
+      // return Jerusalem's 4384 rows. The repo must page via .range() until
+      // a short page stops the loop.
+      const data = Array.from({ length: 4384 }, (_, i) => ({
+        city_id: '3000',
+        street_id: i + 1,
+        name_he: `r${i + 1}`,
+      }));
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseStreetRepository(client);
+
+      const out = await repo.listByCity('3000');
+
+      expect(calls).toHaveLength(5);
+      expect(calls[0]?.range).toEqual({ from: 0, to: 999 });
+      expect(calls[1]?.range).toEqual({ from: 1000, to: 1999 });
+      expect(calls[2]?.range).toEqual({ from: 2000, to: 2999 });
+      expect(calls[3]?.range).toEqual({ from: 3000, to: 3999 });
+      expect(calls[4]?.range).toEqual({ from: 4000, to: 4999 });
+      expect(out).toHaveLength(4384);
+    });
+
+    it('stops paginating after a short page (<PAGE_SIZE) is returned', async () => {
+      // Tel Aviv-style: 2768 rows → 3 pages (1000, 1000, 768 short).
+      const data = Array.from({ length: 2768 }, (_, i) => ({
+        city_id: '5000',
+        street_id: i + 1,
+        name_he: `r${i + 1}`,
+      }));
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseStreetRepository(client);
+
+      const out = await repo.listByCity('5000');
+
+      expect(calls).toHaveLength(3);
+      expect(out).toHaveLength(2768);
+    });
+
+    it('exits after a single round trip when the first page is short (e.g., a kibbutz with one sentinel row)', async () => {
+      const data = [{ city_id: '3729', street_id: 9000, name_he: 'כדים' }];
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseStreetRepository(client);
+
+      const out = await repo.listByCity('3729');
+
+      expect(calls).toHaveLength(1);
+      expect(out).toEqual([{ cityId: '3729', streetId: 9000, nameHe: 'כדים' }]);
+    });
+
+    it('honors MAX_PAGES — never loops indefinitely if the server returns full pages forever', async () => {
+      const data = Array.from({ length: 100000 }, (_, i) => ({
+        city_id: '5000',
+        street_id: i + 1,
+        name_he: `r${i + 1}`,
+      }));
+      const { client, calls } = makeFakeClient({ data });
+      const repo = new SupabaseStreetRepository(client);
+
+      const out = await repo.listByCity('5000');
+
+      expect(calls.length).toBeLessThanOrEqual(10);
+      expect(out.length).toBeLessThanOrEqual(10 * 1000);
     });
   });
 });
