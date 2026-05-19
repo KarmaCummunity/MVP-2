@@ -6,7 +6,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, spacing } from '@kc/ui';
+import { spacing, useTheme } from '@kc/ui';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
 import { useSettingsAccountActions } from '../src/hooks/useSettingsAccountActions';
 import { container } from '../src/lib/container';
@@ -17,7 +17,7 @@ import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfir
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 import { DonationSupportCard } from '../src/components/DonationSupportCard';
 import { SettingsScreenRow } from '../src/components/SettingsScreenRow';
-import { settingsScreenStyles as styles } from './settings.styles';
+import { useSettingsScreenStyles } from './settings.styles';
 import { getUserRepo } from '../src/services/userComposition';
 
 /** Metro `__DEV__` is false in release; set `EXPO_PUBLIC_DEV_SETTINGS_TOOLS=1` for internal builds only. */
@@ -27,6 +27,8 @@ const SHOW_SETTINGS_DEBUG_TOOLS =
 export default function SettingsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useSettingsScreenStyles();
+  const { colors } = useTheme();
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId;
   const userQuery = useQuery({
@@ -87,6 +89,15 @@ export default function SettingsScreen() {
             label={t('settings.accountDetails')}
             icon="person-outline"
             onPress={() => router.push('/edit-profile')}
+          />
+        </View>
+
+        <Text style={styles.sectionTitle}>{t('settings.appearance')}</Text>
+        <View style={styles.section}>
+          <SettingsScreenRow
+            label={t('settings.appearance')}
+            icon="contrast-outline"
+            onPress={() => router.push('/settings/appearance' as never)}
           />
         </View>
 

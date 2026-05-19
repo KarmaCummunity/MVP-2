@@ -4,11 +4,11 @@
 // implementation across iOS / Android / Web.
 // Mapped to: SRS §6.1 — 5 tabs (RTL: Profile | Search | Plus | Donations | Home), per D-16.
 import React from 'react';
-import { Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 
 // Glassmorphism on web — RN-Web forwards unknown style keys to CSS. RN's
 // ViewStyle type doesn't include backdrop-filter, so cast through unknown.
@@ -45,6 +45,8 @@ interface IconBtnProps {
 }
 
 function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnProps) {
+  const styles = useTabBarStyles();
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -68,6 +70,8 @@ interface PlusBtnProps {
 }
 
 function PlusBtn({ active, onPress, label }: PlusBtnProps) {
+  const styles = useTabBarStyles();
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -87,6 +91,7 @@ export function TabBar() {
   const { t } = useTranslation();
   const segments = useSegments() as string[];
   const active = activeTab(segments);
+  const styles = useTabBarStyles();
 
   return (
     <View style={styles.tabBar}>
@@ -130,29 +135,33 @@ export function TabBar() {
   );
 }
 
-const styles = StyleSheet.create({
+const useTabBarStyles = makeUseStyles(({ colors, isDark }) => ({
   tabBar: {
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_HEIGHT / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    alignItems: 'center',
-    width: '100%',
+    backgroundColor: colors.tabBarGlass,
+    alignItems: 'center' as const,
+    width: '100%' as const,
     maxWidth: 480,
-    alignSelf: 'center',
-    overflow: 'hidden',
+    alignSelf: 'center' as const,
+    overflow: 'hidden' as const,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
+    shadowOpacity: isDark ? 0.45 : 0.1,
     shadowRadius: 24,
     elevation: 12,
+    // Subtle hairline so the pill reads as a distinct surface in dark mode
+    // where the underlying background and the glass tint are both dark.
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     ...webGlass,
   },
   tabBtn: {
     flex: 1,
     height: TAB_BAR_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   tabBtnPressed: { opacity: 0.6 },
   plusCircle: {
@@ -160,13 +169,13 @@ const styles = StyleSheet.create({
     height: 40,
     borderRadius: 20,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   plusCircleActive: { backgroundColor: colors.primaryDark },
-});
+}));

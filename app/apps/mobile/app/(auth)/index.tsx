@@ -17,7 +17,7 @@ import Animated, {
   withRepeat,
   withSequence,
 } from 'react-native-reanimated';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { useAuthStore } from '../../src/store/authStore';
 import {
@@ -28,7 +28,7 @@ import {
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { AuthBackground } from '../../src/components/auth/AuthBackground';
-import { welcomeScreenStyles as styles } from '../../src/components/auth/welcomeScreen.styles';
+import { useWelcomeScreenStyles } from '../../src/components/auth/welcomeScreen.styles';
 
 const VALUE_PROPS: Array<{ icon: React.ComponentProps<typeof Ionicons>['name']; key: string }> = [
   { icon: 'gift-outline', key: 'welcomeValueProp1' },
@@ -39,6 +39,8 @@ const VALUE_PROPS: Array<{ icon: React.ComponentProps<typeof Ionicons>['name']; 
 export default function WelcomeScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useWelcomeScreenStyles();
+  const { colors } = useTheme();
   const setGuest = useAuthStore((s) => s.setGuest);
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
@@ -155,7 +157,7 @@ export default function WelcomeScreen() {
             <View key={key} style={styles.valuePropRow}>
               <Text style={styles.valuePropText}>{t(`auth.${key}`)}</Text>
               <View style={styles.valuePropIconWrap}>
-                <Ionicons name={icon} size={22} color="#F97316" />
+                <Ionicons name={icon} size={22} color={colors.primary} />
               </View>
             </View>
           ))}
@@ -210,6 +212,8 @@ interface AuthButtonProps {
 }
 
 function AuthButton({ label, icon, btnStyle, textStyle, onPress, loading }: Readonly<AuthButtonProps>) {
+  const styles = useWelcomeScreenStyles();
+  const { colors } = useTheme();
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
 

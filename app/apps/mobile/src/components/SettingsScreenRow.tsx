@@ -1,9 +1,9 @@
 // Shared row for settings list — use `View` when there is no `onPress` so nested
 // controls (e.g. `Switch`) receive touches; `TouchableOpacity` would steal them.
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 export interface SettingsScreenRowProps {
@@ -23,6 +23,8 @@ export function SettingsScreenRow({
   destructive,
   disabled,
 }: SettingsScreenRowProps) {
+  const styles = useRowStyles();
+  const { colors } = useTheme();
   const iconColor = destructive ? colors.error : colors.textSecondary;
   const labelStyle = [styles.rowLabel, destructive && { color: colors.error }];
   const trailing = rightElement ?? (
@@ -53,7 +55,7 @@ export function SettingsScreenRow({
   return <View style={styles.row}>{inner}</View>;
 }
 
-const styles = StyleSheet.create({
+const useRowStyles = makeUseStyles(({ colors }) => ({
   row: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -70,4 +72,4 @@ const styles = StyleSheet.create({
     flex: 1,
     textAlign: rtlTextAlignStart,
   },
-});
+}));
