@@ -1,8 +1,9 @@
-import { StyleSheet } from 'react-native';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, typography } from '@kc/ui';
 import { rtlTextAlignStart } from '../src/lib/rtlTextAlignStart';
 
-export const settingsScreenStyles = StyleSheet.create({
+// Settings screen styles — themed via `makeUseStyles` so they respond to
+// FR-SETTINGS-014 (dark mode toggle).
+export const useSettingsScreenStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
@@ -30,6 +31,6 @@ export const settingsScreenStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderColor: colors.border,
   },
-  version: { ...typography.caption, color: colors.textDisabled, textAlign: 'center', padding: spacing.xl },
+  version: { ...typography.caption, color: colors.textDisabled, textAlign: 'center' as const, padding: spacing.xl },
   supportCardWrap: { paddingHorizontal: spacing.base, paddingTop: spacing.base },
-});
+}));

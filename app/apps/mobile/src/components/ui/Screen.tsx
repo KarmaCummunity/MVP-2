@@ -1,6 +1,6 @@
 // Screen wrapper for the redesigned main-screen idiom (login-style).
 // Provides:
-//   - SafeAreaView with the warm cream backdrop.
+//   - SafeAreaView with the warm cream backdrop (theme-aware).
 //   - Optional ambient orange blobs behind everything (density configurable).
 //   - A single mount point so every main screen looks identical at the edges.
 //
@@ -9,7 +9,7 @@
 import React from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { AmbientBlobs } from './AmbientBlobs';
 
 interface ScreenProps {
@@ -29,35 +29,38 @@ export function Screen({
   contentContainerStyle,
   style,
 }: ScreenProps) {
+  const { colors } = useTheme();
   const body = scroll ? (
     <ScrollView
-      style={styles.flex}
-      contentContainerStyle={[styles.scrollContent, contentContainerStyle]}
+      style={staticStyles.flex}
+      contentContainerStyle={[staticStyles.scrollContent, contentContainerStyle]}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
       {children}
     </ScrollView>
   ) : (
-    <View style={[styles.flex, contentContainerStyle]}>{children}</View>
+    <View style={[staticStyles.flex, contentContainerStyle]}>{children}</View>
   );
 
   return (
-    <SafeAreaView style={[styles.container, style]} edges={edges}>
+    <SafeAreaView
+      style={[staticStyles.container, { backgroundColor: colors.surfaceCream }, style]}
+      edges={edges}
+    >
       {blobs !== 'off' && <AmbientBlobs density={blobs} />}
       {body}
     </SafeAreaView>
   );
 }
 
-const styles = StyleSheet.create({
+const staticStyles = StyleSheet.create({
   // RN-Web + `dir=rtl`: without explicit width the tree can shrink-wrap to
   // content and hug the inline-start edge, leaving empty space on the other side.
   container: {
     flex: 1,
     width: '100%',
     alignSelf: 'stretch',
-    backgroundColor: colors.surfaceCream,
   },
   flex: { flex: 1, width: '100%', alignSelf: 'stretch', minWidth: 0 },
   scrollContent: { flexGrow: 1, alignSelf: 'stretch', minWidth: '100%' },
