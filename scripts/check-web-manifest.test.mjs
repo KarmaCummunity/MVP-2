@@ -10,10 +10,12 @@ test('passes when generated manifest name matches locale appName', () => {
   try {
     const localeDir = join(root, 'app/apps/mobile/src/i18n/locales/he');
     mkdirSync(localeDir, { recursive: true });
-    writeFileSync(join(localeDir, 'index.ts'), `export default { appName: 'KC - קהילת קארמה' };`);
+    // Fixture is ASCII so the Hebrew-literal scan stays clean on this file.
+    // The guard verifies appName is *non-empty*, not that it contains Hebrew.
+    writeFileSync(join(localeDir, 'index.ts'), `export default { appName: 'TestApp Display Name' };`);
     const result = checkWebManifest({ repoRoot: root });
     assert.equal(result.ok, true, result.errors.join('\n'));
-    assert.equal(result.appName, 'KC - קהילת קארמה');
+    assert.equal(result.appName, 'TestApp Display Name');
   } finally {
     rmSync(root, { recursive: true, force: true });
   }
