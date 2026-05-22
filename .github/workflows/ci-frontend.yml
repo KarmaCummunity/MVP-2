@@ -1,0 +1,141 @@
+name: CI — frontend
+
+# Runs on PRs and pushes to `main` / `dev` whose changes touch the app code
+# or its build inputs. Mirrors the quality + web build + Hebrew scan gates.
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'scripts/extract-hebrew-text.mjs'
+      - '.github/workflows/ci-frontend.yml'
+  push:
+    branches: [main, dev]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'scripts/extract-hebrew-text.mjs'
+      - '.github/workflows/ci-frontend.yml'
+
+concurrency:
+  group: ci-frontend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  quality:
+    name: typecheck · test · lint
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Typecheck
+        run: pnpm typecheck
+
+      - name: Test
+        run: pnpm test:coverage
+
+      - name: Upload coverage artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: coverage-${{ github.run_id }}
+          path: |
+            app/packages/domain/coverage/
+            app/packages/application/coverage/
+            app/packages/infrastructure-supabase/coverage/
+            app/packages/ui/coverage/
+            app/apps/mobile/coverage/
+          retention-days: 14
+
+      - name: Lint
+        run: pnpm lint
+
+  web-build:
+    name: web export (production bundle)
+    if: |
+      github.event.pull_request.draft != true && (
+        (github.event_name == 'pull_request' && github.event.pull_request.base.ref == 'main') ||
+        (github.event_name == 'push' && github.ref_name == 'main')
+      )
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    defaults:
+      run:
+        working-directory: app
+
+    env:
+      EXPO_PUBLIC_ENVIRONMENT: production
+      EXPO_PUBLIC_SUPABASE_URL: https://slxijdfvinbjmrsfgbzx.supabase.co
+      EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-web-build-placeholder-not-for-runtime
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Build web bundle (same env wiring as Dockerfile)
+        run: pnpm build:web
+
+      - name: Verify dist output
+        run: test -f apps/mobile/dist/index.html
+
+  hebrew-source-scan:
+    name: Hebrew source scan (no inline UI copy)
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+
+      - name: Scan for Hebrew outside allowed paths
+        run: node scripts/extract-hebrew-text.mjs --check

@@ -34,3 +34,6 @@ supabase/.branches/
 
 # Hebrew literal scan — generated report (timestamp churn); CI uses --check only.
 scripts/hebrew-text-report.md
+
+# Superpowers brainstorming sessions (visual companion mockups, transient)
+.superpowers/

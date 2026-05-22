@@ -18,7 +18,12 @@
     "ios": "npx pnpm@9.0.0 --filter @kc/mobile ios",
     "android": "npx pnpm@9.0.0 --filter @kc/mobile android",
     "build:web": "pnpm --filter @kc/mobile exec expo export -p web && node scripts/web-postbuild.mjs",
-    "preview:web": "npx serve apps/mobile/dist --single"
+    "preview:web": "npx serve apps/mobile/dist --single",
+    "check:migration-chain": "node ../scripts/check-migration-chain.mjs",
+    "check:rpc-contract": "node ../scripts/check-rpc-contract.mjs",
+    "check:web-manifest": "node ../scripts/check-web-manifest.mjs",
+    "check:backend-guards": "node ../scripts/check-migration-chain.mjs && node ../scripts/check-rpc-contract.mjs",
+    "test:scripts": "node --test ../scripts/check-migration-chain.test.mjs ../scripts/check-rpc-contract.test.mjs ../scripts/check-web-manifest.test.mjs"
   },
   "devDependencies": {
     "@eslint/js": "^9.20.0",
