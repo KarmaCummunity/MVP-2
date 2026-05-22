@@ -21,3 +21,14 @@ export function getAppEnvironment(): AppEnvironment {
 export function isDevEnvironment(): boolean {
   return getAppEnvironment() === 'development';
 }
+
+/**
+ * Gates the PR 1 dev preview (/dev/shell-preview) and (from PR 2 onward) the
+ * desktop ShellWithResponsiveChrome wiring. Default OFF in production; opt-in
+ * during development via EXPO_PUBLIC_SHELL_V2=1 in your .env or shell.
+ */
+export const SHELL_V2_ENABLED: boolean =
+  typeof __DEV__ !== 'undefined' &&
+  __DEV__ &&
+  typeof process !== 'undefined' &&
+  process.env['EXPO_PUBLIC_SHELL_V2'] === '1';
