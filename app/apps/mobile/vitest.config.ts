@@ -1,6 +1,14 @@
 import { defineConfig } from 'vitest/config';
 
 export default defineConfig({
+  // Use the automatic JSX runtime so React-Testing-Library snapshot tests
+  // (e.g. src/components/shell/__tests__/AppShell.snapshot.test.tsx) can
+  // render components that don't `import React from 'react'` — without this,
+  // esbuild defaults to the classic runtime and any transitively-rendered
+  // component fails with "React is not defined".
+  esbuild: {
+    jsx: 'automatic',
+  },
   test: {
     include: ['src/**/__tests__/**/*.test.ts', 'src/**/__tests__/**/*.test.tsx'],
     environment: 'node',
