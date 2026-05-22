@@ -7,11 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
       about_team_members: {
@@ -1404,37 +1399,6 @@ export type Database = {
           post_id: string
         }[]
       }
-      reopen_post_marked: {
-        Args: { p_post_id: string }
-        Returns: {
-          category: string
-          city: string
-          created_at: string
-          delete_after: string | null
-          description: string | null
-          item_condition: string | null
-          location_display_level: string
-          owner_id: string
-          post_id: string
-          reopen_count: number
-          search_vector: unknown
-          status: string
-          status_before_admin_removal: string | null
-          street: string
-          street_number: string
-          title: string
-          type: string
-          updated_at: string
-          urgency: string | null
-          visibility: string
-        }
-        SetofOptions: {
-          from: "*"
-          to: "posts"
-          isOneToOne: true
-          isSetofReturn: false
-        }
-      }
       reopen_post_deleted_no_recipient: {
         Args: { p_post_id: string }
         Returns: {
@@ -1466,10 +1430,38 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      report_donation_link: {
-        Args: { p_link_id: string }
-        Returns: undefined
+      reopen_post_marked: {
+        Args: { p_post_id: string }
+        Returns: {
+          category: string
+          city: string
+          created_at: string
+          delete_after: string | null
+          description: string | null
+          item_condition: string | null
+          location_display_level: string
+          owner_id: string
+          post_id: string
+          reopen_count: number
+          search_vector: unknown
+          status: string
+          status_before_admin_removal: string | null
+          street: string
+          street_number: string
+          title: string
+          type: string
+          updated_at: string
+          urgency: string | null
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
       }
+      report_donation_link: { Args: { p_link_id: string }; Returns: undefined }
       rpc_chat_hide_for_viewer: {
         Args: { p_chat_id: string }
         Returns: undefined
