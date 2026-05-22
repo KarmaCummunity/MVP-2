@@ -17,3 +17,4 @@ export { PlatformSwitch } from './components/PlatformSwitch';
 export type { PlatformSwitchAccent, PlatformSwitchProps } from './components/PlatformSwitch';
 export { BREAKPOINTS, resolveBreakpoint } from './theme/breakpoints';
 export type { BreakpointToken } from './theme/breakpoints';
+export { useBreakpoint } from './theme/useBreakpoint';
