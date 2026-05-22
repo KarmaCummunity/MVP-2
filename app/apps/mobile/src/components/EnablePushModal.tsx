@@ -1,5 +1,6 @@
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
+import { makeUseStyles } from '@kc/ui';
 import type { PrePromptTrigger } from '../lib/notifications/usePushPermissionGate';
 
 interface Props {
@@ -11,6 +12,7 @@ interface Props {
 
 export function EnablePushModal({ visible, trigger, onAccept, onDecline }: Props) {
   const { t } = useTranslation();
+  const styles = useEnablePushModalStyles();
   const bodyKey = trigger === 'first-post-published'
     ? 'notifications.enablePushBodyFromPost'
     : 'notifications.enablePushBodyFromChat';
@@ -33,13 +35,13 @@ export function EnablePushModal({ visible, trigger, onAccept, onDecline }: Props
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'center', padding: 24 },
-  card: { backgroundColor: 'white', borderRadius: 12, padding: 20 },
-  title: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'right' },
-  body: { fontSize: 14, color: '#444', marginBottom: 20, textAlign: 'right' },
+const useEnablePushModalStyles = makeUseStyles(({ colors }) => ({
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: 24 },
+  card: { backgroundColor: colors.surfaceRaised, borderRadius: 12, padding: 20 },
+  title: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'right', color: colors.textPrimary },
+  body: { fontSize: 14, color: colors.textSecondary, marginBottom: 20, textAlign: 'right' },
   button: { paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
-  accept: { backgroundColor: '#0A8754' },
-  acceptText: { color: 'white', fontWeight: '600' },
-  declineText: { color: '#666' },
-});
+  accept: { backgroundColor: colors.primary },
+  acceptText: { color: colors.textInverse, fontWeight: '600' },
+  declineText: { color: colors.textSecondary },
+}));

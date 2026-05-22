@@ -9,7 +9,8 @@ import {
   ScrollView,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 import type { AboutSectionId } from './aboutSectionModel';
 import { ABOUT_NAV_ITEMS } from './aboutSectionModel';
 
@@ -30,6 +31,8 @@ export function AboutNavDrawer({
   onSelect,
   labelFor,
 }: AboutNavDrawerProps) {
+  const styles = useAboutNavDrawerStyles();
+  const { colors } = useTheme();
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
       <View style={styles.root}>
@@ -64,7 +67,7 @@ export function AboutNavDrawer({
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutNavDrawerStyles = makeUseStyles(({ colors }) => ({
   root: { flex: 1 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.overlay },
   sheet: {
@@ -86,11 +89,11 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
-  sheetTitle: { ...typography.h3, color: colors.textPrimary },
+  sheetTitle: { ...typography.h3, color: colors.textPrimary, ...aboutRtlText },
   hint: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
@@ -104,5 +107,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  rowLabel: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-});
+  rowLabel: { flex: 1, ...typography.body, color: colors.textPrimary, ...aboutRtlText },
+}));

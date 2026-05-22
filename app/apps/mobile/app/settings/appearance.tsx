@@ -15,9 +15,10 @@ import {
   typography,
   useTheme,
 } from '@kc/ui';
-import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
-import { ModeRow, PalettePreview, type ModeOption } from './appearance.parts';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
+import { ModeRow, PalettePreview, type ModeOption } from '../../src/components/settings/appearanceParts';
 
 const MODE_OPTIONS: readonly ModeOption[] = [
   {
@@ -41,6 +42,7 @@ const MODE_OPTIONS: readonly ModeOption[] = [
 ] as const;
 
 export default function AppearanceScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
   const { t } = useTranslation();
   const { mode, setMode, colors } = useTheme();
   const styles = useScreenStyles();
@@ -94,13 +96,19 @@ export default function AppearanceScreen() {
 }
 
 const useScreenStyles = makeUseStyles(({ colors }) => ({
-  scroll: { flex: 1, backgroundColor: colors.background },
-  scrollContent: { padding: spacing.base, paddingBottom: spacing['3xl'] },
+  scroll: { flex: 1, backgroundColor: colors.background, ...webViewRtl },
+  scrollContent: {
+    padding: spacing.base,
+    paddingBottom: spacing['3xl'],
+    ...webViewRtl,
+  },
   intro: {
     ...typography.body,
     color: colors.textSecondary,
     textAlign: rtlTextAlignStart,
     marginBottom: spacing.lg,
+    width: '100%',
+    ...webTextRtl,
   },
   sectionLabel: {
     ...typography.label,
@@ -109,6 +117,8 @@ const useScreenStyles = makeUseStyles(({ colors }) => ({
     marginTop: spacing.lg,
     marginBottom: spacing.sm,
     paddingHorizontal: spacing.xs,
+    width: '100%',
+    ...webTextRtl,
   },
   optionGroup: {
     backgroundColor: colors.surface,
@@ -116,9 +126,11 @@ const useScreenStyles = makeUseStyles(({ colors }) => ({
     borderWidth: 1,
     borderColor: colors.border,
     overflow: 'hidden' as const,
+    ...webViewRtl,
   },
   previewRow: {
     flexDirection: 'row' as const,
     gap: spacing.md,
+    ...webViewRtl,
   },
 }));

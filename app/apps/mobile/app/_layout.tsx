@@ -107,7 +107,7 @@ import {
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
-import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
+import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar, TAB_BAR_HEIGHT } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
@@ -191,6 +191,7 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
 // StatusBar style) read fresh values when the user toggles dark mode.
 function ThemedRootShell() {
   const { colors, isDark } = useTheme();
+  const detailStackScreenOptions = useDetailStackScreenOptions();
 
   React.useEffect(() => {
     if (Platform.OS === 'web' && typeof document !== 'undefined') {
@@ -230,6 +231,8 @@ function ThemedRootShell() {
               {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
               <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
               <Stack.Screen name="settings" />
+              <Stack.Screen name="about" options={{ headerShown: false }} />
+              <Stack.Screen name="about-site" options={{ headerShown: false }} />
               <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
               <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
               {/* user/[handle]/* owns its own header via the nested _layout */}

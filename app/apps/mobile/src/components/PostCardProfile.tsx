@@ -5,7 +5,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Dimensions,
   Image,
   I18nManager,
@@ -14,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, radius, shadow, typography } from '@kc/ui';
+import { makeUseStyles, spacing, radius, shadow, typography, useTheme } from '@kc/ui';
 import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { PostMenuButton } from './post/PostMenuButton';
@@ -53,6 +52,8 @@ interface PostCardProfileProps {
 }
 
 export function PostCardProfile({ post, identityRole, onPressOverride, closedPostsProfileUserId }: PostCardProfileProps) {
+  const styles = usePostCardProfileStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const isGive = post.type === 'Give';
@@ -123,25 +124,29 @@ function deriveEconomicRole(
   return postType === 'Give' ? 'receiver' : 'giver';
 }
 
-const styles = StyleSheet.create({
+const usePostCardProfileStyles = makeUseStyles(({ colors, isDark }) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
-    overflow: 'hidden',
+    overflow: 'hidden' as const,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     ...shadow.card,
+    shadowOpacity: isDark ? 0 : shadow.card.shadowOpacity,
+    elevation: isDark ? 0 : shadow.card.elevation,
   },
   imageArea: {
     width: '100%',
     height: CARD_WIDTH,
     backgroundColor: colors.skeleton,
-    justifyContent: 'center',
-    alignItems: 'center',
-    overflow: 'hidden',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    overflow: 'hidden' as const,
   },
   image: { width: '100%', height: '100%' },
   typeTag: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: spacing.xs,
     ...tagPosition,
     paddingHorizontal: 4,
@@ -157,9 +162,9 @@ const styles = StyleSheet.create({
   giveTagText: { color: colors.giveTag },
   requestTagText: { color: colors.requestTag },
   titleRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'flex-start',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'flex-start' as const,
     gap: 4,
     paddingHorizontal: spacing.xs,
     paddingVertical: spacing.xs,
@@ -177,7 +182,7 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   roleBadge: {
-    position: 'absolute',
+    position: 'absolute' as const,
     bottom: spacing.xs,
     ...(I18nManager.isRTL && Platform.OS !== 'web' ? { right: spacing.xs } : { left: spacing.xs }),
     backgroundColor: 'rgba(0,0,0,0.55)',
@@ -188,12 +193,12 @@ const styles = StyleSheet.create({
   roleBadgeText: {
     ...typography.label,
     fontSize: 10,
-    color: '#fff',
+    color: colors.textInverse,
   },
   menuOverlay: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: spacing.xs,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
-});
+}));

@@ -1,6 +1,6 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { Pressable, Text } from 'react-native';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
 interface ChipProps {
   label: string;
@@ -9,6 +9,7 @@ interface ChipProps {
 }
 
 export function Chip({ label, active, onPress }: ChipProps) {
+  const styles = useChipStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -21,7 +22,7 @@ export function Chip({ label, active, onPress }: ChipProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useChipStyles = makeUseStyles(({ colors }) => ({
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
@@ -33,4 +34,4 @@ const styles = StyleSheet.create({
   chipActive: { borderColor: colors.primary, backgroundColor: colors.primary },
   text: { ...typography.caption, fontWeight: '600' as const, color: colors.textPrimary },
   textActive: { color: colors.textInverse },
-});
+}));

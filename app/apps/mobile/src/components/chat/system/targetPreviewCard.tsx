@@ -7,6 +7,7 @@ import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import he from '../../../i18n/locales/he';
 import { isOpaqueSystemShareHandle } from '../../../lib/shareHandleDisplay';
 
@@ -69,6 +70,8 @@ export function TargetPreviewCard({
   borderColor: string;
 }) {
   const router = useRouter();
+  const styles = useTargetPreviewCardStyles();
+  const { colors } = useTheme();
   const t = he.moderation.bubble.targetPreview;
 
   const navigate = () => {
@@ -132,24 +135,24 @@ export function TargetPreviewCard({
         </>
       )}
       <View style={styles.openRow}>
-        <Ionicons name="chevron-back" size={16} color="#1a3d8f" />
+        <Ionicons name="chevron-back" size={16} color={colors.secondary} />
         <Text style={styles.openText}>{t.open}</Text>
       </View>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useTargetPreviewCardStyles = makeUseStyles(({ colors }) => ({
   card: {
     marginTop: 6,
     padding: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
     minHeight: 44,
   },
-  handle: { fontWeight: '600' },
-  snippet: { fontSize: 13, marginTop: 2 },
-  openRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
-  openText: { color: '#1a3d8f', fontWeight: '600', fontSize: 13 },
-});
+  handle: { fontWeight: '600' as const, color: colors.textPrimary },
+  snippet: { fontSize: 13, marginTop: 2, color: colors.textSecondary },
+  openRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginTop: 6, gap: 4 },
+  openText: { color: colors.secondary, fontWeight: '600' as const, fontSize: 13 },
+}));

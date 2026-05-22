@@ -1,5 +1,5 @@
-import { Dimensions, I18nManager, StyleSheet } from 'react-native';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { Dimensions, I18nManager } from 'react-native';
+import { makeUseStyles, radius, shadow, spacing, typography } from '@kc/ui';
 
 const { width: SCREEN_WIDTH } = Dimensions.get('window');
 // 2 columns, spacing.base (16) padding on each side, spacing.sm (8) gap between columns
@@ -10,13 +10,17 @@ const isRTL = I18nManager.isRTL;
 /** Text alignment toward reading start; mirrors native RTL via I18nManager. */
 export const alignStart: 'left' | 'right' = isRTL ? 'left' : 'right';
 
-export const postCardGridStyles = StyleSheet.create({
+export const usePostCardGridStyles = makeUseStyles(({ colors, isDark }) => ({
   card: {
     width: CARD_WIDTH,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     overflow: 'hidden',
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     ...shadow.card,
+    shadowOpacity: isDark ? 0 : shadow.card.shadowOpacity,
+    elevation: isDark ? 0 : shadow.card.elevation,
   },
   imageArea: {
     width: '100%',
@@ -79,4 +83,4 @@ export const postCardGridStyles = StyleSheet.create({
   meta: { ...typography.caption, color: colors.textSecondary },
   metaDot: { ...typography.caption, color: colors.textSecondary },
   location: { ...typography.caption, color: colors.textSecondary, textAlign: alignStart },
-});
+}));

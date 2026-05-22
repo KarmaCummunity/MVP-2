@@ -4,11 +4,11 @@
 import React, { useState } from 'react';
 import {
   Dimensions, FlatList, Image, NativeScrollEvent, NativeSyntheticEvent,
-  Pressable, StyleSheet, Text, View,
+  Pressable, Text, View,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { MediaAsset } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { PostImageViewerModal } from './PostImageViewerModal';
@@ -22,8 +22,42 @@ interface Props {
   readonly fallbackIcon: 'gift-outline' | 'search-outline';
 }
 
+const useStyles = makeUseStyles(({ colors }) => ({
+  frame: { height: HEIGHT, backgroundColor: colors.skeleton, overflow: 'hidden' },
+  empty: { justifyContent: 'center', alignItems: 'center' },
+  image: { width: '100%', height: '100%' },
+  pageImage: { width: SCREEN_WIDTH, height: HEIGHT },
+  counter: {
+    // Physical `left` keeps the chip opposite the type pill (`right` on detail)
+    // and clear of the ⋮ menu (`top` + `start` on detail). `start` would move to
+    // the visual right under RTL and collide with the type tag.
+    position: 'absolute',
+    bottom: spacing.sm,
+    left: spacing.sm,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 2,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    borderRadius: radius.full,
+  },
+  counterText: { ...typography.caption, color: colors.textInverse, fontWeight: '600' },
+  dots: {
+    // Slightly above the counter row so both stay readable on multi-image posts.
+    position: 'absolute',
+    bottom: spacing.sm + 26,
+    alignSelf: 'center',
+    flexDirection: 'row',
+    gap: 6,
+  },
+  dot: {
+    width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)',
+  },
+  dotActive: { backgroundColor: colors.textInverse, width: 8, height: 8, borderRadius: 4 },
+}));
+
 export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const [activeIndex, setActiveIndex] = useState(0);
   const [viewerOpen, setViewerOpen] = useState(false);
 
@@ -104,35 +138,3 @@ export function PostImageCarousel({ mediaAssets, fallbackIcon }: Props) {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  frame: { height: HEIGHT, backgroundColor: colors.primarySurface, overflow: 'hidden' },
-  empty: { justifyContent: 'center', alignItems: 'center' },
-  image: { width: '100%', height: '100%' },
-  pageImage: { width: SCREEN_WIDTH, height: HEIGHT },
-  counter: {
-    // Physical `left` keeps the chip opposite the type pill (`right` on detail)
-    // and clear of the ⋮ menu (`top` + `start` on detail). `start` would move to
-    // the visual right under RTL and collide with the type tag.
-    position: 'absolute',
-    bottom: spacing.sm,
-    left: spacing.sm,
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 2,
-    backgroundColor: 'rgba(0,0,0,0.55)',
-    borderRadius: radius.full,
-  },
-  counterText: { ...typography.caption, color: colors.textInverse, fontWeight: '600' },
-  dots: {
-    // Slightly above the counter row so both stay readable on multi-image posts.
-    position: 'absolute',
-    bottom: spacing.sm + 26,
-    alignSelf: 'center',
-    flexDirection: 'row',
-    gap: 6,
-  },
-  dot: {
-    width: 6, height: 6, borderRadius: 3, backgroundColor: 'rgba(255,255,255,0.55)',
-  },
-  dotActive: { backgroundColor: colors.textInverse, width: 8, height: 8, borderRadius: 4 },
-});

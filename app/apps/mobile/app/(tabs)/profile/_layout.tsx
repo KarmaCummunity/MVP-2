@@ -4,19 +4,19 @@
 import React from 'react';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { nativeStackHeaderLeftIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
-const listScreenHeader = {
-  headerShown: true,
-  ...nativeStackHeaderLeftIconOnly,
-  headerBackVisible: false,
-  headerTintColor: colors.primary,
-  headerStyle: { backgroundColor: colors.surface },
-  headerTitleAlign: 'center' as const,
-} as const;
-
 export default function ProfileTabLayout() {
+  const { colors } = useTheme();
+  const listScreenHeader = {
+    headerShown: true,
+    ...nativeStackHeaderLeftIconOnly(colors.primary),
+    headerBackVisible: false,
+    headerTintColor: colors.primary,
+    headerStyle: { backgroundColor: colors.surface },
+    headerTitleAlign: 'center' as const,
+  } as const;
   const { t } = useTranslation();
   return (
     <Stack screenOptions={{ headerShown: false, contentStyle: { backgroundColor: colors.background } }}>

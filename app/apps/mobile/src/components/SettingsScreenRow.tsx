@@ -5,6 +5,7 @@ import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../lib/webRtlStyle';
 
 export interface SettingsScreenRowProps {
   readonly label: string;
@@ -64,6 +65,7 @@ const useRowStyles = makeUseStyles(({ colors }) => ({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
     gap: spacing.md,
+    ...webViewRtl,
   },
   rowIcon: { width: 24 },
   rowLabel: {
@@ -71,5 +73,6 @@ const useRowStyles = makeUseStyles(({ colors }) => ({
     color: colors.textPrimary,
     flex: 1,
     textAlign: rtlTextAlignStart,
+    ...webTextRtl,
   },
 }));

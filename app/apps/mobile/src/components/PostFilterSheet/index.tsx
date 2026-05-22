@@ -12,7 +12,6 @@ import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -26,7 +25,7 @@ import type {
   LocationFilter,
   PostType,
 } from '@kc/domain';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { SortSection } from './SortSection';
 import { FiltersSection } from './FiltersSection';
 import { LocationFilterSection } from './LocationFilterSection';
@@ -60,6 +59,8 @@ export function PostFilterSheet({
   onClose,
 }: PostFilterSheetProps) {
   const { t } = useTranslation();
+  const styles = usePostFilterSheetStyles();
+  const { colors } = useTheme();
   // Local snapshot — Modal stays mounted, so re-seed each time it opens.
   const [draft, setDraft] = useState<PostFilterValue>(initial);
 
@@ -138,9 +139,9 @@ export function PostFilterSheet({
   );
 }
 
-const styles = StyleSheet.create({
+const usePostFilterSheetStyles = makeUseStyles(({ colors }) => ({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
+  backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: colors.overlay },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl,
@@ -168,4 +169,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   applyText: { ...typography.body, color: colors.textInverse, fontWeight: '700' as const },
-});
+}));

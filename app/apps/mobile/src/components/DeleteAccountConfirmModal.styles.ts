@@ -1,16 +1,17 @@
-import { StyleSheet, Platform } from 'react-native';
+import { Platform } from 'react-native';
+import { makeUseStyles } from '@kc/ui';
 
-export const styles = StyleSheet.create({
+export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => ({
   overlay: {
     position: 'absolute',
     top: 0, left: 0, right: 0, bottom: 0,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: colors.overlay,
     justifyContent: 'center',
     alignItems: 'center',
     paddingHorizontal: 24,
   },
   card: {
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surfaceRaised,
     borderRadius: 16,
     padding: 20,
     maxWidth: 480,
@@ -20,7 +21,7 @@ export const styles = StyleSheet.create({
   title: {
     fontSize: 22,
     fontWeight: '700',
-    color: '#c8323a',
+    color: colors.error,
     textAlign: 'right',
     marginBottom: 14,
   },
@@ -30,43 +31,44 @@ export const styles = StyleSheet.create({
   bullet: {
     fontSize: 15,
     lineHeight: 22,
-    color: '#222',
+    color: colors.textPrimary,
     textAlign: 'right',
     marginBottom: 4,
   },
   chatsRetention: {
     fontSize: 15,
     fontWeight: '600',
-    color: '#222',
+    color: colors.textPrimary,
     textAlign: 'right',
     marginBottom: 10,
-    backgroundColor: '#fff7e6',
+    backgroundColor: colors.warningLight,
     padding: 10,
     borderRadius: 8,
   },
   warning: {
     fontSize: 13,
     lineHeight: 20,
-    color: '#666',
+    color: colors.textSecondary,
     textAlign: 'right',
     marginBottom: 16,
   },
   inputLabel: {
     fontSize: 13,
-    color: '#666',
+    color: colors.textSecondary,
     textAlign: 'right',
     marginBottom: 6,
   },
   input: {
     borderWidth: 1,
-    borderColor: '#ccc',
+    borderColor: colors.border,
     borderRadius: 8,
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === 'web' ? 10 : 8,
     fontSize: 16,
     textAlign: 'right',
     marginBottom: 16,
-    color: '#222',
+    color: colors.textPrimary,
+    backgroundColor: colors.background,
   },
   buttonsRow: {
     flexDirection: 'row-reverse',
@@ -75,64 +77,64 @@ export const styles = StyleSheet.create({
   },
   buttonDelete: {
     flex: 1,
-    backgroundColor: '#c8323a',
+    backgroundColor: colors.error,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonDeleteDisabled: {
-    backgroundColor: '#dca1a4',
+    opacity: 0.55,
   },
   buttonDeleteText: {
-    color: '#ffffff',
+    color: colors.textInverse,
     fontSize: 16,
     fontWeight: '700',
   },
   buttonCancel: {
     flex: 1,
-    backgroundColor: '#f0f0f0',
+    backgroundColor: colors.skeleton,
     paddingVertical: 12,
     borderRadius: 10,
     alignItems: 'center',
     justifyContent: 'center',
   },
   buttonCancelText: {
-    color: '#222',
+    color: colors.textPrimary,
     fontSize: 16,
     fontWeight: '600',
   },
   errorBanner: {
-    backgroundColor: '#fde6e8',
-    borderColor: '#c8323a',
+    backgroundColor: colors.errorLight,
+    borderColor: colors.error,
     borderWidth: 1,
     borderRadius: 8,
     padding: 10,
     marginBottom: 12,
   },
   errorBannerText: {
-    color: '#9a1d24',
+    color: colors.error,
     fontSize: 14,
     textAlign: 'right',
   },
   errorBannerCritical: {
-    backgroundColor: '#c8323a',
+    backgroundColor: colors.error,
   },
   errorBannerCriticalText: {
-    color: '#ffffff',
+    color: colors.textInverse,
     fontWeight: '600',
   },
   blockedTitle: {
     fontSize: 18,
     fontWeight: '700',
-    color: '#c8323a',
+    color: colors.error,
     textAlign: 'right',
     marginBottom: 8,
   },
   blockedBody: {
     fontSize: 15,
-    color: '#222',
+    color: colors.textPrimary,
     textAlign: 'right',
     marginBottom: 16,
   },
-});
+}));

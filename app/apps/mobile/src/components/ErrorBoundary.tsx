@@ -2,14 +2,15 @@
 // Catches unexpected throws from descendant components so the app shell
 // renders a recoverable fallback instead of unmounting to a white screen.
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 
 type Props = { children: React.ReactNode };
 type State = { error: Error | null };
 
 function ErrorBoundaryFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const styles = useStyles();
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
@@ -45,7 +46,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -67,4 +68,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.base,
   },
   ctaText: { ...typography.button, color: colors.textInverse },
-});
+}));

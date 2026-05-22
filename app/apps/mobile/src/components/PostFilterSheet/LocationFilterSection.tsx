@@ -1,9 +1,9 @@
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
 import { RADIUS_OPTIONS_KM, type LocationFilter } from '@kc/domain';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { CityPicker } from '../CityPicker';
 
 interface LocationFilterSectionProps {
@@ -15,6 +15,7 @@ const DEFAULT_RADIUS_KM = 5;
 
 export function LocationFilterSection({ value, onChange }: LocationFilterSectionProps) {
   const { t } = useTranslation();
+  const styles = useLocationFilterSectionStyles();
   const cityValue = value ? { id: value.centerCity, name: value.centerCityName } : null;
   const radiusKm = value?.radiusKm ?? DEFAULT_RADIUS_KM;
 
@@ -63,28 +64,29 @@ export function LocationFilterSection({ value, onChange }: LocationFilterSection
 }
 
 function RadiusChip({ km, active, onPress, t }: { km: number; active: boolean; onPress: () => void; t: TFunction }) {
+  const styles = useRadiusChipStyles();
   return (
     <Pressable
       onPress={onPress}
-      style={[radiusStyles.chip, active && radiusStyles.chipActive]}
+      style={[styles.chip, active && styles.chipActive]}
       accessibilityRole="button"
       accessibilityState={{ selected: active }}
     >
-      <Text style={[radiusStyles.text, active && radiusStyles.textActive]}>{t('filters.radiusKm', { km })}</Text>
+      <Text style={[styles.text, active && styles.textActive]}>{t('filters.radiusKm', { km })}</Text>
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
+const useLocationFilterSectionStyles = makeUseStyles(({ colors }) => ({
   section: { gap: spacing.sm, marginBottom: spacing.lg },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
   subLabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   clearText: { ...typography.caption, color: colors.primary, fontWeight: '500' as const },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
-});
+}));
 
-const radiusStyles = StyleSheet.create({
+const useRadiusChipStyles = makeUseStyles(({ colors }) => ({
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
@@ -96,4 +98,4 @@ const radiusStyles = StyleSheet.create({
   chipActive: { borderColor: colors.secondary, backgroundColor: colors.secondary },
   text: { ...typography.caption, fontWeight: '600' as const, color: colors.textPrimary },
   textActive: { color: colors.textInverse },
-});
+}));

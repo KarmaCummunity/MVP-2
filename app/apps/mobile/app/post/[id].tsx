@@ -9,7 +9,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
-import { colors, spacing } from '@kc/ui';
+import { spacing, useTheme } from '@kc/ui';
 import { EmptyState } from '../../src/components/EmptyState';
 import { useAuthStore } from '../../src/store/authStore';
 import { getPostByIdUseCase } from '../../src/services/postsComposition';
@@ -19,7 +19,7 @@ import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 import { PostMenuButton } from '../../src/components/post/PostMenuButton';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
-import { styles } from './postDetailScreen.styles';
+import { usePostDetailStyles } from './postDetailScreen.styles';
 import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../src/navigation/useShellTabBarVisibility';
 
 function normalizeRoutePostId(raw: string | string[] | undefined): string | undefined {
@@ -46,6 +46,8 @@ function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string
 }
 
 export default function PostDetailScreen() {
+  const styles = usePostDetailStyles();
+  const { colors } = useTheme();
   const { id: rawId, fromProfile: rawFromProfile } = useLocalSearchParams<{
     id?: string | string[];
     fromProfile?: string | string[];

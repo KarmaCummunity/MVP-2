@@ -5,7 +5,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisibility } from '@kc/domain';
 import { CityPicker } from '../CityPicker';
@@ -13,7 +13,7 @@ import { StreetPicker } from '../StreetPicker';
 import { CreatePostExposureSection } from './CreatePostExposureSection';
 import { PhotoPicker } from './PhotoPicker';
 import type { UploadedAsset } from '../../services/imageUpload';
-import { createPostStyles as styles } from '../../../app/(tabs)/create.styles';
+import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
 import type { CreatePostCitySelection } from '../../hooks/useCreatePostPublish';
 
 export interface CreatePostFormScrollContentProps {
@@ -90,6 +90,8 @@ export function CreatePostFormScrollContent({
   onPublishPress,
 }: CreatePostFormScrollContentProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useCreatePostStyles();
 
   return (
     <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>

@@ -1,23 +1,23 @@
 import React from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity } from 'react-native';
+import { View, Text, ScrollView } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { BackButton } from '../src/components/BackButton';
+import { rtlTextAlignStart } from '../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../src/lib/webRtlStyle';
 
 export default function LegalScreen() {
-  const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const { t } = useTranslation();
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
       <View style={styles.header}>
-        <TouchableOpacity onPress={() => router.back()}>
-          <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-        </TouchableOpacity>
+        <BackButton tintColor={colors.primary} />
         <Text style={styles.title}>{t('legalContent.title')}</Text>
-        <View style={{ width: 24 }} />
+        <View style={{ width: 40 }} />
       </View>
 
       <ScrollView contentContainerStyle={styles.scroll}>
@@ -37,8 +37,8 @@ export default function LegalScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
+const useStyles = makeUseStyles(({ colors }) => ({
+  container: { flex: 1, backgroundColor: colors.background, ...webViewRtl },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -48,9 +48,15 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    ...webViewRtl,
   },
-  title: { ...typography.h3, color: colors.textPrimary },
-  scroll: { padding: spacing.base, paddingBottom: spacing['3xl'] },
+  title: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  scroll: { padding: spacing.base, paddingBottom: spacing['3xl'], ...webViewRtl },
   contentBox: {
     backgroundColor: colors.surface,
     padding: spacing.xl,
@@ -60,28 +66,33 @@ const styles = StyleSheet.create({
     shadowRadius: 10,
     shadowOffset: { width: 0, height: 4 },
     elevation: 3,
+    ...webViewRtl,
   },
   lastUpdated: {
     ...typography.caption,
     color: colors.textDisabled,
     textAlign: 'center',
     marginBottom: spacing.lg,
+    ...webTextRtl,
   },
   sectionTitle: {
     ...typography.h4,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: spacing.sm,
+    width: '100%',
+    ...webTextRtl,
   },
   paragraph: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 24,
+    ...webTextRtl,
   },
   divider: {
     height: 1,
     backgroundColor: colors.border,
     marginVertical: spacing.xl,
   },
-});
+}));

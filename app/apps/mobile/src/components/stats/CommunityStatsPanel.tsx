@@ -3,7 +3,7 @@
 import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 
 type Props = {
   readonly users: number;
@@ -31,6 +31,8 @@ export function CommunityStatsPanel({
   labels,
   onRetry,
 }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.wrap}>
       <View style={styles.headerRow}>
@@ -56,6 +58,8 @@ export function CommunityStatsPanel({
 }
 
 function Row({ label, value, last }: { label: string; value: number; last?: boolean }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={[styles.row, !last && styles.rowBorder]}>
       <Text style={styles.rowLabel}>{label}</Text>
@@ -64,7 +68,7 @@ function Row({ label, value, last }: { label: string; value: number; last?: bool
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   wrap: { gap: spacing.sm },
   headerRow: {
     flexDirection: 'row',
@@ -99,4 +103,4 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
   },
   retryText: { ...typography.body, color: colors.error },
-});
+}));

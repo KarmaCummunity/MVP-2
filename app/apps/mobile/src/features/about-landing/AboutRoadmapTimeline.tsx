@@ -3,7 +3,8 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, StyleSheet, Pressable, LayoutAnimation, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 
 type PhaseSeverity = 'current' | 'soon' | 'future' | 'long-term';
 
@@ -17,17 +18,18 @@ interface Phase {
   readonly details?: string;
 }
 
-const SEVERITY_COLOR: Record<PhaseSeverity, string> = {
-  current: colors.primary,
-  soon: colors.warning ?? '#F59E0B',
-  future: colors.textSecondary,
-  'long-term': colors.textDisabled,
-};
-
 export function AboutRoadmapTimeline() {
   const { t } = useTranslation();
+  const styles = useAboutRoadmapTimelineStyles();
+  const { colors } = useTheme();
   const phases: Phase[] = t('aboutContent.roadmapPhases', { returnObjects: true }) as Phase[];
   const [open, setOpen] = useState<Record<number, boolean>>({});
+  const severityColor: Record<PhaseSeverity, string> = {
+    current: colors.primary,
+    soon: colors.warning,
+    future: colors.textSecondary,
+    'long-term': colors.textDisabled,
+  };
 
   const toggle = useCallback((i: number) => {
     if (Platform.OS !== 'web') LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
@@ -38,7 +40,7 @@ export function AboutRoadmapTimeline() {
     <View style={styles.wrap}>
       {phases.map((p, i) => {
         const isLast = i === phases.length - 1;
-        const dot = SEVERITY_COLOR[p.severity] ?? colors.textSecondary;
+        const dot = severityColor[p.severity] ?? colors.textSecondary;
         const summary = p.summary ?? p.body ?? '';
         const details = p.details ?? '';
         const expanded = !!open[i];
@@ -82,7 +84,7 @@ export function AboutRoadmapTimeline() {
 }
 
 const DOT = 32;
-const styles = StyleSheet.create({
+const useAboutRoadmapTimelineStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.sm },
   row: { flexDirection: 'row-reverse', gap: spacing.md, alignItems: 'flex-start' },
   timeline: { alignItems: 'center', width: DOT },
@@ -108,8 +110,8 @@ const styles = StyleSheet.create({
   },
   statusText: { ...typography.caption, color: colors.textInverse, fontWeight: '700', fontSize: 11 },
   label: { ...typography.label, color: colors.textDisabled, fontWeight: '700' },
-  title: { ...typography.h4, color: colors.textPrimary, textAlign: 'right' },
-  summary: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
+  title: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText },
+  summary: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 22 },
   expandBtn: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -122,7 +124,7 @@ const styles = StyleSheet.create({
   details: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     lineHeight: 22,
     marginTop: spacing.xs,
     padding: spacing.sm,
@@ -131,4 +133,4 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: colors.primaryLight,
   },
-});
+}));

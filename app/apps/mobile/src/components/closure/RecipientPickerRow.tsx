@@ -1,8 +1,8 @@
 // FR-CLOSURE-003 AC2 — recipient picker row: avatar + name + optional city,
 // selectable radio. Used inside ClosureSheet's Step 2.
-import { Pressable, Text, View, Image, StyleSheet } from 'react-native';
+import { Pressable, Text, View, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import type { ClosureCandidate } from '@kc/application';
 
 interface Props {
@@ -12,6 +12,8 @@ interface Props {
 }
 
 export function RecipientPickerRow({ candidate, selected, onPress }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const name = candidate.fullName ?? t('profile.fallbackName');
   return (
@@ -40,7 +42,7 @@ export function RecipientPickerRow({ candidate, selected, onPress }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   row: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -72,4 +74,4 @@ const styles = StyleSheet.create({
   text: { flex: 1 },
   name: { fontSize: 16, color: colors.textPrimary, textAlign: 'right', fontWeight: '500' },
   city: { fontSize: 13, color: colors.textSecondary, textAlign: 'right', marginTop: 2 },
-});
+}));

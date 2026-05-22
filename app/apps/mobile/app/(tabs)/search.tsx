@@ -1,22 +1,4 @@
-// ─────────────────────────────────────────────
-// Search tab — Universal Smart Search & Discovery
-// Mapped to SRS: FR-FEED-017+ (replaces FR-FEED-016 placeholder)
-//
-// Two modes:
-//   1. Explore (no query) — shows a discovery feed of recent posts, active
-//      users, and popular donation links. Content loads on mount so the screen
-//      is never empty.
-//   2. Search (query >= 2 chars) — filters across all three domains with
-//      ILIKE substring matching and smart category-aware link discovery.
-//
-// Key UX decisions:
-//   • 300ms debounce to avoid hammering the DB on every keystroke.
-//   • 5 results per section initially; "Show all" expands to 50.
-//   • Recent searches persisted to AsyncStorage (max 10).
-//   • City filter applies to posts + users only; links are national.
-//   • All text from i18n; all colors from the global theme; RTL layout.
-// ─────────────────────────────────────────────
-
+// Search tab — FR-FEED-017+ universal discovery + smart search.
 import React, { useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -30,7 +12,7 @@ import {
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import type { SearchResultType, SearchSortBy } from '@kc/domain';
 import { search as t } from '../../src/i18n/locales/he/donations';
 
@@ -46,7 +28,7 @@ import { SearchFilterSheet } from '../../src/components/SearchFilterSheet';
 import { TopBar } from '../../src/components/TopBar';
 import { Screen } from '../../src/components/ui/Screen';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
-import { searchStyles as styles } from './search.styles';
+import { useSearchScreenStyles } from './search.styles';
 
 // ── Constants ─────────────────────────────────
 /** Debounce delay for search input to avoid excessive queries. */
@@ -57,6 +39,8 @@ const PREVIEW_LIMIT = 5;
 const FULL_LIMIT = 50;
 
 export default function SearchScreen() {
+  const styles = useSearchScreenStyles();
+  const { colors } = useTheme();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 

@@ -2,10 +2,10 @@
 // CTAs adapt to whether filters caused the emptiness.
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { FeedCommunityCounter } from './FeedCommunityCounter';
 
 interface FeedEmptyStateProps {
@@ -19,6 +19,8 @@ export function FeedEmptyState({
   onClearFilters,
   onShare,
 }: FeedEmptyStateProps) {
+  const styles = useFeedEmptyStateStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <View style={styles.wrap}>
@@ -46,27 +48,25 @@ export function FeedEmptyState({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', justifyContent: 'center', padding: spacing.xl, gap: spacing.sm },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+const useFeedEmptyStateStyles = makeUseStyles(({ colors }) => ({
+  wrap: { alignItems: 'center' as const, justifyContent: 'center' as const, padding: spacing.xl, gap: spacing.sm },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const },
   body: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.sm,
   },
-  actions: { flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.base },
-  // Pill buttons that match the welcome screen's secondary surfaces — 48h,
-  // rounded lg, white card + border for secondary, solid primary for primary.
+  actions: { flexDirection: 'row-reverse' as const, gap: spacing.sm, marginTop: spacing.base },
   btn: {
     height: 48,
     paddingHorizontal: spacing.xl,
     borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   btnPrimary: { backgroundColor: colors.primary },
   btnSecondary: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },
   btnTextPrimary: { ...typography.body, color: colors.textInverse, fontWeight: '700' as const },
   btnTextSecondary: { ...typography.body, color: colors.textPrimary, fontWeight: '700' as const },
-});
+}));

@@ -4,12 +4,12 @@
 import React, { useEffect, useState } from 'react';
 import {
   Modal, View, Text, TextInput, Pressable,
-  KeyboardAvoidingView, Platform, ScrollView, StyleSheet,
+  KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { confirmAndRun, showAdminToast } from '../chat/system/adminActions';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import he from '../../i18n/locales/he';
 
 type BanReason = 'spam' | 'harassment' | 'policy_violation' | 'other';
@@ -30,6 +30,8 @@ interface Props {
 }
 
 export function BanUserModal({ targetUserId, visible, onClose }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const adminId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<BanReason>('spam');
   const [note, setNote] = useState('');
@@ -127,11 +129,14 @@ export function BanUserModal({ targetUserId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   flex: { flex: 1 },
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderTopLeftRadius: 16, borderTopRightRadius: 16,
     maxHeight: '90%',
   },
@@ -155,4 +160,4 @@ const styles = StyleSheet.create({
   btnDangerText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnGhostText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

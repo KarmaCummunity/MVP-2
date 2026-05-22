@@ -8,7 +8,8 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 import { MOTION } from '../../lib/animations/motion';
 
 interface FaqItem {
@@ -23,6 +24,8 @@ interface RowProps {
 
 function FaqRow({ item, isLast }: RowProps) {
   const [open, setOpen] = useState(false);
+  const styles = useAboutFaqAccordionStyles();
+  const { colors } = useTheme();
   const rot = useSharedValue(0);
   const opacity = useSharedValue(0);
 
@@ -57,6 +60,7 @@ function FaqRow({ item, isLast }: RowProps) {
 
 export function AboutFaqAccordion() {
   const { t } = useTranslation();
+  const styles = useAboutFaqAccordionStyles();
   const items: FaqItem[] = t('aboutContent.faqItems', { returnObjects: true }) as FaqItem[];
 
   return (
@@ -68,7 +72,7 @@ export function AboutFaqAccordion() {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutFaqAccordionStyles = makeUseStyles(({ colors }) => ({
   list: {
     borderWidth: 1,
     borderColor: colors.border,
@@ -87,14 +91,14 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textPrimary,
     flex: 1,
-    textAlign: 'right',
+    ...aboutRtlText,
     fontWeight: '600',
   },
   answer: { paddingBottom: spacing.md },
   a: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     lineHeight: 22,
   },
-});
+}));

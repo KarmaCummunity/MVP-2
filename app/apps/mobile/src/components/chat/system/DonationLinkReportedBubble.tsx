@@ -4,6 +4,7 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
 import { openExternalUrl } from '../../../utils/openExternalUrl';
 import he from '../../../i18n/locales/he';
@@ -14,6 +15,8 @@ export function DonationLinkReportedBubble({
   handledByLaterAction,
 }: SystemMessageBubbleProps) {
   const isAdmin = useIsSuperAdmin();
+  const styles = useDonationLinkReportedBubbleStyles();
+  const { colors } = useTheme();
   const t = he.moderation.bubble;
   const url = typeof payload?.url === 'string' ? payload.url : null;
   const displayName = typeof payload?.display_name === 'string' ? payload.display_name : null;
@@ -34,7 +37,7 @@ export function DonationLinkReportedBubble({
           <Text style={styles.snippet} numberOfLines={2}>{url}</Text>
           {categorySlug ? <Text style={styles.snippet}>{`#${categorySlug}`}</Text> : null}
           <View style={styles.openRow}>
-            <Ionicons name="open-outline" size={16} color="#1a3d8f" />
+            <Ionicons name="open-outline" size={16} color={colors.secondary} />
             <Text style={styles.openText}>{t.targetPreview.open}</Text>
           </View>
         </Pressable>
@@ -43,28 +46,28 @@ export function DonationLinkReportedBubble({
   );
 }
 
-const styles = StyleSheet.create({
+const useDonationLinkReportedBubbleStyles = makeUseStyles(({ colors }) => ({
   bubble: {
     padding: 8,
-    backgroundColor: '#fff7e0',
+    backgroundColor: colors.warningLight,
     borderRadius: 8,
     marginVertical: 4,
-    alignSelf: 'center',
+    alignSelf: 'center' as const,
     maxWidth: '90%',
   },
   dimmed: { opacity: 0.5 },
-  title: { fontWeight: '600' },
+  title: { fontWeight: '600' as const, color: colors.textPrimary },
   card: {
     marginTop: 6,
     padding: 8,
-    backgroundColor: '#ffffff',
+    backgroundColor: colors.surface,
     borderRadius: 8,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: '#e0d8b0',
+    borderColor: colors.borderStrong,
     minHeight: 44,
   },
-  handle: { fontWeight: '600' },
-  snippet: { fontSize: 13, marginTop: 2 },
-  openRow: { flexDirection: 'row', alignItems: 'center', marginTop: 6, gap: 4 },
-  openText: { color: '#1a3d8f', fontWeight: '600', fontSize: 13 },
-});
+  handle: { fontWeight: '600' as const, color: colors.textPrimary },
+  snippet: { fontSize: 13, marginTop: 2, color: colors.textSecondary },
+  openRow: { flexDirection: 'row' as const, alignItems: 'center' as const, marginTop: 6, gap: 4 },
+  openText: { color: colors.secondary, fontWeight: '600' as const, fontSize: 13 },
+}));

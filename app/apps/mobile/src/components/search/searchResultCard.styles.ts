@@ -1,18 +1,20 @@
 // Shared styles for UserResultCard, PostResultCard, LinkResultCard.
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, shadow, spacing, typography } from '@kc/ui';
 
-export const styles = StyleSheet.create({
+export const useSearchResultCardStyles = makeUseStyles(({ colors, isDark }) => ({
   card: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     padding: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
-    borderWidth: 1,
-    borderColor: colors.border,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     gap: spacing.md,
     marginBottom: spacing.sm,
+    ...shadow.card,
+    shadowOpacity: isDark ? 0 : shadow.card.shadowOpacity,
+    elevation: isDark ? 0 : shadow.card.elevation,
   },
   cardPressed: { backgroundColor: colors.background },
   cardContent: { flex: 1, gap: 2 },
@@ -20,27 +22,31 @@ export const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: 'right' as const,
   },
-  cardHandle: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  cardHandle: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' as const },
   cardSubtitle: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: 'right' as const,
     marginTop: 2,
   },
   metaRow: {
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
     gap: spacing.md,
     marginTop: spacing.xs,
-    justifyContent: 'flex-end',
+    justifyContent: 'flex-end' as const,
   },
-  metaChip: { flexDirection: 'row', alignItems: 'center', gap: 4 },
+  metaChip: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: 4 },
   metaText: { ...typography.caption, color: colors.textSecondary, fontSize: 11 },
-  avatarWrap: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden', flexShrink: 0 },
-  postThumb: { width: 56, height: 56, borderRadius: radius.md, overflow: 'hidden' },
-  postThumbPlaceholder: { backgroundColor: colors.background, alignItems: 'center', justifyContent: 'center' },
-  postTitleRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 2 },
+  avatarWrap: { width: 48, height: 48, borderRadius: 24, overflow: 'hidden' as const, flexShrink: 0 },
+  postThumb: { width: 56, height: 56, borderRadius: radius.md, overflow: 'hidden' as const },
+  postThumbPlaceholder: {
+    backgroundColor: colors.background,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  postTitleRow: { flexDirection: 'row' as const, justifyContent: 'flex-end' as const, marginBottom: 2 },
   typeTag: { paddingHorizontal: spacing.sm, paddingVertical: 2, borderRadius: radius.sm },
   typeTagText: { fontSize: 11, fontWeight: '600' as const },
   linkIconWrap: {
@@ -48,11 +54,11 @@ export const styles = StyleSheet.create({
     height: 48,
     borderRadius: 24,
     backgroundColor: colors.secondaryLight,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   categoryTag: {
-    alignSelf: 'flex-end',
+    alignSelf: 'flex-end' as const,
     backgroundColor: colors.primarySurface,
     paddingHorizontal: spacing.sm,
     paddingVertical: 2,
@@ -63,8 +69,8 @@ export const styles = StyleSheet.create({
   linkUrl: {
     ...typography.caption,
     color: colors.textDisabled,
-    textAlign: 'right',
+    textAlign: 'right' as const,
     fontSize: 10,
     marginTop: 2,
   },
-});
+}));

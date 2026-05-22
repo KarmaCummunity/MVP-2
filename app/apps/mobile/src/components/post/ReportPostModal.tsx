@@ -1,12 +1,12 @@
 // FR-MOD-001 — Report modal opened from post-detail ⋮ menu. Mirror of ReportChatModal.
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { NotifyModal } from '../NotifyModal';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
@@ -25,6 +25,8 @@ interface Props {
 
 export function ReportPostModal({ postId, visible, onClose }: Props) {
   const { t } = useTranslation();
+  const styles = useReportPostModalStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
@@ -119,8 +121,8 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+const useReportPostModalStyles = makeUseStyles(({ colors }) => ({
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface, padding: 16, gap: 8,
     borderTopLeftRadius: 16, borderTopRightRadius: 16,
@@ -135,6 +137,7 @@ const styles = StyleSheet.create({
   note: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 10,
     padding: 12, minHeight: 80, fontSize: 15, color: colors.textPrimary,
+    backgroundColor: colors.background,
   },
   actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
@@ -143,4 +146,4 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnGhostText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

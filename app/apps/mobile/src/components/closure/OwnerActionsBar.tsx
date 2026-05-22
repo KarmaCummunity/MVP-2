@@ -6,10 +6,10 @@
 //   deleted_no_recipient (past grace) → no CTA (post is on its way out)
 //   removed_admin / expired           → no CTA
 import { useEffect, useState } from 'react';
-import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Pressable, Text, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { Post } from '@kc/domain';
 import { isPostError, type PostErrorCode } from '@kc/application';
 import { useClosureStore } from '../../store/closureStore';
@@ -35,6 +35,8 @@ interface Props {
 }
 
 export function OwnerActionsBar(props: Readonly<Props>) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { post, ownerId, tabBarOverlayInset = 0, onClosed, onReopened } = props;
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -156,7 +158,7 @@ export function OwnerActionsBar(props: Readonly<Props>) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   bar: {
     paddingHorizontal: spacing.base,
     paddingTop: spacing.base,
@@ -180,4 +182,4 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-});
+}));

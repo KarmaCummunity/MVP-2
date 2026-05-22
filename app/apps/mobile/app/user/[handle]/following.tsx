@@ -4,18 +4,20 @@
 // FR-PROFILE-010.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getListFollowingUseCase } from '../../../src/services/followComposition';
 
 export default function FollowingListScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
@@ -78,7 +80,7 @@ export default function FollowingListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   searchRow: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.xs,
@@ -95,4 +97,4 @@ const styles = StyleSheet.create({
   name: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
   city: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   empty: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.lg },
-});
+}));

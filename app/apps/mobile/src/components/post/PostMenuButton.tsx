@@ -1,11 +1,11 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { useAuthStore } from '../../store/authStore';
 import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
@@ -20,6 +20,8 @@ export function PostMenuButton({ post }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const styles = usePostMenuButtonStyles();
+  const { colors } = useTheme();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
   const [open, setOpen] = useState(false);
@@ -67,6 +69,6 @@ export function PostMenuButton({ post }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const usePostMenuButtonStyles = makeUseStyles(() => ({
   btn: { padding: 4, marginEnd: 4 },
-});
+}));

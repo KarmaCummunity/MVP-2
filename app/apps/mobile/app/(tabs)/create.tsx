@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { Screen } from '../../src/components/ui/Screen';
 import { useAuthStore } from '../../src/store/authStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
@@ -26,12 +26,14 @@ import { NotifyModal } from '../../src/components/NotifyModal';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { DraftResumeModal } from '../../src/components/post/DraftResumeModal';
 import { getUserRepo } from '../../src/services/userComposition';
-import { createPostStyles as styles } from './create.styles';
+import { useCreatePostStyles } from './create.styles';
 import { useCreatePostPublish } from '../../src/hooks/useCreatePostPublish';
 import { CreatePostFormScrollContent } from '../../src/components/CreatePostForm/CreatePostFormScrollContent';
 
 export default function CreatePostScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useCreatePostStyles();
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const { requestSoftGate } = useSoftGate();

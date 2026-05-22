@@ -3,13 +3,15 @@ import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import type { UserSearchResult } from '@kc/domain';
 import { AvatarInitials } from '../AvatarInitials';
 import { isOpaqueSystemShareHandle } from '../../lib/shareHandleDisplay';
-import { styles } from './searchResultCard.styles';
+import { useSearchResultCardStyles } from './searchResultCard.styles';
 
 export function UserResultCard({ user }: { user: UserSearchResult }) {
+  const styles = useSearchResultCardStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const showHandle = !isOpaqueSystemShareHandle(user.shareHandle);

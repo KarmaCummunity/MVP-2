@@ -3,7 +3,7 @@ import React from 'react';
 import { Modal, View, Text, Pressable, TouchableOpacity, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { DonationLink } from '@kc/domain';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
 import {
   confirmRemoveDonationLink,
   openDonationLinkUrl,
@@ -20,6 +20,28 @@ interface Props {
   readonly onEdit: (link: DonationLink) => void;
 }
 
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' as const },
+  sheet: {
+    backgroundColor: colors.surface,
+    borderTopLeftRadius: radius.lg,
+    borderTopRightRadius: radius.lg,
+    paddingVertical: spacing.xs,
+    borderWidth: isDark ? 1 : 0,
+    borderBottomWidth: 0,
+    borderColor: isDark ? colors.border : 'transparent',
+  },
+  item: {
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.base,
+    alignItems: 'center' as const,
+  },
+  itemText: { ...typography.body, color: colors.textPrimary },
+  itemDestructive: { color: colors.error },
+  itemCancel: { ...typography.semiBold, color: colors.textSecondary },
+  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
+}));
+
 export function DonationLinkRowMenu({
   visible,
   link,
@@ -30,6 +52,7 @@ export function DonationLinkRowMenu({
   onEdit,
 }: Props) {
   const { t } = useTranslation();
+  const styles = useStyles();
   if (!link) return null;
 
   const isOwner = link.submittedBy === me;
@@ -99,18 +122,3 @@ export function DonationLinkRowMenu({
     </Modal>
   );
 }
-
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
-  sheet: {
-    backgroundColor: colors.surface,
-    borderTopLeftRadius: radius.lg,
-    borderTopRightRadius: radius.lg,
-    paddingVertical: spacing.xs,
-  },
-  item: { paddingVertical: spacing.md, paddingHorizontal: spacing.base, alignItems: 'center' },
-  itemText: { ...typography.body, color: colors.textPrimary },
-  itemDestructive: { color: colors.error },
-  itemCancel: { ...typography.semiBold, color: colors.textSecondary },
-  divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-});

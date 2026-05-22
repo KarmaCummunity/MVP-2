@@ -3,14 +3,14 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { ALL_CATEGORIES, DONATION_CATEGORY_SLUGS } from '@kc/domain';
 import type { Category, DonationCategorySlug, PostType, SearchSortBy } from '@kc/domain';
 import { search as t } from '../i18n/locales/he/donations';
 import { useSearchStore } from '../store/searchStore';
 import { CityPicker } from './CityPicker';
 import { SearchChip } from './search/SearchChip';
-import { styles } from './search/searchFilterSheet.styles';
+import { useSearchFilterSheetStyles } from './search/searchFilterSheet.styles';
 
 interface Props {
   visible: boolean;
@@ -18,6 +18,8 @@ interface Props {
 }
 
 export function SearchFilterSheet({ visible, onClose }: Props) {
+  const styles = useSearchFilterSheetStyles();
+  const { colors } = useTheme();
   const store = useSearchStore();
   const [postType, setPostType] = useState<PostType | null>(store.postType);
   const [category, setCategory] = useState<Category | null>(store.category);

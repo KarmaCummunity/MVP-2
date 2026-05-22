@@ -3,8 +3,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
-import { aboutWebTextRtl } from './aboutWebRtlStyle';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -16,6 +16,8 @@ interface Item {
 
 export function AboutContributionsGrid() {
   const { t } = useTranslation();
+  const styles = useAboutContributionsGridStyles();
+  const { colors } = useTheme();
   const items: Item[] = t('aboutContent.contributionsList', { returnObjects: true }) as Item[];
 
   return (
@@ -53,7 +55,7 @@ export function AboutContributionsGrid() {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutContributionsGridStyles = makeUseStyles(({ colors }) => ({
   grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
   tile: {
     width: '47.5%',
@@ -67,8 +69,7 @@ const styles = StyleSheet.create({
   tileSoon: { backgroundColor: colors.background, borderColor: colors.border },
   label: {
     ...typography.caption,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
     fontWeight: '600',
     lineHeight: 16,
     width: '100%',
@@ -78,7 +79,7 @@ const styles = StyleSheet.create({
   badge: { borderRadius: 10, paddingHorizontal: spacing.sm, paddingVertical: 2 },
   badgeActive: { backgroundColor: colors.primary },
   badgeSoon: { backgroundColor: colors.border },
-  badgeText: { fontSize: 10, fontWeight: '700', ...aboutWebTextRtl },
+  badgeText: { fontSize: 10, fontWeight: '700', ...aboutRtlText },
   badgeTextActive: { color: colors.textInverse },
   badgeTextSoon: { color: colors.textDisabled },
-});
+}));

@@ -7,9 +7,11 @@ import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'reac
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 
 export function MyProfileOverflowMenu({ showFollowRequests }: Readonly<{ showFollowRequests: boolean }>) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const [open, setOpen] = useState(false);
@@ -66,6 +68,7 @@ export function MyProfileOverflowMenu({ showFollowRequests }: Readonly<{ showFol
 }
 
 function SheetItem({ label, onPress }: Readonly<{ label: string; onPress: () => void }>) {
+  const styles = useStyles();
   return (
     <TouchableOpacity style={styles.item} onPress={onPress} accessibilityRole="button">
       <Text style={styles.itemText}>{label}</Text>
@@ -73,7 +76,7 @@ function SheetItem({ label, onPress }: Readonly<{ label: string; onPress: () => 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   trigger: { paddingHorizontal: 8, paddingVertical: 4 },
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
@@ -86,4 +89,4 @@ const styles = StyleSheet.create({
   itemText: { ...typography.body, color: colors.textPrimary },
   itemCancel: { ...typography.semiBold, color: colors.textSecondary },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-});
+}));

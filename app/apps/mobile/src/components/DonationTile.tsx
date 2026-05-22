@@ -9,9 +9,9 @@
 // shadow, orange-tinted IconTile, RTL-aware row layout, and a haptic
 // scale-press handled by the Card / PressableScale primitives.
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { PressableScale } from './animations/PressableScale';
 import { Card } from './ui/Card';
 import { IconTile } from './ui/IconTile';
@@ -26,6 +26,33 @@ interface DonationTileProps {
   testID?: string;
 }
 
+const useStyles = makeUseStyles(({ colors }) => ({
+  row: {
+    minHeight: 96,
+    flexDirection: 'row-reverse' as const,
+    alignItems: 'center' as const,
+    gap: spacing.lg,
+    borderRadius: radius.lg,
+  },
+  compactWrap: { flex: 1 },
+  compactCard: {
+    minHeight: 148,
+    alignItems: 'center' as const,
+    justifyContent: 'flex-start' as const,
+    gap: spacing.xs,
+  },
+  compactIcon: { marginBottom: spacing.xs },
+  textBlock: { flex: 1 },
+  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2, textAlign: rtlTextAlignStart },
+  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
+  titleCompact: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const, fontSize: 16 },
+  subtitleCompact: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    textAlign: 'center' as const,
+  },
+}));
+
 export function DonationTile({
   icon,
   title,
@@ -34,6 +61,9 @@ export function DonationTile({
   compact = false,
   testID,
 }: DonationTileProps) {
+  const { colors } = useTheme();
+  const styles = useStyles();
+
   if (compact) {
     return (
       <PressableScale
@@ -70,30 +100,3 @@ export function DonationTile({
     </PressableScale>
   );
 }
-
-const styles = StyleSheet.create({
-  row: {
-    minHeight: 96,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    gap: spacing.lg,
-    borderRadius: radius.lg,
-  },
-  compactWrap: { flex: 1 },
-  compactCard: {
-    minHeight: 148,
-    alignItems: 'center',
-    justifyContent: 'flex-start',
-    gap: spacing.xs,
-  },
-  compactIcon: { marginBottom: spacing.xs },
-  textBlock: { flex: 1 },
-  title: { ...typography.h3, color: colors.textPrimary, marginBottom: 2, textAlign: rtlTextAlignStart },
-  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
-  titleCompact: { ...typography.h3, color: colors.textPrimary, textAlign: 'center', fontSize: 16 },
-  subtitleCompact: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-});

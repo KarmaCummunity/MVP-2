@@ -2,10 +2,10 @@
 // Bottom-sheet menu opened from PostMenuButton on PostDetail.
 // Items shown depend on viewer role (see spec §3).
 import { useState } from 'react';
-import { Modal, Text, Pressable, StyleSheet, ScrollView } from 'react-native';
+import { Modal, Text, Pressable, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
-import { colors } from '@kc/ui';
+import { makeUseStyles } from '@kc/ui';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { ReportPostModal } from './ReportPostModal';
 import { usePostMenuActions } from '../../hooks/usePostMenuActions';
@@ -42,6 +42,7 @@ export function PostMenuSheet({
   onEdit,
 }: Props) {
   const { t } = useTranslation();
+  const styles = usePostMenuSheetStyles();
   const [active, setActive] = useState<ActiveModal>(null);
   const { busy, error, clearError, handleOwnerDelete, handleAdminRemove } =
     usePostMenuActions({
@@ -161,6 +162,7 @@ interface MenuItemProps {
 }
 
 function MenuItem({ icon, label, destructive, muted, onPress }: MenuItemProps) {
+  const styles = usePostMenuSheetStyles();
   return (
     <Pressable style={styles.item} onPress={onPress} accessibilityRole="button">
       <Text style={styles.itemIcon}>{icon}</Text>
@@ -177,8 +179,8 @@ function MenuItem({ icon, label, destructive, muted, onPress }: MenuItemProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+const usePostMenuSheetStyles = makeUseStyles(({ colors }) => ({
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface,
     paddingVertical: 8,
@@ -196,4 +198,4 @@ const styles = StyleSheet.create({
   itemLabel: { fontSize: 16, color: colors.textPrimary, textAlign: 'right' },
   itemLabelDestructive: { color: colors.error },
   itemLabelMuted: { color: colors.textSecondary },
-});
+}));

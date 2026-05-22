@@ -1,5 +1,5 @@
 // Sub-components for the Appearance settings screen (FR-SETTINGS-014).
-// Extracted to keep `appearance.tsx` under the 300-line cap.
+// Lives under src/ (not app/) so expo-router does not register it as a route.
 import React from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -13,7 +13,8 @@ import {
   type ColorPalette,
   type ThemeMode,
 } from '@kc/ui';
-import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
 
 export interface ModeOption {
   readonly mode: ThemeMode;
@@ -155,7 +156,7 @@ export function PalettePreview({ palette, labelKey }: PalettePreviewProps) {
   );
 }
 
-export const useStyles = makeUseStyles(({ colors }) => ({
+const useStyles = makeUseStyles(({ colors }) => ({
   modeRow: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
@@ -164,6 +165,7 @@ export const useStyles = makeUseStyles(({ colors }) => ({
     gap: spacing.md,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    ...webViewRtl,
   },
   modeRowSelected: {
     backgroundColor: colors.primarySurface,
@@ -189,12 +191,14 @@ export const useStyles = makeUseStyles(({ colors }) => ({
     color: colors.textPrimary,
     textAlign: rtlTextAlignStart,
     fontWeight: '600' as const,
+    ...webTextRtl,
   },
   modeHint: {
     ...typography.caption,
     color: colors.textSecondary,
     textAlign: rtlTextAlignStart,
     marginTop: 2,
+    ...webTextRtl,
   },
   radio: {
     width: 22,
@@ -218,6 +222,7 @@ export const useStyles = makeUseStyles(({ colors }) => ({
     borderWidth: 1,
     padding: spacing.md,
     minHeight: 160,
+    ...webViewRtl,
   },
   previewLabel: {
     ...typography.caption,
@@ -225,25 +230,31 @@ export const useStyles = makeUseStyles(({ colors }) => ({
     marginBottom: spacing.sm,
     textTransform: 'uppercase' as const,
     letterSpacing: 0.5,
+    width: '100%',
+    ...webTextRtl,
   },
   previewSurface: {
     borderRadius: radius.md,
     borderWidth: 1,
     padding: spacing.md,
     gap: spacing.xs,
+    ...webViewRtl,
   },
   previewHeading: {
     ...typography.h4,
     textAlign: rtlTextAlignStart,
+    ...webTextRtl,
   },
   previewBody: {
     ...typography.caption,
     textAlign: rtlTextAlignStart,
+    ...webTextRtl,
   },
   previewChipsRow: {
     flexDirection: 'row' as const,
     gap: spacing.xs,
     marginTop: spacing.sm,
+    ...webViewRtl,
   },
   previewChip: {
     paddingHorizontal: spacing.sm,

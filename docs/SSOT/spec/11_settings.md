@@ -233,7 +233,7 @@ The user permanently deletes their own account.
 
 ## FR-SETTINGS-014 — Appearance (light / dark / system)
 
-**Status.** 🟡 In progress (2026-05-19). Infrastructure + toggle screen shipped; remaining screen migration tracked under TD-130.
+**Status.** ✅ Complete (2026-05-22). Infrastructure, toggle screen, and full mobile screen/container migration shipped.
 
 **Description.**
 A user-facing toggle, in Settings → Appearance, that switches the app between three theme modes: `System` (follows the OS), `Light`, and `Dark`. Dark mode uses a warm-tinted palette (deep warm browns instead of pure black) so the community/karma identity carries through.

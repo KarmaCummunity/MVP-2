@@ -4,13 +4,13 @@
 // FR-PROFILE-009 / FR-PROFILE-010. Each row carries dynamic Follow + ⋮ "Remove follower" if self.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { User } from '@kc/domain';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { ConfirmActionModal } from '../../../src/components/post/ConfirmActionModal';
@@ -22,6 +22,8 @@ import {
 } from '../../../src/services/followComposition';
 
 export default function FollowersListScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
@@ -119,7 +121,7 @@ export default function FollowersListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   searchRow: {
     flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.xs,
@@ -137,4 +139,4 @@ const styles = StyleSheet.create({
   city: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   menuBtn: { padding: spacing.xs },
   empty: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.lg },
-});
+}));

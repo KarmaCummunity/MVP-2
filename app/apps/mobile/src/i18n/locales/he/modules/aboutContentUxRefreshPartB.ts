@@ -8,32 +8,15 @@ export const aboutContentUxRefreshPartB = {
   teamPartnerCtaBody:
     'אנחנו פתוחים לשותפים, מתנדבים ויועצים בתחומים שונים — במיוחד מוצר, קהילה, נגישות ובטיחות. כתבו לנו.',
 
-  teamPlaceholderTitle: 'מקום פנוי',
-  teamPlaceholderBody: 'כאן יתווסף בקרוב שותף נוסף לצוות.',
+  teamLoadError: 'לא הצלחנו לטעון את הצוות. נסו שוב.',
 
-  teamMembers: [
-    {
-      name: 'נוה סרוסי',
+  /** Copy keyed by `about_team_members.role_key`; profile name/avatar come from the linked user. */
+  teamRoles: {
+    founder: {
       role: 'מייסד הפרויקט',
       bio: 'מתכנת לשעבר בצבא. הבנתי שהדרך שלי להפוך טוב לנגיש יותר היא דרך טכנולוגיה — חיבור פשוט ובטוח בין מי שרוצה לתת למי שצריך לקבל. מאמין בכוח של קהילה לשנות מציאות.',
-      initials: 'נ״ס',
-      placeholder: false,
     },
-    {
-      name: 'שותף קהילה',
-      role: 'מקום לשותף עתידי',
-      bio: '',
-      initials: '+',
-      placeholder: true,
-    },
-    {
-      name: 'שותף מוצר',
-      role: 'מקום לשותף עתידי',
-      bio: '',
-      initials: '+',
-      placeholder: true,
-    },
-  ],
+  },
 
   roadmapPhases: [
     {

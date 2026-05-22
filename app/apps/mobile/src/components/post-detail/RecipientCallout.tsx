@@ -3,11 +3,11 @@
 //   • Give    → "delivered to X" (owner gave; marked user is the receiver)
 //   • Request → "given by X"     (owner asked for help; marked user is the giver)
 // Tapping the row opens the marked user's profile when profileNavigable is true.
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { AvatarInitials } from '../AvatarInitials';
 
@@ -25,6 +25,8 @@ interface Props {
 }
 
 export function RecipientCallout({ postType, recipient, profileNavigable = true }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const labelLeft = postType === 'Give' ? t('closure.calloutGiveLabel') : t('closure.calloutRequestLabel');
@@ -67,7 +69,7 @@ export function RecipientCallout({ postType, recipient, profileNavigable = true 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   row: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -81,4 +83,4 @@ const styles = StyleSheet.create({
   sublabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   label: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
   name: { fontWeight: '700' },
-});
+}));

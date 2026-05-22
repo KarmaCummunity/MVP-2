@@ -4,10 +4,10 @@
 // Mapped to: FR-PROFILE-001 AC1, FR-PROFILE-002 AC1, FR-PROFILE-011, 012.
 
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { isOpaqueSystemShareHandle } from '../../lib/shareHandleDisplay';
 
@@ -26,6 +26,8 @@ export interface ProfileHeaderProps {
 export function ProfileHeader({
   displayName, handle, locationLine, avatarUrl, biography, privacyMode, onLockPress, size = 96,
 }: ProfileHeaderProps) {
+  const styles = useProfileHeaderStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const showLock = privacyMode === 'Private';
   return (
@@ -53,17 +55,22 @@ export function ProfileHeader({
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', gap: spacing.xs, paddingVertical: spacing.sm },
+const useProfileHeaderStyles = makeUseStyles(({ colors }) => ({
+  wrap: { alignItems: 'center' as const, gap: spacing.xs, paddingVertical: spacing.sm },
   nameRow: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
+    flexDirection: 'row-reverse' as const,
+    alignItems: 'center' as const,
     gap: spacing.xs,
     marginTop: spacing.sm,
   },
-  displayName: { ...typography.h2, color: colors.textPrimary, textAlign: 'center' },
+  displayName: { ...typography.h2, color: colors.textPrimary, textAlign: 'center' as const },
   lock: { marginTop: 2 },
   handle: { ...typography.body, color: colors.textSecondary },
-  location: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
-  bio: { ...typography.body, color: colors.textPrimary, textAlign: 'center', paddingHorizontal: spacing.md },
-});
+  location: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' as const },
+  bio: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: 'center' as const,
+    paddingHorizontal: spacing.md,
+  },
+}));

@@ -4,9 +4,9 @@
 // submission. The street-number input is editable only when a city is set.
 
 import React, { useCallback } from 'react';
-import { StyleSheet, Text, TextInput, View } from 'react-native';
+import { Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { CityPicker } from './CityPicker';
 import { StreetPicker } from './StreetPicker';
 import { applyAddressResetOnCityChange } from '../lib/addressResetOnCityChange';
@@ -30,6 +30,8 @@ export function EditProfileAddressBlock({
   onStreetNumberChange,
   disabled,
 }: EditProfileAddressBlockProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
 
   const handleCityChange = useCallback(
@@ -85,7 +87,7 @@ export function EditProfileAddressBlock({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { width: '100%', maxWidth: 500, alignSelf: 'center' },
   field: { marginVertical: spacing.xs, gap: spacing.xs },
   label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
@@ -104,4 +106,4 @@ const styles = StyleSheet.create({
     minHeight: 50,
   },
   inputDisabled: { opacity: 0.5 },
-});
+}));

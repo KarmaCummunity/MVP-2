@@ -3,10 +3,10 @@
 // Mapped to: FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised).
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 import type { ProfileClosedPostsItem } from '@kc/domain';
 import { PostCardProfile } from '../PostCardProfile';
 import { EmptyState } from '../EmptyState';
@@ -33,6 +33,8 @@ export function ProfileClosedPostsGrid({
   onLoadMore,
   profileUserId,
 }: ProfileClosedPostsGridProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const EMPTY_COPY: Record<ClosedEmptyVariant, {
     title: string;
@@ -98,7 +100,7 @@ export function ProfileClosedPostsGrid({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   loading: { padding: spacing.xl, alignItems: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
   loadMoreRow: { paddingVertical: spacing.lg, alignItems: 'center' },
@@ -113,4 +115,4 @@ const styles = StyleSheet.create({
   },
   loadMoreBtnBusy: { opacity: 0.6 },
   loadMoreText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
-});
+}));

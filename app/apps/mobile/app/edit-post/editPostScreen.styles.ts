@@ -1,10 +1,9 @@
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
-export const styles = StyleSheet.create({
+export const useEditPostScreenStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.base },
-  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const },
   retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: colors.primary, borderRadius: 999 },
   retryText: { ...typography.button, color: colors.textInverse },
   header: {
@@ -24,7 +23,7 @@ export const styles = StyleSheet.create({
   typeBadgeText: { ...typography.button, color: colors.textPrimary },
   typeBadgeSub: { ...typography.caption, color: colors.textSecondary },
   section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
   required: { color: colors.error },
   input: {
     backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
@@ -32,7 +31,7 @@ export const styles = StyleSheet.create({
     ...typography.body, color: colors.textPrimary, minHeight: 48,
   },
   textarea: { minHeight: 100, textAlignVertical: 'top', paddingTop: spacing.md },
-  charCount: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
+  charCount: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' as const },
   streetRow: { flexDirection: 'row', gap: spacing.sm, alignItems: 'stretch' },
   streetInputStreet: { flex: 2, minWidth: 0 },
   streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120 },
@@ -55,6 +54,6 @@ export const styles = StyleSheet.create({
   visRowDisabled: { opacity: 0.5 },
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border },
   radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  visLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  visSub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-});
+  visLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+  visSub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' as const },
+}));

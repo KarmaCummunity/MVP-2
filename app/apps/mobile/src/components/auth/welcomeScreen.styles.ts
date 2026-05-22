@@ -52,8 +52,11 @@ export const useWelcomeScreenStyles = makeUseStyles(({ colors, isDark }) => ({
 
   // ── Value props ───────────────────────────────────────────────────────
   valueProps: {
-    marginBottom: spacing['2xl'],
+    marginBottom: spacing.lg,
     gap: spacing.base,
+  },
+  miniAboutWrap: {
+    marginBottom: spacing['2xl'],
   },
   valuePropRow: {
     flexDirection: 'row' as const,

@@ -2,7 +2,7 @@
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { PostVisibility } from '@kc/domain';
-import { colors, PlatformSwitch, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, PlatformSwitch, radius, spacing, typography } from '@kc/ui';
 import { usePostActorPrivacyModel } from '../../hooks/usePostActorPrivacyModel';
 import type { PostWithOwner } from '@kc/application';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
@@ -14,6 +14,7 @@ interface Props {
 
 export function PostMenuExposureBlock({ post, viewerId }: Props) {
   const { t } = useTranslation();
+  const styles = usePostMenuExposureBlockStyles();
   const m = usePostActorPrivacyModel(post, viewerId);
   const followersLocked = m.profilePrivacy === 'Public';
   const v = m.audienceValue;
@@ -112,7 +113,7 @@ export function PostMenuExposureBlock({ post, viewerId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const usePostMenuExposureBlockStyles = makeUseStyles(({ colors }) => ({
   wrap: {
     paddingHorizontal: spacing.md,
     paddingTop: spacing.sm,
@@ -179,4 +180,4 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   partnerLabel: { ...typography.bodySmall, flex: 1, color: colors.textPrimary, textAlign: 'right' },
-});
+}));

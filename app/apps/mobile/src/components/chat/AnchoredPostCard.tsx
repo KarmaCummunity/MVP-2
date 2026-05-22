@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, shadow, spacing, typography, useTheme } from '@kc/ui';
 import type { GestureResponderEvent } from 'react-native';
 import type { PostType } from '@kc/domain';
 import { getPostByIdUseCase } from '../../services/postsComposition';
@@ -33,6 +33,8 @@ const TYPE_LABEL_KEYS: Record<PostType, string> = {
 
 export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId }: Props) {
   const { t } = useTranslation();
+  const styles = useAnchoredPostCardStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
@@ -186,7 +188,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
   );
 }
 
-const styles = StyleSheet.create({
+const useAnchoredPostCardStyles = makeUseStyles(({ colors }) => ({
   card: {
     flexDirection: 'row-reverse',
     alignItems: 'center',
@@ -239,4 +241,4 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   ctaText: { ...typography.button, color: colors.textInverse, fontSize: 14 },
-});
+}));

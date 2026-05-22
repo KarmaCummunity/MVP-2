@@ -4,12 +4,11 @@ import {
   ActivityIndicator,
   FlatList,
   RefreshControl,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
 } from 'react-native';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { PostCardGrid } from './PostCardGrid';
 import { EmptyState } from './EmptyState';
@@ -47,6 +46,8 @@ export function PostFeedList({
   ListHeaderComponent,
   listRef,
 }: Props) {
+  const styles = usePostFeedListStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   if (isLoading && !data) {
     return (
@@ -110,9 +111,15 @@ export function PostFeedList({
   );
 }
 
-const styles = StyleSheet.create({
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xl, gap: spacing.base },
-  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+const usePostFeedListStyles = makeUseStyles(({ colors }) => ({
+  center: {
+    flex: 1,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    padding: spacing.xl,
+    gap: spacing.base,
+  },
+  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const },
   retryBtn: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
@@ -122,5 +129,5 @@ const styles = StyleSheet.create({
   retryText: { ...typography.button, color: colors.textInverse },
   row: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
   listContent: { paddingTop: spacing.base, paddingBottom: spacing['3xl'] },
-  footer: { paddingVertical: spacing.base, alignItems: 'center' },
-});
+  footer: { paddingVertical: spacing.base, alignItems: 'center' as const },
+}));

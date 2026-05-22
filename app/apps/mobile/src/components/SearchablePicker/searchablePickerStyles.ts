@@ -1,48 +1,53 @@
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
-export const searchablePickerStyles = StyleSheet.create({
+export const useSearchablePickerStyles = makeUseStyles(({ colors, isDark }) => ({
   field: {
     height: 50,
     backgroundColor: colors.background,
     borderRadius: radius.md,
-    borderWidth: 1.5,
+    borderWidth: isDark ? 1 : 1.5,
     borderColor: colors.border,
     paddingHorizontal: spacing.base,
-    justifyContent: 'center',
+    justifyContent: 'center' as const,
   },
   fieldDisabled: { opacity: 0.5 },
   disabledHelper: {
     ...typography.label,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: 'right' as const,
     marginTop: spacing.xs,
   },
-  value: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  value: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
   valuePlaceholder: { color: colors.textDisabled },
   modalRoot: { flex: 1 },
   backdropPressable: {
-    ...StyleSheet.absoluteFillObject,
-    backgroundColor: 'rgba(0,0,0,0.4)',
+    position: 'absolute' as const,
+    top: 0,
+    left: 0,
+    right: 0,
+    bottom: 0,
+    backgroundColor: colors.overlay,
   },
-  sheetOuter: { flex: 1, justifyContent: 'flex-end' },
+  sheetOuter: { flex: 1, justifyContent: 'flex-end' as const },
   sheet: {
     height: '70%',
-    backgroundColor: colors.surface,
+    backgroundColor: colors.surfaceRaised,
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     paddingTop: spacing.base,
     paddingHorizontal: spacing.base,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
   },
   sheetTitle: {
     ...typography.h3,
     color: colors.textPrimary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.sm,
   },
   search: {
     minHeight: 44,
-    textAlign: 'right',
+    textAlign: 'right' as const,
     backgroundColor: colors.background,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -52,12 +57,12 @@ export const searchablePickerStyles = StyleSheet.create({
     ...typography.body,
     color: colors.textPrimary,
   },
-  statusRow: { paddingVertical: spacing.lg, alignItems: 'center' },
-  errorBlock: { alignItems: 'center', paddingVertical: spacing.md },
+  statusRow: { paddingVertical: spacing.lg, alignItems: 'center' as const },
+  errorBlock: { alignItems: 'center' as const, paddingVertical: spacing.md },
   errorText: {
     ...typography.body,
     color: colors.error,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     paddingVertical: spacing.sm,
   },
   retryButton: {
@@ -70,13 +75,13 @@ export const searchablePickerStyles = StyleSheet.create({
   retryLabel: {
     ...typography.body,
     color: colors.primary,
-    fontWeight: '600',
-    textAlign: 'center',
+    fontWeight: '600' as const,
+    textAlign: 'center' as const,
   },
   emptyText: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     paddingVertical: spacing.lg,
   },
   row: {
@@ -85,12 +90,12 @@ export const searchablePickerStyles = StyleSheet.create({
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  rowText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  rowText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
   freeTextRow: { backgroundColor: colors.primarySurface },
   freeTextLabel: {
     ...typography.body,
     color: colors.primary,
-    textAlign: 'right',
-    fontWeight: '600',
+    textAlign: 'right' as const,
+    fontWeight: '600' as const,
   },
-});
+}));

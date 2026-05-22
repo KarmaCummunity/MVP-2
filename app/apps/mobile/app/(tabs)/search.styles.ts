@@ -3,15 +3,15 @@
 // the welcome-screen idiom: 52h rounded-xl white card with soft shadow + light
 // border, filter button matches at radius.lg).
 import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
-export const searchStyles = StyleSheet.create({
+export const useSearchScreenStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.surfaceCream },
 
   // ── Search bar + filter button (welcome-screen idiom) ─────────────────
   searchRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: spacing.sm,
     paddingHorizontal: spacing.base,
     paddingTop: spacing.sm,
@@ -19,8 +19,8 @@ export const searchStyles = StyleSheet.create({
   },
   searchInput: {
     flex: 1,
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
     paddingHorizontal: spacing.base,
@@ -28,11 +28,11 @@ export const searchStyles = StyleSheet.create({
     gap: spacing.sm,
     borderWidth: 1.5,
     borderColor: colors.border,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0 : 0.05,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: isDark ? 0 : 2,
   },
   searchIcon: { marginLeft: spacing.xs },
   searchText: { flex: 1, ...typography.body, color: colors.textPrimary },
@@ -41,35 +41,35 @@ export const searchStyles = StyleSheet.create({
     height: 52,
     borderRadius: radius.lg,
     backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     borderWidth: 1.5,
     borderColor: colors.border,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0 : 0.05,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: isDark ? 0 : 2,
   },
   filterBtnActive: { backgroundColor: colors.primary, borderColor: colors.primary },
   filterBadge: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: -4,
     right: -4,
     width: 18,
     height: 18,
     borderRadius: 9,
     backgroundColor: colors.error,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   filterBadgeText: { ...typography.caption, color: colors.textInverse, fontSize: 10 },
 
   // ── Category / sort chips ─────────────────────────────────────────────
   chipContainer: { backgroundColor: 'transparent', maxHeight: 52 },
   chipRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: spacing.sm,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
@@ -92,8 +92,8 @@ export const searchStyles = StyleSheet.create({
     marginHorizontal: spacing.xs,
   },
   sortChip: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: 4,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
@@ -111,20 +111,20 @@ export const searchStyles = StyleSheet.create({
   contentInner: { padding: spacing.base, paddingBottom: spacing['2xl'] },
   section: { marginBottom: spacing.lg },
   sectionHeader: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
     marginBottom: spacing.sm,
   },
-  sectionTitleRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.xs },
+  sectionTitleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.xs },
   sectionTitle: { ...typography.h3, color: colors.textPrimary },
   sectionCount: { ...typography.caption, color: colors.textSecondary },
   showAllText: { ...typography.caption, color: colors.primary, fontWeight: '600' as const },
 
   // ── Recent searches ───────────────────────────────────────────────────
   recentRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     paddingVertical: spacing.md,
     paddingHorizontal: spacing.sm,
     borderBottomWidth: StyleSheet.hairlineWidth,
@@ -132,26 +132,26 @@ export const searchStyles = StyleSheet.create({
     gap: spacing.sm,
   },
   recentRowPressed: { backgroundColor: colors.background },
-  recentText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  recentText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
   clearRecentText: { ...typography.caption, color: colors.error, fontWeight: '500' as const },
 
   // ── Empty / loading states ────────────────────────────────────────────
   emptyState: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     paddingVertical: spacing['3xl'],
     gap: spacing.md,
   },
-  emptyTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  emptyTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const },
   emptySubtitle: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     maxWidth: 260,
   },
   loadingWrap: {
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     paddingVertical: spacing['3xl'],
     gap: spacing.md,
   },
@@ -159,11 +159,11 @@ export const searchStyles = StyleSheet.create({
 
   // ── National links note ───────────────────────────────────────────────
   nationalNote: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'flex-end' as const,
     gap: spacing.xs,
     marginBottom: spacing.sm,
   },
-  nationalNoteText: { ...typography.caption, color: colors.textSecondary, fontStyle: 'italic' },
-});
+  nationalNoteText: { ...typography.caption, color: colors.textSecondary, fontStyle: 'italic' as const },
+}));

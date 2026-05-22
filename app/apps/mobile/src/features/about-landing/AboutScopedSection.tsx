@@ -1,8 +1,9 @@
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, typography, spacing } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 import { MOTION } from '../../lib/animations/motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { AboutScopeToggle } from './AboutScopeToggle';
@@ -27,6 +28,7 @@ export function AboutScopedSection({
   itemsVisionI18nKey,
 }: AboutScopedSectionProps) {
   const { t } = useTranslation();
+  const styles = useAboutScopedSectionStyles();
   const { scope } = useAboutContentScope();
   const reduced = useReducedMotion();
   const itemsKey = scope === 'mvp' ? itemsMvpI18nKey : itemsVisionI18nKey;
@@ -49,6 +51,7 @@ export function AboutScopedSection({
 }
 
 function NumberedList({ items, reduced }: Readonly<{ items: ScopedItem[]; reduced: boolean }>) {
+  const styles = useAboutScopedSectionStyles();
   return (
     <View style={styles.list}>
       {items.map((it, i) => {
@@ -86,8 +89,8 @@ function NumberedList({ items, reduced }: Readonly<{ items: ScopedItem[]; reduce
 }
 
 const BADGE = 28;
-const styles = StyleSheet.create({
-  h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.xs },
+const useAboutScopedSectionStyles = makeUseStyles(({ colors }) => ({
+  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.xs },
   list: { gap: spacing.md },
   row: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.md },
   badge: {
@@ -102,6 +105,6 @@ const styles = StyleSheet.create({
   },
   badgeNum: { ...typography.caption, color: colors.secondary, fontWeight: '800' },
   copy: { flex: 1, gap: spacing.xs },
-  title: { ...typography.body, color: colors.textPrimary, textAlign: 'right', fontWeight: '700' },
-  body: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
-});
+  title: { ...typography.body, color: colors.textPrimary, ...aboutRtlText, fontWeight: '700' },
+  body: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 22 },
+}));

@@ -4,16 +4,18 @@
 // Sibling of auth/callback.tsx (OAuth code exchange).
 // docs/SSOT/spec/01_auth_and_onboarding.md
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, TouchableOpacity, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { getVerifyEmailUseCase } from '../../src/services/authComposition';
 import { useAuthStore } from '../../src/store/authStore';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 
 export default function AuthVerifyScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const params = useLocalSearchParams<{ token_hash?: string; type?: string }>();
@@ -73,7 +75,7 @@ export default function AuthVerifyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   center: {
     flex: 1, justifyContent: 'center', alignItems: 'center',
     backgroundColor: colors.background, paddingHorizontal: spacing.xl, gap: spacing.md,
@@ -85,4 +87,4 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.xl, paddingVertical: spacing.md, borderRadius: 12,
   },
   btnText: { ...typography.button, color: colors.textInverse },
-});
+}));

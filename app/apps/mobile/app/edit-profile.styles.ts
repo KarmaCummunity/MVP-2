@@ -1,7 +1,6 @@
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
-export const editProfileStyles = StyleSheet.create({
+export const useEditProfileStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   center: {
     flex: 1,
@@ -11,7 +10,7 @@ export const editProfileStyles = StyleSheet.create({
   },
   scroll: { padding: spacing.lg, gap: spacing.base, paddingBottom: spacing['3xl'] },
   field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
   input: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,
@@ -24,7 +23,7 @@ export const editProfileStyles = StyleSheet.create({
     minHeight: 48,
   },
   textarea: { minHeight: 90, textAlignVertical: 'top', paddingTop: spacing.md },
-  count: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' },
+  count: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' as const },
   saveBtn: {
     height: 52,
     backgroundColor: colors.primary,
@@ -34,4 +33,4 @@ export const editProfileStyles = StyleSheet.create({
     marginTop: spacing.base,
   },
   saveText: { ...typography.button, color: colors.textInverse },
-});
+}));

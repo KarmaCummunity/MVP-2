@@ -1,12 +1,11 @@
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
-export const guestFeedStyles = StyleSheet.create({
+export const useGuestFeedStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.sm,
     borderBottomWidth: 1,
@@ -19,13 +18,13 @@ export const guestFeedStyles = StyleSheet.create({
   list: { paddingTop: spacing.md, paddingBottom: 160 },
   centerWrap: {
     flex: 1,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
     paddingHorizontal: spacing.xl,
     paddingTop: spacing.xl,
     gap: spacing.base,
   },
-  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const },
   retryBtn: {
     paddingHorizontal: spacing.xl,
     paddingVertical: spacing.sm,
@@ -36,11 +35,11 @@ export const guestFeedStyles = StyleSheet.create({
   empty: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginTop: spacing.xl,
   },
   bottomBar: {
-    position: 'absolute',
+    position: 'absolute' as const,
     left: 0,
     right: 0,
     bottom: 0,
@@ -54,17 +53,17 @@ export const guestFeedStyles = StyleSheet.create({
   bottomHint: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'center',
+    textAlign: 'center' as const,
     marginBottom: spacing.sm,
   },
   bottomCta: {
     backgroundColor: colors.primary,
     borderRadius: radius.md,
     paddingVertical: spacing.md,
-    alignItems: 'center',
+    alignItems: 'center' as const,
   },
   bottomCtaText: {
     ...typography.button,
     color: colors.textInverse,
   },
-});
+}));

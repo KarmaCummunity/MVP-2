@@ -28,6 +28,7 @@ import {
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { AuthBackground } from '../../src/components/auth/AuthBackground';
+import { AuthMiniAboutTeaser } from '../../src/components/auth/AuthMiniAboutTeaser';
 import { useWelcomeScreenStyles } from '../../src/components/auth/welcomeScreen.styles';
 
 const VALUE_PROPS: Array<{ icon: React.ComponentProps<typeof Ionicons>['name']; key: string }> = [
@@ -163,6 +164,7 @@ export default function WelcomeScreen() {
           ))}
         </Animated.View>
 
+
         {/* Auth buttons */}
         <Animated.View style={[styles.buttons, buttonsStyle]}>
           {Platform.OS === 'ios' && (
@@ -188,6 +190,10 @@ export default function WelcomeScreen() {
           >
             <Text style={styles.guestBtnText}>{t('auth.guestPreviewCta')}</Text>
           </TouchableOpacity>
+        </Animated.View>
+
+        <Animated.View style={[propsStyle, styles.miniAboutWrap]}>
+          <AuthMiniAboutTeaser />
         </Animated.View>
 
         <Text style={styles.legal}>{t('auth.legalConsentShort')}</Text>

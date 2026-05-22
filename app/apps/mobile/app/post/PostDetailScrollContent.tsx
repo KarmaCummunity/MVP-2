@@ -3,14 +3,14 @@ import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
-import { styles } from './postDetailScreen.styles';
+import { usePostDetailStyles } from './postDetailScreen.styles';
 
 export type PostDetailScrollContentProps = Readonly<{
   post: PostWithOwner;
@@ -35,6 +35,8 @@ export function PostDetailScrollContent({
   scrollBottomInset,
 }: PostDetailScrollContentProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = usePostDetailStyles();
 
   return (
     <ScrollView
@@ -135,6 +137,8 @@ function PostDetailAuthorFooter(
   }>,
 ) {
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = usePostDetailStyles();
   const { ownerNavigable, ownerLabel, ownerAvatarUrl, cityName, ownerHandle } = props;
   const core = (
     <>

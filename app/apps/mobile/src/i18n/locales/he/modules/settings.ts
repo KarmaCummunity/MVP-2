@@ -77,7 +77,7 @@ export const settingsHe = {
     categoryLabel: 'קטגוריה (אופציונלי)',
     categories: {
       Bug: 'באג / תקלה',
-      Account: 'חשבון',
+      Account: 'פרופיל והתחברות',
       Suggestion: 'הצעה',
       Other: 'אחר',
     } as Record<string, string>,

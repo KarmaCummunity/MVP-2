@@ -4,7 +4,24 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Platform, Pressable } from 'react-native';
 import type { ReactElement } from 'react';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
+
+function AndroidOverflowIcon({ options }: { options: { a11yLabel: string; onPress: () => void; iconColor?: string } }) {
+  const { colors } = useTheme();
+  const iconColor = options.iconColor ?? colors.textPrimary;
+  return (
+    <Pressable
+      accessibilityRole="button"
+      accessibilityLabel={options.a11yLabel}
+      onPress={options.onPress}
+      hitSlop={8}
+      android_ripple={null}
+      style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}
+    >
+      <Ionicons name="ellipsis-vertical" size={22} color={iconColor} />
+    </Pressable>
+  );
+}
 import { BackButton } from '../components/BackButton';
 
 type CustomBarItem = {
@@ -27,24 +44,31 @@ type IosHeaderRightItem = CustomBarItem | IosNativeOverflowButtonItem;
 
 /** Compatible with expo-router Stack (native-stack) screen options. */
 export type NativeHeaderLeftFragment = {
-  headerLeft: typeof BackButton;
+  headerLeft?: (props: { tintColor?: string }) => ReactElement | null;
   unstable_headerLeftItems?: () => CustomBarItem[];
 };
 
-export const nativeStackHeaderLeftIconOnly: NativeHeaderLeftFragment = {
-  headerLeft: BackButton,
-  ...(Platform.OS === 'ios'
+/** Header bar items must not call React context hooks — pass resolved tint from the screen. */
+export function nativeStackHeaderLeftIconOnly(tintColor: string): NativeHeaderLeftFragment {
+  return Platform.OS === 'ios'
     ? {
+        // iOS uses unstable bar items — omit headerLeft so BackButton is not
+        // mounted twice (avoids Rules-of-Hooks drift in SceneView).
+        headerLeft: () => null,
         unstable_headerLeftItems: () => [
           {
             type: 'custom' as const,
-            element: <BackButton />,
+            element: <BackButton tintColor={tintColor} />,
             hidesSharedBackground: true,
           },
         ],
       }
-    : {}),
-};
+    : {
+        headerLeft: ({ tintColor: navTint }) => (
+          <BackButton tintColor={navTint ?? tintColor} />
+        ),
+      };
+}
 
 export type NativeHeaderRightFragment = {
   headerRight?: (props: { tintColor?: string }) => ReactElement | null;
@@ -75,7 +99,6 @@ export function nativeStackHeaderOverflowMenu(options: {
   onPress: () => void;
   iconColor?: string;
 }): NativeHeaderRightFragment {
-  const iconColor = options.iconColor ?? colors.textPrimary;
   if (Platform.OS === 'ios') {
     return {
       headerRight: undefined,
@@ -91,18 +114,5 @@ export function nativeStackHeaderOverflowMenu(options: {
       ],
     };
   }
-  return {
-    headerRight: () => (
-      <Pressable
-        accessibilityRole="button"
-        accessibilityLabel={options.a11yLabel}
-        onPress={options.onPress}
-        hitSlop={8}
-        android_ripple={null}
-        style={({ pressed }) => [{ opacity: pressed ? 0.6 : 1, padding: 4 }]}
-      >
-        <Ionicons name="ellipsis-vertical" size={22} color={iconColor} />
-      </Pressable>
-    ),
-  };
+  return { headerRight: () => <AndroidOverflowIcon options={options} /> };
 }

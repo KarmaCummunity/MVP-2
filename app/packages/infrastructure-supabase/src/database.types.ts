@@ -1027,6 +1027,16 @@ export type Database = {
       }
     }
     Views: {
+      about_team_profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string
+          role_key: string
+          share_handle: string
+          sort_order: number
+        }
+        Relationships: []
+      }
       community_stats: {
         Row: {
           active_public_posts: number | null

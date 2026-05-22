@@ -16,6 +16,7 @@ export type {
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
 export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRepository';
+export type { IAboutRepository } from './ports/IAboutRepository';
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
@@ -36,6 +37,7 @@ export * from './feed/GetActivePostsCountUseCase';
 export * from './feed/DismissFirstPostNudgeUseCase';
 export * from './stats/GetCommunityStatsSnapshotUseCase';
 export * from './stats/ListMyActivityTimelineUseCase';
+export * from './about/ListAboutTeamMembersUseCase';
 
 export * from './posts/errors';
 export * from './posts/CreatePostUseCase';

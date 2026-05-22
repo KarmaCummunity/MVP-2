@@ -1,22 +1,27 @@
 // FR-ADMIN-007 — admin-only audit lookup. Hidden from non-admins via Redirect.
 import React, { useState, useCallback } from 'react';
-import { View, Text, TextInput, FlatList, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, TextInput, FlatList, Pressable, ActivityIndicator } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, Redirect } from 'expo-router';
-import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
-import { colors, spacing, typography } from '@kc/ui';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import type { AuditEvent } from '@kc/domain';
 import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
 import { container } from '../../src/lib/container';
 import { getUniversalSearchUseCase } from '../../src/services/searchComposition';
 import { useAuthStore } from '../../src/store/authStore';
 import he from '../../src/i18n/locales/he';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 
 interface UserHit { userId: string; displayName: string; }
 
 export default function AuditScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
   const isAdmin = useIsSuperAdmin();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
+  const styles = useAuditScreenStyles();
+  const { colors } = useTheme();
   const t = he.audit;
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<UserHit[]>([]);
@@ -112,6 +117,7 @@ export default function AuditScreen() {
 
 function AuditRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: boolean; onToggle: () => void }) {
   const t = he.audit;
+  const styles = useAuditScreenStyles();
   const actionLabel = (t.rowAction as Record<string, string>)[event.action] ?? event.action;
   const subject = event.targetType
     ? `${event.targetType}#${(event.targetId ?? '').slice(0, 8)}`
@@ -126,16 +132,73 @@ function AuditRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: 
   );
 }
 
-const styles = StyleSheet.create({
-  root:    { flex: 1, padding: spacing.base, backgroundColor: colors.background },
-  search:  { borderWidth: 1, borderColor: colors.border, padding: spacing.sm, borderRadius: 6, marginBottom: spacing.sm, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  hits:    { backgroundColor: colors.surface, borderWidth: 1, borderColor: colors.border, borderRadius: 6, marginBottom: spacing.sm },
-  hitRow:  { paddingVertical: spacing.sm, paddingHorizontal: spacing.md, borderBottomWidth: 1, borderBottomColor: colors.border },
-  hitText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  subjectLabel: { ...typography.h3, color: colors.textPrimary, marginBottom: spacing.sm, textAlign: 'right' },
-  row:     { paddingVertical: spacing.sm, borderBottomWidth: 1, borderBottomColor: colors.border, gap: 4 },
-  rowAction: { ...typography.body, color: colors.textPrimary, fontWeight: '600', textAlign: 'right' },
-  rowMeta: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+const useAuditScreenStyles = makeUseStyles(({ colors }) => ({
+  root: {
+    flex: 1,
+    padding: spacing.base,
+    backgroundColor: colors.background,
+    ...webViewRtl,
+  },
+  search: {
+    borderWidth: 1,
+    borderColor: colors.border,
+    padding: spacing.sm,
+    borderRadius: 6,
+    marginBottom: spacing.sm,
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    backgroundColor: colors.surface,
+    ...webTextRtl,
+  },
+  hits: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 6,
+    marginBottom: spacing.sm,
+    ...webViewRtl,
+  },
+  hitRow: {
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+  },
+  hitText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  subjectLabel: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    marginBottom: spacing.sm,
+    textAlign: rtlTextAlignStart,
+    width: '100%',
+    ...webTextRtl,
+  },
+  row: {
+    paddingVertical: spacing.sm,
+    borderBottomWidth: 1,
+    borderBottomColor: colors.border,
+    gap: 4,
+    ...webViewRtl,
+  },
+  rowAction: {
+    ...typography.body,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  rowMeta: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
   metaJson: { fontSize: 11, color: colors.textSecondary, fontFamily: 'Courier' },
-  empty:   { textAlign: 'center', color: colors.textSecondary, padding: spacing.lg },
-});
+  empty: { textAlign: 'center', color: colors.textSecondary, padding: spacing.lg, ...webTextRtl },
+}));

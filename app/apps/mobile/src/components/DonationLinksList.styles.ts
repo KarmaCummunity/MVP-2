@@ -1,15 +1,14 @@
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
-export const donationLinksListStyles = StyleSheet.create({
+export const useDonationLinksListStyles = makeUseStyles(({ colors }) => ({
   container: { gap: spacing.md },
   // `row` + parent RTL: title (first child) at inline-start (visual right), + at end.
   // `row-reverse` + native/web RTL quirks pinned the section title to the wrong edge.
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     marginBottom: spacing.sm,
     width: '100%',
   },
@@ -25,25 +24,25 @@ export const donationLinksListStyles = StyleSheet.create({
     height: 32,
     borderRadius: 16,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   plusBtnPressed: { opacity: 0.85 },
   list: { gap: spacing.md, paddingBottom: spacing.lg },
-  loading: { paddingVertical: spacing.xl, alignItems: 'center' },
+  loading: { paddingVertical: spacing.xl, alignItems: 'center' as const },
   empty: {
     paddingVertical: spacing.xl,
     paddingHorizontal: spacing.lg,
-    alignItems: 'center',
+    alignItems: 'center' as const,
     gap: spacing.sm,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.border,
-    borderStyle: 'dashed',
+    borderStyle: 'dashed' as const,
   },
-  emptyTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
-  emptyBody: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
+  emptyTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' as const },
+  emptyBody: { ...typography.body, color: colors.textSecondary, textAlign: 'center' as const },
   emptyCta: {
     marginTop: spacing.sm,
     backgroundColor: colors.primary,
@@ -53,4 +52,4 @@ export const donationLinksListStyles = StyleSheet.create({
   },
   emptyCtaPressed: { opacity: 0.85 },
   emptyCtaText: { ...typography.button, color: colors.textInverse },
-});
+}));

@@ -1,12 +1,14 @@
 // FR-FEED-017 — donation link result card for universal search.
 import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import type { DonationLinkSearchResult } from '@kc/domain';
 import { openExternalUrl } from '../../utils/openExternalUrl';
-import { styles } from './searchResultCard.styles';
+import { useSearchResultCardStyles } from './searchResultCard.styles';
 
 export function LinkResultCard({ link }: { link: DonationLinkSearchResult }) {
+  const styles = useSearchResultCardStyles();
+  const { colors } = useTheme();
   return (
     <Pressable
       style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}

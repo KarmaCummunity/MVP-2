@@ -11,10 +11,10 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
+import { useTheme } from '@kc/ui';
 import { useAuthStore } from '../store/authStore';
-import { colors } from '@kc/ui';
 import { AddDonationLinkModal } from './AddDonationLinkModal';
-import { donationLinksListStyles as styles } from './DonationLinksList.styles';
+import { useDonationLinksListStyles } from './DonationLinksList.styles';
 import { DonationLinkRow } from './DonationLinkRow';
 import { DonationLinkRowMenu } from './DonationLinkRowMenu';
 import { useDonationLinkActions } from './useDonationLinkActions';
@@ -27,6 +27,8 @@ interface Props {
 
 export function DonationLinksList({ categorySlug }: Readonly<Props>) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useDonationLinksListStyles();
   const me = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
 
@@ -69,7 +71,7 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
         </Pressable>
       </View>
     ),
-    [t, openAddModal],
+    [t, openAddModal, styles, colors.textInverse],
   );
 
   const renderRow = useCallback(

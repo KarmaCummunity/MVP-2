@@ -9,16 +9,17 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { MOTION, staggerDelay } from '../../lib/animations/motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
-import { aboutWebTextRtl, aboutWebViewRtl } from './aboutWebRtlStyle';
+import { aboutWebViewRtl, aboutRtlText } from './aboutWebRtlStyle';
 
 const LOGO = require('../../../assets/logo.png');
 
 function HeroAmbientGlows() {
   const reduced = useReducedMotion();
+  const styles = useAboutHeroStyles();
   const phase = useSharedValue(0);
 
   useEffect(() => {
@@ -55,6 +56,7 @@ function HeroAmbientGlows() {
 
 export function AboutHero() {
   const { t } = useTranslation();
+  const styles = useAboutHeroStyles();
 
   return (
     <View style={styles.shell}>
@@ -87,7 +89,7 @@ export function AboutHero() {
 }
 
 const LOGO_SZ = 88;
-const styles = StyleSheet.create({
+const useAboutHeroStyles = makeUseStyles(({ colors }) => ({
   shell: {
     borderRadius: radius.xl,
     paddingVertical: spacing['2xl'],
@@ -135,8 +137,7 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: 'rgba(255,255,255,0.88)',
     marginBottom: spacing.xs,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
     fontWeight: '700',
     letterSpacing: 0.3,
   },
@@ -144,8 +145,7 @@ const styles = StyleSheet.create({
     ...typography.h1,
     color: colors.textInverse,
     marginBottom: spacing.sm,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
     textShadowColor: 'rgba(0,0,0,0.25)',
     textShadowOffset: { width: 0, height: 2 },
     textShadowRadius: 6,
@@ -153,9 +153,8 @@ const styles = StyleSheet.create({
   sub: {
     ...typography.body,
     color: 'rgba(255,255,255,0.94)',
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
     lineHeight: 24,
     maxWidth: '100%',
   },
-});
+}));

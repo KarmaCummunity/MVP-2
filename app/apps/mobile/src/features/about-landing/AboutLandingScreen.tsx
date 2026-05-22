@@ -1,17 +1,11 @@
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, Text, ScrollView, TouchableOpacity } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, usePathname } from 'expo-router';
+import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
+import { BackButton } from '../../components/BackButton';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { AboutNavDrawer } from './AboutNavDrawer';
 import { AboutSectionBlocksTop } from './AboutSectionBlocksTop';
@@ -23,11 +17,12 @@ import { ABOUT_NAV_LABEL_KEYS, type AboutSectionId } from './aboutSectionModel';
 import { parseTruthyQueryParam } from '../../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from '../../navigation/aboutMarketingPaths';
 import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../navigation/useShellTabBarVisibility';
-import { aboutWebTextRtl, aboutWebViewRtl } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutWebViewRtl } from './aboutWebRtlStyle';
 
 export function AboutLandingScreen() {
-  const router = useRouter();
   const { t } = useTranslation();
+  const styles = useAboutLandingScreenStyles();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ hideTopBar?: string | string[]; hideBottomBar?: string | string[] }>();
   const pathname = usePathname() ?? '';
@@ -62,9 +57,7 @@ export function AboutLandingScreen() {
     <SafeAreaView style={styles.safe} edges={hideTop ? [] : ['top']}>
       {!hideTop ? (
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityRole="button">
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
+          <BackButton tintColor={colors.primary} />
           <Text style={styles.title}>{t('aboutContent.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -120,7 +113,7 @@ export function AboutLandingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutLandingScreenStyles = makeUseStyles(({ colors }) => ({
   safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
@@ -131,14 +124,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    ...aboutWebViewRtl,
   },
-  back: { padding: spacing.xs },
   title: {
     ...typography.h3,
     color: colors.textPrimary,
-    flex: 1,
-    ...aboutWebTextRtl,
-    ...(Platform.OS === 'web' ? { textAlign: 'right' as const } : {}),
+    ...aboutRtlText,
   },
   scroll: { flexGrow: 1 },
   footer: { alignItems: 'stretch', marginTop: spacing.xl, ...aboutWebViewRtl },
@@ -146,14 +137,12 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
   },
   footerR: {
     ...typography.caption,
     color: colors.textDisabled,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
   },
   fab: {
     position: 'absolute',
@@ -172,4 +161,4 @@ const styles = StyleSheet.create({
       elevation: 6,
     },
   },
-});
+}));

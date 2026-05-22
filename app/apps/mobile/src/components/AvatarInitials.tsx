@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, Text, Image, StyleSheet } from 'react-native';
-import { colors, typography, radius } from '@kc/ui';
+import { View, Text, Image } from 'react-native';
+import { makeUseStyles, typography, radius, useTheme } from '@kc/ui';
 
 interface AvatarInitialsProps {
   name: string;
@@ -22,6 +22,8 @@ function getAvatarColor(name: string): string {
 }
 
 export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const initials = name
     .split(' ')
     .slice(0, 2)
@@ -57,7 +59,7 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   /** No outer margin — parents use `gap` / padding so fixed-size clips (e.g. search cards) stay circular on iOS. */
   avatar: {
     justifyContent: 'center',
@@ -68,4 +70,4 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textAlign: 'center',
   },
-});
+}));

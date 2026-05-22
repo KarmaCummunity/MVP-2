@@ -2,13 +2,13 @@
 // FR-PROFILE-005 / FR-PROFILE-006: Public ↔ Private toggle + follow-requests entry.
 
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { PlatformSwitch, colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, PlatformSwitch, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useAuthStore } from '../../src/store/authStore';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { getUserRepo } from '../../src/services/userComposition';
@@ -16,11 +16,16 @@ import {
   getUpdatePrivacyModeUseCase,
   getListPendingFollowRequestsUseCase,
 } from '../../src/services/followComposition';
-import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 
 export default function PrivacyScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = usePrivacyScreenStyles();
+  const { colors } = useTheme();
   const me = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
 
@@ -113,11 +118,11 @@ export default function PrivacyScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  body: { padding: spacing.base, gap: spacing.sm },
+const usePrivacyScreenStyles = makeUseStyles(({ colors }) => ({
+  container: { flex: 1, backgroundColor: colors.background, ...webViewRtl },
+  body: { padding: spacing.base, gap: spacing.sm, ...webViewRtl },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.md,
     backgroundColor: colors.surface,
@@ -125,8 +130,19 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...webViewRtl,
   },
   labelWrap: { flex: 1 },
-  label: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  hint: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-});
+  label: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  hint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+}));
