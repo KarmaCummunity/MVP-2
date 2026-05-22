@@ -22,7 +22,7 @@ export interface ThemeContextValue {
 const fallbackPalette: ColorPalette = lightColors;
 
 const ThemeContext = createContext<ThemeContextValue>({
-  mode: 'system',
+  mode: 'light',
   scheme: 'light',
   isDark: false,
   colors: fallbackPalette,
