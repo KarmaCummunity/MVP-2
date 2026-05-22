@@ -88,7 +88,9 @@ async function seedPost(admin: AdminClient, ownerId: string, visibility: string)
       title: `TD-41 probe ${crypto.randomUUID().slice(0, 6)}`,
       status: 'open',
       visibility,
-      city: 'Test',
+      // 'tel-aviv' is seeded by migration 0001; literal strings like 'Test'
+      // violate posts_city_fkey -> cities(city_id).
+      city: 'tel-aviv',
       street: 'Test',
       street_number: '1',
       location_display_level: 'CityOnly',
