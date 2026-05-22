@@ -104,7 +104,7 @@ export class SupabaseChatRepository implements IChatRepository {
 
   async submitSupportIssue(category: string | null, description: string): Promise<Chat> {
     const { data, error } = await this.client.rpc('rpc_submit_support_issue', {
-      p_category: category ?? null,
+      p_category: category ?? '',
       p_description: description,
     });
     if (error) throw mapChatError(error);

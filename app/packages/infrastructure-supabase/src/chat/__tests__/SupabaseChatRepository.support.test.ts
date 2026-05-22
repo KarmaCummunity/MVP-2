@@ -51,10 +51,10 @@ describe('SupabaseChatRepository — submitSupportIssue', () => {
     ]);
   });
 
-  it('forwards null category verbatim', async () => {
+  it('coalesces null category to empty string for the RPC', async () => {
     const { client, calls } = makeFakeClient({ rpcData: CHAT_ROW });
     await new SupabaseChatRepository(client).submitSupportIssue(null, 'desc');
-    expect((calls.rpcs[0]?.args as { p_category: unknown }).p_category).toBeNull();
+    expect((calls.rpcs[0]?.args as { p_category: unknown }).p_category).toBe('');
   });
 
   it('handles SetofOptions array shape (returns first row)', async () => {

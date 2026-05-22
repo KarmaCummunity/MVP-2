@@ -67,18 +67,18 @@ export async function fetchRankedFeedPage(
 
   const { data: rankedRows, error: rpcError } = await client.rpc('feed_ranked_ids', {
     p_viewer_id: viewerId ?? '00000000-0000-0000-0000-000000000000',
-    p_filter_type: filter.type ?? null,
-    p_filter_categories: filter.categories?.length ? filter.categories : null,
-    p_filter_item_conditions: filter.itemConditions?.length ? filter.itemConditions : null,
+    p_filter_type: filter.type,
+    p_filter_categories: filter.categories?.length ? filter.categories : undefined,
+    p_filter_item_conditions: filter.itemConditions?.length ? filter.itemConditions : undefined,
     p_filter_status: filter.statusFilter ?? 'open',
-    p_filter_center_city: filter.locationFilter?.centerCity ?? null,
-    p_filter_radius_km: filter.locationFilter?.radiusKm ?? null,
+    p_filter_center_city: filter.locationFilter?.centerCity,
+    p_filter_radius_km: filter.locationFilter?.radiusKm,
     p_sort_order: filter.sortOrder ?? 'newest',
-    p_proximity_sort_city: filter.proximitySortCity ?? null,
+    p_proximity_sort_city: filter.proximitySortCity,
     p_page_limit: pageLimit + 1,
-    p_cursor_distance: cursorParsed?.distanceKm ?? null,
-    p_cursor_created_at: cursorParsed?.createdAt ?? null,
-    p_cursor_post_id: cursorParsed?.postId ?? null,
+    p_cursor_distance: cursorParsed?.distanceKm ?? undefined,
+    p_cursor_created_at: cursorParsed?.createdAt,
+    p_cursor_post_id: cursorParsed?.postId,
     p_followers_only: filter.followersOnly ?? false,
   });
   if (rpcError) throw new Error(`feed_ranked_ids: ${rpcError.message}`);
