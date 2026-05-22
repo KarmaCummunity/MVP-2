@@ -112,7 +112,7 @@ jobs:
       - name: SQL probe integration tests (against local stack)
         working-directory: app
         env:
-          CI: true
+          CI_LOCAL_SUPABASE: 'true'
         run: pnpm --filter @kc/infrastructure-supabase test sqlProbes
 
       - name: Stop Supabase

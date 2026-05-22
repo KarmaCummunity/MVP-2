@@ -15,20 +15,25 @@ import { describe, it, expect, afterAll } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
 import type { Database } from '../../database.types';
 
-// In CI, fall back to the local Supabase stack started by `supabase start`.
+// Opt into the local Supabase stack started by `supabase start` by setting
+// CI_LOCAL_SUPABASE=true. ci-backend.yml sets it for the sqlProbes step
+// (after `supabase start`); ci-frontend's `pnpm test:coverage` does NOT,
+// so this file gracefully skips there.
 // The service-role JWT below is Supabase CLI's documented default for the
 // local stack and only works against 127.0.0.1 — safe to commit.
 const LOCAL_DEFAULT_URL = 'http://127.0.0.1:54321';
 const LOCAL_DEFAULT_SERVICE_KEY =
   'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZS1kZW1vIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImV4cCI6MTk4MzgxMjk5Nn0.EGIM96RAZx35lJzdJsyH-qQwv8Hdp7fsn3W0YpN81IU';
 
+const USE_LOCAL_SUPABASE = process.env['CI_LOCAL_SUPABASE'] === 'true';
+
 const SUPABASE_URL =
   process.env['SUPABASE_URL'] ??
   process.env['EXPO_PUBLIC_SUPABASE_URL'] ??
-  (process.env['CI'] ? LOCAL_DEFAULT_URL : undefined);
+  (USE_LOCAL_SUPABASE ? LOCAL_DEFAULT_URL : undefined);
 
 const SERVICE_KEY =
-  process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? (process.env['CI'] ? LOCAL_DEFAULT_SERVICE_KEY : undefined);
+  process.env['SUPABASE_SERVICE_ROLE_KEY'] ?? (USE_LOCAL_SUPABASE ? LOCAL_DEFAULT_SERVICE_KEY : undefined);
 
 const SKIP = !SUPABASE_URL || !SERVICE_KEY;
 
