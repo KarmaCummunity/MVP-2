@@ -1,12 +1,12 @@
 // FR-MOD-007 — Report modal opened from a user profile's overflow menu.
 // Mirrors ReportPostModal but submits to container.reportUser (target_type='user').
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import he from '../../i18n/locales/he';
 
 const t = he.moderation;
@@ -26,6 +26,8 @@ interface Props {
 }
 
 export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
@@ -116,7 +118,7 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface, padding: 16, gap: 8,
@@ -141,4 +143,4 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnGhostText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

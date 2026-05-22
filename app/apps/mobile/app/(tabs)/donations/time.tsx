@@ -6,7 +6,6 @@ import {
   ActivityIndicator,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   TextInput,
   View,
@@ -14,7 +13,7 @@ import {
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { ChatError } from '@kc/application';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
 import { DonationLinksList } from '../../../src/components/DonationLinksList';
@@ -26,9 +25,67 @@ import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 const COMPOSER_MAX_CHARS = 2000;
 
+const useStyles = makeUseStyles(({ colors }) => ({
+  scrollView: { flex: 1 },
+  scroll: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing['2xl'],
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center' as const,
+    gap: spacing.lg,
+  },
+  hero: { alignItems: 'center' as const, gap: spacing.md },
+  heroIcon: { marginBottom: spacing.xs },
+  body: {
+    ...typography.bodyLarge,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 26,
+    width: '100%',
+  },
+  composerCard: { gap: spacing.sm },
+  composerHeading: {
+    ...typography.body,
+    fontWeight: '600' as const,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 22,
+  },
+  input: {
+    minHeight: 120,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    borderRadius: radius.lg,
+    backgroundColor: colors.surface,
+    padding: spacing.md,
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    writingDirection: 'rtl' as const,
+  },
+  send: {
+    height: 52,
+    backgroundColor: colors.primary,
+    borderRadius: radius.lg,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  sendPressed: { backgroundColor: colors.primaryDark },
+  sendDisabled: { backgroundColor: colors.primaryLight, opacity: 0.6 },
+  sendText: { ...typography.button, color: colors.textInverse },
+  sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
+  errorRow: { flexDirection: 'row-reverse' as const, alignItems: 'center' as const, gap: spacing.sm },
+  errorText: { ...typography.bodySmall, color: colors.error, textAlign: rtlTextAlignStart },
+  retryText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' as const },
+}));
+
 export default function DonationsTimeScreen() {
   const { t } = useTranslation();
   const router = useRouter();
+  const { colors } = useTheme();
+  const styles = useStyles();
   const userId = useAuthStore((s) => s.session?.userId ?? null);
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
@@ -126,59 +183,3 @@ export default function DonationsTimeScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollView: { flex: 1 },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
-    maxWidth: 480,
-    width: '100%',
-    alignSelf: 'center',
-    gap: spacing.lg,
-  },
-  hero: { alignItems: 'center', gap: spacing.md },
-  heroIcon: { marginBottom: spacing.xs },
-  body: {
-    ...typography.bodyLarge,
-    color: '#1C1917',
-    textAlign: rtlTextAlignStart,
-    lineHeight: 26,
-    width: '100%',
-  },
-  composerCard: { gap: spacing.sm },
-  composerHeading: {
-    ...typography.body,
-    fontWeight: '600' as const,
-    color: '#1C1917',
-    textAlign: rtlTextAlignStart,
-    lineHeight: 22,
-  },
-  input: {
-    minHeight: 120,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    borderRadius: radius.lg,
-    backgroundColor: colors.surface,
-    padding: spacing.md,
-    ...typography.body,
-    color: colors.textPrimary,
-    textAlign: rtlTextAlignStart,
-    writingDirection: 'rtl',
-  },
-  send: {
-    height: 52,
-    backgroundColor: colors.primary,
-    borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  sendPressed: { backgroundColor: colors.primaryDark },
-  sendDisabled: { backgroundColor: colors.primaryLight, opacity: 0.6 },
-  sendText: { ...typography.button, color: colors.textInverse },
-  sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
-  errorRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm },
-  errorText: { ...typography.bodySmall, color: colors.error, textAlign: rtlTextAlignStart },
-  retryText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' as const },
-});

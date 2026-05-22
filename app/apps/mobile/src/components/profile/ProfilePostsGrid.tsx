@@ -3,10 +3,10 @@
 // Mapped to: FR-PROFILE-001 AC4, FR-PROFILE-002 AC3.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 import type { Post } from '@kc/domain';
 import { PostCardProfile } from '../PostCardProfile';
 import { EmptyState } from '../EmptyState';
@@ -29,6 +29,8 @@ export interface ProfilePostsGridProps {
 }
 
 export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const EMPTY_COPY: Record<EmptyVariant, { title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }> = {
     self_open: {
@@ -95,7 +97,7 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   loading: { padding: spacing.xl, alignItems: 'center' },
   grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
-});
+}));

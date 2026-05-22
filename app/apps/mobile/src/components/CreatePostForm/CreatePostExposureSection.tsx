@@ -2,10 +2,10 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, PlatformSwitch } from '@kc/ui';
+import { PlatformSwitch, useTheme } from '@kc/ui';
 import type { LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
-import { createPostStyles as styles } from '../../../app/(tabs)/create.styles';
+import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
 import { LocationDisplayLevelChooser } from './LocationDisplayLevelChooser';
 import { VisibilityChooser } from './VisibilityChooser';
 
@@ -35,6 +35,8 @@ export function CreatePostExposureSection({
   onHideFromCounterpartyChange,
 }: Readonly<CreatePostExposureSectionProps>) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useCreatePostStyles();
 
   return (
     <View style={styles.exposureAccordion}>

@@ -1,14 +1,14 @@
 // FR-DONATE-006/007 — generic donation category screen.
 // Renders DonationLinksList for any of: food, housing, transport, knowledge, animals, medical.
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ScrollView, Text, View } from 'react-native';
 import { Redirect, useLocalSearchParams } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import {
   DONATION_CATEGORY_SLUGS,
   type DonationCategorySlug,
 } from '@kc/domain';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography } from '@kc/ui';
 import type { Ionicons } from '@expo/vector-icons';
 import { DonationLinksList } from '../../../../src/components/DonationLinksList';
 import { Screen } from '../../../../src/components/ui/Screen';
@@ -43,9 +43,44 @@ function isCategorySlug(value: unknown): value is DonationCategorySlug {
   return typeof value === 'string' && (DONATION_CATEGORY_SLUGS as readonly string[]).includes(value);
 }
 
+const useStyles = makeUseStyles(({ colors }) => ({
+  scrollOuter: { flex: 1 },
+  scroll: {
+    paddingHorizontal: spacing.lg,
+    paddingTop: spacing.lg,
+    paddingBottom: spacing['2xl'],
+    maxWidth: 480,
+    width: '100%',
+    alignSelf: 'center' as const,
+    gap: spacing.lg,
+  },
+  hero: { alignItems: 'center' as const, gap: spacing.sm },
+  heroIcon: { marginBottom: spacing.xs },
+  heroTitle: {
+    ...typography.h1,
+    fontSize: 28,
+    color: colors.textPrimary,
+    textAlign: 'center' as const,
+    letterSpacing: -0.4,
+  },
+  heroSubtitle: {
+    ...typography.body,
+    color: colors.textSecondary,
+    textAlign: 'center' as const,
+  },
+  body: {
+    ...typography.bodyLarge,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 26,
+    width: '100%',
+  },
+}));
+
 export default function DonationCategoryScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { t } = useTranslation();
+  const styles = useStyles();
 
   if (!isCategorySlug(slug) || slug === 'time' || slug === 'money') {
     return <Redirect href="/(tabs)/donations" />;
@@ -82,37 +117,3 @@ export default function DonationCategoryScreen() {
     </Screen>
   );
 }
-
-const styles = StyleSheet.create({
-  scrollOuter: { flex: 1 },
-  scroll: {
-    paddingHorizontal: spacing.lg,
-    paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
-    maxWidth: 480,
-    width: '100%',
-    alignSelf: 'center',
-    gap: spacing.lg,
-  },
-  hero: { alignItems: 'center', gap: spacing.sm },
-  heroIcon: { marginBottom: spacing.xs },
-  heroTitle: {
-    ...typography.h1,
-    fontSize: 28,
-    color: '#1C1917',
-    textAlign: 'center',
-    letterSpacing: -0.4,
-  },
-  heroSubtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center',
-  },
-  body: {
-    ...typography.bodyLarge,
-    color: '#1C1917',
-    textAlign: rtlTextAlignStart,
-    lineHeight: 26,
-    width: '100%',
-  },
-});

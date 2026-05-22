@@ -13,7 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
 import { ProfileTabs, type ProfilePostsTab } from '../../../src/components/profile/ProfileTabs';
@@ -30,10 +30,12 @@ import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
 import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profileTabSession';
-import { otherProfileScreenStyles as styles } from '../../../src/components/profile/otherProfileScreen.styles';
+import { useOtherProfileScreenStyles } from '../../../src/components/profile/otherProfileScreen.styles';
 import { nativeStackHeaderRightIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
 export default function OtherProfileScreen() {
+  const styles = useOtherProfileScreenStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();

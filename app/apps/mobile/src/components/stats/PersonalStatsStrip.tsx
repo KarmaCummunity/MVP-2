@@ -2,8 +2,8 @@
 // Visual treatment matches Karma tokens (warm orange, compact row for all platforms).
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, View } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { ActivityIndicator, Text, View } from 'react-native';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 
 type Props = {
   readonly given: number;
@@ -24,6 +24,8 @@ function Cell({
   accent: string;
   loading: boolean;
 }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={[styles.cell, { borderTopColor: accent }]}>
       {loading ? (
@@ -41,6 +43,8 @@ function Cell({
 }
 
 export function PersonalStatsStrip({ given, received, active, loading, labels }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.row}>
       <Cell value={given} label={labels.given} accent={colors.primary} loading={loading} />
@@ -50,7 +54,7 @@ export function PersonalStatsStrip({ given, received, active, loading, labels }:
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   row: {
     flexDirection: 'row',
     gap: spacing.sm,
@@ -60,6 +64,9 @@ const styles = StyleSheet.create({
     flex: 1,
     minWidth: 0,
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderRadius: radius.md,
     borderTopWidth: 3,
     paddingVertical: spacing.md,
@@ -79,4 +86,4 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   loader: { marginVertical: spacing.sm },
-});
+}));

@@ -1,0 +1,81 @@
+name: CI — contract
+
+# Static guards on the contract between app code, infra adapters, and the DB.
+# Cheap to run, catches drift before backend or frontend CI burns time.
+
+on:
+  pull_request:
+    branches: [main, dev]
+    paths:
+      - 'app/packages/infrastructure-supabase/**'
+      - 'app/packages/application/**'
+      - 'app/packages/domain/**'
+      - 'app/scripts/check-architecture.mjs'
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'scripts/check-rpc-contract.mjs'
+      - 'scripts/check-rpc-contract.allowlist.json'
+      - 'scripts/check-web-manifest.mjs'
+      - 'app/apps/mobile/src/i18n/locales/he/**'
+      - '.github/workflows/ci-contract.yml'
+  push:
+    branches: [main, dev]
+    paths:
+      - 'app/packages/infrastructure-supabase/**'
+      - 'app/packages/application/**'
+      - 'app/packages/domain/**'
+      - 'app/scripts/check-architecture.mjs'
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - 'scripts/check-rpc-contract.mjs'
+      - 'scripts/check-rpc-contract.allowlist.json'
+      - 'scripts/check-web-manifest.mjs'
+      - 'app/apps/mobile/src/i18n/locales/he/**'
+      - '.github/workflows/ci-contract.yml'
+
+concurrency:
+  group: ci-contract-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  rpc-contract:
+    name: rpc · table contract
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run static rpc/table contract guard
+        run: node scripts/check-rpc-contract.mjs
+
+  coalesce-mirror:
+    name: coalesce mirror · layer invariants
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Run architecture guard (file-size + layer + domain typed errors)
+        run: node app/scripts/check-architecture.mjs
+
+  web-manifest:
+    name: web manifest parity
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify he locale appName is present and non-empty
+        run: node scripts/check-web-manifest.mjs

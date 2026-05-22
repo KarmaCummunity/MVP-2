@@ -1,9 +1,9 @@
 // FR-CLOSURE-001 — error pane shown inside ClosureSheet when start() fails
 // (e.g. block-list fetch rejected). Without this the modal would never appear
 // and the CTA would just stay disabled — the original "nothing happens" bug.
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 
 interface Props {
   errorMessage: string | null;
@@ -11,6 +11,8 @@ interface Props {
 }
 
 export function ClosureErrorPane({ errorMessage, onClose }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <View>
@@ -27,7 +29,7 @@ export function ClosureErrorPane({ errorMessage, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 8, color: colors.textPrimary },
   body: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', marginBottom: 16, lineHeight: 22 },
   actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
@@ -40,4 +42,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
   },
   btnText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
-});
+}));

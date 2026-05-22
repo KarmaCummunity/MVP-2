@@ -8,7 +8,7 @@ import { useRouter, useFocusEffect } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { PersonalActivityItem } from '@kc/domain';
 import { useAuthStore } from '../src/store/authStore';
 import { getUserRepo } from '../src/services/userComposition';
@@ -24,6 +24,8 @@ import { ActivityTimelineList } from '../src/components/stats/ActivityTimelineLi
 
 
 export default function StatsScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const queryClient = useQueryClient();
@@ -139,7 +141,7 @@ export default function StatsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row-reverse',
@@ -147,6 +149,9 @@ const styles = StyleSheet.create({
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
@@ -167,4 +172,4 @@ const styles = StyleSheet.create({
     borderColor: colors.primaryLight,
   },
   sectionTitle: { ...typography.h4, color: colors.textPrimary, textAlign: 'right' },
-});
+}));

@@ -10,7 +10,7 @@
 import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
 import he from '../../i18n/locales/he';
 import { ReportUserModal } from './ReportUserModal';
@@ -25,6 +25,8 @@ interface Props {
 type OpenModal = 'report' | 'ban' | null;
 
 export function ProfileOverflowMenu({ targetUserId }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const isAdmin = useIsSuperAdmin();
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
@@ -93,7 +95,7 @@ export function ProfileOverflowMenu({ targetUserId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   trigger: { paddingHorizontal: 8, paddingVertical: 4 },
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
@@ -107,4 +109,4 @@ const styles = StyleSheet.create({
   itemDestructive: { color: colors.error },
   itemCancel: { ...typography.semiBold, color: colors.textSecondary },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-});
+}));

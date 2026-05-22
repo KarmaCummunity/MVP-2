@@ -1,9 +1,9 @@
 // FR-AUTH-018 + FR-AUTH-010..012 — onboarding chrome: skip · step · back (4 steps).
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-native';
+import { View, Text, TouchableOpacity, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { OnboardingProgressBar } from './animations/OnboardingProgressBar';
 
 export interface OnboardingStepHeaderProps {
@@ -22,6 +22,8 @@ export function OnboardingStepHeader({
   skipDisabled = false,
   backDisabled = false,
 }: OnboardingStepHeaderProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const showBack = step > 1;
 
@@ -64,7 +66,7 @@ export function OnboardingStepHeader({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   wrap: { gap: spacing.sm },
   row: {
     flexDirection: 'row',
@@ -81,4 +83,4 @@ const styles = StyleSheet.create({
   },
   skip: { ...typography.body, color: colors.primary, textAlign: 'right' },
   muted: { color: colors.textDisabled },
-});
+}));

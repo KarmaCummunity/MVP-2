@@ -10,7 +10,7 @@ import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { TopBar } from '../TopBar';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfileStatsRow } from './ProfileStatsRow';
@@ -38,6 +38,8 @@ function profileMenuCornerHorizontalInset(): Pick<ViewStyle, 'left' | 'right' | 
 }
 
 export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePostsTab }>) {
+  const styles = useMyProfileChromeStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
@@ -139,21 +141,18 @@ function resolveDisplayName(
   return fallbackName;
 }
 
-const styles = StyleSheet.create({
+const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
   profileOuter: {
     margin: spacing.base,
-    position: 'relative',
+    position: 'relative' as const,
   },
   profileMenuCorner: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: spacing.sm,
     zIndex: 2,
   },
-  // Card primitive supplies bg + radius + shadow; we only add layout-level gap.
   profileCard: { gap: spacing.base },
-  actionRow: { flexDirection: 'row', gap: spacing.sm },
-  // Edit / share pills mirror the secondary button in the welcome screen
-  // (white card surface, soft border, radius.lg).
+  actionRow: { flexDirection: 'row' as const, gap: spacing.sm },
   editBtn: {
     flex: 1,
     height: 44,
@@ -161,8 +160,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   editBtnText: { ...typography.button, color: colors.textPrimary },
   shareBtn: {
@@ -172,17 +171,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   statsLink: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row-reverse' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingVertical: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     gap: spacing.sm,
   },
-  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-});
+  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+}));

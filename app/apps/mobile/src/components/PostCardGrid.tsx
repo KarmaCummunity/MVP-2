@@ -6,12 +6,12 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { PostMenuButton } from './post/PostMenuButton';
-import { postCardGridStyles as styles } from './PostCardGrid.styles';
+import { usePostCardGridStyles } from './PostCardGrid.styles';
 
 const STORAGE_BUCKET = 'post-images';
 
@@ -23,6 +23,8 @@ interface PostCardGridProps {
 export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = usePostCardGridStyles();
   const isGive = post.type === 'Give';
 
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), {

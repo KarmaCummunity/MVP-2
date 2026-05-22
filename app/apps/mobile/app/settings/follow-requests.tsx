@@ -2,13 +2,13 @@
 // FR-FOLLOW-007: pending follow-request inbox. Reachable only when Private.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { FollowRequestWithUser } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { NotifyModal } from '../../src/components/NotifyModal';
@@ -19,10 +19,15 @@ import {
   getAcceptFollowRequestUseCase,
   getRejectFollowRequestUseCase,
 } from '../../src/services/followComposition';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 
 export default function FollowRequestsScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useFollowRequestsScreenStyles();
+  const { colors } = useTheme();
   const me = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
   const [errorOpen, setErrorOpen] = React.useState(false);
@@ -134,18 +139,19 @@ export default function FollowRequestsScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: colors.background },
-  list: { padding: spacing.base, gap: spacing.sm },
+const useFollowRequestsScreenStyles = makeUseStyles(({ colors }) => ({
+  container: { flex: 1, backgroundColor: colors.background, ...webViewRtl },
+  list: { padding: spacing.base, gap: spacing.sm, ...webViewRtl },
   empty: {
     ...typography.body,
     color: colors.textSecondary,
     textAlign: 'center',
     marginTop: spacing.lg,
     paddingHorizontal: spacing.lg,
+    ...webTextRtl,
   },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.surface,
@@ -153,12 +159,29 @@ const styles = StyleSheet.create({
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
+    ...webViewRtl,
   },
-  who: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm, flex: 1 },
+  who: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    flex: 1,
+    ...webViewRtl,
+  },
   text: { flex: 1 },
-  name: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  city: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  actions: { flexDirection: 'row', gap: spacing.xs },
+  name: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  city: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  actions: { flexDirection: 'row', gap: spacing.xs, ...webViewRtl },
   btnApprove: {
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.md,
@@ -174,4 +197,4 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   btnRejectText: { ...typography.button, color: colors.textPrimary },
-});
+}));

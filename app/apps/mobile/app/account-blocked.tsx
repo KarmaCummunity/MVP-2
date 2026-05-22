@@ -2,9 +2,9 @@
 // Lives at the top level (outside the (auth) group) so a signed-out user can land
 // on it directly after the gate hook signs them out.
 import React from 'react';
-import { Linking, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
+import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography } from '@kc/ui';
 import he from '../src/i18n/locales/he';
 
 const SUPPORT_EMAIL = 'karmacommunity2.0@gmail.com';
@@ -36,6 +36,7 @@ function pickContent(reason: string | undefined) {
 }
 
 export default function AccountBlockedScreen() {
+  const styles = useStyles();
   const { reason, until } = useLocalSearchParams<{ reason?: string; until?: string }>();
   const content = pickContent(reason);
 
@@ -62,7 +63,7 @@ export default function AccountBlockedScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: {
     flex: 1,
     padding: spacing.xl,
@@ -87,4 +88,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.base,
     textDecorationLine: 'underline',
   },
-});
+}));

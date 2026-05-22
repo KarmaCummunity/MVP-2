@@ -2,7 +2,7 @@
 import { Image, StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
-import { colors, radius } from '@kc/ui';
+import { makeUseStyles, radius, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 
 const STORAGE_BUCKET = 'post-images';
@@ -19,6 +19,8 @@ interface Props {
 }
 
 export function AnchoredPostCardPreview({ type, mediaPaths, size = 52 }: Props) {
+  const styles = useAnchoredPostCardPreviewStyles();
+  const { colors } = useTheme();
   const path0 = mediaPaths[0]?.path;
   const uri = path0 ? publicUrl(path0) : null;
   const isGive = type === 'Give';
@@ -40,7 +42,7 @@ export function AnchoredPostCardPreview({ type, mediaPaths, size = 52 }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const useAnchoredPostCardPreviewStyles = makeUseStyles(({ colors }) => ({
   frame: {
     overflow: 'hidden',
     backgroundColor: colors.skeleton,
@@ -54,4 +56,4 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     backgroundColor: colors.background,
   },
-});
+}));

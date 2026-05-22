@@ -2,10 +2,10 @@
 // Camera button auto-hidden on web (no native camera).
 import React from 'react';
 import {
-  Modal, View, Text, TouchableOpacity, StyleSheet, Pressable,
+  Modal, Text, TouchableOpacity, Pressable,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius, shadow } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, shadow } from '@kc/ui';
 import { isCameraAvailable, type AvatarSource } from '../services/avatarUpload';
 
 interface Props {
@@ -18,6 +18,7 @@ interface Props {
 
 export function PhotoSourceSheet({ visible, canRemove, onPick, onRemove, onClose }: Props) {
   const { t } = useTranslation();
+  const styles = usePhotoSourceSheetStyles();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={onClose}>
@@ -68,10 +69,10 @@ export function PhotoSourceSheet({ visible, canRemove, onPick, onRemove, onClose
   );
 }
 
-const styles = StyleSheet.create({
+const usePhotoSourceSheetStyles = makeUseStyles(({ colors }) => ({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -100,4 +101,4 @@ const styles = StyleSheet.create({
   removeText: { color: colors.error },
   cancel: { backgroundColor: 'transparent', marginTop: spacing.xs },
   cancelText: { color: colors.textSecondary, textAlign: 'center' },
-});
+}));

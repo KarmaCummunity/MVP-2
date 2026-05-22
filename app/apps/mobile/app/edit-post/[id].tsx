@@ -11,7 +11,7 @@ import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
@@ -30,7 +30,7 @@ import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
 import { EmptyState } from '../../src/components/EmptyState';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
-import { styles } from './editPostScreen.styles';
+import { useEditPostScreenStyles } from './editPostScreen.styles';
 
 const POST_IMAGES_BUCKET = 'post-images';
 function assetUrl(path: string): string {
@@ -41,6 +41,8 @@ export default function EditPostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useEditPostScreenStyles();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();

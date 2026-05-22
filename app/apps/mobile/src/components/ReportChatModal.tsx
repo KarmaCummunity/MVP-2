@@ -1,12 +1,12 @@
 import { useTranslation } from 'react-i18next';
 // FR-CHAT-010 — Report modal opened from chat ⋮ menu.
 import React, { useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { NotifyModal } from './NotifyModal';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
@@ -24,6 +24,8 @@ interface Props {
 }
 
 export function ReportChatModal({ chatId, visible, onClose }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
@@ -102,10 +104,13 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.5)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderTopLeftRadius: radius.lg,
     borderTopRightRadius: radius.lg,
     padding: spacing.base,
@@ -144,4 +149,4 @@ const styles = StyleSheet.create({
   btnPrimaryText: { ...typography.body, color: colors.textInverse, fontWeight: '700' as const },
   btnGhost: { borderWidth: 1, borderColor: colors.border },
   btnGhostText: { ...typography.body, color: colors.textPrimary },
-});
+}));

@@ -7,13 +7,40 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
-  __InternalSupabase: {
-    PostgrestVersion: "14.5"
-  }
   public: {
     Tables: {
+      about_team_members: {
+        Row: {
+          created_at: string
+          is_active: boolean
+          role_key: string
+          sort_order: number
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          is_active?: boolean
+          role_key: string
+          sort_order?: number
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          is_active?: boolean
+          role_key?: string
+          sort_order?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "about_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -126,8 +153,8 @@ export type Database = {
           inbox_hidden_at_b: string | null
           is_support_thread: boolean
           last_message_at: string
-          participant_a: string
-          participant_b: string
+          participant_a: string | null
+          participant_b: string | null
           removed_at: string | null
         }
         Insert: {
@@ -138,8 +165,8 @@ export type Database = {
           inbox_hidden_at_b?: string | null
           is_support_thread?: boolean
           last_message_at?: string
-          participant_a: string
-          participant_b: string
+          participant_a?: string | null
+          participant_b?: string | null
           removed_at?: string | null
         }
         Update: {
@@ -150,8 +177,8 @@ export type Database = {
           inbox_hidden_at_b?: string | null
           is_support_thread?: boolean
           last_message_at?: string
-          participant_a?: string
-          participant_b?: string
+          participant_a?: string | null
+          participant_b?: string | null
           removed_at?: string | null
         }
         Relationships: [
@@ -181,18 +208,39 @@ export type Database = {
       cities: {
         Row: {
           city_id: string
+          lat: number | null
+          lon: number | null
           name_en: string
           name_he: string
         }
         Insert: {
           city_id: string
+          lat?: number | null
+          lon?: number | null
           name_en: string
           name_he: string
         }
         Update: {
           city_id?: string
+          lat?: number | null
+          lon?: number | null
           name_en?: string
           name_he?: string
+        }
+        Relationships: []
+      }
+      closure_cleanup_metrics: {
+        Row: {
+          deleted_count: number
+          run_at: string
+        }
+        Insert: {
+          deleted_count: number
+          run_at?: string
+        }
+        Update: {
+          deleted_count?: number
+          run_at?: string
         }
         Relationships: []
       }
@@ -264,7 +312,9 @@ export type Database = {
           hidden_at: string | null
           hidden_by: string | null
           id: string
+          search_vector: unknown
           submitted_by: string
+          tags: string | null
           url: string
           validated_at: string
         }
@@ -276,7 +326,9 @@ export type Database = {
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
+          search_vector?: unknown
           submitted_by: string
+          tags?: string | null
           url: string
           validated_at: string
         }
@@ -288,7 +340,9 @@ export type Database = {
           hidden_at?: string | null
           hidden_by?: string | null
           id?: string
+          search_vector?: unknown
           submitted_by?: string
+          tags?: string | null
           url?: string
           validated_at?: string
         }
@@ -510,6 +564,68 @@ export type Database = {
           },
         ]
       }
+      notifications_outbox: {
+        Row: {
+          attempts: number
+          body_args: Json
+          body_key: string
+          bypass_preferences: boolean
+          category: string
+          created_at: string
+          data: Json
+          dedupe_key: string | null
+          dispatched_at: string | null
+          expires_at: string
+          kind: string
+          last_error: string | null
+          notification_id: string
+          title_key: string
+          user_id: string
+        }
+        Insert: {
+          attempts?: number
+          body_args?: Json
+          body_key: string
+          bypass_preferences?: boolean
+          category: string
+          created_at?: string
+          data?: Json
+          dedupe_key?: string | null
+          dispatched_at?: string | null
+          expires_at?: string
+          kind: string
+          last_error?: string | null
+          notification_id?: string
+          title_key: string
+          user_id: string
+        }
+        Update: {
+          attempts?: number
+          body_args?: Json
+          body_key?: string
+          bypass_preferences?: boolean
+          category?: string
+          created_at?: string
+          data?: Json
+          dedupe_key?: string | null
+          dispatched_at?: string | null
+          expires_at?: string
+          kind?: string
+          last_error?: string | null
+          notification_id?: string
+          title_key?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       post_actor_identity: {
         Row: {
           hide_from_counterparty: boolean
@@ -564,6 +680,7 @@ export type Database = {
           owner_id: string
           post_id: string
           reopen_count: number
+          search_vector: unknown
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -585,6 +702,7 @@ export type Database = {
           owner_id: string
           post_id?: string
           reopen_count?: number
+          search_vector?: unknown
           status?: string
           status_before_admin_removal?: string | null
           street: string
@@ -606,6 +724,7 @@ export type Database = {
           owner_id?: string
           post_id?: string
           reopen_count?: number
+          search_vector?: unknown
           status?: string
           status_before_admin_removal?: string | null
           street?: string
@@ -666,39 +785,6 @@ export type Database = {
           },
         ]
       }
-      saved_posts: {
-        Row: {
-          post_id: string
-          saved_at: string
-          user_id: string
-        }
-        Insert: {
-          post_id: string
-          saved_at?: string
-          user_id: string
-        }
-        Update: {
-          post_id?: string
-          saved_at?: string
-          user_id?: string
-        }
-        Relationships: [
-          {
-            foreignKeyName: "saved_posts_post_id_fkey"
-            columns: ["post_id"]
-            isOneToOne: false
-            referencedRelation: "posts"
-            referencedColumns: ["post_id"]
-          },
-          {
-            foreignKeyName: "saved_posts_user_id_fkey"
-            columns: ["user_id"]
-            isOneToOne: false
-            referencedRelation: "users"
-            referencedColumns: ["user_id"]
-          },
-        ]
-      }
       reporter_hides: {
         Row: {
           created_at: string
@@ -737,6 +823,7 @@ export type Database = {
           reporter_id: string
           resolved_at: string | null
           resolved_by: string | null
+          sanction_consumed_at: string | null
           status: string
           target_id: string | null
           target_type: string
@@ -749,6 +836,7 @@ export type Database = {
           reporter_id: string
           resolved_at?: string | null
           resolved_by?: string | null
+          sanction_consumed_at?: string | null
           status?: string
           target_id?: string | null
           target_type: string
@@ -761,6 +849,7 @@ export type Database = {
           reporter_id?: string
           resolved_at?: string | null
           resolved_by?: string | null
+          sanction_consumed_at?: string | null
           status?: string
           target_id?: string | null
           target_type?: string
@@ -776,6 +865,39 @@ export type Database = {
           {
             foreignKeyName: "reports_resolved_by_fkey"
             columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      saved_posts: {
+        Row: {
+          post_id: string
+          saved_at: string
+          user_id: string
+        }
+        Insert: {
+          post_id: string
+          saved_at?: string
+          user_id: string
+        }
+        Update: {
+          post_id?: string
+          saved_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "saved_posts_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "saved_posts_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
@@ -925,9 +1047,8 @@ export type Database = {
           biography: string | null
           city: string | null
           city_name: string | null
-          profile_street: string | null
-          profile_street_number: string | null
           closure_explainer_dismissed: boolean
+          contact_phone: string | null
           created_at: string
           display_name: string | null
           false_report_sanction_count: number
@@ -943,6 +1064,9 @@ export type Database = {
           posts_created_total: number
           privacy_changed_at: string | null
           privacy_mode: string
+          profile_street: string | null
+          profile_street_number: string | null
+          search_vector: unknown
           share_handle: string
           updated_at: string
           user_id: string
@@ -959,9 +1083,8 @@ export type Database = {
           biography?: string | null
           city?: string | null
           city_name?: string | null
-          profile_street?: string | null
-          profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
+          contact_phone?: string | null
           created_at?: string
           display_name?: string | null
           false_report_sanction_count?: number
@@ -977,6 +1100,9 @@ export type Database = {
           posts_created_total?: number
           privacy_changed_at?: string | null
           privacy_mode?: string
+          profile_street?: string | null
+          profile_street_number?: string | null
+          search_vector?: unknown
           share_handle: string
           updated_at?: string
           user_id: string
@@ -993,9 +1119,8 @@ export type Database = {
           biography?: string | null
           city?: string | null
           city_name?: string | null
-          profile_street?: string | null
-          profile_street_number?: string | null
           closure_explainer_dismissed?: boolean
+          contact_phone?: string | null
           created_at?: string
           display_name?: string | null
           false_report_sanction_count?: number
@@ -1011,6 +1136,9 @@ export type Database = {
           posts_created_total?: number
           privacy_changed_at?: string | null
           privacy_mode?: string
+          profile_street?: string | null
+          profile_street_number?: string | null
+          search_vector?: unknown
           share_handle?: string
           updated_at?: string
           user_id?: string
@@ -1027,6 +1155,16 @@ export type Database = {
       }
     }
     Views: {
+      about_team_profiles: {
+        Row: {
+          avatar_url: string | null
+          display_name: string | null
+          role_key: string | null
+          share_handle: string | null
+          sort_order: number | null
+        }
+        Relationships: []
+      }
       community_stats: {
         Row: {
           active_public_posts: number | null
@@ -1042,15 +1180,177 @@ export type Database = {
         Args: { p_owner: string; p_viewer: string }
         Returns: number
       }
+      admin_audit_lookup: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          event_id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "audit_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_audit_lookup_guarded: {
+        Args: { p_limit?: number; p_user_id: string }
+        Returns: {
+          action: string
+          actor_id: string | null
+          created_at: string
+          event_id: string
+          metadata: Json | null
+          target_id: string | null
+          target_type: string | null
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "audit_events"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      admin_ban_user: {
+        Args: { p_note: string; p_reason: string; p_target_user_id: string }
+        Returns: undefined
+      }
+      admin_confirm_report: {
+        Args: { p_report_id: string }
+        Returns: undefined
+      }
+      admin_delete_message: {
+        Args: { p_message_id: string }
+        Returns: undefined
+      }
+      admin_dismiss_report: {
+        Args: { p_report_id: string }
+        Returns: undefined
+      }
+      admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
+      admin_restore_target: {
+        Args: { p_target_id: string; p_target_type: string }
+        Returns: undefined
+      }
+      auth_check_account_gate: {
+        Args: { p_user_id: string }
+        Returns: {
+          allowed: boolean
+          reason: string
+          until_at: string
+        }[]
+      }
+      close_post_with_recipient: {
+        Args: { p_post_id: string; p_recipient_user_id: string }
+        Returns: {
+          category: string
+          city: string
+          created_at: string
+          delete_after: string | null
+          description: string | null
+          item_condition: string | null
+          location_display_level: string
+          owner_id: string
+          post_id: string
+          reopen_count: number
+          search_vector: unknown
+          status: string
+          status_before_admin_removal: string | null
+          street: string
+          street_number: string
+          title: string
+          type: string
+          updated_at: string
+          urgency: string | null
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      closure_cleanup_expired: { Args: never; Returns: number }
+      closure_cleanup_expired_with_metric: { Args: never; Returns: number }
+      delete_account_data: { Args: never; Returns: Json }
+      enqueue_notification: {
+        Args: {
+          p_body_args?: Json
+          p_body_key: string
+          p_bypass_preferences?: boolean
+          p_category: string
+          p_data?: Json
+          p_dedupe_key?: string
+          p_kind: string
+          p_title_key: string
+          p_user_id: string
+        }
+        Returns: string
+      }
+      feed_ranked_ids:
+        | {
+            Args: {
+              p_cursor_created_at?: string
+              p_cursor_distance?: number
+              p_cursor_post_id?: string
+              p_filter_categories?: string[]
+              p_filter_center_city?: string
+              p_filter_item_conditions?: string[]
+              p_filter_radius_km?: number
+              p_filter_status?: string
+              p_filter_type?: string
+              p_page_limit?: number
+              p_proximity_sort_city?: string
+              p_sort_order?: string
+              p_viewer_id: string
+            }
+            Returns: {
+              distance_km: number
+              post_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_cursor_created_at?: string
+              p_cursor_distance?: number
+              p_cursor_post_id?: string
+              p_filter_categories?: string[]
+              p_filter_center_city?: string
+              p_filter_item_conditions?: string[]
+              p_filter_radius_km?: number
+              p_filter_status?: string
+              p_filter_type?: string
+              p_followers_only?: boolean
+              p_page_limit?: number
+              p_proximity_sort_city?: string
+              p_sort_order?: string
+              p_viewer_id: string
+            }
+            Returns: {
+              distance_km: number
+              post_id: string
+            }[]
+          }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
       has_blocked: {
         Args: { blocked: string; blocker: string }
         Returns: boolean
       }
+      haversine_km: {
+        Args: { lat1: number; lat2: number; lon1: number; lon2: number }
+        Returns: number
+      }
       inject_system_message: {
         Args: { p_body?: string; p_chat_id: string; p_payload: Json }
         Returns: string
       }
+      is_active_member: { Args: { uid: string }; Returns: boolean }
       is_admin: { Args: { uid: string }; Returns: boolean }
       is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       is_chat_visible_to: {
@@ -1071,23 +1371,114 @@ export type Database = {
         }
         Returns: boolean
       }
+      notifications_backlog_check: { Args: never; Returns: undefined }
+      notifications_bump_attempt: {
+        Args: { p_error: string; p_id: string }
+        Returns: undefined
+      }
+      notifications_post_expiry_check: { Args: never; Returns: undefined }
+      participant_closed_surface_visible: {
+        Args: {
+          p_actor: string
+          p_post: Database["public"]["Tables"]["posts"]["Row"]
+          p_viewer: string
+        }
+        Returns: boolean
+      }
+      profile_closed_posts: {
+        Args: {
+          p_cursor?: string
+          p_limit?: number
+          p_list_mode?: string
+          p_profile_user_id: string
+          p_viewer_user_id: string
+        }
+        Returns: {
+          closed_at: string
+          identity_role: string
+          post_id: string
+        }[]
+      }
+      reopen_post_deleted_no_recipient: {
+        Args: { p_post_id: string }
+        Returns: {
+          category: string
+          city: string
+          created_at: string
+          delete_after: string | null
+          description: string | null
+          item_condition: string | null
+          location_display_level: string
+          owner_id: string
+          post_id: string
+          reopen_count: number
+          search_vector: unknown
+          status: string
+          status_before_admin_removal: string | null
+          street: string
+          street_number: string
+          title: string
+          type: string
+          updated_at: string
+          urgency: string | null
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      reopen_post_marked: {
+        Args: { p_post_id: string }
+        Returns: {
+          category: string
+          city: string
+          created_at: string
+          delete_after: string | null
+          description: string | null
+          item_condition: string | null
+          location_display_level: string
+          owner_id: string
+          post_id: string
+          reopen_count: number
+          search_vector: unknown
+          status: string
+          status_before_admin_removal: string | null
+          street: string
+          street_number: string
+          title: string
+          type: string
+          updated_at: string
+          urgency: string | null
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      report_donation_link: { Args: { p_link_id: string }; Returns: undefined }
+      rpc_chat_hide_for_viewer: {
+        Args: { p_chat_id: string }
+        Returns: undefined
+      }
       rpc_chat_mark_read: { Args: { p_chat_id: string }; Returns: undefined }
-      rpc_chat_hide_for_viewer: { Args: { p_chat_id: string }; Returns: undefined }
       rpc_chat_set_anchor: {
         Args: { p_anchor_post_id: string; p_chat_id: string }
-        Returns: Database['public']['Tables']['chats']['Row']
-      }
-      rpc_chat_unread_total: { Args: never; Returns: number }
-      rpc_get_or_create_support_thread: {
-        Args: never
         Returns: {
           anchor_post_id: string | null
           chat_id: string
           created_at: string
+          inbox_hidden_at_a: string | null
+          inbox_hidden_at_b: string | null
           is_support_thread: boolean
           last_message_at: string
-          participant_a: string
-          participant_b: string
+          participant_a: string | null
+          participant_b: string | null
           removed_at: string | null
         }
         SetofOptions: {
@@ -1097,127 +1488,75 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      rpc_submit_support_issue: {
-        Args: { p_category: string | null; p_description: string }
+      rpc_chat_unread_total: { Args: never; Returns: number }
+      rpc_get_or_create_support_thread: {
+        Args: never
         Returns: {
           anchor_post_id: string | null
           chat_id: string
           created_at: string
+          inbox_hidden_at_a: string | null
+          inbox_hidden_at_b: string | null
           is_support_thread: boolean
           last_message_at: string
-          participant_a: string
-          participant_b: string
+          participant_a: string | null
+          participant_b: string | null
           removed_at: string | null
         }
-      }
-      stats_safe_dec: { Args: { p_value: number }; Returns: number }
-      // FR-CLOSURE-007 (0075) — manually added until next typegen run.
-      rpc_recipient_unmark_self: { Args: { p_post_id: string }; Returns: void }
-      // P0.6 closure RPCs (0015) — manually added until next typegen run.
-      close_post_with_recipient: {
-        Args: { p_post_id: string; p_recipient_user_id: string }
-        Returns: Database["public"]["Tables"]["posts"]["Row"]
-      }
-      reopen_post_marked: {
-        Args: { p_post_id: string }
-        Returns: Database["public"]["Tables"]["posts"]["Row"]
-      }
-      // 0068 security hardening — replaces the direct client UPDATE that
-      // previously inflated reopen_count from the deleted_no_recipient path.
-      reopen_post_deleted_no_recipient: {
-        Args: { p_post_id: string }
-        Returns: Database["public"]["Tables"]["posts"]["Row"]
-      }
-      // P0.6 cleanup cron (0016) — manually added until next typegen run.
-      closure_cleanup_expired: { Args: Record<string, never>; Returns: number }
-      closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }
-      // FR-ADMIN-009 (0017) — manually added until next typegen run.
-      admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
-      // FR-MOD-010 / FR-ADMIN-002..007 (0034-0040) — manually added until next typegen run.
-      admin_restore_target: {
-        Args: { p_target_type: string; p_target_id: string }
-        Returns: undefined
-      }
-      admin_dismiss_report: {
-        Args: { p_report_id: string }
-        Returns: undefined
-      }
-      admin_confirm_report: {
-        Args: { p_report_id: string }
-        Returns: undefined
-      }
-      admin_ban_user: {
-        Args: { p_target_user_id: string; p_reason: string; p_note: string }
-        Returns: undefined
-      }
-      admin_delete_message: {
-        Args: { p_message_id: string }
-        Returns: undefined
-      }
-      admin_audit_lookup_guarded: {
-        Args: { p_user_id: string; p_limit?: number }
-        Returns: {
-          event_id: string
-          actor_id: string | null
-          action: string
-          target_type: string | null
-          target_id: string | null
-          metadata: Json
-          created_at: string
-        }[]
-      }
-      auth_check_account_gate: {
-        Args: { p_user_id: string }
-        Returns: {
-          allowed: boolean
-          reason: string | null
-          until_at: string | null
-        }[]
-      }
-      // P1.2 (0021, 0022) — manually added until next typegen run.
-      haversine_km: {
-        Args: { lat1: number; lon1: number; lat2: number; lon2: number }
-        Returns: number
-      }
-      feed_ranked_ids: {
-        Args: {
-          p_viewer_id: string
-          p_filter_type?: string | null
-          p_filter_categories?: string[] | null
-          p_filter_item_conditions?: string[] | null
-          p_filter_status?: string
-          p_filter_center_city?: string | null
-          p_filter_radius_km?: number | null
-          p_sort_order?: string
-          p_proximity_sort_city?: string | null
-          p_page_limit?: number
-          p_cursor_distance?: number | null
-          p_cursor_created_at?: string | null
-          p_cursor_post_id?: string | null
-          p_followers_only?: boolean
+        SetofOptions: {
+          from: "*"
+          to: "chats"
+          isOneToOne: true
+          isSetofReturn: false
         }
-        Returns: { post_id: string; distance_km: number | null }[]
       }
-      // FR-STATS-005 (0045) — nightly job; not called from mobile.
-      stats_recompute_personal_counters_nightly: {
-        Args: Record<string, never>
-        Returns: { users_processed: number; drift_events: number }[]
-      }
-      // FR-STATS-003 (0030, 0044) — manually added until next typegen run.
       rpc_my_activity_timeline: {
         Args: { p_limit?: number }
         Returns: {
-          occurred_at: string
+          actor_display_name: string
           kind: string
+          occurred_at: string
           post_id: string
           post_title: string
-          actor_display_name: string | null
         }[]
       }
-      // FR-DONATE AC2 (0047) — manually added until next typegen run.
-      report_donation_link: {
-        Args: { p_link_id: string }
+      rpc_recipient_unmark_self: {
+        Args: { p_post_id: string }
         Returns: undefined
+      }
+      rpc_submit_support_issue: {
+        Args: { p_category: string; p_description: string }
+        Returns: {
+          anchor_post_id: string | null
+          chat_id: string
+          created_at: string
+          inbox_hidden_at_a: string | null
+          inbox_hidden_at_b: string | null
+          is_support_thread: boolean
+          last_message_at: string
+          participant_a: string | null
+          participant_b: string | null
+          removed_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "chats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      stats_recompute_personal_counters_nightly: {
+        Args: never
+        Returns: {
+          drift_events: number
+          users_processed: number
+        }[]
+      }
+      stats_safe_dec: { Args: { p_value: number }; Returns: number }
+      suspension_expiry_lift: { Args: never; Returns: number }
+      users_merge_notification_preferences: {
+        Args: { p_merge: Json; p_user_id: string }
+        Returns: Json
       }
     }
     Enums: {
@@ -1351,3 +1690,4 @@ export const Constants = {
     Enums: {},
   },
 } as const
+

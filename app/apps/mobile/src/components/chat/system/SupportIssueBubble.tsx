@@ -1,53 +1,135 @@
 // FR-MOD-002 AC3 / FR-CHAT-007 AC3 — renders the system message injected when
 // a user submits a support issue from Settings → Report an Issue.
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 import he from '../../../i18n/locales/he';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 export function SupportIssueBubble({ payload }: SystemMessageBubbleProps) {
+  const styles = useSupportIssueBubbleStyles();
+  const { colors } = useTheme();
   const t = he.moderation.supportIssueBubble;
-  const tCategories = (he.settings.reportIssueScreen.categories) as Record<string, string>;
+  const tCategories = he.settings.reportIssueScreen.categories as Record<string, string>;
 
   const issueId = payload?.issue_id as string | undefined;
   const category = payload?.category as string | undefined;
   const description = payload?.description as string | undefined;
   const categoryLabel = category ? (tCategories[category] ?? category) : undefined;
-
-  // Show a short suffix of the UUID so admins can cross-reference without
-  // the full 36-char ID overwhelming the bubble.
   const shortId = issueId ? issueId.slice(-8) : undefined;
 
   return (
-    <View style={styles.bubble}>
-      <Text style={styles.title}>{t.title}</Text>
-      {categoryLabel ? (
-        <Text style={styles.row}>
-          <Text style={styles.label}>{`${t.categoryLabel} `}</Text>
-          {categoryLabel}
-        </Text>
-      ) : null}
-      {description ? <Text style={styles.description}>{description}</Text> : null}
-      {shortId ? (
-        <Text style={styles.ref}>{`${t.issueRef} …${shortId}`}</Text>
-      ) : null}
+    <View style={styles.wrap}>
+      <View style={styles.card}>
+        <View style={styles.headerRow}>
+          <View style={styles.iconBadge}>
+            <Ionicons name="headset-outline" size={18} color={colors.info} />
+          </View>
+          <Text style={styles.title}>{t.title}</Text>
+        </View>
+
+        {categoryLabel ? (
+          <View style={styles.metaRow}>
+            <Text style={styles.metaLabel}>{t.categoryLabel}</Text>
+            <View style={styles.categoryBadge}>
+              <Text style={styles.categoryText}>{categoryLabel}</Text>
+            </View>
+          </View>
+        ) : null}
+
+        {description ? (
+          <View style={styles.descriptionBox}>
+            <Text style={styles.description}>{description}</Text>
+          </View>
+        ) : null}
+
+        {shortId ? (
+          <Text style={styles.ref}>{`${t.issueRef} …${shortId}`}</Text>
+        ) : null}
+      </View>
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  bubble: {
-    padding: 10,
-    backgroundColor: '#e8f4ff',
-    borderRadius: 8,
-    marginVertical: 4,
-    alignSelf: 'center',
-    maxWidth: '90%',
-    gap: 4,
+const useSupportIssueBubbleStyles = makeUseStyles(({ colors, isDark }) => ({
+  wrap: {
+    alignItems: 'center',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
   },
-  title: { fontWeight: '700', fontSize: 14, textAlign: 'right' },
-  row: { fontSize: 13, textAlign: 'right' },
-  label: { fontWeight: '600' },
-  description: { fontSize: 13, textAlign: 'right', color: '#333' },
-  ref: { fontSize: 11, color: '#888', textAlign: 'right', marginTop: 2 },
-});
+  card: {
+    width: '100%',
+    maxWidth: 340,
+    gap: spacing.sm,
+    padding: spacing.base,
+    borderRadius: radius.lg,
+    backgroundColor: colors.infoLight,
+    borderWidth: 1,
+    borderColor: isDark ? colors.border : colors.infoLight,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
+  iconBadge: {
+    width: 36,
+    height: 36,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.surface,
+  },
+  title: {
+    ...typography.body,
+    flex: 1,
+    color: colors.textPrimary,
+    fontWeight: '700',
+    textAlign: rtlTextAlignStart,
+  },
+  metaRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+  },
+  metaLabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+  },
+  categoryBadge: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  categoryText: {
+    ...typography.caption,
+    color: colors.info,
+    fontWeight: '600',
+  },
+  descriptionBox: {
+    padding: spacing.sm,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: colors.border,
+  },
+  description: {
+    ...typography.bodySmall,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 20,
+  },
+  ref: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    fontVariant: ['tabular-nums'],
+  },
+}));

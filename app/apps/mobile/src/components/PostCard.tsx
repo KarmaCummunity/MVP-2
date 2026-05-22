@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { AvatarInitials } from './AvatarInitials';
-import { styles } from './PostCard.styles';
+import { usePostCardStyles } from './PostCard.styles';
 
 interface PostCardProps {
   post: PostWithOwner;
@@ -19,6 +19,7 @@ interface PostCardProps {
 export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = usePostCardStyles();
 
   const isGive = post.type === 'Give';
 

@@ -8,7 +8,7 @@ import { ActivityIndicator, Image, View } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import {
   getRestoreSessionUseCase,
   subscribeToSession,
@@ -23,6 +23,7 @@ import { container } from '../lib/container';
 import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
 
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { colors } = useTheme();
   const router = useRouter();
   const segments = useSegments();
   const queryClient = useQueryClient();
@@ -157,9 +158,19 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     // FR-MOD-010 AC4 — account-blocked is a terminal screen reachable while
     // signed out; do not bounce the user back to (auth).
     const isAccountBlocked = (segments[0] as string | undefined) === 'account-blocked';
+    const isAboutSurface =
+      (segments[0] as string | undefined) === 'about' ||
+      (segments[0] as string | undefined) === 'about-site';
 
     if (!isAuthenticated) {
-      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback && !isEmailVerify && !isAccountBlocked) {
+      if (
+        !inAuthGroup &&
+        !inGuestGroup &&
+        !isOAuthCallback &&
+        !isEmailVerify &&
+        !isAccountBlocked &&
+        !isAboutSurface
+      ) {
         router.replace('/(auth)');
       }
       return;

@@ -5,11 +5,10 @@ import {
   View,
   Text,
   TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 
 interface Props {
   readonly visible: boolean;
@@ -19,6 +18,8 @@ interface Props {
 }
 
 export function HideChatConfirmModal({ visible, loading, onCancel, onConfirm }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onCancel}>
@@ -44,7 +45,7 @@ export function HideChatConfirmModal({ visible, loading, onCancel, onConfirm }: 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -53,6 +54,9 @@ const styles = StyleSheet.create({
   },
   card: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderRadius: radius.lg,
     padding: spacing.lg,
     gap: spacing.md,
@@ -77,4 +81,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   confirmTxt: { ...typography.semiBold, color: colors.textInverse },
-});
+}));

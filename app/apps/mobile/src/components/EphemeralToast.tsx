@@ -2,12 +2,14 @@
 // Mapped to: FR-POST-001 publish feedback (R-MVP-Core-4 Hebrew copy via i18n in callers).
 
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useFeedSessionStore } from '../store/feedSessionStore';
 
 export function EphemeralToast() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const toast = useFeedSessionStore((s) => s.ephemeralToast);
   const insets = useSafeAreaInsets();
   if (!toast) return null;
@@ -26,7 +28,7 @@ export function EphemeralToast() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   wrap: {
     position: 'absolute',
     left: spacing.base,
@@ -53,4 +55,4 @@ const styles = StyleSheet.create({
     fontWeight: '600',
     textAlign: 'center',
   },
-});
+}));

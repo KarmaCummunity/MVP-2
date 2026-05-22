@@ -1,8 +1,8 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { FeedSortOrder } from '@kc/domain';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography } from '@kc/ui';
 import { Chip } from './Chip';
 import { CityPicker } from '../CityPicker';
 
@@ -28,6 +28,7 @@ export function SortSection({
   onProximitySortCityChange,
 }: SortSectionProps) {
   const { t } = useTranslation();
+  const styles = useSortSectionStyles();
   return (
     <View style={styles.section}>
       <Text style={styles.title}>{t('filters.sectionSort')}</Text>
@@ -51,10 +52,10 @@ export function SortSection({
   );
 }
 
-const styles = StyleSheet.create({
+const useSortSectionStyles = makeUseStyles(({ colors }) => ({
   section: { gap: spacing.sm, marginBottom: spacing.lg },
   title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
   subLabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
   cityWrap: { gap: spacing.xs, marginTop: spacing.sm },
-});
+}));

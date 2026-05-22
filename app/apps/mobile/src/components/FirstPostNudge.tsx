@@ -3,10 +3,9 @@
 // P1.2: primary CTA / soft session-dismiss / permanent dismiss link).
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
-import { Ionicons } from '@expo/vector-icons';
+import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { Card } from './ui/Card';
 import { IconTile } from './ui/IconTile';
 
@@ -17,6 +16,7 @@ interface FirstPostNudgeProps {
 }
 
 export function FirstPostNudge({ onShare, onRemindLater, onDismissForever }: FirstPostNudgeProps) {
+  const styles = useFirstPostNudgeStyles();
   const { t } = useTranslation();
   return (
     <View style={styles.outer}>
@@ -43,23 +43,23 @@ export function FirstPostNudge({ onShare, onRemindLater, onDismissForever }: Fir
   );
 }
 
-const styles = StyleSheet.create({
+const useFirstPostNudgeStyles = makeUseStyles(({ colors }) => ({
   outer: { margin: spacing.base },
   card: { gap: spacing.sm },
-  headline: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right', flex: 1 },
-  body: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  headline: { flexDirection: 'row-reverse' as const, alignItems: 'center' as const, gap: spacing.sm },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' as const, flex: 1 },
+  body: { ...typography.body, color: colors.textSecondary, textAlign: 'right' as const },
   btn: {
     height: 48,
     borderRadius: radius.lg,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   btnPrimary: { backgroundColor: colors.primary },
   btnSecondary: { backgroundColor: colors.surface, borderWidth: 1.5, borderColor: colors.border },
   btnText: { ...typography.body, fontWeight: '700' as const },
   btnPrimaryText: { color: colors.textInverse },
   btnSecondaryText: { color: colors.textPrimary },
-  linkBtn: { alignSelf: 'center', paddingVertical: spacing.xs },
-  linkText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' },
-});
+  linkBtn: { alignSelf: 'center' as const, paddingVertical: spacing.xs },
+  linkText: { ...typography.caption, color: colors.textSecondary, textDecorationLine: 'underline' as const },
+}));

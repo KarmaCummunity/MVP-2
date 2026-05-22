@@ -1,6 +1,17 @@
-export { colors } from './theme/colors';
+export { colors, lightColors, darkColors } from './theme/colors';
+export type { ColorToken, ColorPalette } from './theme/colors';
 export { typography, fontFamily } from './theme/typography';
 export { spacing, radius, shadow } from './theme/spacing';
-export type { ColorToken } from './theme/colors';
+export {
+  ThemeProvider,
+  useTheme,
+  makeUseStyles,
+} from './theme/ThemeContext';
+export type {
+  ThemeContextValue,
+  ThemeMode,
+  ResolvedScheme,
+  ThemeProviderProps,
+} from './theme/ThemeContext';
 export { PlatformSwitch } from './components/PlatformSwitch';
 export type { PlatformSwitchAccent, PlatformSwitchProps } from './components/PlatformSwitch';

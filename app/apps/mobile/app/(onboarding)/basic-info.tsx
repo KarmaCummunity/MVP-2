@@ -1,13 +1,12 @@
 // Onboarding step 2 — FR-AUTH-010
 import React from 'react';
 import {
-  View, Text, TextInput,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { CityPicker } from '../../src/components/CityPicker';
 import { StreetPicker } from '../../src/components/StreetPicker';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
@@ -17,6 +16,8 @@ import { PressableScale } from '../../src/components/animations/PressableScale';
 import { staggerDelay } from '../../src/lib/animations/motion';
 
 export default function OnboardingBasicInfoScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const {
     displayName, setDisplayName, city, setCity, street, setStreet, streetNumber, setStreetNumber,
@@ -155,7 +156,7 @@ export default function OnboardingBasicInfoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.surface },
   content: {
     flex: 1,
@@ -222,4 +223,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   ctaText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
-});
+}));

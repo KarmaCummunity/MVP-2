@@ -3,7 +3,8 @@
 // super admins, plus a rich preview card when the enriched payload
 // (link_target + target_preview) is present.
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
 import { useAuthStore } from '../../../store/authStore';
 import { container } from '../../../lib/container';
@@ -21,6 +22,8 @@ export function AutoRemovedBubble({
 }: SystemMessageBubbleProps) {
   const isAdmin = useIsSuperAdmin();
   const me = useAuthStore((s) => s.session?.userId ?? null);
+  const styles = useAutoRemovedBubbleStyles();
+  const { colors } = useTheme();
   const t = he.moderation;
   const targetType = payload?.target_type as TargetType | undefined;
   const targetId = payload?.target_id as string | undefined;
@@ -37,7 +40,7 @@ export function AutoRemovedBubble({
       {showChatNote ? <Text style={styles.note}>{t.bubble.targetPreview.chatNote}</Text> : null}
 
       {showRichPreview && linkTarget && preview ? (
-        <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor="#dcc88a" />
+        <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor={colors.warning} />
       ) : null}
 
       {showRichPreview ? <Text style={styles.evidence}>{t.bubble.targetPreview.evidenceLabel}</Text> : null}
@@ -88,20 +91,20 @@ export function AutoRemovedBubble({
   );
 }
 
-const styles = StyleSheet.create({
+const useAutoRemovedBubbleStyles = makeUseStyles(({ colors }) => ({
   bubble: {
     padding: 8,
-    backgroundColor: '#fff0d0',
+    backgroundColor: colors.warningLight,
     borderRadius: 8,
     marginVertical: 4,
-    alignSelf: 'center',
+    alignSelf: 'center' as const,
     maxWidth: '90%',
   },
   dimmed: { opacity: 0.5 },
-  title: { fontWeight: '600' },
-  body: { marginTop: 2, fontSize: 13 },
-  note: { fontSize: 11, color: '#666', fontStyle: 'italic', marginTop: 2 },
-  evidence: { fontSize: 11, color: '#666', fontStyle: 'italic', marginTop: 4 },
-  row: { flexDirection: 'row-reverse', gap: 16, marginTop: 8 },
-  btn: { color: '#1a3d8f', fontWeight: '600' },
-});
+  title: { fontWeight: '600' as const, color: colors.textPrimary },
+  body: { marginTop: 2, fontSize: 13, color: colors.textPrimary },
+  note: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 2 },
+  evidence: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 4 },
+  row: { flexDirection: 'row-reverse' as const, gap: 16, marginTop: 8 },
+  btn: { color: colors.secondary, fontWeight: '600' as const },
+}));

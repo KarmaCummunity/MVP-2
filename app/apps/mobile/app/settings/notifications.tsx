@@ -5,7 +5,6 @@ import {
   Text,
   ScrollView,
   Linking,
-  StyleSheet,
   Pressable,
   Platform,
 } from 'react-native';
@@ -13,17 +12,56 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import * as Notifications from 'expo-notifications';
 import { Stack } from 'expo-router';
-import { detailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import type { NotificationPreferences } from '@kc/domain';
 import { NotificationToggleRow } from '../../src/components/NotificationToggleRow';
 import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
+
+const useStyles = makeUseStyles(({ colors }) => ({
+  scrollContent: { ...webViewRtl },
+  sectionHeader: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.sm,
+    textAlign: rtlTextAlignStart,
+    width: '100%',
+    ...webTextRtl,
+  },
+  statusRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    padding: spacing.base,
+    justifyContent: 'space-between',
+    ...webViewRtl,
+  },
+  statusText: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    flex: 1,
+    ...webTextRtl,
+  },
+  button: {
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
+    backgroundColor: colors.success,
+    borderRadius: radius.sm,
+  },
+  buttonText: { ...typography.body, color: colors.textInverse, fontSize: 14 },
+}));
 
 type PermStatus = 'granted' | 'denied' | 'undetermined';
 
 const DEFAULT_PREFS: NotificationPreferences = { critical: true, social: true };
 
 export default function NotificationSettingsScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
+  const styles = useStyles();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
   const qc = useQueryClient();
@@ -78,7 +116,7 @@ export default function NotificationSettingsScreen() {
           headerTitle: t('notifications.settingsTitle'),
         }}
       />
-      <ScrollView>
+      <ScrollView contentContainerStyle={styles.scrollContent}>
         <NotificationToggleRow
           label={t('notifications.criticalLabel')}
           caption={t('notifications.criticalCaption')}
@@ -98,7 +136,7 @@ export default function NotificationSettingsScreen() {
               {t('notifications.deviceStatusSection')}
             </Text>
             <View style={styles.statusRow}>
-              <Text>
+              <Text style={styles.statusText}>
                 {permStatus === 'granted'
                   ? t('notifications.permissionGranted')
                   : t('notifications.permissionDenied')}
@@ -120,26 +158,3 @@ export default function NotificationSettingsScreen() {
     </>
   );
 }
-
-const styles = StyleSheet.create({
-  sectionHeader: {
-    fontSize: 13,
-    color: '#888',
-    paddingHorizontal: 16,
-    paddingVertical: 12,
-    textAlign: 'right',
-  },
-  statusRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    padding: 16,
-    justifyContent: 'space-between',
-  },
-  button: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    backgroundColor: '#0A8754',
-    borderRadius: 6,
-  },
-  buttonText: { color: 'white', fontSize: 14 },
-});

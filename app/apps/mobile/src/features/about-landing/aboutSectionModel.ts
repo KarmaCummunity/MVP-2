@@ -11,7 +11,7 @@ export type AboutSectionId =
   | 'goals'
   | 'contributions'
   | 'team'
-  | 'instagram'
+  | 'social'
   | 'faq'
   | 'contact';
 
@@ -28,7 +28,7 @@ export const ABOUT_NAV_ITEMS: ReadonlyArray<{ readonly id: AboutSectionId; reado
   { id: 'goals', icon: 'flag-outline' },
   { id: 'contributions', icon: 'gift-outline' },
   { id: 'team', icon: 'person-circle-outline' },
-  { id: 'instagram', icon: 'logo-instagram' },
+  { id: 'social', icon: 'share-social-outline' },
   { id: 'faq', icon: 'chatbubble-ellipses-outline' },
   { id: 'contact', icon: 'mail-outline' },
 ];
@@ -47,7 +47,7 @@ export const ABOUT_NAV_LABEL_KEYS: Record<AboutSectionId, string> = {
   goals: 'navGoals',
   contributions: 'navContributions',
   team: 'navTeam',
-  instagram: 'navInstagram',
+  social: 'navSocial',
   faq: 'navFaq',
   contact: 'navContact',
 };

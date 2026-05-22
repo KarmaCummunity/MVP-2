@@ -5,15 +5,16 @@
 
 import { Stack } from 'expo-router';
 import React from 'react';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { nativeStackHeaderLeftIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
 export default function UserHandleLayout() {
+  const { colors } = useTheme();
   return (
     <Stack
       screenOptions={{
         headerShown: true,
-        ...nativeStackHeaderLeftIconOnly,
+        ...nativeStackHeaderLeftIconOnly(colors.primary),
         headerBackVisible: false,
         headerTintColor: colors.primary,
         headerStyle: { backgroundColor: colors.surface },

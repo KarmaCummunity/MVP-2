@@ -2,9 +2,9 @@
 // Copy varies on TWO axes:
 //   1. status:  closed_delivered (with consequences) vs deleted_no_recipient (cancel cleanup)
 //   2. type:    Give (owner gave / marked received) vs Request (owner received / marked gave)
-import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 
 interface Props {
@@ -26,6 +26,8 @@ export function ReopenConfirmModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const give = postType === 'Give';
   // Marked-user direction depends on post type (see RecipientCallout for the
@@ -74,7 +76,7 @@ export function ReopenConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -84,6 +86,9 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     padding: 20,
     borderRadius: 12,
     width: '100%',
@@ -117,4 +122,4 @@ const styles = StyleSheet.create({
   btnSecondary: { backgroundColor: colors.skeleton },
   btnSecondaryText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

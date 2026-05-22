@@ -1,11 +1,12 @@
 import React from 'react';
-import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { View, Text, LayoutChangeEvent } from 'react-native';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 import { useTranslation } from 'react-i18next';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { MOTION } from '../../lib/animations/motion';
 import type { AboutSectionId } from './aboutSectionModel';
-import { AboutInstagramEmbed } from './AboutInstagramEmbed';
+import { AboutSocialLinks } from './AboutSocialLinks';
 import { AboutRoadmapTimeline } from './AboutRoadmapTimeline';
 import { AboutContributionsGrid } from './AboutContributionsGrid';
 import { AboutFaqAccordion } from './AboutFaqAccordion';
@@ -26,6 +27,7 @@ export interface AboutSectionBlocksBottomProps {
 
 export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectionBlocksBottomProps) {
   const { t } = useTranslation();
+  const styles = useAboutSectionBlocksBottomStyles();
   let d = delayStart;
   const next = () => {
     const cur = d;
@@ -84,7 +86,7 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
         </AnimatedEntry>
       </View>
 
-      <View onLayout={track('instagram', onSectionY)} collapsable={false}>
+      <View onLayout={track('social', onSectionY)} collapsable={false}>
         <AnimatedEntry
           delay={next()}
           duration={MOTION.duration.slow}
@@ -92,13 +94,7 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
           scaleEntrance={0.985}
         >
           <View style={styles.card}>
-            <AboutInstagramEmbed
-              title={t('aboutContent.instagramTitle')}
-              caption={t('aboutContent.instagramCaption')}
-              openLabel={t('aboutContent.instagramOpen')}
-              embedNote={t('aboutContent.instagramEmbedNote')}
-              webFallbackTitle={t('aboutContent.instagramWebFallbackTitle')}
-            />
+            <AboutSocialLinks />
           </View>
         </AnimatedEntry>
       </View>
@@ -136,7 +132,7 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutSectionBlocksBottomStyles = makeUseStyles(({ colors }) => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -149,7 +145,7 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.md },
-  p: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
+  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.md },
+  p: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 24 },
   spacer: { height: spacing.sm },
-});
+}));

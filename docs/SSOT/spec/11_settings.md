@@ -231,6 +231,29 @@ The user permanently deletes their own account.
 
 ---
 
+## FR-SETTINGS-014 — Appearance (light / dark / system)
+
+**Status.** ✅ Complete (2026-05-22). Infrastructure, toggle screen, and full mobile screen/container migration shipped.
+
+**Description.**
+A user-facing toggle, in Settings → Appearance, that switches the app between three theme modes: `System` (follows the OS), `Light`, and `Dark`. Dark mode uses a warm-tinted palette (deep warm browns instead of pure black) so the community/karma identity carries through.
+
+**Source.**
+- New (2026-05-19) — added on user request; no PRD precedent.
+
+**Acceptance Criteria.**
+- AC1. Settings list shows an `Appearance` row above `Notifications`. Tapping opens the Appearance sub-screen.
+- AC2. The sub-screen exposes three options: `Automatic` (system), `Light`, `Dark`. Exactly one is selected at a time; the selected option is visually distinct (filled icon bubble + filled radio + tinted row background).
+- AC3. The choice is persisted per device in AsyncStorage (`kc-theme-mode`) and survives sign-out.
+- AC4. `Automatic` resolves at runtime against `useColorScheme()` and re-resolves when the OS scheme changes.
+- AC5. The sub-screen renders a live side-by-side preview card showing the Light and Dark palettes (background / surface / text / brand chips) so the user can compare before choosing.
+- AC6. The native StatusBar style flips with the scheme (`light-content` on dark, `dark-content` on light); on web, the html/body background flips so iOS rubber-band overscroll does not flash the opposite color.
+- AC7. Dark palette preserves brand identity: orange primary stays dominant (slightly lifted for AA contrast on dark surfaces); neutral surfaces are warm-tinted (`#15110D` background, `#1F1A14` surface) rather than pure slate/black.
+
+**Related.** Domain: none. Files: `packages/ui/src/theme/colors.ts`, `packages/ui/src/theme/ThemeContext.tsx`, `apps/mobile/src/store/themeStore.ts`, `apps/mobile/src/components/AppThemeProvider.tsx`, `apps/mobile/app/settings/appearance.tsx`.
+
+---
+
 ## FR-SETTINGS-013 — Read-only contact change
 
 **Description.**
@@ -248,3 +271,4 @@ The MVP does not allow self-service phone/email changes; the Settings screen exp
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.5 and Decisions D-5, D-12, D-14. |
+| 0.2 | 2026-05-19 | Added FR-SETTINGS-014 (Appearance — light / dark / system) per PM request. |

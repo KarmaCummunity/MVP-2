@@ -1,10 +1,10 @@
 // Onboarding step 3 — FR-AUTH-011 (camera+gallery, resize+upload, skip→silhouette).
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Text, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { PhotoSourceSheet } from '../../src/components/PhotoSourceSheet';
@@ -18,6 +18,8 @@ const HALO_SIZE = 196;
 const AVATAR_SIZE = 128;
 
 export default function OnboardingPhotoScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
   const {
@@ -134,7 +136,7 @@ export default function OnboardingPhotoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.surface },
   content: {
     flex: 1,
@@ -197,4 +199,4 @@ const styles = StyleSheet.create({
     color: colors.textDisabled,
     textAlign: 'center',
   },
-});
+}));

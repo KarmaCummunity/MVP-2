@@ -79,9 +79,6 @@ describe('fetchRankedFeedPage — RPC params + early-exit branches', () => {
       p_sort_order: 'distance',
       p_proximity_sort_city: 'IL-001',
       p_page_limit: 11,
-      p_cursor_distance: null,
-      p_cursor_created_at: null,
-      p_cursor_post_id: null,
       p_followers_only: true,
     });
   });
@@ -92,14 +89,14 @@ describe('fetchRankedFeedPage — RPC params + early-exit branches', () => {
     expect(rpcCalls[0]?.params.p_viewer_id).toBe(ZERO_UUID);
   });
 
-  it('defaults statusFilter to "open", sortOrder to "newest", followersOnly to false, nulls empty array filters', async () => {
+  it('defaults statusFilter to "open", sortOrder to "newest", followersOnly to false, omits empty array filters', async () => {
     const { client, rpcCalls } = makeFakeClient({ rpc: { data: [] } });
     await fetchRankedFeedPage(client, 'v', { categories: [], itemConditions: [] }, undefined, 5);
     expect(rpcCalls[0]?.params.p_filter_status).toBe('open');
     expect(rpcCalls[0]?.params.p_sort_order).toBe('newest');
     expect(rpcCalls[0]?.params.p_followers_only).toBe(false);
-    expect(rpcCalls[0]?.params.p_filter_categories).toBeNull();
-    expect(rpcCalls[0]?.params.p_filter_item_conditions).toBeNull();
+    expect(rpcCalls[0]?.params.p_filter_categories).toBeUndefined();
+    expect(rpcCalls[0]?.params.p_filter_item_conditions).toBeUndefined();
     expect(rpcCalls[0]?.params.p_page_limit).toBe(6);
   });
 

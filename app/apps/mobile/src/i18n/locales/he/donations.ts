@@ -97,7 +97,7 @@ export const donations = {
   },
   // FR-DONATE-010 — platform-support CTA card embedded on About + Settings.
   supportUs: {
-    title: 'תורמים אהבה? תרמו גם לקהילה',
+    title: 'תורמים באהבה? תרמו גם לקהילה',
     tagline:
       'קארמה היא קהילה חופשית שרצה על האהבה והנדיבות שלכם. כל תרומה עוזרת לנו להמשיך לבנות מקום של נתינה לכולם.',
     ctaBit: 'תרומה דרך ביט',

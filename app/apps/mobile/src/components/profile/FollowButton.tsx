@@ -6,10 +6,10 @@
 // Mapped to: FR-FOLLOW-011, FR-FOLLOW-002 AC1, FR-FOLLOW-004 AC1.
 
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { TFunction } from 'i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { FollowState } from '@kc/application';
 import { ConfirmActionModal } from '../post/ConfirmActionModal';
 
@@ -34,12 +34,14 @@ interface ButtonCfg {
 export function FollowButton({
   state, cooldownUntil, onPress, busy, interactionDisabled,
 }: FollowButtonProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const [confirmOpen, setConfirmOpen] = React.useState(false);
 
   if (state === 'self') return null;
 
-  const cfg = config(state, cooldownUntil, t);
+  const cfg = config(state, cooldownUntil, t, styles);
   const disabled = busy || cfg.disabled || Boolean(interactionDisabled);
 
   const handlePress = () => {
@@ -80,7 +82,7 @@ export function FollowButton({
   );
 }
 
-function config(state: FollowState, cooldownUntil: string | undefined, t: TFunction): ButtonCfg {
+function config(state: FollowState, cooldownUntil: string | undefined, t: TFunction, styles: ReturnType<typeof useStyles>): ButtonCfg {
   switch (state) {
     case 'not_following_public':
       return { label: t('profile.followCta') };
@@ -123,7 +125,7 @@ function config(state: FollowState, cooldownUntil: string | undefined, t: TFunct
   }
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   btn: {
     backgroundColor: colors.primary, paddingVertical: spacing.sm, paddingHorizontal: spacing.lg,
     borderRadius: radius.md, alignItems: 'center', alignSelf: 'stretch',
@@ -133,4 +135,4 @@ const styles = StyleSheet.create({
   text: { ...typography.button, color: colors.textInverse, fontWeight: '700' as const },
   textSecondary: { color: colors.textPrimary },
   subtitle: { ...typography.caption, color: colors.textSecondary, marginTop: 2 },
-});
+}));

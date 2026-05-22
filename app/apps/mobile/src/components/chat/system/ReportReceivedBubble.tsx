@@ -4,7 +4,8 @@
 // super admins. Dimmed once a later mod_action_taken bubble references this
 // message.
 import React from 'react';
-import { View, Text, Pressable, StyleSheet } from 'react-native';
+import { View, Text, Pressable } from 'react-native';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
 import { container } from '../../../lib/container';
 import he from '../../../i18n/locales/he';
@@ -18,6 +19,8 @@ export function ReportReceivedBubble({
   handledByLaterAction,
 }: SystemMessageBubbleProps) {
   const isAdmin = useIsSuperAdmin();
+  const styles = useReportReceivedBubbleStyles();
+  const { colors } = useTheme();
   const t = he.moderation;
   const reportId = payload?.report_id as string | undefined;
   const targetType = payload?.target_type as string | undefined;
@@ -43,7 +46,7 @@ export function ReportReceivedBubble({
       {reasonLabel ? <Text style={styles.body}>{reasonLabel}</Text> : null}
 
       {showRichPreview && linkTarget && preview ? (
-        <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor="#e0d8b0" />
+        <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor={colors.borderStrong} />
       ) : null}
 
       {showRichPreview ? <Text style={styles.evidence}>{t.bubble.targetPreview.evidenceLabel}</Text> : null}
@@ -87,21 +90,21 @@ export function ReportReceivedBubble({
   );
 }
 
-const styles = StyleSheet.create({
+const useReportReceivedBubbleStyles = makeUseStyles(({ colors }) => ({
   bubble: {
     padding: 8,
-    backgroundColor: '#fff7e0',
+    backgroundColor: colors.warningLight,
     borderRadius: 8,
     marginVertical: 4,
-    alignSelf: 'center',
+    alignSelf: 'center' as const,
     maxWidth: '90%',
   },
   dimmed: { opacity: 0.5 },
-  title: { fontWeight: '600' },
-  body: { marginTop: 2, fontSize: 13 },
-  noteLabel: { fontWeight: '600' },
-  note: { fontSize: 11, color: '#666', fontStyle: 'italic', marginTop: 2 },
-  evidence: { fontSize: 11, color: '#666', fontStyle: 'italic', marginTop: 4 },
-  row: { flexDirection: 'row-reverse', gap: 16, marginTop: 8 },
-  btn: { color: '#1a3d8f', fontWeight: '600' },
-});
+  title: { fontWeight: '600' as const, color: colors.textPrimary },
+  body: { marginTop: 2, fontSize: 13, color: colors.textPrimary },
+  noteLabel: { fontWeight: '600' as const },
+  note: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 2 },
+  evidence: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 4 },
+  row: { flexDirection: 'row-reverse' as const, gap: 16, marginTop: 8 },
+  btn: { color: colors.secondary, fontWeight: '600' as const },
+}));

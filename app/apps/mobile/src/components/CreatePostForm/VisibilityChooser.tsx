@@ -1,7 +1,7 @@
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import type { PostVisibility } from '@kc/domain';
 
 interface Props {
@@ -20,6 +20,36 @@ const ROWS: { v: PostVisibility; labelKey: string; subKey: string }[] = [
   { v: 'OnlyMe', labelKey: 'post.visibilityOnlyMe', subKey: 'post.visibilityOnlyMeSub' },
 ];
 
+const useVisibilityChooserStyles = makeUseStyles(({ colors, isDark }) => ({
+  section: { gap: spacing.xs },
+  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  row: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    gap: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
+    borderRadius: radius.md,
+    borderWidth: isDark ? 1 : 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+  },
+  rowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
+  rowDisabled: { opacity: 0.55 },
+  labelDisabled: { color: colors.textDisabled },
+  subDisabled: { color: colors.textDisabled },
+  radio: {
+    width: 20,
+    height: 20,
+    borderRadius: 10,
+    borderWidth: 2,
+    borderColor: colors.border,
+  },
+  radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
+  label: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+  sub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' as const },
+}));
+
 export function VisibilityChooser({
   value,
   onChange,
@@ -28,6 +58,7 @@ export function VisibilityChooser({
   disabled: interactionDisabled,
 }: Props) {
   const { t } = useTranslation();
+  const styles = useVisibilityChooserStyles();
   const followersLocked = profilePrivacy === 'Public';
 
   return (
@@ -63,24 +94,3 @@ export function VisibilityChooser({
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  row: {
-    flexDirection: 'row', alignItems: 'center', gap: spacing.md,
-    paddingVertical: spacing.sm, paddingHorizontal: spacing.md,
-    borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
-    backgroundColor: colors.surface,
-  },
-  rowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-  rowDisabled: { opacity: 0.55 },
-  labelDisabled: { color: colors.textDisabled },
-  subDisabled: { color: colors.textDisabled },
-  radio: {
-    width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border,
-  },
-  radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  label: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  sub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-});

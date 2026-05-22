@@ -1,10 +1,10 @@
 // Bubble for a single chat message — FR-CHAT-002 AC2/AC4.
 // FR-ADMIN-005 — admins can long-press a user-kind bubble to hard-delete it.
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import type { OptimisticMessage } from '../store/chatStore';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { SystemMessageBubble } from './chat/system/SystemMessageBubble';
 import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
 import { container } from '../lib/container';
@@ -17,6 +17,8 @@ const KNOWN_MOD_KINDS = [
   'auto_removed',
   'mod_action_taken',
   'owner_auto_removed',
+  'donation_link_reported',
+  'support_issue',
 ] as const;
 
 export function MessageBubble({
@@ -29,6 +31,9 @@ export function MessageBubble({
 }) {
   const [showTime, setShowTime] = useState(false);
   const isAdmin = useIsSuperAdmin();
+  const styles = useMessageBubbleStyles();
+  const { colors } = useTheme();
+  const mineMetaColor = { color: colors.textInverse, opacity: 0.7 };
 
   // System messages (FR-CHAT-007 / FR-MOD-002) — moderation kinds delegate to
   // SystemMessageBubble; unknown/legacy kinds keep the existing neutral pill.
@@ -82,9 +87,9 @@ export function MessageBubble({
           {m.failed && (
             <TouchableOpacity onPress={onRetry}><Ionicons name="refresh" size={14} color={colors.textInverse} /></TouchableOpacity>
           )}
-          {mine && !m.failed && <Text style={styles.readReceipt}>{m.status === 'read' ? '✓✓' : '✓'}</Text>}
+          {mine && !m.failed && <Text style={[styles.readReceipt, mineMetaColor]}>{m.status === 'read' ? '✓✓' : '✓'}</Text>}
           {showTime && (
-            <Text style={[styles.timeText, mine && { color: 'rgba(255,255,255,0.7)' }]}>
+            <Text style={[styles.timeText, mine ? mineMetaColor : null]}>
               {formatMessageBubbleTime(m.createdAt)}
             </Text>
           )}
@@ -94,7 +99,7 @@ export function MessageBubble({
   );
 }
 
-const styles = StyleSheet.create({
+const useMessageBubbleStyles = makeUseStyles(({ colors }) => ({
   bubble: { maxWidth: '80%', padding: spacing.md, borderRadius: radius.lg, gap: 4 },
   bubbleMine: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderBottomLeftRadius: 4 },
   bubbleOther: { alignSelf: 'flex-end', backgroundColor: colors.surface, borderBottomRightRadius: 4, borderWidth: 1, borderColor: colors.border },
@@ -103,7 +108,7 @@ const styles = StyleSheet.create({
   bubbleTextOther: { color: colors.textPrimary, textAlign: 'right' },
   bubbleMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
   timeText: { ...typography.caption, color: colors.textSecondary },
-  readReceipt: { fontSize: 11, color: 'rgba(255,255,255,0.7)' },
+  readReceipt: { fontSize: 11 },
   systemWrap: { alignItems: 'center', paddingVertical: spacing.xs },
   systemPill: {
     flexDirection: 'row', alignItems: 'center', gap: 4,
@@ -114,4 +119,4 @@ const styles = StyleSheet.create({
     maxWidth: '90%',
   },
   systemText: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
-});
+}));

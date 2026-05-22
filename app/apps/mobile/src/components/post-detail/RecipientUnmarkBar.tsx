@@ -3,10 +3,10 @@
 // Spec AC2: confirmation modal explains consequences.
 // Spec AC3: calls rpc_recipient_unmark_self, post→deleted_no_recipient.
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { ConfirmActionModal } from '../post/ConfirmActionModal';
 import { NotifyModal } from '../NotifyModal';
 import { getUnmarkRecipientSelfUseCase } from '../../services/postsComposition';
@@ -17,6 +17,8 @@ interface Props {
 }
 
 export function RecipientUnmarkBar({ postId, userId }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -69,7 +71,7 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   btn: {
     marginTop: spacing.xs,
     alignSelf: 'flex-end',
@@ -80,4 +82,4 @@ const styles = StyleSheet.create({
     borderColor: colors.error,
   },
   btnText: { ...typography.bodySmall, color: colors.error },
-});
+}));

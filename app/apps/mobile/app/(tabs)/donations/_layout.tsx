@@ -2,20 +2,18 @@
 // Mapped to: FR-DONATE-001..009 / D-16.
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { nativeStackHeaderLeftIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
 
-const detailHeader = {
-  headerShown: true,
-  ...nativeStackHeaderLeftIconOnly,
-  headerBackVisible: false,
-  headerTintColor: colors.primary,
-  // Cream header continues the screen backdrop instead of cutting it with a
-  // white bar — the rest of the redesigned app does the same in TopBar.
-  headerStyle: { backgroundColor: colors.background },
-} as const;
-
 export default function DonationsLayout() {
+  const { colors } = useTheme();
+  const detailHeader = {
+    headerShown: true,
+    ...nativeStackHeaderLeftIconOnly(colors.primary),
+    headerBackVisible: false,
+    headerTintColor: colors.primary,
+    headerStyle: { backgroundColor: colors.background },
+  } as const;
   const { t } = useTranslation();
   return (
     <Stack

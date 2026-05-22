@@ -1,9 +1,9 @@
 // FR-AUTH-006 — verification-pending state shown inside sign-up and sign-in screens.
 // Renders email-icon header, three actions: open mail, resend (60s cooldown), change email.
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { mapAuthErrorToHebrew } from '../../services/authMessages';
 import {
@@ -20,6 +20,8 @@ export interface VerificationPendingPanelProps {
 }
 
 export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { email, onChangeEmail } = props;
   const [cooldown, setCooldown] = useState(0);
@@ -109,7 +111,7 @@ export function VerificationPendingPanel(props: VerificationPendingPanelProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { gap: spacing.base, paddingTop: spacing.lg },
   icon: { fontSize: 48, textAlign: 'center' },
   title: { ...typography.h2, color: colors.textPrimary, textAlign: 'center' },
@@ -139,4 +141,4 @@ const styles = StyleSheet.create({
   helperErr: { ...typography.caption, color: colors.error, textAlign: 'center' },
   tertiaryBtn: { alignItems: 'center', paddingVertical: spacing.sm },
   tertiaryBtnText: { ...typography.body, color: colors.primary },
-});
+}));

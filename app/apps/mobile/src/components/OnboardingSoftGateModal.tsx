@@ -6,13 +6,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
-import { colors, typography, spacing, radius, shadow } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, shadow, useTheme } from '@kc/ui';
 import { EditProfileAddressBlock } from './EditProfileAddressBlock';
 import { NotifyModal } from './NotifyModal';
 import { useAuthStore } from '../store/authStore';
@@ -29,6 +28,8 @@ interface Props {
 }
 
 export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
@@ -170,7 +171,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -180,6 +181,9 @@ const styles = StyleSheet.create({
   kav: { width: '100%' },
   card: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderRadius: radius.lg,
     maxHeight: '85%',
     ...shadow.card,
@@ -210,4 +214,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   ctaText: { ...typography.button, color: colors.textInverse },
-});
+}));

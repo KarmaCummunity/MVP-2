@@ -6,7 +6,7 @@ import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 import type { PersonalActivityItem, PersonalActivityKind } from '@kc/domain';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 
 const KIND_ICONS: Record<PersonalActivityKind, keyof typeof Ionicons.glyphMap> = {
   post_created: 'add-circle-outline',
@@ -40,6 +40,8 @@ export function ActivityTimelineList({
   onPressPost,
   onRetry,
 }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   if (error) {
     return (
       <Pressable style={styles.errorBox} onPress={onRetry}>
@@ -83,7 +85,7 @@ export function ActivityTimelineList({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   list: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -120,4 +122,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   errorText: { ...typography.body, color: colors.error },
-});
+}));

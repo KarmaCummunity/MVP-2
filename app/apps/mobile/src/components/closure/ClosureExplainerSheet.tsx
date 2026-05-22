@@ -1,13 +1,15 @@
 // FR-CLOSURE-004 — one-time educational explainer with "don't show again".
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { useClosureStore } from '../../store/closureStore';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 
 export function ClosureExplainerSheet() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const step = useClosureStore((s) => s.step);
   const postType = useClosureStore((s) => s.postType);
@@ -101,7 +103,7 @@ export function ClosureExplainerSheet() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -111,6 +113,9 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     padding: 20,
     borderRadius: 12,
     width: '100%',
@@ -146,4 +151,4 @@ const styles = StyleSheet.create({
   btn: { paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
-});
+}));

@@ -1,7 +1,7 @@
 // Sign-up with email/password — FR-AUTH-006
 import React, { useEffect, useState } from 'react';
 import {
-  View, Text, TouchableOpacity, StyleSheet,
+  View, Text, TouchableOpacity,
   KeyboardAvoidingView, Platform, ActivityIndicator, Image,
 } from 'react-native';
 import { useRouter } from 'expo-router';
@@ -15,7 +15,7 @@ import Animated, {
   withSpring,
   withDelay,
 } from 'react-native-reanimated';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { isAuthError } from '@kc/application';
 import { getSignUpUseCase, AUTH_VERIFY_URL } from '../../src/services/authComposition';
 import { useAuthStore } from '../../src/store/authStore';
@@ -26,6 +26,8 @@ import { AuthBackground } from '../../src/components/auth/AuthBackground';
 import { AnimatedAuthInput } from '../../src/components/auth/AnimatedAuthInput';
 
 export default function SignUpScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const setSession = useAuthStore((s) => s.setSession);
@@ -147,6 +149,8 @@ export default function SignUpScreen() {
 }
 
 function SubmitButton({ label, loading, onPress }: { label: string; loading: boolean; onPress: () => void }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const scale = useSharedValue(1);
   const pressStyle = useAnimatedStyle(() => ({ transform: [{ scale: scale.value }] }));
   return (
@@ -169,8 +173,8 @@ function SubmitButton({ label, loading, onPress }: { label: string; loading: boo
   );
 }
 
-const styles = StyleSheet.create({
-  container: { flex: 1, backgroundColor: '#FFFBF7' },
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
+  container: { flex: 1, backgroundColor: colors.surfaceCream },
   content: { flex: 1, paddingHorizontal: spacing.xl, paddingTop: spacing.md },
   header: {
     flexDirection: 'row',
@@ -181,26 +185,29 @@ const styles = StyleSheet.create({
   backBtn: { padding: spacing.sm },
   logo: { width: 48, height: 48, borderRadius: 12 },
   card: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderRadius: 24,
     padding: spacing.xl,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.08,
+    shadowOpacity: isDark ? 0 : 0.08,
     shadowRadius: 16,
-    elevation: 4,
+    elevation: isDark ? 0 : 4,
   },
-  title: { ...typography.h1, color: '#1C1917', textAlign: 'right', marginBottom: 4 },
+  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right', marginBottom: 4 },
   subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'right', marginBottom: spacing.xl },
   form: { gap: spacing.base },
   hidden: { display: 'none' },
   submitBtn: {
     height: 56,
-    backgroundColor: '#F97316',
+    backgroundColor: colors.primary,
     borderRadius: radius.xl,
     justifyContent: 'center',
     alignItems: 'center',
-    shadowColor: '#F97316',
+    shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
     shadowOpacity: 0.3,
     shadowRadius: 8,
@@ -210,5 +217,5 @@ const styles = StyleSheet.create({
   submitBtnText: { ...typography.button, fontSize: 16, color: colors.textInverse },
   legal: { ...typography.caption, color: colors.textDisabled, textAlign: 'center', marginTop: spacing.xl },
   switchMode: { marginTop: spacing.md, alignItems: 'center' },
-  switchModeText: { ...typography.body, color: '#F97316' },
-});
+  switchModeText: { ...typography.body, color: colors.primary },
+}));

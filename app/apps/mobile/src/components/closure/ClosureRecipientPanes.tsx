@@ -1,7 +1,7 @@
 // Sub-panes for ClosureStep2: tab switcher + chats list + search input/results.
-import { ActivityIndicator, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { ActivityIndicator, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import type { ClosureCandidate } from '@kc/application';
 import type { PickMode } from '../../store/closureStore';
 import { RecipientPickerRow } from './RecipientPickerRow';
@@ -15,6 +15,7 @@ export function ModeTabs({
   chatsCount: number;
   onChange: (m: PickMode) => void;
 }) {
+  const styles = useStyles();
   const { t } = useTranslation();
   return (
     <View style={styles.tabs}>
@@ -47,6 +48,7 @@ export function ChatsPane({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const styles = useStyles();
   const { t } = useTranslation();
   if (candidates.length === 0) {
     return (
@@ -84,6 +86,8 @@ export function SearchPane({
   selectedId: string | null;
   onSelect: (id: string) => void;
 }) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <View>
@@ -116,7 +120,7 @@ export function SearchPane({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   body: { fontSize: 14, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
   tabs: { flexDirection: 'row-reverse', gap: 4, marginBottom: 12, backgroundColor: colors.skeleton, borderRadius: 8, padding: 3 },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 6, alignItems: 'center' },
@@ -136,4 +140,4 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   searchingRow: { paddingVertical: 8, alignItems: 'center' },
-});
+}));

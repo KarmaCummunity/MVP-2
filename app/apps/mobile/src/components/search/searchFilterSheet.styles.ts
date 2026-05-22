@@ -1,9 +1,9 @@
 // Styles for SearchFilterSheet.
 import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 
-export const styles = StyleSheet.create({
-  overlay: { flex: 1, justifyContent: 'flex-end' },
+export const useSearchFilterSheetStyles = makeUseStyles(({ colors }) => ({
+  overlay: { flex: 1, justifyContent: 'flex-end' as const },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.overlay },
   sheet: {
     backgroundColor: colors.surface,
@@ -12,9 +12,9 @@ export const styles = StyleSheet.create({
     maxHeight: '80%',
   },
   header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.md,
     borderBottomWidth: 1,
@@ -28,10 +28,15 @@ export const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: 'right' as const,
     marginTop: spacing.sm,
   },
-  chipRow: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
+  chipRow: {
+    flexDirection: 'row' as const,
+    flexWrap: 'wrap' as const,
+    gap: spacing.sm,
+    justifyContent: 'flex-end' as const,
+  },
   chip: {
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.sm,
@@ -48,8 +53,8 @@ export const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     paddingVertical: spacing.md,
     borderRadius: radius.lg,
-    alignItems: 'center',
+    alignItems: 'center' as const,
   },
   applyBtnPressed: { backgroundColor: colors.primaryDark },
   applyBtnText: { ...typography.button, color: colors.textInverse },
-});
+}));

@@ -3,8 +3,8 @@
 // near-black slate) so any redesigned main screen can lead with the same
 // presence.
 import React from 'react';
-import { StyleSheet, Text, View, type StyleProp, type ViewStyle } from 'react-native';
-import { colors, spacing, typography } from '@kc/ui';
+import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 
 interface SectionHeadingProps {
   readonly title: string;
@@ -19,6 +19,8 @@ export function SectionHeading({
   align = 'right',
   style,
 }: SectionHeadingProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   return (
     <View style={[align === 'center' ? styles.center : styles.right, style]}>
       <Text style={[styles.title, align === 'center' && styles.titleCentered]}>{title}</Text>
@@ -31,13 +33,13 @@ export function SectionHeading({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   right: { alignItems: 'flex-end' },
   center: { alignItems: 'center' },
   title: {
     ...typography.h1,
     fontSize: 32,
-    color: '#1C1917',
+    color: colors.textPrimary,
     letterSpacing: -0.5,
     textAlign: 'right',
   },
@@ -49,4 +51,4 @@ const styles = StyleSheet.create({
     textAlign: 'right',
   },
   subtitleCentered: { textAlign: 'center' },
-});
+}));

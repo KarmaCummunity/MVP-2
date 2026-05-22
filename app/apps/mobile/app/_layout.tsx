@@ -93,7 +93,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
+import { AppThemeProvider } from '../src/components/AppThemeProvider';
 import { useAuthStore } from '../src/store/authStore';
 import { container } from '../src/lib/container';
 import {
@@ -106,7 +107,7 @@ import {
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
-import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
+import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
 import { TabBar, TAB_BAR_HEIGHT } from '../src/components/TabBar';
 import { EphemeralToast } from '../src/components/EphemeralToast';
@@ -158,6 +159,7 @@ const HORIZONTAL_INSET = 16;
 function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
   const showTabBar = useShellTabBarVisibility();
   const insets = useSafeAreaInsets();
+  const { colors } = useTheme();
 
   // Outer wrapper carries the app background so the translucent pill reveals
   // the app surface even on routes whose own content stops short.
@@ -184,6 +186,70 @@ function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) 
   );
 }
 
+// Inner wiring lives after AppThemeProvider so screen options that depend on
+// the active palette (web html bg, surface backgrounds in screen headers,
+// StatusBar style) read fresh values when the user toggles dark mode.
+function ThemedRootShell() {
+  const { colors, isDark } = useTheme();
+  const detailStackScreenOptions = useDetailStackScreenOptions();
+
+  React.useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      // Paint html/body with the active surface so the area outside the app
+      // root (and any iOS overscroll bounce on mobile-web) matches the theme.
+      document.documentElement.style.backgroundColor = colors.background;
+      if (document.body) document.body.style.backgroundColor = colors.background;
+    }
+  }, [colors.background]);
+
+  return (
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <DevBanner />
+      <NotificationsBridge />
+      <AuthGate>
+        <SoftGateProvider>
+          <ShellWithTabBar>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+                // Subtle cross-fade across every platform so screen
+                // changes feel like part of the same surface, not a
+                // hard hand-off. 220 ms matches the welcome-screen
+                // hero entry, giving the whole app one motion vocab.
+                animation: 'fade',
+                animationDuration: 220,
+              }}
+            >
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(guest)" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(tabs)" />
+              <Stack.Screen name="auth/callback" />
+              <Stack.Screen name="auth/verify" />
+              {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
+              <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="about" options={{ headerShown: false }} />
+              <Stack.Screen name="about-site" options={{ headerShown: false }} />
+              <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
+              <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
+              {/* user/[handle]/* owns its own header via the nested _layout */}
+              <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
+              {/* In-screen `ChatConversationHeader` owns the top bar; a native-stack header
+                  must stay off so it never sits above the custom bar on web/mobile (taps). */}
+              <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+              {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
+              <Stack.Screen name="chat/index" options={{ headerShown: false }} />
+            </Stack>
+          </ShellWithTabBar>
+        </SoftGateProvider>
+      </AuthGate>
+    </>
+  );
+}
+
 export default function RootLayout() {
   useEffect(() => {
     if (!I18nManager.isRTL) {
@@ -200,46 +266,9 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
-            <StatusBar style="dark" />
-            <DevBanner />
-            <NotificationsBridge />
-            <AuthGate>
-              <SoftGateProvider>
-                <ShellWithTabBar>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: colors.background },
-                      // Subtle cross-fade across every platform so screen
-                      // changes feel like part of the same surface, not a
-                      // hard hand-off. 220 ms matches the welcome-screen
-                      // hero entry, giving the whole app one motion vocab.
-                      animation: 'fade',
-                      animationDuration: 220,
-                    }}
-                  >
-                    <Stack.Screen name="(auth)" />
-                    <Stack.Screen name="(guest)" />
-                    <Stack.Screen name="(onboarding)" />
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="auth/callback" />
-                    <Stack.Screen name="auth/verify" />
-                    {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
-                    <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
-                    <Stack.Screen name="settings" />
-                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
-                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
-                    {/* user/[handle]/* owns its own header via the nested _layout */}
-                    <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    {/* In-screen `ChatConversationHeader` owns the top bar; a native-stack header
-                        must stay off so it never sits above the custom bar on web/mobile (taps). */}
-                    <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
-                    {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
-                    <Stack.Screen name="chat/index" options={{ headerShown: false }} />
-                  </Stack>
-                </ShellWithTabBar>
-              </SoftGateProvider>
-            </AuthGate>
+            <AppThemeProvider>
+              <ThemedRootShell />
+            </AppThemeProvider>
           </QueryClientProvider>
         </ErrorBoundary>
       </SafeAreaProvider>

@@ -15,14 +15,14 @@ import {
   View,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import {
   filterItems,
   freeTextSelection,
   shouldShowFreeTextRow,
   type SearchablePickerItemDescriptor,
 } from './searchablePickerLogic';
-import { searchablePickerStyles as styles } from './searchablePickerStyles';
+import { useSearchablePickerStyles } from './searchablePickerStyles';
 
 export interface SearchablePickerProps<T> {
   readonly title: string;
@@ -64,6 +64,8 @@ export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
     onErrorRetry,
   } = props;
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useSearchablePickerStyles();
   const [open, setOpen] = useState(false);
   const [query, setQuery] = useState('');
   const searchInputRef = useRef<TextInput>(null);

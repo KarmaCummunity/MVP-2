@@ -3,10 +3,10 @@
 // >0 (FR-FEED-004 / replaces the deprecated FR-FEED-013 in-feed chip).
 
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 
 interface FeedFilterIconProps {
   activeCount: number;
@@ -14,6 +14,8 @@ interface FeedFilterIconProps {
 }
 
 export function FeedFilterIcon({ activeCount, onPress }: FeedFilterIconProps) {
+  const styles = useFeedFilterIconStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const display = activeCount > 9 ? '9+' : String(activeCount);
   return (
@@ -33,10 +35,10 @@ export function FeedFilterIcon({ activeCount, onPress }: FeedFilterIconProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  btn: { padding: spacing.xs, position: 'relative' },
+const useFeedFilterIconStyles = makeUseStyles(({ colors }) => ({
+  btn: { padding: spacing.xs, position: 'relative' as const },
   badge: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: 0,
     right: 0,
     backgroundColor: colors.error,
@@ -44,8 +46,8 @@ const styles = StyleSheet.create({
     minWidth: 18,
     height: 18,
     paddingHorizontal: 4,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   badgeText: { color: colors.textInverse, fontWeight: '700' as const, fontSize: 10 },
-});
+}));
