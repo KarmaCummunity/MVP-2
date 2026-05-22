@@ -12,6 +12,15 @@ export const spacing = {
   '2xl': 32,
   '3xl': 48,
   '4xl': 64,
+  shell: {
+    railCollapsed: 60,
+    railExpanded: 220,
+    aside: 280,
+    contentMaxWide: 720,
+    contentMaxDesktop: 680,
+    contentMaxTablet: 640,
+    contentMaxNarrow: 600,
+  },
 } as const;
 
 export const radius = {

@@ -102,3 +102,15 @@ describe('theme/typography', () => {
     expect(fontFamily.length).toBeGreaterThan(0);
   });
 });
+
+describe('spacing.shell', () => {
+  it('exposes shell layout dimensions', () => {
+    expect(spacing.shell.railCollapsed).toBe(60);
+    expect(spacing.shell.railExpanded).toBe(220);
+    expect(spacing.shell.aside).toBe(280);
+    expect(spacing.shell.contentMaxWide).toBe(720);
+    expect(spacing.shell.contentMaxDesktop).toBe(680);
+    expect(spacing.shell.contentMaxTablet).toBe(640);
+    expect(spacing.shell.contentMaxNarrow).toBe(600);
+  });
+});
