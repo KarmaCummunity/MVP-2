@@ -19,3 +19,4 @@ export { BREAKPOINTS, resolveBreakpoint } from './theme/breakpoints';
 export type { BreakpointToken } from './theme/breakpoints';
 export { useBreakpoint } from './theme/useBreakpoint';
 export { AsideProvider, useAside, useAsideContent } from './components/AsideContext';
+export { AsidePanel } from './components/AsidePanel';
