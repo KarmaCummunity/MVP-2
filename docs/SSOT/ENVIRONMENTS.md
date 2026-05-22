@@ -1,7 +1,7 @@
 # Environments
 
 > **Canonical source for branch ↔ Supabase ↔ Railway ↔ env-var mapping.**
-> If another doc disagrees, this one wins. Last reviewed: 2026-05-15.
+> If another doc disagrees, this one wins. Last reviewed: 2026-05-22.
 
 ## TL;DR
 
@@ -9,7 +9,7 @@
 |---|---|---|
 | Git branch | `main` | `dev` |
 | Supabase project | `slxijdfvinbjmrsfgbzx` — https://slxijdfvinbjmrsfgbzx.supabase.co | `roeefqpdbftlndzsvhfj` — https://roeefqpdbftlndzsvhfj.supabase.co |
-| Railway service env | `prod` | `dev` (`mvp-2-dev.up.railway.app`) |
+| Railway service env | `prod` (set `PROD_WEB_URL` in GitHub Actions variables — see [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md)) | `dev` (`mvp-2-dev.up.railway.app`) |
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | `development` |
 | In-app dev banner | hidden | visible at top of every screen when the client bundle is dev (see below) |
 
@@ -69,11 +69,26 @@ Checklist in order:
 
 ## DB deploy automation
 
-`.github/workflows/db-deploy.yml` has two trigger modes:
+`.github/workflows/db-deploy.yml` trigger modes:
 
-- **Auto** — on push to `dev` that touches `supabase/migrations/**`, `supabase/seed.sql`, `supabase/config.toml`, or the workflow file itself. Applies pending migrations to the `supabase-dev` environment (`roeefqpdbftlndzsvhfj`) so the dev Supabase project tracks the `dev` branch without manual button presses.
-- **Manual** — `workflow_dispatch` lets an operator target `supabase-prod` or `supabase-dev`. Defaults to dry-run on the prod environment; flip `apply` to true to push.
+- **Auto** — on push to `dev` or `main` when any of these paths change: `supabase/migrations/**`, `supabase/seed.sql`, `supabase/config.toml`, or the workflow file. Pending migrations are applied via `supabase db push` to the matching GitHub Environment: `dev` → `supabase-dev` (`roeefqpdbftlndzsvhfj`); `main` → `supabase-prod` (`slxijdfvinbjmrsfgbzx`). PRs must keep **DB validate** (`.github/workflows/db-validate.yml`) green before merge — it applies all migrations on a fresh local stack.
+- **Manual** — `workflow_dispatch` lets an operator target `supabase-prod` or `supabase-dev`. Defaults to dry-run; flip `apply` to true to push (useful for inspection, retries, or one-off applies).
 
-Production is never deployed automatically — promoting to `supabase-prod` always requires `Actions → DB deploy → Run workflow` with `apply=true` after merging `dev` → `main`.
+Concurrency group `db-deploy-<environment>` (with `cancel-in-progress: false`) ensures back-to-back migration pushes queue rather than race. Optional: add **required reviewers** on the `supabase-prod` GitHub Environment if you want a human gate on automated prod pushes.
 
-Concurrency group `db-deploy-<environment>` (with `cancel-in-progress: false`) ensures back-to-back migration pushes queue rather than race.
+## Production release
+
+Operator checklist: [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md).
+
+**CI layout (2026-05-22):** PR/push checks are split by responsibility with path filters so unrelated work doesn't burn time:
+
+- `.github/workflows/ci-frontend.yml` — `app/**`, `Dockerfile`, Hebrew scan. Jobs: `typecheck · test · lint`, `Hebrew source scan (no inline UI copy)`, `web export (production bundle)` (main-only).
+- `.github/workflows/ci-backend.yml` — `supabase/**` + the migration chain script. Jobs: `migration chain lint`, then `apply migrations · rls · types · sql probes` against a fresh local Supabase stack (replaces the old `db-validate.yml`).
+- `.github/workflows/ci-contract.yml` — infra/application/domain packages + migrations + locale + manifest script. Jobs: `rpc · table contract`, `coalesce mirror · layer invariants` (file-size + layer + domain-typed-error guard), `web manifest parity`.
+- `.github/workflows/ci-pr.yml` — `pull_request` only, non-draft. Job: `PR hygiene` (Conventional Commits title + required `Mapped to spec` line).
+
+Draft PRs skip every job except none (PR hygiene waits for `ready_for_review`). Branch protection on `main` requires the gates listed in [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md#merge-gates-automated--must-be-green).
+
+**CI gates on `main` PRs:** `CI — frontend / web export (production bundle)` mirrors the Dockerfile builder (`EXPO_PUBLIC_*` + `pnpm build:web`).
+
+**Post-merge smoke:** `.github/workflows/prod-smoke.yml` polls repository variable **`PROD_WEB_URL`** after app/Dockerfile changes on `main`. Set it under GitHub → Settings → Secrets and variables → Actions → Variables.
