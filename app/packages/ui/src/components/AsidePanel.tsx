@@ -1,6 +1,6 @@
 import { View, StyleSheet } from 'react-native';
 import { useTheme } from '../theme/ThemeContext';
-import { spacing } from '../theme/spacing';
+import { spacing, shellDimensions } from '../theme/spacing';
 import { useAsideContent } from './AsideContext';
 
 export function AsidePanel() {
@@ -21,7 +21,7 @@ export function AsidePanel() {
 
 const styles = StyleSheet.create({
   panel: {
-    width: spacing.shell.aside,
+    width: shellDimensions.aside,
     padding: spacing.base,
     borderWidth: StyleSheet.hairlineWidth,
     borderRadius: 8,

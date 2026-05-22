@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { colors, spacing, radius, shadow, typography, fontFamily } from '../index';
+import { colors, spacing, radius, shadow, typography, fontFamily, shellDimensions } from '../index';
 
 describe('theme/colors', () => {
   it('exposes the brand primary token', () => {
@@ -103,14 +103,14 @@ describe('theme/typography', () => {
   });
 });
 
-describe('spacing.shell', () => {
+describe('shellDimensions', () => {
   it('exposes shell layout dimensions', () => {
-    expect(spacing.shell.railCollapsed).toBe(60);
-    expect(spacing.shell.railExpanded).toBe(220);
-    expect(spacing.shell.aside).toBe(280);
-    expect(spacing.shell.contentMaxWide).toBe(720);
-    expect(spacing.shell.contentMaxDesktop).toBe(680);
-    expect(spacing.shell.contentMaxTablet).toBe(640);
-    expect(spacing.shell.contentMaxNarrow).toBe(600);
+    expect(shellDimensions.railCollapsed).toBe(60);
+    expect(shellDimensions.railExpanded).toBe(220);
+    expect(shellDimensions.aside).toBe(280);
+    expect(shellDimensions.contentMaxWide).toBe(720);
+    expect(shellDimensions.contentMaxDesktop).toBe(680);
+    expect(shellDimensions.contentMaxTablet).toBe(640);
+    expect(shellDimensions.contentMaxNarrow).toBe(600);
   });
 });

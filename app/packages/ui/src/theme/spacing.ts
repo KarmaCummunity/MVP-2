@@ -12,15 +12,21 @@ export const spacing = {
   '2xl': 32,
   '3xl': 48,
   '4xl': 64,
-  shell: {
-    railCollapsed: 60,
-    railExpanded: 220,
-    aside: 280,
-    contentMaxWide: 720,
-    contentMaxDesktop: 680,
-    contentMaxTablet: 640,
-    contentMaxNarrow: 600,
-  },
+} as const;
+
+/**
+ * Shell layout dimensions used by AppShell, NavigationRail, AsidePanel.
+ * Kept separate from `spacing` because these are layout sizes (rail widths,
+ * content max-widths) rather than the gap-scale that `spacing` represents.
+ */
+export const shellDimensions = {
+  railCollapsed: 60,
+  railExpanded: 220,
+  aside: 280,
+  contentMaxWide: 720,
+  contentMaxDesktop: 680,
+  contentMaxTablet: 640,
+  contentMaxNarrow: 600,
 } as const;
 
 export const radius = {

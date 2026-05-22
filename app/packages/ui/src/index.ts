@@ -1,7 +1,7 @@
 export { colors, lightColors, darkColors } from './theme/colors';
 export type { ColorToken, ColorPalette } from './theme/colors';
 export { typography, fontFamily } from './theme/typography';
-export { spacing, radius, shadow } from './theme/spacing';
+export { spacing, radius, shadow, shellDimensions } from './theme/spacing';
 export {
   ThemeProvider,
   useTheme,
