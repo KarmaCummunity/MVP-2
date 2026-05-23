@@ -93,7 +93,8 @@ import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { useTheme } from '@kc/ui';
+import { useTheme, useBreakpoint, AsideProvider } from '@kc/ui';
+import { AppShell } from '../src/components/shell/AppShell';
 import { AppThemeProvider } from '../src/components/AppThemeProvider';
 import { useAuthStore } from '../src/store/authStore';
 import { container } from '../src/lib/container';
@@ -156,7 +157,31 @@ function NotificationsBridge(): null {
 // list item lands above the pill when scrolled to the end.
 const HORIZONTAL_INSET = 16;
 
-function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
+function ShellWithResponsiveChrome({ children }: Readonly<{ children: React.ReactNode }>) {
+  const bp = useBreakpoint();
+  const isWebDesktop = Platform.OS === 'web' && bp !== 'mobile';
+
+  if (isWebDesktop) {
+    // Desktop web: AppShell renders rail + main + (aside) and provides AsideProvider context.
+    // No bottom tab bar; toast mounts inside AppShell as a child of the main column.
+    return (
+      <AppShell>
+        <View style={{ flex: 1 }}>{children}</View>
+        <EphemeralToast />
+      </AppShell>
+    );
+  }
+
+  // Mobile (native or phone-width web): identical to the old ShellWithTabBar.
+  // Wrap children in AsideProvider so screens can still call useAside(...) safely.
+  return (
+    <AsideProvider>
+      <ShellWithMobileChrome>{children}</ShellWithMobileChrome>
+    </AsideProvider>
+  );
+}
+
+function ShellWithMobileChrome({ children }: Readonly<{ children: React.ReactNode }>) {
   const showTabBar = useShellTabBarVisibility();
   const insets = useSafeAreaInsets();
   const { colors } = useTheme();
@@ -209,7 +234,7 @@ function ThemedRootShell() {
       <NotificationsBridge />
       <AuthGate>
         <SoftGateProvider>
-          <ShellWithTabBar>
+          <ShellWithResponsiveChrome>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -243,7 +268,7 @@ function ThemedRootShell() {
               {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
               <Stack.Screen name="chat/index" options={{ headerShown: false }} />
             </Stack>
-          </ShellWithTabBar>
+          </ShellWithResponsiveChrome>
         </SoftGateProvider>
       </AuthGate>
     </>
