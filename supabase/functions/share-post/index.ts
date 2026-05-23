@@ -36,8 +36,14 @@ const STORAGE_BUCKET = 'post-images';
 const APP_BASE_URL = Deno.env.get('SHARE_POST_APP_BASE_URL') ?? 'https://karma-community-kc.com';
 const APP_NAME = 'KC - קהילת קארמה';
 const APP_TAGLINE = 'קהילת קארמה — נותנים ומבקשים מבלי לקנות.';
+// 512×512 community logo from the web bundle's public/ folder (served at
+// /pwa-icon-512.png — checked into apps/mobile/public/). The previous
+// `og-card.png` default was a 404 placeholder, so when a post had no
+// image WhatsApp / Telegram fell through to the page favicon (or worse,
+// nothing). Square logo is OK for OG even though the recommended ratio
+// is 1.91:1 — beats a broken URL.
 const FALLBACK_OG_IMAGE =
-  Deno.env.get('SHARE_POST_FALLBACK_IMAGE') ?? `${APP_BASE_URL}/og-card.png`;
+  Deno.env.get('SHARE_POST_FALLBACK_IMAGE') ?? `${APP_BASE_URL}/pwa-icon-512.png`;
 
 const supabase = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, {
   auth: { persistSession: false },
