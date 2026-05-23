@@ -22,7 +22,7 @@ This domain covers adapting the mobile app to desktop browsers (≥ 768px viewpo
 
 ## FR-RESP-002 — Wire shell to (tabs)
 
-**Status:** ⏳ Planned (PR 2)
+**Status:** ✅ Done
 
 Wire `AppShell` into root `_layout.tsx`, replacing `ShellWithTabBar` with `ShellWithResponsiveChrome`. Flip `SHELL_V2_ENABLED` default to `true`.
 

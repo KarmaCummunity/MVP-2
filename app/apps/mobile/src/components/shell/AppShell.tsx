@@ -60,17 +60,17 @@ export function AppShell({ children, variant: variantProp }: AppShellProps) {
 }
 
 function useDetectedVariant(): ShellVariant {
-  const segments = useSegments();
-  const joined = segments.join('/');
+  const segments = useSegments() as string[];
   // Form-style routes use the narrow variant (~600px content cap).
-  // Update this list as screens declare unstable_settings.shellVariant in PRs 2-5.
-  if (joined.includes('settings')) return 'narrow';
-  if (joined.includes('edit-profile')) return 'narrow';
-  if (joined.includes('edit-post')) return 'narrow';
-  if (joined.includes('create')) return 'narrow';
-  if (joined.includes('(auth)')) return 'narrow';
-  if (joined.includes('(onboarding)')) return 'narrow';
-  if (joined.includes('auth/verify') || joined.includes('auth/callback')) return 'narrow';
+  // Each entry below is a segment that appears literally in expo-router's
+  // useSegments() output for that route. Update this list as screens declare
+  // unstable_settings.shellVariant in PRs 2-5.
+  const narrowSegments = ['settings', 'edit-profile', 'edit-post', 'create', '(auth)', '(onboarding)'];
+  if (narrowSegments.some((s) => segments.includes(s))) return 'narrow';
+  // auth/verify and auth/callback live under the bare 'auth' segment (not (auth) group).
+  if (segments.includes('auth') && (segments.includes('verify') || segments.includes('callback'))) {
+    return 'narrow';
+  }
   return 'wide';
 }
 

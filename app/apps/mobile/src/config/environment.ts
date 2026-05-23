@@ -23,12 +23,13 @@ export function isDevEnvironment(): boolean {
 }
 
 /**
- * Gates the PR 1 dev preview (/dev/shell-preview) and (from PR 2 onward) the
- * desktop ShellWithResponsiveChrome wiring. Default OFF in production; opt-in
- * during development via EXPO_PUBLIC_SHELL_V2=1 in your .env or shell.
+ * Gates the dev preview route at `/dev/shell-preview`. Defaults ON in dev
+ * (set EXPO_PUBLIC_SHELL_V2=0 to disable), always OFF in production.
+ *
+ * The real desktop shell (AppShell in root _layout.tsx) is NOT gated by
+ * this flag — it always branches on viewport width.
  */
 export const SHELL_V2_ENABLED: boolean =
   typeof __DEV__ !== 'undefined' &&
   __DEV__ &&
-  typeof process !== 'undefined' &&
-  process.env['EXPO_PUBLIC_SHELL_V2'] === '1';
+  !(typeof process !== 'undefined' && process.env['EXPO_PUBLIC_SHELL_V2'] === '0');
