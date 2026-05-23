@@ -31,9 +31,14 @@ export function PostShareButton({ post }: Props) {
     if (busy) return;
     setBusy(true);
     try {
-      const shareBaseUrl = resolveShareBaseUrl(
-        typeof process !== 'undefined' ? process.env : {},
-      );
+      // Metro inlines `process.env.EXPO_PUBLIC_*` ONLY at literal call
+      // sites — passing `process.env` through a parameter loses the
+      // inline (the bundle ships an empty object instead of the keys).
+      // Read each var directly here so each read is statically resolved.
+      const shareBaseUrl = resolveShareBaseUrl({
+        EXPO_PUBLIC_SHARE_BASE_URL: process.env.EXPO_PUBLIC_SHARE_BASE_URL,
+        EXPO_PUBLIC_SUPABASE_URL: process.env.EXPO_PUBLIC_SUPABASE_URL,
+      });
       // Per-post tailored message: title + city + (optional) category +
       // (optional) truncated description + type-aware CTA. Composition rules
       // live in `buildPostShareMessage` so they're unit-testable in isolation.
@@ -58,6 +63,12 @@ export function PostShareButton({ post }: Props) {
       } else if (outcome.kind === 'failed') {
         showToast(t('post.detail.shareFailedToast'), 'error', 2200);
       }
+    } catch (err) {
+      // `resolveShareBaseUrl` throws when env vars are missing; `sharePost`
+      // shouldn't reject (it returns { kind: 'failed' }) but cover that path
+      // too so the user always gets feedback instead of a dead button.
+      console.warn('[PostShareButton] share failed', err);
+      showToast(t('post.detail.shareFailedToast'), 'error', 2200);
     } finally {
       setBusy(false);
     }
