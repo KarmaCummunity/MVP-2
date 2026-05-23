@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { resolveShareBaseUrl, sharePost } from '../../lib/sharePost';
+import { buildPostShareMessage } from '../../lib/buildPostShareMessage';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
 
 interface Props {
@@ -29,10 +30,23 @@ export function PostShareButton({ post }: Props) {
       const shareBaseUrl = resolveShareBaseUrl(
         typeof process !== 'undefined' ? process.env : {},
       );
+      // Per-post tailored message: title + city + (optional) category +
+      // (optional) truncated description + type-aware CTA. Composition rules
+      // live in `buildPostShareMessage` so they're unit-testable in isolation.
+      const message = buildPostShareMessage(
+        {
+          type: post.type,
+          title: post.title,
+          description: post.description,
+          category: post.category,
+          cityName: post.address.cityName,
+        },
+        t,
+      );
       const outcome = await sharePost({
         postId: post.postId,
         title: post.title,
-        message: t('post.detail.shareMessage', { title: post.title }),
+        message,
         shareBaseUrl,
       });
       if (outcome.kind === 'copied') {
@@ -43,7 +57,17 @@ export function PostShareButton({ post }: Props) {
     } finally {
       setBusy(false);
     }
-  }, [busy, post.postId, post.title, showToast, t]);
+  }, [
+    busy,
+    post.postId,
+    post.title,
+    post.type,
+    post.description,
+    post.category,
+    post.address.cityName,
+    showToast,
+    t,
+  ]);
 
   if (!canSharePost(post)) return null;
 

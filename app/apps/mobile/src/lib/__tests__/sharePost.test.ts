@@ -51,11 +51,11 @@ describe('resolveShareBaseUrl', () => {
     expect(base).toBe('https://abc.supabase.co/functions/v1/share-post');
   });
 
-  it('returns the static marketing fallback when both env vars are missing', () => {
-    // FR-POST-023 — public URL must always be under our control even in
-    // dev / test contexts where env vars are not wired up.
-    const base = resolveShareBaseUrl({});
-    expect(base).toBe('https://karma-community-kc.com/p');
+  it('throws when both env vars are missing — never silently downgrade to a SPA URL', () => {
+    // FR-POST-023 — a static fallback to karma-community-kc.com/p would have
+    // produced a logo-only OG preview because the SPA at that host has no
+    // per-post meta tags. Failing loud surfaces the misconfiguration.
+    expect(() => resolveShareBaseUrl({})).toThrow(/EXPO_PUBLIC_SUPABASE_URL/);
   });
 
   it('treats empty/whitespace env values as unset', () => {

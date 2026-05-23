@@ -1,12 +1,22 @@
 // FR-POST-023 (P2.33) — share post via link.
 //
 // Two layers:
-//   1. `buildPostShareUrl()` — pure URL builder. Pulls `EXPO_PUBLIC_SHARE_BASE_URL`
-//      first (lets us swap to a custom-domain redirect later) and falls back to
-//      the Supabase Edge Function URL `<supabase>/functions/v1/share-post`.
+//   1. `buildPostShareUrl()` — pure URL builder. Defaults to the Supabase
+//      Edge Function URL (`${SUPABASE_URL}/functions/v1/share-post`) which
+//      serves Open Graph + Twitter Card meta tags pointing at the post's
+//      first image. `EXPO_PUBLIC_SHARE_BASE_URL` may override the prefix
+//      when a custom domain is set up to rewrite to the Edge Function
+//      (e.g. Vercel/Netlify rewrite `/p/:id` → Edge Function).
 //   2. `sharePost()` — platform-aware invocation. Native uses RN's `Share.share`
 //      so the OS share sheet appears with both message + URL; web uses the Web
 //      Share API when available, falling back to `navigator.clipboard`.
+//
+// **Why no static fallback to karma-community-kc.com:** the SPA at that host
+// has no per-post OG tags, so a fallback URL there causes WhatsApp / Telegram
+// / Twitter to render the site favicon instead of the item image. The Edge
+// Function path is the only URL that surfaces the item image, so we route
+// through it unconditionally unless an override that we trust to do the
+// rewrite is set.
 
 import { Platform, Share } from 'react-native';
 
@@ -16,7 +26,7 @@ export type PostShareInput = Readonly<{
   title: string;
   /** Hebrew message template — `{{title}}` is interpolated by the caller via i18n. */
   message: string;
-  /** Resolved by `useShareConfig` from EXPO_PUBLIC_* or supabase URL. */
+  /** Resolved by `resolveShareBaseUrl` from EXPO_PUBLIC_* or supabase URL. */
   shareBaseUrl: string;
 }>;
 
@@ -38,8 +48,10 @@ export function buildPostShareUrl(postId: string, shareBaseUrl: string): string 
 }
 
 export function resolveShareBaseUrl(env: NodeJS.ProcessEnv | Record<string, string | undefined>): string {
-  // Explicit override wins. Lets us point at a custom domain
-  // (e.g. https://karma-community-kc.com/p) without a code change.
+  // Explicit override wins. Use this only when the override prefix is wired
+  // up to serve OG meta — either by proxying to the Edge Function or by
+  // rendering its own per-post OG tags. A naked SPA host (no per-route SSR)
+  // will silently downgrade the preview image to the site favicon.
   const override = env['EXPO_PUBLIC_SHARE_BASE_URL'];
   if (typeof override === 'string' && override.trim() !== '') {
     return override.replace(/\/+$/, '');
@@ -48,9 +60,12 @@ export function resolveShareBaseUrl(env: NodeJS.ProcessEnv | Record<string, stri
   if (typeof supabaseUrl === 'string' && supabaseUrl.trim() !== '') {
     return `${supabaseUrl.replace(/\/+$/, '')}/functions/v1/share-post`;
   }
-  // Static fallback used only when both env vars are missing (dev/test).
-  // Tests assert the public-facing URL stays under our control.
-  return 'https://karma-community-kc.com/p';
+  // No supabase URL means the app cannot have rendered the post in the first
+  // place. A static fallback URL would only mask the misconfiguration and
+  // produce a logo-image preview on the receiving end.
+  throw new Error(
+    'resolveShareBaseUrl: EXPO_PUBLIC_SUPABASE_URL is missing — cannot build a share URL with OG meta.',
+  );
 }
 
 /**

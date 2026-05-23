@@ -40,3 +40,11 @@ enable_signup = true
 enable_signup = true
 double_confirm_changes = true
 enable_confirmations = false
+
+# FR-POST-023 — share-post Edge Function. Public OG endpoint hit by social
+# crawlers (WhatsApp, Twitter, FB, Telegram…) that do not send an Authorization
+# header. `verify_jwt = false` lets the function answer those unauthenticated
+# requests. Visibility is enforced inside the function (only `Public` + `open`
+# posts reveal their image / title).
+[functions.share-post]
+verify_jwt = false
