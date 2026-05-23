@@ -148,6 +148,12 @@ export const postHe = {
     contactOpeningA11y: 'פותח שיחה עם המפרסם',
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
+    // FR-POST-023 — share post via link (P2.33).
+    shareA11y: 'שתף את הפוסט',
+    shareDialogTitle: 'שיתוף פוסט',
+    shareMessage: '{{title}} — קהילת קארמה',
+    shareCopiedToast: 'הקישור הועתק',
+    shareFailedToast: 'השיתוף נכשל, נסה שוב.',
   },
 
   // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.
