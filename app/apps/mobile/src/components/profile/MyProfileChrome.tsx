@@ -53,7 +53,11 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
   });
   const user = userQuery.data ?? null;
   const displayName = user?.displayName?.trim() || resolveDisplayName(session, fallbackName);
-  const avatarUrl = user?.avatarUrl ?? session?.avatarUrl ?? null;
+  // Don't fall back to session.avatarUrl: it comes from auth.user_metadata
+  // (original SSO photo), which never re-syncs after Edit Profile updates
+  // public.users.avatar_url. Using it briefly while the query loads caused a
+  // flash of the original photo before the canonical DB value rendered.
+  const avatarUrl = user?.avatarUrl ?? null;
   const biography = user?.biography ?? null;
 
   const goToTab = (next: ProfilePostsTab) => {
