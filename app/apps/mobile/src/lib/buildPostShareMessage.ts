@@ -12,12 +12,15 @@
 //
 //   <headline>
 //
-//   *כותרת:* <title>
-//   *תיאור:* <description>      ← omitted when empty
-//   *קטגוריה:* <category>       ← omitted when "Other"
-//   *מיקום:* <city>
+//   *<titleLabel>* <title>
+//   *<descriptionLabel>* <description>   <-- omitted when empty
+//   *<categoryLabel>* <category>         <-- omitted when "Other"
+//   *<locationLabel>* <city>
 //
 //   <CTA>
+//
+// Labels are resolved through the `t` translator (see locale keys
+// `post.detail.shareLabel*`); this file holds layout/composition only.
 
 const DESCRIPTION_MAX = 160;
 
@@ -59,7 +62,7 @@ export function buildPostShareMessage(post: PostShareMessageInput, t: ShareTrans
   }
 
   // Category line is omitted for the catch-all `Other` so the share body
-  // never reads as "קטגוריה: אחר".
+  // never renders the redundant "<categoryLabel> <otherCategoryName>" line.
   if (post.category && post.category !== 'Other') {
     lines.push(bold(t('post.detail.shareLabelCategory'), t(`post.category.${post.category}`)));
   }
