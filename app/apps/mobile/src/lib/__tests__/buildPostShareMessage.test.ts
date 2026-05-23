@@ -20,6 +20,10 @@ const tHe: ShareTranslate = (key) => {
     'post.detail.shareHeadlineRequest': '🔍 בקשה לעזרה מקהילת קארמה',
     'post.detail.shareCtaGive': 'אולי זה בדיוק בשבילכם — לחצו לפרטים 👇',
     'post.detail.shareCtaRequest': 'אם תוכלו לעזור — לחצו לפרטים 👇',
+    'post.detail.shareLabelTitle': 'כותרת:',
+    'post.detail.shareLabelDescription': 'תיאור:',
+    'post.detail.shareLabelCategory': 'קטגוריה:',
+    'post.detail.shareLabelLocation': 'מיקום:',
     'post.category.Furniture': 'רהיטים',
     'post.category.Books': 'ספרים',
     'post.category.Other': 'אחר',
@@ -44,16 +48,16 @@ const REQUEST_FIXTURE: PostShareMessageInput = {
 };
 
 describe('buildPostShareMessage', () => {
-  it('composes a full Give message with title, location · category, description, and Give CTA', () => {
+  it('composes a full Give message with labeled, bold-marked fields and Give CTA', () => {
     const msg = buildPostShareMessage(GIVE_FIXTURE, tHe);
     expect(msg).toBe(
       [
         '🎁 חפץ שמחכה לבית חדש בקהילת קארמה',
         '',
-        'כיסא נדנדה מעץ',
-        '📍 תל אביב · רהיטים',
-        '',
-        'בצבע חום בהיר, במצב מצוין, מחפש בית חדש לאחר 12 שנים אצלנו.',
+        '*כותרת:* כיסא נדנדה מעץ',
+        '*תיאור:* בצבע חום בהיר, במצב מצוין, מחפש בית חדש לאחר 12 שנים אצלנו.',
+        '*קטגוריה:* רהיטים',
+        '*מיקום:* תל אביב',
         '',
         'אולי זה בדיוק בשבילכם — לחצו לפרטים 👇',
       ].join('\n'),
@@ -68,7 +72,7 @@ describe('buildPostShareMessage', () => {
     expect(msg).not.toContain('shareCtaGive');
   });
 
-  it('omits the description block when description is null/empty/whitespace', () => {
+  it('omits the description label when description is null/empty/whitespace', () => {
     const cases: Array<PostShareMessageInput> = [
       { ...GIVE_FIXTURE, description: null },
       { ...GIVE_FIXTURE, description: '' },
@@ -76,18 +80,15 @@ describe('buildPostShareMessage', () => {
     ];
     for (const post of cases) {
       const msg = buildPostShareMessage(post, tHe);
-      // Two consecutive blank lines (description spacer) should never appear.
-      expect(msg).not.toMatch(/\n\n\n/);
+      expect(msg).not.toContain('*תיאור:*');
       // CTA still appears at the end.
       expect(msg.endsWith('אולי זה בדיוק בשבילכם — לחצו לפרטים 👇')).toBe(true);
     }
   });
 
   it('truncates a long description to 160 characters with an ellipsis', () => {
-    // 200-char description gets clipped at index 159 + ellipsis.
     const longDesc = 'א'.repeat(200);
     const msg = buildPostShareMessage({ ...GIVE_FIXTURE, description: longDesc }, tHe);
-    // 159 א's followed by '…'
     expect(msg).toContain(`${'א'.repeat(159)}…`);
     expect(msg).not.toContain(`${'א'.repeat(200)}`);
   });
@@ -95,20 +96,20 @@ describe('buildPostShareMessage', () => {
   it('keeps a short description verbatim (no ellipsis appended)', () => {
     const shortDesc = 'במצב מצוין';
     const msg = buildPostShareMessage({ ...GIVE_FIXTURE, description: shortDesc }, tHe);
-    expect(msg).toContain(shortDesc);
+    expect(msg).toContain(`*תיאור:* ${shortDesc}`);
     expect(msg).not.toContain('…');
   });
 
-  it('omits the category from the location line when category is "Other" (catch-all)', () => {
+  it('omits the category line when category is "Other" (catch-all)', () => {
     const msg = buildPostShareMessage({ ...GIVE_FIXTURE, category: 'Other' }, tHe);
-    expect(msg).toContain('📍 תל אביב');
-    expect(msg).not.toContain('· אחר');
-    expect(msg).not.toContain(' · ');
+    expect(msg).not.toContain('*קטגוריה:*');
+    // Location still rendered.
+    expect(msg).toContain('*מיקום:* תל אביב');
   });
 
-  it('includes the category when it is anything but "Other"', () => {
+  it('includes the category line when it is anything but "Other"', () => {
     const msg = buildPostShareMessage({ ...GIVE_FIXTURE, category: 'Books' }, tHe);
-    expect(msg).toContain('📍 תל אביב · ספרים');
+    expect(msg).toContain('*קטגוריה:* ספרים');
   });
 
   it('trims whitespace from title and city before composition', () => {
@@ -116,12 +117,11 @@ describe('buildPostShareMessage', () => {
       { ...GIVE_FIXTURE, title: '  כיסא נדנדה מעץ  ', cityName: ' תל אביב ' },
       tHe,
     );
-    // Title appears on its own line, without leading/trailing whitespace.
-    expect(msg).toMatch(/\nכיסא נדנדה מעץ\n/);
-    // City appears with the pin prefix, no double-space before " · ".
-    expect(msg).toContain('📍 תל אביב · רהיטים');
-    expect(msg).not.toContain('📍  ');
-    expect(msg).not.toContain('  ·');
+    expect(msg).toContain('*כותרת:* כיסא נדנדה מעץ');
+    expect(msg).toContain('*מיקום:* תל אביב');
+    // No stray double-space from leading/trailing whitespace on the value.
+    expect(msg).not.toContain('*כותרת:*  ');
+    expect(msg).not.toContain('*מיקום:*  ');
   });
 
   it('always places the CTA on the last line', () => {
