@@ -149,9 +149,19 @@ export const postHe = {
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
     // FR-POST-023 — share post via link (P2.33).
+    // The text accompanying the link sets context for the recipient before
+    // they tap. Per-type templates give a clearer hint than a bare title —
+    // Give posts read as "someone is giving away", Request posts as "someone
+    // is looking for", and the trailing newline before the URL avoids the
+    // social app inlining the link into the same line as the title.
     shareA11y: 'שתף את הפוסט',
     shareDialogTitle: 'שיתוף פוסט',
-    shareMessage: '{{title}} — קהילת קארמה',
+    shareMessageGive:
+      '🎁 חפץ שמחפש בית חדש בקהילת קארמה — {{title}}\n\nאולי זה בדיוק בשבילך 👇',
+    shareMessageRequest:
+      '🔍 מישהו מחפש בקהילת קארמה — {{title}}\n\nאולי תוכלו לעזור? 👇',
+    /** Back-compat fallback when post type is unavailable. */
+    shareMessage: '🤝 פוסט בקהילת קארמה — {{title}}\n\nלצפייה ולתגובה 👇',
     shareCopiedToast: 'הקישור הועתק',
     shareFailedToast: 'השיתוף נכשל, נסה שוב.',
   },

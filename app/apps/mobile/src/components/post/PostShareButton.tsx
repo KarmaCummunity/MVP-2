@@ -29,10 +29,18 @@ export function PostShareButton({ post }: Props) {
       const shareBaseUrl = resolveShareBaseUrl(
         typeof process !== 'undefined' ? process.env : {},
       );
+      // Per-type message gives the recipient context before they tap.
+      // Falls back to the generic copy if the type is somehow missing.
+      const messageKey =
+        post.type === 'Give'
+          ? 'post.detail.shareMessageGive'
+          : post.type === 'Request'
+            ? 'post.detail.shareMessageRequest'
+            : 'post.detail.shareMessage';
       const outcome = await sharePost({
         postId: post.postId,
         title: post.title,
-        message: t('post.detail.shareMessage', { title: post.title }),
+        message: t(messageKey, { title: post.title }),
         shareBaseUrl,
       });
       if (outcome.kind === 'copied') {
@@ -43,7 +51,7 @@ export function PostShareButton({ post }: Props) {
     } finally {
       setBusy(false);
     }
-  }, [busy, post.postId, post.title, showToast, t]);
+  }, [busy, post.postId, post.title, post.type, showToast, t]);
 
   if (!canSharePost(post)) return null;
 
