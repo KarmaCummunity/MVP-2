@@ -137,14 +137,13 @@ export default function PostDetailScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen
         options={{
-          // The native header lays children inside `headerRight` LTR; under
-          // forceRTL=true that visually flips so the *first* child ends up
-          // at the screen's right edge (= the corner). Put the ⋮ menu first
-          // so it stays where the user expects, with Share to its left.
+          // Under forceRTL=true, the inner row visually flips so the *first*
+          // child lands at the screen's right edge (= the corner). Share is
+          // first so it sits in the corner, with the ⋮ menu to its left.
           headerRight: () => (
             <View style={styles.headerActions}>
-              <PostMenuButton post={post} />
               <PostShareButton post={post} />
+              <PostMenuButton post={post} />
             </View>
           ),
         }}

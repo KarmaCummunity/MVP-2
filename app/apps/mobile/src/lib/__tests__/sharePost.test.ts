@@ -73,6 +73,7 @@ describe('resolveShareBaseUrl', () => {
 
 type FakeNavigator = {
   share?: ReturnType<typeof vi.fn>;
+  canShare?: ReturnType<typeof vi.fn>;
   clipboard?: { writeText: ReturnType<typeof vi.fn> };
 };
 
@@ -170,5 +171,64 @@ describe('sharePost (web path)', () => {
       shareBaseUrl: 'https://example.com/p',
     });
     expect(outcome.kind).toBe('failed');
+  });
+
+  it('attaches the post image as a File when navigator.canShare allows it', async () => {
+    // Stub global fetch so `fetchAsFile` resolves a real Blob without
+    // hitting the network. We assert that `navigator.share` then receives
+    // a `files` array AND a text body that carries the OG share URL
+    // inline (the receiving chat shows both image + link).
+    const originalFetch = globalThis.fetch;
+    const blob = new Blob(['fake-bytes'], { type: 'image/jpeg' });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) }) as unknown as typeof fetch;
+    try {
+      const share = vi.fn().mockResolvedValue(undefined);
+      const canShare = vi.fn().mockReturnValue(true);
+      installNavigator({ share, canShare });
+      const outcome = await sharePost({
+        postId: 'abc',
+        title: 'Cool sofa',
+        message: 'headline',
+        shareBaseUrl: 'https://share.example.com/p',
+        remoteImageUrl: 'https://cdn.example.com/sofa.jpg',
+      });
+      expect(outcome).toEqual({ kind: 'shared' });
+      expect(canShare).toHaveBeenCalled();
+      const call = share.mock.calls[0]![0]! as { files?: File[]; text?: string; url?: string };
+      expect(call.url).toBe('https://share.example.com/p/abc');
+      expect(call.text).toContain('https://share.example.com/p/abc');
+      expect(Array.isArray(call.files)).toBe(true);
+      expect(call.files!.length).toBe(1);
+      expect(call.files![0]!.type).toBe('image/jpeg');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
+  });
+
+  it('falls back to text-only share when canShare rejects the file payload', async () => {
+    const originalFetch = globalThis.fetch;
+    const blob = new Blob(['fake-bytes'], { type: 'image/jpeg' });
+    globalThis.fetch = vi
+      .fn()
+      .mockResolvedValue({ ok: true, blob: () => Promise.resolve(blob) }) as unknown as typeof fetch;
+    try {
+      const share = vi.fn().mockResolvedValue(undefined);
+      const canShare = vi.fn().mockReturnValue(false);
+      installNavigator({ share, canShare });
+      await sharePost({
+        postId: 'abc',
+        title: 'x',
+        message: 'msg',
+        shareBaseUrl: 'https://example.com/p',
+        remoteImageUrl: 'https://cdn.example.com/sofa.jpg',
+      });
+      const call = share.mock.calls[0]![0]! as { files?: File[]; text?: string };
+      expect(call.files).toBeUndefined();
+      expect(call.text).toBe('msg');
+    } finally {
+      globalThis.fetch = originalFetch;
+    }
   });
 });
