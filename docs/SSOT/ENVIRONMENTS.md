@@ -30,6 +30,7 @@ All variables prefixed `EXPO_PUBLIC_*` are exposed to the client bundle by Expo'
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | `development` | `apps/mobile/src/config/environment.ts` — drives the in-app dev banner |
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://slxijdfvinbjmrsfgbzx.supabase.co` | `https://roeefqpdbftlndzsvhfj.supabase.co` | `packages/infrastructure-supabase/src/client.ts` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | (publishable key for prod project) | (publishable key for dev project) | `packages/infrastructure-supabase/src/client.ts` |
+| `EXPO_PUBLIC_SHARE_BASE_URL` | `https://karma-community-kc.com/p` | `https://mvp-2-dev.up.railway.app/p` | `apps/mobile/src/lib/sharePost.ts` (FR-POST-023). Optional; when set the post share sheet hands recipients `<prefix>/<post_id>` instead of the raw Edge Function URL. Each host's `serve.json` (emitted by `app/scripts/web-postbuild.mjs`) redirects `/p/:id` to `${EXPO_PUBLIC_SUPABASE_URL}/functions/v1/share-post/:id` for that environment, so dev shares never cross into the prod Supabase project. |
 
 > **Pitfall:** Expo only exposes vars that start with `EXPO_PUBLIC_`. A var named `PUBLIC_ENVIRONMENT` (no `EXPO_` prefix) is invisible to the client bundle.
 >

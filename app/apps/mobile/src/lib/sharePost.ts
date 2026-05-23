@@ -2,29 +2,27 @@
 //
 // Two layers:
 //   1. `buildPostShareUrl()` — pure URL builder. Defaults to the Supabase
-//      Edge Function URL (`${SUPABASE_URL}/functions/v1/share-post`) which
-//      serves Open Graph + Twitter Card meta tags pointing at the post's
-//      first image. `EXPO_PUBLIC_SHARE_BASE_URL` may override the prefix
-//      when a custom domain is set up to rewrite to the Edge Function
-//      (e.g. Vercel/Netlify rewrite `/p/:id` → Edge Function).
+//      Edge Function URL (`${SUPABASE_URL}/functions/v1/share-post`).
+//      `EXPO_PUBLIC_SHARE_BASE_URL` overrides the prefix when the SPA host
+//      proxies `/p/:id` → Edge Function via `serve.json` (the dist build
+//      ships such a redirect — see `app/scripts/web-postbuild.mjs`). With
+//      the override the URL shown in the share message is the branded
+//      `karma-community-kc.com/p/<id>` instead of `<ref>.supabase.co/…`.
 //   2. `sharePost()` — platform-aware invocation. When the caller passes a
 //      `remoteImageUrl`, we download the image into the OS cache and
 //      attach it directly to the share sheet **in addition to** the OG
 //      URL in the message body. The OG card still renders on receivers
 //      that fetch link previews; chats that don't fetch OG (older
 //      iMessage, raw SMS, etc.) now also see the actual image.
-//      - iOS: `Share.share({ message: <text+url>, url: <localFileUri> })`.
-//      - Android: RN `Share.share` does not honor `url` for binaries, so
-//        we fall through to the URL-only message (OG-driven preview).
+//      - iOS with image: `Share.share({ message: <text+url>, url: <fileUri> })`.
+//        The `url` field is the local file (not the share URL) so iOS
+//        attaches the binary; the share URL lives once inside `message`.
+//      - All other native cases (iOS no-image, Android): URL goes ONLY
+//        inside `message`. We deliberately do NOT pass the `url` field
+//        — RN's Android `Share` concatenates `url` onto `EXTRA_TEXT`,
+//        so passing both produced a duplicated link in WhatsApp.
 //      - Web: `navigator.share({ files: [File] })` when supported, else
 //        `navigator.share({ title, text, url })`, else clipboard copy.
-//
-// **Why no static fallback to karma-community-kc.com:** the SPA at that host
-// has no per-post OG tags, so a fallback URL there causes WhatsApp / Telegram
-// / Twitter to render the site favicon instead of the item image. The Edge
-// Function path is the only URL that surfaces the item image, so we route
-// through it unconditionally unless an override that we trust to do the
-// rewrite is set.
 
 import { Platform, Share } from 'react-native';
 
@@ -182,13 +180,16 @@ export async function sharePost(input: PostShareInput): Promise<SharePostOutcome
       if (result.action === Share.dismissedAction) return { kind: 'dismissed' };
       return { kind: 'shared' };
     }
-    // Android falls through to the URL-only path: RN `Share.share` ignores
-    // the `url` field for non-iOS, so we cannot attach the binary here.
-    // OG-card preview in the receiving chat fills the gap for apps that
-    // fetch link previews (WhatsApp, Telegram, Messenger, …).
-    const message =
-      Platform.OS === 'android' ? `${input.message}\n${url}` : input.message;
-    const result = await Share.share({ message, url, title: input.title });
+    // No-binary native path (iOS without image, all Android). Put the share
+    // URL inline in `message` and DO NOT pass the `url` field — RN's Android
+    // `Share.share` concatenates `url` onto `EXTRA_TEXT` after the message,
+    // so passing both surfaced the link twice in WhatsApp. The OG-card
+    // preview rendered by the receiving chat still attaches the post image
+    // because the URL fires the `share-post` Edge Function on fetch.
+    const result = await Share.share({
+      message: `${input.message}\n${url}`,
+      title: input.title,
+    });
     if (result.action === Share.dismissedAction) return { kind: 'dismissed' };
     return { kind: 'shared' };
   } catch (err) {
