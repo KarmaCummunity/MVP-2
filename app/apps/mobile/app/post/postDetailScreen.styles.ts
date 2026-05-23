@@ -140,10 +140,10 @@ export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   messageBtnText: { ...typography.button, fontSize: 16, color: colors.textInverse },
 
-  // FR-POST-023 — header trailing slot holds ⋮ + Share side by side.
+  // FR-POST-023 — header trailing slot holds Share + ⋮ side by side.
   // Plain `row` + RTL flipping puts the first child at the visual right
-  // edge (the "corner") — JSX order is [PostMenuButton, PostShareButton]
-  // so the menu lands in the corner and Share sits just to its left.
+  // edge (the "corner") — JSX order is [PostShareButton, PostMenuButton]
+  // so Share lands in the corner and the ⋮ menu sits just to its left.
   // Small inline gap so the two icons don't touch.
   headerActions: { flexDirection: 'row', alignItems: 'center', gap: 4 },
 }));

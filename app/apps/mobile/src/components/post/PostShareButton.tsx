@@ -11,10 +11,13 @@ import { ActivityIndicator, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
+import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { resolveShareBaseUrl, sharePost } from '../../lib/sharePost';
 import { buildPostShareMessage } from '../../lib/buildPostShareMessage';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
+
+const POST_IMAGES_BUCKET = 'post-images';
 
 interface Props {
   post: PostWithOwner;
@@ -52,11 +55,19 @@ export function PostShareButton({ post }: Props) {
         },
         t,
       );
+      // First-image public URL (when present) becomes the actual binary
+      // attachment in the share sheet — receivers without OG-preview support
+      // (raw SMS, some Android chats) still see the item.
+      const firstAsset = post.mediaAssets[0];
+      const remoteImageUrl = firstAsset
+        ? getSupabaseClient().storage.from(POST_IMAGES_BUCKET).getPublicUrl(firstAsset.path).data.publicUrl
+        : undefined;
       const outcome = await sharePost({
         postId: post.postId,
         title: post.title,
         message,
         shareBaseUrl,
+        remoteImageUrl,
       });
       if (outcome.kind === 'copied') {
         showToast(t('post.detail.shareCopiedToast'), 'success', 1800);
@@ -80,6 +91,7 @@ export function PostShareButton({ post }: Props) {
     post.description,
     post.category,
     post.address.cityName,
+    post.mediaAssets,
     showToast,
     t,
   ]);
