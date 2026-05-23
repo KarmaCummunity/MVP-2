@@ -37,7 +37,7 @@ against the service-role-key client.
 | `SUPABASE_URL`                 | Auto-injected; used to compose the public storage URL for OG images.   |
 | `SUPABASE_SERVICE_ROLE_KEY`    | Auto-injected; reads `posts` + `media_assets` bypassing RLS.           |
 | `SHARE_POST_APP_BASE_URL`      | Optional. Defaults to `https://karma-community-kc.com`. Used for the human-redirect target + canonical URL. |
-| `SHARE_POST_FALLBACK_IMAGE`    | Optional. Defaults to `${APP_BASE_URL}/og-card.png`. Used when the post has no media (e.g. Request posts without images) or when the post is private / not found. |
+| `SHARE_POST_FALLBACK_IMAGE`    | Optional. Defaults to `${APP_BASE_URL}/pwa-icon-512.png` (the 512×512 community logo checked into `apps/mobile/public/`). Used when the post has no media (e.g. Request posts without images) or when the post is private / not found. |
 
 ## Verifying after deploy
 

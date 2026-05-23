@@ -1,6 +1,10 @@
 // FR-POST-023 (P2.33) — header share button on the post-detail screen.
-// Visible only for `Public` + `open` posts that have at least one image,
-// per spec AC1 — sharing non-public posts leaks no preview surface.
+// Visible to **any** viewer (owner or third party) on a `Public` + `open`
+// post, per spec AC1. Private (`OnlyMe`, `FollowersOnly`) and non-`open`
+// (closed / expired / removed) posts hide the affordance — sharing a
+// private post leaks no preview surface and dodges follower-gating
+// questions. Image presence is not required: Request posts without images
+// still share, and the Edge Function falls back to the generic OG card.
 
 import { useCallback, useState } from 'react';
 import { ActivityIndicator, Platform, Pressable } from 'react-native';
@@ -95,12 +99,11 @@ export function PostShareButton({ post }: Props) {
 }
 
 export function canSharePost(post: PostWithOwner): boolean {
-  return (
-    post.status === 'open' &&
-    post.visibility === 'Public' &&
-    Array.isArray(post.mediaAssets) &&
-    post.mediaAssets.length > 0
-  );
+  // Share works for any viewer on any Public + open post — owner or
+  // third party. Image presence is intentionally NOT required so Request
+  // posts (where images are optional per FR-POST-004 AC2) remain shareable;
+  // the Edge Function renders a generic OG card when the post has no media.
+  return post.status === 'open' && post.visibility === 'Public';
 }
 
 const usePostShareButtonStyles = makeUseStyles(() => ({

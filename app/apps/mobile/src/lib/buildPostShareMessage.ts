@@ -37,7 +37,7 @@ export function buildPostShareMessage(post: PostShareMessageInput, t: ShareTrans
   lines.push('', post.title.trim());
 
   // Block 3 — location · category (single line). Category is omitted for the
-  // catch-all `Other` so we never share something like "תל אביב · אחר".
+  // catch-all `Other` so the location line never reads as "<city> · Other".
   let locationLine = `📍 ${post.cityName.trim()}`;
   if (post.category && post.category !== 'Other') {
     locationLine += ` · ${t(`post.category.${post.category}`)}`;
