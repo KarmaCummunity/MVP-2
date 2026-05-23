@@ -11,12 +11,17 @@ import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getListSavedPostsUseCase } from '../../../src/services/savedPostsComposition';
+import {
+  useShellTabBarVisibility,
+  shellTabBarHeightPx,
+} from '../../../src/navigation/useShellTabBarVisibility';
 
 export default function MyProfileSavedScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
+  const tabBarPad = shellTabBarHeightPx(useShellTabBarVisibility());
 
   const savedPostsQuery = useQuery({
     queryKey: ['saved-posts', userId],
@@ -36,7 +41,10 @@ export default function MyProfileSavedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentContainerStyle={{ paddingBottom: tabBarPad }}
+      >
         <View style={styles.banner}>
           <Ionicons name="bookmark-outline" size={18} color={colors.textSecondary} />
           <Text style={styles.bannerText}>{t('profile.savedBanner')}</Text>
