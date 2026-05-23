@@ -157,6 +157,13 @@ export const postHe = {
     shareDialogTitle: 'שיתוף פוסט',
     shareHeadlineGive: '🎁 חפץ שמחכה לבית חדש בקהילת קארמה',
     shareHeadlineRequest: '🔍 בקשה לעזרה מקהילת קארמה',
+    // Labels for the structured body lines. Each line is wrapped in `*…*`
+    // by `buildPostShareMessage` so WhatsApp / Telegram / Signal render
+    // the label bold; other receivers fall back to visible asterisks.
+    shareLabelTitle: 'כותרת:',
+    shareLabelDescription: 'תיאור:',
+    shareLabelCategory: 'קטגוריה:',
+    shareLabelLocation: 'מיקום:',
     shareCtaGive: 'אולי זה בדיוק בשבילכם — לחצו לפרטים 👇',
     shareCtaRequest: 'אם תוכלו לעזור — לחצו לפרטים 👇',
     shareCopiedToast: 'הקישור הועתק',

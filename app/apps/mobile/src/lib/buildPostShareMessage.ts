@@ -4,6 +4,20 @@
 // include, in what order, with what truncation — live here, not in i18n
 // templates, because the per-type / optional-field branching gets ugly
 // when forced into a single mustache string.
+//
+// Layout (one labeled line per field — emphasised with WhatsApp / Telegram
+// markdown `*…*` so the labels read bold on the dominant chat apps; SMS /
+// iMessage that don't parse markdown still show readable plain text with
+// visible asterisks):
+//
+//   <headline>
+//
+//   *כותרת:* <title>
+//   *תיאור:* <description>      ← omitted when empty
+//   *קטגוריה:* <category>       ← omitted when "Other"
+//   *מיקום:* <city>
+//
+//   <CTA>
 
 const DESCRIPTION_MAX = 160;
 
@@ -24,34 +38,35 @@ function truncate(input: string, max: number): string {
   return `${input.slice(0, max - 1).trimEnd()}…`;
 }
 
+function bold(label: string, value: string): string {
+  return `*${label}* ${value}`;
+}
+
 export function buildPostShareMessage(post: PostShareMessageInput, t: ShareTranslate): string {
   const isGive = post.type === 'Give';
   const headline = t(isGive ? 'post.detail.shareHeadlineGive' : 'post.detail.shareHeadlineRequest');
   const cta = t(isGive ? 'post.detail.shareCtaGive' : 'post.detail.shareCtaRequest');
 
-  // Block 1 — headline (per-type cue + community context).
-  const lines: string[] = [headline];
+  // Block 1 — per-type headline + a blank line separating it from the body.
+  const lines: string[] = [headline, ''];
 
-  // Block 2 — the post title on its own line so the recipient's eye lands on
-  // it before the secondary metadata.
-  lines.push('', post.title.trim());
+  // Block 2 — labeled fields. Title is always present (Post invariant).
+  lines.push(bold(t('post.detail.shareLabelTitle'), post.title.trim()));
 
-  // Block 3 — location · category (single line). Category is omitted for the
-  // catch-all `Other` so the location line never reads as "<city> · Other".
-  let locationLine = `📍 ${post.cityName.trim()}`;
-  if (post.category && post.category !== 'Other') {
-    locationLine += ` · ${t(`post.category.${post.category}`)}`;
-  }
-  lines.push(locationLine);
-
-  // Block 4 — optional description preview. Truncated so social-app
-  // previews stay scannable; we don't want a 500-char wall of text.
   const description = (post.description ?? '').trim();
   if (description !== '') {
-    lines.push('', truncate(description, DESCRIPTION_MAX));
+    lines.push(bold(t('post.detail.shareLabelDescription'), truncate(description, DESCRIPTION_MAX)));
   }
 
-  // Block 5 — type-aware CTA. The trailing 👇 hints at the URL below.
+  // Category line is omitted for the catch-all `Other` so the share body
+  // never reads as "קטגוריה: אחר".
+  if (post.category && post.category !== 'Other') {
+    lines.push(bold(t('post.detail.shareLabelCategory'), t(`post.category.${post.category}`)));
+  }
+
+  lines.push(bold(t('post.detail.shareLabelLocation'), post.cityName.trim()));
+
+  // Block 3 — type-aware CTA. The trailing 👇 hints at the URL below.
   lines.push('', cta);
 
   return lines.join('\n');
