@@ -139,4 +139,9 @@ export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
     elevation: isDark ? 2 : 4,
   },
   messageBtnText: { ...typography.button, fontSize: 16, color: colors.textInverse },
+
+  // FR-POST-023 — header trailing slot holds Share + ⋮ side by side.
+  // `row-reverse` keeps the visual order Share-then-Menu when read from
+  // the start of the RTL header (rightmost).
+  headerActions: { flexDirection: 'row-reverse', alignItems: 'center' },
 }));

@@ -454,6 +454,34 @@ The column `identity_visibility` remains in `public.post_actor_identity` for pro
 
 ---
 
+## FR-POST-023 — Share post via link with image preview
+
+> **Status:** 🟡 In progress — ships under BACKLOG P2.33.
+
+**Description.**
+A signed-in viewer of a `Public`, `open` post may share a link to that post from the post-detail screen. The link is browsable to anyone (signed-in or not); social-media crawlers see an Open Graph card with the first post image, the post title, and the description; non-authenticated humans landing in the app are routed to the sign-in screen and, after sign-in, deep-linked back to the original post.
+
+**Source.**
+- Product request (2026-05-23). Not in original PRD; added for organic distribution / network growth ahead of P1.5 push notifications.
+
+**Acceptance Criteria.**
+- AC1. The post-detail screen exposes a share affordance in the header (icon button left of the existing ⋮ menu) when **all** of: `post.status === 'open'`, `post.visibility === 'Public'`, and `post.mediaAssets.length > 0`. Private (`OnlyMe`), `FollowersOnly`, expired, removed, and closed posts hide the affordance — sharing a non-public post leaks no preview surface and dodges follower-gating questions.
+- AC2. Tapping the affordance opens the platform share sheet: `react-native` `Share.share({ message, url })` on iOS / Android; `navigator.share({ title, text, url })` on web when available; otherwise the URL is copied to the clipboard and a Hebrew toast confirms the copy (`post.detail.shareCopiedToast`).
+- AC3. The share payload's URL is `${EXPO_PUBLIC_SHARE_BASE_URL ?? ${EXPO_PUBLIC_SUPABASE_URL}/functions/v1/share-post}/<post_id>`. The URL is opaque to the user — they do not see / configure the prefix.
+- AC4. That URL is served by an Edge Function (`share-post`) that, for **`Public` + `open`** posts only, returns HTML with Open Graph + Twitter Card meta tags (`og:title`, `og:description`, `og:image`, `og:url`, `twitter:card=summary_large_image`, `twitter:image`) so crawlers (WhatsApp, Telegram, Twitter, Facebook, iMessage, Signal) render an image preview. For any post that is not `Public` + `open` (including not-found, `OnlyMe`, `FollowersOnly`, `expired`, `removed_admin`, `closed_delivered`, `deleted_no_recipient`), the function returns a generic 200 OG card pointing at the app's marketing landing — never the post's image or title.
+- AC5. Human visitors hitting the same URL with a browser UA receive an HTTP 302 redirect to `https://karma-community-kc.com/post/<post_id>` (the existing universal-link path covered by AASA + assetlinks, `TD-66`); crawlers (UA matches `facebookexternalhit|WhatsApp|Twitterbot|TelegramBot|Slackbot|LinkedInBot|SkypeUriPreview|Discordbot|Applebot|googlebot|bingbot`) receive the OG HTML body directly with a 200.
+- AC6. **Unauthenticated landing:** when an unauthenticated user follows `/post/<id>` (web or native universal link), the AuthGate captures the path **before** redirecting to `(auth)`, persists it in an in-memory redirect-intent store keyed by an optional TTL of 10 minutes, and after successful sign-in / onboarding completion navigates the user to the captured path (`router.replace(pendingPath)`), then clears the intent. Refresh / app restart loses the intent, falling back to the regular `(tabs)` post-auth landing.
+- AC7. The OG image is the post's `mediaAssets[0]` `detail_main` derivative (1280px) — falls back to `original` if `detail_main` is missing, and to a generic site card if `mediaAssets[]` is empty. Image URLs use the public Supabase Storage host so crawlers don't need auth headers.
+- AC8. The share action does not mutate post state, does not require a network round-trip on the client (the Edge Function is hit only when the link is opened, not when sharing), and emits no `audit_event` (read-only intent).
+
+**Edge Cases.**
+- A user shares a `Public` post; before the link is opened the owner deletes / closes it. The Edge Function fetches at open time and renders the generic OG card (AC4 fallback). No stale image is served.
+- A user shares while online, then loses network. The OS Share Sheet is offline-capable; the URL is still copied. The link's recipient receives a valid URL whose resolution depends on their own connectivity.
+
+**Related.** Screens: 2.3 (post detail). Domain: `Post.visibility`, `Post.status`. Cross-refs: `FR-POST-014` (viewer detail), `FR-AUTH-014` (guest entry), `TD-66` (deep-link manifests). Edge Function: `supabase/functions/share-post/index.ts`.
+
+---
+
 ## FR-POST-022 — Save / unsave post
 
 **Description.**
@@ -476,6 +504,7 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.9 | 2026-05-23 | `FR-POST-023` — share post via link with OG image preview + post-login deep-link restoration (P2.33). |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
 | 0.8 | 2026-05-17 | `FR-POST-008` AC5 + `D-35` — `posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status. |
