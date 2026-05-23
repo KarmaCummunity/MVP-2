@@ -149,19 +149,16 @@ export const postHe = {
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
     // FR-POST-023 — share post via link (P2.33).
-    // The text accompanying the link sets context for the recipient before
-    // they tap. Per-type templates give a clearer hint than a bare title —
-    // Give posts read as "someone is giving away", Request posts as "someone
-    // is looking for", and the trailing newline before the URL avoids the
-    // social app inlining the link into the same line as the title.
+    // Building blocks consumed by `buildPostShareMessage` to compose a
+    // per-post text body: headline (per-type) + title + location + optional
+    // description preview + per-type CTA. Composition logic lives in the
+    // helper, not here, so the branching stays out of the i18n table.
     shareA11y: 'שתף את הפוסט',
     shareDialogTitle: 'שיתוף פוסט',
-    shareMessageGive:
-      '🎁 חפץ שמחפש בית חדש בקהילת קארמה — {{title}}\n\nאולי זה בדיוק בשבילך 👇',
-    shareMessageRequest:
-      '🔍 מישהו מחפש בקהילת קארמה — {{title}}\n\nאולי תוכלו לעזור? 👇',
-    /** Back-compat fallback when post type is unavailable. */
-    shareMessage: '🤝 פוסט בקהילת קארמה — {{title}}\n\nלצפייה ולתגובה 👇',
+    shareHeadlineGive: '🎁 חפץ שמחכה לבית חדש בקהילת קארמה',
+    shareHeadlineRequest: '🔍 בקשה לעזרה מקהילת קארמה',
+    shareCtaGive: 'אולי זה בדיוק בשבילכם — לחצו לפרטים 👇',
+    shareCtaRequest: 'אם תוכלו לעזור — לחצו לפרטים 👇',
     shareCopiedToast: 'הקישור הועתק',
     shareFailedToast: 'השיתוף נכשל, נסה שוב.',
   },
