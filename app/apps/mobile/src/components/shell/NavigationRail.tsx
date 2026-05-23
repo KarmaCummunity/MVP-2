@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
-import { useRouter, usePathname } from 'expo-router';
+import { useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useBreakpoint, useTheme, spacing, shellDimensions } from '@kc/ui';
 import { TABS, type TabDefinition } from './tabs.config';
@@ -35,11 +35,11 @@ export function NavigationRail({ expanded }: NavigationRailProps) {
 
 function NavigationRailItem({ tab, expanded }: { tab: TabDefinition; expanded: boolean }) {
   const router = useRouter();
-  const pathname = usePathname();
+  const segments = useSegments();
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useStyles();
-  const active = isTabActive(tab, pathname);
+  const active = isTabActive(tab, segments as string[]);
   const iconName = active ? tab.iconActive : tab.iconInactive;
   const activeBg = (colors as { surfaceVariant?: string }).surfaceVariant ?? colors.surface;
 
@@ -65,18 +65,18 @@ function NavigationRailItem({ tab, expanded }: { tab: TabDefinition; expanded: b
   );
 }
 
-function isTabActive(tab: TabDefinition, pathname: string | null): boolean {
-  if (!pathname) return false;
-  // Home tab — root or any (tabs) path that's not a named subroute.
-  if (tab.route === '/(tabs)') {
-    if (pathname === '/' || pathname === '/(tabs)') return true;
+function isTabActive(tab: TabDefinition, segments: string[]): boolean {
+  // tab.route patterns: '/(tabs)' (home), '/(tabs)/profile', '/(tabs)/search', etc.
+  // Strip the (tabs) prefix to get the named segment (if any).
+  const parts = tab.route.split('/').filter(Boolean); // ['(tabs)'] or ['(tabs)', 'profile']
+  const named = parts[1]; // undefined for home, 'profile' / 'search' / 'donations' / 'create' for others
+  if (!named) {
+    // Home tab — active when we're inside (tabs) but not in any named subroute.
+    if (!segments.includes('(tabs)')) return false;
     const namedSubroutes = ['profile', 'search', 'donations', 'create'];
-    const inNamed = namedSubroutes.some((seg) => pathname.includes(`/${seg}`));
-    return pathname.startsWith('/(tabs)') && !inNamed;
+    return !namedSubroutes.some((s) => segments.includes(s));
   }
-  // Other tabs — match by the last path segment.
-  const segment = tab.route.split('/').pop();
-  return segment !== undefined && segment !== '' && pathname.includes(`/${segment}`);
+  return segments.includes(named);
 }
 
 const useStyles = makeUseStyles(() => ({
