@@ -9,6 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useTheme } from '@kc/ui';
+import { TABS, type IoniconName, type TabKey } from './shell/tabs.config';
 
 // Glassmorphism on web — RN-Web forwards unknown style keys to CSS. RN's
 // ViewStyle type doesn't include backdrop-filter, so cast through unknown.
@@ -19,9 +20,6 @@ const webGlass: ViewStyle =
         WebkitBackdropFilter: 'blur(20px) saturate(180%)',
       } as unknown as ViewStyle)
     : ({} as ViewStyle);
-
-type TabKey = 'home' | 'create' | 'profile' | 'search' | 'donations';
-type IoniconName = keyof typeof Ionicons.glyphMap;
 
 export const TAB_BAR_HEIGHT = 50;
 
@@ -97,40 +95,26 @@ export function TabBar() {
     <View style={styles.tabBar}>
       {/* RTL reading order: Profile (right) | Search | Plus (center) | Donations | Home (left).
           With dir=rtl on web and I18nManager.isRTL on native, default `row` lays them out
-          right-to-left. `row-reverse` would double-flip on web → LTR visual. */}
-      <IconBtn
-        active={active === 'profile'}
-        onPress={() => router.push('/(tabs)/profile')}
-        label={t('tabs.profile')}
-        iconActive="person"
-        iconInactive="person-outline"
-      />
-      <IconBtn
-        active={active === 'search'}
-        onPress={() => router.push('/(tabs)/search')}
-        label={t('search.tabLabel')}
-        iconActive="search"
-        iconInactive="search-outline"
-      />
-      <PlusBtn
-        active={active === 'create'}
-        onPress={() => router.push('/(tabs)/create')}
-        label={t('tabs.newPost')}
-      />
-      <IconBtn
-        active={active === 'donations'}
-        onPress={() => router.push('/(tabs)/donations')}
-        label={t('donations.tabLabel')}
-        iconActive="heart"
-        iconInactive="heart-outline"
-      />
-      <IconBtn
-        active={active === 'home'}
-        onPress={() => router.push('/(tabs)')}
-        label={t('tabs.home')}
-        iconActive="home"
-        iconInactive="home-outline"
-      />
+          right-to-left. `row-reverse` would double-flip on web → LTR visual.
+          Tab definitions live in ./shell/tabs.config.ts so NavigationRail (Task 9) can reuse them. */}
+      {TABS.map((tab) => {
+        const isActive = active === tab.key;
+        const label = t(tab.labelI18nKey);
+        const onPress = () => router.push(tab.route as never);
+        if (tab.isComposer) {
+          return <PlusBtn key={tab.key} active={isActive} onPress={onPress} label={label} />;
+        }
+        return (
+          <IconBtn
+            key={tab.key}
+            active={isActive}
+            onPress={onPress}
+            label={label}
+            iconActive={tab.iconActive}
+            iconInactive={tab.iconInactive}
+          />
+        );
+      })}
     </View>
   );
 }
