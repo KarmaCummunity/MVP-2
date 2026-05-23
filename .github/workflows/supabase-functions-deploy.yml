@@ -1,18 +1,39 @@
 name: Supabase Functions deploy
 
-# Deploys every Edge Function under supabase/functions/ so prod cannot drift
-# behind main (see TD-53 — stale validate-donation-link caused duplicate rows on edit).
+# Deploys every Edge Function under supabase/functions/ so neither dev nor
+# prod can drift behind their feeding branch (see TD-53 — stale
+# validate-donation-link caused duplicate rows on edit; FR-POST-023 share-post
+# needs to land on dev the moment its mobile consumer does, otherwise share
+# links resolve to a 404 OG card).
+#
+# Trigger matrix mirrors db-deploy.yml:
+#   - push dev   → supabase-dev   environment (paths filtered)
+#   - push main  → supabase-prod  environment (paths filtered)
+#   - workflow_dispatch picks the target via input (defaults to supabase-dev)
+#
+# Required secrets on each environment:
+#   - SUPABASE_ACCESS_TOKEN    Account access token (`sbp_…`).
+#   - SUPABASE_PROJECT_REF     Project ref from the Supabase dashboard.
 
 on:
   push:
-    branches: [main]
+    branches: [dev, main]
     paths:
       - 'supabase/functions/**'
+      - 'supabase/config.toml'
       - '.github/workflows/supabase-functions-deploy.yml'
   workflow_dispatch:
+    inputs:
+      target:
+        description: 'GitHub Environment that holds Supabase secrets for this deploy'
+        type: choice
+        options:
+          - supabase-prod
+          - supabase-dev
+        default: supabase-dev
 
 concurrency:
-  group: supabase-functions-deploy
+  group: supabase-functions-deploy-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
   cancel-in-progress: false
 
 permissions:
@@ -20,13 +41,14 @@ permissions:
 
 jobs:
   deploy:
-    name: supabase functions deploy
+    name: ${{ github.event_name == 'workflow_dispatch' && format('functions deploy · {0}', inputs.target) || format('functions deploy · {0} (push)', github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
-      name: supabase-prod
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
 
     env:
+      DEPLOY_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
 
     steps:
@@ -41,6 +63,18 @@ jobs:
 
       - name: Print Supabase CLI version
         run: supabase --version
+
+      - name: Preflight (non-empty secrets)
+        run: |
+          set -euo pipefail
+          if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
+            echo "::error::SUPABASE_ACCESS_TOKEN is empty. Add it to GitHub → Settings → Environments → ${DEPLOY_ENV} (not only repository secrets)."
+            exit 1
+          fi
+          if [ -z "${{ secrets.SUPABASE_PROJECT_REF }}" ]; then
+            echo "::error::SUPABASE_PROJECT_REF is empty for environment ${DEPLOY_ENV}."
+            exit 1
+          fi
 
       - name: Link to remote project
         run: supabase link --project-ref "${{ secrets.SUPABASE_PROJECT_REF }}"
