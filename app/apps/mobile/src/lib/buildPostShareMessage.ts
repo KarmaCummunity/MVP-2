@@ -33,7 +33,7 @@ export interface PostShareMessageInput {
   category: string;
   address: { cityName: string; street: string; streetNumber: string };
   locationDisplayLevel: 'CityOnly' | 'CityAndStreet' | 'FullAddress';
-  /** Already-formatted relative time, e.g. "לפני יומיים". */
+  /** Already-formatted relative time, e.g. "2 days ago". */
   postedAt: string;
   /** Resolved owner line (name, deleted fallback, or anonymous). */
   publisherLabel: string;

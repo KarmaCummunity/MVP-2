@@ -16,9 +16,10 @@
  * **Skips (transitional / technical):**
  * - `docs/`, `PRD_V2_NOT_FOR_MVP/`, `app/apps/mobile/app.json` (Expo metadata).
  * - `app/apps/mobile/src/i18n/**` — canonical locale bundles (`he`, future `en`, etc.).
+ * - `app/apps/mobile/web-server/i18n/**` — web-server locale bundles (Hono server has no React/i18next runtime).
  * - `supabase/migrations/**`, `supabase/seed.sql` — excluded until SQL adopts D-24 indirection.
  * - `supabase/functions/**` — Edge bundles (including `i18n.json`).
- * - `__tests__/**`, `*.test.ts(x)` — fixtures.
+ * - `__tests__/**`, `*.test.ts(x)`, `*.test.mjs`, `*.test.js` — fixtures.
  * - `app/apps/mobile/ios/**` + `.plist` suffix — native permission copy (to be aligned with D-24 / InfoPlist.strings).
  * - Repo-root `CLAUDE.md` — agent-facing Hebrew examples.
  * - `SKIP_HEBREW_SCAN_EXACT_RELS` — narrow ASCII-path exceptions until moved to locale-backed data.
@@ -115,6 +116,12 @@ function isSkippedContentTreeRel(relPosix) {
   if (relPosix === "app/apps/mobile/src/i18n" || relPosix.startsWith("app/apps/mobile/src/i18n/")) {
     return true;
   }
+  if (
+    relPosix === "app/apps/mobile/web-server/i18n" ||
+    relPosix.startsWith("app/apps/mobile/web-server/i18n/")
+  ) {
+    return true;
+  }
   if (relPosix === "app/apps/mobile/app.json") return true;
   return false;
 }
@@ -125,7 +132,15 @@ function isSkippedHebrewScanRel(relPosix) {
   if (SKIP_HEBREW_SCAN_EXACT_RELS.has(relPosix)) return true;
   if (relPosix === "CLAUDE.md") return true;
   if (relPosix.includes("/__tests__/")) return true;
-  if (relPosix.endsWith(".test.ts") || relPosix.endsWith(".test.tsx")) return true;
+  if (
+    relPosix.endsWith(".test.ts") ||
+    relPosix.endsWith(".test.tsx") ||
+    relPosix.endsWith(".test.mjs") ||
+    relPosix.endsWith(".test.js") ||
+    relPosix.endsWith(".test.cjs")
+  ) {
+    return true;
+  }
   if (relPosix === "supabase/functions" || relPosix.startsWith("supabase/functions/")) return true;
   if (relPosix.startsWith("app/apps/mobile/ios/") && relPosix.endsWith(".plist")) return true;
   return false;

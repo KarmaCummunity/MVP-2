@@ -16,17 +16,24 @@ import { Hono } from 'hono';
 import { serve } from '@hono/node-server';
 import { serveStatic } from '@hono/node-server/serve-static';
 import { readFile } from 'node:fs/promises';
+import { readFileSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
 const DIST_DIR = process.env.WEB_DIST_DIR ?? resolve(here, 'dist');
 
+// User-facing copy lives in locale JSON bundles, never inline (D-24 / TD-154).
+const SERVER_LOCALE = process.env.WEB_SERVER_LOCALE ?? 'he';
+const SERVER_STRINGS = JSON.parse(
+  readFileSync(resolve(here, 'i18n', `${SERVER_LOCALE}.json`), 'utf8'),
+);
+
 const SUPABASE_URL = process.env.SUPABASE_URL ?? '';
 const SUPABASE_ANON_KEY = process.env.SUPABASE_ANON_KEY ?? '';
 const APP_BASE_URL = process.env.APP_BASE_URL ?? 'https://karma-community-kc.com';
-const APP_NAME = 'KC - קהילת קארמה';
-const APP_TAGLINE = 'קהילת קארמה — נותנים ומבקשים מבלי לקנות.';
+const APP_NAME = SERVER_STRINGS.appName;
+const APP_TAGLINE = SERVER_STRINGS.appTagline;
 const STORAGE_BUCKET = 'post-images';
 const FALLBACK_OG_IMAGE = `${APP_BASE_URL}/pwa-icon-512.png`;
 const REST_TIMEOUT_MS = 2000;
