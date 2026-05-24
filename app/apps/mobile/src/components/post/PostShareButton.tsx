@@ -45,10 +45,6 @@ export function PostShareButton({ post }: Props) {
         addSuffix: true,
         locale: dateFnsHe,
       });
-      // buildPostShareMessage uses 'Full' while the domain value-object uses
-      // 'FullAddress'. Map at the call site to avoid touching either module.
-      const locationDisplayLevel =
-        post.locationDisplayLevel === 'FullAddress' ? 'Full' : post.locationDisplayLevel;
       const message = buildPostShareMessage(
         {
           type: post.type,
@@ -56,7 +52,7 @@ export function PostShareButton({ post }: Props) {
           description: post.description,
           category: post.category,
           address: post.address,
-          locationDisplayLevel,
+          locationDisplayLevel: post.locationDisplayLevel,
           postedAt,
         },
         t,

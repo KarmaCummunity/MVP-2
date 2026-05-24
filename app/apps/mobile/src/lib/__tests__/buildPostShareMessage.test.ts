@@ -74,8 +74,8 @@ describe('buildPostShareMessage', () => {
     expect(msg).not.toContain('99');
   });
 
-  it('renders full address when locationDisplayLevel is Full', () => {
-    const msg = buildPostShareMessage({ ...base(), locationDisplayLevel: 'Full' }, t);
+  it('renders full address when locationDisplayLevel is FullAddress', () => {
+    const msg = buildPostShareMessage({ ...base(), locationDisplayLevel: 'FullAddress' }, t);
     expect(msg).toContain('תל אביב, דיזנגוף 99');
   });
 

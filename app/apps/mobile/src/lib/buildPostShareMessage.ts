@@ -28,7 +28,7 @@ export interface PostShareMessageInput {
   /** Category enum value (e.g. `Furniture`, `Other`). */
   category: string;
   address: { cityName: string; street: string; streetNumber: string };
-  locationDisplayLevel: 'CityOnly' | 'CityAndStreet' | 'Full';
+  locationDisplayLevel: 'CityOnly' | 'CityAndStreet' | 'FullAddress';
   /** Already-formatted relative time, e.g. "לפני יומיים". */
   postedAt: string;
 }
