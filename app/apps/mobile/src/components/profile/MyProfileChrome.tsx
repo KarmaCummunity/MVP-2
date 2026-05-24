@@ -5,7 +5,16 @@
 // build-up across tab toggles).
 // Mapped to: FR-PROFILE-001 AC1, AC4.
 import React from 'react';
-import { I18nManager, Platform, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  I18nManager,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
@@ -52,8 +61,9 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
     enabled: Boolean(userId),
   });
   const user = userQuery.data ?? null;
-  const displayName = user?.displayName?.trim() || resolveDisplayName(session, fallbackName);
-  const avatarUrl = user?.avatarUrl ?? session?.avatarUrl ?? null;
+  const profileLoading = userQuery.isLoading && user === null;
+  const displayName = user?.displayName?.trim() || fallbackName;
+  const avatarUrl = user?.avatarUrl ?? null;
   const biography = user?.biography ?? null;
 
   const goToTab = (next: ProfilePostsTab) => {
@@ -74,33 +84,41 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
             <MyProfileOverflowMenu showFollowRequests={user?.privacyMode === 'Private'} />
           </View>
           <Card padding="base" style={styles.profileCard}>
-            <ProfileHeader
-              displayName={displayName}
-              locationLine={user ? formatUserLocationLine(user) : null}
-              avatarUrl={avatarUrl}
-              biography={biography}
-              privacyMode={user?.privacyMode ?? 'Public'}
-              onLockPress={() => router.push('/settings/privacy' as never)}
-              size={72}
-            />
-            <ProfileStatsRow
-              followersCount={user?.followersCount ?? 0}
-              followingCount={user?.followingCount ?? 0}
-              postsCount={user?.activePostsCountInternal ?? 0}
-              enabled
-              onPressFollowers={() =>
-                router.push({
-                  pathname: '/user/[handle]/followers' as never,
-                  params: { handle: user?.shareHandle ?? '' },
-                })
-              }
-              onPressFollowing={() =>
-                router.push({
-                  pathname: '/user/[handle]/following' as never,
-                  params: { handle: user?.shareHandle ?? '' },
-                })
-              }
-            />
+            {profileLoading ? (
+              <View style={styles.profileLoading}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : (
+              <>
+                <ProfileHeader
+                  displayName={displayName}
+                  locationLine={user ? formatUserLocationLine(user) : null}
+                  avatarUrl={avatarUrl}
+                  biography={biography}
+                  privacyMode={user?.privacyMode ?? 'Public'}
+                  onLockPress={() => router.push('/settings/privacy' as never)}
+                  size={72}
+                />
+                <ProfileStatsRow
+                  followersCount={user?.followersCount ?? 0}
+                  followingCount={user?.followingCount ?? 0}
+                  postsCount={user?.activePostsCountInternal ?? 0}
+                  enabled={Boolean(user)}
+                  onPressFollowers={() =>
+                    router.push({
+                      pathname: '/user/[handle]/followers' as never,
+                      params: { handle: user?.shareHandle ?? '' },
+                    })
+                  }
+                  onPressFollowing={() =>
+                    router.push({
+                      pathname: '/user/[handle]/following' as never,
+                      params: { handle: user?.shareHandle ?? '' },
+                    })
+                  }
+                />
+              </>
+            )}
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
                 <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
@@ -129,18 +147,6 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
   );
 }
 
-function resolveDisplayName(
-  session: ReturnType<typeof useAuthStore.getState>['session'],
-  fallbackName: string,
-): string {
-  if (session?.displayName && session.displayName.trim().length > 0) return session.displayName;
-  if (session?.email) {
-    const local = session.email.split('@')[0];
-    if (local && local.length > 0) return local;
-  }
-  return fallbackName;
-}
-
 const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
   profileOuter: {
     margin: spacing.base,
@@ -152,6 +158,11 @@ const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
     zIndex: 2,
   },
   profileCard: { gap: spacing.base },
+  profileLoading: {
+    minHeight: 120,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
   actionRow: { flexDirection: 'row' as const, gap: spacing.sm },
   editBtn: {
     flex: 1,

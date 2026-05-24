@@ -14,8 +14,9 @@ import {
   subscribeToSession,
 } from '../services/authComposition';
 import { tryDevAutoSignIn } from '../services/devAutoSignIn';
-import { getDevGhostSession, isDevGhostSessionEnabled } from '../services/devGhostSession';
-import { getOnboardingBootstrap } from '../services/userComposition';
+import { getDevGhostSession } from '../services/devGhostSession';
+import { getOnboardingBootstrap, getReconcileAuthProfileMetadataUseCase } from '../services/userComposition';
+import { isDevGhostSessionEnabled } from '../services/devGhostSession';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { usePostDraftStore } from '../store/postDraftStore';
@@ -141,6 +142,24 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       usePostDraftStore.getState().clearDraft();
     }
   }, [session, queryClient]);
+
+  // FR-AUTH-003 AC5 / FR-PROFILE-001: heal JWT user_metadata drift after cold start
+  // so My Profile does not flash stale OAuth names before the profile query returns.
+  useEffect(() => {
+    if (!session?.userId || isDevGhostSessionEnabled()) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await getReconcileAuthProfileMetadataUseCase().execute({ userId: session.userId });
+      } catch {
+        // Non-fatal — profile screen still reads from DB; user can retry via edit-profile save.
+      }
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.userId]);
 
   // Redirect rules:
   //   - Unauth + outside (auth)/(guest)/auth/callback/auth/verify → (auth).

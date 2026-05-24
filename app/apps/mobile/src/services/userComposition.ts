@@ -21,11 +21,13 @@ import {
   SearchUsersForClosureUseCase,
   SetAvatarUseCase,
   UpdateProfileUseCase,
+  ReconcileAuthProfileMetadataUseCase,
   type ICityRepository,
   type IStreetRepository,
   type IUserRepository,
 } from '@kc/application';
 import type { City, OnboardingState, Street } from '@kc/domain';
+import { getAuthService } from './authComposition';
 
 let _userRepo: IUserRepository | null = null;
 let _cityRepo: ICityRepository | null = null;
@@ -37,6 +39,7 @@ let _updateProfile: UpdateProfileUseCase | null = null;
 let _dismissClosureExplainer: DismissClosureExplainerUseCase | null = null;
 let _searchUsersForClosure: SearchUsersForClosureUseCase | null = null;
 let _deleteAccount: DeleteAccountUseCase | null = null;
+let _reconcileAuthProfile: ReconcileAuthProfileMetadataUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -66,7 +69,7 @@ function getStreetRepo(): IStreetRepository {
 
 export function getCompleteBasicInfoUseCase(): CompleteBasicInfoUseCase {
   if (!_completeBasicInfo) {
-    _completeBasicInfo = new CompleteBasicInfoUseCase(getUserRepo());
+    _completeBasicInfo = new CompleteBasicInfoUseCase(getUserRepo(), getAuthService());
   }
   return _completeBasicInfo;
 }
@@ -80,16 +83,24 @@ export function getCompleteOnboardingUseCase(): CompleteOnboardingUseCase {
 
 export function getSetAvatarUseCase(): SetAvatarUseCase {
   if (!_setAvatar) {
-    _setAvatar = new SetAvatarUseCase(getUserRepo());
+    _setAvatar = new SetAvatarUseCase(getUserRepo(), getAuthService());
   }
   return _setAvatar;
 }
 
 export function getUpdateProfileUseCase(): UpdateProfileUseCase {
   if (!_updateProfile) {
-    _updateProfile = new UpdateProfileUseCase(getUserRepo());
+    _updateProfile = new UpdateProfileUseCase(getUserRepo(), getAuthService());
   }
   return _updateProfile;
+}
+
+/** FR-AUTH-003 AC5 — one-shot JWT metadata reconcile after cold start. */
+export function getReconcileAuthProfileMetadataUseCase(): ReconcileAuthProfileMetadataUseCase {
+  if (!_reconcileAuthProfile) {
+    _reconcileAuthProfile = new ReconcileAuthProfileMetadataUseCase(getUserRepo(), getAuthService());
+  }
+  return _reconcileAuthProfile;
 }
 
 /** FR-PROFILE-007: read editable fields for the Edit Profile form. */

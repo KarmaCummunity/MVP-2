@@ -3,6 +3,7 @@
  *  The actual upload (image pick + resize + Storage put) lives in the FE service —
  *  this use-case only validates and persists the resulting URL.
  *  Reused by FR-PROFILE-007 Edit Profile flow when it ships. */
+import type { IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
 
 export interface SetAvatarInput {
@@ -11,7 +12,10 @@ export interface SetAvatarInput {
 }
 
 export class SetAvatarUseCase {
-  constructor(private readonly users: IUserRepository) {}
+  constructor(
+    private readonly users: IUserRepository,
+    private readonly auth: IAuthService,
+  ) {}
 
   async execute(input: SetAvatarInput): Promise<void> {
     if (!input.userId.trim()) {
@@ -26,8 +30,10 @@ export class SetAvatarUseCase {
         throw new Error('invalid_avatar_url');
       }
       await this.users.setAvatar(input.userId, url);
+      await this.auth.syncProfileMetadata({ avatarUrl: url });
       return;
     }
     await this.users.setAvatar(input.userId, null);
+    await this.auth.syncProfileMetadata({ avatarUrl: null });
   }
 }

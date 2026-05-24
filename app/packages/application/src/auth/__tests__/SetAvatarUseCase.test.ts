@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SetAvatarUseCase } from '../SetAvatarUseCase';
+import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
 describe('SetAvatarUseCase', () => {
@@ -13,7 +14,8 @@ describe('SetAvatarUseCase', () => {
 
   it('persists a valid https URL (FR-AUTH-011 AC1+AC2)', async () => {
     const repo = makeFakeUserRepo({ [userId]: baseRow });
-    const useCase = new SetAvatarUseCase(repo);
+    const auth = new FakeAuthService();
+    const useCase = new SetAvatarUseCase(repo, auth);
 
     await useCase.execute({
       userId,
@@ -23,11 +25,15 @@ describe('SetAvatarUseCase', () => {
     expect(repo.rows.get(userId)?.avatarUrl).toBe(
       'https://kc.supabase.co/storage/v1/object/public/avatars/user-1/avatar.jpg',
     );
+    expect(auth.syncProfileCalls).toEqual([
+      { avatarUrl: 'https://kc.supabase.co/storage/v1/object/public/avatars/user-1/avatar.jpg' },
+    ]);
   });
 
   it('persists null to clear the avatar (FR-AUTH-011 AC4 — Remove SSO photo)', async () => {
     const repo = makeFakeUserRepo({ [userId]: { ...baseRow, avatarUrl: 'https://old.example/p.jpg' } });
-    const useCase = new SetAvatarUseCase(repo);
+    const auth = new FakeAuthService();
+    const useCase = new SetAvatarUseCase(repo, auth);
 
     await useCase.execute({ userId, avatarUrl: null });
 
@@ -36,14 +42,16 @@ describe('SetAvatarUseCase', () => {
 
   it('rejects empty userId', async () => {
     const repo = makeFakeUserRepo();
-    const useCase = new SetAvatarUseCase(repo);
+    const auth = new FakeAuthService();
+    const useCase = new SetAvatarUseCase(repo, auth);
 
     await expect(useCase.execute({ userId: '   ', avatarUrl: null })).rejects.toThrow('invalid_user_id');
   });
 
   it('rejects non-http URLs', async () => {
     const repo = makeFakeUserRepo({ [userId]: baseRow });
-    const useCase = new SetAvatarUseCase(repo);
+    const auth = new FakeAuthService();
+    const useCase = new SetAvatarUseCase(repo, auth);
 
     await expect(
       useCase.execute({ userId, avatarUrl: 'file:///tmp/bad.jpg' }),
@@ -52,7 +60,8 @@ describe('SetAvatarUseCase', () => {
 
   it('rejects empty/whitespace URL string (use null to clear)', async () => {
     const repo = makeFakeUserRepo({ [userId]: baseRow });
-    const useCase = new SetAvatarUseCase(repo);
+    const auth = new FakeAuthService();
+    const useCase = new SetAvatarUseCase(repo, auth);
 
     await expect(useCase.execute({ userId, avatarUrl: '   ' })).rejects.toThrow('invalid_avatar_url');
   });

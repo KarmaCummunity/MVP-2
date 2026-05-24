@@ -1,7 +1,12 @@
 import { describe, expect, it, vi } from 'vitest';
 import { UpdateProfileUseCase } from '../UpdateProfileUseCase';
 import { ProfileError } from '../errors';
+import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
+
+function makeUc(repo: ReturnType<typeof makeFakeUserRepo>, auth = new FakeAuthService()) {
+  return new UpdateProfileUseCase(repo, auth);
+}
 
 const seed = () =>
   makeFakeUserRepo({
@@ -17,7 +22,7 @@ const seed = () =>
 describe('UpdateProfileUseCase', () => {
   it('updates display_name + city + biography + avatar in one go', async () => {
     const repo = seed();
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({
       userId: 'u-1',
       displayName: 'נוה ע',
@@ -33,8 +38,21 @@ describe('UpdateProfileUseCase', () => {
     expect(row?.avatarUrl).toBe('https://example.com/a.jpg');
   });
 
+  it('syncs display_name and avatar_url to auth metadata after DB write', async () => {
+    const auth = new FakeAuthService();
+    const uc = makeUc(seed(), auth);
+    await uc.execute({
+      userId: 'u-1',
+      displayName: 'נוה ע',
+      avatarUrl: 'https://example.com/a.jpg',
+    });
+    expect(auth.syncProfileCalls).toEqual([
+      { displayName: 'נוה ע', avatarUrl: 'https://example.com/a.jpg' },
+    ]);
+  });
+
   it('rejects display_name that is whitespace-only or longer than 50 chars', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(uc.execute({ userId: 'u-1', displayName: '   ' })).rejects.toThrow('invalid_display_name');
     await expect(
       uc.execute({ userId: 'u-1', displayName: 'a'.repeat(51) }),
@@ -42,14 +60,14 @@ describe('UpdateProfileUseCase', () => {
   });
 
   it('rejects biography longer than 200 chars', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(
       uc.execute({ userId: 'u-1', biography: 'x'.repeat(201) }),
     ).rejects.toThrow('biography_too_long');
   });
 
   it('rejects biography that contains a URL (FR-PROFILE-007 AC3)', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(
       uc.execute({ userId: 'u-1', biography: 'follow me at https://x.com/me' }),
     ).rejects.toThrow('biography_url_forbidden');
@@ -59,13 +77,13 @@ describe('UpdateProfileUseCase', () => {
   });
 
   it('rejects city without cityName (and vice versa) — pair must be supplied together', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(uc.execute({ userId: 'u-1', city: 'haifa' })).rejects.toThrow('city_pair_required');
     await expect(uc.execute({ userId: 'u-1', cityName: 'חיפה' })).rejects.toThrow('city_pair_required');
   });
 
   it('rejects empty patch', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(uc.execute({ userId: 'u-1' })).rejects.toThrow('empty_patch');
   });
 
@@ -75,14 +93,14 @@ describe('UpdateProfileUseCase', () => {
       ...repo.rows.get('u-1')!,
       biography: 'old bio',
     });
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', biography: null });
     expect(repo.rows.get('u-1')?.biography).toBeNull();
   });
 
   it('updates only avatar when given just avatarUrl', async () => {
     const repo = seed();
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', avatarUrl: 'https://example.com/new.jpg' });
     expect(repo.rows.get('u-1')?.avatarUrl).toBe('https://example.com/new.jpg');
     expect(repo.rows.get('u-1')?.displayName).toBe('נוה'); // unchanged
@@ -90,7 +108,7 @@ describe('UpdateProfileUseCase', () => {
 
   it('updates only profile address lines when given just profileAddress', async () => {
     const repo = seed();
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({
       userId: 'u-1',
       profileAddress: { street: 'רוטשילד', streetNumber: '22' },
@@ -107,21 +125,21 @@ describe('UpdateProfileUseCase', () => {
       profileStreet: 'רחוב',
       profileStreetNumber: '1',
     });
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', profileAddress: { street: null, streetNumber: null } });
     expect(repo.rows.get('u-1')?.profileStreet).toBeNull();
     expect(repo.rows.get('u-1')?.profileStreetNumber).toBeNull();
   });
 
   it('rejects incomplete profile address (one field empty)', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(
       uc.execute({ userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: null } }),
     ).rejects.toThrow('incomplete_profile_address');
   });
 
   it('rejects invalid profile street number', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(
       uc.execute({ userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: 'abc' } }),
     ).rejects.toThrow('invalid_profile_street_number');
@@ -129,14 +147,14 @@ describe('UpdateProfileUseCase', () => {
 
   it('accepts profile street number with Hebrew suffix (audit §3.1 follow-up)', async () => {
     const repo = seed();
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', profileAddress: { street: 'הרצל', streetNumber: '12א' } });
     expect(repo.rows.get('u-1')?.profileStreetNumber).toBe('12א');
   });
 
   it('persists trimmed contact phone (FR-PROFILE-007 AC1)', async () => {
     const repo = seed();
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', contactPhone: '  050-1234567 ' });
     expect(repo.rows.get('u-1')?.contactPhone).toBe('050-1234567');
   });
@@ -144,7 +162,7 @@ describe('UpdateProfileUseCase', () => {
   it('clears contact phone when given empty string', async () => {
     const repo = seed();
     repo.rows.set('u-1', { ...repo.rows.get('u-1')!, contactPhone: '050-1234567' });
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', contactPhone: '' });
     expect(repo.rows.get('u-1')?.contactPhone).toBeNull();
   });
@@ -152,20 +170,20 @@ describe('UpdateProfileUseCase', () => {
   it('clears contact phone when given null', async () => {
     const repo = seed();
     repo.rows.set('u-1', { ...repo.rows.get('u-1')!, contactPhone: '050-1234567' });
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({ userId: 'u-1', contactPhone: null });
     expect(repo.rows.get('u-1')?.contactPhone).toBeNull();
   });
 
   it('rejects contact phone longer than 20 chars after trim', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(
       uc.execute({ userId: 'u-1', contactPhone: '1234567890123456789012' }),
     ).rejects.toThrow('invalid_contact_phone');
   });
 
   it('throws ProfileError (typed) instead of raw Error for invalid display_name (audit §3.6)', async () => {
-    const uc = new UpdateProfileUseCase(seed());
+    const uc = makeUc(seed());
     await expect(uc.execute({ userId: 'u-1', displayName: '   ' })).rejects.toMatchObject({
       name: 'ProfileError',
       code: 'invalid_display_name',
@@ -180,7 +198,7 @@ describe('UpdateProfileUseCase', () => {
     const setAvatarSpy = vi.spyOn(repo, 'setAvatar');
     const setAddrSpy = vi.spyOn(repo, 'setProfileAddressLines');
 
-    const uc = new UpdateProfileUseCase(repo);
+    const uc = makeUc(repo);
     await uc.execute({
       userId: 'u-1',
       displayName: 'נוה ע',

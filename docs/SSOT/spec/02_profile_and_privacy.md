@@ -177,6 +177,7 @@ The user can change avatar, display name, city, optional street and building num
 - AC3. Biography validation rejects content matching a configurable URL regex (anti-spam, `R-MVP-Profile-6`); the error is shown inline.
 - AC4. Save is atomic: avatar upload completes before the textual fields are persisted; on partial failure, the previous state is preserved.
 - AC5. The `display_name` change emits a `profile_updated` analytics event but **no** push notification to followers (privacy / spam control).
+- AC6. **Auth metadata sync (`D-38`)**: when `display_name` and/or `avatar_url` change, the client also updates the signed-in user's Supabase Auth `user_metadata` (`full_name`/`name`, `avatar_url`/`picture`) via `IAuthService.syncProfileMetadata` so cold-start `AuthSession` matches `public.users`. On session restore, `ReconcileAuthProfileMetadataUseCase` backfills drift once per sign-in. My Profile does not render stale JWT fallbacks while the profile query loads.
 
 **Related.** Screens: 3.2 · Domain: `User`.
 

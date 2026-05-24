@@ -6,7 +6,7 @@
 // ─────────────────────────────────────────────
 
 import type { SupabaseClient, Session as SbSession } from '@supabase/supabase-js';
-import { AuthError, type AuthSession, type IAuthService } from '@kc/application';
+import { AuthError, type AuthProfileMetadataPatch, type AuthSession, type IAuthService } from '@kc/application';
 import { mapAuthError } from './mapAuthError';
 
 export class SupabaseAuthService implements IAuthService {
@@ -129,6 +129,28 @@ export class SupabaseAuthService implements IAuthService {
     if (!data.session) throw new AuthError('unknown', 'verify_no_session');
     return toSession(data.session);
   }
+
+  async syncProfileMetadata(patch: AuthProfileMetadataPatch): Promise<void> {
+    const data = buildAuthMetadataPayload(patch);
+    if (Object.keys(data).length === 0) return;
+    const { error } = await this.client.auth.updateUser({ data });
+    if (error) throw mapAuthError(error);
+  }
+}
+
+/** Maps profile fields to keys read by `toSession` (full_name/name, avatar_url/picture). */
+function buildAuthMetadataPayload(patch: AuthProfileMetadataPatch): Record<string, string | null> {
+  const data: Record<string, string | null> = {};
+  if (patch.displayName !== undefined) {
+    const name = patch.displayName.trim();
+    data.full_name = name;
+    data.name = name;
+  }
+  if (patch.avatarUrl !== undefined) {
+    data.avatar_url = patch.avatarUrl;
+    data.picture = patch.avatarUrl;
+  }
+  return data;
 }
 
 function toSession(s: SbSession): AuthSession {
