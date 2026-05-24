@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 import type { ProfileClosedPostsItem } from '@kc/domain';
+import { chunkArray } from '../../lib/chunkArray';
 import { PostCardProfile } from '../PostCardProfile';
 import { EmptyState } from '../EmptyState';
 
@@ -71,13 +72,17 @@ export function ProfileClosedPostsGrid({
   return (
     <>
       <View style={styles.grid}>
-        {items.map(({ post, identityRole }) => (
-          <PostCardProfile
-            key={post.postId}
-            post={post}
-            identityRole={identityRole}
-            closedPostsProfileUserId={profileUserId}
-          />
+        {chunkArray(items, 3).map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map(({ post, identityRole }) => (
+              <PostCardProfile
+                key={post.postId}
+                post={post}
+                identityRole={identityRole}
+                closedPostsProfileUserId={profileUserId}
+              />
+            ))}
+          </View>
         ))}
       </View>
       {hasMore && onLoadMore ? (
@@ -102,7 +107,18 @@ export function ProfileClosedPostsGrid({
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   loading: { padding: spacing.xl, alignItems: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
+  grid: {
+    width: '100%',
+    alignSelf: 'stretch' as const,
+    paddingHorizontal: spacing.base,
+    gap: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row' as const,
+    gap: spacing.xs,
+    width: '100%',
+    alignSelf: 'stretch' as const,
+  },
   loadMoreRow: { paddingVertical: spacing.lg, alignItems: 'center' },
   loadMoreBtn: {
     paddingHorizontal: spacing.xl,

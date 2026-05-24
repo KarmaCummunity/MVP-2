@@ -2,7 +2,6 @@
 // Mapped to: FR-PROFILE-001 AC4 (closed lane), FR-CLOSURE-005 AC4, FR-CLOSURE-008.
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
-import { spacing } from '@kc/ui';
 import { MyProfileChrome } from '../../../src/components/profile/MyProfileChrome';
 import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileClosedPostsGrid';
 import { Screen } from '../../../src/components/ui/Screen';
@@ -19,7 +18,7 @@ export default function MyProfileClosedScreen() {
     <Screen blobs="content">
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ paddingBottom: spacing.base + tabBarPad }}
+        contentContainerStyle={{ paddingBottom: tabBarPad }}
         showsVerticalScrollIndicator={false}
       >
         <MyProfileChrome activeTab="closed" />

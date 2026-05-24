@@ -8,6 +8,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 import type { Post } from '@kc/domain';
+import { chunkArray } from '../../lib/chunkArray';
 import { PostCardProfile } from '../PostCardProfile';
 import { EmptyState } from '../EmptyState';
 
@@ -92,12 +93,29 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
   }
   return (
     <View style={styles.grid}>
-      {posts.map((p) => <PostCardProfile key={p.postId} post={p} />)}
+      {chunkArray(posts, 3).map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.row}>
+          {row.map((p) => (
+            <PostCardProfile key={p.postId} post={p} />
+          ))}
+        </View>
+      ))}
     </View>
   );
 }
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   loading: { padding: spacing.xl, alignItems: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
+  grid: {
+    width: '100%',
+    alignSelf: 'stretch' as const,
+    paddingHorizontal: spacing.base,
+    gap: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row' as const,
+    gap: spacing.xs,
+    width: '100%',
+    alignSelf: 'stretch' as const,
+  },
 }));

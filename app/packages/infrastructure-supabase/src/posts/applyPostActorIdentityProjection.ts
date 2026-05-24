@@ -4,6 +4,7 @@ import {
   projectActorIdentityForViewer,
   type ActorIdentityInput,
   type PostActorIdentityExposure,
+  type PostVisibility,
 } from '@kc/domain';
 import type { Database } from '../database.types';
 import { isPostgrestRelationMissing } from '../lib/postgrestRelationMissing';
@@ -12,6 +13,11 @@ type IdentityRowDb = Database['public']['Tables']['post_actor_identity']['Row'];
 
 function asExposure(raw: string): PostActorIdentityExposure {
   if (raw === 'FollowersOnly' || raw === 'Hidden' || raw === 'Public') return raw;
+  return 'Public';
+}
+
+function asSurfaceVisibility(raw: string | null | undefined): PostVisibility {
+  if (raw === 'FollowersOnly' || raw === 'OnlyMe' || raw === 'Public') return raw;
   return 'Public';
 }
 
@@ -60,12 +66,17 @@ export async function fetchPostActorIdentitiesByPostIds(
 function policyFor(
   identities: Map<string, IdentityRowDb>,
   userId: string,
-): { exposure: PostActorIdentityExposure; hideFromCounterparty: boolean } {
+): {
+  exposure: PostActorIdentityExposure;
+  hideFromCounterparty: boolean;
+  surfaceVisibility: PostVisibility;
+} {
   const row = identities.get(userId);
-  if (!row) return { exposure: 'Public', hideFromCounterparty: false };
+  if (!row) return { exposure: 'Public', hideFromCounterparty: false, surfaceVisibility: 'Public' };
   return {
     exposure: asExposure(row.identity_visibility),
     hideFromCounterparty: row.hide_from_counterparty,
+    surfaceVisibility: asSurfaceVisibility(row.surface_visibility),
   };
 }
 
@@ -105,12 +116,14 @@ function projectSingle(
 
   const ownerActor = ownerActorFrom(post);
   const ownerPolicy = policyFor(identities, post.ownerId);
+  const ownerSurface: PostVisibility =
+    ownerPolicy.surfaceVisibility !== 'Public' ? ownerPolicy.surfaceVisibility : post.visibility;
   const ownerProj = projectActorIdentityForViewer(ownerActor, ownerPolicy.exposure, {
     viewerUserId: viewerId,
     viewerFollowsActor: viewerId ? followed.has(post.ownerId) : false,
     isCounterparty: Boolean(viewerId && recipientId && viewerId === recipientId),
     hideFromCounterparty: ownerPolicy.hideFromCounterparty,
-    ownerPostVisibilityOnlyMe: post.visibility === 'OnlyMe',
+    actorSurfaceVisibility: ownerSurface,
     counterpartyUserId: recipientId,
     identityListingHostUserId,
   });
@@ -133,7 +146,7 @@ function projectSingle(
     viewerFollowsActor: viewerId ? followed.has(recipientActor.userId) : false,
     isCounterparty: Boolean(viewerId && viewerId === post.ownerId),
     hideFromCounterparty: recPolicy.hideFromCounterparty,
-    ownerPostVisibilityOnlyMe: false,
+    actorSurfaceVisibility: recPolicy.surfaceVisibility,
     counterpartyUserId: post.ownerId,
     identityListingHostUserId,
   });

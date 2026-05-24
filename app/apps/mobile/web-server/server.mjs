@@ -3,7 +3,7 @@
 //
 // Behaviour:
 //   - GET /post/:id from a crawler UA  →  200 text/html OG stub built from a
-//     Supabase REST read (anon key, RLS-gated to Public + open). Two-second
+//     Supabase REST read (anon key, RLS-gated). Two-second
 //     timeout; falls back to generic card on miss/failure.
 //   - GET /post/:id from a human UA    →  200 text/html with the SPA index.
 //   - Everything else                  →  static file from dist/ if present,
@@ -101,7 +101,7 @@ async function fetchPostForShare(postId, fetchImpl) {
     `${SUPABASE_URL.replace(/\/+$/, '')}/rest/v1/posts` +
     `?select=post_id,title,description,visibility,status,media_assets(path,ordinal)` +
     `&post_id=eq.${encodeURIComponent(postId)}` +
-    `&visibility=eq.Public&status=eq.open&limit=1`;
+    `&limit=1`;
   const ctrl = new AbortController();
   const timer = setTimeout(() => ctrl.abort(), REST_TIMEOUT_MS);
   try {

@@ -52,7 +52,7 @@ export default function MyProfileRemovedScreen() {
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ paddingBottom: spacing.base + tabBarPad }}
+        contentContainerStyle={{ paddingBottom: tabBarPad }}
         showsVerticalScrollIndicator={false}
       >
         <View style={styles.banner}>

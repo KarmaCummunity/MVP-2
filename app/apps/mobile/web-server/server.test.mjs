@@ -32,7 +32,7 @@ after(async () => {
 });
 
 describe('GET /post/:id', () => {
-  it('returns OG HTML with the post image for a WhatsApp crawler', async () => {
+  it('returns OG HTML with the post image for a WhatsApp crawler (open)', async () => {
     fetchMock = mock.fn(async () =>
       new Response(
         JSON.stringify([
@@ -59,6 +59,34 @@ describe('GET /post/:id', () => {
     assert.match(body, /שולחן עץ/);
     assert.match(body, /https:\/\/karma-community-kc\.com\/post\/a3ee6f9d/);
     assert.doesNotMatch(body, /supabase\.co\/functions/);
+  });
+
+  it('returns OG HTML for a closed_delivered post when RLS admits the row', async () => {
+    fetchMock = mock.fn(async (url) => {
+      assert.match(String(url), /post_id=eq\./);
+      assert.doesNotMatch(String(url), /status=eq\.open/);
+      return new Response(
+        JSON.stringify([
+          {
+            post_id: 'b4ff7a0e-8e29-51a9-0a7b-23e62ce4a153',
+            title: 'כיסא מעוצב',
+            description: 'נמסר',
+            visibility: 'Public',
+            status: 'closed_delivered',
+            media_assets: [{ path: 'closed/chair.jpg', ordinal: 0 }],
+          },
+        ]),
+        { status: 200, headers: { 'content-type': 'application/json' } },
+      );
+    });
+    app = await bootstrap(DIST_DIR);
+    const res = await app.request('/post/b4ff7a0e-8e29-51a9-0a7b-23e62ce4a153', {
+      headers: { 'user-agent': 'WhatsApp/2.0' },
+    });
+    assert.equal(res.status, 200);
+    const body = await res.text();
+    assert.match(body, /כיסא מעוצב/);
+    assert.match(body, /closed\/chair\.jpg/);
   });
 
   it('returns the SPA index for a browser UA', async () => {

@@ -1,4 +1,6 @@
 import { useGlobalSearchParams, useSegments, usePathname } from 'expo-router';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { spacing } from '@kc/ui';
 import { useAuthStore } from '../store/authStore';
 import { parseTruthyQueryParam } from '../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from './aboutMarketingPaths';
@@ -44,6 +46,7 @@ export function shellTabBarHeightPx(visible: boolean): number {
 }
 
 /** Bottom inset for scroll content above the floating shell tab bar. */
-export function useShellTabBarScrollInset(): number {
-  return shellTabBarHeightPx(useShellTabBarVisibility());
+export function useShellTabBarScrollInset(extraBottom: number = spacing.lg): number {
+  const insets = useSafeAreaInsets();
+  return extraBottom + shellTabBarHeightPx(useShellTabBarVisibility()) + insets.bottom;
 }

@@ -1,5 +1,5 @@
 // FR-POST-023 (P2.33) — header share button on the post-detail screen.
-// Visible to any viewer (owner or third party) on a Public + open post.
+// Public open/closed posts for any viewer; closed_delivered participants always (FR-POST-023 AC1).
 // Image presence is not required: Request posts without images still share
 // (the OG server falls back to the generic community card).
 
@@ -8,13 +8,15 @@ import { ActivityIndicator, Platform, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { formatDistanceToNow } from 'date-fns';
-import { he as dateFnsHe } from 'date-fns/locale';
 import type { PostWithOwner } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { resolveWebBaseUrl } from '../../lib/buildPostShareUrl';
+import { canSharePost } from '../../lib/canSharePost';
+import { resolveDateFnsLocale } from '../../lib/resolveDateFnsLocale';
 import { sharePost } from '../../lib/sharePost';
 import { buildPostShareMessage } from '../../lib/buildPostShareMessage';
+import { useAuthStore } from '../../store/authStore';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
 
 const POST_IMAGES_BUCKET = 'post-images';
@@ -24,7 +26,8 @@ interface Props {
 }
 
 export function PostShareButton({ post }: Props) {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const styles = usePostShareButtonStyles();
   const { colors } = useTheme();
   const showToast = useFeedSessionStore((s) => s.showEphemeralToast);
@@ -43,11 +46,12 @@ export function PostShareButton({ post }: Props) {
       });
       const postedAt = formatDistanceToNow(new Date(post.createdAt), {
         addSuffix: true,
-        locale: dateFnsHe,
+        locale: resolveDateFnsLocale(i18n.language),
       });
       const message = buildPostShareMessage(
         {
           type: post.type,
+          status: post.status === 'closed_delivered' ? 'closed_delivered' : 'open',
           title: post.title,
           description: post.description,
           category: post.category,
@@ -86,6 +90,7 @@ export function PostShareButton({ post }: Props) {
     post.postId,
     post.title,
     post.type,
+    post.status,
     post.description,
     post.category,
     post.address,
@@ -94,9 +99,10 @@ export function PostShareButton({ post }: Props) {
     post.mediaAssets,
     showToast,
     t,
+    i18n.language,
   ]);
 
-  if (!canSharePost(post)) return null;
+  if (!canSharePost(post, viewerId)) return null;
 
   return (
     <Pressable
@@ -119,10 +125,6 @@ export function PostShareButton({ post }: Props) {
       )}
     </Pressable>
   );
-}
-
-export function canSharePost(post: PostWithOwner): boolean {
-  return post.status === 'open' && post.visibility === 'Public';
 }
 
 const usePostShareButtonStyles = makeUseStyles(() => ({

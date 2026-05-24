@@ -1,4 +1,4 @@
-// FR-POST-023 — composes the Hebrew message body that accompanies the share
+// FR-POST-023 — composes the localized message body that accompanies the share
 // URL. Pure function (no React, no i18next side-effects) so tests do not
 // bootstrap the i18n runtime. Caller appends the URL on its own trailing
 // line — keeping the URL outside this composer means platform branching in
@@ -9,20 +9,22 @@
 // Layout (one labeled line per field; labels wrapped in `*…*` so WhatsApp /
 // Telegram / Signal render them bold):
 //
-//   <headline>
+//   <headline — type × open|closed>
 //
 //   *<titleLabel>* <title>
 //   *<descriptionLabel>* <description>    <-- omitted when null/empty
 //   *<categoryLabel>* <category>          <-- always included, even "Other"
 //   *<locationLabel>* <address>           <-- city / city+street / full per displayLevel
 //   *<postedAtLabel>* <relativeTime>
+//   *<statusLabel>* <open|closed status>
 //
-//   <CTA>
+//   <CTA — type × open|closed>
 
 const DESCRIPTION_MAX = 200;
 
 export interface PostShareMessageInput {
   type: 'Give' | 'Request';
+  status: 'open' | 'closed_delivered';
   title: string;
   description: string | null;
   /** Category enum value (e.g. `Furniture`, `Other`). */
@@ -53,10 +55,33 @@ function renderAddress(input: PostShareMessageInput, t: ShareTranslate): string 
   return `${city}, ${input.address.street.trim()} ${input.address.streetNumber.trim()}`;
 }
 
+function shareLifecycleSuffix(status: PostShareMessageInput['status']): 'Open' | 'Closed' {
+  return status === 'closed_delivered' ? 'Closed' : 'Open';
+}
+
+function shareHeadlineKey(input: PostShareMessageInput): string {
+  const suffix = shareLifecycleSuffix(input.status);
+  return input.type === 'Give'
+    ? `post.detail.shareHeadlineGive${suffix}`
+    : `post.detail.shareHeadlineRequest${suffix}`;
+}
+
+function shareCtaKey(input: PostShareMessageInput): string {
+  const suffix = shareLifecycleSuffix(input.status);
+  return input.type === 'Give'
+    ? `post.detail.shareCtaGive${suffix}`
+    : `post.detail.shareCtaRequest${suffix}`;
+}
+
+function shareStatusValue(input: PostShareMessageInput, t: ShareTranslate): string {
+  return input.status === 'closed_delivered'
+    ? t('post.detail.statusClosed')
+    : t('post.detail.statusOpen');
+}
+
 export function buildPostShareMessage(post: PostShareMessageInput, t: ShareTranslate): string {
-  const isGive = post.type === 'Give';
-  const headline = t(isGive ? 'post.detail.shareHeadlineGive' : 'post.detail.shareHeadlineRequest');
-  const cta = t(isGive ? 'post.detail.shareCtaGive' : 'post.detail.shareCtaRequest');
+  const headline = t(shareHeadlineKey(post));
+  const cta = t(shareCtaKey(post));
 
   const lines: string[] = [headline, ''];
   lines.push(bold(t('post.detail.shareLabelTitle'), post.title.trim()));
@@ -69,6 +94,7 @@ export function buildPostShareMessage(post: PostShareMessageInput, t: ShareTrans
   lines.push(bold(t('post.detail.shareLabelCategory'), t(`post.category.${post.category}`)));
   lines.push(bold(t('post.detail.shareLabelLocation'), renderAddress(post, t)));
   lines.push(bold(t('post.detail.shareLabelPostedAt'), post.postedAt));
+  lines.push(bold(t('post.detail.shareLabelStatus'), shareStatusValue(post, t)));
 
   lines.push('', cta);
   return lines.join('\n');

@@ -559,9 +559,11 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
-## D-26 — Post visibility vs per-actor identity on posts (2026-05-16)
+## D-26 — Post visibility vs per-actor identity on posts (2026-05-16, partially superseded by D-39)
 
-**Decision.** Keep `Post.visibility` / `is_post_visible_to` as the **community audience** control for post listings (`FR-POST-009`). Add a separate per-`(post_id, user_id)` policy (`post_actor_identity`) for **how that user's identity is rendered on post surfaces** (feed cards, post detail author/recipient rows) including the **`hide_from_counterparty` third-party mask on the counterparty's profile surface (`D-31`)** and the coupling rule: when the post is `OnlyMe` for the owner, the owner is always anonymous to the counterparty on those surfaces. **Profiles and chat participants** stay real-user shells; chat anchors remain **open posts only** (existing anchor lifecycle).
+> **Note (2026-05-24, `D-39`).** The "owner OnlyMe → counterparty sees anonymous on post chrome" coupling clause is **removed**. Under the dual-surface model the counterparty always sees the actor's real identity on post chrome (chat is the mutual-recognition surface). The rest of D-26 (separate identity-chrome policy, `hide_from_counterparty` semantics, profile/chat invariants) stands.
+
+**Decision.** Keep `Post.visibility` / `is_post_visible_to` as the **community audience** control for post listings (`FR-POST-009`). Add a separate per-`(post_id, user_id)` policy (`post_actor_identity`) for **how that user's identity is rendered on post surfaces** (feed cards, post detail author/recipient rows) including the **`hide_from_counterparty` third-party mask on the counterparty's profile surface (`D-31`)**. **Profiles and chat participants** stay real-user shells; chat anchors remain **open posts only** (existing anchor lifecycle).
 
 **Rationale.** Product requires independent axes: a post can be broadly visible while a participant limits how **third parties** see them on the partner's profile surface (`D-31`), and vice versa. Collapsing both into `visibility` would break `FR-POST-009` invariants and blur UX.
 
@@ -671,7 +673,9 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
-## D-34 — Closed-post Hide fans out to `posts.visibility` + `surface_visibility` (2026-05-17)
+## D-34 — Closed-post Hide fans out to `posts.visibility` + `surface_visibility` (2026-05-17, superseded by D-39)
+
+> **Superseded (2026-05-24, `D-39`).** Migration `0107_profile_closed_posts_surface_visibility.sql` moves Hidden-screen / Closed-tab routing onto effective `surface_visibility`. The `posts.visibility` fan-out is removed; the closed-post Hide control writes only `post_actor_identity` (and auto-couples `hide_from_counterparty = true`). The legacy fallback to `posts.visibility` is preserved inside the RPC's `coalesce`, so pre-D-39 rows still resolve correctly without a backfill.
 
 **Context.** `FR-PROFILE-001 AC4` defines the Hidden overflow screen as "the owner's `Only me` posts (`open` and `closed` lanes)" and excludes those rows from the Closed Posts tab. The owner's "פוסטים סגורים" tab spec (FR-PROFILE-001 AC4) explicitly excludes rows "where the owner published at `posts.visibility = OnlyMe`". The supporting RPC `profile_closed_posts` (migration 0088) keys both lanes on `posts.visibility = 'OnlyMe'`. Meanwhile `D-28` introduced per-participant `post_actor_identity.surface_visibility` to govern third-party access via each participant's profile tab.
 
@@ -740,6 +744,50 @@ The mobile ⋮ exposure block (`PostMenuExposureBlock`) previously routed the "�
 **Alternatives rejected.** *Prod migrations manual-only forever* — rejected as redundant once PR gates are trusted. *Apply prod on every push regardless of paths* — rejected to avoid no-op deploy noise and accidental triggers unrelated to schema.
 
 **Affected docs.** `docs/SSOT/ENVIRONMENTS.md`, `docs/SSOT/OPERATOR_RUNBOOK.md`, `.github/workflows/db-deploy.yml`.
+
+---
+
+## D-39 — Dual-surface closed-post privacy: surface_visibility is sole truth, counterparty always sees actor (2026-05-24)
+
+**Context.** Closed posts share **one physical post** but render across **two profile surfaces** (publisher + respondent). PM definition of `FR-POST-021` requires each participant to control their own surface independently, while the counterparty stays the mutual-recognition surface (chat already exposes real identities). Two pre-existing decisions conflicted with this:
+
+1. `D-26` masked the owner's identity to the counterparty whenever `posts.visibility = OnlyMe`. Under the dual-surface model, OnlyMe is a **per-surface audience control**, not a relationship-level signal — the partner has always-on read access and should see the actor's real chrome.
+2. `D-34` fanned out the closed-post Hide control to both `posts.visibility` and `post_actor_identity.surface_visibility` so the Hidden-screen RPC (`profile_closed_posts`, keyed on `posts.visibility`) routed correctly. This made `posts.visibility` a second, parallel truth for closed-post audience — confusing and fragile.
+
+Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy-design.md`.
+
+**Decision.**
+
+1. **Counterparty always sees actor full on post chrome.** Remove the `D-26` owner-OnlyMe → counterparty mask in `projectActorIdentityForViewer`. The partner-only invariant (`D-31`) becomes the single rule for the counterparty seat.
+2. **`surface_visibility = OnlyMe` always masks third parties on the partner's surface**, regardless of `hide_from_counterparty`. Showing an OnlyMe author with full chrome on the partner's public tab would defeat the privacy intent — the user wanted "private from third parties" and the partner-surface fallback contradicts that. The `hide_from_counterparty` toggle continues to control third-party masking when audience is Public / FollowersOnly. (Spec design table AC-DSP-3, which allowed opt-out, is updated accordingly.)
+3. **`surface_visibility` is the sole truth for closed-post audience** on each participant's own profile surface. Migration `0107_profile_closed_posts_surface_visibility.sql` rewrites `profile_closed_posts` to gate Hidden mode and Standard own-profile exclusion on the **effective** per-actor surface (`post_actor_identity.surface_visibility`, falling back to `posts.visibility` for the publisher and `'Public'` for the respondent). The mobile Hide control writes only `post_actor_identity` (and auto-couples `hide_from_counterparty = true`); the `posts.visibility` fan-out from `D-34` is removed.
+
+**Backwards-compatibility.** The `coalesce(post_actor_identity, posts.visibility)` fallback in the RPC preserves legacy rows (pre-D-39 posts that have `posts.visibility = OnlyMe` but no `post_actor_identity` row) without a backfill — they continue to land in Hidden and stay invisible to third parties. New writes flow through `post_actor_identity` only.
+
+**Rationale.**
+
+- The dual-surface metaphor ("one post, two billboards") requires symmetric controls per participant. `posts.visibility` could not express asymmetric audience without breaking owner-vs-respondent independence.
+- Removing the `D-26` counterparty mask removes a contradiction that had been latent since the spec invariant "partner always sees real identity on chat" was extended to post chrome. The two seats were never meant to behave differently on the chat-context surface.
+- Coupling `OnlyMe` to the third-party mask (regardless of `hide_from_counterparty`) preserves a single coherent meaning of "OnlyMe": the actor is private from everyone except the participants. The opt-out via `hide_from_counterparty = false` was a footgun — most users would not realize OnlyMe with identity hide off still exposed their name on the partner's tab.
+
+**Alternatives rejected.**
+
+- *Keep D-34 fan-out + just decouple D-26.* Leaves `posts.visibility` doing parallel work for a single user action. Brittle: any future field added to "closed post Hide" risks drifting between the two columns. Rejected for the same reason `D-28` superseded `D-19`'s closed-post visibility clause.
+- *Migrate Hidden/Closed routing entirely off `posts.visibility` without the legacy fallback.* Would require a one-time backfill of `post_actor_identity` rows for every legacy `posts.visibility = OnlyMe` closed post. The coalesce fallback is cheap and removes the operational risk.
+- *Allow opt-out from third-party mask on OnlyMe* (per the original design spec AC-DSP-3). Rejected by PM 2026-05-24 — the privacy semantics of OnlyMe should be unconditional.
+
+**Supersedes (in part).**
+- `D-26`: the owner-OnlyMe → counterparty mask clause is removed. The rest of `D-26` (separate identity-chrome policy, profile/chat invariants) stands.
+- `D-34`: the `posts.visibility` fan-out is removed; the Hidden-screen routing now reads `surface_visibility`. The `UpdatePostUseCase` visibility-only patch on closed states remains legal (legacy / admin paths) but the privacy UX no longer relies on it.
+
+**Affected docs / code.**
+- `spec/04_posts.md` (`FR-POST-021` AC3/AC4, `FR-POST-009` AC5, changelog 0.14).
+- `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy-design.md` (AC-DSP-3 + coupling matrix updated).
+- `packages/domain/src/postActorIdentity.ts` (removed `ownerOnlyMeCounterpartyMask`, removed `ownerPostVisibilityOnlyMe` from `ProjectActorViewerContext`).
+- `packages/application/src/posts/__tests__/postActorIdentity.test.ts`.
+- `packages/infrastructure-supabase/src/posts/applyPostActorIdentityProjection.ts`.
+- `apps/mobile/src/hooks/usePostActorPrivacyModel.ts` (no more `posts.visibility` fan-out).
+- `supabase/migrations/0107_profile_closed_posts_surface_visibility.sql`.
 
 ---
 

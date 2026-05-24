@@ -3,7 +3,6 @@
 import React from 'react';
 import { ScrollView, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
-import { spacing } from '@kc/ui';
 import { MyProfileChrome } from '../../../src/components/profile/MyProfileChrome';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { Screen } from '../../../src/components/ui/Screen';
@@ -31,7 +30,7 @@ export default function MyProfileOpenScreen() {
     <Screen blobs="content">
       <ScrollView
         style={styles.scroll}
-        contentContainerStyle={{ paddingBottom: spacing.base + tabBarPad }}
+        contentContainerStyle={{ paddingBottom: tabBarPad }}
         showsVerticalScrollIndicator={false}
       >
         <MyProfileChrome activeTab="open" />

@@ -3,30 +3,52 @@ import { buildPostShareMessage, type PostShareMessageInput, type ShareTranslate 
 
 const t: ShareTranslate = (key) => `t:${key}`;
 
-function base(): PostShareMessageInput {
+function base(overrides: Partial<PostShareMessageInput> = {}): PostShareMessageInput {
   return {
     type: 'Give',
+    status: 'open',
     title: 'שולחן עץ',
     description: 'שולחן יד-שנייה במצב מצוין',
     category: 'Furniture',
     address: { cityName: 'תל אביב', street: 'דיזנגוף', streetNumber: '99' },
     locationDisplayLevel: 'CityOnly',
     postedAt: 'לפני יומיים',
+    ...overrides,
   };
 }
 
 describe('buildPostShareMessage', () => {
-  it('renders the Give headline + CTA when type is Give', () => {
+  it('renders the Give open headline + CTA when type is Give and status is open', () => {
     const msg = buildPostShareMessage(base(), t);
-    expect(msg.startsWith('t:post.detail.shareHeadlineGive')).toBe(true);
-    expect(msg).toContain('t:post.detail.shareCtaGive');
-    expect(msg).not.toContain('t:post.detail.shareHeadlineRequest');
+    expect(msg.startsWith('t:post.detail.shareHeadlineGiveOpen')).toBe(true);
+    expect(msg).toContain('t:post.detail.shareCtaGiveOpen');
+    expect(msg).not.toContain('t:post.detail.shareHeadlineGiveClosed');
   });
 
-  it('renders the Request headline + CTA when type is Request', () => {
+  it('renders the Give closed headline + CTA when status is closed_delivered', () => {
+    const msg = buildPostShareMessage({ ...base(), status: 'closed_delivered' }, t);
+    expect(msg).toContain('t:post.detail.shareHeadlineGiveClosed');
+    expect(msg).toContain('t:post.detail.shareCtaGiveClosed');
+  });
+
+  it('renders the Request open headline + CTA when type is Request', () => {
     const msg = buildPostShareMessage({ ...base(), type: 'Request' }, t);
-    expect(msg).toContain('t:post.detail.shareHeadlineRequest');
-    expect(msg).toContain('t:post.detail.shareCtaRequest');
+    expect(msg).toContain('t:post.detail.shareHeadlineRequestOpen');
+    expect(msg).toContain('t:post.detail.shareCtaRequestOpen');
+  });
+
+  it('renders the Request closed headline + CTA when type is Request and closed', () => {
+    const msg = buildPostShareMessage({ ...base(), type: 'Request', status: 'closed_delivered' }, t);
+    expect(msg).toContain('t:post.detail.shareHeadlineRequestClosed');
+    expect(msg).toContain('t:post.detail.shareCtaRequestClosed');
+  });
+
+  it('includes a localized status line', () => {
+    const openMsg = buildPostShareMessage(base(), t);
+    expect(openMsg).toContain('*t:post.detail.shareLabelStatus* t:post.detail.statusOpen');
+
+    const closedMsg = buildPostShareMessage({ ...base(), status: 'closed_delivered' }, t);
+    expect(closedMsg).toContain('*t:post.detail.shareLabelStatus* t:post.detail.statusClosed');
   });
 
   it('wraps every label in bold asterisks', () => {
@@ -79,11 +101,8 @@ describe('buildPostShareMessage', () => {
     expect(msg).toContain('תל אביב, דיזנגוף 99');
   });
 
-  it('places the URL on its own final line when included via the consumer', () => {
+  it('ends with the lifecycle-specific CTA so the caller can append the URL', () => {
     const msg = buildPostShareMessage(base(), t);
-    // The composer does not append the URL itself — that is the caller's
-    // responsibility. We assert the composer ends with the CTA so the caller
-    // can append `\n${url}`.
-    expect(msg.endsWith('t:post.detail.shareCtaGive')).toBe(true);
+    expect(msg.endsWith('t:post.detail.shareCtaGiveOpen')).toBe(true);
   });
 });
