@@ -33,6 +33,7 @@ COPY --from=builder /repo/app/apps/mobile/web-server/package.json ./package.json
 RUN npm install --omit=dev
 
 COPY --from=builder /repo/app/apps/mobile/web-server/server.mjs ./server.mjs
+COPY --from=builder /repo/app/apps/mobile/web-server/i18n ./i18n
 COPY --from=builder /repo/app/apps/mobile/dist ./dist
 
 ENV PORT=3000
