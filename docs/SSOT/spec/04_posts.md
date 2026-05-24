@@ -488,13 +488,15 @@ A signed-in viewer of a `Public` post that is `open` or `closed_delivered` may s
 - AC1. The post-detail screen exposes a share affordance in the header — **in the trailing corner** (rightmost in RTL), with the existing ⋮ menu placed to its left — when `post.status` is `open` or `closed_delivered` and either (a) `post.visibility === 'Public'` for any viewer, or (b) the viewer is a **participant** on a `closed_delivered` post (post owner **or** marked recipient — including after Hide / `surface_visibility` / counterparty privacy). Image presence is not required.
 - AC2. Tapping the affordance opens the platform share sheet. The accompanying message body is composed per-post by `buildPostShareMessage` as a structured, scannable block of labeled lines (WhatsApp-style bold via `*…*`). All literal strings resolve through the active i18next locale (MVP: Hebrew only; keys live under `post.detail.share*` and reuse `post.detail.statusOpen` / `statusClosed`). Headline and CTA vary by **post type** (`Give` / `Request`) and **lifecycle** (`open` vs `closed_delivered`):
    1. `shareHeadlineGiveOpen` / `shareHeadlineGiveClosed` / `shareHeadlineRequestOpen` / `shareHeadlineRequestClosed` + blank line.
-   2. `*כותרת:* <title>`.
-   3. `*תיאור:* <description>` — truncated to 200 chars with `…`; whole line omitted when null/empty.
-   4. `*קטגוריה:* <category>` — always included, even for `Other`.
-   5. `*מיקום:* <address>` — `city`, `city + street`, or `city + street + number` per `locationDisplayLevel`.
-   6. `*פורסם:* <relativeTime>` — `formatDistanceToNow` with the date-fns locale mapped from `i18n.language`.
-   7. `*סטטוס:* <statusOpen|statusClosed>`.
-   8. Blank line, then `shareCtaGiveOpen` / `shareCtaGiveClosed` / `shareCtaRequestOpen` / `shareCtaRequestClosed`.
+   2. `*מפרסם:* <ownerDisplay>` — resolved via the same rules as post-detail owner chrome (`postOwnerDisplayLabel`): full name when identity is visible, `אנונימי` when masked.
+   3. `*שותף/ה:* <counterpartyDisplay>` — only when `status = closed_delivered` and a marked recipient exists; resolved via `postRecipientDisplayLabel` (mirrors `RecipientCallout`). Omitted for open posts.
+   4. `*כותרת:* <title>`.
+   5. `*תיאור:* <description>` — truncated to 200 chars with `…`; whole line omitted when null/empty.
+   6. `*קטגוריה:* <category>` — always included, even for `Other`.
+   7. `*מיקום:* <address>` — `city`, `city + street`, or `city + street + number` per `locationDisplayLevel`.
+   8. `*פורסם:* <relativeTime>` — `formatDistanceToNow` with the date-fns locale mapped from `i18n.language`.
+   9. `*סטטוס:* <statusOpen|statusClosed>`.
+   10. Blank line, then `shareCtaGiveOpen` / `shareCtaGiveClosed` / `shareCtaRequestOpen` / `shareCtaRequestClosed`.
    The share URL appears in the message body **exactly once** on every platform. iOS attaches the first image binary via the `url` field (`expo-file-system` cache download); Android never passes `url` (RN concatenates it onto EXTRA_TEXT, which is what caused the duplicated link in WhatsApp in the reverted version). Web uses `navigator.share({ files })` when Web Share Level 2 supports files; else `navigator.share({ title, text, url })`; else `navigator.clipboard.writeText(url)` with a Hebrew toast.
 - AC3. The share URL is `https://karma-community-kc.com/post/<id>` — the same URL as the in-app deep link, the universal-link claim path, and the SPA route. There is **no** Supabase URL anywhere — neither as the user-visible URL, nor in a redirect chain, nor in WhatsApp's preview "via" line. Built from `EXPO_PUBLIC_WEB_BASE_URL` (defaults to `https://karma-community-kc.com` when unset).
 - AC4. The Railway web service runs a Hono server (replaces `serve dist --single`) that, on `GET /post/:id` with a crawler UA, returns 200 `text/html` with `og:title`, `og:description`, `og:image`, `og:url`, `og:locale=he_IL`, `twitter:card=summary_large_image`. Posts the anon REST read cannot see (RLS), not-found, invalid UUIDs, and REST timeouts return a generic OG card pointing at the marketing landing — never the post's image or title.
@@ -518,6 +520,7 @@ A signed-in viewer of a `Public` post that is `open` or `closed_delivered` may s
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.15 | 2026-05-24 | `FR-POST-023` AC2 — share body adds `*מפרסם:*` (owner identity per `postOwnerDisplayLabel`) and `*שותף/ה:*` on closed posts with a marked recipient (`postRecipientDisplayLabel`). |
 | 0.14 | 2026-05-24 | `FR-POST-021` AC3/AC4 + `FR-POST-009` AC5 — dual-surface closed-post privacy (`D-39`). Hidden-screen routing now keys on effective participant `surface_visibility` (migration `0107`); `posts.visibility` fan-out removed from the closed-post Hide control. Counterparty always sees the actor's full identity on post chrome (`D-26` legacy owner-OnlyMe counterparty mask removed). `surface_visibility = OnlyMe` always implies third-party mask on the partner's surface even when `hide_from_counterparty = false`. Migration `0106` (recipients RLS for third-party post detail) shipped in the same set. |
 | 0.13 | 2026-05-24 | `FR-POST-023` — re-architected to eliminate Supabase-domain leak. Hono server on the Railway web service replaces the Supabase Edge Function. One canonical URL `https://karma-community-kc.com/post/<id>` for share + deep link + SPA route. Share body adds `*פורסם:*` (relative time); category line is always included (incl. `Other`); address mirrors the post-detail screen's `locationDisplayLevel`. |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |

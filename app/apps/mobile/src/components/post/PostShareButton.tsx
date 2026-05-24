@@ -16,6 +16,8 @@ import { canSharePost } from '../../lib/canSharePost';
 import { resolveDateFnsLocale } from '../../lib/resolveDateFnsLocale';
 import { sharePost } from '../../lib/sharePost';
 import { buildPostShareMessage } from '../../lib/buildPostShareMessage';
+import { postOwnerDisplayLabel } from '../../lib/postOwnerDisplayLabel';
+import { postRecipientDisplayLabel } from '../../lib/postRecipientDisplayLabel';
 import { useAuthStore } from '../../store/authStore';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
 
@@ -48,16 +50,24 @@ export function PostShareButton({ post }: Props) {
         addSuffix: true,
         locale: resolveDateFnsLocale(i18n.language),
       });
+      const shareStatus = post.status === 'closed_delivered' ? 'closed_delivered' : 'open';
+      const recipientNavigable = (post.recipientProfileNavigableFromPost ?? true) === true;
+      const counterpartyLabel =
+        shareStatus === 'closed_delivered' && post.recipientUser
+          ? postRecipientDisplayLabel(post.recipientUser, recipientNavigable, t)
+          : null;
       const message = buildPostShareMessage(
         {
           type: post.type,
-          status: post.status === 'closed_delivered' ? 'closed_delivered' : 'open',
+          status: shareStatus,
           title: post.title,
           description: post.description,
           category: post.category,
           address: post.address,
           locationDisplayLevel: post.locationDisplayLevel,
           postedAt,
+          publisherLabel: postOwnerDisplayLabel(post, t),
+          counterpartyLabel,
         },
         t,
       );
@@ -97,6 +107,10 @@ export function PostShareButton({ post }: Props) {
     post.locationDisplayLevel,
     post.createdAt,
     post.mediaAssets,
+    post.ownerName,
+    post.ownerProfileNavigableFromPost,
+    post.recipientUser,
+    post.recipientProfileNavigableFromPost,
     showToast,
     t,
     i18n.language,

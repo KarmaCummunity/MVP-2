@@ -13,6 +13,7 @@ function base(overrides: Partial<PostShareMessageInput> = {}): PostShareMessageI
     address: { cityName: 'תל אביב', street: 'דיזנגוף', streetNumber: '99' },
     locationDisplayLevel: 'CityOnly',
     postedAt: 'לפני יומיים',
+    publisherLabel: 'דנה',
     ...overrides,
   };
 }
@@ -104,5 +105,40 @@ describe('buildPostShareMessage', () => {
   it('ends with the lifecycle-specific CTA so the caller can append the URL', () => {
     const msg = buildPostShareMessage(base(), t);
     expect(msg.endsWith('t:post.detail.shareCtaGiveOpen')).toBe(true);
+  });
+
+  it('includes the publisher line for every post', () => {
+    const msg = buildPostShareMessage(base({ publisherLabel: 'דנה' }), t);
+    expect(msg).toContain('*t:post.detail.shareLabelPublisher* דנה');
+  });
+
+  it('shows anonymous publisher label when passed', () => {
+    const msg = buildPostShareMessage(
+      base({ publisherLabel: 't:post.detail.anonymousUser' }),
+      t,
+    );
+    expect(msg).toContain('*t:post.detail.shareLabelPublisher* t:post.detail.anonymousUser');
+  });
+
+  it('includes counterparty only on closed posts with a label', () => {
+    const openMsg = buildPostShareMessage(
+      base({ counterpartyLabel: 'יוסי' }),
+      t,
+    );
+    expect(openMsg).not.toContain('shareLabelCounterparty');
+
+    const closedMsg = buildPostShareMessage(
+      base({ status: 'closed_delivered', counterpartyLabel: 'יוסי' }),
+      t,
+    );
+    expect(closedMsg).toContain('*t:post.detail.shareLabelCounterparty* יוסי');
+  });
+
+  it('omits counterparty when closed but label is empty', () => {
+    const msg = buildPostShareMessage(
+      base({ status: 'closed_delivered', counterpartyLabel: '   ' }),
+      t,
+    );
+    expect(msg).not.toContain('shareLabelCounterparty');
   });
 });

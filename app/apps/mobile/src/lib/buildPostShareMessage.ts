@@ -11,6 +11,8 @@
 //
 //   <headline — type × open|closed>
 //
+//   *<publisherLabel>* <name|anonymous>
+//   *<counterpartyLabel>* <name|anonymous>   <-- closed_delivered + marked recipient only
 //   *<titleLabel>* <title>
 //   *<descriptionLabel>* <description>    <-- omitted when null/empty
 //   *<categoryLabel>* <category>          <-- always included, even "Other"
@@ -33,6 +35,10 @@ export interface PostShareMessageInput {
   locationDisplayLevel: 'CityOnly' | 'CityAndStreet' | 'FullAddress';
   /** Already-formatted relative time, e.g. "לפני יומיים". */
   postedAt: string;
+  /** Resolved owner line (name, deleted fallback, or anonymous). */
+  publisherLabel: string;
+  /** Resolved counterparty when closed + marked recipient; omit for open posts. */
+  counterpartyLabel?: string | null;
 }
 
 export type ShareTranslate = (key: string, params?: Record<string, string>) => string;
@@ -84,6 +90,13 @@ export function buildPostShareMessage(post: PostShareMessageInput, t: ShareTrans
   const cta = t(shareCtaKey(post));
 
   const lines: string[] = [headline, ''];
+  lines.push(bold(t('post.detail.shareLabelPublisher'), post.publisherLabel));
+
+  const counterparty = (post.counterpartyLabel ?? '').trim();
+  if (post.status === 'closed_delivered' && counterparty !== '') {
+    lines.push(bold(t('post.detail.shareLabelCounterparty'), counterparty));
+  }
+
   lines.push(bold(t('post.detail.shareLabelTitle'), post.title.trim()));
 
   const description = (post.description ?? '').trim();

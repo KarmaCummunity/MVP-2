@@ -153,6 +153,8 @@ export const postHe = {
     shareLabelLocation: 'מיקום:',
     shareLabelPostedAt: 'פורסם:',
     shareLabelStatus: 'סטטוס:',
+    shareLabelPublisher: 'מפרסם:',
+    shareLabelCounterparty: 'שותף/ה:',
     shareCtaGiveOpen: 'אולי זה בדיוק בשבילכם — לחצו לפרטים 👇',
     shareCtaGiveClosed: 'לצפייה בפרטי המסירה — לחצו כאן 👇',
     shareCtaRequestOpen: 'אם תוכלו לעזור — לחצו לפרטים 👇',
