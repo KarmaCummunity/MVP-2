@@ -34,6 +34,7 @@
     "expo-crypto": "~15.0.9",
     "expo-dev-client": "~6.0.21",
     "expo-device": "~7.0",
+    "expo-file-system": "~19.0.22",
     "expo-font": "~14.0.11",
     "expo-haptics": "~15.0.8",
     "expo-image-manipulator": "~14.0.0",
@@ -63,7 +64,9 @@
   },
   "devDependencies": {
     "@babel/core": "^7.25.0",
+    "@testing-library/react": "^16.1.0",
     "@types/react": "~19.1.17",
+    "jsdom": "^25.0.1",
     "typescript": "^5.9.3",
     "vitest": "^2.1.0"
   }

@@ -65,7 +65,7 @@ function pickStorage(): SupabaseAuthStorage | undefined {
   return createAuthSecureStorage();
 }
 
-function getAuthService(): IAuthService {
+export function getAuthService(): IAuthService {
   if (_authService) return _authService;
   const client = getSupabaseClient({ storage: pickStorage() });
   _authService = new SupabaseAuthService(client);

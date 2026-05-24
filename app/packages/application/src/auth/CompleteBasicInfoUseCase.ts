@@ -2,6 +2,7 @@
  *  advance onboarding_state pending_basic_info → pending_avatar.
  *  City id+name come from the caller (CityPicker); DB FK is the final guard. */
 import { STREET_NUMBER_PATTERN } from '@kc/domain';
+import type { IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
 import { OnboardingError } from './errors';
 
@@ -18,7 +19,10 @@ export interface CompleteBasicInfoInput {
 }
 
 export class CompleteBasicInfoUseCase {
-  constructor(private readonly users: IUserRepository) {}
+  constructor(
+    private readonly users: IUserRepository,
+    private readonly auth: IAuthService,
+  ) {}
 
   async execute(input: CompleteBasicInfoInput): Promise<void> {
     const trimmedName = input.displayName.trim();
@@ -68,5 +72,6 @@ export class CompleteBasicInfoUseCase {
     }
     await this.users.setContactPhone(input.userId, phone.length > 0 ? phone : null);
     await this.users.setOnboardingState(input.userId, 'pending_avatar');
+    await this.auth.syncProfileMetadata({ displayName: trimmedName });
   }
 }

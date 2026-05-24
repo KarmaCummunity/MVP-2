@@ -2,6 +2,7 @@
  *  a single atomic `UPDATE users SET ...` (audit §3.5 — was Promise.all of
  *  four independent writes). Typed `ProfileError` codes per audit §3.6. */
 import { BIOGRAPHY_MAX_LENGTH, STREET_NUMBER_PATTERN, containsBiographyUrl } from '@kc/domain';
+import type { AuthProfileMetadataPatch, IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
 import { ProfileError } from './errors';
 
@@ -19,7 +20,10 @@ export interface UpdateProfileInput {
 }
 
 export class UpdateProfileUseCase {
-  constructor(private readonly users: IUserRepository) {}
+  constructor(
+    private readonly users: IUserRepository,
+    private readonly auth: IAuthService,
+  ) {}
 
   async execute(input: UpdateProfileInput): Promise<void> {
     if (!input.userId.trim()) throw new ProfileError('invalid_user_id');
@@ -90,5 +94,17 @@ export class UpdateProfileUseCase {
 
     if (Object.keys(patch).length === 0) throw new ProfileError('empty_patch');
     await this.users.updateEditableProfile(input.userId, patch);
+    const metaPatch = toAuthMetadataPatch(patch);
+    if (metaPatch) await this.auth.syncProfileMetadata(metaPatch);
   }
+}
+
+function toAuthMetadataPatch(
+  patch: Parameters<IUserRepository['updateEditableProfile']>[1],
+): AuthProfileMetadataPatch | null {
+  if (patch.displayName === undefined && patch.avatarUrl === undefined) return null;
+  return {
+    ...(patch.displayName !== undefined ? { displayName: patch.displayName } : {}),
+    ...(patch.avatarUrl !== undefined ? { avatarUrl: patch.avatarUrl } : {}),
+  };
 }

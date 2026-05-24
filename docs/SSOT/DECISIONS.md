@@ -559,9 +559,11 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
-## D-26 — Post visibility vs per-actor identity on posts (2026-05-16)
+## D-26 — Post visibility vs per-actor identity on posts (2026-05-16, partially superseded by D-39)
 
-**Decision.** Keep `Post.visibility` / `is_post_visible_to` as the **community audience** control for post listings (`FR-POST-009`). Add a separate per-`(post_id, user_id)` policy (`post_actor_identity`) for **how that user's identity is rendered on post surfaces** (feed cards, post detail author/recipient rows) including the **`hide_from_counterparty` third-party mask on the counterparty's profile surface (`D-31`)** and the coupling rule: when the post is `OnlyMe` for the owner, the owner is always anonymous to the counterparty on those surfaces. **Profiles and chat participants** stay real-user shells; chat anchors remain **open posts only** (existing anchor lifecycle).
+> **Note (2026-05-24, `D-39`).** The "owner OnlyMe → counterparty sees anonymous on post chrome" coupling clause is **removed**. Under the dual-surface model the counterparty always sees the actor's real identity on post chrome (chat is the mutual-recognition surface). The rest of D-26 (separate identity-chrome policy, `hide_from_counterparty` semantics, profile/chat invariants) stands.
+
+**Decision.** Keep `Post.visibility` / `is_post_visible_to` as the **community audience** control for post listings (`FR-POST-009`). Add a separate per-`(post_id, user_id)` policy (`post_actor_identity`) for **how that user's identity is rendered on post surfaces** (feed cards, post detail author/recipient rows) including the **`hide_from_counterparty` third-party mask on the counterparty's profile surface (`D-31`)**. **Profiles and chat participants** stay real-user shells; chat anchors remain **open posts only** (existing anchor lifecycle).
 
 **Rationale.** Product requires independent axes: a post can be broadly visible while a participant limits how **third parties** see them on the partner's profile surface (`D-31`), and vice versa. Collapsing both into `visibility` would break `FR-POST-009` invariants and blur UX.
 
@@ -671,7 +673,9 @@ Spec: `docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md` · Plan: `doc
 
 ---
 
-## D-34 — Closed-post Hide fans out to `posts.visibility` + `surface_visibility` (2026-05-17)
+## D-34 — Closed-post Hide fans out to `posts.visibility` + `surface_visibility` (2026-05-17, superseded by D-39)
+
+> **Superseded (2026-05-24, `D-39`).** Migration `0107_profile_closed_posts_surface_visibility.sql` moves Hidden-screen / Closed-tab routing onto effective `surface_visibility`. The `posts.visibility` fan-out is removed; the closed-post Hide control writes only `post_actor_identity` (and auto-couples `hide_from_counterparty = true`). The legacy fallback to `posts.visibility` is preserved inside the RPC's `coalesce`, so pre-D-39 rows still resolve correctly without a backfill.
 
 **Context.** `FR-PROFILE-001 AC4` defines the Hidden overflow screen as "the owner's `Only me` posts (`open` and `closed` lanes)" and excludes those rows from the Closed Posts tab. The owner's "פוסטים סגורים" tab spec (FR-PROFILE-001 AC4) explicitly excludes rows "where the owner published at `posts.visibility = OnlyMe`". The supporting RPC `profile_closed_posts` (migration 0088) keys both lanes on `posts.visibility = 'OnlyMe'`. Meanwhile `D-28` introduced per-participant `post_actor_identity.surface_visibility` to govern third-party access via each participant's profile tab.
 
@@ -711,6 +715,24 @@ The mobile ⋮ exposure block (`PostMenuExposureBlock`) previously routed the "�
 
 ---
 
+## D-38 — Profile display fields: DB source of truth + Auth `user_metadata` sync (2026-05-24)
+
+**Context.** My Profile briefly flashed the user's original OAuth name/avatar after refresh because `MyProfileChrome` fell back to `AuthSession` (JWT `user_metadata`) while React Query fetched `public.users`. `UpdateProfileUseCase` updated only Postgres, not Auth metadata, so the JWT stayed stale across cold starts.
+
+**Decision.**
+1. **`public.users` remains canonical** for profile UI (`findById` / `user-profile` query).
+2. **`IAuthService.syncProfileMetadata`** writes `full_name`/`name` and `avatar_url`/`picture` on every profile write path (`UpdateProfileUseCase`, `SetAvatarUseCase`, `CompleteBasicInfoUseCase`).
+3. **`ReconcileAuthProfileMetadataUseCase`** runs once after session restore (AuthGate) to heal legacy drift without forcing a re-save.
+4. **My Profile** shows a loading state until the profile query resolves — no session fallback for name/avatar.
+
+**Rationale.** Keeps clean architecture (auth port in application layer, Supabase adapter in infrastructure) and fixes both new edits and existing accounts. UI loading state is defense-in-depth during the reconcile/network window.
+
+**Alternatives rejected.** *Session-only display (no DB read)* — wrong for counters/privacy/city. *UI-only fix (hide fallback)* — leaves JWT stale for other consumers. *DB trigger to sync auth* — couples Postgres to GoTrue internals; client port is sufficient for MVP.
+
+**Affected docs.** `spec/01_auth_and_onboarding.md` FR-AUTH-003 AC5, `spec/02_profile_and_privacy.md` FR-PROFILE-007 AC6.
+
+---
+
 ## D-37 — Prod DB migrations auto-apply on `main` after CI-gated merge (2026-05-22)
 
 **Context.** Migrations are validated on every PR / branch push via **DB validate** (fresh local Supabase + `supabase/tests/*.sql`). Previously, production (`supabase-prod`) required a manual `workflow_dispatch` with `apply=true` after merging `dev` → `main`, which added friction without adding a second correctness gate.
@@ -725,10 +747,92 @@ The mobile ⋮ exposure block (`PostMenuExposureBlock`) previously routed the "�
 
 ---
 
+## D-39 — Dual-surface closed-post privacy: surface_visibility is sole truth, counterparty always sees actor (2026-05-24)
+
+**Context.** Closed posts share **one physical post** but render across **two profile surfaces** (publisher + respondent). PM definition of `FR-POST-021` requires each participant to control their own surface independently, while the counterparty stays the mutual-recognition surface (chat already exposes real identities). Two pre-existing decisions conflicted with this:
+
+1. `D-26` masked the owner's identity to the counterparty whenever `posts.visibility = OnlyMe`. Under the dual-surface model, OnlyMe is a **per-surface audience control**, not a relationship-level signal — the partner has always-on read access and should see the actor's real chrome.
+2. `D-34` fanned out the closed-post Hide control to both `posts.visibility` and `post_actor_identity.surface_visibility` so the Hidden-screen RPC (`profile_closed_posts`, keyed on `posts.visibility`) routed correctly. This made `posts.visibility` a second, parallel truth for closed-post audience — confusing and fragile.
+
+Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy-design.md`.
+
+**Decision.**
+
+1. **Counterparty always sees actor full on post chrome.** Remove the `D-26` owner-OnlyMe → counterparty mask in `projectActorIdentityForViewer`. The partner-only invariant (`D-31`) becomes the single rule for the counterparty seat.
+2. **`surface_visibility = OnlyMe` always masks third parties on the partner's surface**, regardless of `hide_from_counterparty`. Showing an OnlyMe author with full chrome on the partner's public tab would defeat the privacy intent — the user wanted "private from third parties" and the partner-surface fallback contradicts that. The `hide_from_counterparty` toggle continues to control third-party masking when audience is Public / FollowersOnly. (Spec design table AC-DSP-3, which allowed opt-out, is updated accordingly.)
+3. **`surface_visibility` is the sole truth for closed-post audience** on each participant's own profile surface. Migration `0107_profile_closed_posts_surface_visibility.sql` rewrites `profile_closed_posts` to gate Hidden mode and Standard own-profile exclusion on the **effective** per-actor surface (`post_actor_identity.surface_visibility`, falling back to `posts.visibility` for the publisher and `'Public'` for the respondent). The mobile Hide control writes only `post_actor_identity` (and auto-couples `hide_from_counterparty = true`); the `posts.visibility` fan-out from `D-34` is removed.
+
+**Backwards-compatibility.** The `coalesce(post_actor_identity, posts.visibility)` fallback in the RPC preserves legacy rows (pre-D-39 posts that have `posts.visibility = OnlyMe` but no `post_actor_identity` row) without a backfill — they continue to land in Hidden and stay invisible to third parties. New writes flow through `post_actor_identity` only.
+
+**Rationale.**
+
+- The dual-surface metaphor ("one post, two billboards") requires symmetric controls per participant. `posts.visibility` could not express asymmetric audience without breaking owner-vs-respondent independence.
+- Removing the `D-26` counterparty mask removes a contradiction that had been latent since the spec invariant "partner always sees real identity on chat" was extended to post chrome. The two seats were never meant to behave differently on the chat-context surface.
+- Coupling `OnlyMe` to the third-party mask (regardless of `hide_from_counterparty`) preserves a single coherent meaning of "OnlyMe": the actor is private from everyone except the participants. The opt-out via `hide_from_counterparty = false` was a footgun — most users would not realize OnlyMe with identity hide off still exposed their name on the partner's tab.
+
+**Alternatives rejected.**
+
+- *Keep D-34 fan-out + just decouple D-26.* Leaves `posts.visibility` doing parallel work for a single user action. Brittle: any future field added to "closed post Hide" risks drifting between the two columns. Rejected for the same reason `D-28` superseded `D-19`'s closed-post visibility clause.
+- *Migrate Hidden/Closed routing entirely off `posts.visibility` without the legacy fallback.* Would require a one-time backfill of `post_actor_identity` rows for every legacy `posts.visibility = OnlyMe` closed post. The coalesce fallback is cheap and removes the operational risk.
+- *Allow opt-out from third-party mask on OnlyMe* (per the original design spec AC-DSP-3). Rejected by PM 2026-05-24 — the privacy semantics of OnlyMe should be unconditional.
+
+**Supersedes (in part).**
+- `D-26`: the owner-OnlyMe → counterparty mask clause is removed. The rest of `D-26` (separate identity-chrome policy, profile/chat invariants) stands.
+- `D-34`: the `posts.visibility` fan-out is removed; the Hidden-screen routing now reads `surface_visibility`. The `UpdatePostUseCase` visibility-only patch on closed states remains legal (legacy / admin paths) but the privacy UX no longer relies on it.
+
+**Affected docs / code.**
+- `spec/04_posts.md` (`FR-POST-021` AC3/AC4, `FR-POST-009` AC5, changelog 0.14).
+- `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy-design.md` (AC-DSP-3 + coupling matrix updated).
+- `packages/domain/src/postActorIdentity.ts` (removed `ownerOnlyMeCounterpartyMask`, removed `ownerPostVisibilityOnlyMe` from `ProjectActorViewerContext`).
+- `packages/application/src/posts/__tests__/postActorIdentity.test.ts`.
+- `packages/infrastructure-supabase/src/posts/applyPostActorIdentityProjection.ts`.
+- `apps/mobile/src/hooks/usePostActorPrivacyModel.ts` (no more `posts.visibility` fan-out).
+- `supabase/migrations/0107_profile_closed_posts_surface_visibility.sql`.
+
+---
+
+## D-RESP-001 — Desktop adaptation strategy (2026-05-22)
+
+**Context.** The app renders on web via `react-native-web` but looks like a stretched phone on desktop browsers. Three high-level strategies were considered: centered phone shell (Instagram.com style), adapted side-rail (X/Twitter style), full desktop rewrite (Facebook style).
+
+**Decision.**
+1. **Strategy: adapted side rail + wider content + secondary aside panel.** Same code, additive layout primitives gated by viewport width.
+2. **Shell: wide labeled rail (≥1024) + content + 280px aside panel (≥1024).** No top bar.
+3. **Chat: inbox pattern (list + thread side-by-side) at ≥768.**
+4. **Forms / settings: narrow centered (600px max).**
+5. **Auth / onboarding: split-screen with brand panel.**
+6. **Breakpoints: <768 mobile / 768–1023 tablet / 1024–1439 desktop / ≥1440 wide.**
+
+**Consequences.**
+- Mobile path stays byte-identical (hard invariant; CI snapshot at 375px guards it).
+- Five-PR delivery (`RESP-001..005`); each ships independently behind the `SHELL_V2_ENABLED` flag until PR 2 flips the default.
+- New shell primitives live in `@kc/ui` (pure) and `apps/mobile/src/components/shell/` (composition).
+- New SSOT spec file `14_responsive_desktop.md` created (FR-RESP-*).
+
+---
+
+## D-38 — Share-post OG meta is served by the Railway web server, not a Supabase Edge Function (2026-05-24)
+
+**Decision.** The share URL is `https://karma-community-kc.com/post/<id>`, and the same URL serves both the OG meta stub (for crawler UAs) and the SPA `index.html` (for humans). The OG rendering logic lives in a Hono server that runs in the same Railway service as the existing web bundle, replacing `serve dist --single`. No Supabase Edge Function is involved in the share-link surface.
+
+**Rationale.** The prior implementation (PRs #356–#366, reverted in `81b96d6`) routed crawlers + humans through `<ref>.supabase.co/functions/v1/share-post/<id>`. That URL appeared in user-visible share messages, in WhatsApp's preview-card "via" line, and in the redirect chain — undermining the "professional, branded" share UX the PM asked for. Layering a `kc.com/p/:id` 302-redirect on top via `serve.json` reduced the user-visible URL but did not eliminate the Supabase domain from the chain (or from the user-visible URL when `EXPO_PUBLIC_SHARE_BASE_URL` was misconfigured, which is what shipped). Moving OG rendering into the Railway server eliminates the entire class of bug at the architecture level: there is only one host, only one URL, and no redirect chain.
+
+**Alternatives rejected.**
+- *Supabase Custom Domain (Pro plan).* Requires paid plan; still ships with two URLs (share URL ≠ deep link) and a 302 redirect for humans.
+- *Cloudflare Worker in front of Railway.* Adds a second deployment surface and depends on CF for the OG path. Overkill at current scale.
+- *Pre-rendered static OG pages.* Would not survive post closure / deletion (stale OG card).
+
+**Trade-offs accepted.** The Railway web service is now the critical path for `/post/<id>` crawler responses in addition to the SPA. Mitigated by the small Hono surface (one dynamic route), local + CI tests against the server, and the fact that any failure mode is the same as a general web-service outage (which is already monitored).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 2.9 | 2026-05-24 | Added `D-38` (share-post OG meta served by Railway Hono server; eliminates Supabase-domain leak from share URL and redirect chain; replaces `serve dist --single`). |
+| 2.9 | 2026-05-24 | Added `D-38` (profile display: `public.users` canonical; sync Auth `user_metadata` on write + cold-start reconcile; My Profile no JWT fallback). |
+| 2.8 | 2026-05-22 | Added `D-RESP-001` (desktop adaptation strategy: adapted side rail + 280px aside panel, inbox chat, split-screen auth, 4-tier breakpoints, `SHELL_V2_ENABLED` flag, five-PR delivery `FR-RESP-001..005`). |
 | 2.7 | 2026-05-22 | Added `D-37` (auto `db-deploy` to `supabase-prod` on `main` push when migration paths change; manual dispatch retained). |
 | 2.6 | 2026-05-18 | Added `D-36` (canonical streets from data.gov.il package 321; zero filtering, free-text fallback, city-dependent picker with onboarding progressive disclosure). |
 | 2.5 | 2026-05-17 | Added `D-35` (`posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status). |

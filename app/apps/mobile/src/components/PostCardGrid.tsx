@@ -6,14 +6,18 @@ import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
 import { he as dateFnsHe } from 'date-fns/locale';
 import { useTranslation } from 'react-i18next';
-import { useTheme } from '@kc/ui';
+import { useTheme, spacing } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
+import { usePostGridCardWidth } from '../hooks/useShellContentWidth';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
+import { AvatarInitials } from './AvatarInitials';
 import { PostMenuButton } from './post/PostMenuButton';
 import { usePostCardGridStyles } from './PostCardGrid.styles';
 
 const STORAGE_BUCKET = 'post-images';
+const OWNER_AVATAR_SIZE = 24;
+const OVERLAY_ICON = '#FFFFFF';
 
 interface PostCardGridProps {
   post: PostWithOwner;
@@ -25,6 +29,7 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = usePostCardGridStyles();
+  const cardWidth = usePostGridCardWidth(2, spacing.sm);
   const isGive = post.type === 'Give';
 
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), {
@@ -40,59 +45,72 @@ export function PostCardGrid({ post, onPressOverride }: PostCardGridProps) {
     ? getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(post.mediaAssets[0].path).data.publicUrl
     : null;
 
+  const ownerLabel = postOwnerDisplayLabel(post, t);
+  const placeholderBg = isGive ? colors.primarySurface : `${colors.secondary}18`;
+
   return (
     <TouchableOpacity
-      style={styles.card}
-      activeOpacity={0.8}
+      style={[styles.card, { width: cardWidth }]}
+      activeOpacity={0.86}
       onPress={() =>
         onPressOverride ? onPressOverride() : router.push(`/post/${post.postId}`)
       }
     >
-      {/* Image / icon area */}
-      <View style={styles.imageArea}>
+      <View style={[styles.imageArea, { height: cardWidth * 0.78, backgroundColor: placeholderBg }]}>
         {firstImageUrl ? (
           <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
-          <Ionicons name={isGive ? 'gift-outline' : 'search-outline'} size={36} color={colors.textSecondary} />
+          <View style={styles.placeholderTint}>
+            <Ionicons
+              name={isGive ? 'gift-outline' : 'search-outline'}
+              size={40}
+              color={isGive ? colors.giveTag : colors.secondary}
+            />
+          </View>
         )}
-        {/* Type tag overlay (top-right in RTL) */}
-        <View style={[styles.typeTag, isGive ? styles.giveTag : styles.requestTag]}>
-          <Text style={[styles.typeTagText, isGive ? styles.giveTagText : styles.requestTagText]}>
+
+        <View style={styles.typePill}>
+          <Text style={[styles.typePillText, isGive ? styles.givePillText : styles.requestPillText]}>
             {isGive ? t('feed.giveTypeShort') : t('feed.requestTypeShort')}
           </Text>
         </View>
-        {/* FR-POST-010 AC1 — ⋮ menu on the card, opposite the type tag.
-            Claim the touch responder so the wrapping card TouchableOpacity
-            doesn't also navigate to the post detail. */}
+
         <View
           style={styles.menuOverlay}
           onStartShouldSetResponder={() => true}
           onResponderRelease={(e) => e.stopPropagation()}
         >
-          <PostMenuButton post={post} />
+          <PostMenuButton post={post} iconColor={OVERLAY_ICON} />
         </View>
       </View>
 
-      {/* Text content */}
       <View style={styles.content}>
+        <View style={styles.authorRow} accessibilityLabel={ownerLabel}>
+          <AvatarInitials
+            name={ownerLabel}
+            avatarUrl={post.ownerAvatarUrl}
+            size={OWNER_AVATAR_SIZE}
+          />
+          <Text style={styles.ownerName} numberOfLines={1}>{ownerLabel}</Text>
+        </View>
+
         <View style={styles.titleRow}>
           <Text style={styles.title} numberOfLines={2}>{post.title}</Text>
-          <View style={styles.categoryTag}>
-            <Text style={styles.categoryTagText} numberOfLines={1}>
+          <View style={styles.categoryChip}>
+            <Text style={styles.categoryChipText} numberOfLines={1}>
               {t(`post.category.${post.category}`)}
             </Text>
           </View>
         </View>
-        <Text style={styles.metaContainerText} numberOfLines={1}>
-          <Text style={styles.meta}>{postOwnerDisplayLabel(post, t)}</Text>
-          <Text style={styles.metaDot}> · </Text>
-          <Text style={styles.meta}>{timeAgo}</Text>
-        </Text>
-        <Text style={styles.location} numberOfLines={1}>
-          {locationText}
-        </Text>
+
+        <View style={styles.metaFooter}>
+          <View style={styles.locationRow}>
+            <Ionicons name="location-outline" size={11} color={colors.textSecondary} />
+            <Text style={styles.locationText} numberOfLines={1}>{locationText}</Text>
+          </View>
+          <Text style={styles.timeAgo} numberOfLines={1}>{timeAgo}</Text>
+        </View>
       </View>
     </TouchableOpacity>
   );
 }
-

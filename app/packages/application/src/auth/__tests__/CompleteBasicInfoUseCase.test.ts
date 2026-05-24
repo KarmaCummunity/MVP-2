@@ -1,7 +1,12 @@
 import { describe, expect, it } from 'vitest';
 import { CompleteBasicInfoUseCase } from '../CompleteBasicInfoUseCase';
 import { OnboardingError } from '../errors';
+import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
+
+function makeUc(repo: ReturnType<typeof makeFakeUserRepo>, auth = new FakeAuthService()) {
+  return new CompleteBasicInfoUseCase(repo, auth);
+}
 
 describe('CompleteBasicInfoUseCase', () => {
   const userId = 'user-1';
@@ -18,7 +23,7 @@ describe('CompleteBasicInfoUseCase', () => {
 
   it('persists trimmed display_name + city + city_name and advances state to pending_avatar', async () => {
     const repo = seed();
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await useCase.execute({
       userId,
@@ -41,7 +46,7 @@ describe('CompleteBasicInfoUseCase', () => {
 
   it('persists trimmed optional contact phone (FR-AUTH-010 AC2.c)', async () => {
     const repo = seed();
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await useCase.execute({
       userId,
@@ -56,7 +61,7 @@ describe('CompleteBasicInfoUseCase', () => {
 
   it('clears contact phone when whitespace-only is submitted', async () => {
     const repo = seed();
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await useCase.execute({
       userId,
@@ -70,7 +75,7 @@ describe('CompleteBasicInfoUseCase', () => {
   });
 
   it('rejects contact phone longer than 20 chars after trim', async () => {
-    const useCase = new CompleteBasicInfoUseCase(seed());
+    const useCase = makeUc(seed());
 
     await expect(
       useCase.execute({
@@ -84,7 +89,7 @@ describe('CompleteBasicInfoUseCase', () => {
   });
 
   it('rejects whitespace-only display_name (FR-AUTH-010 AC1)', async () => {
-    const useCase = new CompleteBasicInfoUseCase(seed());
+    const useCase = makeUc(seed());
 
     await expect(
       useCase.execute({ userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
@@ -92,7 +97,7 @@ describe('CompleteBasicInfoUseCase', () => {
   });
 
   it('rejects display_name longer than 50 chars (FR-AUTH-010 AC1)', async () => {
-    const useCase = new CompleteBasicInfoUseCase(seed());
+    const useCase = makeUc(seed());
 
     await expect(
       useCase.execute({
@@ -105,7 +110,7 @@ describe('CompleteBasicInfoUseCase', () => {
   });
 
   it('rejects empty cityId or cityName (boundary input from picker)', async () => {
-    const useCase = new CompleteBasicInfoUseCase(seed());
+    const useCase = makeUc(seed());
 
     await expect(
       useCase.execute({ userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
@@ -118,7 +123,7 @@ describe('CompleteBasicInfoUseCase', () => {
 
   it('persists optional profile street + number (FR-PROFILE-007 shape)', async () => {
     const repo = seed();
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await useCase.execute({
       userId,
@@ -140,7 +145,7 @@ describe('CompleteBasicInfoUseCase', () => {
   });
 
   it('rejects street without number', async () => {
-    const useCase = new CompleteBasicInfoUseCase(seed());
+    const useCase = makeUc(seed());
 
     await expect(
       useCase.execute({
@@ -156,7 +161,7 @@ describe('CompleteBasicInfoUseCase', () => {
 
   it('accepts profile street number with Hebrew letter suffix (audit §3.1)', async () => {
     const repo = seed();
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await useCase.execute({
       userId,
@@ -171,7 +176,7 @@ describe('CompleteBasicInfoUseCase', () => {
   });
 
   it('rejects profile street number with punctuation (FR-PROFILE-007)', async () => {
-    const useCase = new CompleteBasicInfoUseCase(seed());
+    const useCase = makeUc(seed());
 
     await expect(
       useCase.execute({
@@ -194,7 +199,7 @@ describe('CompleteBasicInfoUseCase', () => {
         onboardingState: 'completed',
       },
     });
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await expect(
       useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' }),
@@ -213,7 +218,7 @@ describe('CompleteBasicInfoUseCase', () => {
         onboardingState: 'pending_avatar',
       },
     });
-    const useCase = new CompleteBasicInfoUseCase(repo);
+    const useCase = makeUc(repo);
 
     await useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' });
 

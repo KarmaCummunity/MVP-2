@@ -2,6 +2,8 @@
  * Per-post actor identity exposure (FR-POST-021).
  * Pure projection — no UI strings (D-23).
  */
+import type { PostVisibility } from './value-objects';
+
 export type PostActorIdentityExposure = 'Public' | 'FollowersOnly' | 'Hidden';
 
 export interface ActorIdentityInput {
@@ -15,10 +17,10 @@ export interface ProjectActorViewerContext {
   viewerUserId: string | null;
   viewerFollowsActor: boolean;
   isCounterparty: boolean;
-  /** DB column `hide_from_counterparty` — see D-31: third-party viewers on the counterparty's closed-post profile surface. */
+  /** DB column `hide_from_counterparty` — see D-31. */
   hideFromCounterparty: boolean;
-  /** When the post is visible to owner only, the counterparty must not see the owner's identity on post surfaces. */
-  ownerPostVisibilityOnlyMe: boolean;
+  /** Participant `surface_visibility`; `OnlyMe` masks third parties on counterparty surfaces (FR-POST-021). */
+  actorSurfaceVisibility: PostVisibility;
   /** The other participant on this post (`null` if none). */
   counterpartyUserId: string | null;
   /**
@@ -37,16 +39,33 @@ export interface ProjectedActorIdentity {
   profileNavigableFromPost: boolean;
 }
 
-/** D-26 — owner chose OnlyMe: counterparty never sees owner's identity on post chrome. */
-function ownerOnlyMeCounterpartyMask(isCounterparty: boolean, ownerPostVisibilityOnlyMe: boolean): boolean {
-  return isCounterparty && ownerPostVisibilityOnlyMe;
+/**
+ * D-31 / D-39 — mask actor chrome for third-party viewers when the actor opted out on the
+ * counterparty's closed-post surface (`hide_from_counterparty`) or hid their surface (`OnlyMe`).
+ * Counterparty always sees full identity (they coordinate in chat) — D-26 owner-OnlyMe
+ * counterparty mask was removed by D-39 (dual-surface privacy).
+ */
+export function shouldMaskActorIdentityForThirdPartyViewer(
+  hideFromCounterparty: boolean,
+  actorSurfaceVisibility: PostVisibility,
+  viewerUserId: string | null,
+  actorUserId: string,
+  counterpartyUserId: string | null,
+  identityListingHostUserId: string | null,
+): boolean {
+  if (!counterpartyUserId) return false;
+  if (viewerUserId !== null && viewerUserId === actorUserId) return false;
+  if (viewerUserId !== null && viewerUserId === counterpartyUserId) return false;
+
+  const maskRequested = hideFromCounterparty || actorSurfaceVisibility === 'OnlyMe';
+  if (!maskRequested) return false;
+
+  if (identityListingHostUserId === null) return true;
+
+  return identityListingHostUserId === counterpartyUserId;
 }
 
-/**
- * D-31 — `hide_from_counterparty`: third-party viewers (not actor, not counterparty) see anonymous
- * chrome when the listing context is the **counterparty's** profile closed-post surface.
- * The counterparty always sees full identity here (they already know the actor from chat).
- */
+/** @deprecated Use {@link shouldMaskActorIdentityForThirdPartyViewer}. */
 export function shouldAnonymizeForHideFromCounterpartyOnPartnerSurface(
   hideFromCounterparty: boolean,
   viewerUserId: string | null,
@@ -54,11 +73,14 @@ export function shouldAnonymizeForHideFromCounterpartyOnPartnerSurface(
   counterpartyUserId: string | null,
   identityListingHostUserId: string | null,
 ): boolean {
-  if (!hideFromCounterparty || !counterpartyUserId || !identityListingHostUserId) return false;
-  if (identityListingHostUserId !== counterpartyUserId) return false;
-  if (viewerUserId !== null && viewerUserId === actorUserId) return false;
-  if (viewerUserId !== null && viewerUserId === counterpartyUserId) return false;
-  return true;
+  return shouldMaskActorIdentityForThirdPartyViewer(
+    hideFromCounterparty,
+    'Public',
+    viewerUserId,
+    actorUserId,
+    counterpartyUserId,
+    identityListingHostUserId,
+  );
 }
 
 export function projectActorIdentityForViewer(
@@ -77,19 +99,10 @@ export function projectActorIdentityForViewer(
     };
   }
 
-  if (ownerOnlyMeCounterpartyMask(ctx.isCounterparty, ctx.ownerPostVisibilityOnlyMe)) {
-    return {
-      mode: 'anonymous',
-      displayName: '',
-      shareHandle: '',
-      avatarUrl: null,
-      profileNavigableFromPost: false,
-    };
-  }
-
   if (
-    shouldAnonymizeForHideFromCounterpartyOnPartnerSurface(
+    shouldMaskActorIdentityForThirdPartyViewer(
       ctx.hideFromCounterparty,
+      ctx.actorSurfaceVisibility,
       ctx.viewerUserId,
       actor.userId,
       ctx.counterpartyUserId,

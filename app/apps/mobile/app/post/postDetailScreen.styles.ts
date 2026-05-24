@@ -1,9 +1,24 @@
 // Styles extracted from app/post/[id].tsx to keep the screen under the
 // 300-LOC cap (TD-29).
+import { Platform, type ViewStyle } from 'react-native';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { heroCornerEnd, heroCornerStart } from '../../src/components/post-detail/postDetailCorner';
+import { textAlignStart } from '../../src/lib/rtlLayout';
+
+const IMAGE_OVERLAY_BG = 'rgba(0, 0, 0, 0.68)';
+const IMAGE_OVERLAY_BORDER = 'rgba(255, 255, 255, 0.22)';
+
+const overlayShadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.28,
+  shadowRadius: 4,
+  elevation: 3,
+};
 
 export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   center: {
     flex: 1,
     justifyContent: 'center',
@@ -20,8 +35,6 @@ export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   retryText: { ...typography.button, color: colors.textInverse },
 
-  // Image carousel "floats" on the cream backdrop with rounded corners + a
-  // soft shadow so it reads as the post's hero — no longer a flush rectangle.
   imageWrap: {
     position: 'relative',
     marginHorizontal: spacing.base,
@@ -37,29 +50,47 @@ export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
     shadowRadius: 8,
     elevation: isDark ? 0 : 2,
   },
+  imageWrapClosed: {
+    borderColor: isDark ? colors.success : `${colors.success}55`,
+    borderWidth: 1,
+  },
+  closedImageTint: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '38%',
+    backgroundColor: isDark ? 'rgba(74, 222, 128, 0.12)' : 'rgba(34, 197, 94, 0.14)',
+  },
+  statusBadgePos: {
+    position: 'absolute',
+    top: spacing.base,
+    zIndex: 2,
+    ...(heroCornerStart(spacing.base) as ViewStyle),
+  },
   typeTagOverlay: {
     position: 'absolute',
     bottom: spacing.base,
-    right: spacing.base,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
     paddingHorizontal: spacing.md,
     paddingVertical: spacing.xs + 2,
     borderRadius: radius.full,
-    shadowColor: colors.shadow,
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: isDark ? 0 : 0.12,
-    shadowRadius: 4,
-    elevation: isDark ? 0 : 2,
+    backgroundColor: IMAGE_OVERLAY_BG,
+    borderWidth: 1,
+    borderColor: IMAGE_OVERLAY_BORDER,
+    ...overlayShadow,
+    ...(heroCornerEnd(spacing.base) as ViewStyle),
   },
-  giveTag: { backgroundColor: colors.giveTagBg },
-  requestTag: { backgroundColor: colors.requestTagBg },
-  typeTagText: { ...typography.label, color: colors.textPrimary, fontWeight: '700' },
+  giveTagText: { ...typography.label, color: colors.giveTag, fontWeight: '700' },
+  requestTagText: { ...typography.label, color: '#FFFFFF', fontWeight: '700' },
 
-  // Content card — theme-aware surface lifted off the backdrop.
   content: {
     marginHorizontal: spacing.base,
     marginTop: spacing.base,
     padding: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
     borderWidth: isDark ? 1 : 0,
@@ -70,64 +101,149 @@ export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
     shadowRadius: 6,
     elevation: isDark ? 0 : 1,
   },
+  contentClosed: {
+    borderColor: isDark ? `${colors.success}44` : `${colors.success}33`,
+    borderWidth: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  titleBlock: { flex: 1, gap: spacing.xs, minWidth: 0 },
   title: {
     ...typography.h2,
     fontSize: 26,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: textAlignStart(),
     letterSpacing: -0.3,
     lineHeight: 32,
   },
-  category: {
-    ...typography.label,
-    color: colors.primary,
-    textAlign: 'right',
-    fontWeight: '700',
-    textTransform: 'none' as const,
+  categoryChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    backgroundColor: isDark ? `${colors.primary}22` : colors.primarySurface,
+    borderWidth: 1,
+    borderColor: isDark ? `${colors.primary}44` : colors.primaryLight,
   },
-  conditionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  conditionLabel: { ...typography.body, color: colors.textSecondary },
-  conditionValue: { ...typography.body, color: colors.textPrimary, fontWeight: '600' },
+  categoryChipText: {
+    ...typography.label,
+    fontSize: 11,
+    color: isDark ? colors.giveTag : colors.primaryDark,
+    fontWeight: '700',
+  },
+  metaChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metaChipText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
   description: {
     ...typography.body,
     color: colors.textPrimary,
     lineHeight: 24,
-    textAlign: 'right',
-    paddingTop: spacing.sm,
+    textAlign: textAlignStart(),
+  },
+  metaSection: {
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
   },
   locationRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     gap: spacing.sm,
-    paddingTop: spacing.sm,
   },
   locationIcon: {
-    width: 28,
-    height: 28,
-    borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
     backgroundColor: colors.primarySurface,
     alignItems: 'center',
     justifyContent: 'center',
   },
-  locationText: { ...typography.body, color: colors.textSecondary, flex: 1, textAlign: 'right' },
-  timeText: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  locationText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    flex: 1,
+    textAlign: textAlignStart(),
+  },
+  timeText: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    textAlign: textAlignStart(),
+    paddingStart: 32 + spacing.sm,
+  },
+  authorCard: {
+    marginTop: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   authorInfo: { flex: 1, gap: 2 },
-  authorName: { ...typography.body, fontWeight: '600', color: colors.textPrimary, textAlign: 'right' },
-  authorCity: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  authorName: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+  },
+  authorCity: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: textAlignStart(),
+  },
+  authorLabel: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    textAlign: textAlignStart(),
+    marginBottom: spacing.xs,
+    fontWeight: '600',
+  },
 
   cta: {
     flexDirection: 'row',
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     paddingBottom: spacing.base,
     gap: spacing.sm,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    ...Platform.select({
+      default: {},
+      web: {},
+    }),
   },
   messageBtn: {
     flex: 1,
     height: 56,
+    flexDirection: 'row',
+    gap: spacing.sm,
     backgroundColor: colors.primary,
     borderRadius: radius.xl,
     justifyContent: 'center',

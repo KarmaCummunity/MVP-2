@@ -69,6 +69,7 @@ export function PostFeedList({
   return (
     <FlatList
       ref={listRef}
+      style={styles.list}
       data={data ?? []}
       keyExtractor={(p) => p.postId}
       numColumns={2}
@@ -112,6 +113,7 @@ export function PostFeedList({
 }
 
 const usePostFeedListStyles = makeUseStyles(({ colors }) => ({
+  list: { flex: 1, width: '100%', minWidth: 0, alignSelf: 'stretch' as const },
   center: {
     flex: 1,
     justifyContent: 'center' as const,

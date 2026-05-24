@@ -22,14 +22,20 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; cal
       calls.rpcs.push({ fn, args });
       return { data: opts.rpcData ?? null, error: opts.rpcError ?? null };
     },
-    from: () => ({
-      select: () => ({
+    from: (table: string) => {
+      const empty = { data: [] as unknown[], error: null as { message: string } | null };
+      const chain = {
         in: async (col: string, vals: unknown[]) => {
-          calls.inOps.push({ col, vals });
-          return { data: opts.postsData ?? null, error: opts.postsError ?? null };
+          if (table === 'posts') {
+            calls.inOps.push({ col, vals });
+            return { data: opts.postsData ?? null, error: opts.postsError ?? null };
+          }
+          return empty;
         },
-      }),
-    }),
+        eq: () => chain,
+      };
+      return { select: () => chain };
+    },
   } as unknown as SupabaseClient<any>;
   return { client, calls };
 }

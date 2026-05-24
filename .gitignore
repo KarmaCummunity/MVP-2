@@ -37,3 +37,6 @@ scripts/hebrew-text-report.md
 
 # Superpowers brainstorming sessions (visual companion mockups, transient)
 .superpowers/
+
+# Turborepo local cache — per-machine build artifacts, never committed.
+.turbo/

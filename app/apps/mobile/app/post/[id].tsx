@@ -1,8 +1,9 @@
 // Post detail — wired to live IPostRepository (P0.4-FE).
-// Mapped to: FR-POST-014, FR-POST-015, FR-POST-021, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
+// Mapped to: FR-POST-014, FR-POST-015, FR-POST-021, FR-POST-023, FR-CHAT-004, FR-CHAT-005. Closes TD-32 / AUDIT-P2-09.
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -18,6 +19,7 @@ import { postOwnerDisplayLabel } from '../../src/lib/postOwnerDisplayLabel';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { OwnerActionsBar } from '../../src/components/closure/OwnerActionsBar';
 import { PostMenuButton } from '../../src/components/post/PostMenuButton';
+import { PostShareButton } from '../../src/components/post/PostShareButton';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
 import { usePostDetailStyles } from './postDetailScreen.styles';
 import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../src/navigation/useShellTabBarVisibility';
@@ -134,7 +136,19 @@ export default function PostDetailScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <Stack.Screen options={{ headerRight: () => <PostMenuButton post={post} /> }} />
+      <Stack.Screen
+        options={{
+          // Under forceRTL=true, the inner row visually flips so the *first*
+          // child lands at the screen's right edge (= the corner). Share is
+          // first so it sits in the corner, with the ⋮ menu to its left.
+          headerRight: () => (
+            <View style={styles.headerActions}>
+              <PostShareButton post={post} />
+              <PostMenuButton post={post} />
+            </View>
+          ),
+        }}
+      />
       <PostDetailScrollContent
         post={post}
         isGive={isGive}
@@ -171,7 +185,10 @@ export default function PostDetailScreen() {
             {contactPosterBusy ? (
               <ActivityIndicator size="small" color={colors.textInverse} />
             ) : (
-              <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+              <>
+                <Ionicons name="chatbubble-outline" size={20} color={colors.textInverse} />
+                <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+              </>
             )}
           </TouchableOpacity>
         </View>

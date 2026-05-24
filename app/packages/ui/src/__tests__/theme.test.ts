@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { colors, spacing, radius, shadow, typography, fontFamily } from '../index';
+import { colors, spacing, radius, shadow, typography, fontFamily, shellDimensions } from '../index';
 
 describe('theme/colors', () => {
   it('exposes the brand primary token', () => {
@@ -100,5 +100,17 @@ describe('theme/typography', () => {
   it('resolves a non-empty fontFamily string', () => {
     expect(typeof fontFamily).toBe('string');
     expect(fontFamily.length).toBeGreaterThan(0);
+  });
+});
+
+describe('shellDimensions', () => {
+  it('exposes shell layout dimensions', () => {
+    expect(shellDimensions.railCollapsed).toBe(60);
+    expect(shellDimensions.railExpanded).toBe(220);
+    expect(shellDimensions.aside).toBe(280);
+    expect(shellDimensions.contentMaxWide).toBe(720);
+    expect(shellDimensions.contentMaxDesktop).toBe(680);
+    expect(shellDimensions.contentMaxTablet).toBe(640);
+    expect(shellDimensions.contentMaxNarrow).toBe(600);
   });
 });

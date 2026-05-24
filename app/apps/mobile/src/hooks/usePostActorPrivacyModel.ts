@@ -133,15 +133,17 @@ export function usePostActorPrivacyModel(
       updatePostVisibility.mutate(next);
       return;
     }
-    // FR-POST-009 + D-34: for closed-post owners, fan out to both
-    // posts.visibility (drives Hidden screen + own Closed-tab exclusion) and
-    // surface_visibility (drives third-party views of the owner's Closed tab).
-    if (isOwner && (post.status === 'closed_delivered' || post.status === 'deleted_no_recipient')) {
-      updatePostVisibility.mutate(next);
-      persistClosed({ surfaceVisibility: next });
+    // D-39 (dual-surface): closed-post audience lives entirely on
+    // post_actor_identity.surface_visibility for both owner and recipient.
+    // The Hidden-screen / Closed-tab routing keys on effective surface
+    // (migration 0107), so no `posts.visibility` fan-out is needed.
+    // OnlyMe still auto-couples to hide_from_counterparty for clarity even
+    // though OnlyMe alone already masks third parties on the partner surface.
+    if (next === 'OnlyMe') {
+      persistClosed({ surfaceVisibility: next, hideFromCounterparty: true });
+      setHide(true);
       return;
     }
-    // Recipients (not owner) on closed posts: surface_visibility only.
     persistClosed({ surfaceVisibility: next });
   };
 

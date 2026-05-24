@@ -7,6 +7,7 @@ import { useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
+import { PostDetailStatusBadge } from '../../src/components/post-detail/PostDetailStatusBadge';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
@@ -20,7 +21,6 @@ export type PostDetailScrollContentProps = Readonly<{
   ownerLabel: string;
   locationText: string;
   timeAgo: string;
-  /** Clears last scroll content above the floating shell tab bar (see `shellTabBarHeightPx`). */
   scrollBottomInset: number;
 }>;
 
@@ -37,6 +37,8 @@ export function PostDetailScrollContent({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = usePostDetailStyles();
+  const isClosed = post.status === 'closed_delivered';
+  const isOpen = post.status === 'open';
 
   return (
     <ScrollView
@@ -44,61 +46,100 @@ export function PostDetailScrollContent({
       contentContainerStyle={scrollBottomInset > 0 ? { paddingBottom: scrollBottomInset } : undefined}
     >
       <MotionEntry variant="hero" delay={ENTRY_DELAY.hero}>
-        <View style={styles.imageWrap}>
+        <View style={[styles.imageWrap, isClosed ? styles.imageWrapClosed : null]}>
           <PostImageCarousel
             mediaAssets={post.mediaAssets}
             fallbackIcon={isGive ? 'gift-outline' : 'search-outline'}
           />
-          <View style={[styles.typeTagOverlay, isGive ? styles.giveTag : styles.requestTag]}>
-            <Text style={styles.typeTagText}>{isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}</Text>
+          {isClosed ? <View style={styles.closedImageTint} pointerEvents="none" /> : null}
+          <View style={styles.statusBadgePos}>
+            <PostDetailStatusBadge status={post.status} />
+          </View>
+          <View style={styles.typeTagOverlay}>
+            <Text style={isGive ? styles.giveTagText : styles.requestTagText}>
+              {isGive ? t('post.detail.typeGiveLabel') : t('post.detail.typeRequestLabel')}
+            </Text>
           </View>
         </View>
       </MotionEntry>
 
       <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
-        <View style={styles.content}>
-          <Text style={styles.category}>{t(`post.category.${post.category}`)}</Text>
-          <Text style={styles.title}>{post.title}</Text>
+        <View style={[styles.content, isClosed ? styles.contentClosed : null]}>
+          <View style={styles.headerRow}>
+            <View style={styles.titleBlock}>
+              <View style={styles.categoryChip}>
+                <Text style={styles.categoryChipText}>{t(`post.category.${post.category}`)}</Text>
+              </View>
+              <Text style={styles.title}>{post.title}</Text>
+            </View>
+          </View>
 
-          {isGive && post.itemCondition != null ? (
-            <View style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>{t('post.detail.conditionPrefix')}</Text>
-              <Text style={styles.conditionValue}>{t(`post.condition.${post.itemCondition}`)}</Text>
-            </View>
-          ) : null}
-          {!isGive && post.urgency != null && post.urgency !== '' ? (
-            <View style={styles.conditionRow}>
-              <Text style={styles.conditionLabel}>{t('post.detail.urgencyPrefix')}</Text>
-              <Text style={styles.conditionValue}>{post.urgency}</Text>
-            </View>
-          ) : null}
+          <MetaChips post={post} isGive={isGive} />
+
+          {isClosed ? <ClosedDeliveredExtras post={post} viewerId={viewerId} /> : null}
 
           {post.description != null && post.description !== '' ? (
             <Text style={styles.description}>{post.description}</Text>
           ) : null}
 
-          <ClosedDeliveredExtras post={post} viewerId={viewerId} />
-
-          <View style={styles.locationRow}>
-            <View style={styles.locationIcon}>
-              <Ionicons name="location-outline" size={16} color={colors.primary} />
+          {isOpen ? (
+            <View style={styles.metaChip}>
+              <Ionicons name="sparkles-outline" size={14} color={colors.primary} />
+              <Text style={styles.metaChipText}>{t('post.detail.statusOpenHint')}</Text>
             </View>
-            <Text style={styles.locationText}>{locationText}</Text>
-          </View>
-          <Text style={styles.timeText}>{timeAgo}</Text>
+          ) : null}
 
-          <View style={styles.divider} />
-          <PostDetailAuthorFooter
-            ownerNavigable={ownerNavigable}
-            ownerLabel={ownerLabel}
-            ownerAvatarUrl={post.ownerAvatarUrl}
-            cityName={post.address.cityName}
-            ownerHandle={post.ownerHandle}
-          />
+          <View style={styles.metaSection}>
+            <View style={styles.locationRow}>
+              <View style={styles.locationIcon}>
+                <Ionicons name="location-outline" size={16} color={colors.primary} />
+              </View>
+              <Text style={styles.locationText}>{locationText}</Text>
+            </View>
+            <Text style={styles.timeText}>{timeAgo}</Text>
+          </View>
+
+          <View style={styles.authorCard}>
+            <Text style={styles.authorLabel}>{t('post.detail.publishedBy')}</Text>
+            <PostDetailAuthorFooter
+              ownerNavigable={ownerNavigable}
+              ownerLabel={ownerLabel}
+              ownerAvatarUrl={post.ownerAvatarUrl}
+              cityName={post.address.cityName}
+              ownerHandle={post.ownerHandle}
+            />
+          </View>
         </View>
       </MotionEntry>
     </ScrollView>
   );
+}
+
+function MetaChips(props: Readonly<{ post: PostWithOwner; isGive: boolean }>) {
+  const { post, isGive } = props;
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = usePostDetailStyles();
+
+  const chips: React.ReactNode[] = [];
+  if (isGive && post.itemCondition != null) {
+    chips.push(
+      <View key="condition" style={styles.metaChip}>
+        <Ionicons name="cube-outline" size={14} color={colors.textSecondary} />
+        <Text style={styles.metaChipText}>{t(`post.condition.${post.itemCondition}`)}</Text>
+      </View>,
+    );
+  }
+  if (!isGive && post.urgency != null && post.urgency !== '') {
+    chips.push(
+      <View key="urgency" style={styles.metaChip}>
+        <Ionicons name="flash-outline" size={14} color={colors.warning} />
+        <Text style={styles.metaChipText}>{post.urgency}</Text>
+      </View>,
+    );
+  }
+  if (chips.length === 0) return null;
+  return <View style={styles.metaChipsRow}>{chips}</View>;
 }
 
 function ClosedDeliveredExtras(
@@ -108,23 +149,20 @@ function ClosedDeliveredExtras(
   }>,
 ) {
   const { post, viewerId } = props;
-  if (post.status === 'closed_delivered') {
-    return (
-      <>
-        {post.recipientUser != null && (
-          <RecipientCallout
-            postType={post.type}
-            recipient={post.recipientUser}
-            profileNavigable={(post.recipientProfileNavigableFromPost ?? true) === true}
-          />
-        )}
-        {post.recipient?.recipientUserId === viewerId && viewerId != null ? (
-          <RecipientUnmarkBar postId={post.postId} userId={viewerId} />
-        ) : null}
-      </>
-    );
-  }
-  return null;
+  return (
+    <>
+      {post.recipientUser != null ? (
+        <RecipientCallout
+          postType={post.type}
+          recipient={post.recipientUser}
+          profileNavigable={(post.recipientProfileNavigableFromPost ?? true) === true}
+        />
+      ) : null}
+      {post.recipient?.recipientUserId === viewerId && viewerId != null ? (
+        <RecipientUnmarkBar postId={post.postId} userId={viewerId} />
+      ) : null}
+    </>
+  );
 }
 
 function PostDetailAuthorFooter(

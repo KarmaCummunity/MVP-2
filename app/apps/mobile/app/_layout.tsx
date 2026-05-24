@@ -2,7 +2,7 @@ import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, usePathname } from 'expo-router';
-import { I18nManager, Platform, View } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
 // this at module load (not inside an effect) so the first paint is already RTL.
@@ -88,12 +88,13 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useTheme } from '@kc/ui';
+import { ShellWithResponsiveChrome } from '../src/components/shell/ShellWithResponsiveChrome';
 import { AppThemeProvider } from '../src/components/AppThemeProvider';
 import { useAuthStore } from '../src/store/authStore';
 import { container } from '../src/lib/container';
@@ -109,9 +110,6 @@ import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
-import { TabBar, TAB_BAR_HEIGHT } from '../src/components/TabBar';
-import { EphemeralToast } from '../src/components/EphemeralToast';
-import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -147,45 +145,6 @@ function NotificationsBridge(): null {
   return null;
 }
 
-// TabBar geometry. The pill is flush with the platform safe area on every
-// platform (sits directly above the iOS home indicator / Android gesture bar;
-// touches the viewport bottom on web where there's no inset). Screen content
-// fills the full viewport — the translucent pill floats over it so the user
-// sees real content through the bar, not a reserved blank strip. Scrollable
-// screens add their own bottom inset (via `shellTabBarHeightPx`) so the last
-// list item lands above the pill when scrolled to the end.
-const HORIZONTAL_INSET = 16;
-
-function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
-  const showTabBar = useShellTabBarVisibility();
-  const insets = useSafeAreaInsets();
-  const { colors } = useTheme();
-
-  // Outer wrapper carries the app background so the translucent pill reveals
-  // the app surface even on routes whose own content stops short.
-  return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1 }}>
-        {children}
-      </View>
-      <EphemeralToast />
-      {showTabBar && (
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            bottom: insets.bottom,
-            left: HORIZONTAL_INSET,
-            right: HORIZONTAL_INSET,
-          }}
-        >
-          <TabBar />
-        </View>
-      )}
-    </View>
-  );
-}
-
 // Inner wiring lives after AppThemeProvider so screen options that depend on
 // the active palette (web html bg, surface backgrounds in screen headers,
 // StatusBar style) read fresh values when the user toggles dark mode.
@@ -209,7 +168,7 @@ function ThemedRootShell() {
       <NotificationsBridge />
       <AuthGate>
         <SoftGateProvider>
-          <ShellWithTabBar>
+          <ShellWithResponsiveChrome>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -243,7 +202,7 @@ function ThemedRootShell() {
               {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
               <Stack.Screen name="chat/index" options={{ headerShown: false }} />
             </Stack>
-          </ShellWithTabBar>
+          </ShellWithResponsiveChrome>
         </SoftGateProvider>
       </AuthGate>
     </>
