@@ -1,6 +1,7 @@
 // Styles for SearchFilterSheet.
 import { StyleSheet } from 'react-native';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export const useSearchFilterSheetStyles = makeUseStyles(({ colors }) => ({
   overlay: { flex: 1, justifyContent: 'flex-end' as const },
@@ -28,7 +29,7 @@ export const useSearchFilterSheetStyles = makeUseStyles(({ colors }) => ({
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     marginTop: spacing.sm,
   },
   chipRow: {

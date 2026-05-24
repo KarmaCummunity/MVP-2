@@ -48,3 +48,23 @@ export function textAlignStart(): NonNullable<TextStyle['textAlign']> {
   if (Platform.OS === 'web') return isLayoutRtl() ? 'right' : 'left';
   return 'left';
 }
+
+/**
+ * `flexDirection` for a row laid out from the reading-start edge.
+ *
+ * Why this exists: the app forces RTL on both platforms (web `dir=rtl`,
+ * native `I18nManager.forceRTL(true)`). Native auto-mirrors `flexDirection: 'row'`,
+ * so writing `'row-reverse'` there causes a **double flip** back to LTR.
+ * RN-Web with `dir=rtl` does *not* auto-mirror `flexDirection: 'row'` in the
+ * same way, so web needs the explicit `'row-reverse'` to read right-to-left.
+ *
+ * Use this helper anywhere a row should follow the active reading direction.
+ * If you actually want a physically reversed row (LTR-style on an RTL app),
+ * write `'row-reverse'` directly and add a comment explaining why.
+ */
+export const rowDirectionStart: FlexStyle['flexDirection'] =
+  Platform.OS === 'web' ? 'row-reverse' : 'row';
+
+/** Counterpart of {@link rowDirectionStart} for rows that should run end-to-start. */
+export const rowDirectionEnd: FlexStyle['flexDirection'] =
+  Platform.OS === 'web' ? 'row' : 'row-reverse';

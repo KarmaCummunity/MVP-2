@@ -1,5 +1,7 @@
 import { Platform } from 'react-native';
 import { makeUseStyles } from '@kc/ui';
+import { rowDirectionStart } from '../lib/rtlLayout';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => ({
   overlay: {
@@ -16,13 +18,12 @@ export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => 
     padding: 20,
     maxWidth: 480,
     width: '100%',
-    writingDirection: 'rtl',
   },
   title: {
     fontSize: 22,
     fontWeight: '700',
     color: colors.error,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 14,
   },
   bulletList: {
@@ -32,14 +33,14 @@ export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => 
     fontSize: 15,
     lineHeight: 22,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 4,
   },
   chatsRetention: {
     fontSize: 15,
     fontWeight: '600',
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 10,
     backgroundColor: colors.warningLight,
     padding: 10,
@@ -49,13 +50,13 @@ export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => 
     fontSize: 13,
     lineHeight: 20,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 16,
   },
   inputLabel: {
     fontSize: 13,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 6,
   },
   input: {
@@ -65,13 +66,13 @@ export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => 
     paddingHorizontal: 12,
     paddingVertical: Platform.OS === 'web' ? 10 : 8,
     fontSize: 16,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 16,
     color: colors.textPrimary,
     backgroundColor: colors.background,
   },
   buttonsRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     justifyContent: 'space-between',
     gap: 12,
   },
@@ -115,7 +116,7 @@ export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => 
   errorBannerText: {
     color: colors.error,
     fontSize: 14,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
   errorBannerCritical: {
     backgroundColor: colors.error,
@@ -128,13 +129,13 @@ export const useDeleteAccountConfirmModalStyles = makeUseStyles(({ colors }) => 
     fontSize: 18,
     fontWeight: '700',
     color: colors.error,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 8,
   },
   blockedBody: {
     fontSize: 15,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 16,
   },
 }));

@@ -12,6 +12,7 @@ import he from '../../../i18n/locales/he';
 import { confirmAndRun, showAdminToast } from './adminActions';
 import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
+import { rowDirectionStart } from '../../../lib/rtlLayout';
 
 export function ReportReceivedBubble({
   payload,
@@ -105,6 +106,6 @@ const useReportReceivedBubbleStyles = makeUseStyles(({ colors }) => ({
   noteLabel: { fontWeight: '600' as const },
   note: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 2 },
   evidence: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 4 },
-  row: { flexDirection: 'row-reverse' as const, gap: 16, marginTop: 8 },
+  row: { flexDirection: rowDirectionStart, gap: 16, marginTop: 8 },
   btn: { color: colors.secondary, fontWeight: '600' as const },
 }));

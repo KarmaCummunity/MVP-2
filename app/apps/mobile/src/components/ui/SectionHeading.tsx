@@ -5,6 +5,7 @@
 import React from 'react';
 import { Text, View, type StyleProp, type ViewStyle } from 'react-native';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface SectionHeadingProps {
   readonly title: string;
@@ -41,14 +42,14 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     fontSize: 32,
     color: colors.textPrimary,
     letterSpacing: -0.5,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
   titleCentered: { textAlign: 'center' },
   subtitle: {
     ...typography.bodyLarge,
     color: colors.textSecondary,
     marginTop: spacing.xs,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
   subtitleCentered: { textAlign: 'center' },
 }));

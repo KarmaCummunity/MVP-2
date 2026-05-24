@@ -12,6 +12,8 @@ import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGr
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getListSavedPostsUseCase } from '../../../src/services/savedPostsComposition';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 export default function MyProfileSavedScreen() {
   const styles = useStyles();
@@ -68,7 +70,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1, width: '100%', alignSelf: 'stretch' as const },
   banner: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'flex-start',
     gap: spacing.sm,
     marginHorizontal: spacing.base,
@@ -79,20 +81,20 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     borderWidth: isDark ? 1 : 0,
     borderColor: isDark ? colors.border : 'transparent',
     borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.textSecondary,
+    borderStartWidth: 3,
+    borderStartColor: colors.textSecondary,
   },
   bannerText: {
     flex: 1,
     ...typography.bodySmall,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 20,
   },
   sectionTitle: {
     ...typography.semiBold,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginHorizontal: spacing.base,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,

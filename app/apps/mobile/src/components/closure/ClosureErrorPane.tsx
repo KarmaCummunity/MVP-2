@@ -4,6 +4,8 @@
 import { View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useTheme } from '@kc/ui';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   errorMessage: string | null;
@@ -30,9 +32,9 @@ export function ClosureErrorPane({ errorMessage, onClose }: Props) {
 }
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 8, color: colors.textPrimary },
-  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', marginBottom: 16, lineHeight: 22 },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 8, color: colors.textPrimary },
+  body: { fontSize: 15, color: colors.textSecondary, textAlign: rtlTextAlignStart, marginBottom: 16, lineHeight: 22 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: {
     flex: 1,
     paddingVertical: 12,

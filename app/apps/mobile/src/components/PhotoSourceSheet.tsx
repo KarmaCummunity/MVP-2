@@ -6,6 +6,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, typography, spacing, radius, shadow } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 import { isCameraAvailable, type AvatarSource } from '../services/avatarUpload';
 
 interface Props {
@@ -97,7 +98,7 @@ const usePhotoSourceSheetStyles = makeUseStyles(({ colors }) => ({
     borderRadius: radius.md,
     backgroundColor: colors.background,
   },
-  optionText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  optionText: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   removeText: { color: colors.error },
   cancel: { backgroundColor: 'transparent', marginTop: spacing.xs },
   cancelText: { color: colors.textSecondary, textAlign: 'center' },

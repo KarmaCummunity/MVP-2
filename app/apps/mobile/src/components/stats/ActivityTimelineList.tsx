@@ -7,6 +7,7 @@ import { he as dateFnsHe } from 'date-fns/locale';
 import { Ionicons } from '@expo/vector-icons';
 import type { PersonalActivityItem, PersonalActivityKind } from '@kc/domain';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 const KIND_ICONS: Record<PersonalActivityKind, keyof typeof Ionicons.glyphMap> = {
   post_created: 'add-circle-outline',
@@ -111,9 +112,9 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     justifyContent: 'center',
   },
   body: { flex: 1, minWidth: 0 },
-  line: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  time: { ...typography.caption, color: colors.textDisabled, textAlign: 'right', marginTop: spacing.xs },
-  empty: { ...typography.body, color: colors.textSecondary, textAlign: 'right', padding: spacing.base },
+  line: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  time: { ...typography.caption, color: colors.textDisabled, textAlign: rtlTextAlignStart, marginTop: spacing.xs },
+  empty: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart, padding: spacing.base },
   loader: { paddingVertical: spacing.lg },
   errorBox: {
     padding: spacing.base,

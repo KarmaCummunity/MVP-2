@@ -5,6 +5,7 @@ import type { FeedSortOrder } from '@kc/domain';
 import { makeUseStyles, spacing, typography } from '@kc/ui';
 import { Chip } from './Chip';
 import { CityPicker } from '../CityPicker';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface SortSectionProps {
   sortOrder: FeedSortOrder;
@@ -54,8 +55,8 @@ export function SortSection({
 
 const useSortSectionStyles = makeUseStyles(({ colors }) => ({
   section: { gap: spacing.sm, marginBottom: spacing.lg },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
-  subLabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  subLabel: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
   cityWrap: { gap: spacing.xs, marginTop: spacing.sm },
 }));

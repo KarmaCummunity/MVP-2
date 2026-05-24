@@ -10,12 +10,23 @@
 //   - optional leading icon (rendered on the trailing edge so RTL puts it on the
 //     left like the welcome buttons do).
 import React from 'react';
-import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { isLayoutRtl } from '../../lib/rtlLayout';
+
+/**
+ * Trailing-edge inset for the absolutely-positioned icon.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function iconSlotCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: spacing.lg };
+  return isLayoutRtl() ? { left: spacing.lg } : { right: spacing.lg };
+}
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 
@@ -162,7 +173,7 @@ const useButtonStyles = makeUseStyles(({ colors, isDark }) => ({
   textOnGhost: { color: colors.primary },
   iconSlot: {
     position: 'absolute',
-    right: spacing.lg,
+    ...iconSlotCornerEnd(),
     width: 24,
     height: 24,
     alignItems: 'center',

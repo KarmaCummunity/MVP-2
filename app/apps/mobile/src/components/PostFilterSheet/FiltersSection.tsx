@@ -10,6 +10,7 @@ import {
 } from '@kc/domain';
 import { makeUseStyles, spacing, typography } from '@kc/ui';
 import { Chip } from './Chip';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface FiltersSectionProps {
   type: PostType | null;
@@ -144,6 +145,6 @@ export function FiltersSection({
 
 const useFiltersSectionStyles = makeUseStyles(({ colors }) => ({
   section: { gap: spacing.sm, marginBottom: spacing.lg },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
 }));

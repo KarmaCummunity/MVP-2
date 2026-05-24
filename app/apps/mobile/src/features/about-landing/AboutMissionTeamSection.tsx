@@ -3,7 +3,7 @@ import { View, Text, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 import { AvatarInitials } from '../../components/AvatarInitials';
 import { useAboutTeamMembers } from '../../hooks/useAboutTeamMembers';
 
@@ -114,7 +114,7 @@ const useAboutMissionTeamSectionStyles = makeUseStyles(({ colors }) => ({
     opacity: 0.85,
     backgroundColor: colors.surface,
   },
-  row: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
+  row: { flexDirection: aboutRtlRow, alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
   meta: { flex: 1, gap: 2 },
   name: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText },
   role: { ...typography.body, color: colors.primary, ...aboutRtlText, fontWeight: '700' },

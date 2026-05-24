@@ -6,12 +6,23 @@
 // `extraIcon` slot: the feed renders the filter/sort icon there so it's visible
 // only on the feed and disappears when navigating to another tab (FR-FEED-004).
 import React from 'react';
-import { Image, Text, TouchableOpacity, View } from 'react-native';
+import { Image, Platform, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 import { useChatStore } from '../store/chatStore';
+import { isLayoutRtl } from '../lib/rtlLayout';
+
+/**
+ * Pin the notification badge to the icon's reading-end corner.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function badgeCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 0 };
+  return isLayoutRtl() ? { left: 0 } : { right: 0 };
+}
 
 interface TopBarProps {
   /** Optional icon rendered between the logo and the settings icon. */
@@ -64,7 +75,7 @@ const useTopBarStyles = makeUseStyles(({ colors }) => ({
   badge: {
     position: 'absolute' as const,
     top: 0,
-    right: 0,
+    ...badgeCornerEnd(),
     backgroundColor: colors.primary,
     borderRadius: 10,
     minWidth: 18,

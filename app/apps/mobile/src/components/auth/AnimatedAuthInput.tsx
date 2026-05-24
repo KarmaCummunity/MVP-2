@@ -7,6 +7,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { makeUseStyles, spacing, radius, typography, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface AnimatedAuthInputProps extends TextInputProps {
   label: string;
@@ -17,7 +18,7 @@ const useAnimatedAuthInputStyles = makeUseStyles(({ colors, isDark }) => ({
   label: {
     ...typography.label,
     color: colors.textSecondary,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
   },
   labelFocused: {
     color: colors.primary,
@@ -90,7 +91,7 @@ export function AnimatedAuthInput({
         <TextInput
           style={styles.input}
           placeholderTextColor={colors.textDisabled}
-          textAlign="right"
+          textAlign={rtlTextAlignStart}
           onFocus={handleFocus}
           onBlur={handleBlur}
           {...rest}

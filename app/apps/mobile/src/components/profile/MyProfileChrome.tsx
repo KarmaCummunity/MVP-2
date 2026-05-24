@@ -30,6 +30,8 @@ import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 /**
  * RN-Web: absolute `start` ignores RTL like native. `I18nManager.isRTL` is also false at
@@ -186,7 +188,7 @@ const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
     alignItems: 'center' as const,
   },
   statsLink: {
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
     paddingVertical: spacing.sm,
@@ -194,5 +196,5 @@ const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
     borderTopColor: colors.border,
     gap: spacing.sm,
   },
-  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
 }));

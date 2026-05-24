@@ -20,6 +20,7 @@ import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
 import { getProfileAddressPairIssue } from '../lib/profileAddressFieldGate';
 import { useFeedSessionStore } from '../store/feedSessionStore';
 import { useTranslation } from 'react-i18next';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface Props {
   readonly visible: boolean;
@@ -116,7 +117,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                   placeholder={t('onboarding.fullNamePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!saving}
                 />
               </View>
@@ -141,7 +142,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                   placeholderTextColor={colors.textDisabled}
                   maxLength={20}
                   keyboardType="phone-pad"
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!saving}
                 />
               </View>
@@ -190,11 +191,11 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   cardContent: { padding: spacing.lg, gap: spacing.base },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
+  title: { ...typography.h2, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   cancel: { ...typography.body, color: colors.textSecondary },
-  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   input: {
     height: 50,
     backgroundColor: colors.background,

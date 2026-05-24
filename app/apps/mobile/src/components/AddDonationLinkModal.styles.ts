@@ -1,6 +1,7 @@
 // Styles for AddDonationLinkModal — extracted to keep the component file under 200 LOC.
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
+import { rowDirectionStart } from '../lib/rtlLayout';
 
 export const useAddDonationLinkModalStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' as const },
@@ -51,7 +52,7 @@ export const useAddDonationLinkModalStyles = makeUseStyles(({ colors, isDark }) 
     marginTop: spacing.sm,
   },
   actions: {
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     gap: spacing.sm,
     marginTop: spacing.lg,
   },
@@ -67,7 +68,7 @@ export const useAddDonationLinkModalStyles = makeUseStyles(({ colors, isDark }) 
   btnGhost: { borderWidth: 1, borderColor: colors.border },
   btnGhostText: { ...typography.body, color: colors.textPrimary },
   submittingRow: {
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     gap: spacing.sm,
   },

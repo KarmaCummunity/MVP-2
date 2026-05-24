@@ -10,6 +10,7 @@ import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { isOpaqueSystemShareHandle } from '../../lib/shareHandleDisplay';
+import { rowDirectionStart } from '../../lib/rtlLayout';
 
 export interface ProfileHeaderProps {
   displayName: string;
@@ -58,7 +59,7 @@ export function ProfileHeader({
 const useProfileHeaderStyles = makeUseStyles(({ colors }) => ({
   wrap: { alignItems: 'center' as const, gap: spacing.xs, paddingVertical: spacing.sm },
   nameRow: {
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     gap: spacing.xs,
     marginTop: spacing.sm,

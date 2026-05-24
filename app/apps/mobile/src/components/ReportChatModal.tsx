@@ -7,6 +7,7 @@ import { ReportError } from '@kc/application';
 import { container } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 import { NotifyModal } from './NotifyModal';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
@@ -82,7 +83,7 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
             placeholderTextColor={colors.textDisabled}
             multiline
             maxLength={500}
-            textAlign="right"
+            textAlign={rtlTextAlignStart}
           />
           <View style={styles.actions}>
             <TouchableOpacity style={[styles.btn, styles.btnGhost]} onPress={onClose}>
@@ -116,7 +117,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     padding: spacing.base,
     gap: spacing.sm,
   },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   option: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -126,7 +127,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   radio: { width: 18, height: 18, borderRadius: 9, borderWidth: 2, borderColor: colors.border },
   radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  optionLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  optionLabel: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   note: {
     backgroundColor: colors.background,
     borderRadius: radius.md,

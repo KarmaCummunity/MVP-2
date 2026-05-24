@@ -11,6 +11,8 @@ import { useClosureStore } from '../../store/closureStore';
 import { useAuthStore } from '../../store/authStore';
 import { ClosureStep2 } from './ClosureStep2';
 import { ClosureErrorPane } from './ClosureErrorPane';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export function ClosureSheet() {
   const styles = useStyles();
@@ -104,9 +106,9 @@ function Step1({
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: { backgroundColor: colors.surface, padding: 20, borderTopLeftRadius: 16, borderTopRightRadius: 16, maxHeight: '85%' },
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 8, color: colors.textPrimary },
-  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', marginBottom: 16, lineHeight: 22 },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 8, color: colors.textPrimary },
+  body: { fontSize: 15, color: colors.textSecondary, textAlign: rtlTextAlignStart, marginBottom: 16, lineHeight: 22 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },

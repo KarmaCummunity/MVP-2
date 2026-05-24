@@ -1,4 +1,5 @@
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export const useSearchablePickerStyles = makeUseStyles(({ colors, isDark }) => ({
   field: {
@@ -14,10 +15,10 @@ export const useSearchablePickerStyles = makeUseStyles(({ colors, isDark }) => (
   disabledHelper: {
     ...typography.label,
     color: colors.textSecondary,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     marginTop: spacing.xs,
   },
-  value: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+  value: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   valuePlaceholder: { color: colors.textDisabled },
   modalRoot: { flex: 1 },
   backdropPressable: {
@@ -47,7 +48,7 @@ export const useSearchablePickerStyles = makeUseStyles(({ colors, isDark }) => (
   },
   search: {
     minHeight: 44,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     backgroundColor: colors.background,
     borderRadius: radius.md,
     borderWidth: 1,
@@ -90,12 +91,12 @@ export const useSearchablePickerStyles = makeUseStyles(({ colors, isDark }) => (
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  rowText: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+  rowText: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   freeTextRow: { backgroundColor: colors.primarySurface },
   freeTextLabel: {
     ...typography.body,
     color: colors.primary,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     fontWeight: '600' as const,
   },
 }));

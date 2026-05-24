@@ -10,6 +10,7 @@ import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
 import { container } from '../lib/container';
 import { confirmAndRun, showAdminToast } from './chat/system/adminActions';
 import { formatMessageBubbleTime } from '../lib/chatMessageDisplayTime';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 import he from '../i18n/locales/he';
 
 const KNOWN_MOD_KINDS = [
@@ -105,7 +106,7 @@ const useMessageBubbleStyles = makeUseStyles(({ colors }) => ({
   bubbleOther: { alignSelf: 'flex-end', backgroundColor: colors.surface, borderBottomRightRadius: 4, borderWidth: 1, borderColor: colors.border },
   bubbleText: { ...typography.body },
   bubbleTextMine: { color: colors.textInverse },
-  bubbleTextOther: { color: colors.textPrimary, textAlign: 'right' },
+  bubbleTextOther: { color: colors.textPrimary, textAlign: rtlTextAlignStart },
   bubbleMeta: { flexDirection: 'row', alignItems: 'center', justifyContent: 'flex-end', gap: 4 },
   timeText: { ...typography.caption, color: colors.textSecondary },
   readReceipt: { fontSize: 11 },

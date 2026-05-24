@@ -7,6 +7,7 @@
 import { Modal, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface Props {
   visible: boolean;
@@ -38,8 +39,8 @@ export function NotifyModal({ visible, title, message, ctaLabel, onDismiss }: Pr
 const useNotifyModalStyles = makeUseStyles(({ colors }) => ({
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: 16 },
   sheet: { backgroundColor: colors.surfaceRaised, borderRadius: 12, padding: 20, gap: 12 },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: 'right' },
-  message: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
+  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  message: { fontSize: 15, color: colors.textSecondary, textAlign: rtlTextAlignStart, lineHeight: 22 },
   btn: { paddingVertical: 12, borderRadius: 8, alignItems: 'center', backgroundColor: colors.primary, marginTop: 8 },
   btnText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
 }));

@@ -4,7 +4,7 @@ import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -38,7 +38,7 @@ const useAboutValuesGridStyles = makeUseStyles(({ colors }) => ({
     gap: spacing.sm,
   },
   chip: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,

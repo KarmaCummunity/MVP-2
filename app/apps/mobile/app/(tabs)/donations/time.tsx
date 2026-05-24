@@ -22,6 +22,8 @@ import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { webTextRtl } from '../../../src/lib/webRtlStyle';
 
 const COMPOSER_MAX_CHARS = 2000;
 
@@ -63,7 +65,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
     ...typography.body,
     color: colors.textPrimary,
     textAlign: rtlTextAlignStart,
-    writingDirection: 'rtl' as const,
+    ...webTextRtl,
   },
   send: {
     height: 52,
@@ -76,7 +78,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
   sendDisabled: { backgroundColor: colors.primaryLight, opacity: 0.6 },
   sendText: { ...typography.button, color: colors.textInverse },
   sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
-  errorRow: { flexDirection: 'row-reverse' as const, alignItems: 'center' as const, gap: spacing.sm },
+  errorRow: { flexDirection: rowDirectionStart, alignItems: 'center' as const, gap: spacing.sm },
   errorText: { ...typography.bodySmall, color: colors.error, textAlign: rtlTextAlignStart },
   retryText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' as const },
 }));

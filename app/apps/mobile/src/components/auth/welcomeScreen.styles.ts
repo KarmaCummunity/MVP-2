@@ -1,4 +1,17 @@
+import { Platform, type ViewStyle } from 'react-native';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { isLayoutRtl } from '../../lib/rtlLayout';
+
+/**
+ * Trailing-edge inset for the absolutely-positioned auth-button icon.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function authBtnIconCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: spacing.lg };
+  return isLayoutRtl() ? { left: spacing.lg } : { right: spacing.lg };
+}
 
 // Welcome / sign-in entry styles — theme-aware so the warm cream/white surfaces
 // flip to warm-dark counterparts in dark mode.
@@ -86,7 +99,7 @@ export const useWelcomeScreenStyles = makeUseStyles(({ colors, isDark }) => ({
     ...typography.body,
     color: colors.textPrimary,
     flex: 1,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     fontWeight: '500' as const,
   },
 
@@ -105,7 +118,7 @@ export const useWelcomeScreenStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   authBtnIconWrap: {
     position: 'absolute' as const,
-    right: spacing.lg,
+    ...authBtnIconCornerEnd(),
     width: 24,
     height: 24,
     alignItems: 'center' as const,

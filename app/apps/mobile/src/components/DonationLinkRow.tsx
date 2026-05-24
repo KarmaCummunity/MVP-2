@@ -7,6 +7,7 @@ import type { DonationLink } from '@kc/domain';
 import { makeUseStyles, radius, shadow, spacing, typography, useTheme } from '@kc/ui';
 import { openExternalUrl } from '../utils/openExternalUrl';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
+import { rowDirectionStart } from '../lib/rtlLayout';
 
 interface Props {
   link: DonationLink;
@@ -25,7 +26,7 @@ function getHost(url: string): string {
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   row: {
     minHeight: 80,
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -40,7 +41,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   rowMain: {
     flex: 1,
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     gap: spacing.md,
     minWidth: 0,

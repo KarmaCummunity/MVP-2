@@ -4,6 +4,8 @@ import { Pressable, Text, View, Image } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import type { ClosureCandidate } from '@kc/application';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   candidate: ClosureCandidate;
@@ -44,7 +46,7 @@ export function RecipientPickerRow({ candidate, selected, onPress }: Props) {
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     paddingHorizontal: 16,
     paddingVertical: 12,
@@ -72,6 +74,6 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   avatarInitial: { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
   text: { flex: 1 },
-  name: { fontSize: 16, color: colors.textPrimary, textAlign: 'right', fontWeight: '500' },
-  city: { fontSize: 13, color: colors.textSecondary, textAlign: 'right', marginTop: 2 },
+  name: { fontSize: 16, color: colors.textPrimary, textAlign: rtlTextAlignStart, fontWeight: '500' },
+  city: { fontSize: 13, color: colors.textSecondary, textAlign: rtlTextAlignStart, marginTop: 2 },
 }));

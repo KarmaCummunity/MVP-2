@@ -18,14 +18,31 @@ import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { usePostGridCardWidth } from '../hooks/useShellContentWidth';
 import { PostMenuButton } from './post/PostMenuButton';
 import { postWithOwnerFromPost } from '../lib/postWithOwnerFromPost';
+import { isLayoutRtl } from '../lib/rtlLayout';
+import type { ViewStyle } from 'react-native';
 
 const STORAGE_BUCKET = 'post-images';
-const isRTL = I18nManager.isRTL;
-const isWeb = Platform.OS === 'web';
-const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
-const tagPosition = (isRTL && !isWeb) ? { left: spacing.xs } : { right: spacing.xs };
+
+/**
+ * Reading-end corner (where the type tag sits). Native auto-mirrors `end`;
+ * RN-Web ignores `start`/`end` for absolute positioning, so on web we resolve
+ * RTL live and emit a physical key.
+ */
+function tagCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: spacing.xs };
+  return isLayoutRtl() ? { left: spacing.xs } : { right: spacing.xs };
+}
+
 /** Opposite corner from type tag — matches PostCardGrid menu placement (FR-POST-010 AC1). */
-const menuPosition = (isRTL && !isWeb) ? { right: spacing.xs } : { left: spacing.xs };
+function tagCornerStart(): Pick<ViewStyle, 'left' | 'right' | 'start'> {
+  if (Platform.OS !== 'web') return { start: spacing.xs };
+  return isLayoutRtl() ? { right: spacing.xs } : { left: spacing.xs };
+}
+
+function textAlignStart(): 'left' | 'right' {
+  if (Platform.OS !== 'web') return 'left';
+  return isLayoutRtl() ? 'right' : 'left';
+}
 
 interface PostCardProfileProps {
   post: Post;
@@ -98,7 +115,7 @@ export function PostCardProfile({ post, identityRole, onPressOverride, closedPos
           </View>
         ) : null}
         <View
-          style={[styles.menuOverlay, menuPosition]}
+          style={[styles.menuOverlay, tagCornerStart()]}
           onStartShouldSetResponder={() => true}
           onResponderRelease={(e) => e.stopPropagation()}
         >
@@ -143,7 +160,7 @@ const usePostCardProfileStyles = makeUseStyles(({ colors, isDark }) => ({
   typeTag: {
     position: 'absolute' as const,
     top: spacing.xs,
-    ...tagPosition,
+    ...tagCornerEnd(),
     paddingHorizontal: 4,
     paddingVertical: 1,
     borderRadius: radius.sm,
@@ -167,7 +184,7 @@ const usePostCardProfileStyles = makeUseStyles(({ colors, isDark }) => ({
   title: {
     ...typography.caption,
     color: colors.textPrimary,
-    textAlign: alignStart,
+    textAlign: textAlignStart(),
     flex: 1,
   },
   categoryText: {
@@ -179,7 +196,7 @@ const usePostCardProfileStyles = makeUseStyles(({ colors, isDark }) => ({
   roleBadge: {
     position: 'absolute' as const,
     bottom: spacing.xs,
-    ...(I18nManager.isRTL && Platform.OS !== 'web' ? { right: spacing.xs } : { left: spacing.xs }),
+    ...tagCornerStart(),
     backgroundColor: 'rgba(0,0,0,0.55)',
     paddingHorizontal: 6,
     paddingVertical: 2,

@@ -8,6 +8,8 @@ import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { NotifyModal } from '../NotifyModal';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
   { value: 'Spam', key: 'post.reportReasonSpam' },
@@ -127,19 +129,19 @@ const useReportPostModalStyles = makeUseStyles(({ colors }) => ({
     backgroundColor: colors.surface, padding: 16, gap: 8,
     borderTopLeftRadius: 16, borderTopRightRadius: 16,
   },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: 4 },
+  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: 4 },
   reasonRow: {
     paddingVertical: 12, paddingHorizontal: 14,
     borderRadius: 10, borderWidth: 1, borderColor: colors.border,
   },
   reasonRowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-  reasonText: { fontSize: 15, color: colors.textPrimary, textAlign: 'right' },
+  reasonText: { fontSize: 15, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   note: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 10,
     padding: 12, minHeight: 80, fontSize: 15, color: colors.textPrimary,
     backgroundColor: colors.background,
   },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },

@@ -24,6 +24,7 @@ import { VerificationPendingPanel } from '../../src/components/auth/Verification
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { AuthBackground } from '../../src/components/auth/AuthBackground';
 import { AnimatedAuthInput } from '../../src/components/auth/AnimatedAuthInput';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 
 export default function SignInScreen() {
   const styles = useStyles();
@@ -197,10 +198,10 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     shadowRadius: 16,
     elevation: isDark ? 0 : 4,
   },
-  title: { ...typography.h1, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.xl },
+  title: { ...typography.h1, color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: spacing.xl },
   form: { gap: spacing.base },
   hidden: { display: 'none' },
-  forgotText: { ...typography.body, color: colors.primary, textAlign: 'right' },
+  forgotText: { ...typography.body, color: colors.primary, textAlign: rtlTextAlignStart },
   submitBtn: {
     height: 56,
     backgroundColor: colors.primary,

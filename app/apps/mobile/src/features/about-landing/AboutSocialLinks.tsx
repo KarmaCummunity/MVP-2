@@ -9,7 +9,7 @@ import {
   ABOUT_TIKTOK_PROFILE_URL,
 } from './aboutExternalLinks';
 import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 type Row = {
   readonly key: string;
@@ -86,7 +86,7 @@ const useAboutSocialLinksStyles = makeUseStyles(({ colors }) => ({
     marginBottom: spacing.sm,
   },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,

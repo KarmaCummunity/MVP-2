@@ -5,6 +5,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import type { LocationDisplayLevel } from '@kc/domain';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   readonly value: LocationDisplayLevel;
@@ -20,7 +21,7 @@ const OPTION_KEYS: { value: LocationDisplayLevel; labelKey: string; hintKey: str
 
 const useLocationDisplayLevelChooserStyles = makeUseStyles(({ colors, isDark }) => ({
   section: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   row: { flexDirection: 'row' as const, gap: spacing.sm },
   btn: {
     flex: 1,

@@ -1,11 +1,22 @@
 // FR-CHAT-012 — unread badge in top-bar.
 import React from 'react';
-import { View, Text, TouchableOpacity } from 'react-native';
+import { Platform, View, Text, TouchableOpacity, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { useChatStore } from '../store/chatStore';
 import { makeUseStyles, typography, useTheme } from '@kc/ui';
+import { isLayoutRtl } from '../lib/rtlLayout';
+
+/**
+ * Pin the unread badge to the icon's reading-end corner.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function badgeCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 0 };
+  return isLayoutRtl() ? { left: 0 } : { right: 0 };
+}
 
 export function ChatBadge() {
   const styles = useStyles();
@@ -29,7 +40,7 @@ export function ChatBadge() {
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   wrap: { padding: 6, position: 'relative' },
   badge: {
-    position: 'absolute', top: 0, right: 0,
+    position: 'absolute', top: 0, ...badgeCornerEnd(),
     backgroundColor: colors.primary, borderRadius: 10,
     minWidth: 18, height: 18, paddingHorizontal: 4,
     justifyContent: 'center', alignItems: 'center',

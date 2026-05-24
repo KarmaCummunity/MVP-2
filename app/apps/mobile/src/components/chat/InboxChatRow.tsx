@@ -7,6 +7,7 @@ import type { ChatWithPreview } from '@kc/application';
 import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { formatRelativeChatTime } from '../../lib/formatRelativeChatTime';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   readonly item: ChatWithPreview;
@@ -81,10 +82,10 @@ const useInboxChatRowStyles = makeUseStyles(({ colors }) => ({
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
   chatTime: { ...typography.caption, color: colors.textSecondary },
-  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   badge: {
     width: 22,
     height: 22,

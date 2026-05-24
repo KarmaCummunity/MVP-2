@@ -19,6 +19,8 @@ import {
 import { PersonalStatsStrip } from '../src/components/stats/PersonalStatsStrip';
 import { CommunityStatsPanel } from '../src/components/stats/CommunityStatsPanel';
 import { ActivityTimelineList } from '../src/components/stats/ActivityTimelineList';
+import { rowDirectionStart } from '../src/lib/rtlLayout';
+import { rtlTextAlignStart } from '../src/lib/rtlTextAlignStart';
 
 
 
@@ -144,7 +146,7 @@ export default function StatsScreen() {
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   safe: { flex: 1, backgroundColor: colors.background },
   header: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     paddingHorizontal: spacing.base,
     paddingVertical: spacing.sm,
@@ -157,8 +159,8 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   headerTitles: { flex: 1, alignItems: 'center', marginHorizontal: spacing.sm },
   headerSpacer: { width: 24 },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
-  subtitle: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', marginTop: 2 },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  subtitle: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart, marginTop: 2 },
   scroll: {
     padding: spacing.base,
     paddingBottom: spacing['3xl'],
@@ -171,5 +173,5 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     borderWidth: 1,
     borderColor: colors.primaryLight,
   },
-  sectionTitle: { ...typography.h4, color: colors.textPrimary, textAlign: 'right' },
+  sectionTitle: { ...typography.h4, color: colors.textPrimary, textAlign: rtlTextAlignStart },
 }));

@@ -4,7 +4,7 @@ import { View, Text, StyleSheet, Pressable, LayoutAnimation, Platform } from 're
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 type PhaseSeverity = 'current' | 'soon' | 'future' | 'long-term';
 
@@ -86,7 +86,7 @@ export function AboutRoadmapTimeline() {
 const DOT = 32;
 const useAboutRoadmapTimelineStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.sm },
-  row: { flexDirection: 'row-reverse', gap: spacing.md, alignItems: 'flex-start' },
+  row: { flexDirection: aboutRtlRow, gap: spacing.md, alignItems: 'flex-start' },
   timeline: { alignItems: 'center', width: DOT },
   dot: {
     width: DOT,
@@ -99,7 +99,7 @@ const useAboutRoadmapTimelineStyles = makeUseStyles(({ colors }) => ({
   line: { flex: 1, width: 2, backgroundColor: colors.border, marginTop: spacing.xs, minHeight: 30 },
   content: { flex: 1, paddingBottom: spacing.lg, gap: spacing.xs },
   headerRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
   },
@@ -113,7 +113,7 @@ const useAboutRoadmapTimelineStyles = makeUseStyles(({ colors }) => ({
   title: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText },
   summary: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 22 },
   expandBtn: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.xs,
     marginTop: spacing.xs,

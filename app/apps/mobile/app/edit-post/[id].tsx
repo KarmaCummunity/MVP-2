@@ -3,8 +3,8 @@
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, ScrollView,
-  Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator,
+  Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,30 +12,25 @@ import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useTheme } from '@kc/ui';
-import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { useAuthStore } from '../../src/store/authStore';
 import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
-import { getPostByIdUseCase } from '../../src/services/postsComposition';
+import {
+  getListPostActorIdentityUseCase,
+  getPostByIdUseCase,
+  getUpdatePostUseCase,
+} from '../../src/services/postsComposition';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
-import { CityPicker } from '../../src/components/CityPicker';
-import { StreetPicker } from '../../src/components/StreetPicker';
 import { useAddressStateWithCityReset } from '../../src/hooks/useAddressStateWithCityReset';
-import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
-import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
-import { EditPostExposureSection } from '../../src/components/post/EditPostExposureSection';
 import { EmptyState } from '../../src/components/EmptyState';
+import { EditPostFormScrollContent } from '../../src/components/post/EditPostFormScrollContent';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { syncOwnerPostActorIdentity } from '../../src/lib/syncOwnerPostActorIdentity';
-import {
-  getListPostActorIdentityUseCase,
-  getUpdatePostUseCase,
-} from '../../src/services/postsComposition';
 import { getUserRepo } from '../../src/services/userComposition';
 import { useEditPostScreenStyles } from './editPostScreen.styles';
 
@@ -285,141 +280,37 @@ export default function EditPostScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {/* Read-only type badge */}
-        <View style={[styles.typeBadge, isGive ? styles.typeBadgeGive : styles.typeBadgeRequest]}>
-          <Text style={styles.typeBadgeText}>{isGive ? t('post.editPost.typeBadgeGive') : t('post.editPost.typeBadgeRequest')}</Text>
-          <Text style={styles.typeBadgeSub}>{t('post.editPost.typeBadgeSub')}</Text>
-        </View>
-
-        <PhotoPicker
-          uploads={uploads}
-          isUploading={uploadingCount > 0}
-          uploadingCount={uploadingCount}
-          required={isGive}
-          onAdd={handlePickImages}
-          onRemove={handleRemoveImage}
-        />
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionTitle')} <Text style={styles.required}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('post.editPost.titlePlaceholder')}
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            maxLength={80}
-          />
-          <Text style={styles.charCount}>{title.length}/80</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionAddress')} <Text style={styles.required}>*</Text></Text>
-          <CityPicker value={city} onChange={setCity} disabled={isSaving} />
-          <View style={styles.streetRow}>
-            <View style={styles.streetInputStreet}>
-              <StreetPicker
-                cityId={city?.id ?? null}
-                value={street ? { id: '', name: street } : null}
-                onChange={(sel) => setStreet(sel.name)}
-                disabled={isSaving}
-              />
-            </View>
-            <TextInput
-              style={[styles.input, styles.streetInputHouse, !city ? { opacity: 0.5 } : null]}
-              value={streetNumber}
-              onChangeText={setStreetNumber}
-              placeholder={t('post.editPost.streetNumberPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              editable={!isSaving && !!city}
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionDescription')}</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder={t('post.editPost.descriptionPlaceholder')}
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            multiline
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{description.length}/500</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionCategory')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-            {ALL_CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.chip, category === cat && styles.chipActive]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>
-                  {t(`post.category.${cat}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {isGive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('post.editPost.sectionCondition')}</Text>
-            <View style={styles.conditionRow}>
-              {ITEM_CONDITIONS.map((c) => (
-                <TouchableOpacity
-                  key={c}
-                  style={[styles.conditionBtn, condition === c && styles.conditionBtnActive]}
-                  onPress={() => setCondition(c)}
-                >
-                  <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
-                    {t(`post.condition.${c}`)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        <LocationDisplayLevelChooser
-          value={locationDisplayLevel}
-          onChange={setLocationDisplayLevel}
-          disabled={isSaving}
-        />
-
-        {!isGive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('post.editPost.sectionUrgency')}</Text>
-            <TextInput
-              style={styles.input}
-              value={urgency}
-              onChangeText={setUrgency}
-              placeholder={t('post.editPost.urgencyPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              maxLength={100}
-            />
-          </View>
-        )}
-
-        <EditPostExposureSection
-          visibility={visibility}
-          onVisibilityChange={setVisibility}
-          profilePrivacy={profilePrivacy}
-          hideFromCounterparty={hideFromCounterparty}
-          onHideFromCounterpartyChange={setHideFromCounterparty}
-          disabled={isSaving}
-        />
-      </ScrollView>
+      <EditPostFormScrollContent
+        isGive={isGive}
+        isSaving={isSaving}
+        uploads={uploads}
+        uploadingCount={uploadingCount}
+        onAddPhotos={handlePickImages}
+        onRemovePhoto={handleRemoveImage}
+        title={title}
+        onTitleChange={setTitle}
+        city={city}
+        onCityChange={setCity}
+        street={street}
+        onStreetChange={setStreet}
+        streetNumber={streetNumber}
+        onStreetNumberChange={setStreetNumber}
+        description={description}
+        onDescriptionChange={setDescription}
+        category={category}
+        onCategoryChange={setCategory}
+        condition={condition}
+        onConditionChange={setCondition}
+        locationDisplayLevel={locationDisplayLevel}
+        onLocationDisplayLevelChange={setLocationDisplayLevel}
+        urgency={urgency}
+        onUrgencyChange={setUrgency}
+        visibility={visibility}
+        onVisibilityChange={setVisibility}
+        profilePrivacy={profilePrivacy}
+        hideFromCounterparty={hideFromCounterparty}
+        onHideFromCounterpartyChange={setHideFromCounterparty}
+      />
       <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );

@@ -1,6 +1,7 @@
 import { Modal, View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 import type { PrePromptTrigger } from '../lib/notifications/usePushPermissionGate';
 
 interface Props {
@@ -38,8 +39,8 @@ export function EnablePushModal({ visible, trigger, onAccept, onDecline }: Props
 const useEnablePushModalStyles = makeUseStyles(({ colors }) => ({
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: 24 },
   card: { backgroundColor: colors.surfaceRaised, borderRadius: 12, padding: 20 },
-  title: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: 'right', color: colors.textPrimary },
-  body: { fontSize: 14, color: colors.textSecondary, marginBottom: 20, textAlign: 'right' },
+  title: { fontSize: 18, fontWeight: '600', marginBottom: 12, textAlign: rtlTextAlignStart, color: colors.textPrimary },
+  body: { fontSize: 14, color: colors.textSecondary, marginBottom: 20, textAlign: rtlTextAlignStart },
   button: { paddingVertical: 12, borderRadius: 8, alignItems: 'center', marginTop: 8 },
   accept: { backgroundColor: colors.primary },
   acceptText: { color: colors.textInverse, fontWeight: '600' },
