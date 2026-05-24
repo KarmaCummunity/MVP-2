@@ -18,7 +18,7 @@ import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { useAuthStore } from '../../src/store/authStore';
 import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
-import { getPostByIdUseCase, getUpdatePostUseCase } from '../../src/services/postsComposition';
+import { getPostByIdUseCase } from '../../src/services/postsComposition';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
@@ -27,9 +27,16 @@ import { StreetPicker } from '../../src/components/StreetPicker';
 import { useAddressStateWithCityReset } from '../../src/hooks/useAddressStateWithCityReset';
 import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
 import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
+import { EditPostExposureSection } from '../../src/components/post/EditPostExposureSection';
 import { EmptyState } from '../../src/components/EmptyState';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { syncOwnerPostActorIdentity } from '../../src/lib/syncOwnerPostActorIdentity';
+import {
+  getListPostActorIdentityUseCase,
+  getUpdatePostUseCase,
+} from '../../src/services/postsComposition';
+import { getUserRepo } from '../../src/services/userComposition';
 import { useEditPostScreenStyles } from './editPostScreen.styles';
 
 const POST_IMAGES_BUCKET = 'post-images';
@@ -66,12 +73,25 @@ export default function EditPostScreen() {
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
   const [visibility, setVisibility] = useState<PostVisibility>('Public');
+  const [hideFromCounterparty, setHideFromCounterparty] = useState(false);
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [batchId] = useState(() => newUploadBatchId());
   const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const post = query.data?.post;
+
+  const profileQuery = useQuery({
+    queryKey: ['user-profile', viewerId],
+    queryFn: () => getUserRepo().findById(viewerId!),
+    enabled: Boolean(viewerId),
+  });
+
+  const identityQuery = useQuery({
+    queryKey: ['post-actor-identity', id],
+    queryFn: () => getListPostActorIdentityUseCase().execute({ postId: id ?? '' }),
+    enabled: Boolean(id) && Boolean(viewerId),
+  });
 
   useEffect(() => {
     setSeeded(false);
@@ -99,6 +119,12 @@ export default function EditPostScreen() {
     );
     setSeeded(true);
   }, [post, seeded]);
+
+  useEffect(() => {
+    if (!viewerId || identityQuery.data == null) return;
+    const myIdentity = identityQuery.data.find((r) => r.userId === viewerId);
+    setHideFromCounterparty(myIdentity?.hideFromCounterparty ?? false);
+  }, [identityQuery.data, viewerId]);
 
   const handlePickImages = async () => {
     if (!viewerId) {
@@ -129,7 +155,7 @@ export default function EditPostScreen() {
     mutationFn: async () => {
       if (!viewerId || !id) throw new Error('not_authenticated');
       if (!city) throw new Error('city_required');
-      return getUpdatePostUseCase().execute({
+      const updated = await getUpdatePostUseCase().execute({
         postId: id,
         viewerId,
         patch: {
@@ -148,9 +174,19 @@ export default function EditPostScreen() {
           })),
         },
       });
+      if (post?.ownerId === viewerId) {
+        await syncOwnerPostActorIdentity({
+          postId: id,
+          ownerId: viewerId,
+          visibility,
+          hideFromCounterparty,
+        });
+      }
+      return updated;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['post', id, viewerId] });
+      await queryClient.invalidateQueries({ queryKey: ['post-actor-identity', id] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
@@ -226,16 +262,7 @@ export default function EditPostScreen() {
     streetNumber.trim().length > 0 &&
     (!isGive || uploads.length > 0);
 
-  // FR-POST-009 / D-32: visibility may change freely (except Followers-only requires private profile — server + create flow).
-  function handleVisibilityChange(next: PostVisibility) {
-    setVisibility(next);
-  }
-
-  const VISIBILITY_ROWS: Array<{ v: PostVisibility; label: string; openSub: string }> = [
-    { v: 'Public', label: t('post.editPost.visibilityPublicLabel'), openSub: t('post.editPost.visibilityPublicSub') },
-    { v: 'FollowersOnly', label: t('post.editPost.visibilityFollowersLabel'), openSub: t('post.editPost.visibilityFollowersSub') },
-    { v: 'OnlyMe', label: t('post.editPost.visibilityOnlyMeLabel'), openSub: t('post.editPost.visibilityOnlyMeSub') },
-  ];
+  const profilePrivacy = profileQuery.data?.privacyMode ?? 'Public';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -384,23 +411,14 @@ export default function EditPostScreen() {
           </View>
         )}
 
-        {/* Visibility — FR-POST-009 / D-32 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionVisibility')}</Text>
-          {VISIBILITY_ROWS.map(({ v, label, openSub }) => (
-              <TouchableOpacity
-                key={v}
-                style={[styles.visRow, visibility === v && styles.visRowActive]}
-                onPress={() => handleVisibilityChange(v)}
-              >
-                <View style={[styles.radio, visibility === v && styles.radioActive]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.visLabel}>{label}</Text>
-                  <Text style={styles.visSub}>{openSub}</Text>
-                </View>
-              </TouchableOpacity>
-          ))}
-        </View>
+        <EditPostExposureSection
+          visibility={visibility}
+          onVisibilityChange={setVisibility}
+          profilePrivacy={profilePrivacy}
+          hideFromCounterparty={hideFromCounterparty}
+          onHideFromCounterpartyChange={setHideFromCounterparty}
+          disabled={isSaving}
+        />
       </ScrollView>
       <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>

@@ -126,6 +126,9 @@ export const postHe = {
 
   /** Collapsible block on create post — address display, visibility, partner-surface mask. */
   exposureSettingsSectionTitle: 'הגדרות חשיפה',
+  menuExposureClosedHint:
+    'פוסט סגור: כאן מגדירים מי רואה את הכרטיס בפרופיל של המתאם (בנפרד מנראות בפיד).',
+  menuExposureSaving: 'שומר…',
 
   /** FR-POST-021 + D-31 — third-party viewers on the partner's closed-post profile (not the partner in chat). */
   counterpartyMaskLabel: 'להסתיר את הזהות שלי מצופים אחרים ב״פוסטים סגורים״ של המתאם',

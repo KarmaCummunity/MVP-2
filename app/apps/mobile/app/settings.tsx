@@ -5,7 +5,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { spacing, useTheme } from '@kc/ui';
+import { PlatformSwitch, spacing, useTheme } from '@kc/ui';
 import { BackButton } from '../src/components/BackButton';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
 import { useSettingsAccountActions } from '../src/hooks/useSettingsAccountActions';
@@ -17,6 +17,8 @@ import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfir
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 import { DonationSupportCard } from '../src/components/DonationSupportCard';
 import { SettingsScreenRow } from '../src/components/SettingsScreenRow';
+import { ConfirmActionModal } from '../src/components/post/ConfirmActionModal';
+import { usePrivateProfileToggle } from '../src/hooks/usePrivateProfileToggle';
 import { useSettingsScreenStyles } from './settings.styles';
 import { getUserRepo } from '../src/services/userComposition';
 
@@ -37,6 +39,7 @@ export default function SettingsScreen() {
     enabled: Boolean(userId),
   });
   const showFollowRequests = userQuery.data?.privacyMode === 'Private';
+  const { isPrivate, canToggle, onToggle, confirmModal } = usePrivateProfileToggle(userId);
   const isSuperAdmin = useIsSuperAdmin();
   const queryClient = useQueryClient();
   const [hardRefreshing, setHardRefreshing] = React.useState(false);
@@ -113,7 +116,13 @@ export default function SettingsScreen() {
           <SettingsScreenRow
             label={t('settings.privateProfileToggle')}
             icon="lock-closed-outline"
-            onPress={() => router.push('/settings/privacy' as never)}
+            rightElement={
+              <PlatformSwitch
+                value={isPrivate}
+                onValueChange={onToggle}
+                disabled={!canToggle}
+              />
+            }
           />
           {showFollowRequests ? (
             <SettingsScreenRow
@@ -196,6 +205,18 @@ export default function SettingsScreen() {
 
         <Text style={styles.version}>{t('settings.version')} v0.1.0</Text>
       </ScrollView>
+
+      {confirmModal ? (
+        <ConfirmActionModal
+          visible={confirmModal.visible}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmLabel={confirmModal.confirmLabel}
+          isBusy={confirmModal.isBusy}
+          onCancel={confirmModal.onCancel}
+          onConfirm={confirmModal.onConfirm}
+        />
+      ) : null}
 
       <DeleteAccountConfirmModal
         visible={deleteModalVisible}

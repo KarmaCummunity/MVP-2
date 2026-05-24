@@ -14,10 +14,6 @@ import { getUserRepo } from '../services/userComposition';
 import { useFeedSessionStore } from '../store/feedSessionStore';
 import { mapPostErrorToHebrew } from '../services/postMessages';
 
-export function hasMarkedCounterparty(post: PostWithOwner): boolean {
-  return Boolean(post.recipientUser ?? post.recipient?.recipientUserId);
-}
-
 function inferredClosedSurface(post: PostWithOwner, viewerId: string): PostVisibility {
   if (post.ownerId === viewerId) return post.visibility;
   return 'Public';
@@ -118,8 +114,18 @@ export function usePostActorPrivacyModel(
 
   const saving = updatePostVisibility.isPending || upsertIdentity.isPending;
 
+  // FR-POST-021 AC7 — mask preference is editable on open posts (pre-close) and on closed posts.
   const showCounterpartyRow =
-    post.status === 'closed_delivered' && hasMarkedCounterparty(post);
+    isOwner || (post.status === 'closed_delivered' && post.recipient?.recipientUserId === viewerId);
+
+  const persistIdentity = (next: {
+    surfaceVisibility: PostVisibility;
+    hideFromCounterparty: boolean;
+  }) => {
+    setSurface(next.surfaceVisibility);
+    setHide(next.hideFromCounterparty);
+    upsertIdentity.mutate(next);
+  };
 
   const persistClosed = (next: { surfaceVisibility?: PostVisibility; hideFromCounterparty?: boolean }) => {
     const sv = next.surfaceVisibility ?? surface;
@@ -130,7 +136,13 @@ export function usePostActorPrivacyModel(
 
   const onAudienceChange = (next: PostVisibility) => {
     if (isOpenOwner) {
-      updatePostVisibility.mutate(next);
+      updatePostVisibility.mutate(next, {
+        onSuccess: () => {
+          if (next === 'OnlyMe') {
+            persistIdentity({ surfaceVisibility: next, hideFromCounterparty: true });
+          }
+        },
+      });
       return;
     }
     // D-39 (dual-surface): closed-post audience lives entirely on
@@ -148,7 +160,10 @@ export function usePostActorPrivacyModel(
   };
 
   const onHideChange = (next: boolean) => {
-    setHide(next);
+    if (isOpenOwner) {
+      persistIdentity({ surfaceVisibility: audienceValue, hideFromCounterparty: next });
+      return;
+    }
     persistClosed({ hideFromCounterparty: next });
   };
 

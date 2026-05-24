@@ -96,7 +96,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
                   avatarUrl={avatarUrl}
                   biography={biography}
                   privacyMode={user?.privacyMode ?? 'Public'}
-                  onLockPress={() => router.push('/settings/privacy' as never)}
+                  onLockPress={() => router.push('/settings')}
                   size={72}
                 />
                 <ProfileStatsRow

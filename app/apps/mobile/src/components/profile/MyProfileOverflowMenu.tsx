@@ -1,5 +1,5 @@
 // My Profile — ⋮ overflow anchored to the profile card top-start corner (RTL: visual top-right).
-// Routes mirror profile-related rows on `app/settings.tsx` (account, notifications, privacy, stats)
+// Routes mirror profile-related rows on `app/settings.tsx` (account, notifications, stats)
 // plus admin-removed posts (FR-POST-008 owner list).
 // Bottom-sheet pattern matches ProfileOverflowMenu (RN-Web safe).
 import React, { useState } from 'react';
@@ -40,8 +40,6 @@ export function MyProfileOverflowMenu({ showFollowRequests }: Readonly<{ showFol
             <SheetItem label={t('settings.accountDetails')} onPress={() => go('/edit-profile')} />
             <View style={styles.divider} />
             <SheetItem label={t('settings.notifications')} onPress={() => go('/settings/notifications')} />
-            <View style={styles.divider} />
-            <SheetItem label={t('settings.privateProfileToggle')} onPress={() => go('/settings/privacy')} />
             {showFollowRequests ? (
               <>
                 <View style={styles.divider} />

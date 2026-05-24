@@ -1,3 +1,4 @@
+// FR-POST-003 — audience picker (Public / Followers / Only me). Shared by create + post menu.
 import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
@@ -35,12 +36,12 @@ const useVisibilityChooserStyles = makeUseStyles(({ colors, isDark }) => ({
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
     gap: spacing.sm,
-    paddingVertical: spacing.xs,
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.sm,
-    borderRadius: radius.sm,
+    borderRadius: radius.md,
     borderWidth: isDark ? 1 : 1.5,
     borderColor: colors.border,
-    backgroundColor: colors.surface,
+    backgroundColor: colors.background,
   },
   rowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
   rowDisabled: { opacity: 0.55 },
@@ -56,6 +57,7 @@ const useVisibilityChooserStyles = makeUseStyles(({ colors, isDark }) => ({
   radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
   label: {
     ...typography.caption,
+    fontWeight: '600',
     color: colors.textPrimary,
     textAlign: rtlTextAlignStart,
     ...webTextRtl,
@@ -65,6 +67,7 @@ const useVisibilityChooserStyles = makeUseStyles(({ colors, isDark }) => ({
     fontSize: 11,
     color: colors.textSecondary,
     textAlign: rtlTextAlignStart,
+    lineHeight: 16,
     ...webTextRtl,
   },
 }));
@@ -100,7 +103,8 @@ export function VisibilityChooser({
               }
               onChange(v);
             }}
-            accessibilityState={{ disabled: rowDisabled }}
+            accessibilityRole="radio"
+            accessibilityState={{ selected: value === v, disabled: rowDisabled }}
           >
             <View style={{ flex: 1 }}>
               <Text style={[styles.label, rowDisabled && styles.labelDisabled]}>{t(labelKey)}</Text>
