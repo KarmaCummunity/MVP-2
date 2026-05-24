@@ -12,17 +12,12 @@ import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileC
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
-import {
-  useShellTabBarVisibility,
-  shellTabBarHeightPx,
-} from '../../../src/navigation/useShellTabBarVisibility';
 
 export default function MyProfileHiddenScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
-  const tabBarPad = shellTabBarHeightPx(useShellTabBarVisibility());
 
   const hiddenOpenQuery = useQuery({
     queryKey: ['my-hidden-open-posts', userId],
@@ -44,10 +39,7 @@ export default function MyProfileHiddenScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentContainerStyle={{ paddingBottom: tabBarPad }}
-      >
+      <ScrollView showsVerticalScrollIndicator={false}>
         <View style={styles.banner}>
           <Ionicons name="eye-off-outline" size={18} color={colors.textSecondary} />
           <Text style={styles.bannerText}>{t('profile.hiddenBanner')}</Text>

@@ -148,26 +148,6 @@ export const postHe = {
     contactOpeningA11y: 'פותח שיחה עם המפרסם',
     contactCta: '💬 שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
-    // FR-POST-023 — share post via link (P2.33).
-    // Building blocks consumed by `buildPostShareMessage` to compose a
-    // per-post text body: headline (per-type) + title + location + optional
-    // description preview + per-type CTA. Composition logic lives in the
-    // helper, not here, so the branching stays out of the i18n table.
-    shareA11y: 'שתף את הפוסט',
-    shareDialogTitle: 'שיתוף פוסט',
-    shareHeadlineGive: '🎁 חפץ שמחכה לבית חדש בקהילת קארמה',
-    shareHeadlineRequest: '🔍 בקשה לעזרה מקהילת קארמה',
-    // Labels for the structured body lines. Each line is wrapped in `*…*`
-    // by `buildPostShareMessage` so WhatsApp / Telegram / Signal render
-    // the label bold; other receivers fall back to visible asterisks.
-    shareLabelTitle: 'כותרת:',
-    shareLabelDescription: 'תיאור:',
-    shareLabelCategory: 'קטגוריה:',
-    shareLabelLocation: 'מיקום:',
-    shareCtaGive: 'אולי זה בדיוק בשבילכם — לחצו לפרטים 👇',
-    shareCtaRequest: 'אם תוכלו לעזור — לחצו לפרטים 👇',
-    shareCopiedToast: 'הקישור הועתק',
-    shareFailedToast: 'השיתוף נכשל, נסה שוב.',
   },
 
   // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.
