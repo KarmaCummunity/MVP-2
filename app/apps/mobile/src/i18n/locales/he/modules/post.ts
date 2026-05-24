@@ -27,7 +27,7 @@ export const postHe = {
   fullAddress: 'כתובת מלאה',
   visibility: 'מי יראה את הפוסט',
   visibilityPublic: '🌍 כולם',
-  visibilityFollowers: '👥 רק עוקבים שלי',
+  visibilityFollowers: '👥 רק העוקבים שלי',
   visibilityOnlyMe: '🔒 רק אני',
   publish: 'פרסם',
   draft: 'שמור טיוטה',
@@ -146,8 +146,13 @@ export const postHe = {
     urgencyPrefix: '⚡ דחיפות: ',
     contactA11y: 'שלח הודעה למפרסם',
     contactOpeningA11y: 'פותח שיחה עם המפרסם',
-    contactCta: '💬 שלח הודעה למפרסם',
+    contactCta: 'שלח הודעה למפרסם',
     anonymousUser: 'אנונימי',
+    statusOpen: 'פעיל',
+    statusOpenHint: 'הפוסט פתוח ומחפש התאמה',
+    statusClosed: 'הושלם',
+    statusPendingDelete: 'נסגר זמנית',
+    publishedBy: 'פורסם על-ידי',
   },
 
   // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.

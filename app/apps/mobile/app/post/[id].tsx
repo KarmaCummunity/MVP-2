@@ -3,6 +3,7 @@
 import React, { useCallback, useState } from 'react';
 import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useQuery } from '@tanstack/react-query';
 import { formatDistanceToNow } from 'date-fns';
@@ -171,7 +172,10 @@ export default function PostDetailScreen() {
             {contactPosterBusy ? (
               <ActivityIndicator size="small" color={colors.textInverse} />
             ) : (
-              <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+              <>
+                <Ionicons name="chatbubble-outline" size={20} color={colors.textInverse} />
+                <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
+              </>
             )}
           </TouchableOpacity>
         </View>

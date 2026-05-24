@@ -1,15 +1,18 @@
 // My Profile — open-posts tab. Sibling route: ./closed.tsx.
 // Mapped to: FR-PROFILE-001 AC4 (open lane), FR-POST-016.
 import React from 'react';
-import { ScrollView } from 'react-native';
+import { ScrollView, StyleSheet } from 'react-native';
 import { useQuery } from '@tanstack/react-query';
+import { spacing } from '@kc/ui';
 import { MyProfileChrome } from '../../../src/components/profile/MyProfileChrome';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
 import { Screen } from '../../../src/components/ui/Screen';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 
 export default function MyProfileOpenScreen() {
+  const tabBarPad = useShellTabBarScrollInset();
   const userId = useAuthStore((s) => s.session?.userId);
 
   const myPostsQuery = useQuery({
@@ -26,7 +29,11 @@ export default function MyProfileOpenScreen() {
 
   return (
     <Screen blobs="content">
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: spacing.base + tabBarPad }}
+        showsVerticalScrollIndicator={false}
+      >
         <MyProfileChrome activeTab="open" />
         <ProfilePostsGrid
           posts={myPostsQuery.data?.posts ?? []}
@@ -37,3 +44,7 @@ export default function MyProfileOpenScreen() {
     </Screen>
   );
 }
+
+const styles = StyleSheet.create({
+  scroll: { flex: 1, width: '100%', alignSelf: 'stretch' },
+});

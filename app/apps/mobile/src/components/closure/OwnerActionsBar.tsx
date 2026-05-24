@@ -118,7 +118,7 @@ export function OwnerActionsBar(props: Readonly<Props>) {
           </Pressable>
         ) : (
           <Pressable
-            style={[styles.btnPrimary, (isReopening || reopenOpen) && styles.btnDisabled]}
+            style={[styles.btnSecondary, (isReopening || reopenOpen) && styles.btnDisabled]}
             disabled={isReopening || reopenOpen}
             onPress={() => {
               setReopenError(null);
@@ -126,7 +126,7 @@ export function OwnerActionsBar(props: Readonly<Props>) {
             }}
             accessibilityLabel={t('closure.itemNotDeliveredA11y')}
           >
-            <Text style={styles.btnPrimaryText}>{t('closure.itemNotDeliveredCta')}</Text>
+            <Text style={styles.btnSecondaryText}>{t('closure.itemNotDeliveredCta')}</Text>
           </Pressable>
         )}
       </View>
@@ -161,19 +161,34 @@ export function OwnerActionsBar(props: Readonly<Props>) {
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   bar: {
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.base,
+    paddingTop: spacing.md,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
   btnPrimary: {
-    height: 50,
+    height: 56,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.15 : 0.22,
+    shadowRadius: 10,
+    elevation: isDark ? 2 : 4,
   },
-  btnPrimaryText: { ...typography.button, color: colors.textInverse },
+  btnSecondary: {
+    height: 56,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.background,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  btnPrimaryText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
+  btnSecondaryText: { ...typography.button, color: colors.textPrimary, fontSize: 16 },
   btnDisabled: { opacity: 0.5 },
   busyOverlay: {
     position: 'absolute',

@@ -14,9 +14,11 @@ import { usePostSavedActions } from '../../hooks/usePostSavedActions';
 
 interface Props {
   post: PostWithOwner;
+  /** Override icon color (e.g. white on image overlays). */
+  iconColor?: string;
 }
 
-export function PostMenuButton({ post }: Props) {
+export function PostMenuButton({ post, iconColor }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -41,7 +43,7 @@ export function PostMenuButton({ post }: Props) {
         accessibilityRole="button"
         hitSlop={8}
       >
-        <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
+        <Ionicons name="ellipsis-vertical" size={20} color={iconColor ?? colors.textPrimary} />
       </Pressable>
 
       <PostMenuSheet

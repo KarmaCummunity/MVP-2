@@ -42,3 +42,8 @@ export function useShellTabBarVisibility(): boolean {
 export function shellTabBarHeightPx(visible: boolean): number {
   return visible ? TAB_BAR_HEIGHT : 0;
 }
+
+/** Bottom inset for scroll content above the floating shell tab bar. */
+export function useShellTabBarScrollInset(): number {
+  return shellTabBarHeightPx(useShellTabBarVisibility());
+}

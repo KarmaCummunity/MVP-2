@@ -6,6 +6,14 @@ import { makeUseStyles, PlatformSwitch, radius, spacing, typography } from '@kc/
 import { usePostActorPrivacyModel } from '../../hooks/usePostActorPrivacyModel';
 import type { PostWithOwner } from '@kc/application';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
+import {
+  crossAxisAlignStart,
+  layoutDirectionStyle,
+  layoutWritingDirectionStyle,
+  mainAxisAlignStart,
+  selfAlignStart,
+  textAlignStart,
+} from '../../lib/rtlLayout';
 
 interface Props {
   readonly post: PostWithOwner;
@@ -73,14 +81,16 @@ export function PostMenuExposureBlock({ post, viewerId }: Props) {
           </View>
         </View>
       ) : (
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t('post.visibilityFollowers')}</Text>
-          <PlatformSwitch
-            value={v === 'Public'}
-            onValueChange={onPublicFollowersSwitch}
-            disabled={m.saving}
-          />
-          <Text style={styles.switchLabel}>{t('post.visibilityPublic')}</Text>
+        <View style={styles.switchWrap}>
+          <View style={styles.switchRow}>
+            <Text style={styles.switchLabel}>{t('post.visibilityPublic')}</Text>
+            <PlatformSwitch
+              value={v === 'Public'}
+              onValueChange={onPublicFollowersSwitch}
+              disabled={m.saving}
+            />
+            <Text style={styles.switchLabel}>{t('post.visibilityFollowers')}</Text>
+          </View>
         </View>
       )}
 
@@ -116,68 +126,108 @@ export function PostMenuExposureBlock({ post, viewerId }: Props) {
 const usePostMenuExposureBlockStyles = makeUseStyles(({ colors }) => ({
   wrap: {
     paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
+    paddingTop: spacing.xs,
+    paddingBottom: spacing.xs,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
-    gap: spacing.sm,
+    gap: spacing.xs,
+    ...layoutDirectionStyle(),
   },
   subheading: {
-    ...typography.label,
+    ...typography.caption,
+    fontWeight: '600',
     color: colors.textSecondary,
-    textAlign: 'right',
-    marginTop: spacing.xs,
+    textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
+  switchWrap: {
+    alignItems: crossAxisAlignStart,
+    paddingVertical: spacing.xs,
   },
   switchRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
+    justifyContent: 'center',
+    gap: spacing.sm,
+    maxWidth: '100%',
   },
-  switchLabel: { ...typography.bodySmall, color: colors.textPrimary, flexShrink: 1, textAlign: 'center' },
+  switchLabel: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    flexShrink: 1,
+    ...layoutWritingDirectionStyle(),
+  },
   onlyMeBanner: {
-    padding: spacing.md,
-    borderRadius: radius.md,
+    padding: spacing.sm,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    gap: spacing.sm,
+    gap: spacing.xs,
   },
-  onlyMeText: { ...typography.bodySmall, color: colors.textPrimary, textAlign: 'right' },
-  upgradeRow: { flexDirection: 'row-reverse', gap: spacing.sm, justifyContent: 'flex-end' },
+  onlyMeText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
+  upgradeRow: {
+    flexDirection: 'row',
+    gap: spacing.xs,
+    justifyContent: mainAxisAlignStart,
+    flexWrap: 'wrap',
+  },
   upgradeChip: {
     paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
+    paddingHorizontal: spacing.sm,
     borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.primary,
     backgroundColor: colors.primarySurface,
   },
-  upgradeChipText: { ...typography.bodySmall, color: colors.primary, textAlign: 'center' },
+  upgradeChipText: {
+    ...typography.caption,
+    color: colors.primary,
+    textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
   disabled: { opacity: 0.45 },
   hideBtn: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
+    alignSelf: selfAlignStart,
+    maxWidth: '100%',
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
+    borderWidth: 1,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    alignItems: 'flex-end',
   },
   hideBtnSelected: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
   hideBtnDisabled: { opacity: 0.55 },
-  hideBtnLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  hideBtnLabel: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
   hideBtnLabelSelected: { color: colors.primary },
   partnerRow: {
     marginTop: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radius.md,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
     borderWidth: 1,
     borderColor: colors.border,
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
+    gap: spacing.sm,
   },
-  partnerLabel: { ...typography.bodySmall, flex: 1, color: colors.textPrimary, textAlign: 'right' },
+  partnerLabel: {
+    ...typography.caption,
+    flex: 1,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
 }));

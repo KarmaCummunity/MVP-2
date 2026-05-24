@@ -86,5 +86,5 @@ const useStyles = makeUseStyles(() => ({
   row: { flex: 1, flexDirection: 'row' },
   aside: { padding: spacing.base, justifyContent: 'flex-start' },
   mainOuter: { flex: 1, alignItems: 'center' },
-  main: { flex: 1, width: '100%' },
+  main: { flex: 1, width: '100%', minWidth: 0, overflow: 'hidden' as const },
 }));

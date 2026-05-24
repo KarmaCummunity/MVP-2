@@ -3,6 +3,8 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import type { PostVisibility } from '@kc/domain';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
 
 interface Props {
   value: PostVisibility;
@@ -21,15 +23,21 @@ const ROWS: { v: PostVisibility; labelKey: string; subKey: string }[] = [
 ];
 
 const useVisibilityChooserStyles = makeUseStyles(({ colors, isDark }) => ({
-  section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  section: { gap: spacing.xs, ...webViewRtl },
+  sectionLabel: {
+    ...typography.caption,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
   row: {
     flexDirection: 'row' as const,
     alignItems: 'center' as const,
-    gap: spacing.md,
-    paddingVertical: spacing.sm,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
+    gap: spacing.sm,
+    paddingVertical: spacing.xs,
+    paddingHorizontal: spacing.sm,
+    borderRadius: radius.sm,
     borderWidth: isDark ? 1 : 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
@@ -46,8 +54,19 @@ const useVisibilityChooserStyles = makeUseStyles(({ colors, isDark }) => ({
     borderColor: colors.border,
   },
   radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  label: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
-  sub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' as const },
+  label: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  sub: {
+    ...typography.caption,
+    fontSize: 11,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
 }));
 
 export function VisibilityChooser({
@@ -83,11 +102,11 @@ export function VisibilityChooser({
             }}
             accessibilityState={{ disabled: rowDisabled }}
           >
-            <View style={[styles.radio, value === v && styles.radioActive]} />
             <View style={{ flex: 1 }}>
               <Text style={[styles.label, rowDisabled && styles.labelDisabled]}>{t(labelKey)}</Text>
               <Text style={[styles.sub, rowDisabled && styles.subDisabled]}>{sub}</Text>
             </View>
+            <View style={[styles.radio, value === v && styles.radioActive]} />
           </TouchableOpacity>
         );
       })}

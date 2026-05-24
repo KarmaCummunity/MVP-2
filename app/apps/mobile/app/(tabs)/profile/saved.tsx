@@ -9,11 +9,13 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGrid';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getListSavedPostsUseCase } from '../../../src/services/savedPostsComposition';
 
 export default function MyProfileSavedScreen() {
   const styles = useStyles();
+  const tabBarPad = useShellTabBarScrollInset();
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
@@ -36,7 +38,11 @@ export default function MyProfileSavedScreen() {
 
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
-      <ScrollView showsVerticalScrollIndicator={false}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={{ paddingBottom: spacing.base + tabBarPad }}
+        showsVerticalScrollIndicator={false}
+      >
         <View style={styles.banner}>
           <Ionicons name="bookmark-outline" size={18} color={colors.textSecondary} />
           <Text style={styles.bannerText}>{t('profile.savedBanner')}</Text>
@@ -60,6 +66,7 @@ export default function MyProfileSavedScreen() {
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
+  scroll: { flex: 1, width: '100%', alignSelf: 'stretch' as const },
   banner: {
     flexDirection: 'row-reverse',
     alignItems: 'flex-start',

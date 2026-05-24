@@ -71,15 +71,16 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
   );
 }
 
-const useStyles = makeUseStyles(({ colors, isDark }) => ({
+const useStyles = makeUseStyles(({ colors }) => ({
   btn: {
-    marginTop: spacing.xs,
-    alignSelf: 'flex-end',
-    paddingVertical: spacing.xs,
+    alignSelf: 'stretch',
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.error,
+    backgroundColor: colors.errorLight,
+    alignItems: 'center',
   },
-  btnText: { ...typography.bodySmall, color: colors.error },
+  btnText: { ...typography.bodySmall, color: colors.error, fontWeight: '600' },
 }));

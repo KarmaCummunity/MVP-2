@@ -6,6 +6,8 @@ import { Modal, Text, Pressable, ScrollView } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { makeUseStyles } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { ReportPostModal } from './ReportPostModal';
 import { usePostMenuActions } from '../../hooks/usePostMenuActions';
@@ -165,7 +167,6 @@ function MenuItem({ icon, label, destructive, muted, onPress }: MenuItemProps) {
   const styles = usePostMenuSheetStyles();
   return (
     <Pressable style={styles.item} onPress={onPress} accessibilityRole="button">
-      <Text style={styles.itemIcon}>{icon}</Text>
       <Text
         style={[
           styles.itemLabel,
@@ -175,6 +176,7 @@ function MenuItem({ icon, label, destructive, muted, onPress }: MenuItemProps) {
       >
         {label}
       </Text>
+      <Text style={styles.itemIcon}>{icon}</Text>
     </Pressable>
   );
 }
@@ -186,16 +188,23 @@ const usePostMenuSheetStyles = makeUseStyles(({ colors }) => ({
     paddingVertical: 8,
     borderTopLeftRadius: 16,
     borderTopRightRadius: 16,
+    ...webViewRtl,
   },
   item: {
-    flexDirection: 'row-reverse',
+    flexDirection: 'row',
     alignItems: 'center',
     paddingHorizontal: 16,
-    paddingVertical: 12,
-    gap: 12,
+    paddingVertical: 10,
+    gap: 10,
   },
-  itemIcon: { fontSize: 22 },
-  itemLabel: { fontSize: 16, color: colors.textPrimary, textAlign: 'right' },
+  itemIcon: { fontSize: 20 },
+  itemLabel: {
+    fontSize: 15,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    flex: 1,
+    ...webTextRtl,
+  },
   itemLabelDestructive: { color: colors.error },
   itemLabelMuted: { color: colors.textSecondary },
 }));

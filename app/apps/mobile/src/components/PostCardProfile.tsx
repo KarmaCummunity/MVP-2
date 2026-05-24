@@ -5,7 +5,6 @@ import {
   View,
   Text,
   TouchableOpacity,
-  Dimensions,
   Image,
   I18nManager,
   Platform,
@@ -16,20 +15,17 @@ import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, radius, shadow, typography, useTheme } from '@kc/ui';
 import type { Post, IdentityRoleForViewedProfile } from '@kc/domain';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
+import { usePostGridCardWidth } from '../hooks/useShellContentWidth';
 import { PostMenuButton } from './post/PostMenuButton';
 import { postWithOwnerFromPost } from '../lib/postWithOwnerFromPost';
 
 const STORAGE_BUCKET = 'post-images';
-const { width: SCREEN_WIDTH } = Dimensions.get('window');
 const isRTL = I18nManager.isRTL;
 const isWeb = Platform.OS === 'web';
 const alignStart: any = isWeb ? (isRTL ? 'right' : 'left') : 'left';
 const tagPosition = (isRTL && !isWeb) ? { left: spacing.xs } : { right: spacing.xs };
 /** Opposite corner from type tag — matches PostCardGrid menu placement (FR-POST-010 AC1). */
 const menuPosition = (isRTL && !isWeb) ? { right: spacing.xs } : { left: spacing.xs };
-
-// 3 columns, spacing.base (16) padding each side, spacing.xs (4) gap × 2.
-const CARD_WIDTH = (SCREEN_WIDTH - spacing.base * 2 - spacing.xs * 2) / 3;
 
 interface PostCardProfileProps {
   post: Post;
@@ -52,6 +48,7 @@ interface PostCardProfileProps {
 }
 
 export function PostCardProfile({ post, identityRole, onPressOverride, closedPostsProfileUserId }: PostCardProfileProps) {
+  const cardWidth = usePostGridCardWidth(3, spacing.xs);
   const styles = usePostCardProfileStyles();
   const { colors } = useTheme();
   const router = useRouter();
@@ -68,7 +65,7 @@ export function PostCardProfile({ post, identityRole, onPressOverride, closedPos
 
   return (
     <TouchableOpacity
-      style={styles.card}
+      style={[styles.card, { width: cardWidth }]}
       activeOpacity={0.8}
       onPress={() => {
         if (onPressOverride) {
@@ -82,7 +79,7 @@ export function PostCardProfile({ post, identityRole, onPressOverride, closedPos
         router.push(`/post/${post.postId}${q}` as never);
       }}
     >
-      <View style={styles.imageArea}>
+      <View style={[styles.imageArea, { height: cardWidth }]}>
         {firstImageUrl ? (
           <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" />
         ) : (
@@ -126,7 +123,6 @@ function deriveEconomicRole(
 
 const usePostCardProfileStyles = makeUseStyles(({ colors, isDark }) => ({
   card: {
-    width: CARD_WIDTH,
     backgroundColor: colors.surface,
     borderRadius: radius.md,
     overflow: 'hidden' as const,
@@ -138,7 +134,6 @@ const usePostCardProfileStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   imageArea: {
     width: '100%',
-    height: CARD_WIDTH,
     backgroundColor: colors.skeleton,
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
