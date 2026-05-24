@@ -5,7 +5,7 @@
 // FR-CHAT-001: inbox subscription started on sign-in, torn down on sign-out.
 import React, { useEffect } from 'react';
 import { ActivityIndicator, Image, View } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter, useSegments, usePathname, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTheme } from '@kc/ui';
@@ -19,6 +19,7 @@ import { getOnboardingBootstrap } from '../services/userComposition';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { usePostDraftStore } from '../store/postDraftStore';
+import { useRedirectIntentStore } from '../store/redirectIntentStore';
 import { container } from '../lib/container';
 import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
 
@@ -27,6 +28,9 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
   const router = useRouter();
   const segments = useSegments();
   const queryClient = useQueryClient();
+  const pathname = usePathname();
+  const capturePendingPath = useRedirectIntentStore((s) => s.capturePath);
+  const consumePendingPath = useRedirectIntentStore((s) => s.consumePath);
   const {
     session,
     isAuthenticated,
@@ -171,6 +175,9 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
         !isAccountBlocked &&
         !isAboutSurface
       ) {
+        // FR-POST-023 AC6 — remember the deep-link target so we can restore
+        // it after the user completes sign-in / onboarding.
+        if (typeof pathname === 'string') capturePendingPath(pathname);
         router.replace('/(auth)');
       }
       return;
@@ -180,15 +187,19 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     if (onboardingState === null) return;
 
     if (onboardingState === 'pending_basic_info' && basicInfoSkipped === true) {
-      router.replace('/(tabs)');
+      // FR-POST-023 AC6 — restore a captured deep-link if the user signed in
+      // straight through the basic-info skip path.
+      const pending = consumePendingPath();
+      router.replace((pending ?? '/(tabs)') as Href);
     } else if (onboardingState === 'pending_basic_info') {
       router.replace('/(onboarding)/about-intro');
     } else if (onboardingState === 'pending_avatar') {
       router.replace('/(onboarding)/photo');
     } else {
-      router.replace('/(tabs)');
+      const pending = consumePendingPath();
+      router.replace((pending ?? '/(tabs)') as Href);
     }
-  }, [isLoading, isAuthenticated, onboardingState, basicInfoSkipped, segments, router]);
+  }, [isLoading, isAuthenticated, onboardingState, basicInfoSkipped, segments, pathname, router, capturePendingPath, consumePendingPath]);
 
   if (isLoading) {
     return (

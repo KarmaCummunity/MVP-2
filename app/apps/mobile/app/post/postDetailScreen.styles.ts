@@ -18,6 +18,7 @@ const overlayShadow = {
 
 export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
+  headerActions: { flexDirection: 'row', alignItems: 'center' },
   center: {
     flex: 1,
     justifyContent: 'center',

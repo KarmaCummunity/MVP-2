@@ -474,8 +474,47 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 
 ---
 
+## FR-POST-023 — Share post via link with image preview
+
+> **Status:** 🟡 In progress — ships under BACKLOG P2.33. Replaces the v0.9–v0.12 architecture (Supabase Edge Function) with a Hono web server on the same Railway service that serves the SPA — one canonical URL on `karma-community-kc.com`.
+
+**Description.**
+A signed-in viewer of a `Public`, `open` post may share a link to that post from the post-detail screen. The link is browsable to anyone (signed-in or not); social-media crawlers see an Open Graph card with the first post image, the post title, and the description; non-authenticated humans landing in the app are routed to the sign-in screen and, after sign-in, deep-linked back to the original post.
+
+**Source.**
+- Product request (2026-05-23). Re-scoped 2026-05-24 to eliminate the Supabase-domain leak observed in the prior shipped version.
+
+**Acceptance Criteria.**
+- AC1. The post-detail screen exposes a share affordance in the header — **in the trailing corner** (rightmost in RTL), with the existing ⋮ menu placed to its left — to **any** viewer (owner or third party) when `post.status === 'open'` AND `post.visibility === 'Public'`. Image presence is not required.
+- AC2. Tapping the affordance opens the platform share sheet. The accompanying message body is composed per-post by `buildPostShareMessage` as a structured, scannable block of labeled lines (WhatsApp-style bold via `*…*`):
+   1. `shareHeadlineGive` / `shareHeadlineRequest` (per-type cue) + blank line.
+   2. `*כותרת:* <title>`.
+   3. `*תיאור:* <description>` — truncated to 200 chars with `…`; whole line omitted when null/empty.
+   4. `*קטגוריה:* <category>` — always included, even for `Other`.
+   5. `*מיקום:* <address>` — `city`, `city + street`, or `city + street + number` per `locationDisplayLevel`.
+   6. `*פורסם:* <relativeTime>` — date-fns relative format, Hebrew locale.
+   7. Blank line, then `shareCtaGive` / `shareCtaRequest`.
+   The share URL appears in the message body **exactly once** on every platform. iOS attaches the first image binary via the `url` field (`expo-file-system` cache download); Android never passes `url` (RN concatenates it onto EXTRA_TEXT, which is what caused the duplicated link in WhatsApp in the reverted version). Web uses `navigator.share({ files })` when Web Share Level 2 supports files; else `navigator.share({ title, text, url })`; else `navigator.clipboard.writeText(url)` with a Hebrew toast.
+- AC3. The share URL is `https://karma-community-kc.com/post/<id>` — the same URL as the in-app deep link, the universal-link claim path, and the SPA route. There is **no** Supabase URL anywhere — neither as the user-visible URL, nor in a redirect chain, nor in WhatsApp's preview "via" line. Built from `EXPO_PUBLIC_WEB_BASE_URL` (defaults to `https://karma-community-kc.com` when unset).
+- AC4. The Railway web service runs a Hono server (replaces `serve dist --single`) that, on `GET /post/:id` with a crawler UA, returns 200 `text/html` with `og:title`, `og:description`, `og:image`, `og:url`, `og:locale=he_IL`, `twitter:card=summary_large_image`. Non-`Public+open` posts, not-found, invalid UUIDs, and REST timeouts return a generic OG card pointing at the marketing landing — never the post's image or title.
+- AC5. The same `GET /post/:id` from a human (UA not matching the BOT regex) returns the SPA `index.html`; Expo Router renders the post-detail screen.
+- AC6. **Unauthenticated landing:** when an unauthenticated user follows `/post/<id>`, `AuthGate` captures the path before redirecting to `(auth)`, persists it in an in-memory store with a 10-minute TTL, and after sign-in / onboarding completion navigates to the captured path (`router.replace(pendingPath)`), then clears the intent. Refresh / app restart loses the intent, falling back to `(tabs)`.
+- AC7. The OG image is the public Supabase Storage URL for `mediaAssets[0].path`. When the post has no media (e.g. Request posts without images), the OG image is `${APP_BASE_URL}/pwa-icon-512.png` (the 512×512 community logo bundled with the web app).
+- AC8. The share action does not mutate post state, does not require a network round-trip on the client (the Hono server is hit only when the recipient opens the link), and emits no `audit_event` (read-only intent).
+
+**Edge Cases.**
+- Post deleted between share and link-open: crawler gets generic card (Hono REST filter excludes the row); human gets SPA → "not found" UX.
+- Post closed between share and link-open: same as above (filter is `visibility=eq.Public&status=eq.open`).
+- User offline at share time: OS share sheet still opens. Recipient's connectivity governs link resolution.
+- Image download failure on iOS: fall back to URL-only share. OG preview on the recipient still renders the image.
+
+**Related.** Screens: 2.3 (post detail). Domain: `Post.visibility`, `Post.status`. Cross-refs: `FR-POST-014` (viewer detail), `FR-AUTH-014` (guest entry), `TD-66` (deep-link manifests). Server: `app/apps/mobile/web-server/server.mjs`. Decision: `D-38`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.13 | 2026-05-24 | `FR-POST-023` — re-architected to eliminate Supabase-domain leak. Hono server on the Railway web service replaces the Supabase Edge Function. One canonical URL `https://karma-community-kc.com/post/<id>` for share + deep link + SPA route. Share body adds `*פורסם:*` (relative time); category line is always included (incl. `Other`); address mirrors the post-detail screen's `locationDisplayLevel`. |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
 | 0.8 | 2026-05-17 | `FR-POST-008` AC5 + `D-35` — `posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status. |

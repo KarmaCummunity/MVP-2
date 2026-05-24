@@ -96,4 +96,15 @@ export default tseslint.config(
       globals: globals.node,
     },
   },
+  // Hono web-server (Node.js ESM, not a React-Native browser env).
+  {
+    files: ['apps/mobile/web-server/**/*.mjs'],
+    languageOptions: {
+      sourceType: 'module',
+      globals: { ...globals.node, ...globals.browser },
+    },
+    rules: {
+      'no-undef': 'off',
+    },
+  },
 );

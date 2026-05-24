@@ -1,39 +1,43 @@
 # syntax=docker/dockerfile:1.7
-# Static SPA build of the Expo web target, served with `serve --single`.
-# Designed for Railway, but builds anywhere Docker runs.
+# Two-stage build: Expo web bundle → Node 20 Hono server.
+# Designed for Railway, builds anywhere Docker runs.
 
 # ─── Stage 1: install + build the web bundle ──────────────────────────
 FROM node:20-bookworm-slim AS builder
 WORKDIR /repo
 
-# pnpm via corepack (version pinned by app/package.json#packageManager).
 RUN corepack enable
-
-# Copy the entire pnpm workspace (lockfile-driven install for cache hits).
 COPY app /repo/app
-
 WORKDIR /repo/app
 RUN pnpm install --frozen-lockfile
 
-# Build args become inlined into the bundle by `expo export -p web`.
-# Railway exposes service variables to the build via build args automatically.
 # Every EXPO_PUBLIC_* the client reads at bundle time must be listed here;
-# otherwise the builder stage never sees it and Metro inlines `undefined` / defaults.
+# otherwise the builder stage never sees it and Metro inlines `undefined`.
 ARG EXPO_PUBLIC_ENVIRONMENT
 ARG EXPO_PUBLIC_SUPABASE_URL
 ARG EXPO_PUBLIC_SUPABASE_ANON_KEY
+ARG EXPO_PUBLIC_WEB_BASE_URL
 ENV EXPO_PUBLIC_ENVIRONMENT=${EXPO_PUBLIC_ENVIRONMENT}
 ENV EXPO_PUBLIC_SUPABASE_URL=${EXPO_PUBLIC_SUPABASE_URL}
 ENV EXPO_PUBLIC_SUPABASE_ANON_KEY=${EXPO_PUBLIC_SUPABASE_ANON_KEY}
+ENV EXPO_PUBLIC_WEB_BASE_URL=${EXPO_PUBLIC_WEB_BASE_URL}
 
 RUN pnpm build:web
 
-# ─── Stage 2: tiny runtime that serves the static dist with SPA fallback ──
+# ─── Stage 2: Hono server with OG meta + static SPA + SPA fallback ────
 FROM node:20-alpine AS runner
 WORKDIR /srv
-RUN npm install --global serve@14
+
+# Server package brings hono + @hono/node-server only. Tiny dep surface.
+COPY --from=builder /repo/app/apps/mobile/web-server/package.json ./package.json
+RUN npm install --omit=dev
+
+COPY --from=builder /repo/app/apps/mobile/web-server/server.mjs ./server.mjs
 COPY --from=builder /repo/app/apps/mobile/dist ./dist
+
 ENV PORT=3000
+ENV WEB_DIST_DIR=/srv/dist
 EXPOSE 3000
-# `--single` rewrites unknown paths to index.html (deep-link refresh).
-CMD ["sh", "-c", "serve dist --single --listen ${PORT:-3000}"]
+
+# SUPABASE_URL, SUPABASE_ANON_KEY, APP_BASE_URL are injected by Railway at runtime.
+CMD ["node", "server.mjs"]
