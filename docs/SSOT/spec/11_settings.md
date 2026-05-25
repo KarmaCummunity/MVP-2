@@ -180,16 +180,22 @@ A non-actionable line offering an out-of-app contact for emergencies.
 
 ## FR-SETTINGS-010 — Legal section
 
+**Status.** ✅ Implemented (P2.18, migration `0108_legal_documents_and_consent.sql`).
+
 **Description.**
-Links to Terms of Service and Privacy Policy.
+Two settings rows ("תנאי שימוש", "מדיניות פרטיות") open dedicated screens that render server-driven Markdown content natively (no WebView). Document content is editable from Supabase Studio via the `publish_legal_document` RPC; no app deploy required. Material changes trigger a re-acknowledgement flow per `docs/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md`.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.5.
+- Design: `docs/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md`.
 
 **Acceptance Criteria.**
-- AC1. Two rows that open in-app web views with the canonical URLs.
-- AC2. Both URLs are configurable via remote config.
-- AC3. Older user must re-acknowledge if the legal documents have a newer effective date than the user's last acceptance (`FR-AUTH-002`).
+- AC1. Two settings rows ("תנאי שימוש", "מדיניות פרטיות") open dedicated screens rendering server-driven Markdown content natively (no WebView). RTL-correct on iOS, Android, and web.
+- AC2. Document content is editable via the `publish_legal_document` RPC. No remote-config URL configuration is involved.
+- AC3. Re-acknowledgement is required when a published version has `severity ∈ ('standard','critical')`. `critical` blocks on next foreground; `standard` shows a 7-day soft banner that escalates to blocking on day 7. The banner→modal promotion is computed server-side (`needs_legal_reacknowledgement` SQL function) from the database clock, not the client.
+- AC4. Post-OAuth consent screen presents both documents as cards; the user must check both before proceeding. Skipping is only possible via sign-out (with confirmation).
+- AC5. Documents support `effective_date` in the future; until the date arrives, the document is visible in Settings with a "ייכנס לתוקף ב-DATE" banner but does not trigger the gate.
+- AC6. Network failure during the gate check falls open (allows the user through) and logs the bypass via `console.warn`. Next online foreground re-checks. (A future server-side `legal_events` log will replace `console.warn`.)
 
 ---
 

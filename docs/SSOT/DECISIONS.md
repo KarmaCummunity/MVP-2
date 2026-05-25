@@ -826,6 +826,64 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-40 — Legal docs delivery model: server-driven Markdown, native render (2026-05-25)
+
+**Decision.** Legal documents (Terms of Service + Privacy Policy) are delivered as server-driven Markdown stored in `legal_document_versions.body_md` and rendered natively in the mobile app via `react-native-markdown-display`. No WebView; no remote-config URL pointing at a canonical web copy.
+
+**Rationale.** Native rendering keeps RTL, theming, and offline behavior consistent across iOS, Android, and web. Avoids depending on a separate website CMS during an MVP that doesn't yet have one. Editing workflow is one SQL snippet (`publish_legal_document` RPC) against Supabase Studio rather than a CMS publish + cache invalidation.
+
+**Trade-off.** Markdown is the ceiling for layout richness — no embedded video, no complex tables. Acceptable for legal copy.
+
+---
+
+## D-41 — Severity tiers: minor / standard / critical (2026-05-25)
+
+**Decision.** `publish_legal_document` takes a three-valued `severity`: `minor` (no re-ack), `standard` (re-ack within 7 days, banner→modal promoted server-side), `critical` (blocking modal on next foreground; `effective_date` must be within 1 hour).
+
+**Rationale.** Replaces the originally-proposed `is_material_change` boolean. Protects users from "wall of text on app open" for typo fixes while still meeting consent requirements for material changes. The publisher decides per release.
+
+---
+
+## D-42 — Append-only acceptance log (2026-05-25)
+
+**Decision.** `user_legal_acceptances` is an append-only event log: one row per acceptance event per (user_id, doc_type, version). `UPDATE` and `DELETE` are blocked by a BEFORE trigger. RLS allows users to read only their own rows and insert only their own rows (but the insert path is the SECURITY-DEFINER RPC anyway).
+
+**Rationale.** GDPR Art. 7(1) requires demonstrating consent per version with a timestamp. An upsert-only table would let one user's later acceptance overwrite the audit record of their earlier one. Council legal review identified this as the highest-priority blocker on the original design.
+
+---
+
+## D-43 — No grandfather backfill of acceptances (2026-05-25)
+
+**Decision.** Existing users at the launch of FR-SETTINGS-010 are NOT issued fabricated `accepted_at = users.created_at` rows. The migration seeds v1 with `severity='standard'` so every existing user enters the 7-day soft-grace flow on their next foreground.
+
+**Rationale.** A backfilled timestamp for a v1 text that the user never actually saw is a fabricated audit record — exactly what GDPR Art. 7 audit-readiness is supposed to prevent. The one-time soft-grace UX cost (a banner for ≤ 7 days) is the right trade against falsifying the consent log.
+
+---
+
+## D-44 — Server-computed `block_mode` (2026-05-25)
+
+**Decision.** The 7-day `standard` → `critical` promotion (banner → blocking modal) is computed inside the `needs_legal_reacknowledgement` SQL function from `now() - current_effective_date >= '7 days'`. The mobile client does not derive `block_mode` from local time; it consumes the server-supplied `block_mode` field verbatim.
+
+**Rationale.** Client clocks can be wrong (DST, deliberate tampering, OS bug, plane mode timezone confusion). The legally-enforceable promotion must live with the source of truth. Client uses the server-supplied `currentEffectiveDate` only to *display* a countdown.
+
+---
+
+## D-45 — `critical` severity must publish immediately (2026-05-25)
+
+**Decision.** `publish_legal_document` rejects `severity='critical'` with `effective_date > now() + interval '1 hour'`.
+
+**Rationale.** Critical = urgent. A scheduled rollout is exactly the case where `standard` (with the 7-day soft-grace) is the right tool. Allowing a "future critical" is an "alarm bomb": users would foreground the app at the appointed time and find themselves blocked with no warning. The 1-hour window is operational slack for a publish that misses `now()` by seconds.
+
+---
+
+## D-46 — Legal tables `authenticated`-only read (2026-05-25)
+
+**Decision.** SELECT on `legal_documents` and `legal_document_versions` is granted to `authenticated` only, not `anon`. The RPCs follow the same posture.
+
+**Rationale.** Sign-up happens through OAuth (or email-OTP) — by the time the user needs to read a legal document for the first time, they are always already authenticated. Removing the anon grant shrinks the public-facing read surface by two tables for no UX cost.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |

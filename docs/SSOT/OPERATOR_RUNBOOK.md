@@ -294,3 +294,77 @@ supabase functions deploy
 If historical bad data exists (same contributor intent, two live rows), identification is **manual** and needs product/operator judgment — do **not** bulk-delete blindly.
 
 Heuristic: same `submitted_by`, same `category_slug`, same `url`, two rows with different `created_at` (often the “edit” created an unintended INSERT). Keep the row you want to show (typically the older canonical row or the one referenced by UI); remove or soft-hide the duplicate per your data policy. Migration `0050_donation_links_purge_soft_deleted.sql` only addresses `hidden_at` / soft-delete hygiene, not this class of duplicate.
+
+---
+
+## Publishing legal documents (FR-SETTINGS-010)
+
+Editable from Supabase Studio without a frontend deploy. Each publish is an immutable `legal_document_versions` row plus an update to the current-pointer row in `legal_documents`. The trigger computes `content_hash` (SHA-256) automatically.
+
+**Severity semantics:**
+- `minor` — typo / cosmetic. No re-acknowledgement. `change_summary` may be null.
+- `standard` — material change. Users see a 7-day soft-grace banner, then the server promotes the gate to a blocking modal at day 7. `change_summary` is required (Markdown bullets shown on the consent card).
+- `critical` — urgent change. Blocks immediately on the next foreground. `effective_date` must be within 1 hour of `now()`; the RPC rejects scheduled criticals.
+
+### Snippet 1 — Publish Terms (minor): typo / cosmetic, no re-ack
+
+```sql
+select public.publish_legal_document(
+  p_doc_type       => 'terms',
+  p_body_md        => $$
+# תנאי שימוש
+<full Markdown body here>
+$$,
+  p_severity       => 'minor',
+  p_change_summary => null,
+  p_effective_date => now()
+);
+```
+
+### Snippet 2 — Publish Terms (material): re-ack required, 7-day soft grace
+
+```sql
+select public.publish_legal_document(
+  p_doc_type       => 'terms',
+  p_body_md        => $$
+# תנאי שימוש
+<full Markdown body here>
+$$,
+  p_severity       => 'standard',
+  p_change_summary => $$- בולט 1
+- בולט 2
+- בולט 3$$,
+  p_effective_date => now()
+);
+```
+
+### Snippet 3 — Publish Privacy (minor)
+
+Same as Snippet 1 with `p_doc_type => 'privacy'`.
+
+### Snippet 4 — Publish Privacy (material)
+
+Same as Snippet 2 with `p_doc_type => 'privacy'`.
+
+### Snippet 5 — Publish CRITICAL (blocks all users immediately)
+
+Use sparingly. Effective date must be within 1 hour of `now()` or the RPC rejects.
+
+```sql
+select public.publish_legal_document(
+  p_doc_type       => 'privacy',
+  p_body_md        => $$<full Markdown>$$,
+  p_severity       => 'critical',
+  p_change_summary => $$- שינוי דחוף שדורש אישור מיידי$$,
+  p_effective_date => now()
+);
+```
+
+### Verification after publish
+
+```sql
+select doc_type, current_version, last_material_version, last_material_severity
+  from public.legal_documents;
+```
+
+The published row should show the new `current_version`. For `standard` / `critical`, `last_material_version` advances; for `minor`, it stays.
