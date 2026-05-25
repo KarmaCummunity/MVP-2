@@ -28,6 +28,7 @@ import { SearchFilterSheet } from '../../src/components/SearchFilterSheet';
 import { TopBar } from '../../src/components/TopBar';
 import { Screen } from '../../src/components/ui/Screen';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../src/navigation/useShellTabBarVisibility';
 import { useSearchScreenStyles } from './search.styles';
 
 // ── Constants ─────────────────────────────────
@@ -41,6 +42,7 @@ const FULL_LIMIT = 50;
 export default function SearchScreen() {
   const styles = useSearchScreenStyles();
   const { colors } = useTheme();
+  const tabBarPad = useShellTabBarScrollInset();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
@@ -248,7 +250,7 @@ export default function SearchScreen() {
       {/* ── Content area ────────────────────── */}
       <ScrollView
         style={styles.content}
-        contentContainerStyle={styles.contentInner}
+        contentContainerStyle={[styles.contentInner, { paddingBottom: tabBarPad }]}
         keyboardShouldPersistTaps="handled"
       >
         {/* Min chars message (1 char typed) */}

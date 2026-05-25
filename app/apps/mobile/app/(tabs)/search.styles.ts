@@ -120,7 +120,9 @@ export const useSearchScreenStyles = makeUseStyles(({ colors, isDark }) => ({
 
   // ── Content + sections ────────────────────────────────────────────────
   content: { flex: 1 },
-  contentInner: { padding: spacing.base, paddingBottom: spacing['2xl'] },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last result row clears the floating tab-bar pill (FR-RESP-006).
+  contentInner: { padding: spacing.base },
   section: { marginBottom: spacing.lg },
   sectionHeader: {
     flexDirection: rowDirectionStart,
