@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
-import { AppState, View, Text, Pressable, Modal } from 'react-native';
+import { AppState, View, Text, Pressable, Modal, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { usePathname } from 'expo-router';
 import type { LegalPendingItem } from '@kc/domain';
@@ -144,61 +145,84 @@ interface FirstForegroundSheetProps {
 function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroundSheetProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  // Web: center the sheet at the bottom with a max width so it doesn't span
+  // a 1600px desktop. Native: full-width sheet, edges=['bottom'] inset so it
+  // doesn't sit under the iOS home indicator.
+  const sheetStyle =
+    Platform.OS === 'web'
+      ? ({ width: '100%', maxWidth: 560, alignSelf: 'center' } as const)
+      : undefined;
   return (
     <Modal visible animationType="slide" presentationStyle="pageSheet" transparent>
-      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-        <View
-          style={{
-            backgroundColor: colors.surface,
-            borderTopLeftRadius: 16,
-            borderTopRightRadius: 16,
-            padding: spacing.lg,
-          }}
+      <View
+        style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay }}
+      >
+        <SafeAreaView
+          edges={['bottom']}
+          style={[
+            {
+              backgroundColor: colors.surface,
+              borderTopLeftRadius: 16,
+              borderTopRightRadius: 16,
+            },
+            sheetStyle,
+          ]}
         >
-          <Text style={{ ...typography.h4, color: colors.textPrimary, textAlign: 'right' }}>
-            {t('legal.updateBannerHeading')}
-          </Text>
-          <Text
-            style={{
-              ...typography.body,
-              color: colors.textPrimary,
-              textAlign: 'right',
-              marginTop: spacing.sm,
-            }}
-          >
-            {t('legal.updateBannerCountdown', { days: daysRemaining(pending) })}
-          </Text>
-          <View style={{ flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.lg }}>
-            <Pressable
-              onPress={onSnooze}
+          <View style={{ padding: spacing.lg }}>
+            <Text
+              accessibilityRole="header"
               style={{
-                flex: 1,
-                padding: spacing.md,
-                borderRadius: 8,
-                backgroundColor: colors.surfaceRaised,
-                alignItems: 'center',
+                ...typography.h4,
+                color: colors.textPrimary,
+                textAlign: 'right',
+                writingDirection: 'rtl',
               }}
             >
-              <Text style={{ ...typography.button, color: colors.textPrimary }}>
-                {t('legal.updateSheetSnooze')}
-              </Text>
-            </Pressable>
-            <Pressable
-              onPress={onAcceptNow}
+              {t('legal.updateBannerHeading')}
+            </Text>
+            <Text
               style={{
-                flex: 1,
-                padding: spacing.md,
-                borderRadius: 8,
-                backgroundColor: colors.primary,
-                alignItems: 'center',
+                ...typography.body,
+                color: colors.textPrimary,
+                textAlign: 'right',
+                writingDirection: 'rtl',
+                marginTop: spacing.sm,
               }}
             >
-              <Text style={{ ...typography.button, color: colors.textInverse }}>
-                {t('legal.updateSheetAccept')}
-              </Text>
-            </Pressable>
+              {t('legal.updateBannerCountdown', { days: daysRemaining(pending) })}
+            </Text>
+            <View style={{ flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.lg }}>
+              <Pressable
+                onPress={onSnooze}
+                style={{
+                  flex: 1,
+                  padding: spacing.md,
+                  borderRadius: 8,
+                  backgroundColor: colors.surfaceRaised,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ ...typography.button, color: colors.textPrimary }}>
+                  {t('legal.updateSheetSnooze')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={onAcceptNow}
+                style={{
+                  flex: 1,
+                  padding: spacing.md,
+                  borderRadius: 8,
+                  backgroundColor: colors.primary,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ ...typography.button, color: colors.textInverse }}>
+                  {t('legal.updateSheetAccept')}
+                </Text>
+              </Pressable>
+            </View>
           </View>
-        </View>
+        </SafeAreaView>
       </View>
     </Modal>
   );

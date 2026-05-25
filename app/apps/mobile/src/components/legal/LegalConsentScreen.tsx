@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Modal, Platform } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import type { LegalPendingItem } from '@kc/domain';
@@ -53,14 +54,28 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
     router.replace('/');
   };
 
+  // Modals (and the web SPA) render outside the root SafeAreaProvider's padding
+  // — wrap in SafeAreaView so the H3 heading clears the iOS status bar / web
+  // address bar instead of bleeding under it (see screenshot regression).
+  // `edges=['top','bottom']` only — we want horizontal flush to the screen.
+  const containerStyle =
+    Platform.OS === 'web'
+      ? ({ maxWidth: 560, alignSelf: 'center', width: '100%' } as const)
+      : undefined;
+
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <ScrollView contentContainerStyle={{ padding: spacing.lg }}>
+    <SafeAreaView
+      edges={['top', 'bottom']}
+      style={{ flex: 1, backgroundColor: colors.background }}
+    >
+      <ScrollView contentContainerStyle={[{ padding: spacing.lg }, containerStyle]}>
         <Text
+          accessibilityRole="header"
           style={{
             ...typography.h3,
             color: colors.textPrimary,
             textAlign: 'right',
+            writingDirection: 'rtl',
             marginBottom: spacing.lg,
           }}
         >
@@ -118,8 +133,23 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
             padding: spacing.lg,
           }}
         >
-          <View style={{ backgroundColor: colors.surface, borderRadius: 12, padding: spacing.lg }}>
-            <Text style={{ ...typography.h4, color: colors.textPrimary, textAlign: 'right' }}>
+          <View
+            style={[
+              { backgroundColor: colors.surface, borderRadius: 12, padding: spacing.lg },
+              Platform.OS === 'web'
+                ? ({ width: '100%', maxWidth: 480, alignSelf: 'center' } as const)
+                : null,
+            ]}
+          >
+            <Text
+              accessibilityRole="header"
+              style={{
+                ...typography.h4,
+                color: colors.textPrimary,
+                textAlign: 'right',
+                writingDirection: 'rtl',
+              }}
+            >
               {t('legal.exitConfirmTitle')}
             </Text>
             <Text
@@ -127,6 +157,7 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
                 ...typography.body,
                 color: colors.textPrimary,
                 textAlign: 'right',
+                writingDirection: 'rtl',
                 marginVertical: spacing.md,
               }}
             >
@@ -172,17 +203,23 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
         onRequestClose={() => setReaderOpenFor(null)}
       >
         {readerOpenFor ? (
-          <View style={{ flex: 1, backgroundColor: colors.background }}>
-            <Pressable onPress={() => setReaderOpenFor(null)} style={{ padding: spacing.md }}>
-              <Text style={{ ...typography.button, color: colors.primary, textAlign: 'left' }}>
+          <SafeAreaView
+            edges={['top', 'bottom']}
+            style={{ flex: 1, backgroundColor: colors.background }}
+          >
+            <Pressable
+              onPress={() => setReaderOpenFor(null)}
+              style={{ padding: spacing.md, alignSelf: 'flex-start' }}
+            >
+              <Text style={{ ...typography.button, color: colors.primary }}>
                 {t('legal.closeReader')}
               </Text>
             </Pressable>
             <LegalDocumentReader docType={readerOpenFor.docType} />
-          </View>
+          </SafeAreaView>
         ) : null}
       </Modal>
-    </View>
+    </SafeAreaView>
   );
 }
 

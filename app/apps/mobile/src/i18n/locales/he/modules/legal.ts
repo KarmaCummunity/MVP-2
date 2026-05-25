@@ -20,8 +20,8 @@ export const legalHe = {
   exitConfirmConfirm: 'התנתק',
   exitConfirmCancel: 'ביטול',
 
-  updateModalHeading: 'המסמך התעדכן — נדרש אישור',
-  updateBannerHeading: 'המסמך התעדכן',
+  updateModalHeading: 'מסמכי התקנון התעדכנו',
+  updateBannerHeading: 'מסמכי התקנון התעדכנו',
   updateBannerCountdown: 'אישור נדרש תוך {{days}} ימים',
   updateCheckbox: 'קראתי ואני מאשר/ת',
   updateConfirmCta: 'אישור',
