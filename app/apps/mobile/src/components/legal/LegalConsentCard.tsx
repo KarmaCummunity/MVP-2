@@ -5,14 +5,14 @@ import type { LegalDocumentContent, LegalPendingItem } from '@kc/domain';
 import { typography, spacing, useTheme } from '@kc/ui';
 import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
 
-interface Props {
-  item: LegalPendingItem;
-  checked: boolean;
-  onToggle: (v: boolean) => void;
-  onOpenReader: () => void;
+interface LegalConsentCardProps {
+  readonly item: LegalPendingItem;
+  readonly checked: boolean;
+  readonly onToggle: (v: boolean) => void;
+  readonly onOpenReader: () => void;
 }
 
-export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Props) {
+export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: LegalConsentCardProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const title = item.docType === 'terms' ? t('legal.termsTitle') : t('legal.privacyTitle');

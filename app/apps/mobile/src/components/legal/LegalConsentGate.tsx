@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState, type ReactNode } from 'react';
+import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState, View, Text, Pressable, Modal } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { usePathname } from 'expo-router';
@@ -12,8 +12,10 @@ import { LegalConsentScreen, type LegalConsentMode } from './LegalConsentScreen'
 
 const FOREGROUND_DEBOUNCE_MS = 500;
 
-interface Props {
-  children: ReactNode;
+const noop = () => {};
+
+interface LegalConsentGateProps {
+  readonly children: ReactNode;
 }
 
 type GateState =
@@ -27,9 +29,7 @@ type GateState =
       userOptedToAcceptNow: boolean;
     };
 
-export function LegalConsentGate({ children }: Props) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
+export function LegalConsentGate({ children }: LegalConsentGateProps) {
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId ?? null;
   const pathname = usePathname();
@@ -39,41 +39,38 @@ export function LegalConsentGate({ children }: Props) {
 
   const onReadingDoc = pathname.startsWith('/legal/');
 
-  const runCheck = useMemo(
-    () => async () => {
-      if (!userId) {
+  const runCheck = useCallback(async () => {
+    if (!userId) {
+      setState({ kind: 'clear' });
+      return;
+    }
+    setState((prev) => (prev.kind === 'pending' ? prev : { kind: 'loading' }));
+    try {
+      const result = await getCheckPendingLegalAcksUseCase().execute();
+      if (result.pending.length === 0) {
         setState({ kind: 'clear' });
         return;
       }
-      setState((prev) => (prev.kind === 'pending' ? prev : { kind: 'loading' }));
-      try {
-        const result = await getCheckPendingLegalAcksUseCase().execute();
-        if (result.pending.length === 0) {
-          setState({ kind: 'clear' });
-        } else {
-          setState({
-            kind: 'pending',
-            result,
-            sheetDismissedThisSession: false,
-            userOptedToAcceptNow: false,
-          });
-        }
-      } catch (err) {
-        // Fall open: log and let the user through (spec §7.5).
-        // eslint-disable-next-line no-console
-        console.warn('[legal] consent_check_skipped_offline', {
-          reason: (err as Error).message,
-          timestamp: new Date().toISOString(),
-        });
-        setState({ kind: 'clear' });
-      }
-    },
-    [userId],
-  );
+      setState({
+        kind: 'pending',
+        result,
+        sheetDismissedThisSession: false,
+        userOptedToAcceptNow: false,
+      });
+    } catch (err) {
+      // Fall open: log and let the user through (spec §7.5).
+      // eslint-disable-next-line no-console
+      console.warn('[legal] consent_check_skipped_offline', {
+        reason: (err as Error).message,
+        timestamp: new Date().toISOString(),
+      });
+      setState({ kind: 'clear' });
+    }
+  }, [userId]);
 
   // Trigger: mount + auth change
   useEffect(() => {
-    void runCheck();
+    runCheck();
   }, [runCheck]);
 
   // Trigger: AppState 'active' transition (debounced)
@@ -81,9 +78,7 @@ export function LegalConsentGate({ children }: Props) {
     const sub = AppState.addEventListener('change', (next) => {
       if (next !== 'active') return;
       if (debounceTimer.current) clearTimeout(debounceTimer.current);
-      debounceTimer.current = setTimeout(() => {
-        void runCheck();
-      }, FOREGROUND_DEBOUNCE_MS);
+      debounceTimer.current = setTimeout(runCheck, FOREGROUND_DEBOUNCE_MS);
     });
     return () => {
       sub.remove();
@@ -105,18 +100,17 @@ export function LegalConsentGate({ children }: Props) {
   // Full-screen consent: server says block, or user voluntarily opted to accept now from the sheet
   if (mustBlock || state.userOptedToAcceptNow) {
     return (
-      <Modal visible animationType="slide" onRequestClose={() => void 0}>
+      <Modal visible animationType="slide" onRequestClose={noop}>
         <LegalConsentScreen
           mode={screenMode}
           pending={state.result.pending}
-          onResolved={() => void runCheck()}
+          onResolved={runCheck}
         />
       </Modal>
     );
   }
 
   // Banner mode: in-shell affordance + first-foreground sheet
-  const dismissed = state.sheetDismissedThisSession;
   return (
     <View style={{ flex: 1 }}>
       <BannerStrip
@@ -124,71 +118,89 @@ export function LegalConsentGate({ children }: Props) {
         onOpen={() => setState({ ...state, userOptedToAcceptNow: true })}
       />
       {children}
-      {!dismissed ? (
-        <Modal visible animationType="slide" presentationStyle="pageSheet" transparent>
-          <View style={{ flex: 1, justifyContent: 'flex-end' }}>
-            <View
-              style={{
-                backgroundColor: colors.surface,
-                borderTopLeftRadius: 16,
-                borderTopRightRadius: 16,
-                padding: spacing.lg,
-              }}
-            >
-              <Text style={{ ...typography.h4, color: colors.textPrimary, textAlign: 'right' }}>
-                {t('legal.updateBannerHeading')}
-              </Text>
-              <Text
-                style={{
-                  ...typography.body,
-                  color: colors.textPrimary,
-                  textAlign: 'right',
-                  marginTop: spacing.sm,
-                }}
-              >
-                {t('legal.updateBannerCountdown', { days: daysRemaining(state.result.pending) })}
-              </Text>
-              <View style={{ flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.lg }}>
-                <Pressable
-                  onPress={() => setState({ ...state, sheetDismissedThisSession: true })}
-                  style={{
-                    flex: 1,
-                    padding: spacing.md,
-                    borderRadius: 8,
-                    backgroundColor: colors.surfaceRaised,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ ...typography.button, color: colors.textPrimary }}>
-                    {t('legal.updateSheetSnooze')}
-                  </Text>
-                </Pressable>
-                <Pressable
-                  onPress={() =>
-                    setState({
-                      ...state,
-                      sheetDismissedThisSession: true,
-                      userOptedToAcceptNow: true,
-                    })
-                  }
-                  style={{
-                    flex: 1,
-                    padding: spacing.md,
-                    borderRadius: 8,
-                    backgroundColor: colors.primary,
-                    alignItems: 'center',
-                  }}
-                >
-                  <Text style={{ ...typography.button, color: colors.textInverse }}>
-                    {t('legal.updateSheetAccept')}
-                  </Text>
-                </Pressable>
-              </View>
-            </View>
-          </View>
-        </Modal>
+      {!state.sheetDismissedThisSession ? (
+        <FirstForegroundSheet
+          pending={state.result.pending}
+          onSnooze={() => setState({ ...state, sheetDismissedThisSession: true })}
+          onAcceptNow={() =>
+            setState({
+              ...state,
+              sheetDismissedThisSession: true,
+              userOptedToAcceptNow: true,
+            })
+          }
+        />
       ) : null}
     </View>
+  );
+}
+
+interface FirstForegroundSheetProps {
+  readonly pending: readonly LegalPendingItem[];
+  readonly onSnooze: () => void;
+  readonly onAcceptNow: () => void;
+}
+
+function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroundSheetProps) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  return (
+    <Modal visible animationType="slide" presentationStyle="pageSheet" transparent>
+      <View style={{ flex: 1, justifyContent: 'flex-end' }}>
+        <View
+          style={{
+            backgroundColor: colors.surface,
+            borderTopLeftRadius: 16,
+            borderTopRightRadius: 16,
+            padding: spacing.lg,
+          }}
+        >
+          <Text style={{ ...typography.h4, color: colors.textPrimary, textAlign: 'right' }}>
+            {t('legal.updateBannerHeading')}
+          </Text>
+          <Text
+            style={{
+              ...typography.body,
+              color: colors.textPrimary,
+              textAlign: 'right',
+              marginTop: spacing.sm,
+            }}
+          >
+            {t('legal.updateBannerCountdown', { days: daysRemaining(pending) })}
+          </Text>
+          <View style={{ flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.lg }}>
+            <Pressable
+              onPress={onSnooze}
+              style={{
+                flex: 1,
+                padding: spacing.md,
+                borderRadius: 8,
+                backgroundColor: colors.surfaceRaised,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ ...typography.button, color: colors.textPrimary }}>
+                {t('legal.updateSheetSnooze')}
+              </Text>
+            </Pressable>
+            <Pressable
+              onPress={onAcceptNow}
+              style={{
+                flex: 1,
+                padding: spacing.md,
+                borderRadius: 8,
+                backgroundColor: colors.primary,
+                alignItems: 'center',
+              }}
+            >
+              <Text style={{ ...typography.button, color: colors.textInverse }}>
+                {t('legal.updateSheetAccept')}
+              </Text>
+            </Pressable>
+          </View>
+        </View>
+      </View>
+    </Modal>
   );
 }
 
@@ -203,13 +215,12 @@ function daysRemaining(pending: readonly LegalPendingItem[]): number {
   return Math.max(0, 7 - elapsedDays);
 }
 
-function BannerStrip({
-  pending,
-  onOpen,
-}: {
-  pending: readonly LegalPendingItem[];
-  onOpen: () => void;
-}) {
+interface BannerStripProps {
+  readonly pending: readonly LegalPendingItem[];
+  readonly onOpen: () => void;
+}
+
+function BannerStrip({ pending, onOpen }: BannerStripProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   return (

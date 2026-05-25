@@ -11,13 +11,13 @@ import { useAuthStore } from '../../store/authStore';
 
 export type LegalConsentMode = 'signup' | 'update';
 
-interface Props {
-  mode: LegalConsentMode;
-  pending: readonly LegalPendingItem[];
-  onResolved: () => void;
+interface LegalConsentScreenProps {
+  readonly mode: LegalConsentMode;
+  readonly pending: readonly LegalPendingItem[];
+  readonly onResolved: () => void;
 }
 
-export function LegalConsentScreen({ mode, pending, onResolved }: Props) {
+export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentScreenProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});

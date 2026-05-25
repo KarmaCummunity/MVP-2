@@ -8,7 +8,11 @@ interface ModalStackApi {
 
 const ModalStackContext = createContext<ModalStackApi | null>(null);
 
-export function ModalStackProvider({ children }: { children: ReactNode }) {
+interface ModalStackProviderProps {
+  readonly children: ReactNode;
+}
+
+export function ModalStackProvider({ children }: ModalStackProviderProps) {
   const [count, setCount] = useState(0);
 
   const push = useCallback(() => setCount((c) => c + 1), []);

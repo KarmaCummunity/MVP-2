@@ -14,8 +14,8 @@ function formatHebrewDate(d: Date): string {
   return `${dd}.${mm}.${d.getFullYear()}`;
 }
 
-interface Props {
-  docType: LegalDocType;
+interface LegalDocumentReaderProps {
+  readonly docType: LegalDocType;
 }
 
 type State =
@@ -23,7 +23,7 @@ type State =
   | { kind: 'ready'; content: LegalDocumentContent }
   | { kind: 'error' };
 
-export function LegalDocumentReader({ docType }: Props) {
+export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const markdownStyles = useMemo(() => makeLegalMarkdownStyles(colors), [colors]);
@@ -91,7 +91,7 @@ export function LegalDocumentReader({ docType }: Props) {
   );
 }
 
-function LoadingSkeleton({ bgColor }: { bgColor: string }) {
+function LoadingSkeleton({ bgColor }: Readonly<{ bgColor: string }>) {
   const bar = (width: number | string, marginTop: number) => (
     <View
       style={{
