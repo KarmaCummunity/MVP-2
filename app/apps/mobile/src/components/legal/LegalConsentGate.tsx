@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useRef, useState, type ReactNode } from 'react';
 import { AppState, View, Text, Pressable, Modal, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { usePathname } from 'expo-router';
 import type { LegalPendingItem } from '@kc/domain';
@@ -145,9 +145,11 @@ interface FirstForegroundSheetProps {
 function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroundSheetProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   // Web: center the sheet at the bottom with a max width so it doesn't span
-  // a 1600px desktop. Native: full-width sheet, edges=['bottom'] inset so it
-  // doesn't sit under the iOS home indicator.
+  // a 1600px desktop. Native: full-width. Bottom inset added as padding so the
+  // sheet content clears the iOS home indicator without SafeAreaView (Modal
+  // doesn't always propagate the SafeAreaProvider context cleanly on iOS).
   const sheetStyle =
     Platform.OS === 'web'
       ? ({ width: '100%', maxWidth: 560, alignSelf: 'center' } as const)
@@ -157,13 +159,13 @@ function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroun
       <View
         style={{ flex: 1, justifyContent: 'flex-end', backgroundColor: colors.overlay }}
       >
-        <SafeAreaView
-          edges={['bottom']}
+        <View
           style={[
             {
               backgroundColor: colors.surface,
               borderTopLeftRadius: 16,
               borderTopRightRadius: 16,
+              paddingBottom: insets.bottom,
             },
             sheetStyle,
           ]}
@@ -222,7 +224,7 @@ function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroun
               </Pressable>
             </View>
           </View>
-        </SafeAreaView>
+        </View>
       </View>
     </Modal>
   );

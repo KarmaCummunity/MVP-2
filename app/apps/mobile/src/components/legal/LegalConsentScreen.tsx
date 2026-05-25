@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Modal, Platform } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
 import type { LegalPendingItem } from '@kc/domain';
@@ -21,6 +21,7 @@ interface LegalConsentScreenProps {
 export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentScreenProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
+  const insets = useSafeAreaInsets();
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
   const [submitting, setSubmitting] = useState(false);
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false);
@@ -54,21 +55,28 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
     router.replace('/');
   };
 
-  // Modals (and the web SPA) render outside the root SafeAreaProvider's padding
-  // — wrap in SafeAreaView so the H3 heading clears the iOS status bar / web
-  // address bar instead of bleeding under it (see screenshot regression).
-  // `edges=['top','bottom']` only — we want horizontal flush to the screen.
+  // Native Modal renders OUTSIDE the root SafeAreaProvider's measured tree,
+  // so wrapping with <SafeAreaView> returns zero insets and the H3 lands
+  // under the status bar. Reading insets here via the hook works (the hook
+  // resolves against the Provider on Web and the native status-bar metric
+  // via the bridge on iOS/Android) — apply them as physical padding.
   const containerStyle =
     Platform.OS === 'web'
       ? ({ maxWidth: 560, alignSelf: 'center', width: '100%' } as const)
       : undefined;
 
   return (
-    <SafeAreaView
-      edges={['top', 'bottom']}
-      style={{ flex: 1, backgroundColor: colors.background }}
-    >
-      <ScrollView contentContainerStyle={[{ padding: spacing.lg }, containerStyle]}>
+    <View style={{ flex: 1, backgroundColor: colors.background }}>
+      <ScrollView
+        contentContainerStyle={[
+          {
+            paddingTop: insets.top + spacing.md,
+            paddingBottom: insets.bottom + spacing.lg,
+            paddingHorizontal: spacing.lg,
+          },
+          containerStyle,
+        ]}
+      >
         <Text
           accessibilityRole="header"
           style={{
@@ -203,10 +211,7 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
         onRequestClose={() => setReaderOpenFor(null)}
       >
         {readerOpenFor ? (
-          <SafeAreaView
-            edges={['top', 'bottom']}
-            style={{ flex: 1, backgroundColor: colors.background }}
-          >
+          <View style={{ flex: 1, backgroundColor: colors.background, paddingTop: insets.top }}>
             <Pressable
               onPress={() => setReaderOpenFor(null)}
               style={{ padding: spacing.md, alignSelf: 'flex-start' }}
@@ -216,10 +221,10 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
               </Text>
             </Pressable>
             <LegalDocumentReader docType={readerOpenFor.docType} />
-          </SafeAreaView>
+          </View>
         ) : null}
       </Modal>
-    </SafeAreaView>
+    </View>
   );
 }
 

@@ -4,6 +4,7 @@ import { useTranslation } from 'react-i18next';
 import type { LegalDocumentContent, LegalPendingItem } from '@kc/domain';
 import { typography, spacing, useTheme } from '@kc/ui';
 import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
+import { rowDirectionStart } from '../../lib/rtlLayout';
 
 interface LegalConsentCardProps {
   readonly item: LegalPendingItem;
@@ -86,7 +87,12 @@ export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Lega
         accessibilityState={{ checked }}
         onPress={() => onToggle(!checked)}
         style={{
-          flexDirection: 'row-reverse',
+          // `rowDirectionStart` (= 'row' on native, 'row-reverse' on web)
+          // gives the same visual on both: checkbox on the right (inline-start
+          // in RTL), label running right-to-left next to it. Writing
+          // 'row-reverse' directly on native is a double-flip under
+          // I18nManager.forceRTL → checkbox would jump to the LEFT.
+          flexDirection: rowDirectionStart,
           alignItems: 'center',
           marginTop: spacing.md,
           gap: spacing.sm,
