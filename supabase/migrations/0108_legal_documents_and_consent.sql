@@ -426,7 +426,12 @@ comment on function public.needs_legal_reacknowledgement is
 -- ---------------------------------------------------------------------------
 
 -- We need a "system" published_by uuid. Use the first super-admin if any
--- exists; otherwise fail loudly so the operator can pre-provision one.
+-- exists; otherwise raise a NOTICE and skip the v1 content seed (the schema
+-- itself still ships fully). The seed is bonus content for prod; CI's
+-- supabase-stack does not have an auth.users super-admin pre-seeded, and the
+-- migration must stay applicable in both environments.
+-- The smoke test (supabase/tests/0108_*.sql) bootstraps its own super-admin
+-- and publishes a v1 inline, so coverage stays complete.
 do $$
 declare
   v_admin uuid;
@@ -438,7 +443,8 @@ begin
    limit 1;
 
   if v_admin is null then
-    raise exception 'no super-admin found; pre-provision one before applying 0108';
+    raise notice 'no super-admin found; skipping v1 legal-doc seed. Prod operators must publish v1 via Supabase Studio before the FE depends on it.';
+    return;
   end if;
 
   -- Idempotent inserts: re-running the migration on a partially applied state succeeds.
@@ -550,12 +556,14 @@ $md$,
   on conflict (doc_type, version) do nothing;
 end$$;
 
--- Current-pointer rows. last_material_* mirrors v1 so existing users
--- enter the 7-day soft-grace flow (block_mode='banner' until day 7).
+-- Current-pointer rows. Inserted only when the v1 seed above actually ran
+-- (i.e. a super-admin existed at migration time). Otherwise we'd point at a
+-- non-existent version. last_material_* mirrors v1 so existing users enter the
+-- 7-day soft-grace flow (block_mode='banner' until day 7).
 insert into public.legal_documents (doc_type, current_version, current_effective_date, last_material_version, last_material_severity)
-values
-  ('terms',   1, now(), 1, 'standard'),
-  ('privacy', 1, now(), 1, 'standard')
+select doc_type, version, effective_date, version, severity
+  from public.legal_document_versions
+ where (doc_type, version) in (('terms', 1), ('privacy', 1))
 on conflict (doc_type) do nothing;
 
 commit;
