@@ -59,7 +59,7 @@ export class FakeChatRepository implements IChatRepository {
     anchorPostId?: string,
     options?: { preferNewThread?: boolean },
   ): Promise<Chat> {
-    const ids = [userId, otherUserId].sort() as [string, string];
+    const ids = [userId, otherUserId].sort((a, b) => a.localeCompare(b)) as [string, string];
 
     if (!options?.preferNewThread) {
       const candidates = this.chats.filter(
@@ -160,7 +160,7 @@ export class FakeChatRepository implements IChatRepository {
 
   async getOrCreateSupportThread(userId: string): Promise<Chat> {
     const admin = 'super-admin';
-    const ids = [userId, admin].sort() as [string, string];
+    const ids = [userId, admin].sort((a, b) => a.localeCompare(b)) as [string, string];
     const existing = this.chats.find(
       (c) =>
         c.isSupportThread &&

@@ -33,9 +33,9 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
     from: (table: string) => {
       if (table === 'posts') return { select: () => ({ eq: () => ({ single: async () => ({ data: opts.ownerRow ?? null, error: opts.ownerError ?? null }) }) }) };
       if (table === 'chats') {
-        const result = () => Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
-        const isThenable: any = { then: (f: any, r: any) => result().then(f, r) };
-        return { select: () => ({ or: () => ({ eq: () => ({ is: () => isThenable }) }) }) };
+        const chatsPromise = () =>
+          Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
+        return { select: () => ({ or: () => ({ eq: () => ({ is: () => chatsPromise() }) }) }) };
       }
       if (table === 'users') return { select: () => ({ in: async () => ({ data: opts.users ?? [], error: opts.usersError ?? null }) }) };
       throw new Error(`fake: unexpected table ${table}`);

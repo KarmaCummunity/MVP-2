@@ -22,9 +22,9 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
   const client = {
     from: (table: string) => {
       if (table === 'chats') {
-        const r = () => Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
-        const thenable: any = { then: (f: any, j: any) => r().then(f, j) };
-        return { select: () => ({ or: () => ({ order: () => thenable }) }) };
+        const chatsPromise = () =>
+          Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
+        return { select: () => ({ or: () => ({ order: () => chatsPromise() }) }) };
       }
       if (table === 'messages') {
         return {

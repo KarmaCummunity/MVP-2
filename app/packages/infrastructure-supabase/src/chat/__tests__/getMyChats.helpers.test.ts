@@ -111,7 +111,7 @@ describe('dedupeRowsByCounterpart', () => {
     ];
     const out = dedupeRowsByCounterpart('u_me', rows);
     expect(out).toHaveLength(2);
-    expect(out.map((r) => r.chat_id).sort()).toEqual(['c1', 'c2']);
+    expect(out.map((r) => r.chat_id).sort((a, b) => a.localeCompare(b))).toEqual(['c1', 'c2']);
   });
 
   it('groups all null-counterpart rows under one synthetic bucket', () => {

@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ChatError } from '@kc/application';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
@@ -108,12 +107,8 @@ export default function DonationsTimeScreen() {
         body: `${t('donations.timeScreen.volunteerPrefix')}${body}`,
       });
       router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
-    } catch (err) {
-      if (err instanceof ChatError && err.code === 'super_admin_not_found') {
-        setSendError(true);
-      } else {
-        setSendError(true);
-      }
+    } catch {
+      setSendError(true);
     } finally {
       setBusy(false);
     }
