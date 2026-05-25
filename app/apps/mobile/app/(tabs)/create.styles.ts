@@ -36,7 +36,9 @@ export const useCreatePostStyles = makeUseStyles(({ colors, isDark }) => ({
   publishBtnFooter: { alignSelf: 'stretch' as const, marginTop: spacing.md },
   publishBtnText: { ...typography.button, color: colors.textInverse },
   scroll: { flex: 1 },
-  scrollContent: { padding: spacing.base, gap: spacing.base, paddingBottom: spacing['3xl'] },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the publish CTA clears the floating tab-bar pill (FR-RESP-006).
+  scrollContent: { padding: spacing.base, gap: spacing.base },
   typeToggle: {
     flexDirection: 'row' as const,
     backgroundColor: colors.surface,

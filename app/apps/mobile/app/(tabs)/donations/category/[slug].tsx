@@ -14,6 +14,7 @@ import { DonationLinksList } from '../../../../src/components/DonationLinksList'
 import { Screen } from '../../../../src/components/ui/Screen';
 import { IconTile } from '../../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../../../src/navigation/useShellTabBarVisibility';
 import { rtlTextAlignStart } from '../../../../src/lib/rtlTextAlignStart';
 
 const ICON_BY_SLUG: Record<DonationCategorySlug, keyof typeof Ionicons.glyphMap> = {
@@ -45,10 +46,11 @@ function isCategorySlug(value: unknown): value is DonationCategorySlug {
 
 const useStyles = makeUseStyles(({ colors }) => ({
   scrollOuter: { flex: 1 },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last link clears the floating tab-bar pill (FR-RESP-006).
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center' as const,
@@ -81,6 +83,7 @@ export default function DonationCategoryScreen() {
   const { slug } = useLocalSearchParams<{ slug: string }>();
   const { t } = useTranslation();
   const styles = useStyles();
+  const tabBarPad = useShellTabBarScrollInset();
 
   if (!isCategorySlug(slug) || slug === 'time' || slug === 'money') {
     return <Redirect href="/(tabs)/donations" />;
@@ -93,10 +96,10 @@ export default function DonationCategoryScreen() {
   const iconName = ICON_BY_SLUG[slug];
 
   return (
-    <Screen blobs="content" edges={['bottom']}>
+    <Screen blobs="content">
       <ScrollView
         style={styles.scrollOuter}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

@@ -20,6 +20,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 import { rowDirectionStart } from '../../../src/lib/rtlLayout';
 import { webTextRtl } from '../../../src/lib/webRtlStyle';
@@ -28,10 +29,11 @@ const COMPOSER_MAX_CHARS = 2000;
 
 const useStyles = makeUseStyles(({ colors }) => ({
   scrollView: { flex: 1 },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last link clears the floating tab-bar pill (FR-RESP-006).
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center' as const,
@@ -88,6 +90,7 @@ export default function DonationsTimeScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const userId = useAuthStore((s) => s.session?.userId ?? null);
+  const tabBarPad = useShellTabBarScrollInset();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [sendError, setSendError] = useState(false);
@@ -115,10 +118,10 @@ export default function DonationsTimeScreen() {
   };
 
   return (
-    <Screen blobs="content" edges={['bottom']}>
+    <Screen blobs="content">
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

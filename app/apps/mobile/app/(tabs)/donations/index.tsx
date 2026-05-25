@@ -21,6 +21,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 interface CategoryTile {
@@ -55,12 +56,13 @@ const TILES: CategoryTile[] = [
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   scrollView: { flex: 1, width: '100%', alignSelf: 'stretch' as const },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last row clears the floating tab-bar pill (FR-RESP-006).
   scroll: {
     flexGrow: 1,
     alignSelf: 'stretch' as const,
     minWidth: '100%',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing['3xl'],
     width: '100%',
   },
 
@@ -174,6 +176,7 @@ export default function DonationsHubScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useStyles();
+  const tabBarPad = useShellTabBarScrollInset();
 
   // Pair grid tiles into rows of 2 — single row when count is odd.
   const rows: CategoryTile[][] = [];
@@ -188,7 +191,7 @@ export default function DonationsHubScreen() {
         style={styles.scrollView}
         // RN-Web + `dir=rtl`: content can shrink-wrap and hug the inline-start
         // edge (visual right), leaving empty space on the left — stretch to viewport.
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Hero ─────────────────────────── */}
