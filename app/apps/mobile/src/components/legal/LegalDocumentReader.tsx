@@ -1,0 +1,123 @@
+import { useEffect, useMemo, useState } from 'react';
+import { View, ScrollView, Text, ActivityIndicator, Platform } from 'react-native';
+import Markdown from 'react-native-markdown-display';
+import { useTranslation } from 'react-i18next';
+import type { LegalDocType, LegalDocumentContent } from '@kc/domain';
+import { typography, spacing, useTheme } from '@kc/ui';
+import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
+import { makeLegalMarkdownStyles } from './LegalMarkdownStyles';
+
+function formatHebrewDate(d: Date): string {
+  // DD.MM.YYYY per spec §7.1
+  const dd = String(d.getDate()).padStart(2, '0');
+  const mm = String(d.getMonth() + 1).padStart(2, '0');
+  return `${dd}.${mm}.${d.getFullYear()}`;
+}
+
+interface Props {
+  docType: LegalDocType;
+}
+
+type State =
+  | { kind: 'loading' }
+  | { kind: 'ready'; content: LegalDocumentContent }
+  | { kind: 'error' };
+
+export function LegalDocumentReader({ docType }: Props) {
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+  const markdownStyles = useMemo(() => makeLegalMarkdownStyles(colors), [colors]);
+  const [state, setState] = useState<State>({ kind: 'loading' });
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const content = await getLoadLegalDocumentUseCase().execute({ docType });
+        if (!cancelled) setState({ kind: 'ready', content });
+      } catch {
+        if (!cancelled) setState({ kind: 'error' });
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [docType]);
+
+  if (state.kind === 'loading') {
+    return <LoadingSkeleton bgColor={colors.surfaceRaised} />;
+  }
+
+  if (state.kind === 'error') {
+    return (
+      <View style={{ padding: spacing.lg, backgroundColor: colors.background, flex: 1 }}>
+        <Text style={{ ...typography.body, color: colors.textPrimary, textAlign: 'right' }}>
+          {t('legal.loadFailed')}
+        </Text>
+      </View>
+    );
+  }
+
+  const { content } = state;
+  const isFutureDated = content.effectiveDate.getTime() > Date.now();
+  const containerStyle =
+    Platform.OS === 'web'
+      ? ({ maxWidth: 720, alignSelf: 'center', width: '100%' } as const)
+      : undefined;
+
+  return (
+    <ScrollView
+      style={{ backgroundColor: colors.background }}
+      contentContainerStyle={[{ padding: spacing.lg }, containerStyle]}
+    >
+      <View style={{ marginBottom: spacing.md }}>
+        <Text
+          accessibilityRole="header"
+          style={{ ...typography.h2, color: colors.textPrimary, textAlign: 'right' }}
+        >
+          {docType === 'terms' ? t('legal.termsTitle') : t('legal.privacyTitle')}
+        </Text>
+        <Text style={{ ...typography.caption, color: colors.textSecondary, textAlign: 'right' }}>
+          {isFutureDated
+            ? t('legal.futureEffective', { date: formatHebrewDate(content.effectiveDate) })
+            : t('legal.effectiveDate', { date: formatHebrewDate(content.effectiveDate) })}
+          {'  ·  '}
+          {t('legal.versionChip', { version: content.version })}
+        </Text>
+      </View>
+
+      <Markdown style={markdownStyles}>{content.bodyMd}</Markdown>
+    </ScrollView>
+  );
+}
+
+function LoadingSkeleton({ bgColor }: { bgColor: string }) {
+  const bar = (width: number | string, marginTop: number) => (
+    <View
+      style={{
+        alignSelf: 'flex-end',
+        width: width as any,
+        height: 14,
+        backgroundColor: bgColor,
+        borderRadius: 4,
+        marginTop,
+      }}
+    />
+  );
+  return (
+    <View style={{ padding: spacing.lg }}>
+      {bar('40%', 0)}
+      {bar('60%', spacing.md)}
+      {bar('55%', spacing.md)}
+      {bar('90%', spacing.lg)}
+      {bar('85%', spacing.xs)}
+      {bar('80%', spacing.xs)}
+      {bar('70%', spacing.xs)}
+      {bar('90%', spacing.lg)}
+      {bar('85%', spacing.xs)}
+      {bar('80%', spacing.xs)}
+      {bar('70%', spacing.xs)}
+      <ActivityIndicator style={{ alignSelf: 'flex-end', marginTop: spacing.lg }} />
+    </View>
+  );
+}

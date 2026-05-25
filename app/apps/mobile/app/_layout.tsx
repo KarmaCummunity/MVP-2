@@ -110,6 +110,8 @@ import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
+import { LegalConsentGate } from '../src/components/legal/LegalConsentGate';
+import { ModalStackProvider } from '../src/components/legal/useActiveModalStack';
 
 SplashScreen.preventAutoHideAsync();
 
@@ -167,8 +169,10 @@ function ThemedRootShell() {
       <DevBanner />
       <NotificationsBridge />
       <AuthGate>
-        <SoftGateProvider>
-          <ShellWithResponsiveChrome>
+        <ModalStackProvider>
+          <LegalConsentGate>
+            <SoftGateProvider>
+              <ShellWithResponsiveChrome>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -202,8 +206,10 @@ function ThemedRootShell() {
               {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
               <Stack.Screen name="chat/index" options={{ headerShown: false }} />
             </Stack>
-          </ShellWithResponsiveChrome>
-        </SoftGateProvider>
+              </ShellWithResponsiveChrome>
+            </SoftGateProvider>
+          </LegalConsentGate>
+        </ModalStackProvider>
       </AuthGate>
     </>
   );

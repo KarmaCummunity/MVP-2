@@ -157,9 +157,14 @@ export default function SettingsScreen() {
             />
           ) : null}
           <SettingsScreenRow
-            label={t('settings.termsAndPrivacy')}
+            label={t('settings.termsOfService')}
             icon="document-text-outline"
-            onPress={() => router.push('/legal')}
+            onPress={() => router.push('/legal/terms')}
+          />
+          <SettingsScreenRow
+            label={t('settings.privacyPolicy')}
+            icon="shield-checkmark-outline"
+            onPress={() => router.push('/legal/privacy')}
           />
           <SettingsScreenRow
             label={t('settings.about')}

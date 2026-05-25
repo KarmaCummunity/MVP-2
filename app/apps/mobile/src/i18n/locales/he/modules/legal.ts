@@ -1,0 +1,32 @@
+export const legalHe = {
+  termsTitle: 'תנאי שימוש',
+  privacyTitle: 'מדיניות פרטיות',
+
+  effectiveDate: 'בתוקף מ-{{date}}',
+  versionChip: 'גרסה {{version}}',
+  futureEffective: 'ייכנס לתוקף ב-{{date}}',
+  offlineBanner: 'מציג גרסה שמורה — לא ניתן לעדכן כרגע',
+  loadFailed: 'לא הצלחנו לטעון את המסמך. נסה שוב מאוחר יותר.',
+  closeReader: 'סגור',
+
+  signupHeading: 'עוד דבר אחרון לפני שמתחילים — נשמח שתכיר/י את הכללים שלנו.',
+  cardOpenFull: 'פתח וקרא במלואו',
+  checkboxTerms: 'קראתי ואני מאשר/ת את תנאי השימוש',
+  checkboxPrivacy: 'קראתי ואני מאשר/ת את מדיניות הפרטיות',
+  signupContinue: 'המשך',
+  exitLink: 'אפשר לחזור בהמשך — יציאה',
+  exitConfirmTitle: 'להתנתק?',
+  exitConfirmBody: 'תאבד/י גישה לפרופיל ולשיחות עד שתחזור/י להיכנס.',
+  exitConfirmConfirm: 'התנתק',
+  exitConfirmCancel: 'ביטול',
+
+  updateModalHeading: 'המסמך התעדכן — נדרש אישור',
+  updateBannerHeading: 'המסמך התעדכן',
+  updateBannerCountdown: 'אישור נדרש תוך {{days}} ימים',
+  updateCheckbox: 'קראתי ואני מאשר/ת',
+  updateConfirmCta: 'אישור',
+
+  updateSheetOpen: 'פתח לקריאה',
+  updateSheetSnooze: 'אזכיר לי בעוד יום',
+  updateSheetAccept: 'אישור עכשיו',
+} as const;
