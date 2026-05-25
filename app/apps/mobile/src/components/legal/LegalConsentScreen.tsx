@@ -1,14 +1,12 @@
-import { useEffect, useMemo, useState } from 'react';
+import { useMemo, useState } from 'react';
 import { View, Text, Pressable, ScrollView, Modal, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import type { LegalDocumentContent, LegalPendingItem } from '@kc/domain';
+import type { LegalPendingItem } from '@kc/domain';
 import { typography, spacing, useTheme } from '@kc/ui';
 import { LegalDocumentReader } from './LegalDocumentReader';
-import {
-  getAcceptLegalDocumentUseCase,
-  getLoadLegalDocumentUseCase,
-} from '../../services/legalComposition';
+import { LegalConsentCard } from './LegalConsentCard';
+import { getAcceptLegalDocumentUseCase } from '../../services/legalComposition';
 import { useAuthStore } from '../../store/authStore';
 
 export type LegalConsentMode = 'signup' | 'update';
@@ -70,7 +68,7 @@ export function LegalConsentScreen({ mode, pending, onResolved }: Props) {
         </Text>
 
         {pending.map((p) => (
-          <ConsentCard
+          <LegalConsentCard
             key={p.docType}
             item={p}
             checked={!!accepted[p.docType]}
@@ -188,114 +186,3 @@ export function LegalConsentScreen({ mode, pending, onResolved }: Props) {
   );
 }
 
-interface CardProps {
-  item: LegalPendingItem;
-  checked: boolean;
-  onToggle: (v: boolean) => void;
-  onOpenReader: () => void;
-}
-
-function ConsentCard({ item, checked, onToggle, onOpenReader }: CardProps) {
-  const { t } = useTranslation();
-  const { colors } = useTheme();
-  const title = item.docType === 'terms' ? t('legal.termsTitle') : t('legal.privacyTitle');
-  const checkboxLabel =
-    item.docType === 'terms' ? t('legal.checkboxTerms') : t('legal.checkboxPrivacy');
-  const [content, setContent] = useState<LegalDocumentContent | null>(null);
-
-  useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const c = await getLoadLegalDocumentUseCase().execute({ docType: item.docType });
-        if (!cancelled) setContent(c);
-      } catch {
-        // Cache fallback handles offline; nothing to do here on hard failure.
-      }
-    })();
-    return () => {
-      cancelled = true;
-    };
-  }, [item.docType]);
-
-  const bullets = content?.changeSummary
-    ? content.changeSummary
-        .split('\n')
-        .map((l) => l.trim())
-        .filter((l) => l.startsWith('-'))
-        .map((l) => l.replace(/^-\s*/, ''))
-        .slice(0, 3)
-    : [];
-
-  return (
-    <View
-      style={{
-        backgroundColor: colors.surfaceRaised,
-        borderRadius: 12,
-        padding: spacing.md,
-        marginBottom: spacing.md,
-      }}
-    >
-      <Text style={{ ...typography.h4, color: colors.textPrimary, textAlign: 'right' }}>
-        {title}
-      </Text>
-
-      {bullets.length > 0 ? (
-        <View style={{ marginTop: spacing.sm }}>
-          {bullets.map((b, i) => (
-            <Text
-              key={i}
-              style={{
-                ...typography.body,
-                color: colors.textPrimary,
-                textAlign: 'right',
-                marginBottom: spacing.xs,
-              }}
-            >
-              {`• ${b}`}
-            </Text>
-          ))}
-        </View>
-      ) : null}
-
-      <Pressable onPress={onOpenReader} style={{ marginTop: spacing.sm }}>
-        <Text style={{ ...typography.body, color: colors.primary, textAlign: 'right' }}>
-          {t('legal.cardOpenFull')}
-        </Text>
-      </Pressable>
-
-      <Pressable
-        accessibilityRole="checkbox"
-        accessibilityState={{ checked }}
-        onPress={() => onToggle(!checked)}
-        style={{
-          flexDirection: 'row-reverse',
-          alignItems: 'center',
-          marginTop: spacing.md,
-          gap: spacing.sm,
-        }}
-      >
-        <View
-          style={{
-            width: 22,
-            height: 22,
-            borderRadius: 4,
-            borderWidth: 2,
-            borderColor: colors.primary,
-            backgroundColor: checked ? colors.primary : 'transparent',
-          }}
-        />
-        <Text
-          style={{
-            ...typography.body,
-            color: colors.textPrimary,
-            flex: 1,
-            textAlign: 'right',
-          }}
-        >
-          {checkboxLabel}
-        </Text>
-      </Pressable>
-    </View>
-  );
-}
