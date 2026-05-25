@@ -281,8 +281,8 @@ The "Active Posts" headline counter is **split**: a private (internal) value vis
 - Constraints: `R-MVP-Items-14`.
 
 **Acceptance Criteria.**
-- AC1. `active_posts_count_internal` = count of `open` posts owned by the user where `visibility <> 'OnlyMe'`.
-- AC2. `active_posts_count_public` = count of `open` posts where `visibility ∈ {Public, FollowersOnly}` and the post is currently visible to **the viewer** (i.e., a `FollowersOnly` post counts only when I'm an approved follower).
+- AC1. `active_posts_count_internal` = count of posts owned by the user where `status ∈ {open, closed_delivered, deleted_no_recipient}` and `visibility <> 'OnlyMe'` (closed posts remain in the headline total; `expired` and `removed_admin` do not).
+- AC2. For non-owners, the visible profile post count = posts where `status ∈ {open, closed_delivered, deleted_no_recipient}`, `visibility = Public`, **or** (`visibility = FollowersOnly` and the viewer is an approved follower). Implemented via `active_posts_count_for_viewer` (live query for others; denormalized column for self).
 - AC3. The owner sees `active_posts_count_internal` on their own profile.
 - AC4. Anyone else sees `active_posts_count_public`. The system never reveals to a viewer that the owner has hidden `Only-me` posts.
 - AC5. The counters are computed server-side and projected via Realtime to keep multiple clients in sync (`NFR-PERF-005`).

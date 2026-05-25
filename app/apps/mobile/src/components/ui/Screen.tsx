@@ -6,11 +6,15 @@
 //
 // `scroll` is intentional: if the screen already brings its own FlatList /
 // ScrollView (e.g. feed), pass `scroll={false}` and render the list directly.
-import React from 'react';
+import React, { useMemo } from 'react';
 import { ScrollView, StyleSheet, View, type ViewStyle } from 'react-native';
 import { SafeAreaView, type Edge } from 'react-native-safe-area-context';
 import { useTheme } from '@kc/ui';
 import { AmbientBlobs } from './AmbientBlobs';
+import {
+  useShellTabBarScrollInset,
+  useShellTabBarVisibility,
+} from '../../navigation/useShellTabBarVisibility';
 
 interface ScreenProps {
   readonly children: React.ReactNode;
@@ -19,21 +23,62 @@ interface ScreenProps {
   readonly edges?: readonly Edge[];
   readonly contentContainerStyle?: ViewStyle;
   readonly style?: ViewStyle;
+  /**
+   * When true (default), reserves bottom padding equal to the floating
+   * tab-bar pill height + safe-area on screens where the shell renders the
+   * bar. The padding is only applied when the bar is actually visible — on
+   * routes that suppress the bar (auth, onboarding, chat conversation) this
+   * prop is a no-op even if true. Pass `false` only when the screen owns its
+   * own footer (CTA bar, composer) and already reserves space, or when
+   * wrapping a `FlatList` directly.
+   */
+  readonly tabBarInset?: boolean;
+  /**
+   * Set when the screen is rendered inside an Expo Router Stack with
+   * `headerShown: true` (native header). The header already consumes the top
+   * safe-area; including `'top'` in `edges` would double-pad on notched /
+   * Dynamic Island iPhones (FR-RESP-006 AC9).
+   */
+  readonly hasNativeHeader?: boolean;
 }
 
 export function Screen({
   children,
   scroll = false,
   blobs = 'content',
-  edges = ['top'],
+  edges,
   contentContainerStyle,
   style,
+  tabBarInset = true,
+  hasNativeHeader = false,
 }: ScreenProps) {
   const { colors } = useTheme();
+  // Both hooks always called (Rules of Hooks). When the bar is hidden, we
+  // skip padding so we don't add phantom 20+76+insets.bottom px on
+  // auth / onboarding screens that mount under <Screen>.
+  const tabBarVisible = useShellTabBarVisibility();
+  const tabBarPad = useShellTabBarScrollInset();
+
+  // Effective edges: caller wins; otherwise default to ['top'] unless a
+  // native header already eats the top inset (then default to []).
+  const effectiveEdges: readonly Edge[] =
+    edges ?? (hasNativeHeader ? [] : ['top']);
+
+  // Memoized so FlatList / ScrollView don't see a fresh array on every parent
+  // re-render — FR-RESP-006 AC15.
+  const scrollContentStyle = useMemo<ViewStyle[]>(() => {
+    const out: ViewStyle[] = [staticStyles.scrollContent];
+    if (contentContainerStyle) out.push(contentContainerStyle);
+    if (tabBarInset && scroll && tabBarVisible) {
+      out.push({ paddingBottom: tabBarPad });
+    }
+    return out;
+  }, [contentContainerStyle, tabBarInset, scroll, tabBarVisible, tabBarPad]);
+
   const body = scroll ? (
     <ScrollView
       style={staticStyles.flex}
-      contentContainerStyle={[staticStyles.scrollContent, contentContainerStyle]}
+      contentContainerStyle={scrollContentStyle}
       showsVerticalScrollIndicator={false}
       keyboardShouldPersistTaps="handled"
     >
@@ -46,7 +91,7 @@ export function Screen({
   return (
     <SafeAreaView
       style={[staticStyles.container, { backgroundColor: colors.surfaceCream }, style]}
-      edges={edges}
+      edges={effectiveEdges}
     >
       {blobs !== 'off' && <AmbientBlobs density={blobs} />}
       {body}

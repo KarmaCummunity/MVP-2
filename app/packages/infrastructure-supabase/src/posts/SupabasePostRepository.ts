@@ -47,7 +47,13 @@ import {
   upsertPostActorIdentityRow,
 } from './postActorIdentityMethods';
 import { getMyPostsPage } from './getMyPostsPage';
-import { countOpenByUser as countOpenByUserQuery, fetchPostById } from './postRepoQueries';
+import {
+  countOpenByUser as countOpenByUserQuery,
+  countProfileClosedPosts as countProfileClosedPostsQuery,
+  countProfileOpenPosts as countProfileOpenPostsQuery,
+  countProfilePostsForViewer as countProfilePostsForViewerQuery,
+  fetchPostById,
+} from './postRepoQueries';
 
 const FEED_HARD_MAX = 100;
 
@@ -266,5 +272,21 @@ export class SupabasePostRepository implements IPostRepository {
   // ── Stats ───────────────────────────────────────────────────────────────
   countOpenByUser(userId: string): Promise<number> {
     return countOpenByUserQuery(this.client, userId);
+  }
+
+  countProfilePostsForViewer(ownerId: string, viewerId: string | null): Promise<number> {
+    return countProfilePostsForViewerQuery(this.client, ownerId, viewerId);
+  }
+
+  countProfileOpenPosts(ownerId: string, options?: { excludeOnlyMe?: boolean }): Promise<number> {
+    return countProfileOpenPostsQuery(this.client, ownerId, options);
+  }
+
+  countProfileClosedPosts(
+    profileUserId: string,
+    viewerUserId: string | null,
+    listMode?: ProfileClosedPostsListMode,
+  ): Promise<number> {
+    return countProfileClosedPostsQuery(this.client, profileUserId, viewerUserId, listMode);
   }
 }

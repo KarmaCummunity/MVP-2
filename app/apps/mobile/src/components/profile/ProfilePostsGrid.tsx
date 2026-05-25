@@ -29,7 +29,7 @@ export interface ProfilePostsGridProps {
   posts: Post[];
   isLoading: boolean;
   empty: EmptyVariant;
-  /** Profile owner line on feed-style cards (avatar + name). */
+  /** Profile owner context for PostMenuButton / post detail (not shown on grid cards). */
   postOwner?: ProfilePostOwnerContext;
 }
 

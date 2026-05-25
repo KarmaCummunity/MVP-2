@@ -185,6 +185,8 @@ export default function EditPostScreen() {
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-tab-open-count'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-tab-closed-count'] });
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       if (router.canGoBack()) router.back();
       else router.replace('/(tabs)');

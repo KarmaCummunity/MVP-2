@@ -130,19 +130,29 @@ export function PostCardGrid({
       </View>
 
       <View style={styles.content}>
-        <View style={styles.authorRow} accessibilityLabel={ownerLabel}>
-          <AvatarInitials
-            name={ownerLabel}
-            avatarUrl={post.ownerAvatarUrl}
-            size={OWNER_AVATAR_SIZE}
-          />
-          <Text style={styles.ownerName} numberOfLines={1}>{ownerLabel}</Text>
-        </View>
+        {!isProfileGrid ? (
+          <View style={styles.authorRow} accessibilityLabel={ownerLabel}>
+            <AvatarInitials
+              name={ownerLabel}
+              avatarUrl={post.ownerAvatarUrl}
+              size={OWNER_AVATAR_SIZE}
+            />
+            <Text style={styles.ownerName} numberOfLines={1}>{ownerLabel}</Text>
+          </View>
+        ) : null}
 
         <View style={styles.titleRow}>
-          <Text style={styles.title} numberOfLines={2}>{post.title}</Text>
-          <View style={styles.categoryChip}>
-            <Text style={styles.categoryChipText} numberOfLines={1}>
+          <Text
+            style={[styles.title, isProfileGrid && styles.titleDense]}
+            numberOfLines={2}
+          >
+            {post.title}
+          </Text>
+          <View style={[styles.categoryChip, isProfileGrid && styles.categoryChipDense]}>
+            <Text
+              style={[styles.categoryChipText, isProfileGrid && styles.categoryChipTextDense]}
+              numberOfLines={1}
+            >
               {t(`post.category.${post.category}`)}
             </Text>
           </View>

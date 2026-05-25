@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React from 'react';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -11,6 +11,7 @@ import {
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { HOME_FEED_GRID_COLUMNS } from '../hooks/useShellContentWidth';
+import { useShellTabBarScrollInset } from '../navigation/useShellTabBarVisibility';
 import { PostCardGrid } from './PostCardGrid';
 import { EmptyState } from './EmptyState';
 
@@ -50,6 +51,11 @@ export function PostFeedList({
   const styles = usePostFeedListStyles();
   const { colors } = useTheme();
   const { t } = useTranslation();
+  const tabBarPad = useShellTabBarScrollInset();
+  const listContentStyle = useMemo(
+    () => [styles.listContent, { paddingBottom: tabBarPad }] as const,
+    [styles.listContent, tabBarPad],
+  );
   if (isLoading && !data) {
     return (
       <View style={styles.center}>
@@ -81,7 +87,7 @@ export function PostFeedList({
           onPressOverride={onCardPress ? () => onCardPress(item) : undefined}
         />
       )}
-      contentContainerStyle={styles.listContent}
+      contentContainerStyle={listContentStyle as unknown as object}
       ListHeaderComponent={ListHeaderComponent as React.ComponentType | null | undefined}
       ListEmptyComponent={
         (emptyComponent as React.ReactElement) ?? (
@@ -131,6 +137,6 @@ const usePostFeedListStyles = makeUseStyles(({ colors }) => ({
   },
   retryText: { ...typography.button, color: colors.textInverse },
   row: { paddingHorizontal: spacing.base, gap: spacing.sm, marginBottom: spacing.sm },
-  listContent: { paddingTop: spacing.base, paddingBottom: spacing['3xl'] },
+  listContent: { paddingTop: spacing.base },
   footer: { paddingVertical: spacing.base, alignItems: 'center' as const },
 }));

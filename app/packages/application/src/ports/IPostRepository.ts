@@ -206,4 +206,14 @@ export interface IPostRepository {
 
   // Stats
   countOpenByUser(userId: string): Promise<number>;
+  /** FR-PROFILE-013 — profile headline counter (open + closed, viewer-aware). */
+  countProfilePostsForViewer(ownerId: string, viewerId: string | null): Promise<number>;
+  /** FR-PROFILE-001 AC4 — open-tab badge count. */
+  countProfileOpenPosts(ownerId: string, options?: { excludeOnlyMe?: boolean }): Promise<number>;
+  /** FR-PROFILE-001 AC4 — closed-tab badge count. */
+  countProfileClosedPosts(
+    profileUserId: string,
+    viewerUserId: string | null,
+    listMode?: ProfileClosedPostsListMode,
+  ): Promise<number>;
 }

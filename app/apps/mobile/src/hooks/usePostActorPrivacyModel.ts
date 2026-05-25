@@ -75,6 +75,8 @@ export function usePostActorPrivacyModel(
     await qc.invalidateQueries({ queryKey: ['post-actor-identity', post.postId] });
     await qc.invalidateQueries({ queryKey: ['post', post.postId] });
     await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+    await qc.invalidateQueries({ queryKey: ['profile-tab-open-count'] });
+    await qc.invalidateQueries({ queryKey: ['profile-tab-closed-count'] });
     await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
     await qc.invalidateQueries({ queryKey: ['feed'] });
     await qc.invalidateQueries({ queryKey: ['my-posts'] });

@@ -73,6 +73,7 @@
 | RESP-003 | **Aside panel content** — feed, donations, profile, search aside surfaces at ≥1024 (FR-RESP-003) | agent-fe | ⏳ Planned | `spec/14_responsive_desktop.md` FR-RESP-003 |
 | RESP-004 | **Chat inbox layout** — two-pane inbox + thread at ≥768 (FR-RESP-004) | agent-fe | ⏳ Planned | `spec/14_responsive_desktop.md` FR-RESP-004 |
 | RESP-005 | **Split-screen auth & onboarding** — `SplitAuthLayout` across sign-in / sign-up / onboarding steps (FR-RESP-005) | agent-fe | ⏳ Planned | `spec/14_responsive_desktop.md` FR-RESP-005 |
+| RESP-006 | **Mobile platform polish & bottom-bar safety** — extend `Screen` primitive with tab-bar inset; sweep all screens that crop; platform helpers for back-icon + keyboard offset; clamp Dynamic Type in tight rows; Hebrew typography + content polish (FR-RESP-006) | agent-fe | 🟡 In progress | `spec/14_responsive_desktop.md` FR-RESP-006 |
 
 ## P3 — Post-MVP (Deferred)
 
