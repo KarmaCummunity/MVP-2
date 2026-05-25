@@ -10,6 +10,7 @@ import {
 } from 'react-native';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
+import { HOME_FEED_GRID_COLUMNS } from '../hooks/useShellContentWidth';
 import { PostCardGrid } from './PostCardGrid';
 import { EmptyState } from './EmptyState';
 
@@ -72,7 +73,7 @@ export function PostFeedList({
       style={styles.list}
       data={data ?? []}
       keyExtractor={(p) => p.postId}
-      numColumns={2}
+      numColumns={HOME_FEED_GRID_COLUMNS}
       columnWrapperStyle={styles.row}
       renderItem={({ item }) => (
         <PostCardGrid

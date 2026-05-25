@@ -16,9 +16,21 @@ interface Props {
   post: PostWithOwner;
   /** Override icon color (e.g. white on image overlays). */
   iconColor?: string;
+  /**
+   * `overlay` fills the parent touch target (grid card menu chip).
+   * `header` uses a compact bar-button footprint (post detail nav).
+   */
+  placement?: 'overlay' | 'header';
+  /** Smaller ⋮ icon for dense profile 3-column grids. */
+  overlaySize?: 'default' | 'compact';
 }
 
-export function PostMenuButton({ post, iconColor }: Props) {
+export function PostMenuButton({
+  post,
+  iconColor,
+  placement = 'overlay',
+  overlaySize = 'default',
+}: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
@@ -37,13 +49,23 @@ export function PostMenuButton({ post, iconColor }: Props) {
   return (
     <>
       <Pressable
-        style={styles.btn}
+        style={placement === 'header' ? styles.btnHeader : styles.btnOverlay}
         onPress={() => setOpen(true)}
         accessibilityLabel={t('post.menuA11y')}
         accessibilityRole="button"
         hitSlop={8}
       >
-        <Ionicons name="ellipsis-vertical" size={20} color={iconColor ?? colors.textPrimary} />
+        <Ionicons
+          name="ellipsis-vertical"
+          size={
+            placement === 'header'
+              ? 22
+              : overlaySize === 'compact'
+                ? 14
+                : 20
+          }
+          color={iconColor ?? colors.textPrimary}
+        />
       </Pressable>
 
       <PostMenuSheet
@@ -72,5 +94,17 @@ export function PostMenuButton({ post, iconColor }: Props) {
 }
 
 const usePostMenuButtonStyles = makeUseStyles(() => ({
-  btn: { padding: 4, marginEnd: 4 },
+  btnOverlay: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnHeader: {
+    paddingStart: 0,
+    paddingEnd: 4,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
 }));

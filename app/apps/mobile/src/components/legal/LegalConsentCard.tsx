@@ -5,6 +5,7 @@ import type { LegalDocumentContent, LegalPendingItem } from '@kc/domain';
 import { typography, spacing, useTheme } from '@kc/ui';
 import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
 import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface LegalConsentCardProps {
   readonly item: LegalPendingItem;
@@ -54,7 +55,14 @@ export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Lega
         marginBottom: spacing.md,
       }}
     >
-      <Text style={{ ...typography.h4, color: colors.textPrimary, textAlign: 'right' }}>
+      <Text
+        style={{
+          ...typography.h4,
+          color: colors.textPrimary,
+          textAlign: rtlTextAlignStart,
+          writingDirection: 'rtl',
+        }}
+      >
         {title}
       </Text>
 
@@ -66,8 +74,10 @@ export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Lega
               style={{
                 ...typography.body,
                 color: colors.textPrimary,
-                textAlign: 'right',
+                textAlign: rtlTextAlignStart,
+                writingDirection: 'rtl',
                 marginBottom: spacing.xs,
+                lineHeight: 22,
               }}
             >
               {`• ${b}`}
@@ -77,7 +87,14 @@ export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Lega
       ) : null}
 
       <Pressable onPress={onOpenReader} style={{ marginTop: spacing.sm }}>
-        <Text style={{ ...typography.body, color: colors.primary, textAlign: 'right' }}>
+        <Text
+          style={{
+            ...typography.body,
+            color: colors.primary,
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
+          }}
+        >
           {t('legal.cardOpenFull')}
         </Text>
       </Pressable>
@@ -113,7 +130,8 @@ export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Lega
             ...typography.body,
             color: colors.textPrimary,
             flex: 1,
-            textAlign: 'right',
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
           }}
         >
           {checkboxLabel}

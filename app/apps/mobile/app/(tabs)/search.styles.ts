@@ -4,8 +4,8 @@
 // border, filter button matches at radius.lg).
 import { Platform, StyleSheet, type ViewStyle } from 'react-native';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
-import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
-import { isLayoutRtl } from '../../src/lib/rtlLayout';
+import { rtlTextAlignEnd, rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { isLayoutRtl, layoutDirectionStyle, rowDirectionStart } from '../../src/lib/rtlLayout';
 
 /**
  * Pin the filter-count badge to the button's reading-end corner.
@@ -123,15 +123,36 @@ export const useSearchScreenStyles = makeUseStyles(({ colors, isDark }) => ({
   contentInner: { padding: spacing.base, paddingBottom: spacing['2xl'] },
   section: { marginBottom: spacing.lg },
   sectionHeader: {
-    flexDirection: 'row' as const,
+    flexDirection: rowDirectionStart,
+    ...layoutDirectionStyle(),
     justifyContent: 'space-between' as const,
     alignItems: 'center' as const,
     marginBottom: spacing.sm,
   },
-  sectionTitleRow: { flexDirection: 'row' as const, alignItems: 'center' as const, gap: spacing.xs },
-  sectionTitle: { ...typography.h3, color: colors.textPrimary },
-  sectionCount: { ...typography.caption, color: colors.textSecondary },
-  showAllText: { ...typography.caption, color: colors.primary, fontWeight: '600' as const },
+  sectionTitleRow: {
+    flexDirection: rowDirectionStart,
+    ...layoutDirectionStyle(),
+    alignItems: 'center' as const,
+    gap: spacing.xs,
+    flexShrink: 1,
+  },
+  sectionTitle: {
+    ...typography.h3,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+  },
+  sectionCount: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+  },
+  showAllBtn: { flexShrink: 0 },
+  showAllText: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '600' as const,
+    textAlign: rtlTextAlignEnd,
+  },
 
   // ── Recent searches ───────────────────────────────────────────────────
   recentRow: {
@@ -145,7 +166,12 @@ export const useSearchScreenStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   recentRowPressed: { backgroundColor: colors.background },
   recentText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
-  clearRecentText: { ...typography.caption, color: colors.error, fontWeight: '500' as const },
+  clearRecentText: {
+    ...typography.caption,
+    color: colors.error,
+    fontWeight: '500' as const,
+    textAlign: rtlTextAlignEnd,
+  },
 
   // ── Empty / loading states ────────────────────────────────────────────
   emptyState: {

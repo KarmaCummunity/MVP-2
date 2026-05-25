@@ -280,10 +280,10 @@ export default function SearchScreen() {
         {!isSearchMode && !isSingleCharTyped && store.recentSearches.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
+              <Text style={styles.sectionTitle}>{t.recentSearches}</Text>
               <TouchableOpacity onPress={() => store.clearRecentSearches()}>
                 <Text style={styles.clearRecentText}>{t.clearRecent}</Text>
               </TouchableOpacity>
-              <Text style={styles.sectionTitle}>{t.recentSearches}</Text>
             </View>
             {store.recentSearches.map((q, i) => (
               <Pressable
@@ -306,16 +306,19 @@ export default function SearchScreen() {
             {results.users.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  {results.users.length >= PREVIEW_LIMIT && expandedSection !== 'user' && (
-                    <TouchableOpacity onPress={() => setExpandedSection('user')}>
+                  <View style={styles.sectionTitleRow}>
+                    <Text style={styles.sectionTitle}>{t.sectionPeople}</Text>
+                    <Ionicons name="people" size={18} color={colors.primary} />
+                    <Text style={styles.sectionCount}>({results.usersTotal})</Text>
+                  </View>
+                  {results.usersTotal > PREVIEW_LIMIT && expandedSection !== 'user' && (
+                    <TouchableOpacity
+                      style={styles.showAllBtn}
+                      onPress={() => setExpandedSection('user')}
+                    >
                       <Text style={styles.showAllText}>{t.showAll}</Text>
                     </TouchableOpacity>
                   )}
-                  <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionCount}>({results.users.length})</Text>
-                    <Ionicons name="people" size={18} color={colors.primary} />
-                    <Text style={styles.sectionTitle}>{t.sectionPeople}</Text>
-                  </View>
                 </View>
                 {results.users.map((user) => (
                   <UserResultCard key={user.userId} user={user} />
@@ -327,16 +330,19 @@ export default function SearchScreen() {
             {results.posts.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  {results.posts.length >= PREVIEW_LIMIT && expandedSection !== 'post' && (
-                    <TouchableOpacity onPress={() => setExpandedSection('post')}>
+                  <View style={styles.sectionTitleRow}>
+                    <Text style={styles.sectionTitle}>{t.sectionPosts}</Text>
+                    <Ionicons name="cube" size={18} color={colors.primary} />
+                    <Text style={styles.sectionCount}>({results.postsTotal})</Text>
+                  </View>
+                  {results.postsTotal > PREVIEW_LIMIT && expandedSection !== 'post' && (
+                    <TouchableOpacity
+                      style={styles.showAllBtn}
+                      onPress={() => setExpandedSection('post')}
+                    >
                       <Text style={styles.showAllText}>{t.showAll}</Text>
                     </TouchableOpacity>
                   )}
-                  <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionCount}>({results.posts.length})</Text>
-                    <Ionicons name="cube" size={18} color={colors.primary} />
-                    <Text style={styles.sectionTitle}>{t.sectionPosts}</Text>
-                  </View>
                 </View>
                 {results.posts.map((post) => (
                   <PostResultCard key={post.postId} post={post} />
@@ -348,16 +354,19 @@ export default function SearchScreen() {
             {results.links.length > 0 && (
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
-                  {results.links.length >= PREVIEW_LIMIT && expandedSection !== 'link' && (
-                    <TouchableOpacity onPress={() => setExpandedSection('link')}>
+                  <View style={styles.sectionTitleRow}>
+                    <Text style={styles.sectionTitle}>{t.sectionLinks}</Text>
+                    <Ionicons name="link" size={18} color={colors.secondary} />
+                    <Text style={styles.sectionCount}>({results.linksTotal})</Text>
+                  </View>
+                  {results.linksTotal > PREVIEW_LIMIT && expandedSection !== 'link' && (
+                    <TouchableOpacity
+                      style={styles.showAllBtn}
+                      onPress={() => setExpandedSection('link')}
+                    >
                       <Text style={styles.showAllText}>{t.showAll}</Text>
                     </TouchableOpacity>
                   )}
-                  <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionCount}>({results.links.length})</Text>
-                    <Ionicons name="link" size={18} color={colors.secondary} />
-                    <Text style={styles.sectionTitle}>{t.sectionLinks}</Text>
-                  </View>
                 </View>
                 {/* Note: city filter doesn't apply to links — they're national */}
                 {filters.city && (

@@ -10,6 +10,8 @@ import { useAuthStore } from '../../store/authStore';
 import { getCheckPendingLegalAcksUseCase } from '../../services/legalComposition';
 import { useModalStackIsEmpty } from './useActiveModalStack';
 import { LegalConsentScreen, type LegalConsentMode } from './LegalConsentScreen';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 const FOREGROUND_DEBOUNCE_MS = 500;
 
@@ -176,7 +178,7 @@ function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroun
               style={{
                 ...typography.h4,
                 color: colors.textPrimary,
-                textAlign: 'right',
+                textAlign: rtlTextAlignStart,
                 writingDirection: 'rtl',
               }}
             >
@@ -186,28 +188,17 @@ function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroun
               style={{
                 ...typography.body,
                 color: colors.textPrimary,
-                textAlign: 'right',
+                textAlign: rtlTextAlignStart,
                 writingDirection: 'rtl',
                 marginTop: spacing.sm,
+                lineHeight: 24,
               }}
             >
               {t('legal.updateBannerCountdown', { days: daysRemaining(pending) })}
             </Text>
-            <View style={{ flexDirection: 'row-reverse', gap: spacing.sm, marginTop: spacing.lg }}>
-              <Pressable
-                onPress={onSnooze}
-                style={{
-                  flex: 1,
-                  padding: spacing.md,
-                  borderRadius: 8,
-                  backgroundColor: colors.surfaceRaised,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ ...typography.button, color: colors.textPrimary }}>
-                  {t('legal.updateSheetSnooze')}
-                </Text>
-              </Pressable>
+            <View style={{ flexDirection: rowDirectionStart, gap: spacing.sm, marginTop: spacing.lg }}>
+              {/* Primary action sits at the inline-start edge (right in RTL Hebrew),
+                  per iOS HIG: confirmation goes on the reading-start side. */}
               <Pressable
                 onPress={onAcceptNow}
                 style={{
@@ -220,6 +211,20 @@ function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroun
               >
                 <Text style={{ ...typography.button, color: colors.textInverse }}>
                   {t('legal.updateSheetAccept')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={onSnooze}
+                style={{
+                  flex: 1,
+                  padding: spacing.md,
+                  borderRadius: 8,
+                  backgroundColor: colors.surfaceRaised,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ ...typography.button, color: colors.textPrimary }}>
+                  {t('legal.updateSheetSnooze')}
                 </Text>
               </Pressable>
             </View>
@@ -259,7 +264,8 @@ function BannerStrip({ pending, onOpen }: BannerStripProps) {
         style={{
           ...typography.bodySmall,
           color: colors.textPrimary,
-          textAlign: 'right',
+          textAlign: rtlTextAlignStart,
+          writingDirection: 'rtl',
         }}
       >
         {t('legal.updateBannerHeading')} ·{' '}

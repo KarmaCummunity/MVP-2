@@ -14,6 +14,7 @@ import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGr
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
+import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
 import { rowDirectionStart } from '../../../src/lib/rtlLayout';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
@@ -23,6 +24,7 @@ export default function MyProfileRemovedScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
+  const postOwner = useMyProfilePostOwner();
 
   const removedPostsQuery = useQuery({
     queryKey: ['my-removed-posts', userId],
@@ -66,12 +68,14 @@ export default function MyProfileRemovedScreen() {
           posts={openLane}
           isLoading={removedPostsQuery.isLoading}
           empty="self_removed_open"
+          postOwner={postOwner}
         />
         <Text style={styles.sectionTitle}>{t('profile.removedSectionClosed')}</Text>
         <ProfilePostsGrid
           posts={closedLane}
           isLoading={removedPostsQuery.isLoading}
           empty="self_removed_closed"
+          postOwner={postOwner}
         />
       </ScrollView>
     </SafeAreaView>

@@ -10,3 +10,10 @@ import { Platform } from 'react-native';
  */
 export const rtlTextAlignStart: 'left' | 'right' =
   Platform.OS === 'web' ? 'right' : 'left';
+
+/**
+ * Reading-end edge (visual left in forced RTL Hebrew).
+ * Pair with actions such as "הצג הכל" pinned to the screen's left gutter.
+ */
+export const rtlTextAlignEnd: 'left' | 'right' =
+  Platform.OS === 'web' ? 'left' : 'right';

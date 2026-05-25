@@ -8,6 +8,7 @@ import { searchLinks, searchPosts, searchUsers } from '../searchQueryHelpers';
 interface FakeOpts {
   data?: unknown;
   error?: { message: string } | null;
+  count?: number | null;
 }
 interface Op {
   kind: 'from' | 'select' | 'eq' | 'in' | 'is' | 'or' | 'gte' | 'order' | 'limit';
@@ -16,7 +17,11 @@ interface Op {
 
 function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; ops: Op[] } {
   const ops: Op[] = [];
-  const result = () => ({ data: opts.data ?? null, error: opts.error ?? null });
+  const result = () => ({
+    data: opts.data ?? null,
+    error: opts.error ?? null,
+    count: opts.count ?? null,
+  });
   function makeChain(): any {
     return new Proxy({}, {
       get(_t, prop: string) {
@@ -93,15 +98,22 @@ describe('searchPosts', () => {
     await expect(searchPosts(client, 'q', {}, 10)).rejects.toThrow('searchPosts: rls denied');
   });
 
-  it('returns mapped PostWithOwner rows on success', async () => {
-    const { client } = makeFakeClient({ data: [POST_ROW] });
-    const out = await searchPosts(client, 'q', {}, 10);
-    expect(out[0]?.postId).toBe('p_1');
+  it('requests count: "exact" on select', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    await searchPosts(client, 'q', {}, 10);
+    expect(ops.find((o) => o.kind === 'select')?.args?.[1]).toEqual({ count: 'exact' });
   });
 
-  it('returns [] when data is null', async () => {
+  it('returns mapped PostWithOwner rows and total from PostgREST count', async () => {
+    const { client } = makeFakeClient({ data: [POST_ROW], count: 23 });
+    const out = await searchPosts(client, 'q', {}, 5);
+    expect(out.items[0]?.postId).toBe('p_1');
+    expect(out.total).toBe(23);
+  });
+
+  it('returns empty bucket when data is null', async () => {
     const { client } = makeFakeClient({ data: null });
-    expect(await searchPosts(client, 'q', {}, 10)).toEqual([]);
+    expect(await searchPosts(client, 'q', {}, 10)).toEqual({ items: [], total: 0 });
   });
 });
 
@@ -142,9 +154,10 @@ describe('searchUsers', () => {
   });
 
   it('returns mapped UserSearchResult rows on success', async () => {
-    const { client } = makeFakeClient({ data: [USER_ROW] });
+    const { client } = makeFakeClient({ data: [USER_ROW], count: 7 });
     const out = await searchUsers(client, 'q', {}, null, 10);
-    expect(out[0]?.userId).toBe('u_1');
+    expect(out.items[0]?.userId).toBe('u_1');
+    expect(out.total).toBe(7);
   });
 });
 
@@ -189,8 +202,9 @@ describe('searchLinks', () => {
   });
 
   it('returns mapped DonationLinkSearchResult rows on success', async () => {
-    const { client } = makeFakeClient({ data: [LINK_ROW] });
+    const { client } = makeFakeClient({ data: [LINK_ROW], count: 12 });
     const out = await searchLinks(client, 'q', {}, 10);
-    expect(out[0]?.id).toBe('l_1');
+    expect(out.items[0]?.id).toBe('l_1');
+    expect(out.total).toBe(12);
   });
 });

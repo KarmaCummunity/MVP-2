@@ -26,10 +26,16 @@ import type { ASTNode, RenderRules } from 'react-native-markdown-display';
 import type { ColorPalette } from '@kc/ui';
 import { typography, spacing } from '@kc/ui';
 import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
+// Why `rtlTextAlignStart` and not a hard-coded 'right':
+// On native under `I18nManager.forceRTL(true)`, `textAlign: 'right'` resolves
+// to the *end* edge (visually LEFT in RTL). The helper returns 'left' on native
+// (which mirrors to inline-start = visual right) and 'right' on web (where
+// `dir="rtl"` makes physical 'right' the inline-start edge).
 const RTL_TEXT_BASE: TextStyle = {
   writingDirection: 'rtl',
-  textAlign: 'right',
+  textAlign: rtlTextAlignStart,
 };
 
 export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
@@ -60,7 +66,7 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
         style={{
           ...typography.body,
           color: colors.textPrimary,
-          lineHeight: 24,
+          lineHeight: 26,
           marginBottom: spacing.md,
           ...RTL_TEXT_BASE,
         }}
@@ -96,14 +102,17 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
       const rowStyle: ViewStyle = {
         flexDirection: rowDirectionStart,
         alignItems: 'flex-start',
-        marginBottom: spacing.xs,
+        marginBottom: spacing.sm,
       };
       const iconStyle: TextStyle = {
         ...typography.body,
         color: colors.textSecondary,
+        // Logical spacing — gap sits between the bullet (inline-start) and the
+        // body that follows it, on both native (auto-mirrors) and web.
         marginStart: 0,
         marginEnd: spacing.sm,
         minWidth: 16,
+        lineHeight: 26,
         ...RTL_TEXT_BASE,
       };
       return (
@@ -113,7 +122,7 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
             style={{
               ...typography.body,
               color: colors.textPrimary,
-              lineHeight: 24,
+              lineHeight: 26,
               flex: 1,
               ...RTL_TEXT_BASE,
             }}
@@ -129,11 +138,15 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
         key={node.key}
         style={{
           backgroundColor: colors.surfaceRaised,
-          borderRightWidth: 3,
-          borderRightColor: colors.primary,
+          // `borderStartWidth` is a logical property: lands on the inline-start
+          // edge (right in RTL) on both native and web. Avoids the LTR-only
+          // `borderRightWidth`, which doesn't auto-mirror reliably on web.
+          borderStartWidth: 3,
+          borderStartColor: colors.primary,
           paddingHorizontal: spacing.md,
           paddingVertical: spacing.sm,
           marginVertical: spacing.sm,
+          borderRadius: 6,
         }}
       >
         {children}

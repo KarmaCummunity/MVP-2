@@ -7,9 +7,11 @@ import { ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, useTheme } from '@kc/ui';
+import { PROFILE_GRID_COLUMNS } from '../../hooks/useShellContentWidth';
 import type { Post } from '@kc/domain';
 import { chunkArray } from '../../lib/chunkArray';
-import { PostCardProfile } from '../PostCardProfile';
+import { postWithOwnerFromPost, type ProfilePostOwnerContext } from '../../lib/postWithOwnerFromPost';
+import { PostCardGrid } from '../PostCardGrid';
 import { EmptyState } from '../EmptyState';
 
 export type EmptyVariant =
@@ -27,9 +29,11 @@ export interface ProfilePostsGridProps {
   posts: Post[];
   isLoading: boolean;
   empty: EmptyVariant;
+  /** Profile owner line on feed-style cards (avatar + name). */
+  postOwner?: ProfilePostOwnerContext;
 }
 
-export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridProps) {
+export function ProfilePostsGrid({ posts, isLoading, empty, postOwner }: ProfilePostsGridProps) {
   const styles = useStyles();
   const { colors } = useTheme();
   const { t } = useTranslation();
@@ -93,10 +97,15 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
   }
   return (
     <View style={styles.grid}>
-      {chunkArray(posts, 3).map((row, rowIndex) => (
+      {chunkArray(posts, PROFILE_GRID_COLUMNS).map((row, rowIndex) => (
         <View key={rowIndex} style={styles.row}>
           {row.map((p) => (
-            <PostCardProfile key={p.postId} post={p} />
+            <PostCardGrid
+              key={p.postId}
+              post={postWithOwnerFromPost(p, postOwner)}
+              columns={PROFILE_GRID_COLUMNS}
+              gap={spacing.xs}
+            />
           ))}
         </View>
       ))}

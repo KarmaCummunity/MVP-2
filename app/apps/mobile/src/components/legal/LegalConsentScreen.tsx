@@ -9,6 +9,8 @@ import { LegalDocumentReader } from './LegalDocumentReader';
 import { LegalConsentCard } from './LegalConsentCard';
 import { getAcceptLegalDocumentUseCase } from '../../services/legalComposition';
 import { useAuthStore } from '../../store/authStore';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export type LegalConsentMode = 'signup' | 'update';
 
@@ -82,9 +84,10 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
           style={{
             ...typography.h3,
             color: colors.textPrimary,
-            textAlign: 'right',
+            textAlign: rtlTextAlignStart,
             writingDirection: 'rtl',
             marginBottom: spacing.lg,
+            lineHeight: 28,
           }}
         >
           {mode === 'signup' ? t('legal.signupHeading') : t('legal.updateModalHeading')}
@@ -121,7 +124,13 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
           onPress={() => setExitConfirmOpen(true)}
           style={{ marginTop: spacing.md, alignSelf: 'center' }}
         >
-          <Text style={{ ...typography.bodySmall, color: colors.textSecondary }}>
+          <Text
+            style={{
+              ...typography.bodySmall,
+              color: colors.textSecondary,
+              writingDirection: 'rtl',
+            }}
+          >
             {t('legal.exitLink')}
           </Text>
         </Pressable>
@@ -154,7 +163,7 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
               style={{
                 ...typography.h4,
                 color: colors.textPrimary,
-                textAlign: 'right',
+                textAlign: rtlTextAlignStart,
                 writingDirection: 'rtl',
               }}
             >
@@ -164,28 +173,17 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
               style={{
                 ...typography.body,
                 color: colors.textPrimary,
-                textAlign: 'right',
+                textAlign: rtlTextAlignStart,
                 writingDirection: 'rtl',
                 marginVertical: spacing.md,
+                lineHeight: 24,
               }}
             >
               {t('legal.exitConfirmBody')}
             </Text>
-            <View style={{ flexDirection: 'row-reverse', gap: spacing.sm }}>
-              <Pressable
-                onPress={onExit}
-                style={{
-                  flex: 1,
-                  paddingVertical: spacing.md,
-                  borderRadius: 8,
-                  backgroundColor: colors.error,
-                  alignItems: 'center',
-                }}
-              >
-                <Text style={{ ...typography.button, color: colors.textInverse }}>
-                  {t('legal.exitConfirmConfirm')}
-                </Text>
-              </Pressable>
+            {/* Destructive action sits at the inline-end (visual left in RTL Hebrew)
+                so the safe "ביטול" is on the reading-start side. */}
+            <View style={{ flexDirection: rowDirectionStart, gap: spacing.sm }}>
               <Pressable
                 onPress={() => setExitConfirmOpen(false)}
                 style={{
@@ -198,6 +196,20 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
               >
                 <Text style={{ ...typography.button, color: colors.textPrimary }}>
                   {t('legal.exitConfirmCancel')}
+                </Text>
+              </Pressable>
+              <Pressable
+                onPress={onExit}
+                style={{
+                  flex: 1,
+                  paddingVertical: spacing.md,
+                  borderRadius: 8,
+                  backgroundColor: colors.error,
+                  alignItems: 'center',
+                }}
+              >
+                <Text style={{ ...typography.button, color: colors.textInverse }}>
+                  {t('legal.exitConfirmConfirm')}
                 </Text>
               </Pressable>
             </View>

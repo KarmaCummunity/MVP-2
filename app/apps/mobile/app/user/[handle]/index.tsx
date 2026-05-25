@@ -29,6 +29,7 @@ import { useOtherProfileActions } from '../../../src/hooks/useOtherProfileAction
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
+import { profilePostOwnerFromUser } from '../../../src/lib/profilePostOwnerContext';
 import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profileTabSession';
 import { useOtherProfileScreenStyles } from '../../../src/components/profile/otherProfileScreen.styles';
 import { nativeStackHeaderRightIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
@@ -52,6 +53,10 @@ export default function OtherProfileScreen() {
     enabled: Boolean(handle),
   });
   const u = userQuery.data ?? null;
+  const postOwner = React.useMemo(
+    () => (u ? profilePostOwnerFromUser(u, t('profile.fallbackName')) : undefined),
+    [u, t],
+  );
 
   const stateQuery = useQuery({
     queryKey: ['follow-state', me, u?.userId],
@@ -181,6 +186,7 @@ export default function OtherProfileScreen() {
             posts={postsQuery.data?.posts ?? []}
             isLoading={postsQuery.isLoading}
             empty="other_open"
+            postOwner={postOwner}
           />
         ) : (
           <ProfileClosedPostsGrid
@@ -191,6 +197,7 @@ export default function OtherProfileScreen() {
             isLoadingMore={closed.isLoadingMore}
             onLoadMore={closed.loadMore}
             profileUserId={u.userId}
+            postOwner={postOwner}
           />
         )}
       </ScrollView>

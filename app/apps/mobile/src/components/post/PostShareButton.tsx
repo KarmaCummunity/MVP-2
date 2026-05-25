@@ -25,9 +25,11 @@ const POST_IMAGES_BUCKET = 'post-images';
 
 interface Props {
   post: PostWithOwner;
+  /** Compact nav-bar footprint (post detail header). */
+  placement?: 'default' | 'header';
 }
 
-export function PostShareButton({ post }: Props) {
+export function PostShareButton({ post, placement = 'default' }: Props) {
   const { t, i18n } = useTranslation();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const styles = usePostShareButtonStyles();
@@ -120,7 +122,7 @@ export function PostShareButton({ post }: Props) {
 
   return (
     <Pressable
-      style={styles.btn}
+      style={placement === 'header' ? styles.btnHeader : styles.btn}
       onPress={() => void onPress()}
       disabled={busy}
       accessibilityLabel={t('post.detail.shareA11y')}
@@ -143,4 +145,5 @@ export function PostShareButton({ post }: Props) {
 
 const usePostShareButtonStyles = makeUseStyles(() => ({
   btn: { padding: 4, marginEnd: 4 },
+  btnHeader: { paddingVertical: 4, paddingHorizontal: 4 },
 }));

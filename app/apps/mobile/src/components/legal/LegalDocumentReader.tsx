@@ -7,6 +7,8 @@ import { typography, spacing, useTheme } from '@kc/ui';
 import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
 import { makeLegalMarkdownStyles } from './LegalMarkdownStyles';
 import { makeLegalMarkdownRules } from './legalMarkdownRules';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { selfAlignStart } from '../../lib/rtlLayout';
 
 function formatHebrewDate(d: Date): string {
   // DD.MM.YYYY per spec §7.1
@@ -53,7 +55,14 @@ export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
   if (state.kind === 'error') {
     return (
       <View style={{ padding: spacing.lg, backgroundColor: colors.background, flex: 1 }}>
-        <Text style={{ ...typography.body, color: colors.textPrimary, textAlign: 'right' }}>
+        <Text
+          style={{
+            ...typography.body,
+            color: colors.textPrimary,
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
+          }}
+        >
           {t('legal.loadFailed')}
         </Text>
       </View>
@@ -75,11 +84,24 @@ export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
       <View style={{ marginBottom: spacing.md }}>
         <Text
           accessibilityRole="header"
-          style={{ ...typography.h2, color: colors.textPrimary, textAlign: 'right' }}
+          style={{
+            ...typography.h2,
+            color: colors.textPrimary,
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
+          }}
         >
           {docType === 'terms' ? t('legal.termsTitle') : t('legal.privacyTitle')}
         </Text>
-        <Text style={{ ...typography.caption, color: colors.textSecondary, textAlign: 'right' }}>
+        <Text
+          style={{
+            ...typography.caption,
+            color: colors.textSecondary,
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
+            marginTop: spacing.xs,
+          }}
+        >
           {isFutureDated
             ? t('legal.futureEffective', { date: formatHebrewDate(content.effectiveDate) })
             : t('legal.effectiveDate', { date: formatHebrewDate(content.effectiveDate) })}
@@ -96,10 +118,13 @@ export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
 }
 
 function LoadingSkeleton({ bgColor }: Readonly<{ bgColor: string }>) {
+  // `selfAlignStart` ('flex-start') resolves to the cross-axis start edge —
+  // which under `I18nManager.forceRTL(true)` on native and `dir="rtl"` on web
+  // is the visual RIGHT, matching the alignment of the loaded Hebrew body.
   const bar = (width: DimensionValue, marginTop: number) => (
     <View
       style={{
-        alignSelf: 'flex-end',
+        alignSelf: selfAlignStart,
         width,
         height: 14,
         backgroundColor: bgColor,
@@ -121,7 +146,7 @@ function LoadingSkeleton({ bgColor }: Readonly<{ bgColor: string }>) {
       {bar('85%', spacing.xs)}
       {bar('80%', spacing.xs)}
       {bar('70%', spacing.xs)}
-      <ActivityIndicator style={{ alignSelf: 'flex-end', marginTop: spacing.lg }} />
+      <ActivityIndicator style={{ alignSelf: selfAlignStart, marginTop: spacing.lg }} />
     </View>
   );
 }

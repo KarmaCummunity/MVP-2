@@ -72,7 +72,7 @@ export function PostMenuSheet({
           <Pressable style={styles.sheet} onPress={(e) => e.stopPropagation()}>
             <View style={styles.handle} accessibilityElementsHidden importantForAccessibility="no" />
             <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
-              <View style={styles.actionsGroup}>
+              <View style={[styles.actionsGroup, showExposureBlock && styles.actionsGroupBordered]}>
                 {isOwner ? null : (
                   <MenuItem
                     icon="flag-outline"
@@ -125,10 +125,6 @@ export function PostMenuSheet({
               {showExposureBlock && viewerId ? (
                 <PostMenuExposureBlock post={post} viewerId={viewerId} />
               ) : null}
-
-              <View style={styles.footer}>
-                <MenuItem icon="close" label={t('general.cancel')} muted onPress={onClose} />
-              </View>
             </ScrollView>
           </Pressable>
         </Pressable>
@@ -164,12 +160,11 @@ export function PostMenuSheet({
 }
 
 interface MenuItemProps {
-  icon: IoniconName;
+  icon?: IoniconName;
   label: string;
   iconColor?: string;
   labelColor?: string;
   destructive?: boolean;
-  muted?: boolean;
   disabled?: boolean;
   onPress: () => void;
 }
@@ -180,17 +175,15 @@ function MenuItem({
   iconColor,
   labelColor,
   destructive,
-  muted,
   disabled,
   onPress,
 }: MenuItemProps) {
   const { colors } = useTheme();
   const styles = usePostMenuSheetStyles();
-  const resolvedIconColor = iconColor ?? (muted ? colors.textSecondary : colors.textPrimary);
+  const resolvedIconColor = iconColor ?? colors.textPrimary;
   let resolvedLabelColor = colors.textPrimary;
   if (labelColor) resolvedLabelColor = labelColor;
   else if (destructive) resolvedLabelColor = colors.error;
-  else if (muted) resolvedLabelColor = colors.textSecondary;
 
   return (
     <Pressable
@@ -201,7 +194,7 @@ function MenuItem({
       accessibilityState={{ disabled: Boolean(disabled) }}
     >
       <Text style={[styles.itemLabel, { color: resolvedLabelColor }]}>{label}</Text>
-      <Ionicons name={icon} size={22} color={resolvedIconColor} />
+      {icon ? <Ionicons name={icon} size={22} color={resolvedIconColor} /> : null}
     </Pressable>
   );
 }
@@ -227,13 +220,10 @@ const usePostMenuSheetStyles = makeUseStyles(({ colors }) => ({
   },
   actionsGroup: {
     paddingTop: spacing.xs,
+  },
+  actionsGroupBordered: {
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
-  },
-  footer: {
-    marginTop: spacing.xs,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
   },
   item: {
     flexDirection: 'row',

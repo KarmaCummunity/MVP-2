@@ -51,6 +51,12 @@ export function useShellContentWidth(): number {
   return computeShellContentWidth(width, bp);
 }
 
+/** Home feed grid density (FR-FEED-* / responsive desktop). */
+export const HOME_FEED_GRID_COLUMNS = 2 as const;
+
+/** Profile post grids — denser 3-up layout (FR-PROFILE-001 AC4, FR-RESP-002). */
+export const PROFILE_GRID_COLUMNS = 3 as const;
+
 /** Home feed = 2 columns; profile grids = 3 columns. */
 export function usePostGridCardWidth(columns: 2 | 3, gap?: number): number {
   const resolvedGap = gap ?? (columns === 2 ? spacing.sm : spacing.xs);

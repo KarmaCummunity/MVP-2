@@ -13,6 +13,7 @@ import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBa
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
+import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
 import { rowDirectionStart } from '../../../src/lib/rtlLayout';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
@@ -22,6 +23,7 @@ export default function MyProfileHiddenScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
+  const postOwner = useMyProfilePostOwner();
 
   const hiddenOpenQuery = useQuery({
     queryKey: ['my-hidden-open-posts', userId],
@@ -57,6 +59,7 @@ export default function MyProfileHiddenScreen() {
           posts={hiddenOpenQuery.data?.posts ?? []}
           isLoading={hiddenOpenQuery.isLoading}
           empty="self_hidden_open"
+          postOwner={postOwner}
         />
         <Text style={styles.sectionTitle}>{t('profile.hiddenSectionClosed')}</Text>
         <ProfileClosedPostsGrid
@@ -67,6 +70,7 @@ export default function MyProfileHiddenScreen() {
           isLoadingMore={hiddenClosed.isLoadingMore}
           onLoadMore={hiddenClosed.loadMore}
           profileUserId={userId!}
+          postOwner={postOwner}
         />
       </ScrollView>
     </SafeAreaView>

@@ -7,9 +7,11 @@ import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, useTheme } from '@kc/ui';
+import { PROFILE_GRID_COLUMNS } from '../../hooks/useShellContentWidth';
 import type { ProfileClosedPostsItem } from '@kc/domain';
 import { chunkArray } from '../../lib/chunkArray';
-import { PostCardProfile } from '../PostCardProfile';
+import { postWithOwnerFromPost, type ProfilePostOwnerContext } from '../../lib/postWithOwnerFromPost';
+import { PostCardGrid } from '../PostCardGrid';
 import { EmptyState } from '../EmptyState';
 
 export type ClosedEmptyVariant = 'self_closed' | 'self_hidden_closed' | 'other_closed';
@@ -23,6 +25,8 @@ export interface ProfileClosedPostsGridProps {
   onLoadMore?: () => void;
   /** Profile whose closed-posts tab is shown — forwarded to post detail for D-31 identity projection. */
   profileUserId: string;
+  /** Profile owner line on feed-style cards (avatar + name). */
+  postOwner?: ProfilePostOwnerContext;
 }
 
 export function ProfileClosedPostsGrid({
@@ -33,6 +37,7 @@ export function ProfileClosedPostsGrid({
   isLoadingMore = false,
   onLoadMore,
   profileUserId,
+  postOwner,
 }: ProfileClosedPostsGridProps) {
   const styles = useStyles();
   const { colors } = useTheme();
@@ -72,12 +77,14 @@ export function ProfileClosedPostsGrid({
   return (
     <>
       <View style={styles.grid}>
-        {chunkArray(items, 3).map((row, rowIndex) => (
+        {chunkArray(items, PROFILE_GRID_COLUMNS).map((row, rowIndex) => (
           <View key={rowIndex} style={styles.row}>
             {row.map(({ post, identityRole }) => (
-              <PostCardProfile
+              <PostCardGrid
                 key={post.postId}
-                post={post}
+                post={postWithOwnerFromPost(post, postOwner)}
+                columns={PROFILE_GRID_COLUMNS}
+                gap={spacing.xs}
                 identityRole={identityRole}
                 closedPostsProfileUserId={profileUserId}
               />

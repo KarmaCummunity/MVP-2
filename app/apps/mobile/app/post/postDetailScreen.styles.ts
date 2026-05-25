@@ -3,7 +3,7 @@
 import { Platform, type ViewStyle } from 'react-native';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { heroCornerEnd, heroCornerStart } from '../../src/components/post-detail/postDetailCorner';
-import { textAlignStart } from '../../src/lib/rtlLayout';
+import { rowDirectionStart, textAlignStart } from '../../src/lib/rtlLayout';
 
 const IMAGE_OVERLAY_BG = 'rgba(0, 0, 0, 0.68)';
 const IMAGE_OVERLAY_BORDER = 'rgba(255, 255, 255, 0.22)';
@@ -18,7 +18,13 @@ const overlayShadow = {
 
 export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
-  headerActions: { flexDirection: 'row', alignItems: 'center' },
+  headerActions: {
+    flexDirection: rowDirectionStart,
+    alignItems: 'center',
+    // headerRight slot is wide; pack icons to the screen edge (visual left in RTL).
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+  },
   center: {
     flex: 1,
     justifyContent: 'center',

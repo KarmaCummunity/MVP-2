@@ -8,10 +8,12 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
+import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
 
 export default function MyProfileClosedScreen() {
   const tabBarPad = useShellTabBarScrollInset();
   const userId = useAuthStore((s) => s.session?.userId);
+  const postOwner = useMyProfilePostOwner();
   const closed = useProfileClosedPosts({ profileUserId: userId, viewerUserId: userId ?? null });
 
   return (
@@ -30,6 +32,7 @@ export default function MyProfileClosedScreen() {
           isLoadingMore={closed.isLoadingMore}
           onLoadMore={closed.loadMore}
           profileUserId={userId!}
+          postOwner={postOwner}
         />
       </ScrollView>
     </Screen>
