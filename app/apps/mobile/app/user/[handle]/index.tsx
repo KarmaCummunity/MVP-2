@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
 import { useProfileTabCounts } from '../../../src/hooks/useProfileTabCounts';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useTheme } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
