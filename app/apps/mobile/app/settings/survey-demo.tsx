@@ -1,0 +1,278 @@
+// UI-only survey layout demo — no server, no persistence. For design review.
+import React, { useMemo, useState } from 'react';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
+} from 'react-native';
+import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { Stack } from 'expo-router';
+import { makeUseStyles, spacing, typography, useBreakpoint, useTheme } from '@kc/ui';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import {
+  shellTabBarHeightPx,
+  useShellTabBarVisibility,
+} from '../../src/navigation/useShellTabBarVisibility';
+import { Card } from '../../src/components/ui/Card';
+import { SurveyQuestionMap } from '../../src/components/survey-demo/SurveyQuestionMap';
+import {
+  SURVEY_FLOAT_NAV_CLEARANCE,
+  SurveyFloatingNav,
+} from '../../src/components/survey-demo/SurveyFloatingNav';
+import { SurveyRatingRow } from '../../src/components/survey-demo/SurveyRatingRow';
+import {
+  SURVEY_DEMO_QUESTIONS,
+  type SurveyDemoQuestion,
+} from '../../src/components/survey-demo/surveyDemoQuestions';
+import {
+  hebrewSurveyFieldTextStyle,
+  SURVEY_TEXT_ALIGN,
+} from '../../src/components/survey-demo/hebrewSurveyFieldStyle';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
+
+type DemoAnswer = { rating: number | null; text: string };
+
+const DEMO_TITLE = 'סקר חווית משתמש (דמה)';
+
+function emptyAnswers(): Record<string, DemoAnswer> {
+  return Object.fromEntries(
+    SURVEY_DEMO_QUESTIONS.map((q) => [q.id, { rating: null, text: '' }]),
+  );
+}
+
+export default function SurveyDemoScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
+  const { colors } = useTheme();
+  const bp = useBreakpoint();
+  const styles = useScreenStyles();
+  const insets = useSafeAreaInsets();
+  const tabBarVisible = useShellTabBarVisibility();
+  const useSideRail = bp === 'tablet' || bp === 'desktop' || bp === 'wide';
+
+  const floatNavBottom = shellTabBarHeightPx(tabBarVisible) + insets.bottom + spacing.md;
+  const scrollBottomPad =
+    SURVEY_FLOAT_NAV_CLEARANCE + floatNavBottom + spacing.lg;
+
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, DemoAnswer>>(emptyAnswers);
+
+  const question = SURVEY_DEMO_QUESTIONS[activeIndex] as SurveyDemoQuestion;
+  const answer = answers[question.id] ?? { rating: null, text: '' };
+  const total = SURVEY_DEMO_QUESTIONS.length;
+
+  const setAnswer = (patch: Partial<DemoAnswer>) => {
+    setAnswers((prev) => ({
+      ...prev,
+      [question.id]: { ...(prev[question.id] ?? { rating: null, text: '' }), ...patch },
+    }));
+  };
+
+  const goPrev = () => setActiveIndex((i) => Math.max(0, i - 1));
+  const goNext = () => setActiveIndex((i) => Math.min(total - 1, i + 1));
+
+  const mapProps = useMemo(
+    () => ({
+      questions: SURVEY_DEMO_QUESTIONS,
+      activeIndex,
+      answers,
+      onSelect: setActiveIndex,
+    }),
+    [activeIndex, answers],
+  );
+
+  return (
+    <SafeAreaView style={styles.safe} edges={['left', 'right']}>
+      <Stack.Screen
+        options={{
+          ...detailStackScreenOptions,
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.primary,
+          headerTitle: DEMO_TITLE,
+        }}
+      />
+      <KeyboardAvoidingView
+        style={[styles.flex, styles.stage]}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      >
+        <View style={styles.progressBar}>
+          <Text style={styles.progressText}>
+            שאלה {activeIndex + 1} מתוך {total}
+          </Text>
+          <Text style={styles.progressHint}>דמה · ללא שמירה</Text>
+        </View>
+
+        {useSideRail ? null : <SurveyQuestionMap {...mapProps} variant="chips" />}
+
+        <View style={styles.body}>
+          {useSideRail ? <SurveyQuestionMap {...mapProps} variant="rail" /> : null}
+
+          <ScrollView
+            style={styles.mainScroll}
+            contentContainerStyle={[styles.mainContent, { paddingBottom: scrollBottomPad }]}
+            keyboardShouldPersistTaps="handled"
+            showsVerticalScrollIndicator={false}
+          >
+            <QuestionPanel
+              question={question}
+              index={activeIndex}
+              answer={answer}
+              onRating={(rating) => setAnswer({ rating })}
+              onText={(text) => setAnswer({ text })}
+            />
+          </ScrollView>
+        </View>
+
+        <SurveyFloatingNav
+          onPrev={goPrev}
+          onNext={goNext}
+          prevDisabled={activeIndex === 0}
+          nextDisabled={activeIndex >= total - 1}
+          bottom={floatNavBottom}
+        />
+      </KeyboardAvoidingView>
+    </SafeAreaView>
+  );
+}
+
+type QuestionPanelProps = {
+  readonly question: SurveyDemoQuestion;
+  readonly index: number;
+  readonly answer: DemoAnswer;
+  readonly onRating: (rating: number) => void;
+  readonly onText: (text: string) => void;
+};
+
+function QuestionPanel({ question, index, answer, onRating, onText }: QuestionPanelProps) {
+  const styles = usePanelStyles();
+  const { colors } = useTheme();
+
+  return (
+    <Card padding="base" style={styles.card}>
+      <Text style={styles.questionIndex}>שאלה {index + 1}</Text>
+      <Text style={styles.prompt}>{question.prompt}</Text>
+      <Text style={styles.context}>{question.context}</Text>
+
+      <Text style={styles.fieldLabel} accessibilityRole="text">
+        דירוג (1–7, חובה)
+      </Text>
+      <SurveyRatingRow value={answer.rating} onChange={onRating} />
+      <View style={styles.scaleHints}>
+        <Text style={styles.scaleHint}>1 = לא מספיק</Text>
+        <Text style={styles.scaleHint}>7 = מצוין</Text>
+      </View>
+
+      <Text style={styles.fieldLabel} accessibilityRole="text">
+        פירוט (אופציונלי)
+      </Text>
+      <TextInput
+        style={[styles.textInput, hebrewSurveyFieldTextStyle()]}
+        value={answer.text}
+        onChangeText={onText}
+        placeholder={question.textPlaceholder}
+        placeholderTextColor={colors.textDisabled}
+        textAlign={SURVEY_TEXT_ALIGN}
+        multiline
+        maxLength={500}
+        accessibilityLabel={question.textPlaceholder}
+      />
+    </Card>
+  );
+}
+
+const useScreenStyles = makeUseStyles(({ colors }) => ({
+  safe: { flex: 1, backgroundColor: colors.background },
+  flex: { flex: 1 },
+  stage: { position: 'relative' },
+  progressBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    paddingHorizontal: spacing.base,
+    paddingVertical: spacing.xs,
+    ...webViewRtl,
+  },
+  progressText: {
+    ...typography.bodySmall,
+    fontWeight: '700',
+    color: colors.textPrimary,
+    ...webTextRtl,
+  },
+  progressHint: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    ...webTextRtl,
+  },
+  body: { flex: 1, flexDirection: 'row', minHeight: 0, ...webViewRtl },
+  mainScroll: { flex: 1 },
+  mainContent: {
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.sm,
+    gap: spacing.sm,
+  },
+}));
+
+const usePanelStyles = makeUseStyles(({ colors }) => ({
+  card: {
+    gap: spacing.sm,
+    alignSelf: 'stretch',
+  },
+  questionIndex: {
+    ...typography.caption,
+    color: colors.primary,
+    fontWeight: '700',
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  prompt: {
+    ...typography.h3,
+    fontSize: 18,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 26,
+    ...webTextRtl,
+  },
+  context: {
+    ...typography.body,
+    fontSize: 15,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 23,
+    ...webTextRtl,
+  },
+  fieldLabel: {
+    ...typography.bodySmall,
+    fontWeight: '600',
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    marginTop: spacing.xs,
+    ...webTextRtl,
+  },
+  scaleHints: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    ...webViewRtl,
+  },
+  scaleHint: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    ...webTextRtl,
+  },
+  textInput: {
+    ...typography.body,
+    fontSize: 15,
+    lineHeight: 22,
+    minHeight: 88,
+    maxHeight: 128,
+    padding: spacing.md,
+    borderRadius: 10,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.surface,
+    color: colors.textPrimary,
+  },
+}));

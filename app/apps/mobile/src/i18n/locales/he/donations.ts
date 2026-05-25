@@ -159,6 +159,8 @@ export const search = {
   filterCategory: 'קטגוריה',
   filterDonationCategory: 'קטגוריית תרומה',
   filterMinFollowers: 'מינימום עוקבים',
+  filterRadius: 'רדיוס מהעיר',
+  radiusKm: 'עד {km} ק"מ',
   clearFilters: 'נקה סינון',
   applyFilters: 'החל סינון',
 

@@ -142,6 +142,15 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <Text style={styles.sectionTitle}>סקרים (דמה)</Text>
+        <View style={styles.section}>
+          <SettingsScreenRow
+            label="סקר חווית משתמש — תצוגה לדוגמה"
+            icon="clipboard-outline"
+            onPress={() => router.push('/settings/survey-demo' as never)}
+          />
+        </View>
+
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow

@@ -71,6 +71,7 @@ export default function SearchScreen() {
       category: s.category,
       donationCategory: s.donationCategory,
       city: s.city,
+      radiusKm: s.radiusKm,
       sortBy: s.sortBy,
       minFollowers: s.minFollowers,
     })),
