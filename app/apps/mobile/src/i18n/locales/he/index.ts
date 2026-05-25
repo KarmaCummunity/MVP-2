@@ -24,6 +24,7 @@ import { closureHe } from './modules/closure';
 import { filtersHe } from './modules/filters';
 import { commonHe } from './modules/common';
 import { legalHe } from './modules/legal';
+import { surveyDemoHe } from './modules/surveyDemo';
 
 const he = {
   // App
@@ -69,6 +70,9 @@ const he = {
 
   // Legal (FR-SETTINGS-010) — see modules/legal.ts; bodies are server-driven Markdown.
   legal: legalHe,
+
+  // Survey UX demo (internal preview) — see modules/surveyDemo.ts.
+  surveyDemo: surveyDemoHe,
 
   // About — see modules/aboutContentBundle.ts (FR-SETTINGS About narrative)
   aboutContent: aboutContentMerged,

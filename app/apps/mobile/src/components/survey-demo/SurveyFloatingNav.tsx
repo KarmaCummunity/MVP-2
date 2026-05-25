@@ -1,8 +1,8 @@
 import React from 'react';
-import { Platform, Pressable, Text, View, type ViewStyle } from 'react-native';
+import { Pressable, Text, View, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
-import { isLayoutRtl } from '../../lib/rtlLayout';
 import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
 
 type SurveyFloatingNavProps = {
@@ -13,15 +13,10 @@ type SurveyFloatingNavProps = {
   readonly bottom: number;
 };
 
-/** Anchor floating controls to the horizontal edges (above tab bar). */
-function dockHorizontalInsets(): Pick<ViewStyle, 'left' | 'right'> {
-  if (Platform.OS !== 'web') {
-    return { left: spacing.base, right: spacing.base };
-  }
-  return isLayoutRtl()
-    ? { left: spacing.base, right: spacing.base }
-    : { left: spacing.base, right: spacing.base };
-}
+const DOCK_HORIZONTAL_INSETS: Pick<ViewStyle, 'left' | 'right'> = {
+  left: spacing.base,
+  right: spacing.base,
+};
 
 export function SurveyFloatingNav({
   onPrev,
@@ -32,10 +27,11 @@ export function SurveyFloatingNav({
 }: SurveyFloatingNavProps) {
   const styles = useNavStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <View
-      style={[styles.dock, dockHorizontalInsets(), { bottom }]}
+      style={[styles.dock, DOCK_HORIZONTAL_INSETS, { bottom }]}
       pointerEvents="box-none"
     >
       <Pressable
@@ -48,7 +44,7 @@ export function SurveyFloatingNav({
           pressed && !prevDisabled && styles.pillPressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel="שאלה קודמת"
+        accessibilityLabel={t('surveyDemo.navPrevA11y')}
         accessibilityState={{ disabled: prevDisabled }}
       >
         <Ionicons
@@ -56,7 +52,9 @@ export function SurveyFloatingNav({
           size={18}
           color={prevDisabled ? colors.textDisabled : colors.textPrimary}
         />
-        <Text style={[styles.pillText, prevDisabled && styles.pillTextDisabled]}>הקודם</Text>
+        <Text style={[styles.pillText, prevDisabled && styles.pillTextDisabled]}>
+          {t('surveyDemo.navPrev')}
+        </Text>
       </Pressable>
 
       <Pressable
@@ -69,11 +67,11 @@ export function SurveyFloatingNav({
           pressed && !nextDisabled && styles.pillPressed,
         ]}
         accessibilityRole="button"
-        accessibilityLabel="שאלה הבאה"
+        accessibilityLabel={t('surveyDemo.navNextA11y')}
         accessibilityState={{ disabled: nextDisabled }}
       >
         <Text style={[styles.pillTextPrimary, nextDisabled && styles.pillTextDisabledOnPrimary]}>
-          הבא
+          {t('surveyDemo.navNext')}
         </Text>
         <Ionicons
           name="chevron-back"

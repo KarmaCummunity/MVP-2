@@ -1,5 +1,6 @@
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
@@ -34,6 +35,7 @@ export function SurveyQuestionMap({
 }: SurveyQuestionMapProps) {
   const styles = useMapStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const isCompact = variant === 'chips';
 
   const renderCompactChip = (q: SurveyDemoQuestion, index: number) => {
@@ -54,7 +56,7 @@ export function SurveyQuestionMap({
         style={[styles.compactChip, isActive && styles.compactChipActive]}
         accessibilityRole="button"
         accessibilityState={{ selected: isActive }}
-        accessibilityLabel={`שאלה ${index + 1}, ${q.shortLabel}`}
+        accessibilityLabel={t('surveyDemo.questionA11y', { index: index + 1, label: q.shortLabel })}
       >
         <Text style={[styles.compactNumber, isActive && styles.compactNumberActive]}>
           {index + 1}
@@ -94,7 +96,7 @@ export function SurveyQuestionMap({
         style={[styles.railItem, isActive && styles.itemActive]}
         accessibilityRole="button"
         accessibilityState={{ selected: isActive }}
-        accessibilityLabel={`שאלה ${index + 1}, ${q.shortLabel}`}
+        accessibilityLabel={t('surveyDemo.questionA11y', { index: index + 1, label: q.shortLabel })}
       >
         <Text style={[styles.itemNumber, isActive && styles.itemNumberActive]}>
           {index + 1}
@@ -126,7 +128,7 @@ export function SurveyQuestionMap({
 
   return (
     <View style={styles.rail}>
-      <Text style={styles.railTitle}>כל השאלות</Text>
+      <Text style={styles.railTitle}>{t('surveyDemo.questionMapTitle')}</Text>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.railList}>
         {questions.map((q, i) => renderRailItem(q, i))}
       </ScrollView>

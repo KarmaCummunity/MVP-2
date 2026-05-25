@@ -182,7 +182,7 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
               {t('legal.exitConfirmBody')}
             </Text>
             {/* Destructive action sits at the inline-end (visual left in RTL Hebrew)
-                so the safe "ביטול" is on the reading-start side. */}
+                so the safe Cancel button is on the reading-start side. */}
             <View style={{ flexDirection: rowDirectionStart, gap: spacing.sm }}>
               <Pressable
                 onPress={() => setExitConfirmOpen(false)}

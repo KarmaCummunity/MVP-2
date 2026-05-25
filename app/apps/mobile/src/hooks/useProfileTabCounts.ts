@@ -42,7 +42,7 @@ export function useProfileTabCounts({
   return {
     openCount,
     closedCount,
-    /** FR-PROFILE-013 — headline "פוסטים" = open tab + closed tab (same sources as badges). */
+    /** FR-PROFILE-013 — headline "posts" total = open tab + closed tab (same sources as badges). */
     totalCount,
     isLoading: openQuery.isLoading || closedQuery.isLoading,
   };
