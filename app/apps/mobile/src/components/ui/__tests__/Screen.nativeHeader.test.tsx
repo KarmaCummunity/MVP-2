@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { Text } from 'react-native';
 import { render } from '@testing-library/react';
@@ -33,6 +33,10 @@ vi.mock('@kc/ui', async () => {
 });
 
 describe('Screen — native-header double-padding guard', () => {
+  beforeEach(() => {
+    sawEdges.length = 0;
+  });
+
   it('drops top edge when hasNativeHeader is set', () => {
     render(
       <Screen hasNativeHeader>

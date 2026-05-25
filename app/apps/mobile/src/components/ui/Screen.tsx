@@ -54,8 +54,8 @@ export function Screen({
 }: ScreenProps) {
   const { colors } = useTheme();
   // Both hooks always called (Rules of Hooks). When the bar is hidden, we
-  // skip padding so we don't add phantom 54px on auth / onboarding screens
-  // that mount under <Screen>.
+  // skip padding so we don't add phantom 20+76+insets.bottom px on
+  // auth / onboarding screens that mount under <Screen>.
   const tabBarVisible = useShellTabBarVisibility();
   const tabBarPad = useShellTabBarScrollInset();
 

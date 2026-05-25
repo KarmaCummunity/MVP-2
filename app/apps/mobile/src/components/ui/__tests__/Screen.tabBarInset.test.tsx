@@ -1,5 +1,5 @@
 // @vitest-environment jsdom
-import { describe, it, expect, vi } from 'vitest';
+import { describe, it, expect, beforeEach, vi } from 'vitest';
 import React from 'react';
 import { Text, type ViewStyle } from 'react-native';
 import { render } from '@testing-library/react';
@@ -55,8 +55,11 @@ function flattenStyle(input: unknown): Record<string, unknown> {
 }
 
 describe('Screen — tab-bar inset wiring', () => {
-  it('adds tab-bar paddingBottom to scrollable content when visible', () => {
+  beforeEach(() => {
     capturedContentStyles.length = 0;
+  });
+
+  it('adds tab-bar paddingBottom to scrollable content when visible', () => {
     render(
       <Screen scroll tabBarInset>
         <Text>body</Text>
@@ -67,7 +70,6 @@ describe('Screen — tab-bar inset wiring', () => {
   });
 
   it('omits tab-bar paddingBottom when tabBarInset=false', () => {
-    capturedContentStyles.length = 0;
     render(
       <Screen scroll tabBarInset={false}>
         <Text>body</Text>
