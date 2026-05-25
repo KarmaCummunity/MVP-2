@@ -54,7 +54,7 @@ function mapPendingRow(row: PendingRow): LegalPendingItem {
     currentVersion: row.current_version,
     currentEffectiveDate: new Date(row.current_effective_date),
     lastAcceptedVersion: row.last_accepted_version,
-    severity: (row.last_material_severity ?? 'standard') as LegalSeverity,
+    severity: row.last_material_severity ?? 'standard',
     blockMode: row.block_mode,
   };
 }

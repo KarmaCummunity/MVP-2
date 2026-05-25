@@ -425,13 +425,22 @@ comment on function public.needs_legal_reacknowledgement is
 -- 7-day soft-grace flow on next foreground — see spec §8).
 -- ---------------------------------------------------------------------------
 
--- We need a "system" published_by uuid. Use the first super-admin if any
--- exists; otherwise raise a NOTICE and skip the v1 content seed (the schema
--- itself still ships fully). The seed is bonus content for prod; CI's
--- supabase-stack does not have an auth.users super-admin pre-seeded, and the
--- migration must stay applicable in both environments.
--- The smoke test (supabase/tests/0108_*.sql) bootstraps its own super-admin
--- and publishes a v1 inline, so coverage stays complete.
+-- Stub pointer rows (always present after migration, even with no admin).
+-- current_version = 0, last_material_version = 0 mean the gate finds nothing
+-- pending (coalesce(0,0) < 0 is false) and the publish RPC bootstraps v1 by
+-- advancing 0 → 1. Makes the migration deterministic across CI (no admin)
+-- and prod (admin pre-provisioned).
+insert into public.legal_documents (doc_type, current_version, current_effective_date, last_material_version, last_material_severity)
+values
+  ('terms',   0, now(), 0, null),
+  ('privacy', 0, now(), 0, null)
+on conflict (doc_type) do nothing;
+
+-- Conditional v1 content seed: needs a super-admin row to satisfy the
+-- published_by FK against auth.users. If none exists (CI's fresh stack), we
+-- raise a NOTICE and skip — the smoke test (supabase/tests/0108_*.sql)
+-- bootstraps its own admin and publishes v1 via the RPC, and prod operators
+-- publish v1 via Supabase Studio per OPERATOR_RUNBOOK.md.
 do $$
 declare
   v_admin uuid;
@@ -556,14 +565,19 @@ $md$,
   on conflict (doc_type, version) do nothing;
 end$$;
 
--- Current-pointer rows. Inserted only when the v1 seed above actually ran
--- (i.e. a super-admin existed at migration time). Otherwise we'd point at a
--- non-existent version. last_material_* mirrors v1 so existing users enter the
--- 7-day soft-grace flow (block_mode='banner' until day 7).
-insert into public.legal_documents (doc_type, current_version, current_effective_date, last_material_version, last_material_severity)
-select doc_type, version, effective_date, version, severity
-  from public.legal_document_versions
- where (doc_type, version) in (('terms', 1), ('privacy', 1))
-on conflict (doc_type) do nothing;
+-- Advance the stub pointer rows to v1 wherever v1 was actually seeded above.
+-- last_material_* mirrors v1 so existing users enter the 7-day soft-grace flow
+-- (block_mode='banner' until day 7). When v1 wasn't seeded (CI, fresh stack),
+-- pointers stay at version 0 and the gate finds nothing pending.
+update public.legal_documents ld
+   set current_version        = ldv.version,
+       current_effective_date = ldv.effective_date,
+       updated_at             = now(),
+       last_material_version  = ldv.version,
+       last_material_severity = ldv.severity
+  from public.legal_document_versions ldv
+ where ldv.doc_type = ld.doc_type
+   and ldv.version  = 1
+   and ld.current_version = 0;
 
 commit;

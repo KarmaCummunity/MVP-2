@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from 'react';
-import { View, ScrollView, Text, ActivityIndicator, Platform } from 'react-native';
+import { View, ScrollView, Text, ActivityIndicator, Platform, type DimensionValue } from 'react-native';
 import Markdown from 'react-native-markdown-display';
 import { useTranslation } from 'react-i18next';
 import type { LegalDocType, LegalDocumentContent } from '@kc/domain';
@@ -92,11 +92,11 @@ export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
 }
 
 function LoadingSkeleton({ bgColor }: Readonly<{ bgColor: string }>) {
-  const bar = (width: number | string, marginTop: number) => (
+  const bar = (width: DimensionValue, marginTop: number) => (
     <View
       style={{
         alignSelf: 'flex-end',
-        width: width as any,
+        width,
         height: 14,
         backgroundColor: bgColor,
         borderRadius: 4,

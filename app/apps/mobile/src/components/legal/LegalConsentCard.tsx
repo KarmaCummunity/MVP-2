@@ -59,9 +59,9 @@ export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: Lega
 
       {bullets.length > 0 ? (
         <View style={{ marginTop: spacing.sm }}>
-          {bullets.map((b, i) => (
+          {bullets.map((b) => (
             <Text
-              key={i}
+              key={b}
               style={{
                 ...typography.body,
                 color: colors.textPrimary,

@@ -24,8 +24,8 @@ let _accept: AcceptLegalDocumentUseCase | null = null;
 
 function pickSupabaseStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
-    if (typeof window === 'undefined' || !window.localStorage) return undefined;
-    return window.localStorage;
+    if (typeof globalThis.window === 'undefined' || !globalThis.window.localStorage) return undefined;
+    return globalThis.window.localStorage;
   }
   return AsyncStorage;
 }
@@ -45,16 +45,16 @@ function getRepo(): ILegalDocumentRepository {
 }
 
 export function getLoadLegalDocumentUseCase(): LoadLegalDocumentUseCase {
-  if (!_load) _load = new LoadLegalDocumentUseCase(getRepo());
+  _load ??= new LoadLegalDocumentUseCase(getRepo());
   return _load;
 }
 
 export function getCheckPendingLegalAcksUseCase(): CheckPendingLegalAcksUseCase {
-  if (!_check) _check = new CheckPendingLegalAcksUseCase(getRepo());
+  _check ??= new CheckPendingLegalAcksUseCase(getRepo());
   return _check;
 }
 
 export function getAcceptLegalDocumentUseCase(): AcceptLegalDocumentUseCase {
-  if (!_accept) _accept = new AcceptLegalDocumentUseCase(getRepo());
+  _accept ??= new AcceptLegalDocumentUseCase(getRepo());
   return _accept;
 }

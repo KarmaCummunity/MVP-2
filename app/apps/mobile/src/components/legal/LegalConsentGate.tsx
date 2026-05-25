@@ -118,7 +118,7 @@ export function LegalConsentGate({ children }: LegalConsentGateProps) {
         onOpen={() => setState({ ...state, userOptedToAcceptNow: true })}
       />
       {children}
-      {!state.sheetDismissedThisSession ? (
+      {state.sheetDismissedThisSession ? null : (
         <FirstForegroundSheet
           pending={state.result.pending}
           onSnooze={() => setState({ ...state, sheetDismissedThisSession: true })}
@@ -130,7 +130,7 @@ export function LegalConsentGate({ children }: LegalConsentGateProps) {
             })
           }
         />
-      ) : null}
+      )}
     </View>
   );
 }
@@ -206,12 +206,9 @@ function FirstForegroundSheet({ pending, onSnooze, onAcceptNow }: FirstForegroun
 
 function daysRemaining(pending: readonly LegalPendingItem[]): number {
   // Display-only; server is the source of truth for the banner→modal flip.
-  const earliest = pending.reduce<Date | null>((acc, p) => {
-    if (!acc) return p.currentEffectiveDate;
-    return p.currentEffectiveDate < acc ? p.currentEffectiveDate : acc;
-  }, null);
-  if (!earliest) return 7;
-  const elapsedDays = Math.floor((Date.now() - earliest.getTime()) / 86_400_000);
+  if (pending.length === 0) return 7;
+  const earliest = Math.min(...pending.map((p) => p.currentEffectiveDate.getTime()));
+  const elapsedDays = Math.floor((Date.now() - earliest) / 86_400_000);
   return Math.max(0, 7 - elapsedDays);
 }
 
