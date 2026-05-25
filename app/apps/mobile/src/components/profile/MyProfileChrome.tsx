@@ -29,6 +29,7 @@ import { Card } from '../ui/Card';
 import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
+import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
@@ -63,6 +64,11 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
     enabled: Boolean(userId),
   });
   const user = userQuery.data ?? null;
+  const tabCounts = useProfileTabCounts({
+    profileUserId: userId,
+    viewerUserId: userId ?? null,
+    enabled: Boolean(userId),
+  });
   const profileLoading = userQuery.isLoading && user === null;
   const displayName = user?.displayName?.trim() || fallbackName;
   const avatarUrl = user?.avatarUrl ?? null;
@@ -104,7 +110,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
                 <ProfileStatsRow
                   followersCount={user?.followersCount ?? 0}
                   followingCount={user?.followingCount ?? 0}
-                  postsCount={user?.activePostsCountInternal ?? 0}
+                  postsCount={tabCounts.totalCount ?? 0}
                   enabled={Boolean(user)}
                   onPressFollowers={() =>
                     router.push({
@@ -143,7 +149,12 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
         </View>
       </MotionEntry>
       <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
-        <ProfileTabs active={activeTab} onChange={goToTab} />
+        <ProfileTabs
+          active={activeTab}
+          onChange={goToTab}
+          openCount={tabCounts.openCount}
+          closedCount={tabCounts.closedCount}
+        />
       </MotionEntry>
     </>
   );

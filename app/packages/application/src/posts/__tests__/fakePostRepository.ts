@@ -163,6 +163,30 @@ export class FakePostRepository implements IPostRepository {
     return this.countOpenResult;
   };
 
+  countProfilePostsForViewer = async (
+    ownerId: string,
+    _viewerId: string | null,
+  ): Promise<number> => {
+    this.lastCountOpenUserId = ownerId;
+    return this.countOpenResult;
+  };
+
+  countProfileOpenPosts = async (
+    ownerId: string,
+    _options?: { excludeOnlyMe?: boolean },
+  ): Promise<number> => {
+    this.lastCountOpenUserId = ownerId;
+    return this.countOpenResult;
+  };
+
+  countProfileClosedPosts = async (
+    profileUserId: string,
+    _viewerUserId: string | null,
+  ): Promise<number> => {
+    this.lastCountOpenUserId = profileUserId;
+    return this.countOpenResult;
+  };
+
   getProfileClosedPosts = async (
     profileUserId: string,
     viewerUserId: string | null,

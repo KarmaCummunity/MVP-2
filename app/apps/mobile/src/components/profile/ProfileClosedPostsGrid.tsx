@@ -25,7 +25,7 @@ export interface ProfileClosedPostsGridProps {
   onLoadMore?: () => void;
   /** Profile whose closed-posts tab is shown — forwarded to post detail for D-31 identity projection. */
   profileUserId: string;
-  /** Profile owner line on feed-style cards (avatar + name). */
+  /** Profile owner context for PostMenuButton / post detail (not shown on grid cards). */
   postOwner?: ProfilePostOwnerContext;
 }
 

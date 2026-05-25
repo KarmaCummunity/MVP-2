@@ -40,6 +40,8 @@ export const profileHe = {
   // Tabs
   tabOpen: 'פוסטים פתוחים',
   tabClosed: 'פוסטים סגורים',
+  tabOpenWithCount: 'פתוחים ({{count}})',
+  tabClosedWithCount: 'סגורים ({{count}})',
 
   // My Profile top-bar ⋮ (admin-removed posts — FR-POST-008 owner list)
   myProfileMenuA11y: 'אפשרויות פרופיל',

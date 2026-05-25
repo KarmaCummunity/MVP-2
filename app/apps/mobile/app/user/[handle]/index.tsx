@@ -13,6 +13,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
+import { useProfileTabCounts } from '../../../src/hooks/useProfileTabCounts';
 import { useTheme } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
@@ -22,7 +23,7 @@ import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileC
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getUserRepo } from '../../../src/services/userComposition';
-import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
+import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { useOtherProfileActions } from '../../../src/hooks/useOtherProfileActions';
@@ -65,12 +66,6 @@ export default function OtherProfileScreen() {
   });
   const followInfo = stateQuery.data;
 
-  const postsCountQuery = useQuery({
-    queryKey: ['profile-other-post-count', u?.userId],
-    queryFn: () => getPostRepo().countOpenByUser(u!.userId),
-    enabled: Boolean(u?.userId),
-  });
-
   const isMe = me === u?.userId;
 
   // ✅ RULES OF HOOKS: useOptimisticFollowAction must be called here, before any early return.
@@ -97,6 +92,12 @@ export default function OtherProfileScreen() {
       limit: 30,
     }),
     enabled: Boolean(u?.userId) && activeTab === 'open',
+  });
+
+  const tabCounts = useProfileTabCounts({
+    profileUserId: u?.userId,
+    viewerUserId: me ?? null,
+    enabled: Boolean(u?.userId),
   });
 
   const closed = useProfileClosedPosts({
@@ -147,7 +148,7 @@ export default function OtherProfileScreen() {
           <ProfileStatsRow
             followersCount={u.followersCount}
             followingCount={u.followingCount}
-            postsCount={postsCountQuery.data ?? 0}
+            postsCount={tabCounts.totalCount ?? 0}
             enabled
             onPressFollowers={() => router.push({ pathname: '/user/[handle]/followers' as never, params: { handle } } as never)}
             onPressFollowing={() => router.push({ pathname: '/user/[handle]/following' as never, params: { handle } } as never)}
@@ -180,6 +181,8 @@ export default function OtherProfileScreen() {
             if (handle) persistProfileTab({ otherHandle: handle }, t);
             setActiveTab(t);
           }}
+          openCount={tabCounts.openCount}
+          closedCount={tabCounts.closedCount}
         />
         {activeTab === 'open' ? (
           <ProfilePostsGrid

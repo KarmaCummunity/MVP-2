@@ -185,6 +185,12 @@ export const usePostCardGridStyles = makeUseStyles(({ colors, isDark }) => ({
     letterSpacing: -0.2,
     flex: 1,
   },
+  /** Profile 3-up grid — smaller title beside compact category pill. */
+  titleDense: {
+    fontSize: 12,
+    lineHeight: 16,
+    letterSpacing: -0.15,
+  },
   categoryChip: {
     flexShrink: 0,
     paddingHorizontal: spacing.sm,
@@ -194,11 +200,19 @@ export const usePostCardGridStyles = makeUseStyles(({ colors, isDark }) => ({
     borderWidth: 1,
     borderColor: isDark ? `${colors.primary}44` : colors.primaryLight,
   },
+  categoryChipDense: {
+    paddingHorizontal: 5,
+    paddingVertical: 2,
+  },
   categoryChipText: {
     ...typography.label,
     fontSize: 10,
     color: isDark ? colors.giveTag : colors.primaryDark,
     fontWeight: '700',
+  },
+  categoryChipTextDense: {
+    fontSize: 8,
+    lineHeight: 10,
   },
   metaFooter: {
     flexDirection: 'row',
