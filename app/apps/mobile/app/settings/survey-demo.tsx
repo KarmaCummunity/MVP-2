@@ -8,6 +8,7 @@ import {
   TextInput,
   View,
 } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import { makeUseStyles, spacing, typography, useBreakpoint, useTheme } from '@kc/ui';
@@ -24,7 +25,8 @@ import {
 } from '../../src/components/survey-demo/SurveyFloatingNav';
 import { SurveyRatingRow } from '../../src/components/survey-demo/SurveyRatingRow';
 import {
-  SURVEY_DEMO_QUESTIONS,
+  SURVEY_DEMO_QUESTION_IDS,
+  useSurveyDemoQuestions,
   type SurveyDemoQuestion,
 } from '../../src/components/survey-demo/surveyDemoQuestions';
 import {
@@ -36,11 +38,9 @@ import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 
 type DemoAnswer = { rating: number | null; text: string };
 
-const DEMO_TITLE = 'סקר חווית משתמש (דמה)';
-
 function emptyAnswers(): Record<string, DemoAnswer> {
   return Object.fromEntries(
-    SURVEY_DEMO_QUESTIONS.map((q) => [q.id, { rating: null, text: '' }]),
+    SURVEY_DEMO_QUESTION_IDS.map((id) => [id, { rating: null, text: '' }]),
   );
 }
 
@@ -51,6 +51,8 @@ export default function SurveyDemoScreen() {
   const styles = useScreenStyles();
   const insets = useSafeAreaInsets();
   const tabBarVisible = useShellTabBarVisibility();
+  const { t } = useTranslation();
+  const questions = useSurveyDemoQuestions();
   const useSideRail = bp === 'tablet' || bp === 'desktop' || bp === 'wide';
 
   const floatNavBottom = shellTabBarHeightPx(tabBarVisible) + insets.bottom + spacing.md;
@@ -60,9 +62,9 @@ export default function SurveyDemoScreen() {
   const [activeIndex, setActiveIndex] = useState(0);
   const [answers, setAnswers] = useState<Record<string, DemoAnswer>>(emptyAnswers);
 
-  const question = SURVEY_DEMO_QUESTIONS[activeIndex] as SurveyDemoQuestion;
+  const question = questions[activeIndex] as SurveyDemoQuestion;
   const answer = answers[question.id] ?? { rating: null, text: '' };
-  const total = SURVEY_DEMO_QUESTIONS.length;
+  const total = questions.length;
 
   const setAnswer = (patch: Partial<DemoAnswer>) => {
     setAnswers((prev) => ({
@@ -76,12 +78,12 @@ export default function SurveyDemoScreen() {
 
   const mapProps = useMemo(
     () => ({
-      questions: SURVEY_DEMO_QUESTIONS,
+      questions,
       activeIndex,
       answers,
       onSelect: setActiveIndex,
     }),
-    [activeIndex, answers],
+    [questions, activeIndex, answers],
   );
 
   return (
@@ -91,7 +93,7 @@ export default function SurveyDemoScreen() {
           ...detailStackScreenOptions,
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primary,
-          headerTitle: DEMO_TITLE,
+          headerTitle: t('surveyDemo.screenTitle'),
         }}
       />
       <KeyboardAvoidingView
@@ -101,9 +103,9 @@ export default function SurveyDemoScreen() {
       >
         <View style={styles.progressBar}>
           <Text style={styles.progressText}>
-            שאלה {activeIndex + 1} מתוך {total}
+            {t('surveyDemo.progress', { current: activeIndex + 1, total })}
           </Text>
-          <Text style={styles.progressHint}>דמה · ללא שמירה</Text>
+          <Text style={styles.progressHint}>{t('surveyDemo.progressHint')}</Text>
         </View>
 
         {useSideRail ? null : <SurveyQuestionMap {...mapProps} variant="chips" />}
@@ -150,24 +152,27 @@ type QuestionPanelProps = {
 function QuestionPanel({ question, index, answer, onRating, onText }: QuestionPanelProps) {
   const styles = usePanelStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
 
   return (
     <Card padding="base" style={styles.card}>
-      <Text style={styles.questionIndex}>שאלה {index + 1}</Text>
+      <Text style={styles.questionIndex}>
+        {t('surveyDemo.questionIndex', { index: index + 1 })}
+      </Text>
       <Text style={styles.prompt}>{question.prompt}</Text>
       <Text style={styles.context}>{question.context}</Text>
 
       <Text style={styles.fieldLabel} accessibilityRole="text">
-        דירוג (1–7, חובה)
+        {t('surveyDemo.ratingFieldLabel')}
       </Text>
       <SurveyRatingRow value={answer.rating} onChange={onRating} />
       <View style={styles.scaleHints}>
-        <Text style={styles.scaleHint}>1 = לא מספיק</Text>
-        <Text style={styles.scaleHint}>7 = מצוין</Text>
+        <Text style={styles.scaleHint}>{t('surveyDemo.ratingLowHint')}</Text>
+        <Text style={styles.scaleHint}>{t('surveyDemo.ratingHighHint')}</Text>
       </View>
 
       <Text style={styles.fieldLabel} accessibilityRole="text">
-        פירוט (אופציונלי)
+        {t('surveyDemo.textFieldLabel')}
       </Text>
       <TextInput
         style={[styles.textInput, hebrewSurveyFieldTextStyle()]}
