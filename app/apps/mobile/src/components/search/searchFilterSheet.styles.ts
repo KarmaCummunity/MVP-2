@@ -23,7 +23,10 @@ export const useSearchFilterSheetStyles = makeUseStyles(({ colors }) => ({
   },
   headerTitle: { ...typography.h3, color: colors.textPrimary },
   clearText: { ...typography.caption, color: colors.primary, fontWeight: '600' as const },
-  body: { flex: 1 },
+  // `flexGrow: 0` (was `flex: 1`) — the sheet has no explicit height (only
+  // `maxHeight: '80%'`), so `flex: 1` collapsed the body to an invisible
+  // strip and only the header + footer were visible. Matches PostFilterSheet.
+  body: { flexGrow: 0 },
   bodyContent: { padding: spacing.base, gap: spacing.md, paddingBottom: spacing.xl },
   sectionTitle: {
     ...typography.body,
