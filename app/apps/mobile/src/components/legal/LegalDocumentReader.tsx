@@ -6,6 +6,7 @@ import type { LegalDocType, LegalDocumentContent } from '@kc/domain';
 import { typography, spacing, useTheme } from '@kc/ui';
 import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
 import { makeLegalMarkdownStyles } from './LegalMarkdownStyles';
+import { makeLegalMarkdownRules } from './legalMarkdownRules';
 
 function formatHebrewDate(d: Date): string {
   // DD.MM.YYYY per spec §7.1
@@ -27,6 +28,7 @@ export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const markdownStyles = useMemo(() => makeLegalMarkdownStyles(colors), [colors]);
+  const markdownRules = useMemo(() => makeLegalMarkdownRules(colors), [colors]);
   const [state, setState] = useState<State>({ kind: 'loading' });
 
   useEffect(() => {
@@ -86,7 +88,9 @@ export function LegalDocumentReader({ docType }: LegalDocumentReaderProps) {
         </Text>
       </View>
 
-      <Markdown style={markdownStyles}>{content.bodyMd}</Markdown>
+      <Markdown style={markdownStyles} rules={markdownRules}>
+        {content.bodyMd}
+      </Markdown>
     </ScrollView>
   );
 }
