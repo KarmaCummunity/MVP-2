@@ -876,11 +876,29 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
-## D-46 — Legal tables `authenticated`-only read (2026-05-25)
+## D-46 — Legal tables `authenticated`-only read (2026-05-25) — superseded by D-47
 
 **Decision.** SELECT on `legal_documents` and `legal_document_versions` is granted to `authenticated` only, not `anon`. The RPCs follow the same posture.
 
 **Rationale.** Sign-up happens through OAuth (or email-OTP) — by the time the user needs to read a legal document for the first time, they are always already authenticated. Removing the anon grant shrinks the public-facing read surface by two tables for no UX cost.
+
+**Superseded.** See D-47 (same day). The "always authenticated by read time" premise broke in practice: expired sessions, pre-signup readers, and shared `/legal/*` deep links all hit `PGRST205` ("table not in schema cache") because PostgREST hides tables from anon when no GRANT exists.
+
+---
+
+## D-47 — Legal docs SELECT is public; acceptances stay private (2026-05-25)
+
+**Decision.** Grant SELECT on `legal_documents` and `legal_document_versions` to both `anon` and `authenticated` (migration `0109_legal_documents_public_read.sql`). RLS policies follow the same posture (`for select to anon, authenticated using (true)`). Acceptance writes (`user_legal_acceptances`) remain `authenticated`-only — anon has no `auth.uid()` to own a row, and the insert RPC asserts `auth.uid() IS NOT NULL` directly.
+
+**Rationale.**
+1. **Bug fix.** D-46's posture broke three real flows on dev:
+   - Expired session / failed token refresh → React store still says authenticated, Supabase client falls back to anon, PostgREST returns 404 (`PGRST205`).
+   - Pre-signup readers tapping "Terms" / "Privacy" on the welcome screen — AuthGate punts them to `/(auth)` but the link target is still `/legal/*`, which 404'd.
+   - Shared `/legal/terms` deep links — recipients without a session got 404.
+2. **No security value to gate.** Legal documents are public-by-definition published content; the contents are the same for every user. Hiding the table from anon doesn't protect any secret, it just creates fragile dependence on session state.
+3. **Smaller blast radius for re-publish accidents.** With public SELECT, a misfired publish surfaces immediately on any device (signed in or not), not only after a sign-in round-trip — easier to spot and roll back.
+
+**Trade-off accepted.** Public read means scrapers can pull the documents at will. This is fine — these are the published terms of service and privacy policy, intended for public consumption.
 
 ---
 

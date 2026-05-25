@@ -107,10 +107,15 @@ Read-only view used by the gate's RPC and by the user's own "view my acceptances
 ### `legal_documents` + `legal_document_versions`
 
 ```sql
--- SELECT: any authenticated user. NOT anon (signup happens after OAuth, so the
--- user is always authenticated when they need to read the documents).
-GRANT SELECT ON legal_documents, legal_document_versions TO authenticated;
-REVOKE ALL ON legal_documents, legal_document_versions FROM anon;
+-- SELECT: anon + authenticated. Legal documents are public content by
+-- definition; restricting to authenticated broke pre-signup readers, expired
+-- sessions, and shared deep links (PGRST205 because the table is invisible
+-- to anon's schema cache without a GRANT). See D-47 (supersedes D-46).
+CREATE POLICY legal_documents_select_public ON legal_documents
+  FOR SELECT TO anon, authenticated USING (true);
+CREATE POLICY legal_document_versions_select_public ON legal_document_versions
+  FOR SELECT TO anon, authenticated USING (true);
+GRANT SELECT ON legal_documents, legal_document_versions TO anon, authenticated;
 ```
 
 No direct INSERT/UPDATE/DELETE grants. All writes go through `publish_legal_document` (SECURITY DEFINER, which checks super_admin role internally).
@@ -516,7 +521,8 @@ Idempotency: all `CREATE` statements use `IF NOT EXISTS`. The seed `INSERT`s use
 - `SupabaseLegalDocumentRepository.getCurrentContent` — cache hit, cache miss, cache stale (different content_hash).
 - `SupabaseLegalDocumentRepository.acceptVersion` — RPC call shape, error mapping.
 - RLS smoke tests via `supabase test db`:
-  - Anon cannot SELECT documents.
+  - Anon CAN SELECT `legal_documents` + `legal_document_versions` (public content; D-47).
+  - Anon CANNOT SELECT or INSERT `user_legal_acceptances` (still authenticated-only — `auth.uid()` predicate).
   - Authenticated user can SELECT documents.
   - Authenticated user can only INSERT acceptance with own user_id.
   - Authenticated user cannot UPDATE/DELETE any of the legal tables.
@@ -563,7 +569,7 @@ Idempotency: all `CREATE` statements use `IF NOT EXISTS`. The seed `INSERT`s use
 - **D-XX (No grandfather backfill):** existing users at launch are NOT fabricated consent records; they are routed through the 7-day soft-grace flow. Rationale: a backfilled `accepted_at = users.created_at` for a v1 the user never saw is a fabricated audit record that exposes the operator to ILITA enforcement risk; one-time soft-grace UX cost is the right trade.
 - **D-XX (Server-computed `block_mode`):** the 7-day standard→critical promotion is computed in SQL inside `needs_legal_reacknowledgement`, not on the client. Rationale: client clocks can be wrong (DST, deliberate tampering, OS bug); enforcement must live with the source of truth. Client uses the server-supplied countdown for display only.
 - **D-XX (`critical` must publish-now):** `publish_legal_document` rejects `critical` severity with `effective_date > now() + 1 hour`. Rationale: critical = urgent; scheduled rollouts should use `standard`. Prevents the operator from setting an "alarm bomb" critical that catches users off-guard.
-- **D-XX (Legal tables `authenticated`-only read):** SELECT on `legal_documents` + `legal_document_versions` is granted to `authenticated`, not `anon`. Rationale: signup happens through OAuth before any legal text is shown — the user is always authenticated by the time they need to read. Removing the anon grant shrinks the public-facing surface.
+- **D-46 (superseded by D-47, 2026-05-25):** initial design granted SELECT on `legal_documents` + `legal_document_versions` to `authenticated` only. Reverted same-day after a regression: expired sessions, pre-signup readers, and shared `/legal/*` deep links all 404'd because PostgREST hides the table from anon's schema cache when no GRANT exists. Public legal content has no security value to gate, so D-47 restores anon read.
 
 ## 15. Tech debt added (`docs/SSOT/TECH_DEBT.md`)
 
