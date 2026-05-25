@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       about_team_members: {
@@ -430,6 +435,81 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      legal_document_versions: {
+        Row: {
+          body_md: string
+          change_summary: string | null
+          content_hash: string
+          created_at: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_date: string
+          id: string
+          language: string
+          published_at: string
+          published_by: string
+          severity: string
+          version: number
+        }
+        Insert: {
+          body_md: string
+          change_summary?: string | null
+          content_hash?: string
+          created_at?: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_date: string
+          id?: string
+          language?: string
+          published_at?: string
+          published_by: string
+          severity: string
+          version: number
+        }
+        Update: {
+          body_md?: string
+          change_summary?: string | null
+          content_hash?: string
+          created_at?: string
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          effective_date?: string
+          id?: string
+          language?: string
+          published_at?: string
+          published_by?: string
+          severity?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      legal_documents: {
+        Row: {
+          current_effective_date: string
+          current_version: number
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id: string
+          last_material_severity: string | null
+          last_material_version: number
+          updated_at: string
+        }
+        Insert: {
+          current_effective_date: string
+          current_version?: number
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          last_material_severity?: string | null
+          last_material_version?: number
+          updated_at?: string
+        }
+        Update: {
+          current_effective_date?: string
+          current_version?: number
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          last_material_severity?: string | null
+          last_material_version?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       media_assets: {
         Row: {
@@ -996,6 +1076,47 @@ export type Database = {
           },
         ]
       }
+      user_legal_acceptances: {
+        Row: {
+          accepted_at: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id: string
+          ip_inet: unknown
+          locale: string | null
+          user_agent: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          ip_inet?: unknown
+          locale?: string | null
+          user_agent?: string | null
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          ip_inet?: unknown
+          locale?: string | null
+          user_agent?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_legal_acceptances_version_fk"
+            columns: ["doc_type", "version"]
+            isOneToOne: false
+            referencedRelation: "legal_document_versions"
+            referencedColumns: ["doc_type", "version"]
+          },
+        ]
+      }
       user_personal_activity_log: {
         Row: {
           actor_display_name: string | null
@@ -1174,8 +1295,34 @@ export type Database = {
         }
         Relationships: []
       }
+      user_legal_acceptances_latest: {
+        Row: {
+          accepted_at: string | null
+          doc_type: Database["public"]["Enums"]["legal_doc_type"] | null
+          user_id: string | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_legal_acceptances_version_fk"
+            columns: ["doc_type", "version"]
+            isOneToOne: false
+            referencedRelation: "legal_document_versions"
+            referencedColumns: ["doc_type", "version"]
+          },
+        ]
+      }
     }
     Functions: {
+      accept_legal_document: {
+        Args: {
+          p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          p_locale: string
+          p_user_agent: string
+          p_version: number
+        }
+        Returns: Json
+      }
       active_posts_count_for_viewer: {
         Args: { p_owner: string; p_viewer: string }
         Returns: number
@@ -1371,6 +1518,18 @@ export type Database = {
         }
         Returns: boolean
       }
+      needs_legal_reacknowledgement: {
+        Args: never
+        Returns: {
+          block_mode: string
+          current_effective_date: string
+          current_version: number
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          last_accepted_version: number
+          last_material_severity: string
+          last_material_version: number
+        }[]
+      }
       notifications_backlog_check: { Args: never; Returns: undefined }
       notifications_bump_attempt: {
         Args: { p_error: string; p_id: string }
@@ -1398,6 +1557,16 @@ export type Database = {
           identity_role: string
           post_id: string
         }[]
+      }
+      publish_legal_document: {
+        Args: {
+          p_body_md: string
+          p_change_summary: string
+          p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          p_effective_date: string
+          p_severity: string
+        }
+        Returns: Json
       }
       reopen_post_deleted_no_recipient: {
         Args: { p_post_id: string }
@@ -1560,7 +1729,7 @@ export type Database = {
       }
     }
     Enums: {
-      [_ in never]: never
+      legal_doc_type: "terms" | "privacy"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1687,7 +1856,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      legal_doc_type: ["terms", "privacy"],
+    },
   },
 } as const
-

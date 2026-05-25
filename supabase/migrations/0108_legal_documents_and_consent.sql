@@ -88,12 +88,15 @@ comment on table public.user_legal_acceptances is
 -- ---------------------------------------------------------------------------
 
 -- BEFORE INSERT: compute SHA-256 of body_md into content_hash.
+-- pgcrypto installs into the `extensions` schema on Supabase, so digest()
+-- must be schema-qualified — the trigger fires in callers' search_paths.
 create or replace function public.legal_document_versions_set_content_hash()
 returns trigger
 language plpgsql
+set search_path = public, extensions, pg_temp
 as $$
 begin
-  new.content_hash := encode(digest(new.body_md, 'sha256'), 'hex');
+  new.content_hash := encode(extensions.digest(new.body_md, 'sha256'), 'hex');
   return new;
 end;
 $$;
