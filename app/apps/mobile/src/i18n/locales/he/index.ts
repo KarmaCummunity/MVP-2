@@ -25,6 +25,7 @@ import { filtersHe } from './modules/filters';
 import { commonHe } from './modules/common';
 import { legalHe } from './modules/legal';
 import { surveyDemoHe } from './modules/surveyDemo';
+import { adminHe } from './modules/admin';
 
 const he = {
   // App
@@ -61,6 +62,9 @@ const he = {
   moderation: moderationHe,
   audit: auditHe,
   accountBlocked: accountBlockedHe,
+
+  // Admin portal (FR-ADMIN-010/011) — see modules/admin.ts
+  admin: adminHe,
 
   // Settings — see modules/settings.ts
   settings: settingsHe,
