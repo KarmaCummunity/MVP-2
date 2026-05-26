@@ -11,7 +11,7 @@ const d = skip ? describe.skip : describe;
 d('admin RBAC primitives (A0)', () => {
   let admin: SupabaseClient;
   const cleanup: Array<() => Promise<void>> = [];
-  let preExistingSuperAdminUserId: string | null = null;
+  let preExistingSuperAdminGrantId: string | null = null;
 
   beforeAll(async () => {
     admin = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
@@ -21,29 +21,29 @@ d('admin RBAC primitives (A0)', () => {
     // then restore it in afterAll.
     const { data: pre } = await admin
       .from('admin_role_grants')
-      .select('user_id')
+      .select('grant_id, user_id')
       .eq('role', 'super_admin')
       .is('revoked_at', null)
       .maybeSingle();
-    if (pre?.user_id) {
-      preExistingSuperAdminUserId = pre.user_id;
+    if (pre?.grant_id) {
+      preExistingSuperAdminGrantId = pre.grant_id;
       await admin
         .from('admin_role_grants')
         .update({ revoked_at: new Date().toISOString() })
-        .eq('user_id', pre.user_id)
-        .eq('role', 'super_admin')
-        .is('revoked_at', null);
+        .eq('grant_id', pre.grant_id);
     }
   });
 
   afterAll(async () => {
     for (const fn of cleanup.reverse()) await fn();
-    if (preExistingSuperAdminUserId !== null) {
-      // Restore the original super_admin so the dev DB returns to its prior state.
+    if (preExistingSuperAdminGrantId !== null) {
+      // Restore the original super_admin by un-revoking the original row so
+      // granted_at/granted_by are preserved.
       await admin
         .from('admin_role_grants')
-        .insert({ user_id: preExistingSuperAdminUserId, role: 'super_admin' });
-      preExistingSuperAdminUserId = null;
+        .update({ revoked_at: null, revoked_by: null })
+        .eq('grant_id', preExistingSuperAdminGrantId);
+      preExistingSuperAdminGrantId = null;
     }
   });
 
@@ -73,11 +73,30 @@ d('admin RBAC primitives (A0)', () => {
     expect(data).toBe(true);
   });
 
+  it('revoked grants do not match has_admin_role', async () => {
+    const uid = await seedUser();
+    await admin.from('admin_role_grants').insert({ user_id: uid, role: 'support' });
+    await admin
+      .from('admin_role_grants')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('user_id', uid).eq('role', 'support');
+    const { data } = await admin.rpc('has_admin_role', { uid, role_name: 'support' });
+    expect(data).toBe(false);
+  });
+
   it('admin_assert_role raises 42501 when the user has no matching role', async () => {
     const uid = await seedUser();
     const { error } = await admin.rpc('admin_assert_role', {
       uid, allowed: ['super_admin'],
     });
+    expect(error).not.toBeNull();
+    expect(error!.code).toBe('42501');
+  });
+
+  it('admin_assert_role with an empty allowed array raises 42501', async () => {
+    const uid = await seedUser();
+    await admin.from('admin_role_grants').insert({ user_id: uid, role: 'support' });
+    const { error } = await admin.rpc('admin_assert_role', { uid, allowed: [] });
     expect(error).not.toBeNull();
     expect(error!.code).toBe('42501');
   });
@@ -116,5 +135,31 @@ d('admin RBAC primitives (A0)', () => {
     const { data } = await admin.from('users')
       .select('is_super_admin').eq('user_id', uid).single();
     expect(data?.is_super_admin).toBe(false);
+  });
+
+  it('updating a super_admin grant to moderator clears users.is_super_admin', async () => {
+    const uid = await seedUser();
+    const { data: grant } = await admin
+      .from('admin_role_grants')
+      .insert({ user_id: uid, role: 'super_admin' })
+      .select('grant_id')
+      .single();
+    // Sanity: trigger fired on insert.
+    const { data: before } = await admin.from('users')
+      .select('is_super_admin').eq('user_id', uid).single();
+    expect(before?.is_super_admin).toBe(true);
+
+    await admin.from('admin_role_grants')
+      .update({ role: 'moderator' })
+      .eq('grant_id', grant!.grant_id);
+
+    const { data: after } = await admin.from('users')
+      .select('is_super_admin').eq('user_id', uid).single();
+    expect(after?.is_super_admin).toBe(false);
+
+    // Cleanup: revoke the moderator grant so the user cleanup doesn't trip RLS.
+    await admin.from('admin_role_grants')
+      .update({ revoked_at: new Date().toISOString() })
+      .eq('grant_id', grant!.grant_id);
   });
 });
