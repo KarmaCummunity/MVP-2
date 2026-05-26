@@ -147,6 +147,7 @@ export type Database = {
       chats: {
         Row: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -159,6 +160,7 @@ export type Database = {
         }
         Insert: {
           anchor_post_id?: string | null
+          anchor_ride_id?: string | null
           chat_id?: string
           created_at?: string
           inbox_hidden_at_a?: string | null
@@ -171,6 +173,7 @@ export type Database = {
         }
         Update: {
           anchor_post_id?: string | null
+          anchor_ride_id?: string | null
           chat_id?: string
           created_at?: string
           inbox_hidden_at_a?: string | null
@@ -188,6 +191,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "chats_anchor_ride_id_fkey"
+            columns: ["anchor_ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
           },
           {
             foreignKeyName: "chats_participant_a_fkey"
@@ -946,6 +956,76 @@ export type Database = {
           },
         ]
       }
+      ride_listings: {
+        Row: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          mode: string
+          origin_city_id: string
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          departs_at: string
+          description?: string | null
+          dest_city_id: string
+          mode: string
+          origin_city_id: string
+          owner_id: string
+          ride_id?: string
+          seats_available?: number | null
+          status?: string
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          departs_at?: string
+          description?: string | null
+          dest_city_id?: string
+          mode?: string
+          origin_city_id?: string
+          owner_id?: string
+          ride_id?: string
+          seats_available?: number | null
+          status?: string
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_listings_dest_city_id_fkey"
+            columns: ["dest_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_origin_city_id_fkey"
+            columns: ["origin_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       saved_posts: {
         Row: {
           post_id: string
@@ -1639,10 +1719,46 @@ export type Database = {
         Returns: undefined
       }
       rpc_chat_mark_read: { Args: { p_chat_id: string }; Returns: undefined }
+      ride_listings_search: {
+        Args: {
+          p_cursor?: string | null
+          p_depart_from?: string | null
+          p_depart_to?: string | null
+          p_dest_city_id?: string | null
+          p_limit?: number
+          p_mode?: string | null
+          p_origin_city_id?: string | null
+          p_query?: string | null
+        }
+        Returns: Database['public']['Tables']['ride_listings']['Row'][]
+      }
       rpc_chat_set_anchor: {
         Args: { p_anchor_post_id: string; p_chat_id: string }
         Returns: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
+          chat_id: string
+          created_at: string
+          inbox_hidden_at_a: string | null
+          inbox_hidden_at_b: string | null
+          is_support_thread: boolean
+          last_message_at: string
+          participant_a: string | null
+          participant_b: string | null
+          removed_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "chats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_chat_set_anchor_ride: {
+        Args: { p_anchor_ride_id: string; p_chat_id: string }
+        Returns: {
+          anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -1665,6 +1781,7 @@ export type Database = {
         Args: never
         Returns: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -1700,6 +1817,7 @@ export type Database = {
         Args: { p_category: string; p_description: string }
         Returns: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null

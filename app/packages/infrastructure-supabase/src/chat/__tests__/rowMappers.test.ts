@@ -22,6 +22,7 @@ describe('rowToChat', () => {
       chatId: 'c_1',
       participantIds: ['u_a', 'u_b'],
       anchorPostId: 'p_1',
+      anchorRideId: null,
       isSupportThread: false,
       lastMessageAt: '2026-05-15T12:00:00.000Z',
       createdAt: '2026-05-10T08:00:00.000Z',

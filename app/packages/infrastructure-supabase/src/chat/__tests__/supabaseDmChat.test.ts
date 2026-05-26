@@ -56,7 +56,9 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; cal
     }),
     rpc: async (fn: string, args: unknown) => {
       calls.rpcs.push({ fn, args });
-      if (fn === 'rpc_chat_set_anchor') return { data: opts.setAnchorData ?? null, error: opts.setAnchorError ?? null };
+      if (fn === 'rpc_chat_set_anchor' || fn === 'rpc_chat_set_anchor_ride') {
+        return { data: opts.setAnchorData ?? null, error: opts.setAnchorError ?? null };
+      }
       if (fn === 'rpc_chat_hide_for_viewer') return { data: null, error: opts.hideError ?? null };
       return { data: null, error: null };
     },
@@ -69,6 +71,7 @@ const CHAT_ROW = {
   participant_a: 'u_a',
   participant_b: 'u_b',
   anchor_post_id: null,
+  anchor_ride_id: null,
   is_support_thread: false,
   last_message_at: '2026-05-16T12:00:00.000Z',
   created_at: '2026-05-16T11:00:00.000Z',
@@ -145,7 +148,7 @@ describe('findOrCreateDmChat', () => {
       client,
       'u_aaaa',
       'u_zzzz',
-      'p_anchor',
+      { postId: 'p_anchor' },
       { preferNewThread: true },
     );
 
@@ -153,7 +156,12 @@ describe('findOrCreateDmChat', () => {
     expect(calls.inserts).toEqual([
       {
         table: 'chats',
-        row: { participant_a: 'u_aaaa', participant_b: 'u_zzzz', anchor_post_id: 'p_anchor' },
+        row: {
+          participant_a: 'u_aaaa',
+          participant_b: 'u_zzzz',
+          anchor_post_id: 'p_anchor',
+          anchor_ride_id: null,
+        },
       },
     ]);
   });
@@ -166,7 +174,9 @@ describe('findOrCreateDmChat', () => {
       chatsInsertData: { ...CHAT_ROW, chat_id: 'c_new' },
     });
 
-    await findOrCreateDmChat(client, 'u_zzzz', 'u_aaaa', undefined, { preferNewThread: true });
+    await findOrCreateDmChat(client, 'u_zzzz', 'u_aaaa', undefined, {
+      preferNewThread: true,
+    });
 
     expect((calls.inserts[0]?.row as { participant_a: string }).participant_a).toBe('u_aaaa');
     expect((calls.inserts[0]?.row as { participant_b: string }).participant_b).toBe('u_zzzz');
@@ -179,7 +189,7 @@ describe('findOrCreateDmChat', () => {
       setAnchorData: [{ ...CHAT_ROW, chat_id: 'c_existing', anchor_post_id: 'p_new' }],
     });
 
-    const chat = await findOrCreateDmChat(client, 'u_aaaa', 'u_zzzz', 'p_new');
+    const chat = await findOrCreateDmChat(client, 'u_aaaa', 'u_zzzz', { postId: 'p_new' });
 
     expect(chat.anchorPostId).toBe('p_new');
     expect(calls.rpcs).toEqual([
@@ -193,7 +203,7 @@ describe('findOrCreateDmChat', () => {
       chatsList: [{ ...CHAT_ROW, anchor_post_id: 'p_same' }],
     });
 
-    await findOrCreateDmChat(client, 'u_aaaa', 'u_zzzz', 'p_same');
+    await findOrCreateDmChat(client, 'u_aaaa', 'u_zzzz', { postId: 'p_same' });
 
     expect(calls.rpcs).toHaveLength(0);
   });
