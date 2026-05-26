@@ -1,9 +1,9 @@
--- 0123_public_research_responses.sql
+-- 0131_public_research_responses.sql
 -- FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003 — anonymous public market-research form (Survey B)
 -- Design spec: docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md §6, §7, §9
 -- Seeds Survey B "alt-platforms-research" v1 (11 questions) at the end of this file.
--- (Numbered 0123 — slots 0118–0121 already occupied on remote by admin-portal migrations.)
--- Question content reuses existing surveys / survey_versions / survey_questions tables from 0122.
+-- (Numbered 0131 — follows surveys migration 0130 after dev's parallel admin/rides/feed migrations.)
+-- Question content reuses existing surveys / survey_versions / survey_questions tables from 0130.
 -- Only the anonymous answer rows go to a new dedicated table.
 
 begin;

@@ -47,7 +47,7 @@ Each post in a channel uses a distinct `?src=` value. Soft cap: 100 responses pe
 
 ## Failure modes
 
-- **Survey B not seeded after a fresh DB reset:** seed runs as part of migration `0123` but requires a super-admin user. If no super-admin exists, the seed prints a NOTICE and skips. Operator must call `publish_survey_version('alt-platforms-research', ...)` manually.
+- **Survey B not seeded after a fresh DB reset:** seed runs as part of migration `0131` but requires a super-admin user. If no super-admin exists, the seed prints a NOTICE and skips. Operator must call `publish_survey_version('alt-platforms-research', ...)` manually.
 - **Edge Function rejects all requests with 403:** check `PUBLIC_RESEARCH_ALLOWED_ORIGINS` env var. Add the production domain.
 - **Rate-limit hits dominate logs:** check the daily salt is rotating. If it isn't, all responses from the same IP share a hash forever — fix the `rotate-research-salt` schedule.
 - **No responses coming in despite link posted:** verify the `?src=` value matches the regex `^[a-z0-9_-]{1,32}$`; otherwise the RPC's CHECK constraint rejects the insert.

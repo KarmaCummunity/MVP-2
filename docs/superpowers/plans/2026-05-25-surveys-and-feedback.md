@@ -6,7 +6,7 @@
 - **Survey A `ux-experience`** — in-app, authenticated, Settings → Surveys (6 questions).
 - **Survey B `alt-platforms-research`** — public web-only, anonymous, distributed via FB/WhatsApp/Agora posts (11 questions). Captures pain-language from alt-platform users for the "Karma Phrasebook" deliverable.
 
-**Architecture:** Two Postgres migrations (`0122` for Survey A, `0123` for Survey B). Survey A uses RLS by `auth.uid()`. Survey B uses an `anon`-callable `SECURITY DEFINER` RPC fronted by an Edge Function (for real client IP via `x-forwarded-for` and `Origin` allowlist check). Clean Architecture: separate ports `ISurveyRepository` (A) and `IPublicResearchRepository` (B). Web-only Survey B routes use Expo Router's `.web.tsx` platform extension.
+**Architecture:** Two Postgres migrations (`0130` for Survey A, `0131` for Survey B). Survey A uses RLS by `auth.uid()`. Survey B uses an `anon`-callable `SECURITY DEFINER` RPC fronted by an Edge Function (for real client IP via `x-forwarded-for` and `Origin` allowlist check). Clean Architecture: separate ports `ISurveyRepository` (A) and `IPublicResearchRepository` (B). Web-only Survey B routes use Expo Router's `.web.tsx` platform extension.
 
 **Tech Stack:** Supabase Postgres + RLS + Edge Functions, `@kc/domain`, `@kc/application`, `@kc/infrastructure-supabase`, Expo Router (typed routes, platform-extension routing), React Query, AsyncStorage (snooze only).
 
@@ -23,7 +23,7 @@
 | Layer | Create | Modify |
 |-------|--------|--------|
 | SSOT | `docs/SSOT/spec/16_public_research.md` | `docs/SSOT/spec/11_settings.md`, `docs/SSOT/BACKLOG.md`, `docs/SSOT/DECISIONS.md` (D-* entries), `CLAUDE.md` (§1 spec-files table) |
-| DB | `supabase/migrations/0122_surveys_and_feedback.sql`, `supabase/migrations/0123_public_research_responses.sql` | — |
+| DB | `supabase/migrations/0130_surveys_and_feedback.sql`, `supabase/migrations/0131_public_research_responses.sql` | — |
 | Edge Functions | `supabase/functions/public-research-submit/index.ts`, `supabase/functions/rotate-research-salt/index.ts` | — |
 | Domain | `packages/domain/src/survey/*.ts`, `packages/domain/src/research/*.ts` | `packages/domain/src/index.ts` |
 | Application | `packages/application/src/ports/ISurveyRepository.ts`, `packages/application/src/ports/IPublicResearchRepository.ts`, `packages/application/src/survey/*.ts`, `packages/application/src/research/*.ts`, tests | `packages/application/src/index.ts` |
@@ -38,13 +38,13 @@
 
 | PR | Scope | Base |
 |----|-------|------|
-| 1 | `docs(contract):` SSOT FR-SETTINGS-015..017 + migration `0122` + seed `ux-experience` | `dev` |
+| 1 | `docs(contract):` SSOT FR-SETTINGS-015..017 + migration `0130` + seed `ux-experience` | `dev` |
 | 2 | `feat(contract):` survey domain + application use cases + fake repo tests | `dev` |
 | 3 | `feat(infra):` SupabaseSurveyRepository + direct SQL tests | PR 1 merged |
 | 4 | `feat(mobile):` production survey UI + settings hub + persistence | PR 2–3 merged |
 | 5 | `feat(mobile):` Survey A milestone banner + snooze + analytics events | PR 4 merged |
 | 6 | `docs(contract):` new SSOT file `16_public_research.md` + FR-RESEARCH-001..003 | `dev` |
-| 7 | `feat(infra):` migration `0123` + Edge Functions + research domain/application | PR 6 merged |
+| 7 | `feat(infra):` migration `0131` + Edge Functions + research domain/application | PR 6 merged |
 | 8 | `feat(infra):` SupabasePublicResearchRepository + Edge Function tests | PR 7 merged |
 | 9 | `feat(mobile):` `.web.tsx` public research form + thank-you page + UTM parsing | PR 8 merged |
 
@@ -116,17 +116,17 @@ git commit -m "docs(ssot): add FR-SETTINGS-015..017 surveys and feedback"
 
 ---
 
-### Task 2: Database migration `0122_surveys_and_feedback.sql` (Survey A)
+### Task 2: Database migration `0130_surveys_and_feedback.sql` (Survey A)
 
 **Files:**
-- Create: `supabase/migrations/0122_surveys_and_feedback.sql`
+- Create: `supabase/migrations/0130_surveys_and_feedback.sql`
 
 > Migration number: **0122** (not 0118). Slots 0118–0121 are already occupied on the dev DB by admin-portal migrations (`widen_admin_rpcs_to_rbac`, `admin_restore_no_cascade_dismiss`, `reports_open_inbox_rpc`, `reports_case_detail_rpc`) whose files weren't yet merged to `dev` when this plan was written. Verify with `supabase migration list --linked` before committing.
 
 - [ ] **Step 1: Write migration (core DDL)**
 
 ```sql
--- 0122_surveys_and_feedback.sql — FR-SETTINGS-015..017
+-- 0130_surveys_and_feedback.sql — FR-SETTINGS-015..017
 
 CREATE TABLE public.surveys (
   id uuid PRIMARY KEY DEFAULT gen_random_uuid(),
@@ -271,7 +271,7 @@ GRANT INSERT ON public.user_feedback TO authenticated;
 - [ ] **Step 11: Commit**
 
 ```bash
-git add supabase/migrations/0122_surveys_and_feedback.sql packages/infrastructure-supabase/src/database.types.ts
+git add supabase/migrations/0130_surveys_and_feedback.sql packages/infrastructure-supabase/src/database.types.ts
 git commit -m "feat(infra): add surveys and feedback schema with RPCs (Survey A)"
 ```
 
@@ -567,10 +567,10 @@ A public, anonymous web form at `/research/[slug]?src=...`, served from the Expo
 
 ---
 
-### Task 13: Database migration `0123_public_research_responses.sql` (Survey B)
+### Task 13: Database migration `0131_public_research_responses.sql` (Survey B)
 
 **Files:**
-- Create: `supabase/migrations/0123_public_research_responses.sql`
+- Create: `supabase/migrations/0131_public_research_responses.sql`
 
 > Migration number: **0123** (Survey B follows Survey A's 0122). Verify against remote ledger with `supabase migration list --linked` before committing.
 
@@ -723,7 +723,7 @@ GRANT EXECUTE ON FUNCTION public.submit_public_research_response(text, int, text
 - [ ] **Step 8: Regenerate types + commit**
 
 ```bash
-git add supabase/migrations/0123_public_research_responses.sql packages/infrastructure-supabase/src/database.types.ts
+git add supabase/migrations/0131_public_research_responses.sql packages/infrastructure-supabase/src/database.types.ts
 git commit -m "feat(infra): public research responses schema with anonymous RPC (Survey B)"
 ```
 

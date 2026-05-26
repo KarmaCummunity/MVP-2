@@ -1,8 +1,9 @@
--- 0122_surveys_and_feedback.sql
+-- 0130_surveys_and_feedback.sql
 -- FR-SETTINGS-015..017 — server-driven survey runner + free feedback
 -- Design spec: docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md §8
 -- Seeds Survey A "ux-experience" v1 (6 questions) at the end of this file.
--- (Numbered 0122 — slots 0118–0121 already occupied on remote by admin-portal migrations.)
+-- (Numbered 0130 — slots 0118–0129 occupied on dev DB by admin-portal,
+--  reports, rides, and feed-search migrations whose files landed in parallel.)
 
 begin;
 

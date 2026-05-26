@@ -101,6 +101,7 @@ export function ResearchRunner({
         <ResearchQuestionPanel
           question={question}
           index={activeIndex}
+          totalQuestions={total}
           answer={answer}
           onRating={(rating) => onAnswerChange(question.id, rating, answer.answerText)}
           onText={(text) => onAnswerChange(question.id, answer.rating, text)}

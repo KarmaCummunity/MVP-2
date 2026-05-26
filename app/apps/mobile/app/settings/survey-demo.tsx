@@ -38,7 +38,7 @@ import {
 import {
   hebrewSurveyFieldTextStyle,
   SURVEY_TEXT_ALIGN,
-} from '../../src/components/survey-demo/hebrewSurveyFieldStyle';
+} from '../../src/components/survey/hebrewSurveyFieldStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 

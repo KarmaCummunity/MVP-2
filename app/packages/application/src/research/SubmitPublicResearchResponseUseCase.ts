@@ -17,7 +17,10 @@ import type { IPublicResearchRepository } from '../ports/IPublicResearchReposito
 const MIN_RATING = 1;
 const MAX_RATING = 7;
 const SOURCE_REGEX = /^[a-z0-9_-]{1,32}$/;
-const EMAIL_REGEX = /^[^@\s]+@[^@\s]+\.[^@\s]+$/;
+// Bounded quantifiers prevent ReDoS backtracking. RFC 5321 caps email at 320
+// chars but we cap each segment for safety. The DB CHECK constraint mirrors
+// this shape; client-side check is for early rejection / UX only.
+const EMAIL_REGEX = /^[^@\s]{1,128}@[^@\s.]{1,64}(?:\.[^@\s.]{1,64}){1,4}$/;
 const MAX_CONTACT_WINDOW_LENGTH = 200;
 
 function validateRatings(payload: PublicResearchSubmission): void {

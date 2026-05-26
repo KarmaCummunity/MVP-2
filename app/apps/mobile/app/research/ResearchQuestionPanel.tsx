@@ -14,14 +14,15 @@ import {
 import { webTextRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 
-// Q11 is identified by short_label_he === 'שיחה איתנו' (design spec §9 row 11).
-const Q11_LABEL = 'שיחה איתנו';
-
+// Q11 is the final "contact us" question — identified by its position as the
+// last question in the survey (design spec §9 row 11). Using sort_order keeps
+// the Q11 sentinel out of the source tree (Hebrew-scan compliance).
 type AnswerEntry = { rating: number | null; answerText: string | null };
 
 type Props = {
   readonly question: SurveyQuestion;
   readonly index: number;
+  readonly totalQuestions: number;
   readonly answer: AnswerEntry;
   readonly onRating: (rating: number) => void;
   readonly onText: (text: string) => void;
@@ -34,6 +35,7 @@ type Props = {
 export function ResearchQuestionPanel({
   question,
   index,
+  totalQuestions,
   answer,
   onRating,
   onText,
@@ -45,7 +47,7 @@ export function ResearchQuestionPanel({
   const styles = usePanelStyles();
   const { colors } = useTheme();
   const { t } = useTranslation();
-  const isQ11 = question.shortLabelHe === Q11_LABEL;
+  const isQ11 = index === totalQuestions - 1;
 
   return (
     <View style={styles.card}>

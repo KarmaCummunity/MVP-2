@@ -122,7 +122,7 @@ Daily salt rotation: a `secrets.daily_research_salt` row, rotated by scheduled E
 
 ### 7.5 Two migrations, not one
 
-`0122_surveys_and_feedback.sql` (Survey A — authenticated, RLS-heavy) and `0123_public_research_responses.sql` (Survey B — anon, RPC + Edge Function gated). Separation forces reviewers to evaluate each security posture in isolation; bundling risks rubber-stamping the `GRANT EXECUTE TO anon` because surrounding context looks authenticated.
+`0130_surveys_and_feedback.sql` (Survey A — authenticated, RLS-heavy) and `0131_public_research_responses.sql` (Survey B — anon, RPC + Edge Function gated). Separation forces reviewers to evaluate each security posture in isolation; bundling risks rubber-stamping the `GRANT EXECUTE TO anon` because surrounding context looks authenticated.
 
 ## 8. Survey A — questions (final v3)
 
