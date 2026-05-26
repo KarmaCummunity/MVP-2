@@ -31,6 +31,7 @@
 | P1.5 | Push notifications | agent-be + agent-fe | ✅ Done | `spec/09_notifications.md` |
 | P1.6 | MVP email verification gate (migration 0067 + verify route + verify-pending panel) | agent-be + agent-fe | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-006 / FR-AUTH-007; `DECISIONS.md` D-20 |
 | P1.6.1 | Verification status follow-up: phone OTP + Apple-hide-email path leaves `account_status='pending_verification'`; trigger only watched `email_confirmed_at` (migration 0068 — provider-aware INSERT + dual-column verified trigger + backfill) | agent-be | ✅ Done | `spec/01_auth_and_onboarding.md` FR-AUTH-005 / FR-AUTH-006; `DECISIONS.md` D-20 |
+| P1.7 | FR-RESEARCH-001..003 — Public market research form (Survey B) — web-only anonymous form at `/research/[slug]?src=`, 11 questions, anti-abuse (honeypot + origin allowlist + rate limit + circuit breaker), PII-isolated contact opt-in | agent-be + agent-fe | 🟡 In progress | `spec/15_public_research.md`; Migration `0123`, Edge Functions `public-research-submit` + `rotate-research-salt`, `.web.tsx` route |
 
 ## P2 — Stats, Admin & Polish
 
