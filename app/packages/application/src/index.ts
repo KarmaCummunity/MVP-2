@@ -159,3 +159,5 @@ export * from './admin/GetMyAdminRolesUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
+export * from './reports/ListOpenReportsUseCase';
+export * from './reports/GetReportCaseDetailUseCase';
