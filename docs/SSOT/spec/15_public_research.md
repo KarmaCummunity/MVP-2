@@ -1,6 +1,6 @@
 # 2.15 Public Market Research
 
-> **Status:** ⏳ Planned — Survey B captures pain-language from alt-platform users (FB / WhatsApp / Agora). Output: Karma Phrasebook (see design spec §2).
+> **Status:** 🟡 Code complete, post-merge QA pending — Survey B captures pain-language from alt-platform users (FB / WhatsApp / Agora). Output: Karma Phrasebook (see design spec §2). Migration `0123`, Edge Functions `public-research-submit` + `rotate-research-salt`, and `.web.tsx` routes are implemented; individual FR statuses remain ⏳ Planned until manual QA on dev confirms ACs.
 
 Prefix: `FR-RESEARCH-*`
 
