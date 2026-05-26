@@ -11,13 +11,40 @@ const d = skip ? describe.skip : describe;
 d('admin RBAC primitives (A0)', () => {
   let admin: SupabaseClient;
   const cleanup: Array<() => Promise<void>> = [];
+  let preExistingSuperAdminUserId: string | null = null;
 
-  beforeAll(() => {
+  beforeAll(async () => {
     admin = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
+
+    // The single-active-super_admin invariant means we must temporarily
+    // revoke any pre-existing super_admin grant for the duration of the suite,
+    // then restore it in afterAll.
+    const { data: pre } = await admin
+      .from('admin_role_grants')
+      .select('user_id')
+      .eq('role', 'super_admin')
+      .is('revoked_at', null)
+      .maybeSingle();
+    if (pre?.user_id) {
+      preExistingSuperAdminUserId = pre.user_id;
+      await admin
+        .from('admin_role_grants')
+        .update({ revoked_at: new Date().toISOString() })
+        .eq('user_id', pre.user_id)
+        .eq('role', 'super_admin')
+        .is('revoked_at', null);
+    }
   });
 
   afterAll(async () => {
     for (const fn of cleanup.reverse()) await fn();
+    if (preExistingSuperAdminUserId !== null) {
+      // Restore the original super_admin so the dev DB returns to its prior state.
+      await admin
+        .from('admin_role_grants')
+        .insert({ user_id: preExistingSuperAdminUserId, role: 'super_admin' });
+      preExistingSuperAdminUserId = null;
+    }
   });
 
   async function seedUser(): Promise<string> {
