@@ -8,7 +8,7 @@ import he from '../../src/i18n/locales/he';
 const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
 
 export default function AdminDashboard(): ReactElement {
-  const roles = useAdminRoles();
+  const { roles } = useAdminRoles();
   const t = he.admin.dashboard;
 
   return (

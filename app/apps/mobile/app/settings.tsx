@@ -42,7 +42,7 @@ export default function SettingsScreen() {
   const showFollowRequests = userQuery.data?.privacyMode === 'Private';
   const { isPrivate, canToggle, onToggle, confirmModal } = usePrivateProfileToggle(userId);
   const isSuperAdmin = useIsSuperAdmin();
-  const adminRoles = useAdminRoles();
+  const { roles: adminRoles } = useAdminRoles();
   const queryClient = useQueryClient();
   const [hardRefreshing, setHardRefreshing] = React.useState(false);
   const {
@@ -171,7 +171,7 @@ export default function SettingsScreen() {
             <SettingsScreenRow
               label={he.admin.settingsRow}
               icon="shield-checkmark-outline"
-              onPress={() => router.push('/(admin)' as never)}
+              onPress={() => router.push('/(admin)')}
             />
           ) : null}
           <SettingsScreenRow

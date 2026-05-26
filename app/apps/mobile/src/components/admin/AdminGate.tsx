@@ -1,6 +1,7 @@
 // app/apps/mobile/src/components/admin/AdminGate.tsx
 import { Redirect } from 'expo-router';
 import type { ReactElement, ReactNode } from 'react';
+import { ActivityIndicator, View } from 'react-native';
 import { useAdminRoles } from '../../hooks/useAdminRoles';
 
 export interface AdminGateProps {
@@ -9,14 +10,24 @@ export interface AdminGateProps {
 }
 
 export function AdminGate({ children, anyOf }: AdminGateProps): ReactElement {
-  const roles = useAdminRoles();
+  const { roles, isLoading } = useAdminRoles();
+  // Wait for the role query before deciding — without this, a cold-start
+  // render sees `roles.length === 0` and redirects to /(tabs), creating a
+  // tap → flash-of-deny → tap loop for legitimate admins on native (the
+  // native stack can't recover from a Redirect mid-mount the way web URL
+  // routing does).
+  if (isLoading) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center' }}>
+        <ActivityIndicator />
+      </View>
+    );
+  }
   if (roles.length === 0) {
     return <Redirect href="/(tabs)" />;
   }
   if (anyOf && !roles.some((r) => anyOf.includes(r))) {
-    // Cast: expo-router generates the (admin) typed route once route files
-    // exist (Task 18). This gate may render before that during a cold start.
-    return <Redirect href={'/(admin)' as never} />;
+    return <Redirect href="/(admin)" />;
   }
   return <>{children}</>;
 }
