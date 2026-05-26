@@ -1,3 +1,5 @@
+import { initSentry } from '../src/lib/observability/sentry';
+initSentry();
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
