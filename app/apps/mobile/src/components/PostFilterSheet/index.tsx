@@ -87,11 +87,13 @@ export function PostFilterSheet({
           </View>
 
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-            <SearchSection
-              searchQuery={value.searchQuery}
-              sheetVisible={visible}
-              onSearchQueryChange={handleSearchQueryChange}
-            />
+            {visible ? (
+              <SearchSection
+                searchQuery={value.searchQuery}
+                sheetVisible={visible}
+                onSearchQueryChange={handleSearchQueryChange}
+              />
+            ) : null}
             <SortSection
               sortOrder={value.sortOrder}
               proximitySortCity={

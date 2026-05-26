@@ -1,4 +1,4 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import { Pressable, TextInput, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -24,14 +24,24 @@ export function SearchSection({
   const { colors } = useTheme();
   const [inputText, setInputText] = useState(searchQuery);
   const debounced = useDebouncedValue(inputText, DEBOUNCE_MS);
+  const onChangeRef = useRef(onSearchQueryChange);
+  onChangeRef.current = onSearchQueryChange;
+  const wasVisibleRef = useRef(false);
 
+  // Seed local input once when the sheet opens (not on every store-driven searchQuery tick).
   useEffect(() => {
-    if (sheetVisible) setInputText(searchQuery);
+    if (sheetVisible && !wasVisibleRef.current) {
+      setInputText(searchQuery);
+    }
+    wasVisibleRef.current = sheetVisible;
   }, [sheetVisible, searchQuery]);
 
   useEffect(() => {
-    onSearchQueryChange(debounced.trim());
-  }, [debounced, onSearchQueryChange]);
+    if (!sheetVisible) return;
+    const next = debounced.trim();
+    if (next === searchQuery) return;
+    onChangeRef.current(next);
+  }, [debounced, sheetVisible, searchQuery]);
 
   return (
     <View style={styles.wrap}>
