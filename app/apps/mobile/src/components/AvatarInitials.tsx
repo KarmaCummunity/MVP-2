@@ -1,6 +1,8 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
 import { makeUseStyles, typography, radius, useTheme } from '@kc/ui';
+import { getSupabasePublicImageUrl } from '../lib/imageUrl';
+import { KCImage } from './ui/KCImage';
 
 interface AvatarInitialsProps {
   name: string;
@@ -21,7 +23,7 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? AVATAR_COLORS[0]!;
 }
 
-export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsProps) {
+function AvatarInitialsInner({ name, avatarUrl, size = 40 }: AvatarInitialsProps) {
   const styles = useStyles();
   const { colors } = useTheme();
   const initials = name
@@ -32,12 +34,20 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
 
   const bgColor = getAvatarColor(name);
 
-  if (avatarUrl) {
+  const transformedUrl = React.useMemo(() => {
+    if (!avatarUrl) return null;
+    if (avatarUrl.startsWith('http')) return avatarUrl;
+    return getSupabasePublicImageUrl({ bucket: 'avatars', path: avatarUrl, width: 96, quality: 75 });
+  }, [avatarUrl]);
+
+  if (transformedUrl) {
     return (
-      <Image
-        source={{ uri: avatarUrl }}
-        style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
-        resizeMode="cover"
+      <KCImage
+        uri={transformedUrl}
+        width={size}
+        height={size}
+        style={[styles.avatar, { borderRadius: size / 2 }]}
+        contentFit="cover"
       />
     );
   }
@@ -58,6 +68,8 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
     </View>
   );
 }
+
+export const AvatarInitials = React.memo(AvatarInitialsInner);
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   /** No outer margin — parents use `gap` / padding so fixed-size clips (e.g. search cards) stay circular on iOS. */
