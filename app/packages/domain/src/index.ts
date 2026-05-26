@@ -1,4 +1,6 @@
 export * from './errors';
+export * from './survey/SurveyTypes';
+export * from './survey/SurveyError';
 export * from './entities';
 export * from './audit';
 export * from './posts';

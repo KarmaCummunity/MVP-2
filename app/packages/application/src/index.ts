@@ -156,3 +156,15 @@ export * from './legal/AcceptLegalDocumentUseCase';
 
 export * from './admin/IAdminRoleRepository';
 export * from './admin/GetMyAdminRolesUseCase';
+
+// Survey use cases (FR-SETTINGS-015..017)
+export type { ISurveyRepository } from './ports/ISurveyRepository';
+export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';
+export type { LoadSurveyBundleInput } from './survey/LoadSurveyBundleUseCase';
+export { SaveSurveyAnswersUseCase } from './survey/SaveSurveyAnswersUseCase';
+export type { SaveSurveyAnswersInput } from './survey/SaveSurveyAnswersUseCase';
+export { ListActiveSurveysUseCase } from './survey/ListActiveSurveysUseCase';
+export { CheckSurveyPromptUseCase } from './survey/CheckSurveyPromptUseCase';
+export type { CheckSurveyPromptInput } from './survey/CheckSurveyPromptUseCase';
+export { SubmitFreeFeedbackUseCase } from './survey/SubmitFreeFeedbackUseCase';
+export type { SubmitFreeFeedbackInput } from './survey/SubmitFreeFeedbackUseCase';
