@@ -51,6 +51,12 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
         onClose();
         setNotify({ title: t('post.reportDuplicateTitle'), message: t('chat.reportChatDuplicateBody') });
+      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
+        onClose();
+        setNotify({
+          title: t('post.reportAlreadyModeratedTitle'),
+          message: t('post.reportAlreadyModeratedBody'),
+        });
       } else {
         setNotify({ title: t('general.error'), message: t('post.reportErrorBody') });
       }
