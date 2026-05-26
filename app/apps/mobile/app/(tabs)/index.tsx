@@ -94,25 +94,22 @@ export default function HomeFeedScreen() {
     searchQuery: filter.searchQuery,
   };
 
-  const handleFilterPatch = useCallback(
-    (patch: Partial<PostFilterValue>) => {
-      if ('type' in patch) filter.setType(patch.type ?? null);
-      if ('categories' in patch) filter.setCategories(patch.categories ?? []);
-      if ('itemConditions' in patch) filter.setItemConditions(patch.itemConditions ?? []);
-      if ('locationFilter' in patch) filter.setLocationFilter(patch.locationFilter ?? null);
-      if ('statusFilter' in patch) filter.setStatusFilter(patch.statusFilter ?? 'open');
-      if ('sortOrder' in patch) filter.setSortOrder(patch.sortOrder ?? 'newest');
-      if ('proximitySortCity' in patch || 'proximitySortCityName' in patch) {
-        filter.setProximitySortCity(
-          patch.proximitySortCity ?? null,
-          patch.proximitySortCityName ?? null,
-        );
-      }
-      if ('followersOnly' in patch) filter.setFollowersOnly(patch.followersOnly ?? false);
-      if ('searchQuery' in patch) filter.setSearchQuery(patch.searchQuery ?? '');
-    },
-    [filter],
-  );
+  // Stable callback — zustand actions via getState() so SearchSection debounce
+  // does not retrigger an infinite loop (React #185).
+  const handleFilterPatch = useCallback((patch: Partial<PostFilterValue>) => {
+    const s = useFilterStore.getState();
+    if ('type' in patch) s.setType(patch.type ?? null);
+    if ('categories' in patch) s.setCategories(patch.categories ?? []);
+    if ('itemConditions' in patch) s.setItemConditions(patch.itemConditions ?? []);
+    if ('locationFilter' in patch) s.setLocationFilter(patch.locationFilter ?? null);
+    if ('statusFilter' in patch) s.setStatusFilter(patch.statusFilter ?? 'open');
+    if ('sortOrder' in patch) s.setSortOrder(patch.sortOrder ?? 'newest');
+    if ('proximitySortCity' in patch || 'proximitySortCityName' in patch) {
+      s.setProximitySortCity(patch.proximitySortCity ?? null, patch.proximitySortCityName ?? null);
+    }
+    if ('followersOnly' in patch) s.setFollowersOnly(patch.followersOnly ?? false);
+    if ('searchQuery' in patch) s.setSearchQuery(patch.searchQuery ?? '');
+  }, []);
 
   const header = (
     <View>
