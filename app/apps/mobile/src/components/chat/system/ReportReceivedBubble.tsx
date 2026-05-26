@@ -5,8 +5,10 @@
 // message.
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
+import { router } from 'expo-router';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
+import { useAdminPortalReportsFlag } from '../../../hooks/useAdminPortalReportsFlag';
 import { container } from '../../../lib/container';
 import he from '../../../i18n/locales/he';
 import { confirmAndRun, showAdminToast } from './adminActions';
@@ -20,12 +22,18 @@ export function ReportReceivedBubble({
   handledByLaterAction,
 }: SystemMessageBubbleProps) {
   const isAdmin = useIsSuperAdmin();
+  const portalActive = useAdminPortalReportsFlag();
   const styles = useReportReceivedBubbleStyles();
   const { colors } = useTheme();
   const t = he.moderation;
   const reportId = payload?.report_id as string | undefined;
   const targetType = payload?.target_type as string | undefined;
+  const targetId = payload?.target_id as string | undefined;
   const reason = payload?.reason as string | undefined;
+  const caseId =
+    (targetType === 'post' || targetType === 'user' || targetType === 'chat') && targetId
+      ? encodeURIComponent(`${targetType}:${targetId}`)
+      : null;
   // The trigger writes the raw `Report.reason` enum (PascalCase). The Hebrew
   // mapping is keyed by lowercase — case-fold then look up, with the original
   // enum as a safe fallback for unknown values (e.g. a future-added reason
@@ -60,32 +68,54 @@ export function ReportReceivedBubble({
       ) : null}
 
       {showActions ? (
-        <View style={styles.row}>
-          <Pressable
-            onPress={() =>
-              confirmAndRun({
-                action: 'dismiss',
-                onConfirm: () => container.dismissReport.execute({ reportId: reportId! }),
-                onSuccess: () => showAdminToast(t.actions.success.dismiss),
-                onError: showAdminToast,
-              })
-            }
-          >
-            <Text style={styles.btn}>{t.actions.dismiss}</Text>
-          </Pressable>
-          <Pressable
-            onPress={() =>
-              confirmAndRun({
-                action: 'confirm',
-                onConfirm: () => container.confirmReport.execute({ reportId: reportId! }),
-                onSuccess: () => showAdminToast(t.actions.success.confirm),
-                onError: showAdminToast,
-              })
-            }
-          >
-            <Text style={styles.btn}>{t.actions.confirm}</Text>
-          </Pressable>
-        </View>
+        portalActive ? (
+          <View style={styles.portalRow}>
+            <Text style={styles.portalNote}>{he.admin.coexistence.bubbleReadOnly}</Text>
+            {caseId ? (
+              <Pressable
+                onPress={() =>
+                  router.push({
+                    pathname: '/(admin)/reports/[caseId]',
+                    params: { caseId },
+                  })
+                }
+                style={styles.portalLink}
+                accessibilityRole="link"
+              >
+                <Text style={styles.portalLinkText}>
+                  {he.admin.coexistence.bubbleOpenInPortal}
+                </Text>
+              </Pressable>
+            ) : null}
+          </View>
+        ) : (
+          <View style={styles.row}>
+            <Pressable
+              onPress={() =>
+                confirmAndRun({
+                  action: 'dismiss',
+                  onConfirm: () => container.dismissReport.execute({ reportId: reportId! }),
+                  onSuccess: () => showAdminToast(t.actions.success.dismiss),
+                  onError: showAdminToast,
+                })
+              }
+            >
+              <Text style={styles.btn}>{t.actions.dismiss}</Text>
+            </Pressable>
+            <Pressable
+              onPress={() =>
+                confirmAndRun({
+                  action: 'confirm',
+                  onConfirm: () => container.confirmReport.execute({ reportId: reportId! }),
+                  onSuccess: () => showAdminToast(t.actions.success.confirm),
+                  onError: showAdminToast,
+                })
+              }
+            >
+              <Text style={styles.btn}>{t.actions.confirm}</Text>
+            </Pressable>
+          </View>
+        )
       ) : null}
     </View>
   );
@@ -108,4 +138,14 @@ const useReportReceivedBubbleStyles = makeUseStyles(({ colors }) => ({
   evidence: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 4 },
   row: { flexDirection: rowDirectionStart, gap: 16, marginTop: 8 },
   btn: { color: colors.secondary, fontWeight: '600' as const },
+  portalRow: {
+    flexDirection: rowDirectionStart,
+    gap: 12,
+    marginTop: 8,
+    alignItems: 'center' as const,
+    flexWrap: 'wrap' as const,
+  },
+  portalNote: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const },
+  portalLink: { paddingVertical: 2 },
+  portalLinkText: { color: colors.secondary, fontWeight: '600' as const, fontSize: 13 },
 }));

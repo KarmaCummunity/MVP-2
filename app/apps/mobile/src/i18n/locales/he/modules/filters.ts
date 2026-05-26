@@ -5,6 +5,8 @@ export const filtersHe = {
   header: 'סינון ומיון',
   clearAll: 'נקה הכל',
   apply: 'החל',
+  searchPlaceholder: 'חיפוש בכותרת, תיאור או קטגוריה…',
+  searchClearA11y: 'נקה חיפוש',
 
   // Section titles
   sectionType: 'סוג פוסט',

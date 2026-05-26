@@ -1,7 +1,7 @@
 # Server-Driven Surveys & Market Research — Design
 
 > **Status:** Approved (PM, 2026-05-26) — v0.2 after 4-agent council review.
-> **Spec targets:** `docs/SSOT/spec/11_settings.md` — FR-SETTINGS-015..017 (Survey A) **and** new file `docs/SSOT/spec/15_public_research.md` — FR-RESEARCH-001..003 (Survey B).
+> **Spec targets:** `docs/SSOT/spec/11_settings.md` — FR-SETTINGS-015..017 (Survey A) **and** new file `docs/SSOT/spec/16_public_research.md` — FR-RESEARCH-001..003 (Survey B).
 > **Backlog targets:** P2.34 (Survey A) and P1.x (Survey B — research is acquisition-critical, ahead of in-app UX poll).
 > **Pattern reference:** `docs/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md` (server content, Studio publish, append-only answers).
 
@@ -31,7 +31,7 @@ After ≥50 responses per survey, the PM (or assigned operator) exports all free
 
 The phrasebook becomes the canonical source for: landing page copy, App Store description, ad creative headlines, onboarding microcopy, push notification copy. Without this synthesis step, both surveys are wasted effort.
 
-**Operational owner:** PM. **Cadence:** after each Survey B distribution wave (target: ≥50 responses per wave). **Storage:** Google Sheet linked from `docs/SSOT/spec/15_public_research.md`.
+**Operational owner:** PM. **Cadence:** after each Survey B distribution wave (target: ≥50 responses per wave). **Storage:** Google Sheet linked from `docs/SSOT/spec/16_public_research.md`.
 
 ## 3. Non-goals (V1)
 
@@ -181,12 +181,12 @@ All questions: rating 1–7 (required) + free text (optional). For Q11 the free 
 - **FR-SETTINGS-016** — Server-driven survey runner (Survey A)
 - **FR-SETTINGS-017** — Free feedback form (DB only, no support thread)
 
-**In new file `docs/SSOT/spec/15_public_research.md`:**
+**In new file `docs/SSOT/spec/16_public_research.md`:**
 - **FR-RESEARCH-001** — Public market research form (Survey B runner, web-only)
 - **FR-RESEARCH-002** — Anti-abuse (honeypot + origin allowlist + IP-hash rate limit + circuit breaker)
 - **FR-RESEARCH-003** — Contact-request opt-in (separate PII table)
 
-`CLAUDE.md` §1 spec-files table must be updated to include row `15_public_research.md FR-RESEARCH-*`.
+`CLAUDE.md` §1 spec-files table must be updated to include row `16_public_research.md FR-RESEARCH-*`.
 
 ## 11. Selection-bias mitigations (Survey B distribution)
 
@@ -202,4 +202,4 @@ The council flagged a real risk: linking from FB giving-groups self-selects the 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-25 | Initial design from brainstorming + approved UI demo |
-| 0.2 | 2026-05-26 | Added Survey B (public market research). Council review (4 agents: marketing, methodology, Hebrew copy, technical) integrated. Two migrations. PII isolation. Phrasebook output documented. Real client IP via Edge Function. Web-only `.web.tsx` routing. Per-question rating anchors. Spec-file split: FR-RESEARCH-* gets its own file `15_public_research.md`. |
+| 0.2 | 2026-05-26 | Added Survey B (public market research). Council review (4 agents: marketing, methodology, Hebrew copy, technical) integrated. Two migrations. PII isolation. Phrasebook output documented. Real client IP via Edge Function. Web-only `.web.tsx` routing. Per-question rating anchors. Spec-file split: FR-RESEARCH-* gets its own file `16_public_research.md`. |

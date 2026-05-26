@@ -14,7 +14,7 @@
 
 **Mapped FR-IDs:**
 - Survey A: FR-SETTINGS-015, FR-SETTINGS-016, FR-SETTINGS-017 (add to `docs/SSOT/spec/11_settings.md` in Task 1)
-- Survey B: FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003 (new file `docs/SSOT/spec/15_public_research.md` in Task 12)
+- Survey B: FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003 (new file `docs/SSOT/spec/16_public_research.md` in Task 12)
 
 ---
 
@@ -22,7 +22,7 @@
 
 | Layer | Create | Modify |
 |-------|--------|--------|
-| SSOT | `docs/SSOT/spec/15_public_research.md` | `docs/SSOT/spec/11_settings.md`, `docs/SSOT/BACKLOG.md`, `docs/SSOT/DECISIONS.md` (D-* entries), `CLAUDE.md` (§1 spec-files table) |
+| SSOT | `docs/SSOT/spec/16_public_research.md` | `docs/SSOT/spec/11_settings.md`, `docs/SSOT/BACKLOG.md`, `docs/SSOT/DECISIONS.md` (D-* entries), `CLAUDE.md` (§1 spec-files table) |
 | DB | `supabase/migrations/0122_surveys_and_feedback.sql`, `supabase/migrations/0123_public_research_responses.sql` | — |
 | Edge Functions | `supabase/functions/public-research-submit/index.ts`, `supabase/functions/rotate-research-salt/index.ts` | — |
 | Domain | `packages/domain/src/survey/*.ts`, `packages/domain/src/research/*.ts` | `packages/domain/src/index.ts` |
@@ -43,7 +43,7 @@
 | 3 | `feat(infra):` SupabaseSurveyRepository + direct SQL tests | PR 1 merged |
 | 4 | `feat(mobile):` production survey UI + settings hub + persistence | PR 2–3 merged |
 | 5 | `feat(mobile):` Survey A milestone banner + snooze + analytics events | PR 4 merged |
-| 6 | `docs(contract):` new SSOT file `15_public_research.md` + FR-RESEARCH-001..003 | `dev` |
+| 6 | `docs(contract):` new SSOT file `16_public_research.md` + FR-RESEARCH-001..003 | `dev` |
 | 7 | `feat(infra):` migration `0123` + Edge Functions + research domain/application | PR 6 merged |
 | 8 | `feat(infra):` SupabasePublicResearchRepository + Edge Function tests | PR 7 merged |
 | 9 | `feat(mobile):` `.web.tsx` public research form + thank-you page + UTM parsing | PR 8 merged |
@@ -495,15 +495,15 @@ Expected: all green.
 
 ## ========== SURVEY B (public market research) ==========
 
-### Task 12: SSOT — new file `15_public_research.md` + FR-RESEARCH-001..003
+### Task 12: SSOT — new file `16_public_research.md` + FR-RESEARCH-001..003
 
 **Files:**
-- Create: `docs/SSOT/spec/15_public_research.md`
+- Create: `docs/SSOT/spec/16_public_research.md`
 - Modify: `docs/SSOT/BACKLOG.md` (add P1.x — research is acquisition-critical)
 - Modify: `docs/SSOT/DECISIONS.md` (D-* — anonymous public form, separate from Settings domain)
-- Modify: `CLAUDE.md` (§1 spec-files table — add row `15_public_research.md FR-RESEARCH-*`)
+- Modify: `CLAUDE.md` (§1 spec-files table — add row `16_public_research.md FR-RESEARCH-*`)
 
-- [ ] **Step 1: Create `15_public_research.md` skeleton**
+- [ ] **Step 1: Create `16_public_research.md` skeleton**
 
 ```markdown
 # 2.15 Public Market Research
@@ -858,7 +858,7 @@ cd app && pnpm typecheck && pnpm test && pnpm lint
 
 - [ ] **Step 3: SSOT close** — flip FR-RESEARCH-001..003 to ✅; BACKLOG P1.x → ✅.
 
-- [ ] **Step 4: Create empty "Karma Phrasebook" Google Sheet** with 3 columns (Pain / Relief / Where it ships). Link from `docs/SSOT/spec/15_public_research.md` "Output" section. PM owns this sheet; reviewed after every distribution wave.
+- [ ] **Step 4: Create empty "Karma Phrasebook" Google Sheet** with 3 columns (Pain / Relief / Where it ships). Link from `docs/SSOT/spec/16_public_research.md` "Output" section. PM owns this sheet; reviewed after every distribution wave.
 
 - [ ] **Step 5: Distribution playbook** — short doc in `docs/SSOT/playbooks/distribute-public-research.md`:
   - List of channels to post per wave (FB giving-groups, WhatsApp neighborhood, Agora, parents' groups, secondhand-buying groups)
