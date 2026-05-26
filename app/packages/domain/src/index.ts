@@ -1,5 +1,7 @@
 export * from './errors';
 export * from './survey/SurveyTypes';
+export * from './research/PublicResearchTypes';
+export * from './research/PublicResearchError';
 export * from './survey/SurveyError';
 export * from './entities';
 export * from './audit';

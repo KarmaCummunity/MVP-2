@@ -159,6 +159,11 @@ export * from './admin/GetMyAdminRolesUseCase';
 
 // Survey use cases (FR-SETTINGS-015..017)
 export type { ISurveyRepository } from './ports/ISurveyRepository';
+
+// Public research use cases (FR-RESEARCH-001..003)
+export type { IPublicResearchRepository } from './ports/IPublicResearchRepository';
+export { LoadPublicResearchBundleUseCase } from './research/LoadPublicResearchBundleUseCase';
+export { SubmitPublicResearchResponseUseCase } from './research/SubmitPublicResearchResponseUseCase';
 export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';
 export type { LoadSurveyBundleInput } from './survey/LoadSurveyBundleUseCase';
 export { SaveSurveyAnswersUseCase } from './survey/SaveSurveyAnswersUseCase';
