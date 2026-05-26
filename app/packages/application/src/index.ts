@@ -155,4 +155,4 @@ export * from './legal/CheckPendingLegalAcksUseCase';
 export * from './legal/AcceptLegalDocumentUseCase';
 
 export * from './admin/IAdminRoleRepository';
-// export * from './admin/GetMyAdminRolesUseCase'; // re-enabled in Task 9
+export * from './admin/GetMyAdminRolesUseCase';
