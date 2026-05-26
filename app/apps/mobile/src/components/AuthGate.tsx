@@ -32,16 +32,14 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
   const pathname = usePathname();
   const capturePendingPath = useRedirectIntentStore((s) => s.capturePath);
   const consumePendingPath = useRedirectIntentStore((s) => s.consumePath);
-  const {
-    session,
-    isAuthenticated,
-    isLoading,
-    onboardingState,
-    basicInfoSkipped,
-    setSession,
-    setOnboardingState,
-    setBasicInfoSkipped,
-  } = useAuthStore();
+  const session = useAuthStore((s) => s.session);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const onboardingState = useAuthStore((s) => s.onboardingState);
+  const basicInfoSkipped = useAuthStore((s) => s.basicInfoSkipped);
+  const setSession = useAuthStore((s) => s.setSession);
+  const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
+  const setBasicInfoSkipped = useAuthStore((s) => s.setBasicInfoSkipped);
 
   // FR-MOD-010 AC4 — sign-in + mid-session enforcement of bans / suspensions.
   useEnforceAccountGate(session?.userId ?? null);
