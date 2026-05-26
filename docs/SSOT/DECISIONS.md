@@ -919,10 +919,23 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-48 — Server-driven surveys via Supabase Studio publish (mirrors legal-documents pattern)
+
+**Date.** 2026-05-26
+
+**Decision.** Survey A (in-app community feedback) is delivered as a set of server-driven question definitions stored in Supabase (`surveys`, `survey_versions`, `survey_questions`) and edited through Supabase Studio via a `publish_survey_version` RPC — exactly the same Studio-publish pattern used for legal documents (`D-40`, `D-41`). Survey answers are written per `(user_id, survey_id, version, question_id)` into `survey_answers`; free-form feedback lands in a separate `user_feedback` table. No app deploy is required to update question copy or publish a new version; a new published version resets the completion state for that survey.
+
+**Rationale.** The product needs to iterate on community questions post-launch without shipping a new app binary. The legal-documents pattern (`legal_document_versions` + `publish_legal_document` RPC, D-40) already proves this model at the infrastructure level. Reusing the same publish pattern keeps operator training simple (one mental model for "push copy changes via Studio") and reuses existing migration and RLS patterns. PII isolation is achieved by placing contact emails in a dedicated `survey_contact_info` table with its own RLS policy, kept separate from the ratings/text answers.
+
+**Affected docs.** `spec/11_settings.md` FR-SETTINGS-015..017; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migrations `0118_surveys` + `0119_user_feedback` (planned).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.1 | 2026-05-26 | Added `D-48` (server-driven surveys via Studio publish, mirrors legal-documents pattern; FR-SETTINGS-015..017). |
 | 3.0 | 2026-05-25 | Added `D-40` (Admin Portal foundation A0 — RBAC primitives + `(admin)` route group; closes TD-95 via partial unique index; A1..A4 follow as separate sub-projects). |
 | 2.9 | 2026-05-24 | Added `D-38` (share-post OG meta served by Railway Hono server; eliminates Supabase-domain leak from share URL and redirect chain; replaces `serve dist --single`). |
 | 2.9 | 2026-05-24 | Added `D-38` (profile display: `public.users` canonical; sync Auth `user_metadata` on write + cold-start reconcile; My Profile no JWT fallback). |

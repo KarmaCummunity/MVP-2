@@ -1,6 +1,6 @@
 # 2.11 Settings
 
-> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name; About `support@karma.community` mailto is un-owned (use `karmacommunity2.0@gmail.com`). TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`.
+> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name; About `support@karma.community` mailto is un-owned (use `karmacommunity2.0@gmail.com`). TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`. ⏳ **FR-SETTINGS-015..017** (Surveys & feedback hub, server-driven survey runner, free feedback form) — Planned, not yet implemented (BACKLOG P2.34).
 
 
 
@@ -274,7 +274,48 @@ The MVP does not allow self-service phone/email changes; the Settings screen exp
 
 ---
 
+## FR-SETTINGS-015 — Surveys & feedback hub
+
+**Status.** ⏳ Planned
+
+**Description.** Settings section "סקרים וחוות דעת" listing active server-driven surveys and a free-feedback entry.
+
+**Acceptance Criteria.**
+- AC1. Section appears between My Stats and Support (adjust FR-SETTINGS-001 order note).
+- AC2. Each active survey row shows title, status chip (not started / in progress / completed for current version), navigates to FR-SETTINGS-016.
+- AC3. Row "חוות דעת חופשית" navigates to FR-SETTINGS-017 (not FR-MOD-002).
+- AC4. List data comes from server (`list_active_surveys`); empty state copy when no surveys active.
+
+---
+
+## FR-SETTINGS-016 — Server-driven survey runner
+
+**Status.** ⏳ Planned
+
+**Acceptance Criteria.**
+- AC1. One question visible; compact top map: number + short label (≤2 words) + completion dot; non-linear jump.
+- AC2. Each question: required rating 1–7 + optional text (max 500 chars); per-question anchor labels (low/high) loaded from server; Hebrew RTL placeholders.
+- AC3. Floating prev/next controls above tab bar; never hidden behind shell chrome.
+- AC4. Answers upserted per `(user_id, survey_id, version, question_id)`; user may edit while current version unchanged.
+- AC5. New published version resets completion for that survey; banner may reappear per FR-SETTINGS-016 AC6.
+- AC6. Prompt banner when milestones met and survey incomplete: CTA + "אחר כך" snoozes 7 days (AsyncStorage key `kc-survey-snooze-{slug}`).
+- AC7. Question copy editable in Supabase without app deploy (`publish_survey_version` RPC).
+
+---
+
+## FR-SETTINGS-017 — Free feedback form
+
+**Status.** ⏳ Planned
+
+**Acceptance Criteria.**
+- AC1. Optional 1–7 rating + required text (min 10 chars, max 500).
+- AC2. Submits to `user_feedback` table; success toast; no chat thread.
+- AC3. Does not replace FR-SETTINGS-008.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.5 and Decisions D-5, D-12, D-14. |
 | 0.2 | 2026-05-19 | Added FR-SETTINGS-014 (Appearance — light / dark / system) per PM request. |
+| 0.3 | 2026-05-26 | Added FR-SETTINGS-015..017 (Surveys & feedback hub, server-driven survey runner, free feedback form). Updated status header with ⏳ note. |
