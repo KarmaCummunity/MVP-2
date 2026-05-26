@@ -1504,6 +1504,11 @@ export type Database = {
             }[]
           }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
+      get_my_admin_roles: { Args: never; Returns: string[] }
+      has_admin_role: {
+        Args: { role_name: string; uid: string }
+        Returns: boolean
+      }
       has_blocked: {
         Args: { blocked: string; blocker: string }
         Returns: boolean
@@ -1658,6 +1663,20 @@ export type Database = {
         }
       }
       report_donation_link: { Args: { p_link_id: string }; Returns: undefined }
+      reports_case_detail: {
+        Args: { p_target_id: string; p_target_type: string }
+        Returns: Json
+      }
+      reports_open_inbox: {
+        Args: {
+          p_cursor?: Json
+          p_limit?: number
+          p_max_age_days?: number
+          p_reporter_filter?: string
+          p_target_type_filter?: string
+        }
+        Returns: Json
+      }
       rpc_chat_hide_for_viewer: {
         Args: { p_chat_id: string }
         Returns: undefined
