@@ -121,7 +121,13 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 2, retry: 2 },
+    queries: {
+      staleTime: 10 * 60_000,       // 10 min default — most data is fine for 10 min
+      gcTime: 30 * 60_000,          // 30 min — keep in memory longer
+      refetchOnWindowFocus: false,  // explicit; Realtime + per-query overrides handle live data
+      refetchOnMount: true,         // default — respects staleTime
+      retry: 2,
+    },
   },
 });
 
