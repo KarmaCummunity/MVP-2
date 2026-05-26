@@ -18,7 +18,7 @@ export function ComingSoon({ subProject, description }: ComingSoonProps): ReactE
       <Text style={styles.subtitle}>{description ?? t[key]}</Text>
       <Pressable
         style={styles.back}
-        onPress={() => router.replace('/(admin)' as never)}
+        onPress={() => router.replace('/(admin)')}
         accessibilityRole="button"
       >
         <Text style={styles.backText}>{t.back}</Text>

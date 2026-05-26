@@ -189,6 +189,11 @@ function ThemedRootShell() {
               <Stack.Screen name="(guest)" />
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
+              {/* FR-ADMIN-011 AC1 — register the admin group at the root so
+                  native stack navigation can resolve `/(admin)` targets.
+                  Without this, `router.push('/(admin)')` is a no-op on iOS /
+                  Android (web URL routing falls back to resolved path). */}
+              <Stack.Screen name="(admin)" />
               <Stack.Screen name="auth/callback" />
               <Stack.Screen name="auth/verify" />
               {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
