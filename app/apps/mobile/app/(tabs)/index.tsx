@@ -25,6 +25,15 @@ import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { useFeedRealtime } from '../../src/hooks/useFeedRealtime';
 import { useFirstPostNudge } from '../../src/hooks/useFirstPostNudge';
 import { getFeedUseCase } from '../../src/services/postsComposition';
+import { startMark } from '../../src/lib/observability/perfMarks';
+
+// Module-scope guard: fires once per JS context (cold home-tab mount).
+let feedFirstRenderStarted = false;
+if (!feedFirstRenderStarted) {
+  feedFirstRenderStarted = true;
+  startMark('feed.first_render');
+  startMark('image.first_paint');
+}
 
 export default function HomeFeedScreen() {
   const router = useRouter();

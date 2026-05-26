@@ -15,6 +15,7 @@ import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { AvatarInitials } from './AvatarInitials';
 import { PostMenuButton } from './post/PostMenuButton';
 import { usePostCardGridStyles } from './PostCardGrid.styles';
+import { finishMark } from '../lib/observability/perfMarks';
 
 const STORAGE_BUCKET = 'post-images';
 const OWNER_AVATAR_SIZE = 24;
@@ -65,6 +66,10 @@ export function PostCardGrid({
   const placeholderBg = isGive ? colors.primarySurface : `${colors.secondary}18`;
   const economicRole = identityRole ? deriveEconomicRole(post.type, identityRole) : null;
 
+  const onImageLoadOnce = React.useCallback(() => {
+    finishMark('image.first_paint');
+  }, []);
+
   const navigateToPost = () => {
     if (onPressOverride) {
       onPressOverride();
@@ -85,7 +90,7 @@ export function PostCardGrid({
     >
       <View style={[styles.imageArea, { height: cardWidth * 0.78, backgroundColor: placeholderBg }]}>
         {firstImageUrl ? (
-          <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" />
+          <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" onLoad={onImageLoadOnce} />
         ) : (
           <View style={styles.placeholderTint}>
             <Ionicons
