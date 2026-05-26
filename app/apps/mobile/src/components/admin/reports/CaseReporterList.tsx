@@ -1,13 +1,15 @@
 // app/apps/mobile/src/components/admin/reports/CaseReporterList.tsx
 // FR-ADMIN-013 — list of reporters attached to a case (name, status, reason, note, time).
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import type { ReportCaseReporter } from '@kc/domain';
+import { makeUseStyles } from '@kc/ui';
 
 export interface CaseReporterListProps {
   readonly reporters: readonly ReportCaseReporter[];
 }
 
 export function CaseReporterList({ reporters }: CaseReporterListProps) {
+  const styles = useStyles();
   if (reporters.length === 0) {
     return (
       <View style={styles.empty}>
@@ -32,9 +34,9 @@ export function CaseReporterList({ reporters }: CaseReporterListProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors }) => ({
   list:      { gap: 12 },
-  item:      { padding: 12, borderRadius: 8, backgroundColor: '#fafafa', gap: 4 },
+  item:      { padding: 12, borderRadius: 8, backgroundColor: colors.skeleton, gap: 4 },
   head:      { flexDirection: 'row', justifyContent: 'space-between' },
   name:      { fontSize: 14, fontWeight: '600' },
   status:    { fontSize: 12, opacity: 0.6 },
@@ -43,4 +45,4 @@ const styles = StyleSheet.create({
   time:      { fontSize: 11, opacity: 0.5 },
   empty:     { padding: 24, alignItems: 'center' },
   emptyText: { fontSize: 14, opacity: 0.5 },
-});
+}));

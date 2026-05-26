@@ -8,6 +8,7 @@ export const moderationHe = {
       submit: 'שלח דיווח',
       successToast: '✅ הדיווח התקבל. הצוות שלנו יבדוק.',
       duplicateError: 'כבר דיווחת על משתמש זה ב-24 השעות האחרונות.',
+      alreadyModeratedError: 'המשתמש כבר טופל על ידי המנהלים. תודה על העזרה.',
     },
   },
   reasons: {

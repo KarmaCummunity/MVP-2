@@ -928,10 +928,24 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+### D-41 — Support issues (Settings → "Report an issue") intentionally do not populate `public.reports`
+
+**Date:** 2026-05-26
+**Status:** Accepted
+
+**Decision.** Support tickets submitted via `rpc_submit_support_issue` continue to flow exclusively into a 1:1 support chat with the super admin (system message kind `'support_issue'`). They do NOT INSERT into `public.reports` and therefore do not appear in the Admin Portal Reports Dashboard (FR-ADMIN-012).
+
+**Rationale.** Tickets and moderation reports have different lifecycles, different escalation paths, and different audit needs. Conflating them into a single inbox would force the moderation UI to handle a payload it isn't designed for (free-text description, no target). When A3 Internal Tasks lands, the admin team will track ticket follow-ups there.
+
+**Implication.** The two surfaces stay separate: moderation work happens in `/admin/reports`; tickets stay in the support chat and (eventually) in `/admin/tasks`. Closes TD-94 sub-item (1) by reclassifying it as "by design" rather than a defect.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.1 | 2026-05-26 | Added `D-41` (support tickets vs moderation reports stay on separate surfaces; closes TD-94 sub-item (1) as intentional). |
 | 3.0 | 2026-05-25 | Added `D-40` (Admin Portal foundation A0 — RBAC primitives + `(admin)` route group; closes TD-95 via partial unique index; A1..A4 follow as separate sub-projects). |
 | 2.9 | 2026-05-24 | Added `D-38` (share-post OG meta served by Railway Hono server; eliminates Supabase-domain leak from share URL and redirect chain; replaces `serve dist --single`). |
 | 2.9 | 2026-05-24 | Added `D-38` (profile display: `public.users` canonical; sync Auth `user_metadata` on write + cold-start reconcile; My Profile no JWT fallback). |

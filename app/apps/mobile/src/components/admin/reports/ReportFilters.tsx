@@ -3,6 +3,7 @@
 import { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import type { ListOpenReportsFilters } from '@kc/application';
+import { makeUseStyles } from '@kc/ui';
 import he from '../../../i18n/locales/he';
 
 export interface ReportFiltersProps {
@@ -19,6 +20,7 @@ const TYPES: ReadonlyArray<{ readonly key: 'all' | 'post' | 'user' | 'chat'; rea
 
 export function ReportFilters({ value, onChange }: ReportFiltersProps) {
   const [reporter, setReporter] = useState(value.reporterId ?? '');
+  const styles = useStyles();
 
   return (
     <View style={styles.root}>
@@ -62,12 +64,12 @@ export function ReportFilters({ value, onChange }: ReportFiltersProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  root:           { gap: 8, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: '#eee' },
+const useStyles = makeUseStyles(({ colors }) => ({
+  root:           { gap: 8, padding: 12, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   row:            { gap: 8, paddingRight: 12 },
-  chip:           { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: '#f5f5f5' },
-  chipActive:     { backgroundColor: '#eef2ff' },
+  chip:           { paddingHorizontal: 12, paddingVertical: 6, borderRadius: 999, backgroundColor: colors.skeleton },
+  chipActive:     { backgroundColor: colors.secondaryLight },
   chipText:       { fontSize: 12 },
   chipTextActive: { fontWeight: '600' },
-  search:         { paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: '#eee', borderRadius: 8, fontSize: 14 },
-});
+  search:         { paddingHorizontal: 12, paddingVertical: 8, borderWidth: 1, borderColor: colors.border, borderRadius: 8, fontSize: 14 },
+}));

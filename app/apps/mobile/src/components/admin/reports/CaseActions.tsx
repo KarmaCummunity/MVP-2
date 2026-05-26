@@ -3,7 +3,8 @@
 // Buttons are wholly driven by PERMISSION_MATRIX in @kc/domain. Adding a new
 // action in a future iteration is: matrix entry + action id + i18n label.
 import { useState } from 'react';
-import { Alert, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
+import { Alert, Pressable, Text, View, Platform } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   type AdminPermission,
   type AdminRole,
@@ -11,6 +12,7 @@ import {
   type AdminReportTargetType,
   hasPermission,
 } from '@kc/domain';
+import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { useAuthStore } from '../../../store/authStore';
@@ -41,6 +43,8 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
   const { roles } = useAdminRoles();
   const adminId = useAuthStore((s) => s.session?.userId ?? null);
   const [busy, setBusy] = useState(false);
+  const queryClient = useQueryClient();
+  const styles = useStyles();
 
   async function run(action: ActionId): Promise<void> {
     const ok = await confirmDialog(he.admin.caseDetail.confirmDialog.message);
@@ -84,6 +88,7 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
           // it as a no-op stub so the action shape stays stable.
           break;
       }
+      await queryClient.invalidateQueries({ queryKey: ['admin.reports.inbox'] });
       onActed();
     } finally {
       setBusy(false);
@@ -144,6 +149,7 @@ interface ActionButtonProps {
 }
 
 function ActionButton({ label, disabled, onPress, variant }: ActionButtonProps) {
+  const styles = useStyles();
   return (
     <Pressable
       onPress={onPress}
@@ -156,11 +162,13 @@ function ActionButton({ label, disabled, onPress, variant }: ActionButtonProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors }) => ({
   row:           { flexDirection: 'row', flexWrap: 'wrap', gap: 8, padding: 12 },
-  btn:           { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: '#eef2ff' },
-  btnDanger:     { backgroundColor: '#fee2e2' },
+  btn:           { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.secondaryLight },
+  btnDanger:     { backgroundColor: colors.errorLight },
   btnDisabled:   { opacity: 0.5 },
   btnText:       { fontSize: 13, fontWeight: '600' },
+  // TD-130: no semantic "on-errorLight strong text" token in light palette; keep
+  // the hex until tokens add an `errorStrong`/`onErrorLight` entry.
   btnTextDanger: { color: '#7f1d1d' },
-});
+}));
