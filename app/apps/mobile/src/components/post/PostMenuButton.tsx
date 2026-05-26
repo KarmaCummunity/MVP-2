@@ -6,8 +6,9 @@ import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
 import { makeUseStyles, useTheme } from '@kc/ui';
+import { hasPermission, type AdminRole } from '@kc/domain';
 import { useAuthStore } from '../../store/authStore';
-import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
+import { useAdminRoles } from '../../hooks/useAdminRoles';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { PostMenuSheet } from './PostMenuSheet';
 import { usePostSavedActions } from '../../hooks/usePostSavedActions';
@@ -37,7 +38,8 @@ export function PostMenuButton({
   const styles = usePostMenuButtonStyles();
   const { colors } = useTheme();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
-  const isSuperAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canManuallyRemovePost = hasPermission(roles as readonly AdminRole[], 'reports.manual_remove_post');
   const [open, setOpen] = useState(false);
   const { isSaved, busy: saveBusy, toggleSave } = usePostSavedActions(post.postId);
 
@@ -73,7 +75,7 @@ export function PostMenuButton({
         onClose={() => setOpen(false)}
         post={post}
         viewerId={viewerId}
-        isSuperAdmin={isSuperAdmin}
+        isSuperAdmin={canManuallyRemovePost}
         isSaved={isSaved}
         saveBusy={saveBusy}
         onToggleSave={toggleSave}
