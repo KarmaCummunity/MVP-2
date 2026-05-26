@@ -25,6 +25,7 @@ import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { container } from '../../src/lib/container';
+import { track } from '../../src/lib/analytics';
 
 const MIN_BODY = 10;
 const MAX_BODY = 500;
@@ -64,6 +65,7 @@ export default function FreeFeedbackScreen() {
     setSubmitting(true);
     try {
       await container.submitFreeFeedback.execute({ rating, body });
+      track('feedback_submitted');
       showToast(t('survey.feedbackSuccessToast'), 'success', 2200);
       router.back();
     } catch {

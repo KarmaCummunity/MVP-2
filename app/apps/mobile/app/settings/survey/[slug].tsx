@@ -1,6 +1,6 @@
 // Settings → survey runner — FR-SETTINGS-016.
 // Loads a SurveyBundle, lets the user answer each question, and debounce-saves.
-import React from 'react';
+import React, { useEffect, useRef } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -29,6 +29,7 @@ import {
 import { webTextRtl, webViewRtl } from '../../../src/lib/webRtlStyle';
 import { container } from '../../../src/lib/container';
 import { useSurveyRunnerState } from '../../../src/hooks/useSurveyRunnerState';
+import { track } from '../../../src/lib/analytics';
 import { SurveyQuestionPanel } from './SurveyQuestionPanel';
 
 // ─── types ───────────────────────────────────────────────────────────────────
@@ -148,6 +149,28 @@ export default function SurveyRunnerScreen() {
 
   const floatNavBottom = shellTabBarHeightPx(tabBarVisible) + insets.bottom + spacing.md;
   const scrollBottomPad = SURVEY_FLOAT_NAV_CLEARANCE + floatNavBottom + spacing.lg;
+
+  // Analytics: survey_opened on first render once the bundle is loaded.
+  const openTrackedRef = useRef(false);
+  useEffect(() => {
+    if (bundle && !openTrackedRef.current) {
+      openTrackedRef.current = true;
+      track('survey_opened', { slug, version: bundle.version });
+    }
+  }, [bundle, slug]);
+
+  // Analytics: survey_completed when all questions have a rating.
+  const completedTrackedRef = useRef(false);
+  useEffect(() => {
+    if (!bundle || completedTrackedRef.current) return;
+    const total = bundle.questions.length;
+    if (total === 0) return;
+    const answeredCount = Object.values(answers).filter((a) => a.rating != null).length;
+    if (answeredCount >= total) {
+      completedTrackedRef.current = true;
+      track('survey_completed', { slug, version: bundle.version });
+    }
+  }, [answers, bundle, slug]);
 
   function renderBody() {
     if (bundleQuery.isLoading) {

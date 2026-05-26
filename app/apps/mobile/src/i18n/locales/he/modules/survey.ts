@@ -41,4 +41,10 @@ export const surveyHe = {
   feedbackErrorBodyTooShort: 'הטקסט חייב להכיל לפחות 10 תווים.',
   feedbackErrorBodyTooLong: 'הטקסט לא יכול לעלות על 500 תווים.',
   feedbackErrorGeneric: 'שליחה נכשלה. נסה שוב.',
+
+  // Prompt banner (FR-SETTINGS-016 AC6)
+  bannerTitle: 'יש לנו שאלה אליך',
+  bannerBody: 'עזור לנו לשפר את הקהילה — פחות מדקה.',
+  bannerCta: 'מלא סקר',
+  bannerSnooze: 'אחר כך',
 } as const;
