@@ -3,6 +3,7 @@ import type { ReactElement } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { AdminRole } from '@kc/domain';
 import { useAdminRoles } from '../../src/hooks/useAdminRoles';
+import { useReportsInbox } from '../../src/hooks/useReportsInbox';
 import he from '../../src/i18n/locales/he';
 
 const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
@@ -10,6 +11,11 @@ const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
 export default function AdminDashboard(): ReactElement {
   const { roles } = useAdminRoles();
   const t = he.admin.dashboard;
+  const inbox = useReportsInbox({});
+  const firstPage = inbox.data?.pages[0];
+  const openReportsLabel = firstPage
+    ? `${firstPage.rows.length}${firstPage.nextCursor ? '+' : ''}`
+    : t.comingSoonKpi;
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
@@ -31,7 +37,7 @@ export default function AdminDashboard(): ReactElement {
       <View style={styles.kpis}>
         <View style={styles.kpi}>
           <Text style={styles.kpiLabel}>{t.openReportsKpi}</Text>
-          <Text style={styles.kpiValue}>{t.comingSoonKpi}</Text>
+          <Text style={styles.kpiValue}>{openReportsLabel}</Text>
         </View>
         <View style={styles.kpi}>
           <Text style={styles.kpiLabel}>{t.openTasksKpi}</Text>
