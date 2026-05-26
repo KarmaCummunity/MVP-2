@@ -1446,10 +1446,8 @@ export type Database = {
               p_filter_center_city?: string
               p_filter_item_conditions?: string[]
               p_filter_radius_km?: number
-              p_filter_search_query?: string
               p_filter_status?: string
               p_filter_type?: string
-              p_followers_only?: boolean
               p_page_limit?: number
               p_proximity_sort_city?: string
               p_sort_order?: string
@@ -1469,8 +1467,10 @@ export type Database = {
               p_filter_center_city?: string
               p_filter_item_conditions?: string[]
               p_filter_radius_km?: number
+              p_filter_search_query?: string
               p_filter_status?: string
               p_filter_type?: string
+              p_followers_only?: boolean
               p_page_limit?: number
               p_proximity_sort_city?: string
               p_sort_order?: string
