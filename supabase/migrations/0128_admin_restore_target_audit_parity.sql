@@ -1,4 +1,4 @@
--- 0126_admin_restore_target_audit_parity | FR-ADMIN-007 — closes TD-94 (5)
+-- 0128_admin_restore_target_audit_parity | FR-ADMIN-007 — closes TD-94 (5)
 --
 -- Symmetry fix: auto_remove_target writes metadata {distinct_reporters: N}
 -- (see reports_after_insert_apply_effects in 0125). The companion

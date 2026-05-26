@@ -224,7 +224,7 @@ d('admin portal hardening (integration)', () => {
 
   // ── 4. target_already_moderated raises SQLSTATE P0020 ─────────────────────
   it('reporting an already-moderated post raises P0020 target_already_moderated (defense in depth)', async () => {
-    // Migration 0127 surfaces P0020 'target_already_moderated' as a
+    // Migration 0129 surfaces P0020 'target_already_moderated' as a
     // defense-in-depth check ordered BEFORE the visibility gate. In practice,
     // the public RLS policies already hide moderated rows from non-owner
     // viewers, so a regular reporter falls through to
