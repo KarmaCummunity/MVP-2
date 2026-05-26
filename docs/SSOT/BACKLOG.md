@@ -94,6 +94,7 @@
 | INFRA-CI-MAIN-P1 | Main-production CI/CD P1: pin Supabase CLI 2.99.0, web build gate on `main` PRs, prod smoke workflow, `RELEASE_CHECKLIST.md` | infra | ✅ Done | `docs/SSOT/RELEASE_CHECKLIST.md`, `docs/SSOT/ENVIRONMENTS.md` |
 | INFRA-CI-SPLIT-GUARDS | Split CI into `ci-frontend` / `ci-backend` / `ci-contract` / `ci-pr` workflows with path filters; add migration-chain guard, RLS lint, RPC contract, `database.types.ts` drift, manifest parity, local-stack sqlProbes | infra | ✅ Done | `docs/superpowers/plans/2026-05-22-ci-split-and-backend-guards.md` |
 | PERF-1 | Performance Wave 0 — Sentry crash + perf instrumentation + Edge Function timing logger | infra | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 0; `docs/superpowers/plans/2026-05-25-perf-wave-0-observability.md` |
+| PERF-2 | Performance Wave 1 — KCImage + transform URLs + React.memo + Zustand selectors + memoized date/URL composition | agent-fe | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 1; `docs/superpowers/plans/2026-05-25-perf-wave-1-images-rerenders.md` |
 
 ---
 
