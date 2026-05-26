@@ -7,6 +7,11 @@ export type Json =
   | Json[]
 
 export type Database = {
+  // Allows to automatically instantiate createClient with right options
+  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
+  __InternalSupabase: {
+    PostgrestVersion: "14.5"
+  }
   public: {
     Tables: {
       about_team_members: {
@@ -34,6 +39,58 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "about_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      admin_role_grants: {
+        Row: {
+          grant_id: string
+          granted_at: string
+          granted_by: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          grant_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          grant_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_role_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -1071,6 +1128,196 @@ export type Database = {
           },
         ]
       }
+      survey_answers: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          id: string
+          question_id: string
+          rating: number
+          survey_id: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          rating: number
+          survey_id: string
+          updated_at?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          rating?: number
+          survey_id?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          context_he: string
+          id: string
+          prompt_he: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          rating_anchor_high_he: string
+          rating_anchor_low_he: string
+          short_label_he: string
+          sort_order: number
+          survey_version_id: string
+          text_placeholder_he: string
+        }
+        Insert: {
+          context_he?: string
+          id?: string
+          prompt_he: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          rating_anchor_high_he?: string
+          rating_anchor_low_he?: string
+          short_label_he: string
+          sort_order: number
+          survey_version_id: string
+          text_placeholder_he?: string
+        }
+        Update: {
+          context_he?: string
+          id?: string
+          prompt_he?: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          rating_anchor_high_he?: string
+          rating_anchor_low_he?: string
+          short_label_he?: string
+          sort_order?: number
+          survey_version_id?: string
+          text_placeholder_he?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_version_id_fkey"
+            columns: ["survey_version_id"]
+            isOneToOne: false
+            referencedRelation: "survey_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_versions: {
+        Row: {
+          id: string
+          published_at: string
+          published_by: string
+          survey_id: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          published_at?: string
+          published_by: string
+          survey_id: string
+          version: number
+        }
+        Update: {
+          id?: string
+          published_at?: string
+          published_by?: string
+          survey_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_versions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          created_at: string
+          current_version: number
+          description_he: string | null
+          id: string
+          is_active: boolean
+          prompt_rules: Json
+          slug: string
+          title_he: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_version?: number
+          description_he?: string | null
+          id?: string
+          is_active?: boolean
+          prompt_rules?: Json
+          slug: string
+          title_he: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_version?: number
+          description_he?: string | null
+          id?: string
+          is_active?: boolean
+          prompt_rules?: Json
+          slug?: string
+          title_he?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_feedback: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       user_legal_acceptances: {
         Row: {
           accepted_at: string
@@ -1322,6 +1569,10 @@ export type Database = {
         Args: { p_owner: string; p_viewer: string }
         Returns: number
       }
+      admin_assert_role: {
+        Args: { allowed: string[]; uid: string }
+        Returns: undefined
+      }
       admin_audit_lookup: {
         Args: { p_limit?: number; p_user_id: string }
         Returns: {
@@ -1386,6 +1637,10 @@ export type Database = {
           reason: string
           until_at: string
         }[]
+      }
+      check_survey_prompt_eligibility: {
+        Args: { p_session_count: number; p_slug: string }
+        Returns: Json
       }
       close_post_with_recipient: {
         Args: { p_post_id: string; p_recipient_user_id: string }
@@ -1480,6 +1735,12 @@ export type Database = {
             }[]
           }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
+      get_my_admin_roles: { Args: never; Returns: string[] }
+      get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      has_admin_role: {
+        Args: { role_name: string; uid: string }
+        Returns: boolean
+      }
       has_blocked: {
         Args: { blocked: string; blocker: string }
         Returns: boolean
@@ -1513,6 +1774,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_active_surveys: { Args: never; Returns: Json }
       needs_legal_reacknowledgement: {
         Args: never
         Returns: {
@@ -1568,6 +1830,17 @@ export type Database = {
           p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
           p_effective_date: string
           p_severity: string
+        }
+        Returns: Json
+      }
+      publish_survey_version: {
+        Args: {
+          p_description_he: string
+          p_is_active: boolean
+          p_prompt_rules: Json
+          p_questions: Json
+          p_slug: string
+          p_title_he: string
         }
         Returns: Json
       }
@@ -1632,6 +1905,20 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      reports_case_detail: {
+        Args: { p_target_id: string; p_target_type: string }
+        Returns: Json
+      }
+      reports_open_inbox: {
+        Args: {
+          p_cursor?: Json
+          p_limit?: number
+          p_max_age_days?: number
+          p_reporter_filter?: string
+          p_target_type_filter?: string
+        }
+        Returns: Json
       }
       report_donation_link: { Args: { p_link_id: string }; Returns: undefined }
       rpc_chat_hide_for_viewer: {
@@ -1726,6 +2013,10 @@ export type Database = {
       }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
       suspension_expiry_lift: { Args: never; Returns: number }
+      upsert_survey_answers: {
+        Args: { p_answers: Json; p_slug: string }
+        Returns: undefined
+      }
       users_merge_notification_preferences: {
         Args: { p_merge: Json; p_user_id: string }
         Returns: Json
@@ -1733,6 +2024,7 @@ export type Database = {
     }
     Enums: {
       legal_doc_type: "terms" | "privacy"
+      survey_question_type: "rating_1_7_with_optional_text"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1861,7 +2153,7 @@ export const Constants = {
   public: {
     Enums: {
       legal_doc_type: ["terms", "privacy"],
+      survey_question_type: ["rating_1_7_with_optional_text"],
     },
   },
 } as const
-
