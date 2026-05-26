@@ -4,6 +4,7 @@ import type { DonationLinkSearchResult, SearchFilters, UserSearchResult } from '
 import type { PostWithOwner } from '@kc/application';
 import type { Database } from '../database.types';
 import { POST_SELECT_OWNER, mapPostWithOwnerRow, type PostWithOwnerJoinedRow } from '../posts/mapPostRow';
+import { applyPostActorIdentityProjectionBatch } from '../posts/applyPostActorIdentityProjection';
 import { type LinkRow, type SearchUserRow, mapUserSearchResult, mapLinkSearchResult } from './searchMappers';
 import { toSearchBucket, type SearchBucket } from './searchBucket';
 import { escapeIlike, findMatchingCategorySlug } from './searchUtils';
@@ -17,6 +18,7 @@ export async function searchPosts(
   query: string,
   f: SearchFilters,
   limit: number,
+  viewerId?: string | null,
 ): Promise<SearchBucket<PostWithOwner>> {
   const esc = escapeIlike(query);
   let q = c
@@ -29,7 +31,8 @@ export async function searchPosts(
   if (f.city) q = q.eq('city', f.city);
   const { data, count, error } = await q.order('created_at', { ascending: false }).limit(limit);
   if (error) throw new Error(`searchPosts: ${error.message}`);
-  const items = ((data ?? []) as unknown as PostWithOwnerJoinedRow[]).map(mapPostWithOwnerRow);
+  const raw = ((data ?? []) as unknown as PostWithOwnerJoinedRow[]).map(mapPostWithOwnerRow);
+  const items = await applyPostActorIdentityProjectionBatch(c, raw, viewerId ?? null);
   return toSearchBucket(items, count);
 }
 
