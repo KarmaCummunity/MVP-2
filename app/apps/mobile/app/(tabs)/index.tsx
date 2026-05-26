@@ -10,6 +10,7 @@ import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
+import { useShallow } from 'zustand/react/shallow';
 import type { PostWithOwner } from '@kc/application';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { TopBar } from '../../src/components/TopBar';
@@ -40,7 +41,28 @@ export default function HomeFeedScreen() {
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
-  const filter = useFilterStore();
+  const filter = useFilterStore(
+    useShallow((s) => ({
+      type: s.type,
+      categories: s.categories,
+      itemConditions: s.itemConditions,
+      locationFilter: s.locationFilter,
+      statusFilter: s.statusFilter,
+      sortOrder: s.sortOrder,
+      proximitySortCity: s.proximitySortCity,
+      proximitySortCityName: s.proximitySortCityName,
+      followersOnly: s.followersOnly,
+      setType: s.setType,
+      setCategories: s.setCategories,
+      setItemConditions: s.setItemConditions,
+      setLocationFilter: s.setLocationFilter,
+      setStatusFilter: s.setStatusFilter,
+      setSortOrder: s.setSortOrder,
+      setProximitySortCity: s.setProximitySortCity,
+      setFollowersOnly: s.setFollowersOnly,
+      clearAll: s.clearAll,
+    })),
+  );
   const activeCount = useFilterStore((s) => s.activeCount());
   const newPostsCount = useFeedSessionStore((s) => s.newPostsCount);
   const resetNewPosts = useFeedSessionStore((s) => s.resetNewPosts);
