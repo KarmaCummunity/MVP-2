@@ -1,4 +1,6 @@
-// UI-only survey layout demo — no server, no persistence. For design review.
+// Dev-only design QA route — kept under __DEV__ until product confirms removal.
+// The production survey runner lives at app/settings/survey/[slug].tsx and
+// consumes the live ux-experience survey from Supabase. See FR-SETTINGS-016.
 import React, { useMemo, useState } from 'react';
 import {
   KeyboardAvoidingView,
@@ -49,6 +51,8 @@ function emptyAnswers(): Record<string, DemoAnswer> {
 }
 
 export default function SurveyDemoScreen() {
+  // All hooks must run unconditionally (Rules of Hooks). The __DEV__ gate is
+  // applied after all hooks have been called.
   const detailStackScreenOptions = useDetailStackScreenOptions();
   const { colors } = useTheme();
   const bp = useBreakpoint();
@@ -59,12 +63,12 @@ export default function SurveyDemoScreen() {
   const questions = useSurveyDemoQuestions();
   const useSideRail = bp === 'tablet' || bp === 'desktop' || bp === 'wide';
 
+  const [activeIndex, setActiveIndex] = useState(0);
+  const [answers, setAnswers] = useState<Record<string, DemoAnswer>>(emptyAnswers);
+
   const floatNavBottom = shellTabBarHeightPx(tabBarVisible) + insets.bottom + spacing.md;
   const scrollBottomPad =
     SURVEY_FLOAT_NAV_CLEARANCE + floatNavBottom + spacing.lg;
-
-  const [activeIndex, setActiveIndex] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, DemoAnswer>>(emptyAnswers);
 
   const question = questions[activeIndex] as SurveyDemoQuestion;
   const answer = answers[question.id] ?? { rating: null, text: '' };
@@ -89,6 +93,8 @@ export default function SurveyDemoScreen() {
     }),
     [questions, activeIndex, answers],
   );
+
+  if (!__DEV__) return null;
 
   return (
     <SafeAreaView style={styles.safe} edges={['left', 'right']}>
