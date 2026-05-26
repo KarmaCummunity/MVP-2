@@ -79,7 +79,7 @@
 
 | ID | Task | Owner | Status | Spec |
 |----|------|-------|--------|------|
-| V2.1 | Rides V2.0 (FR-RIDE-001..010) | agent-fullstack | 🟡 In progress | `spec/15_rides.md` |
+| V2.1 | Rides V2.0 (FR-RIDE-001..010) | agent-fullstack | ✅ Done | `spec/15_rides.md` |
 
 ## P3 — Post-MVP (Deferred)
 

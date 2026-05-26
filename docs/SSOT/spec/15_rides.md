@@ -1,6 +1,6 @@
 # 2.14 Rides (Hitchhiking V2.0)
 
-> **Status:** 🟡 In progress — V2.0 minimal product per design 2026-05-26.
+> **Status:** ✅ Complete — V2.0 minimal product shipped on `feat/FR-RIDE-rides-v2` (2026-05-26). Requires migration `0122_ride_listings.sql` on dev DB before runtime use.
 
 Prefix: `FR-RIDE-*`
 
