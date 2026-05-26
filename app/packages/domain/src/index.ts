@@ -13,3 +13,4 @@ export * from './postActorIdentity';
 export * from './aboutTeam';
 export * from './legal';
 export * from './admin';
+export * from './reports';
