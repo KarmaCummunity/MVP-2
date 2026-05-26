@@ -36,16 +36,10 @@ export class SupabaseChatRepository implements IChatRepository {
   async findOrCreateChat(
     userId: string,
     otherUserId: string,
-    anchorPostId?: string,
+    anchor?: { postId?: string; rideId?: string },
     options?: { preferNewThread?: boolean },
   ): Promise<Chat> {
-    return findOrCreateDmChat(
-      this.client,
-      userId,
-      otherUserId,
-      anchorPostId,
-      options,
-    );
+    return findOrCreateDmChat(this.client, userId, otherUserId, anchor, options);
   }
 
   async hideChatFromInbox(chatId: string): Promise<void> {

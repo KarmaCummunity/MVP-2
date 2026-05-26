@@ -902,6 +902,15 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+### D-41 — Dedicated `ride_listings` table (not `posts` extension)
+
+**Date:** 2026-05-26
+**Decision:** Hitchhiking ships as `ride_listings` + `features/rides/` module. Item posts remain unchanged.
+**Rationale:** Posts schema is item-shaped (single city address, item categories, closure/recipient). Rides need origin/dest cities, `departs_at`, seats, and a simpler status FSM. Extension ports allow join-approval and route matching later without migrating posts.
+**Affected:** `spec/15_rides.md`, migration `0122_ride_listings.sql`, chat `anchor_ride_id`.
+
+---
+
 ### D-40 — Replace in-chat moderation with a dedicated Admin Portal + RBAC
 
 **Date:** 2026-05-25

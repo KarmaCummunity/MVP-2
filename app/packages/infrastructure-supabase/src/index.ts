@@ -23,3 +23,4 @@ export { SupabaseLegalDocumentRepository } from './legal/SupabaseLegalDocumentRe
 export { LegalDocumentCache, type AsyncKVStorage } from './legal/legalCache';
 export * from './admin/SupabaseAdminRoleRepository';
 export * from './reports/SupabaseReportsRepository';
+export { SupabaseRideListingRepository } from './rides/SupabaseRideListingRepository';
