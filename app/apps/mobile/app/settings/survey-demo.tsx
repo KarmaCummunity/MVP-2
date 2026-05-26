@@ -18,17 +18,21 @@ import {
   useShellTabBarVisibility,
 } from '../../src/navigation/useShellTabBarVisibility';
 import { Card } from '../../src/components/ui/Card';
-import { SurveyQuestionMap } from '../../src/components/survey-demo/SurveyQuestionMap';
+import { SurveyQuestionMap } from '../../src/components/survey/SurveyQuestionMap';
 import {
   SURVEY_FLOAT_NAV_CLEARANCE,
   SurveyFloatingNav,
-} from '../../src/components/survey-demo/SurveyFloatingNav';
-import { SurveyRatingRow } from '../../src/components/survey-demo/SurveyRatingRow';
+} from '../../src/components/survey/SurveyFloatingNav';
+import { SurveyRatingRow } from '../../src/components/survey/SurveyRatingRow';
 import {
   SURVEY_DEMO_QUESTION_IDS,
   useSurveyDemoQuestions,
   type SurveyDemoQuestion,
 } from '../../src/components/survey-demo/surveyDemoQuestions';
+import {
+  toProductionAnswers,
+  toProductionQuestions,
+} from '../../src/components/survey-demo/surveyDemoAdapter';
 import {
   hebrewSurveyFieldTextStyle,
   SURVEY_TEXT_ALIGN,
@@ -78,9 +82,9 @@ export default function SurveyDemoScreen() {
 
   const mapProps = useMemo(
     () => ({
-      questions,
+      questions: toProductionQuestions(questions),
       activeIndex,
-      answers,
+      answers: toProductionAnswers(answers),
       onSelect: setActiveIndex,
     }),
     [questions, activeIndex, answers],

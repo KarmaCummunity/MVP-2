@@ -25,6 +25,7 @@ import { filtersHe } from './modules/filters';
 import { commonHe } from './modules/common';
 import { legalHe } from './modules/legal';
 import { surveyDemoHe } from './modules/surveyDemo';
+import { surveyHe } from './modules/survey';
 import { adminHe } from './modules/admin';
 
 const he = {
@@ -77,6 +78,9 @@ const he = {
 
   // Survey UX demo (internal preview) — see modules/surveyDemo.ts.
   surveyDemo: surveyDemoHe,
+
+  // Production surveys + free feedback (FR-SETTINGS-015..017) — see modules/survey.ts.
+  survey: surveyHe,
 
   // About — see modules/aboutContentBundle.ts (FR-SETTINGS About narrative)
   aboutContent: aboutContentMerged,

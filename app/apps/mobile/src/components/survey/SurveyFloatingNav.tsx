@@ -1,0 +1,151 @@
+// Production survey floating nav — bottom-anchored prev/next pills.
+// FR-SETTINGS-016 AC3: floating controls above tab bar, never hidden.
+import React from 'react';
+import { Pressable, Text, View, type ViewStyle } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
+
+type SurveyFloatingNavProps = {
+  readonly onPrev: () => void;
+  readonly onNext: () => void;
+  readonly prevDisabled: boolean;
+  readonly nextDisabled: boolean;
+  readonly bottom: number;
+};
+
+const DOCK_HORIZONTAL_INSETS: Pick<ViewStyle, 'left' | 'right'> = {
+  left: spacing.base,
+  right: spacing.base,
+};
+
+export function SurveyFloatingNav({
+  onPrev,
+  onNext,
+  prevDisabled,
+  nextDisabled,
+  bottom,
+}: SurveyFloatingNavProps) {
+  const styles = useNavStyles();
+  const { colors } = useTheme();
+  const { t } = useTranslation();
+
+  return (
+    <View
+      style={[styles.dock, DOCK_HORIZONTAL_INSETS, { bottom }]}
+      pointerEvents="box-none"
+    >
+      <Pressable
+        onPress={onPrev}
+        disabled={prevDisabled}
+        style={({ pressed }) => [
+          styles.pill,
+          styles.pillSecondary,
+          prevDisabled && styles.pillDisabled,
+          pressed && !prevDisabled && styles.pillPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={t('surveyDemo.navPrevA11y')}
+        accessibilityState={{ disabled: prevDisabled }}
+      >
+        <Ionicons
+          name="chevron-forward"
+          size={18}
+          color={prevDisabled ? colors.textDisabled : colors.textPrimary}
+        />
+        <Text style={[styles.pillText, prevDisabled && styles.pillTextDisabled]}>
+          {t('surveyDemo.navPrev')}
+        </Text>
+      </Pressable>
+
+      <Pressable
+        onPress={onNext}
+        disabled={nextDisabled}
+        style={({ pressed }) => [
+          styles.pill,
+          styles.pillPrimary,
+          nextDisabled && styles.pillDisabled,
+          pressed && !nextDisabled && styles.pillPressed,
+        ]}
+        accessibilityRole="button"
+        accessibilityLabel={t('surveyDemo.navNextA11y')}
+        accessibilityState={{ disabled: nextDisabled }}
+      >
+        <Text style={[styles.pillTextPrimary, nextDisabled && styles.pillTextDisabledOnPrimary]}>
+          {t('surveyDemo.navNext')}
+        </Text>
+        <Ionicons
+          name="chevron-back"
+          size={18}
+          color={nextDisabled ? colors.textDisabled : colors.textInverse}
+        />
+      </Pressable>
+    </View>
+  );
+}
+
+/** Reserve scroll space so content clears the floating nav pills. */
+export const SURVEY_FLOAT_NAV_CLEARANCE = 52;
+
+const useNavStyles = makeUseStyles(({ colors, isDark }) => ({
+  dock: {
+    position: 'absolute',
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    zIndex: 20,
+    ...webViewRtl,
+  },
+  pill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.xs,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
+    borderRadius: radius.full,
+    minHeight: 48,
+    shadowColor: colors.shadow,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.35 : 0.14,
+    shadowRadius: 10,
+    elevation: 10,
+    ...webViewRtl,
+  },
+  pillSecondary: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  pillPrimary: {
+    backgroundColor: colors.primary,
+    borderWidth: 0,
+  },
+  pillDisabled: {
+    opacity: 0.55,
+    shadowOpacity: 0,
+    elevation: 0,
+  },
+  pillPressed: {
+    opacity: 0.92,
+    transform: [{ scale: 0.98 }],
+  },
+  pillText: {
+    ...typography.button,
+    fontSize: 15,
+    color: colors.textPrimary,
+    ...webTextRtl,
+  },
+  pillTextPrimary: {
+    ...typography.button,
+    fontSize: 15,
+    color: colors.textInverse,
+    ...webTextRtl,
+  },
+  pillTextDisabled: {
+    color: colors.textDisabled,
+  },
+  pillTextDisabledOnPrimary: {
+    color: colors.textDisabled,
+  },
+}));
