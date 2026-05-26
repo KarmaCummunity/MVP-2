@@ -112,6 +112,7 @@ export interface Chat {
    */
   readonly participantIds: [string | null, string | null];
   readonly anchorPostId: string | null;
+  readonly anchorRideId: string | null;
   readonly isSupportThread: boolean;
   lastMessageAt: string | null;
   readonly createdAt: string;

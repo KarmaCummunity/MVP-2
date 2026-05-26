@@ -75,6 +75,12 @@
 | RESP-005 | **Split-screen auth & onboarding** — `SplitAuthLayout` across sign-in / sign-up / onboarding steps (FR-RESP-005) | agent-fe | ⏳ Planned | `spec/14_responsive_desktop.md` FR-RESP-005 |
 | RESP-006 | **Mobile platform polish & bottom-bar safety** — extend `Screen` primitive with tab-bar inset; sweep all screens that crop; platform helpers for back-icon + keyboard offset; clamp Dynamic Type in tight rows; Hebrew typography + content polish (FR-RESP-006) | agent-fe | 🟡 In progress | `spec/14_responsive_desktop.md` FR-RESP-006 |
 
+## V2.1 — Donation Worlds
+
+| ID | Task | Owner | Status | Spec |
+|----|------|-------|--------|------|
+| V2.1 | Rides V2.0 (FR-RIDE-001..010) | agent-fullstack | ✅ Done | `spec/15_rides.md` |
+
 ## P3 — Post-MVP (Deferred)
 
 | ID | Task | Status | Spec |
@@ -83,7 +89,7 @@
 | P3.2 | Apple SSO (iOS only) | ⏳ Deferred | `spec/01_auth_and_onboarding.md` FR-AUTH-004 |
 | P3.3 | Quiet hours / DND | ⏳ Deferred | `spec/09_notifications.md` FR-NOTIF-016 |
 | P3.A0 | **Admin Portal A0 — Foundation (RBAC primitives + portal scaffold)** — `admin_role_grants` table with PRD V2-wide role CHECK + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates; backfill + bi-directional sync triggers keeping `users.is_super_admin` coherent; `get_my_admin_roles` RPC; `@kc/domain` `AdminRole` + `AdminPermission` matrix (RBAC SSOT); `@kc/application` `IAdminRoleRepository` + `GetMyAdminRolesUseCase`; `@kc/infrastructure-supabase` `SupabaseAdminRoleRepository`; mobile `(admin)` route group with `AdminGate` + responsive `AdminNav` + dashboard + 6 ComingSoon stubs (A1..A4); admin i18n module; Settings entry row gated on `useAdminRoles().length > 0`. | ✅ Done | `spec/12_super_admin.md` FR-ADMIN-010/011; design `docs/superpowers/specs/2026-05-25-admin-portal-design.md`; plan `docs/superpowers/plans/2026-05-25-admin-portal-a0-foundation.md`; `DECISIONS.md` D-40 |
-| P3.A1 | **Admin Portal A1 — Reports Dashboard.** Replaces the chat-based moderation flow with `/admin/reports` inbox + `/admin/reports/[caseId]` case detail. Closes TD-94 (per-case restore — no cascade). Introduces `ADMIN_PORTAL_REPORTS` feature flag and the chat-flow coexistence/deprecation path. | ⏳ Planned, blocked by P3.A0 | `spec/12_super_admin.md` FR-ADMIN-012/013/014 |
+| P3.A1 | **Admin Portal A1 — Reports Dashboard** — `/admin/reports` inbox + `/admin/reports/[caseId]` case detail with RBAC-gated actions; widens `admin_dismiss_report` / `admin_remove_post` / `admin_confirm_report` from `is_admin()` to `admin_assert_role(['super_admin','moderator'])` (migration 0118); rewrites `admin_restore_target` to per-case dismiss — closes TD-94 cascade-dismiss sub-item (migration 0119); adds `reports_open_inbox` + `reports_case_detail` RPCs (migrations 0120/0121); `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` feature flag + chat-flow `ReportReceivedBubble` coexistence (read-only + deep-link). 11 integration tests + 20 application/domain tests. | ✅ Done | `spec/12_super_admin.md` FR-ADMIN-012/013/014; plan `docs/superpowers/plans/2026-05-26-admin-portal-a1-reports.md`; PR #387 |
 | P3.A2 | **Admin Portal A2 — RBAC management.** `/admin/admins` list + `/admin/admins/[userId]` detail; grant/revoke `moderator`/`support` via SECURITY DEFINER RPCs; amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support". | ⏳ Planned, blocked by P3.A0 | `spec/12_super_admin.md` FR-ADMIN-015/016/017 |
 | P3.A3 | **Admin Portal A3 — Internal Tasks tracker.** `admin_tasks` + `admin_task_activities` tables; `/admin/tasks` list/new/detail with status FSM + comments + assignee push notifications via `notifications_outbox`. Internal-only — never visible to end users. | ⏳ Planned, blocked by P3.A0 + P3.A2 | `spec/12_super_admin.md` FR-ADMIN-018 |
 | P3.A4 | **Admin Portal A4 — Content & Users management.** `/admin/users` and `/admin/posts` server-paginated search via `admin_search_users` / `admin_search_posts` RPCs (closes TD-93 at UX layer); `/admin/audit` viewer with role-tiered visibility replaces FR-ADMIN-007 Settings sub-page. | ⏳ Planned, blocked by P3.A0 + P3.A2 | `spec/12_super_admin.md` FR-ADMIN-019/020 |

@@ -39,6 +39,7 @@ export const chatHe = {
   // dedupes against the rendered string in the last 50 messages.
   autoMessage: {
     initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח שנדבר.',
+    rideInitial: 'היי, פניתי בנוגע ל: {{title}}',
   },
 
   // Chat conversation screen (chat/[id].tsx) — PR5b i18n sweep.

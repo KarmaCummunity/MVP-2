@@ -8,6 +8,8 @@ import { mapChatError } from './mapChatError';
 
 type ChatRow = Database['public']['Tables']['chats']['Row'];
 
+export type ChatAnchorInput = { postId?: string; rideId?: string };
+
 /** Support singleton index — see `chats_set_support_thread_flag` + `chats_unique_support_pair`. */
 function isUniqueSupportPairViolation(err: {
   code?: string;
@@ -35,39 +37,71 @@ async function fetchSupportThreadForOrderedPair(
   return data;
 }
 
-async function maybeReanchorAndReturnChat(
+async function maybeReanchorPost(
   client: SupabaseClient<Database>,
   row: ChatRow,
-  anchorPostId?: string,
+  postId: string,
 ): Promise<Chat> {
   const needsReanchor =
-    anchorPostId !== undefined &&
-    anchorPostId !== null &&
-    row.anchor_post_id !== anchorPostId;
-
+    row.anchor_post_id !== postId || row.anchor_ride_id != null;
   if (!needsReanchor) return rowToChat(row);
 
   const { data, error } = await client.rpc('rpc_chat_set_anchor', {
     p_chat_id: row.chat_id,
-    p_anchor_post_id: anchorPostId,
+    p_anchor_post_id: postId,
   });
   if (error) throw mapChatError(error);
   const out = Array.isArray(data) ? data[0] : data;
   return rowToChat((out as ChatRow | undefined) ?? row);
 }
 
+async function maybeReanchorRide(
+  client: SupabaseClient<Database>,
+  row: ChatRow,
+  rideId: string,
+): Promise<Chat> {
+  const needsReanchor =
+    row.anchor_ride_id !== rideId || row.anchor_post_id != null;
+  if (!needsReanchor) return rowToChat(row);
+
+  const { data, error } = await client.rpc('rpc_chat_set_anchor_ride', {
+    p_chat_id: row.chat_id,
+    p_anchor_ride_id: rideId,
+  });
+  if (error) throw mapChatError(error);
+  const out = Array.isArray(data) ? data[0] : data;
+  return rowToChat((out as ChatRow | undefined) ?? row);
+}
+
+async function maybeReanchorAndReturnChat(
+  client: SupabaseClient<Database>,
+  row: ChatRow,
+  anchor?: ChatAnchorInput,
+): Promise<Chat> {
+  if (anchor?.postId) return maybeReanchorPost(client, row, anchor.postId);
+  if (anchor?.rideId) return maybeReanchorRide(client, row, anchor.rideId);
+  return rowToChat(row);
+}
+
+function anchorInsertPayload(anchor?: ChatAnchorInput): Pick<ChatRow, 'anchor_post_id' | 'anchor_ride_id'> {
+  return {
+    anchor_post_id: anchor?.postId ?? null,
+    anchor_ride_id: anchor?.rideId ?? null,
+  };
+}
+
 async function insertDmRowOrReuseSupportThread(
   client: SupabaseClient<Database>,
   a: string,
   b: string,
-  anchorPostId?: string,
+  anchor?: ChatAnchorInput,
 ): Promise<Chat> {
   const insert = await client
     .from('chats')
     .insert({
       participant_a: a,
       participant_b: b,
-      anchor_post_id: anchorPostId ?? null,
+      ...anchorInsertPayload(anchor),
     })
     .select('*')
     .single();
@@ -76,7 +110,7 @@ async function insertDmRowOrReuseSupportThread(
 
   if (isUniqueSupportPairViolation(insert.error)) {
     const support = await fetchSupportThreadForOrderedPair(client, a, b);
-    if (support) return maybeReanchorAndReturnChat(client, support, anchorPostId);
+    if (support) return maybeReanchorAndReturnChat(client, support, anchor);
   }
 
   throw mapChatError(insert.error);
@@ -86,7 +120,7 @@ export async function findOrCreateDmChat(
   client: SupabaseClient<Database>,
   userId: string,
   otherUserId: string,
-  anchorPostId?: string,
+  anchor?: ChatAnchorInput,
   options?: { preferNewThread?: boolean },
 ): Promise<Chat> {
   const { data: otherRow, error: otherErr } = await client
@@ -103,7 +137,7 @@ export async function findOrCreateDmChat(
     userId < otherUserId ? [userId, otherUserId] : [otherUserId, userId];
 
   if (options?.preferNewThread) {
-    return insertDmRowOrReuseSupportThread(client, a, b, anchorPostId);
+    return insertDmRowOrReuseSupportThread(client, a, b, anchor);
   }
 
   const list = await client
@@ -122,10 +156,10 @@ export async function findOrCreateDmChat(
   );
 
   if (visible) {
-    return maybeReanchorAndReturnChat(client, visible, anchorPostId);
+    return maybeReanchorAndReturnChat(client, visible, anchor);
   }
 
-  return insertDmRowOrReuseSupportThread(client, a, b, anchorPostId);
+  return insertDmRowOrReuseSupportThread(client, a, b, anchor);
 }
 
 export async function hideDmChatFromInbox(

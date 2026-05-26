@@ -156,3 +156,26 @@ export * from './legal/AcceptLegalDocumentUseCase';
 
 export * from './admin/IAdminRoleRepository';
 export * from './admin/GetMyAdminRolesUseCase';
+
+// A1 — admin reports inbox & case detail
+export * from './reports/IReportsRepository';
+export * from './reports/ListOpenReportsUseCase';
+export * from './reports/GetReportCaseDetailUseCase';
+
+export type {
+  IRideListingRepository,
+  RideListingRow,
+  CreateRideListingRepoInput,
+  SearchRideListingsInput,
+} from './ports/IRideListingRepository';
+export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
+export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';
+export { SearchRideListingsUseCase } from './rides/SearchRideListingsUseCase';
+export { GetRideListingUseCase } from './rides/GetRideListingUseCase';
+export type { GetRideListingInput } from './rides/GetRideListingUseCase';
+export { CloseRideListingUseCase } from './rides/CloseRideListingUseCase';
+export type { CloseRideListingInput } from './rides/CloseRideListingUseCase';
+export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
+export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
+export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
+export { ChronologicalRideMatchScorer } from './rides/ChronologicalRideMatchScorer';

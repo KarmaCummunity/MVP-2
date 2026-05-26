@@ -144,7 +144,7 @@ export function FiltersSection({
 }
 
 const useFiltersSectionStyles = makeUseStyles(({ colors }) => ({
-  section: { gap: spacing.sm, marginBottom: spacing.lg },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  section: { gap: spacing.xs, marginBottom: spacing.md },
+  title: { ...typography.label, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
 }));

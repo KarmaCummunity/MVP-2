@@ -67,5 +67,11 @@ function normalizeFilter(raw: PostFeedFilter): PostFeedFilter {
     }
   }
 
+  if (typeof out.searchQuery === 'string') {
+    const q = out.searchQuery.trim();
+    if (q.length < 2) delete out.searchQuery;
+    else out.searchQuery = q;
+  }
+
   return out;
 }
