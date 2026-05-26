@@ -225,7 +225,46 @@ A new Expo Router group `(admin)` accessible only to users with an active admin 
 
 ---
 
-> **Note:** FR-ADMIN-012..020 will be added in their respective sub-project PRs (A1 Reports Dashboard; A2 RBAC management; A3 Internal Tasks; A4 Content & Users management).
+> **Note:** FR-ADMIN-015..020 will be added in their respective sub-project PRs (A2 RBAC management; A3 Internal Tasks; A4 Content & Users management).
+
+---
+
+## §11 Admin Portal — Reports Dashboard (A1)
+
+## FR-ADMIN-012 — Reports inbox
+
+- AC1. `/admin/reports` lists open Reports grouped by target (post/user/chat), with filters (status, target_type, days, reporter, target).
+- AC2. Each row shows: target preview, # reports, oldest report age, latest reporter, threshold progress (n/3).
+- AC3. Search bar accepts target ID or reporter display name; powered by `audit_search` + `reports` query.
+- AC4. Default sort: oldest unresolved first.
+
+**Related.** Database: `reports_open_inbox(...)` RPC (migration 0120). Domain: `ReportInboxPage`, `ReportInboxCursor`, `ReportInboxRow`. Application: `IReportsRepository.listOpenReports`, `ListOpenReportsUseCase`. Infrastructure: `SupabaseReportsRepository`. Mobile: `useReportsInbox` (infinite query), `ReportRow`, `ReportFilters`, `(admin)/reports/index.tsx`.
+
+---
+
+## FR-ADMIN-013 — Case detail
+
+- AC1. `/admin/reports/[caseId]` shows: target deep-link, reporter list with reasons, audit timeline, current target status.
+- AC2. Inline actions per RBAC matrix: Confirm removal / Dismiss / Restore / Permanent ban / Manual remove / Open support thread.
+- AC3. Restore action no longer cascades-dismisses reports across unrelated cases (closes `TD-94`); each case is dismissed independently.
+- AC4. All actions emit `audit_events` rows; the timeline updates optimistically + reconciles on success.
+
+**Related.** Database: `reports_case_detail(...)` RPC (migration 0121); `admin_restore_target` rewritten in migration 0119 (per-case dismiss). Migration 0118 widens `admin_dismiss_report` / `admin_remove_post` / `admin_confirm_report` from `is_admin()` to `admin_assert_role(['super_admin','moderator'])`. Domain: `ReportCaseDetail`, `ReportCaseReporter`, `ReportCaseTimelineEntry`. Application: `IReportsRepository.getCaseDetail`, `GetReportCaseDetailUseCase`. Mobile: `useReportCaseDetail`, `CaseActions`, `CaseReporterList`, `CaseAuditTimeline`, `(admin)/reports/[caseId].tsx`.
+
+---
+
+## FR-ADMIN-014 — Chat-flow coexistence & deprecation
+
+- AC1. The existing `system` message + inline buttons in chat keep working through A1's lifetime.
+- AC2. Actions taken in the Portal are reflected back into the chat thread (the `system` message updates its inline status: "Resolved by @moderator-x at …").
+- AC3. After A1 ships behind a flag (`ADMIN_PORTAL_REPORTS=true`), the chat-flow buttons render in read-only mode and direct the admin to the Portal.
+- AC4. Chat-flow buttons are removed in a follow-up PR after one stable week (logged in `BACKLOG.md`).
+
+**Related.** Mobile: `useAdminPortalReportsFlag` (reads `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS`); `ReportReceivedBubble` coexistence (read-only + deep-link into `/admin/reports/[caseId]` when flag is true). Implementation plan §A1.
+
+---
+
+> **Deprecation note (per FR-ADMIN-014):** the legacy chat-flow surface defined in **FR-ADMIN-003**, **FR-ADMIN-004**, **FR-ADMIN-005**, and **FR-ADMIN-009** is deprecated by FR-ADMIN-014; coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag. Read-only chat buttons deep-link to the Admin Portal when the flag is true; the moderation surface lives at `/admin/reports` (FR-ADMIN-012) and `/admin/reports/[caseId]` (FR-ADMIN-013).
 
 ---
 
@@ -235,3 +274,4 @@ A new Expo Router group `(admin)` accessible only to users with an active admin 
 | 0.2 | 2026-05-10 | Added FR-ADMIN-009 (manual delete from post screen). |
 | 0.3 | 2026-05-12 | `FR-ADMIN-009 AC1` — Super Admin sees *Remove as admin* on own posts too; `FR-POST-008` alignment: admin may edit any open post (RLS `0049_admin_post_edit_rls.sql`). |
 | 0.4 | 2026-05-25 | Added §10 Admin Portal — Foundation (A0). FR-ADMIN-010 (RBAC primitives) and FR-ADMIN-011 (Portal scaffold). Status header ✅ → 🟡. FR-ADMIN-012..020 reserved for A1..A4. |
+| 0.5 | 2026-05-26 | Added §11 Admin Portal — Reports Dashboard (A1). FR-ADMIN-012/013/014. Closed cascade-dismiss sub-item of TD-94 (migration 0119). Widened admin_dismiss_report / admin_remove_post / admin_confirm_report from `is_admin()` to RBAC (migration 0118). Added deprecation note on FR-ADMIN-003/004/005/009 referencing FR-ADMIN-014. |
