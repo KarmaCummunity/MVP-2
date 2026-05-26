@@ -1,6 +1,6 @@
 // app/apps/mobile/src/components/admin/AdminGate.tsx
 import { Redirect } from 'expo-router';
-import type { ReactNode } from 'react';
+import type { ReactElement, ReactNode } from 'react';
 import { useAdminRoles } from '../../hooks/useAdminRoles';
 
 export interface AdminGateProps {
@@ -8,13 +8,15 @@ export interface AdminGateProps {
   anyOf?: readonly string[];
 }
 
-export function AdminGate({ children, anyOf }: AdminGateProps): JSX.Element {
+export function AdminGate({ children, anyOf }: AdminGateProps): ReactElement {
   const roles = useAdminRoles();
   if (roles.length === 0) {
     return <Redirect href="/(tabs)" />;
   }
   if (anyOf && !roles.some((r) => anyOf.includes(r))) {
-    return <Redirect href="/(admin)" />;
+    // Cast: expo-router generates the (admin) typed route once route files
+    // exist (Task 18). This gate may render before that during a cold start.
+    return <Redirect href={'/(admin)' as never} />;
   }
   return <>{children}</>;
 }
