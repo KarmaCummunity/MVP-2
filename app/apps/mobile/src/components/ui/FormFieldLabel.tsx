@@ -1,5 +1,6 @@
 import React from 'react';
 import { Text, View } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { makeUseStyles, typography } from '@kc/ui';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
@@ -30,11 +31,16 @@ interface Props {
 
 /** Section label with optional red asterisk for required fields (matches create-post form). */
 export function FormFieldLabel({ label, required = false }: Props) {
+  const { t } = useTranslation();
   const styles = useStyles();
   return (
     <View style={styles.row} accessibilityRole="text">
       <Text style={styles.label}>{label}</Text>
-      {required ? <Text style={styles.required} accessibilityLabel="שדה חובה">*</Text> : null}
+      {required ? (
+        <Text style={styles.required} accessibilityLabel={t('common.requiredFieldA11y')}>
+          *
+        </Text>
+      ) : null}
     </View>
   );
 }

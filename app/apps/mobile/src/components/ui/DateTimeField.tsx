@@ -101,7 +101,7 @@ export function DateTimeField({ value, onChange, minimumDate, onShortcut }: Prop
   const [open, setOpen] = useState(false);
   const [draft, setDraft] = useState(value);
 
-  const display = format(value, 'EEEE, d בMMMM · HH:mm', { locale: dateFnsHe });
+  const display = format(value, 'EEEE, d MMMM · HH:mm', { locale: dateFnsHe });
 
   const openPicker = () => {
     setDraft(value);

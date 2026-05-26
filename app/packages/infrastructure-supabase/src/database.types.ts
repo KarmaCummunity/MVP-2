@@ -1825,24 +1825,48 @@ export type Database = {
         }
         Returns: Json
       }
+      ride_listings_search: {
+        Args: {
+          p_cursor?: string
+          p_depart_from?: string
+          p_depart_to?: string
+          p_dest_city_id?: string
+          p_limit?: number
+          p_mode?: string
+          p_origin_city_id?: string
+          p_query?: string
+        }
+        Returns: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          title: string
+          updated_at: string
+          visibility: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       rpc_chat_hide_for_viewer: {
         Args: { p_chat_id: string }
         Returns: undefined
       }
       rpc_chat_mark_read: { Args: { p_chat_id: string }; Returns: undefined }
-      ride_listings_search: {
-        Args: {
-          p_cursor?: string | null
-          p_depart_from?: string | null
-          p_depart_to?: string | null
-          p_dest_city_id?: string | null
-          p_limit?: number
-          p_mode?: string | null
-          p_origin_city_id?: string | null
-          p_query?: string | null
-        }
-        Returns: Database['public']['Tables']['ride_listings']['Row'][]
-      }
       rpc_chat_set_anchor: {
         Args: { p_anchor_post_id: string; p_chat_id: string }
         Returns: {
