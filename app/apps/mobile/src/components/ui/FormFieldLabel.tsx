@@ -1,0 +1,40 @@
+import React from 'react';
+import { Text, View } from 'react-native';
+import { makeUseStyles, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+
+const useStyles = makeUseStyles(({ colors }) => ({
+  row: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'flex-end' as const,
+    gap: 2,
+  },
+  label: {
+    ...typography.label,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+  },
+  required: {
+    ...typography.label,
+    color: colors.error,
+    fontSize: 14,
+    lineHeight: 18,
+  },
+}));
+
+interface Props {
+  readonly label: string;
+  readonly required?: boolean;
+}
+
+/** Section label with optional red asterisk for required fields (matches create-post form). */
+export function FormFieldLabel({ label, required = false }: Props) {
+  const styles = useStyles();
+  return (
+    <View style={styles.row} accessibilityRole="text">
+      <Text style={styles.label}>{label}</Text>
+      {required ? <Text style={styles.required} accessibilityLabel="שדה חובה">*</Text> : null}
+    </View>
+  );
+}

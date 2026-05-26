@@ -8,6 +8,10 @@ export interface CreateRideListingInput {
   mode: RideMode;
   originCityId: string;
   destCityId: string;
+  originStreet: string;
+  originStreetNumber: string | null;
+  destStreet: string;
+  destStreetNumber: string | null;
   departsAt: string;
   seatsAvailable: number | null;
   description: string | null;
@@ -29,6 +33,8 @@ export class CreateRideListingUseCase {
       mode: input.mode,
       originCityId: input.originCityId,
       destCityId: input.destCityId,
+      originStreet: input.originStreet,
+      destStreet: input.destStreet,
       departsAt: input.departsAt,
       seatsAvailable: input.seatsAvailable,
       description,
@@ -38,7 +44,7 @@ export class CreateRideListingUseCase {
     const origin = cityList.find((c) => c.cityId === input.originCityId);
     const dest = cityList.find((c) => c.cityId === input.destCityId);
     if (!origin || !dest) {
-      throw new RideError('same_cities', 'city_not_found');
+      throw new RideError('city_not_found', 'city_not_found');
     }
 
     const title = generateRideTitle({
@@ -52,6 +58,10 @@ export class CreateRideListingUseCase {
       mode: input.mode,
       originCityId: input.originCityId,
       destCityId: input.destCityId,
+      originStreet: input.originStreet.trim(),
+      originStreetNumber: input.originStreetNumber?.trim() || null,
+      destStreet: input.destStreet.trim(),
+      destStreetNumber: input.destStreetNumber?.trim() || null,
       departsAt: input.departsAt,
       seatsAvailable: input.seatsAvailable,
       description,

@@ -6,6 +6,10 @@ type RideRow = {
   mode: string;
   origin_city_id: string;
   dest_city_id: string;
+  origin_street: string;
+  origin_street_number: string | null;
+  dest_street: string;
+  dest_street_number: string | null;
   departs_at: string;
   seats_available: number | null;
   description: string | null;
@@ -29,6 +33,10 @@ export function mapRideRow(
     destCityId: row.dest_city_id,
     originCityName,
     destCityName,
+    originStreet: row.origin_street,
+    originStreetNumber: row.origin_street_number,
+    destStreet: row.dest_street,
+    destStreetNumber: row.dest_street_number,
     departsAt: row.departs_at,
     seatsAvailable: row.seats_available,
     description: row.description,

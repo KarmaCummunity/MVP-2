@@ -1014,8 +1014,12 @@ export type Database = {
           departs_at: string
           description: string | null
           dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
           mode: string
           origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
           owner_id: string
           ride_id: string
           seats_available: number | null
@@ -1029,8 +1033,12 @@ export type Database = {
           departs_at: string
           description?: string | null
           dest_city_id: string
+          dest_street: string
+          dest_street_number?: string | null
           mode: string
           origin_city_id: string
+          origin_street: string
+          origin_street_number?: string | null
           owner_id: string
           ride_id?: string
           seats_available?: number | null
@@ -1044,8 +1052,12 @@ export type Database = {
           departs_at?: string
           description?: string | null
           dest_city_id?: string
+          dest_street?: string
+          dest_street_number?: string | null
           mode?: string
           origin_city_id?: string
+          origin_street?: string
+          origin_street_number?: string | null
           owner_id?: string
           ride_id?: string
           seats_available?: number | null
