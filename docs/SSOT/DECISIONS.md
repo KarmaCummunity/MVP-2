@@ -902,6 +902,23 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+### D-40 — Replace in-chat moderation with a dedicated Admin Portal + RBAC
+
+**Date:** 2026-05-25
+**Status:** Accepted
+
+**Decision.** Build a dedicated `(admin)` route group with an extensible RBAC store (`admin_role_grants`) instead of continuing to scale the single-super-admin chat-flow. Roles are gated at the DB level via `admin_assert_role`; the client gate (`AdminGate` + permission matrix in `@kc/domain`) is UX only.
+
+**Rationale.** The chat-flow is a single point of failure (one super-admin), discovery is poor (actions scattered), audit search is RLS-blocked (TD-93), restore cascades incorrectly (TD-94), and the single-admin invariant has no DB enforcement (TD-95). The portal addresses all four and unblocks the broader role hierarchy from PRD V2 (`02_Personas_Roles.md`: Operator, Org Admin, Volunteer Manager, …).
+
+**Decomposition.** A0 (this PR) ships the foundation. A1..A4 follow as separate sub-projects per `docs/superpowers/specs/2026-05-25-admin-portal-design.md`.
+
+**Alternatives considered.**
+1. Extend the chat-flow with multi-admin support. Rejected — does not address discoverability, scattered actions, or the deeper TDs.
+2. Use Supabase Studio as the only admin surface. Rejected — not accessible to non-engineers, no in-app context.
+
+---
+
 ## D-48 — Sentry as the single observability sink for mobile + Edge Functions (2026-05-26)
 
 `@sentry/react-native` for mobile crash + 3 explicit performance marks (`app.cold_start`, `feed.first_render`, `image.first_paint`). Edge Functions use a `withTiming` wrapper logging structured JSON to Supabase function logs (read via `mcp__supabase__get_logs`).
@@ -915,6 +932,7 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.0 | 2026-05-25 | Added `D-40` (Admin Portal foundation A0 — RBAC primitives + `(admin)` route group; closes TD-95 via partial unique index; A1..A4 follow as separate sub-projects). |
 | 2.9 | 2026-05-24 | Added `D-38` (share-post OG meta served by Railway Hono server; eliminates Supabase-domain leak from share URL and redirect chain; replaces `serve dist --single`). |
 | 2.9 | 2026-05-24 | Added `D-38` (profile display: `public.users` canonical; sync Auth `user_metadata` on write + cold-start reconcile; My Profile no JWT fallback). |
 | 2.8 | 2026-05-22 | Added `D-RESP-001` (desktop adaptation strategy: adapted side rail + 280px aside panel, inbox chat, split-screen auth, 4-tier breakpoints, `SHELL_V2_ENABLED` flag, five-PR delivery `FR-RESP-001..005`). |

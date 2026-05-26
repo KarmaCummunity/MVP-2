@@ -1,6 +1,6 @@
 # 2.12 Super Admin (in-chat moderation)
 
-> **Status:** ✅ Done (P1.3 + P2.2 slice) — All FR-ADMIN-001..009 shipped. Suspect-queue producers (FR-MOD-008) and 90-day re-registration block (FR-ADMIN-003 AC3) deferred to TECH_DEBT. ⚠️ Audit 2026-05-16: FR-ADMIN-007 AC2 audit-search blocked by `users_select_active` (admin can't search banned/suspended targets) — TD-93; FR-ADMIN-006 AC2 single-admin invariant has no DB-level unique index — TD-95; `admin_restore_target` cascade-dismiss can multi-sanction reporters simultaneously — TD-94; restore audit `metadata` empty vs auto-remove `{distinct_reporters}`. See `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md`.
+> **Status:** 🟡 In progress — FR-ADMIN-001..009 ✅ shipped (P1.3 + P2.2 slice); FR-ADMIN-010/011 🟡 in progress under P3.A0 (Admin Portal foundation). Suspect-queue producers (FR-MOD-008) and 90-day re-registration block (FR-ADMIN-003 AC3) deferred to TECH_DEBT. ⚠️ Audit 2026-05-16: FR-ADMIN-007 AC2 audit-search blocked by `users_select_active` (admin can't search banned/suspended targets) — TD-93 (closes in P3.A4); `admin_restore_target` cascade-dismiss can multi-sanction reporters simultaneously — TD-94 (closes in P3.A1); restore audit `metadata` empty vs auto-remove `{distinct_reporters}`. **TD-95 closed by P3.A0** — `admin_role_grants` partial unique index `(role) WHERE role = 'super_admin' AND revoked_at IS NULL` enforces FR-ADMIN-006 AC2 single-admin invariant at the DB level. See `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md`.
 
 
 
@@ -177,8 +177,61 @@ While signed in as the Super Admin, the post detail screen exposes an "Remove as
 
 ---
 
+## §10 Admin Portal — Foundation (A0)
+
+A0 is the foundation layer that all other Admin Portal sub-projects (A1..A4) depend on. It introduces the RBAC data model with DB-enforced invariants, the `(admin)` Expo Router group with a permission-gated layout, and stub screens for every future admin function so the nav structure is complete from day one.
+
+Design spec: `docs/superpowers/specs/2026-05-25-admin-portal-design.md`. Implementation plan: `docs/superpowers/plans/2026-05-25-admin-portal-a0-foundation.md`. Decision: `D-40` in `DECISIONS.md`.
+
+---
+
+## FR-ADMIN-010 — RBAC primitives
+
+**Description.**
+Ships the extensible RBAC store (`admin_role_grants`) and the canonical SQL predicates (`has_admin_role`, `admin_assert_role`) that future write paths re-check on the server. The role enum is intentionally wide so the PRD V2 role hierarchy (operator, org_admin, …) can be granted without a schema migration. `users.is_super_admin` stays in lockstep with `admin_role_grants` via bi-directional sync triggers so the ~10 existing `useIsSuperAdmin` / `is_admin()` call sites keep working unchanged during A0.
+
+**Source.**
+- Design spec `docs/superpowers/specs/2026-05-25-admin-portal-design.md` §3.4, §3.5.
+- Implementation plan `docs/superpowers/plans/2026-05-25-admin-portal-a0-foundation.md`.
+
+**Acceptance Criteria.**
+- AC1. `admin_role_grants` table + indexes + RLS policies (admins read own + all if `super_admin`; writes via RPC only).
+- AC2. `has_admin_role(uid, role)` and `admin_assert_role(uid, roles[])` SQL functions.
+- AC3. Migration backfills `users.is_super_admin = true` rows into `admin_role_grants` as `role = 'super_admin'`.
+- AC4. `users.is_super_admin` becomes a generated column derived from `admin_role_grants` (or a view) for back-compat with existing call sites; new code uses `has_admin_role`.
+- AC5. `super_admin` partial unique index enforces single-row invariant at DB level (closes `TD-95`).
+
+**Related.** Domain: `AdminRole`, `AdminPermission` matrix. Migrations: `0112_admin_role_grants_table.sql`, `0113_admin_role_functions.sql`, `0114_admin_role_grants_backfill.sql`, `0115_get_my_admin_roles_rpc.sql`.
+
+---
+
+## FR-ADMIN-011 — Portal scaffold
+
+**Description.**
+A new Expo Router group `(admin)` accessible only to users with an active admin role. The dashboard is a real screen showing role badges + KPI placeholders; every other admin route (reports, tasks, admins, users, posts, audit) ships as a `ComingSoon` stub so the nav structure is locked in from A0. `AdminGate` is screen-level UX (server RPCs re-check the actor). Settings exposes an "Admin Portal" row gated on `useAdminRoles().length > 0` (so moderator + support also see it in A2+).
+
+**Source.**
+- Design spec `docs/superpowers/specs/2026-05-25-admin-portal-design.md` §3.2, §3.3.
+- Implementation plan `docs/superpowers/plans/2026-05-25-admin-portal-a0-foundation.md`.
+
+**Acceptance Criteria.**
+- AC1. Expo Router group `(admin)` exists with `AdminLayout` (drawer on web ≥ md, bottom-tabs on mobile).
+- AC2. `<AdminGate>` HOC + `useAdminRoles()` hook implemented and tested.
+- AC3. Settings exposes an "Admin Portal" row, visible only when the session has ≥1 active role.
+- AC4. `/admin` renders a stub dashboard (welcome + role badge + nav).
+- AC5. i18n namespace `admin` added to `apps/mobile/src/i18n/locales/he/modules/`.
+
+**Related.** Domain: `AdminRole`, `AdminPermission`. Application: `IAdminRoleRepository`, `GetMyAdminRolesUseCase`. Mobile: `useAdminRoles`, `AdminGate`, `AdminNav`, `ComingSoon`, `(admin)/_layout`, `(admin)/index`.
+
+---
+
+> **Note:** FR-ADMIN-012..020 will be added in their respective sub-project PRs (A1 Reports Dashboard; A2 RBAC management; A3 Internal Tasks; A4 Content & Users management).
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
 | 0.2 | 2026-05-10 | Added FR-ADMIN-009 (manual delete from post screen). |
 | 0.3 | 2026-05-12 | `FR-ADMIN-009 AC1` — Super Admin sees *Remove as admin* on own posts too; `FR-POST-008` alignment: admin may edit any open post (RLS `0049_admin_post_edit_rls.sql`). |
+| 0.4 | 2026-05-25 | Added §10 Admin Portal — Foundation (A0). FR-ADMIN-010 (RBAC primitives) and FR-ADMIN-011 (Portal scaffold). Status header ✅ → 🟡. FR-ADMIN-012..020 reserved for A1..A4. |

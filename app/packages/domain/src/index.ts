@@ -12,3 +12,4 @@ export * from './notifications';
 export * from './postActorIdentity';
 export * from './aboutTeam';
 export * from './legal';
+export * from './admin';

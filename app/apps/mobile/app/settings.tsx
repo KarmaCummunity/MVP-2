@@ -8,6 +8,7 @@ import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { PlatformSwitch, spacing, useTheme } from '@kc/ui';
 import { BackButton } from '../src/components/BackButton';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
+import { useAdminRoles } from '../src/hooks/useAdminRoles';
 import { useSettingsAccountActions } from '../src/hooks/useSettingsAccountActions';
 import { container } from '../src/lib/container';
 import he from '../src/i18n/locales/he';
@@ -41,6 +42,7 @@ export default function SettingsScreen() {
   const showFollowRequests = userQuery.data?.privacyMode === 'Private';
   const { isPrivate, canToggle, onToggle, confirmModal } = usePrivateProfileToggle(userId);
   const isSuperAdmin = useIsSuperAdmin();
+  const { roles: adminRoles } = useAdminRoles();
   const queryClient = useQueryClient();
   const [hardRefreshing, setHardRefreshing] = React.useState(false);
   const {
@@ -163,6 +165,13 @@ export default function SettingsScreen() {
               label={he.audit.title}
               icon="document-text-outline"
               onPress={() => router.push('/settings/audit' as never)}
+            />
+          ) : null}
+          {adminRoles.length > 0 ? (
+            <SettingsScreenRow
+              label={he.admin.settingsRow}
+              icon="shield-checkmark-outline"
+              onPress={() => router.push('/(admin)')}
             />
           ) : null}
           <SettingsScreenRow
