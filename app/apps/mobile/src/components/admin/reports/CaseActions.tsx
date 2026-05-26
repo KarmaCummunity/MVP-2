@@ -4,6 +4,7 @@
 // action in a future iteration is: matrix entry + action id + i18n label.
 import { useState } from 'react';
 import { Alert, Pressable, StyleSheet, Text, View, Platform } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import {
   type AdminPermission,
   type AdminRole,
@@ -41,6 +42,7 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
   const { roles } = useAdminRoles();
   const adminId = useAuthStore((s) => s.session?.userId ?? null);
   const [busy, setBusy] = useState(false);
+  const queryClient = useQueryClient();
 
   async function run(action: ActionId): Promise<void> {
     const ok = await confirmDialog(he.admin.caseDetail.confirmDialog.message);
@@ -84,6 +86,7 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
           // it as a no-op stub so the action shape stays stable.
           break;
       }
+      await queryClient.invalidateQueries({ queryKey: ['admin.reports.inbox'] });
       onActed();
     } finally {
       setBusy(false);
