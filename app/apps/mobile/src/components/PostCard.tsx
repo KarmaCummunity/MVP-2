@@ -16,17 +16,17 @@ interface PostCardProps {
   onPressOverride?: () => void;
 }
 
-export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProps) {
+function PostCardInner({ post, onMessagePress, onPressOverride }: PostCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
   const styles = usePostCardStyles();
 
   const isGive = post.type === 'Give';
 
-  const timeAgo = formatDistanceToNow(new Date(post.createdAt), {
-    addSuffix: true,
-    locale: dateFnsHe,
-  });
+  const timeAgo = React.useMemo(
+    () => formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe }),
+    [post.createdAt],
+  );
 
   const locationText = (() => {
     if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
@@ -102,3 +102,5 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
     </TouchableOpacity>
   );
 }
+
+export const PostCard = React.memo(PostCardInner);
