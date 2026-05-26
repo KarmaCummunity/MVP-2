@@ -53,6 +53,7 @@ export default function HomeFeedScreen() {
       proximitySortCity: s.proximitySortCity,
       proximitySortCityName: s.proximitySortCityName,
       followersOnly: s.followersOnly,
+      searchQuery: s.searchQuery,
       setType: s.setType,
       setCategories: s.setCategories,
       setItemConditions: s.setItemConditions,
@@ -61,6 +62,7 @@ export default function HomeFeedScreen() {
       setSortOrder: s.setSortOrder,
       setProximitySortCity: s.setProximitySortCity,
       setFollowersOnly: s.setFollowersOnly,
+      setSearchQuery: s.setSearchQuery,
       clearAll: s.clearAll,
     })),
   );
