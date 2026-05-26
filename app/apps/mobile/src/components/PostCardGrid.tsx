@@ -1,6 +1,6 @@
 // app/apps/mobile/src/components/PostCardGrid.tsx
 import React from 'react';
-import { View, Text, TouchableOpacity, Image } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { formatDistanceToNow } from 'date-fns';
@@ -9,15 +9,15 @@ import { useTranslation } from 'react-i18next';
 import { useTheme, spacing } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import type { IdentityRoleForViewedProfile } from '@kc/domain';
-import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { PROFILE_GRID_COLUMNS, usePostGridCardWidth } from '../hooks/useShellContentWidth';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
+import { getSupabasePublicImageUrl } from '../lib/imageUrl';
 import { AvatarInitials } from './AvatarInitials';
 import { PostMenuButton } from './post/PostMenuButton';
+import { KCImage } from './ui/KCImage';
 import { usePostCardGridStyles } from './PostCardGrid.styles';
 import { finishMark } from '../lib/observability/perfMarks';
 
-const STORAGE_BUCKET = 'post-images';
 const OWNER_AVATAR_SIZE = 24;
 const OVERLAY_ICON = '#FFFFFF';
 
@@ -33,7 +33,7 @@ interface PostCardGridProps {
   closedPostsProfileUserId?: string;
 }
 
-export function PostCardGrid({
+function PostCardGridInner({
   post,
   onPressOverride,
   columns = 2,
@@ -49,18 +49,22 @@ export function PostCardGrid({
   const isProfileGrid = columns === PROFILE_GRID_COLUMNS;
   const isGive = post.type === 'Give';
 
-  const timeAgo = formatDistanceToNow(new Date(post.createdAt), {
-    addSuffix: true,
-    locale: dateFnsHe,
-  });
+  const timeAgo = React.useMemo(
+    () => formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe }),
+    [post.createdAt],
+  );
 
   const locationText = post.locationDisplayLevel === 'CityOnly'
     ? post.address.cityName
     : `${post.address.cityName}, ${post.address.street}`;
 
-  const firstImageUrl = post.mediaAssets[0]
-    ? getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(post.mediaAssets[0].path).data.publicUrl
-    : null;
+  const firstImagePath = post.mediaAssets[0]?.path ?? null;
+  const imageUrl = React.useMemo(
+    () => firstImagePath
+      ? getSupabasePublicImageUrl({ bucket: 'post-images', path: firstImagePath, width: 400, quality: 80 })
+      : null,
+    [firstImagePath],
+  );
 
   const ownerLabel = postOwnerDisplayLabel(post, t);
   const placeholderBg = isGive ? colors.primarySurface : `${colors.secondary}18`;
@@ -89,8 +93,8 @@ export function PostCardGrid({
       onPress={navigateToPost}
     >
       <View style={[styles.imageArea, { height: cardWidth * 0.78, backgroundColor: placeholderBg }]}>
-        {firstImageUrl ? (
-          <Image source={{ uri: firstImageUrl }} style={styles.image} resizeMode="cover" onLoad={onImageLoadOnce} />
+        {imageUrl ? (
+          <KCImage uri={imageUrl} style={styles.image} contentFit="cover" onLoad={onImageLoadOnce} />
         ) : (
           <View style={styles.placeholderTint}>
             <Ionicons
@@ -174,6 +178,8 @@ export function PostCardGrid({
     </TouchableOpacity>
   );
 }
+
+export const PostCardGrid = React.memo(PostCardGridInner);
 
 function deriveEconomicRole(
   postType: PostWithOwner['type'],
