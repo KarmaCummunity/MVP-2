@@ -15,6 +15,7 @@ import {
   SupabaseAccountGateRepository,
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
+  SupabaseSurveyRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -45,6 +46,11 @@ import {
   ReportUserUseCase,
   UpdateNotificationPreferencesUseCase,
   GetMyAdminRolesUseCase,
+  ListActiveSurveysUseCase,
+  LoadSurveyBundleUseCase,
+  SaveSurveyAnswersUseCase,
+  CheckSurveyPromptUseCase,
+  SubmitFreeFeedbackUseCase,
 } from '@kc/application';
 
 /**
@@ -74,6 +80,7 @@ const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
+const surveyRepo = new SupabaseSurveyRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 const getMyAdminRoles = new GetMyAdminRolesUseCase(adminRoleRepo);
@@ -129,4 +136,12 @@ export const container = {
   updateDonationLink: new UpdateDonationLinkUseCase(donationLinksRepo),
   removeDonationLink: new RemoveDonationLinkUseCase(donationLinksRepo),
   reportDonationLink: new ReportDonationLinkUseCase(donationLinksRepo),
+
+  // Surveys + free feedback (FR-SETTINGS-015..017)
+  surveyRepo,
+  listActiveSurveys: new ListActiveSurveysUseCase(surveyRepo),
+  loadSurveyBundle: new LoadSurveyBundleUseCase(surveyRepo),
+  saveSurveyAnswers: new SaveSurveyAnswersUseCase(surveyRepo),
+  checkSurveyPrompt: new CheckSurveyPromptUseCase(surveyRepo),
+  submitFreeFeedback: new SubmitFreeFeedbackUseCase(surveyRepo),
 } as const;
