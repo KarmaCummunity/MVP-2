@@ -66,14 +66,14 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
 
   async search(input: SearchRideListingsInput): Promise<RideListingRow[]> {
     const { data, error } = await this.client.rpc('ride_listings_search', {
-      p_query: input.query ?? null,
-      p_origin_city_id: input.originCityId ?? null,
-      p_dest_city_id: input.destCityId ?? null,
-      p_mode: input.mode ?? null,
-      p_depart_from: input.departFrom ?? null,
-      p_depart_to: input.departTo ?? null,
+      p_query: input.query ?? undefined,
+      p_origin_city_id: input.originCityId ?? undefined,
+      p_dest_city_id: input.destCityId ?? undefined,
+      p_mode: input.mode ?? undefined,
+      p_depart_from: input.departFrom ?? undefined,
+      p_depart_to: input.departTo ?? undefined,
       p_limit: input.limit ?? 30,
-      p_cursor: input.cursor ?? null,
+      p_cursor: input.cursor ?? undefined,
     });
     if (error) throw new Error(error.message);
     const rows = (data ?? []) as RideRow[];
