@@ -53,6 +53,7 @@ export default function EditPostScreen() {
     queryKey: ['post', id, viewerId],
     queryFn: () => getPostByIdUseCase().execute({ postId: id ?? '', viewerId }),
     enabled: Boolean(id),
+    staleTime: 60_000, // PERF-3: post detail — edit submission invalidates explicitly
   });
 
   // Form state — seeded once the post loads.
@@ -80,12 +81,14 @@ export default function EditPostScreen() {
     queryKey: ['user-profile', viewerId],
     queryFn: () => getUserRepo().findById(viewerId!),
     enabled: Boolean(viewerId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
 
   const identityQuery = useQuery({
     queryKey: ['post-actor-identity', id],
     queryFn: () => getListPostActorIdentityUseCase().execute({ postId: id ?? '' }),
     enabled: Boolean(id) && Boolean(viewerId),
+    staleTime: 5 * 60_000, // PERF-3: post actor identity (self) — upsert actions invalidate explicitly
   });
 
   useEffect(() => {

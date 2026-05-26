@@ -37,20 +37,21 @@ export default function StatsScreen() {
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — stats row; focus-back useFocusEffect invalidates
   });
 
   const communityQuery = useQuery({
     queryKey: ['community-stats'],
     queryFn: () => getCommunityStatsSnapshotUseCase().execute(),
     refetchInterval: 60_000,
-    staleTime: 55_000,
+    staleTime: 5 * 60_000, // PERF-3: stats — realtime planned in G1; tight refetchInterval handles freshness
   });
 
   const activityQuery = useQuery({
     queryKey: ['my-activity-timeline', userId],
     queryFn: () => getListMyActivityTimelineUseCase().execute(30),
     enabled: Boolean(userId),
-    staleTime: 20_000,
+    staleTime: 5 * 60_000, // PERF-3: stats — useFocusEffect invalidates on every focus
   });
 
   useFocusEffect(

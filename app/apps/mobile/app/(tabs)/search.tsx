@@ -111,6 +111,7 @@ export default function SearchScreen() {
       }),
     // Always enabled — empty query triggers explore mode
     enabled: !isSingleCharTyped,
+    staleTime: 60_000, // PERF-3: search results — fresh enough for explore; realtime fills gaps
   });
 
   const results = query.data;

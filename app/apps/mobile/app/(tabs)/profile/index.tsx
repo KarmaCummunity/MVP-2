@@ -26,6 +26,7 @@ export default function MyProfileOpenScreen() {
         excludeVisibility: 'OnlyMe',
       }),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
 
   return (

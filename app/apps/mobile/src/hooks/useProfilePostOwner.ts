@@ -14,6 +14,7 @@ export function useMyProfilePostOwner(): ProfilePostOwnerContext | undefined {
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   return useMemo(() => {
     const user = userQuery.data;

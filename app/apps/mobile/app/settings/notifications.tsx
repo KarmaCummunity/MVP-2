@@ -83,6 +83,7 @@ export default function NotificationSettingsScreen() {
       return user?.notificationPreferences ?? DEFAULT_PREFS;
     },
     enabled: !!userId,
+    staleTime: 5 * 60_000, // PERF-3: notification prefs — mutation invalidates explicitly via onSettled
   });
 
   const mutation = useMutation({

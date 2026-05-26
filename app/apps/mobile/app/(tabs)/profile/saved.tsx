@@ -26,6 +26,7 @@ export default function MyProfileSavedScreen() {
     queryKey: ['saved-posts', userId],
     queryFn: () => getListSavedPostsUseCase().execute({ limit: 30 }),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — save/unsave actions invalidate explicitly
   });
 
   const { openPosts, closedPosts } = useMemo(() => {

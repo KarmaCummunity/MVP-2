@@ -50,12 +50,14 @@ export function usePostActorPrivacyModel(
     queryKey: ['user-profile', viewerId],
     queryFn: () => getUserRepo().findById(viewerId),
     enabled: Boolean(viewerId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
 
   const identityQuery = useQuery({
     queryKey: ['post-actor-identity', post.postId],
     queryFn: () => getListPostActorIdentityUseCase().execute({ postId: post.postId }),
+    staleTime: 5 * 60_000, // PERF-3: post actor identity (self) — upsert mutations invalidate explicitly
   });
 
   const myRow = identityQuery.data?.find((r) => r.userId === viewerId);

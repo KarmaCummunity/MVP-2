@@ -35,6 +35,7 @@ export default function MyProfileHiddenScreen() {
         visibility: 'OnlyMe',
       }),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
 
   const hiddenClosed = useProfileClosedPosts({

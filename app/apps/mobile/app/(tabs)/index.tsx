@@ -97,6 +97,7 @@ export default function HomeFeedScreen() {
     queryKey: ['feed', viewerId, feedFilter],
     queryFn: () =>
       getFeedUseCase().execute({ viewerId, filter: feedFilter, limit: 20 }),
+    staleTime: 60_000, // PERF-3: feed — realtime fills gaps; tight stale ensures focus-back refresh
   });
 
   const refetchAndReset = useCallback(() => {

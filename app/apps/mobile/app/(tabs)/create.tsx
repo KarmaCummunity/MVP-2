@@ -76,6 +76,7 @@ export default function CreatePostScreen() {
       return getUserRepo().findById(ownerId);
     },
     enabled: Boolean(ownerId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
 

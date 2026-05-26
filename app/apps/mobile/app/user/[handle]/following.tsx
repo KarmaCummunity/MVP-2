@@ -29,6 +29,7 @@ export default function FollowingListScreen() {
     queryKey: ['profile-other', handle],
     queryFn: () => getUserRepo().findByHandle(handle!),
     enabled: Boolean(handle),
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
   const owner = userQuery.data;
 
@@ -36,6 +37,7 @@ export default function FollowingListScreen() {
     queryKey: ['following', owner?.userId],
     queryFn: () => getListFollowingUseCase().execute({ userId: owner!.userId, limit: 50 }),
     enabled: Boolean(owner?.userId),
+    staleTime: 60_000, // PERF-3: profile (others) — follow action invalidates explicitly
   });
 
   if (!owner) {
