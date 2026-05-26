@@ -1,5 +1,5 @@
 // Home Feed — wired to IPostRepository + IFeedRealtime + IStatsRepository (P1.2).
-// Mapped to: FR-FEED-001, 002, 004, 005, 006, 008, 009, 010, 014, 015.
+// Mapped to: FR-FEED-001, 002, 003, 004, 005, 006, 008, 009, 010, 014, 015.
 //
 // The Home Feed reads its filter from `filterStore` (persisted) and overlays
 // session-only banners (new-posts pill, first-post nudge) via
@@ -49,6 +49,8 @@ export default function HomeFeedScreen() {
       sortOrder: filter.sortOrder,
       proximitySortCity: filter.proximitySortCity ?? undefined,
       followersOnly: filter.followersOnly,
+      searchQuery:
+        filter.searchQuery.trim().length >= 2 ? filter.searchQuery.trim() : undefined,
     }),
     [
       filter.type,
@@ -59,6 +61,7 @@ export default function HomeFeedScreen() {
       filter.sortOrder,
       filter.proximitySortCity,
       filter.followersOnly,
+      filter.searchQuery,
     ],
   );
 
@@ -78,7 +81,7 @@ export default function HomeFeedScreen() {
 
   const nudge = useFirstPostNudge(viewerId);
 
-  const sheetInitial: PostFilterValue = {
+  const sheetValue: PostFilterValue = {
     type: filter.type,
     categories: filter.categories,
     itemConditions: filter.itemConditions,
@@ -88,17 +91,28 @@ export default function HomeFeedScreen() {
     proximitySortCity: filter.proximitySortCity,
     proximitySortCityName: filter.proximitySortCityName,
     followersOnly: filter.followersOnly,
+    searchQuery: filter.searchQuery,
   };
-  const handleApply = (next: PostFilterValue) => {
-    filter.setType(next.type);
-    filter.setCategories(next.categories);
-    filter.setItemConditions(next.itemConditions);
-    filter.setLocationFilter(next.locationFilter);
-    filter.setStatusFilter(next.statusFilter);
-    filter.setSortOrder(next.sortOrder);
-    filter.setProximitySortCity(next.proximitySortCity, next.proximitySortCityName);
-    filter.setFollowersOnly(next.followersOnly);
-  };
+
+  const handleFilterPatch = useCallback(
+    (patch: Partial<PostFilterValue>) => {
+      if ('type' in patch) filter.setType(patch.type ?? null);
+      if ('categories' in patch) filter.setCategories(patch.categories ?? []);
+      if ('itemConditions' in patch) filter.setItemConditions(patch.itemConditions ?? []);
+      if ('locationFilter' in patch) filter.setLocationFilter(patch.locationFilter ?? null);
+      if ('statusFilter' in patch) filter.setStatusFilter(patch.statusFilter ?? 'open');
+      if ('sortOrder' in patch) filter.setSortOrder(patch.sortOrder ?? 'newest');
+      if ('proximitySortCity' in patch || 'proximitySortCityName' in patch) {
+        filter.setProximitySortCity(
+          patch.proximitySortCity ?? null,
+          patch.proximitySortCityName ?? null,
+        );
+      }
+      if ('followersOnly' in patch) filter.setFollowersOnly(patch.followersOnly ?? false);
+      if ('searchQuery' in patch) filter.setSearchQuery(patch.searchQuery ?? '');
+    },
+    [filter],
+  );
 
   const header = (
     <View>
@@ -140,8 +154,8 @@ export default function HomeFeedScreen() {
 
       <PostFilterSheet
         visible={sheetOpen}
-        initial={sheetInitial}
-        onApply={handleApply}
+        value={sheetValue}
+        onPatch={handleFilterPatch}
         onClear={() => filter.clearAll()}
         onClose={() => setSheetOpen(false)}
       />
