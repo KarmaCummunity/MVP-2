@@ -1,13 +1,15 @@
 // app/apps/mobile/src/components/admin/reports/CaseAuditTimeline.tsx
 // FR-ADMIN-013 — chronological list of moderation events on a case.
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import type { ReportCaseAuditEntry } from '@kc/domain';
+import { makeUseStyles } from '@kc/ui';
 
 export interface CaseAuditTimelineProps {
   readonly entries: readonly ReportCaseAuditEntry[];
 }
 
 export function CaseAuditTimeline({ entries }: CaseAuditTimelineProps) {
+  const styles = useStyles();
   if (entries.length === 0) {
     return (
       <View style={styles.empty}>
@@ -28,12 +30,12 @@ export function CaseAuditTimeline({ entries }: CaseAuditTimelineProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors }) => ({
   list:      { gap: 8 },
-  item:      { padding: 10, borderRadius: 6, backgroundColor: '#fafafa', gap: 2 },
+  item:      { padding: 10, borderRadius: 6, backgroundColor: colors.skeleton, gap: 2 },
   action:    { fontSize: 13, fontWeight: '600' },
   time:      { fontSize: 11, opacity: 0.6 },
   actor:     { fontSize: 11, opacity: 0.5 },
   empty:     { padding: 24, alignItems: 'center' },
   emptyText: { fontSize: 14, opacity: 0.5 },
-});
+}));
