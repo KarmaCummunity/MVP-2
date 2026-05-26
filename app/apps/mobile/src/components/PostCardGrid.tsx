@@ -24,6 +24,8 @@ const OVERLAY_ICON = '#FFFFFF';
 interface PostCardGridProps {
   post: PostWithOwner;
   onPressOverride?: () => void;
+  /** Per-post press handler — receives the full post so the parent avoids per-item closures. */
+  onCardPress?: (post: PostWithOwner) => void;
   /** Grid density — home feed uses 2; profile grids use 3. */
   columns?: 2 | 3;
   gap?: number;
@@ -36,6 +38,7 @@ interface PostCardGridProps {
 function PostCardGridInner({
   post,
   onPressOverride,
+  onCardPress,
   columns = 2,
   gap = spacing.sm,
   identityRole,
@@ -74,7 +77,11 @@ function PostCardGridInner({
     finishMark('image.first_paint');
   }, []);
 
-  const navigateToPost = () => {
+  const navigateToPost = React.useCallback(() => {
+    if (onCardPress) {
+      onCardPress(post);
+      return;
+    }
     if (onPressOverride) {
       onPressOverride();
       return;
@@ -84,7 +91,7 @@ function PostCardGridInner({
         ? `?fromProfile=${encodeURIComponent(closedPostsProfileUserId)}`
         : '';
     router.push(`/post/${post.postId}${q}` as never);
-  };
+  }, [onCardPress, onPressOverride, post, closedPostsProfileUserId, router]);
 
   return (
     <TouchableOpacity

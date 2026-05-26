@@ -1,5 +1,5 @@
 import { useTranslation } from 'react-i18next';
-import React, { useMemo } from 'react';
+import React, { useCallback, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
@@ -58,6 +58,15 @@ export function PostFeedList({
     [styles.listContent, tabBarPad],
   );
 
+  const renderItem = useCallback(
+    ({ item }: { item: PostWithOwner }) => (
+      <PostCardGrid post={item} onCardPress={onCardPress} />
+    ),
+    [onCardPress],
+  );
+
+  const keyExtractor = useCallback((p: PostWithOwner) => p.postId, []);
+
   React.useEffect(() => {
     if ((data ?? []).length > 0) finishMark('feed.first_render');
   }, [data]);
@@ -84,15 +93,10 @@ export function PostFeedList({
       ref={listRef}
       style={styles.list}
       data={data ?? []}
-      keyExtractor={(p) => p.postId}
+      keyExtractor={keyExtractor}
       numColumns={HOME_FEED_GRID_COLUMNS}
       columnWrapperStyle={styles.row}
-      renderItem={({ item }) => (
-        <PostCardGrid
-          post={item}
-          onPressOverride={onCardPress ? () => onCardPress(item) : undefined}
-        />
-      )}
+      renderItem={renderItem}
       contentContainerStyle={listContentStyle as unknown as object}
       ListHeaderComponent={ListHeaderComponent as React.ComponentType | null | undefined}
       ListEmptyComponent={
