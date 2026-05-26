@@ -1,5 +1,7 @@
 import { initSentry } from '../src/lib/observability/sentry';
 initSentry();
+import { startMark, finishMark } from '../src/lib/observability/perfMarks';
+startMark('app.cold_start');
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
@@ -153,6 +155,7 @@ function NotificationsBridge(): null {
 // the active palette (web html bg, surface backgrounds in screen headers,
 // StatusBar style) read fresh values when the user toggles dark mode.
 function ThemedRootShell() {
+  React.useEffect(() => { finishMark('app.cold_start'); }, []);
   const { colors, isDark } = useTheme();
   const detailStackScreenOptions = useDetailStackScreenOptions();
 
