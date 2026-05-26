@@ -19,9 +19,8 @@ import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from './postA
  * Mapped to FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
  * FR-FEED-006 (distance sort).
  *
- * `searchQuery` and `city` (single-string equality) and `includeClosed` and
- * `sortBy: 'newest'|'city'` from the prior shape were dropped:
- *   - search bar moved off the Home Feed (the Universal Search tab owns it).
+ * `city` (single-string equality), `includeClosed`, and `sortBy: 'newest'|'city'`
+ * from the prior shape were dropped:
  *   - `city` equality replaced by `locationFilter` (city + radius).
  *   - `includeClosed` boolean expanded to `statusFilter` 3-mode.
  *   - `sortBy: 'city'` replaced by `sortOrder: 'distance'` with Haversine.
@@ -35,6 +34,8 @@ export interface PostFeedFilter {
   sortOrder?: FeedSortOrder;        // 'newest' (default) | 'oldest' | 'distance'
   proximitySortCity?: string;       // city_id of center for distance sort; undefined = viewer's city
   followersOnly?: boolean;          // true = restrict to posts whose owner the viewer follows (FR-FEED-020)
+  /** Trimmed free-text; applied only when length >= 2 after normalize (FR-FEED-003). */
+  searchQuery?: string;
 }
 
 export interface FeedPage {

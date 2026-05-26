@@ -10,8 +10,8 @@ import type {
   PostType,
 } from '@kc/domain';
 
-// Mapped to: FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
-// FR-FEED-020 (followers-only feed scope).
+// Mapped to: FR-FEED-003 (text search), FR-FEED-004 (filter modal),
+// FR-FEED-005 (persisted state), FR-FEED-020 (followers-only feed scope).
 // State is saved per signed-in user via AsyncStorage so reopening the app
 // restores their last filter set.
 
@@ -25,6 +25,7 @@ interface FilterState {
   proximitySortCity: string | null;       // null = use viewer's city
   proximitySortCityName: string | null;   // display name; UI-only — for re-hydrating the city picker
   followersOnly: boolean;                 // FR-FEED-020 — restrict to people I follow
+  searchQuery: string;                    // FR-FEED-003 — raw input; active when trim length >= 2
 
   setType: (t: PostType | null) => void;
   setCategories: (c: Category[]) => void;
@@ -34,6 +35,7 @@ interface FilterState {
   setSortOrder: (s: FeedSortOrder) => void;
   setProximitySortCity: (id: string | null, name: string | null) => void;
   setFollowersOnly: (v: boolean) => void;
+  setSearchQuery: (q: string) => void;
   clearAll: () => void;
   activeCount: () => number;
 }
@@ -48,6 +50,7 @@ const DEFAULT_STATE = {
   proximitySortCity: null as string | null,
   proximitySortCityName: null as string | null,
   followersOnly: false,
+  searchQuery: '',
 };
 
 export const useFilterStore = create<FilterState>()(
@@ -64,6 +67,7 @@ export const useFilterStore = create<FilterState>()(
       setProximitySortCity: (id, name) =>
         set({ proximitySortCity: id, proximitySortCityName: name }),
       setFollowersOnly: (followersOnly) => set({ followersOnly }),
+      setSearchQuery: (searchQuery) => set({ searchQuery }),
 
       clearAll: () => set(DEFAULT_STATE),
 
@@ -78,13 +82,14 @@ export const useFilterStore = create<FilterState>()(
         if (s.sortOrder !== 'newest') count++;
         if (s.proximitySortCity) count++;
         if (s.followersOnly) count++;
+        if (s.searchQuery.trim().length >= 2) count++;
         return count;
       },
     }),
     {
       name: 'kc-filters',
       storage: createJSONStorage(() => AsyncStorage),
-      version: 3,
+      version: 4,
       // Migrating from any prior version drops the persisted state — fields
       // and shapes have changed multiple times during P1.2. Users land on
       // defaults and pick their filters again.
@@ -99,6 +104,7 @@ export const useFilterStore = create<FilterState>()(
         proximitySortCity: state.proximitySortCity,
         proximitySortCityName: state.proximitySortCityName,
         followersOnly: state.followersOnly,
+        searchQuery: state.searchQuery,
       }),
     }
   )

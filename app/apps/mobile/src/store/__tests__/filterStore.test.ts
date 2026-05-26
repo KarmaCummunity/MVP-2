@@ -43,6 +43,7 @@ describe('useFilterStore — defaults', () => {
     expect(s.proximitySortCity).toBeNull();
     expect(s.proximitySortCityName).toBeNull();
     expect(s.followersOnly).toBe(false);
+    expect(s.searchQuery).toBe('');
   });
 
   it('activeCount() returns 0 on default state (no filters tweaked)', () => {
@@ -94,7 +95,8 @@ describe('useFilterStore — clearAll', () => {
     s.setSortOrder('distance');
     s.setProximitySortCity('IL-001', 'Tel Aviv');
     s.setFollowersOnly(true);
-    expect(useFilterStore.getState().activeCount()).toBe(8);
+    s.setSearchQuery('ספר');
+    expect(useFilterStore.getState().activeCount()).toBe(9);
 
     useFilterStore.getState().clearAll();
     expect(useFilterStore.getState().activeCount()).toBe(0);
@@ -108,7 +110,23 @@ describe('useFilterStore — clearAll', () => {
       proximitySortCity: null,
       proximitySortCityName: null,
       followersOnly: false,
+      searchQuery: '',
     });
+  });
+});
+
+describe('useFilterStore — searchQuery (FR-FEED-003)', () => {
+  it('activeCount includes searchQuery when trimmed length >= 2', () => {
+    useFilterStore.getState().setSearchQuery('ab');
+    expect(useFilterStore.getState().activeCount()).toBe(1);
+    useFilterStore.getState().setSearchQuery('a');
+    expect(useFilterStore.getState().activeCount()).toBe(0);
+  });
+
+  it('clearAll resets searchQuery', () => {
+    useFilterStore.getState().setSearchQuery('ספרים');
+    useFilterStore.getState().clearAll();
+    expect(useFilterStore.getState().searchQuery).toBe('');
   });
 });
 
@@ -161,7 +179,7 @@ describe('useFilterStore — activeCount() per dimension', () => {
     expect(useFilterStore.getState().activeCount()).toBe(1);
   });
 
-  it('all 8 dimensions stack additively up to 8', () => {
+  it('all dimensions stack additively up to 9', () => {
     const s = useFilterStore.getState();
     s.setType('Request');
     s.setCategories(['Books']);
@@ -171,6 +189,7 @@ describe('useFilterStore — activeCount() per dimension', () => {
     s.setSortOrder('distance');
     s.setProximitySortCity('IL-001', 'Tel Aviv');
     s.setFollowersOnly(true);
-    expect(useFilterStore.getState().activeCount()).toBe(8);
+    s.setSearchQuery('בקשה');
+    expect(useFilterStore.getState().activeCount()).toBe(9);
   });
 });
