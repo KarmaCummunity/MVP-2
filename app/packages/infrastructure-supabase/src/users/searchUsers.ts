@@ -17,7 +17,7 @@ export async function searchUsers(
   const escaped = q.replace(/[%_\\]/g, (c) => `\\${c}`);
   const { data, error } = await client
     .from('users')
-    .select('*')
+    .select('user_id, auth_provider, share_handle, display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url, privacy_mode, privacy_changed_at, account_status, onboarding_state, notification_preferences, is_super_admin, closure_explainer_dismissed, first_post_nudge_dismissed, items_given_count, items_received_count, active_posts_count_internal, followers_count, following_count, created_at, updated_at')
     .or(`display_name.ilike.%${escaped}%,share_handle.ilike.%${escaped}%`)
     .neq('user_id', opts.excludeUserId)
     .limit(Math.min(50, Math.max(1, opts.limit)));

@@ -62,7 +62,7 @@ export async function searchLinks(
 ): Promise<SearchBucket<DonationLinkSearchResult>> {
   const esc = escapeIlike(query);
   const slug = findMatchingCategorySlug(query.toLowerCase());
-  let q = c.from('donation_links').select('*', COUNT_EXACT).is('hidden_at', null);
+  let q = c.from('donation_links').select('id, category_slug, url, display_name, description, tags', COUNT_EXACT).is('hidden_at', null);
   if (slug && !f.donationCategory) {
     q = q.or(`display_name.ilike.%${esc}%,description.ilike.%${esc}%,url.ilike.%${esc}%,category_slug.eq.${slug}`);
   } else {

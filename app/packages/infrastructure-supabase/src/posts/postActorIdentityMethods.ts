@@ -13,7 +13,7 @@ export async function listPostActorIdentitiesForPost(
   client: SupabaseClient<Database>,
   postId: string,
 ): Promise<PostActorIdentityRow[]> {
-  const { data, error } = await client.from('post_actor_identity').select('*').eq('post_id', postId);
+  const { data, error } = await client.from('post_actor_identity').select('post_id, user_id, identity_visibility, hide_from_counterparty, surface_visibility, updated_at').eq('post_id', postId);
   if (error) {
     if (isPostgrestRelationMissing(error)) return [];
     throw new Error(`listPostActorIdentities: ${error.message}`);

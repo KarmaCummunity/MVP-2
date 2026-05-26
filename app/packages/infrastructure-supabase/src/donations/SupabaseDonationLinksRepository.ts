@@ -30,12 +30,13 @@ export class SupabaseDonationLinksRepository implements IDonationLinksRepository
   async listByCategory(slug: DonationCategorySlug): Promise<DonationLink[]> {
     const { data, error } = await this.client
       .from('donation_links')
-      .select('*')
+      .select('id, category_slug, url, display_name, description, submitted_by, validated_at, hidden_at, created_at')
       .eq('category_slug', slug)
       .is('hidden_at', null)
-      .order('created_at', { ascending: false });
+      .order('created_at', { ascending: false })
+      .limit(100);
     if (error) throw new DonationLinkError('network', error.message, error);
-    return (data ?? []).map(mapRow);
+    return (data ?? []).map((row) => mapRow(row as unknown as LinkRow));
   }
 
   async addViaEdgeFunction(input: AddDonationLinkInput): Promise<DonationLink> {

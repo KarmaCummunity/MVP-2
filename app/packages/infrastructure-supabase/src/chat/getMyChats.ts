@@ -45,9 +45,10 @@ export async function getMyChats(
 ): Promise<ChatWithPreview[]> {
   const chatsRes = await client
     .from('chats')
-    .select('*')
+    .select('chat_id, participant_a, participant_b, anchor_post_id, is_support_thread, last_message_at, inbox_hidden_at_a, inbox_hidden_at_b, removed_at, created_at')
     .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
-    .order('last_message_at', { ascending: false });
+    .order('last_message_at', { ascending: false })
+    .limit(50);
   if (chatsRes.error) throw mapChatError(chatsRes.error);
 
   const raw = (chatsRes.data ?? []) as ChatRow[];
@@ -61,9 +62,10 @@ export async function getMyChats(
 
   const msgsRes = await client
     .from('messages')
-    .select('*')
+    .select('message_id, chat_id, sender_id, body, kind, system_payload, status, created_at, delivered_at, read_at')
     .in('chat_id', chatIds)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
   if (msgsRes.error) throw mapChatError(msgsRes.error);
   const lastMessageByChat = new Map<string, Message>();
   for (const m of (msgsRes.data ?? []).map(rowToMessage)) {

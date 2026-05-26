@@ -46,7 +46,7 @@ export async function exploreLinks(
   f: SearchFilters,
   limit: number,
 ): Promise<SearchBucket<DonationLinkSearchResult>> {
-  let q = c.from('donation_links').select('*', COUNT_EXACT).is('hidden_at', null);
+  let q = c.from('donation_links').select('id, category_slug, url, display_name, description, tags', COUNT_EXACT).is('hidden_at', null);
   if (f.donationCategory) q = q.eq('category_slug', f.donationCategory);
   const { data, count, error } = await q.order('created_at', { ascending: false }).limit(limit);
   if (error) throw new Error(`exploreLinks: ${error.message}`);
