@@ -11,7 +11,8 @@ import React, { useState } from 'react';
 import { Modal, Pressable, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
-import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
+import { hasPermission, type AdminRole } from '@kc/domain';
+import { useAdminRoles } from '../../hooks/useAdminRoles';
 import he from '../../i18n/locales/he';
 import { ReportUserModal } from './ReportUserModal';
 import { BanUserModal } from './BanUserModal';
@@ -27,7 +28,8 @@ type OpenModal = 'report' | 'ban' | null;
 export function ProfileOverflowMenu({ targetUserId }: Props) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const isAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canBan = hasPermission(roles as readonly AdminRole[], 'reports.permanent_ban');
   const [sheetOpen, setSheetOpen] = useState(false);
   const [openModal, setOpenModal] = useState<OpenModal>(null);
 
@@ -59,7 +61,7 @@ export function ProfileOverflowMenu({ targetUserId }: Props) {
             >
               <Text style={styles.itemText}>{t.report.user.title}</Text>
             </TouchableOpacity>
-            {isAdmin ? (
+            {canBan ? (
               <>
                 <View style={styles.divider} />
                 <TouchableOpacity
@@ -84,7 +86,7 @@ export function ProfileOverflowMenu({ targetUserId }: Props) {
         visible={openModal === 'report'}
         onClose={() => setOpenModal(null)}
       />
-      {isAdmin ? (
+      {canBan ? (
         <BanUserModal
           targetUserId={targetUserId}
           visible={openModal === 'ban'}
