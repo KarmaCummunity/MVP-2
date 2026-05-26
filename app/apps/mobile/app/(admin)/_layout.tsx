@@ -4,6 +4,7 @@ import { Stack } from 'expo-router';
 import { Platform, SafeAreaView, View, StyleSheet } from 'react-native';
 import { AdminGate } from '../../src/components/admin/AdminGate';
 import { AdminNav } from '../../src/components/admin/AdminNav';
+import { rowDirectionStart } from '../../src/lib/rtlLayout';
 
 export default function AdminLayout(): ReactElement {
   return (
@@ -31,7 +32,7 @@ export default function AdminLayout(): ReactElement {
 
 const styles = StyleSheet.create({
   safe:       { flex: 1 },
-  webRow:     { flex: 1, flexDirection: 'row' },
+  webRow:     { flex: 1, flexDirection: rowDirectionStart },
   webMain:    { flex: 1 },
   mobileCol:  { flex: 1, flexDirection: 'column' },
   mobileMain: { flex: 1 },

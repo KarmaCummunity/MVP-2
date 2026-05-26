@@ -6,6 +6,12 @@ import he from '../../i18n/locales/he';
 
 type Item = { key: keyof typeof he.admin.nav; href: string };
 
+function normalize(href: string): string {
+  // Strip expo-router group prefix '(admin)' so the literal route
+  // matches what usePathname() returns at runtime.
+  return href.replace('/(admin)', '/admin').replace(/\/$/, '');
+}
+
 const ITEMS: readonly Item[] = [
   { key: 'dashboard', href: '/(admin)' },
   { key: 'reports',   href: '/(admin)/reports' },
@@ -23,7 +29,9 @@ export function AdminNav(): ReactElement {
   const content = (
     <>
       {ITEMS.map(({ key, href }) => {
-        const active = pathname === href || (href === '/(admin)' && pathname.endsWith('/admin'));
+        const target = normalize(href);
+        const current = normalize(pathname || '/admin');
+        const active = current === target;
         return (
           <Pressable
             key={key}
@@ -53,7 +61,7 @@ export function AdminNav(): ReactElement {
 }
 
 const styles = StyleSheet.create({
-  sidebar: { width: 200, paddingVertical: 16, paddingHorizontal: 8, borderLeftWidth: 1, borderLeftColor: '#eee', gap: 4 },
+  sidebar: { width: 200, paddingVertical: 16, paddingHorizontal: 8, borderStartWidth: 1, borderStartColor: '#eee', gap: 4 },
   topbar:  { gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
   item:    { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
   itemActive: { backgroundColor: '#eef2ff' },

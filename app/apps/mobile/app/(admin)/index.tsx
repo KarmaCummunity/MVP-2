@@ -1,8 +1,11 @@
 // app/apps/mobile/app/(admin)/index.tsx
 import type { ReactElement } from 'react';
 import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import type { AdminRole } from '@kc/domain';
 import { useAdminRoles } from '../../src/hooks/useAdminRoles';
 import he from '../../src/i18n/locales/he';
+
+const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
 
 export default function AdminDashboard(): ReactElement {
   const roles = useAdminRoles();
@@ -18,7 +21,7 @@ export default function AdminDashboard(): ReactElement {
           {roles.map((role) => (
             <View key={role} style={styles.badge}>
               <Text style={styles.badgeText}>
-                {(he.admin.roles as Record<string, string>)[role] ?? role}
+                {ROLE_LABELS[role] ?? role}
               </Text>
             </View>
           ))}
