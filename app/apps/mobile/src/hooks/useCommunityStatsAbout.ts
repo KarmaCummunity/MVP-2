@@ -1,7 +1,9 @@
 // Hook for fetching community stats on the About screen.
-// Polls every 60 s, matching FR-STATS-004.
+// Fetches once on mount, then stays fresh via Supabase Realtime — no polling.
+// Mapped to FR-STATS-004.
 
-import { useState, useEffect, useCallback, useRef } from 'react';
+import { useState, useEffect, useCallback } from 'react';
+import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { getCommunityStatsSnapshotUseCase } from '../services/postsComposition';
 
 interface StatsState {
@@ -12,8 +14,6 @@ interface StatsState {
   readonly error: boolean;
 }
 
-const POLL_INTERVAL_MS = 60_000;
-
 export function useCommunityStatsAbout(): StatsState & { refetch: () => void } {
   const [state, setState] = useState<StatsState>({
     users: 0,
@@ -22,12 +22,12 @@ export function useCommunityStatsAbout(): StatsState & { refetch: () => void } {
     loading: true,
     error: false,
   });
-  const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-  const fetch = useCallback(async () => {
+  const fetchOnce = useCallback(async (guard: { cancelled: boolean }) => {
     setState((s) => ({ ...s, loading: true, error: false }));
     try {
       const snap = await getCommunityStatsSnapshotUseCase().execute();
+      if (guard.cancelled) return;
       setState({
         users: snap.registeredUsers,
         posts: snap.activePublicPosts,
@@ -36,17 +36,35 @@ export function useCommunityStatsAbout(): StatsState & { refetch: () => void } {
         error: false,
       });
     } catch {
+      if (guard.cancelled) return;
       setState((s) => ({ ...s, loading: false, error: true }));
     }
   }, []);
 
   useEffect(() => {
-    void fetch();
-    timerRef.current = setInterval(() => void fetch(), POLL_INTERVAL_MS);
-    return () => {
-      if (timerRef.current !== null) clearInterval(timerRef.current);
-    };
-  }, [fetch]);
+    const guard = { cancelled: false };
+    void fetchOnce(guard);
 
-  return { ...state, refetch: fetch };
+    const supabase = getSupabaseClient();
+    const channel = supabase
+      .channel('community-stats-watch')
+      .on(
+        'postgres_changes',
+        { event: '*', schema: 'public', table: 'community_stats' },
+        () => void fetchOnce(guard),
+      )
+      .subscribe();
+
+    return () => {
+      guard.cancelled = true;
+      void supabase.removeChannel(channel);
+    };
+  }, [fetchOnce]);
+
+  const refetch = useCallback(() => {
+    const guard = { cancelled: false };
+    void fetchOnce(guard);
+  }, [fetchOnce]);
+
+  return { ...state, refetch };
 }
