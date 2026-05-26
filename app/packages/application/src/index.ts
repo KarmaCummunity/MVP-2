@@ -153,3 +153,6 @@ export * from './ports/ILegalDocumentRepository';
 export * from './legal/LoadLegalDocumentUseCase';
 export * from './legal/CheckPendingLegalAcksUseCase';
 export * from './legal/AcceptLegalDocumentUseCase';
+
+export * from './admin/IAdminRoleRepository';
+export * from './admin/GetMyAdminRolesUseCase';

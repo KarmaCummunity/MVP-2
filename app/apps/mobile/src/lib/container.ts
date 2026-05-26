@@ -14,6 +14,7 @@ import {
   SupabaseModerationAdminRepository,
   SupabaseAccountGateRepository,
   SupabaseDeviceRepository,
+  SupabaseAdminRoleRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -43,6 +44,7 @@ import {
   LookupAuditUseCase,
   ReportUserUseCase,
   UpdateNotificationPreferencesUseCase,
+  GetMyAdminRolesUseCase,
 } from '@kc/application';
 
 /**
@@ -71,8 +73,10 @@ const postRepo = new SupabasePostRepository(supabase);
 const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
+const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
+const getMyAdminRoles = new GetMyAdminRolesUseCase(adminRoleRepo);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
@@ -81,6 +85,10 @@ export const container = {
   chatRealtime,
   moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
   deviceRepo,
+  adminRoleRepo,
+
+  // Admin portal (FR-ADMIN-011)
+  getMyAdminRoles,
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

@@ -1,0 +1,43 @@
+// app/apps/mobile/src/i18n/locales/he/modules/admin.ts
+export const adminHe = {
+  portalTitle: 'פורטל ניהול',
+  settingsRow: 'פורטל ניהול',
+  nav: {
+    dashboard: 'לוח בקרה',
+    reports: 'דיווחים',
+    tasks: 'משימות צוות',
+    admins: 'צוות ניהול',
+    users: 'משתמשים',
+    posts: 'פוסטים',
+    audit: 'יומן פעולות',
+  },
+  roles: {
+    super_admin: 'מנהל-על',
+    moderator: 'מנחה',
+    support: 'תמיכה',
+    operator: 'מוקדן',
+    operators_manager: 'מנהל מוקדנים',
+    org_admin: 'מנהל ארגון',
+    org_manager: 'מנהל בארגון',
+    org_employee: 'עובד עמותה',
+    volunteer_manager: 'מנהל מתנדבים',
+    org_volunteer: 'מתנדב בארגון',
+  },
+  dashboard: {
+    welcome: 'ברוך הבא לפורטל הניהול',
+    rolesLabel: 'התפקידים שלך',
+    quickLinksTitle: 'קיצורי דרך',
+    openReportsKpi: 'דיווחים פתוחים',
+    openTasksKpi: 'משימות פתוחות',
+    comingSoonKpi: 'יזמין בקרוב',
+  },
+  comingSoon: {
+    title: 'מסך זה יזמין בקרוב',
+    a1: 'דיווחים — תת־פרויקט A1',
+    a2: 'ניהול צוות — תת־פרויקט A2',
+    a3: 'משימות — תת־פרויקט A3',
+    a4: 'משתמשים, פוסטים ויומן — תת־פרויקט A4',
+    back: 'חזרה ללוח בקרה',
+  },
+  gate: { denied: 'אין לך הרשאת גישה לפורטל הניהול.' },
+} as const;
