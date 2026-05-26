@@ -60,6 +60,9 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
         Alert.alert(t.report.user.duplicateError);
         onClose();
+      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
+        Alert.alert(t.report.user.alreadyModeratedError);
+        onClose();
       } else {
         Alert.alert(t.actions.errors.networkError);
       }

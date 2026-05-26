@@ -4,6 +4,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReportInboxRow } from '@kc/domain';
 import { thresholdProgress } from '@kc/domain';
+import { makeUseStyles } from '@kc/ui';
 import he from '../../../i18n/locales/he';
 
 export interface ReportRowProps {
@@ -30,6 +31,7 @@ function preview(row: ReportInboxRow): string {
 export function ReportRow({ row }: ReportRowProps) {
   const progress = thresholdProgress(row.reporterCount);
   const caseId = encodeURIComponent(`${row.targetType}:${row.targetId}`);
+  const styles = useStyles();
   return (
     <Pressable
       style={styles.root}
@@ -51,9 +53,9 @@ export function ReportRow({ row }: ReportRowProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  root:      { padding: 16, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: '#eee' },
+const useStyles = makeUseStyles(({ colors }) => ({
+  root:      { padding: 16, gap: 8, borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border },
   preview:   { fontSize: 14, fontWeight: '500' },
   meta:      { flexDirection: 'row', gap: 12 },
   metaText:  { fontSize: 12, opacity: 0.6 },
-});
+}));

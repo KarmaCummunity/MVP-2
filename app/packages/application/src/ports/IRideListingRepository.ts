@@ -6,6 +6,10 @@ export interface RideListingRow {
   destCityId: string;
   originCityName: string;
   destCityName: string;
+  originStreet: string;
+  originStreetNumber: string | null;
+  destStreet: string;
+  destStreetNumber: string | null;
   departsAt: string;
   seatsAvailable: number | null;
   description: string | null;
@@ -21,6 +25,10 @@ export interface CreateRideListingRepoInput {
   mode: 'offer' | 'request';
   originCityId: string;
   destCityId: string;
+  originStreet: string;
+  originStreetNumber: string | null;
+  destStreet: string;
+  destStreetNumber: string | null;
   departsAt: string;
   seatsAvailable: number | null;
   description: string | null;

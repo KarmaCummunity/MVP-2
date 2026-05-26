@@ -12,6 +12,7 @@ import { AvatarInitials } from '../../../components/AvatarInitials';
 import { getUserRepo } from '../../../services/userComposition';
 import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 import { rowDirectionStart } from '../../../lib/rtlLayout';
+import { formatRideAddress } from '../lib/formatRideAddress';
 
 interface Props {
   readonly ride: RideListingRow;
@@ -30,6 +31,8 @@ export function RideCard({ ride }: Props) {
   const ownerName = ownerQuery.data?.displayName ?? t('profile.fallbackName');
   const departsLabel = format(new Date(ride.departsAt), 'dd/MM HH:mm', { locale: dateFnsHe });
   const isOffer = ride.mode === 'offer';
+  const originLine = formatRideAddress(ride.originCityName, ride.originStreet, ride.originStreetNumber);
+  const destLine = formatRideAddress(ride.destCityName, ride.destStreet, ride.destStreetNumber);
 
   return (
     <Pressable
@@ -51,8 +54,8 @@ export function RideCard({ ride }: Props) {
         <Text style={styles.title} numberOfLines={2}>
           {ride.title}
         </Text>
-        <Text style={styles.route} numberOfLines={1}>
-          {ride.originCityName} → {ride.destCityName}
+        <Text style={styles.route} numberOfLines={2}>
+          {originLine} → {destLine}
         </Text>
         {ride.description ? (
           <Text style={styles.snippet} numberOfLines={2}>

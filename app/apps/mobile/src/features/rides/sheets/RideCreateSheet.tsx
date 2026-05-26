@@ -1,20 +1,31 @@
-// FR-RIDE-003 — publish ride bottom sheet (FAB entry).
+// FR-RIDE-003 — publish ride sheet (items-form parity: mode toggle, full address, datetime picker).
 import React, { useEffect, useState } from 'react';
-import { ActivityIndicator, Modal, Pressable, ScrollView, Text, TextInput, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Modal,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { addDays, addHours, addMinutes, format } from 'date-fns';
-import { he as dateFnsHe } from 'date-fns/locale';
-import { RideError } from '@kc/domain';
-import type { RideMode } from '@kc/domain';
+import { Ionicons } from '@expo/vector-icons';
+import { RideError, type RideMode } from '@kc/domain';
 import { useTheme } from '@kc/ui';
+import { useCreatePostStyles } from '../../../../app/(tabs)/create.styles';
 import { useRideCreateSheetStyles } from './rideCreateSheet.styles';
 import { CityPicker } from '../../../components/CityPicker';
-import { SearchChip } from '../../../components/search/SearchChip';
+import { StreetPicker } from '../../../components/StreetPicker';
+import { FormFieldLabel } from '../../../components/ui/FormFieldLabel';
+import { DateTimeField } from '../../../components/ui/DateTimeField';
 import { useAuthStore } from '../../../store/authStore';
 import { getCreateRideListingUseCase } from '../composition/ridesComposition';
 import { useRideDefaults } from '../hooks/useRideDefaults';
 import { setRideLastMode } from '../lib/rideLastModeStorage';
+
 interface Props {
   readonly visible: boolean;
   readonly onClose: () => void;
@@ -22,16 +33,20 @@ interface Props {
 
 export function RideCreateSheet({ visible, onClose }: Props) {
   const { t } = useTranslation();
-  const styles = useRideCreateSheetStyles();
+  const postStyles = useCreatePostStyles();
+  const sheetStyles = useRideCreateSheetStyles();
   const { colors } = useTheme();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const queryClient = useQueryClient();
   const defaults = useRideDefaults();
 
-  const [step, setStep] = useState<'mode' | 'form'>('mode');
   const [mode, setMode] = useState<RideMode>('offer');
   const [originCity, setOriginCity] = useState<{ id: string; name: string } | null>(null);
+  const [originStreet, setOriginStreet] = useState('');
+  const [originStreetNumber, setOriginStreetNumber] = useState('');
   const [destCity, setDestCity] = useState<{ id: string; name: string } | null>(null);
+  const [destStreet, setDestStreet] = useState('');
+  const [destStreetNumber, setDestStreetNumber] = useState('');
   const [departsAt, setDepartsAt] = useState(() => new Date());
   const [seats, setSeats] = useState(3);
   const [description, setDescription] = useState('');
@@ -40,24 +55,25 @@ export function RideCreateSheet({ visible, onClose }: Props) {
 
   useEffect(() => {
     if (!visible) {
-      setStep('mode');
       setErrorKey(null);
       return;
     }
     if (!defaults.isLoading) {
       setMode(defaults.mode);
       setOriginCity(defaults.originCity);
+      setOriginStreet(defaults.originStreet);
+      setOriginStreetNumber(defaults.originStreetNumber);
       setDepartsAt(new Date());
       setSeats(defaults.seatsAvailable);
       setDestCity(null);
+      setDestStreet('');
+      setDestStreetNumber('');
       setDescription('');
     }
-  }, [visible, defaults.isLoading, defaults.mode, defaults.originCity, defaults.seatsAvailable]);
-
-  const departsLabel = format(departsAt, 'dd/MM/yyyy HH:mm', { locale: dateFnsHe });
+  }, [visible, defaults.isLoading, defaults]);
 
   const handlePublish = async () => {
-    if (!viewerId || !originCity || !destCity) return;
+    if (!viewerId || !originCity || !destCity || !originStreet.trim() || !destStreet.trim()) return;
     setSubmitting(true);
     setErrorKey(null);
     try {
@@ -66,6 +82,10 @@ export function RideCreateSheet({ visible, onClose }: Props) {
         mode,
         originCityId: originCity.id,
         destCityId: destCity.id,
+        originStreet: originStreet.trim(),
+        originStreetNumber: originStreetNumber.trim() || null,
+        destStreet: destStreet.trim(),
+        destStreetNumber: destStreetNumber.trim() || null,
         departsAt: departsAt.toISOString(),
         seatsAvailable: mode === 'offer' ? seats : null,
         description: description.trim() || null,
@@ -85,128 +105,166 @@ export function RideCreateSheet({ visible, onClose }: Props) {
   };
 
   const canPublish =
-    Boolean(originCity && destCity) &&
+    Boolean(originCity && destCity && originStreet.trim() && destStreet.trim()) &&
     (mode === 'request' || (seats >= 1 && seats <= 8)) &&
-    !submitting;
+    !submitting &&
+    !defaults.isLoading;
 
   return (
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
-      <View style={styles.overlay}>
-        <Pressable style={styles.backdrop} onPress={onClose} />
-        <View style={styles.sheet}>
-          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scroll}>
-            <Text style={styles.title}>
-              {step === 'mode' ? t('donations.rides.publishTitle') : t('donations.rides.formTitle')}
-            </Text>
+      <View style={sheetStyles.overlay}>
+        <Pressable style={sheetStyles.backdrop} onPress={onClose} />
+        <View style={sheetStyles.sheet}>
+          <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={sheetStyles.scroll}>
+            <Text style={sheetStyles.title}>{t('donations.rides.formTitle')}</Text>
 
-            {step === 'mode' ? (
-              <>
-                <View style={styles.chipRow}>
-                  <SearchChip
-                    label={t('donations.rides.modeOffer')}
-                    active={mode === 'offer'}
-                    onPress={() => setMode('offer')}
-                  />
-                  <SearchChip
-                    label={t('donations.rides.modeRequest')}
-                    active={mode === 'request'}
-                    onPress={() => setMode('request')}
-                  />
-                </View>
-                <Pressable style={styles.primaryBtn} onPress={() => setStep('form')}>
-                  <Text style={styles.primaryBtnText}>{t('donations.rides.continue')}</Text>
-                </Pressable>
-              </>
+            <View style={postStyles.typeToggle}>
+              <TouchableOpacity
+                style={[postStyles.typeBtn, mode === 'request' && postStyles.typeBtnActive]}
+                onPress={() => setMode('request')}
+                accessibilityRole="button"
+                accessibilityState={{ selected: mode === 'request' }}
+              >
+                <Ionicons
+                  name="search-outline"
+                  size={18}
+                  color={mode === 'request' ? colors.textInverse : colors.textPrimary}
+                />
+                <Text
+                  style={[
+                    postStyles.typeBtnText,
+                    mode === 'request' && postStyles.typeBtnTextActive,
+                  ]}
+                >
+                  {t('donations.rides.modeRequest')}
+                </Text>
+              </TouchableOpacity>
+              <TouchableOpacity
+                style={[postStyles.typeBtn, mode === 'offer' && postStyles.typeBtnActiveGive]}
+                onPress={() => setMode('offer')}
+                accessibilityRole="button"
+                accessibilityState={{ selected: mode === 'offer' }}
+              >
+                <Ionicons
+                  name="car-outline"
+                  size={18}
+                  color={mode === 'offer' ? colors.textInverse : colors.textPrimary}
+                />
+                <Text
+                  style={[postStyles.typeBtnText, mode === 'offer' && postStyles.typeBtnTextActive]}
+                >
+                  {t('donations.rides.modeOffer')}
+                </Text>
+              </TouchableOpacity>
+            </View>
+
+            {defaults.isLoading ? (
+              <ActivityIndicator color={colors.primary} style={{ marginTop: 24 }} />
             ) : (
               <>
-                {defaults.isLoading ? (
-                  <ActivityIndicator color={colors.primary} />
-                ) : (
-                  <>
-                    <Text style={styles.label}>{t('donations.rides.fieldOrigin')}</Text>
-                    <CityPicker value={originCity} onChange={setOriginCity} />
-
-                    <Text style={styles.label}>{t('donations.rides.fieldDest')}</Text>
-                    <CityPicker value={destCity} onChange={setDestCity} />
-
-                    <Text style={styles.label}>{t('donations.rides.fieldDeparts')}</Text>
-                    <Text style={styles.departsValue}>{departsLabel}</Text>
-                    <View style={styles.chipRow}>
-                      <SearchChip
-                        label={t('donations.rides.departsNow')}
-                        active={false}
-                        onPress={() => setDepartsAt(new Date())}
-                      />
-                      <SearchChip
-                        label={t('donations.rides.departsPlus30')}
-                        active={false}
-                        onPress={() => setDepartsAt(addMinutes(new Date(), 30))}
-                      />
-                      <SearchChip
-                        label={t('donations.rides.departsPlus1h')}
-                        active={false}
-                        onPress={() => setDepartsAt(addHours(new Date(), 1))}
-                      />
-                      <SearchChip
-                        label={t('donations.rides.departsPlus1d')}
-                        active={false}
-                        onPress={() => setDepartsAt(addDays(new Date(), 1))}
+                <View style={postStyles.section}>
+                  <FormFieldLabel label={t('donations.rides.sectionOrigin')} required />
+                  <CityPicker value={originCity} onChange={setOriginCity} />
+                  <View style={postStyles.streetRow}>
+                    <View style={postStyles.streetInputStreet}>
+                      <StreetPicker
+                        cityId={originCity?.id ?? null}
+                        value={originStreet ? { id: '', name: originStreet } : null}
+                        onChange={(sel) => setOriginStreet(sel.name)}
                       />
                     </View>
-
-                    {mode === 'offer' ? (
-                      <>
-                        <Text style={styles.label}>{t('donations.rides.fieldSeats')}</Text>
-                        <View style={styles.seatsRow}>
-                          <Pressable
-                            style={styles.seatBtn}
-                            onPress={() => setSeats((s) => Math.max(1, s - 1))}
-                          >
-                            <Text style={styles.seatBtnText}>−</Text>
-                          </Pressable>
-                          <Text style={styles.seatsValue}>{seats}</Text>
-                          <Pressable
-                            style={styles.seatBtn}
-                            onPress={() => setSeats((s) => Math.min(8, s + 1))}
-                          >
-                            <Text style={styles.seatBtnText}>+</Text>
-                          </Pressable>
-                        </View>
-                      </>
-                    ) : null}
-
-                    <Text style={styles.label}>{t('donations.rides.fieldDescription')}</Text>
                     <TextInput
-                      style={styles.input}
-                      value={description}
-                      onChangeText={setDescription}
-                      placeholder={t('donations.rides.descriptionPlaceholder')}
+                      style={[postStyles.input, postStyles.streetInputHouse, !originCity && { opacity: 0.5 }]}
+                      value={originStreetNumber}
+                      onChangeText={setOriginStreetNumber}
+                      placeholder={t('post.streetNumberShort')}
                       placeholderTextColor={colors.textDisabled}
-                      multiline
-                      maxLength={500}
                       textAlign="right"
+                      editable={Boolean(originCity)}
                     />
+                  </View>
+                </View>
 
-                    {errorKey ? (
-                      <Text style={styles.errorText}>{t(errorKey)}</Text>
-                    ) : null}
+                <View style={postStyles.section}>
+                  <FormFieldLabel label={t('donations.rides.sectionDest')} required />
+                  <CityPicker value={destCity} onChange={setDestCity} />
+                  <View style={postStyles.streetRow}>
+                    <View style={postStyles.streetInputStreet}>
+                      <StreetPicker
+                        cityId={destCity?.id ?? null}
+                        value={destStreet ? { id: '', name: destStreet } : null}
+                        onChange={(sel) => setDestStreet(sel.name)}
+                      />
+                    </View>
+                    <TextInput
+                      style={[postStyles.input, postStyles.streetInputHouse, !destCity && { opacity: 0.5 }]}
+                      value={destStreetNumber}
+                      onChangeText={setDestStreetNumber}
+                      placeholder={t('post.streetNumberShort')}
+                      placeholderTextColor={colors.textDisabled}
+                      textAlign="right"
+                      editable={Boolean(destCity)}
+                    />
+                  </View>
+                </View>
 
-                    <Pressable
-                      style={[styles.primaryBtn, !canPublish && styles.primaryBtnDisabled]}
-                      onPress={() => void handlePublish()}
-                      disabled={!canPublish}
-                    >
-                      {submitting ? (
-                        <ActivityIndicator color={colors.textInverse} />
-                      ) : (
-                        <Text style={styles.primaryBtnText}>{t('donations.rides.publish')}</Text>
-                      )}
-                    </Pressable>
-                    <Pressable onPress={() => setStep('mode')} style={styles.backLink}>
-                      <Text style={styles.backLinkText}>{t('donations.rides.backToMode')}</Text>
-                    </Pressable>
-                  </>
-                )}
+                <View style={postStyles.section}>
+                  <FormFieldLabel label={t('donations.rides.fieldDeparts')} required />
+                  <DateTimeField
+                    value={departsAt}
+                    onChange={setDepartsAt}
+                    minimumDate={new Date()}
+                  />
+                </View>
+
+                {mode === 'offer' ? (
+                  <View style={postStyles.section}>
+                    <FormFieldLabel label={t('donations.rides.fieldSeats')} required />
+                    <View style={sheetStyles.seatsRow}>
+                      <Pressable
+                        style={sheetStyles.seatBtn}
+                        onPress={() => setSeats((s) => Math.max(1, s - 1))}
+                      >
+                        <Text style={sheetStyles.seatBtnText}>−</Text>
+                      </Pressable>
+                      <Text style={sheetStyles.seatsValue}>{seats}</Text>
+                      <Pressable
+                        style={sheetStyles.seatBtn}
+                        onPress={() => setSeats((s) => Math.min(8, s + 1))}
+                      >
+                        <Text style={sheetStyles.seatBtnText}>+</Text>
+                      </Pressable>
+                    </View>
+                  </View>
+                ) : null}
+
+                <View style={postStyles.section}>
+                  <FormFieldLabel label={t('donations.rides.fieldDescription')} />
+                  <TextInput
+                    style={[postStyles.input, postStyles.textarea]}
+                    value={description}
+                    onChangeText={setDescription}
+                    placeholder={t('donations.rides.descriptionPlaceholder')}
+                    placeholderTextColor={colors.textDisabled}
+                    multiline
+                    maxLength={500}
+                    textAlign="right"
+                  />
+                </View>
+
+                {errorKey ? <Text style={sheetStyles.errorText}>{t(errorKey)}</Text> : null}
+
+                <Pressable
+                  style={[sheetStyles.primaryBtn, !canPublish && sheetStyles.primaryBtnDisabled]}
+                  onPress={() => void handlePublish()}
+                  disabled={!canPublish}
+                >
+                  {submitting ? (
+                    <ActivityIndicator color={colors.textInverse} />
+                  ) : (
+                    <Text style={sheetStyles.primaryBtnText}>{t('donations.rides.publish')}</Text>
+                  )}
+                </Pressable>
               </>
             )}
           </ScrollView>

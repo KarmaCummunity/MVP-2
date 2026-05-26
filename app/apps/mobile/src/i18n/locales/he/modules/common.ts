@@ -2,4 +2,5 @@
 // translation modules via interpolation. Kept tiny and dependency-free.
 export const commonHe = {
   deletedUser: 'משתמש שנמחק',
+  requiredFieldA11y: 'שדה חובה',
 } as const;
