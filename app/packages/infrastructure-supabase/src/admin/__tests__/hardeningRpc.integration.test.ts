@@ -15,9 +15,21 @@
 //      post that's already in 'removed_admin'.
 //   5. Regression: report_target_not_visible still fires for true privacy
 //      gating (target the reporter cannot see).
+//
+// Test helpers (seedUser, signInAs, seedPost, seedChatBetween, fileReportAs)
+// live in `./hardeningRpc.helpers.ts` to keep this file under the 300-line
+// architecture cap.
 
 import { afterAll, beforeAll, describe, expect, it } from 'vitest';
 import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import {
+  fileReportAs,
+  seedChatBetween,
+  seedPost,
+  seedUser,
+  signInAs,
+  type TestHarness,
+} from './hardeningRpc.helpers';
 
 const URL = process.env['SUPABASE_URL'];
 const SERVICE = process.env['SUPABASE_SERVICE_ROLE_KEY'];
@@ -32,9 +44,11 @@ d('admin portal hardening (integration)', () => {
   let preExistingSuperAdminGrantId: string | null = null;
   let suiteModeratorClient: SupabaseClient;
   let suiteModeratorUid: string;
+  let h: TestHarness;
 
   beforeAll(async () => {
     admin = createClient(URL!, SERVICE!, { auth: { persistSession: false } });
+    h = { admin, cleanup, url: URL!, anon: ANON! };
 
     // The single-active-super_admin invariant requires us to temporarily
     // revoke any pre-existing super_admin grant for the suite's duration.
@@ -54,7 +68,7 @@ d('admin portal hardening (integration)', () => {
 
     // Suite moderator (used by tests 1 + 3 — and any test that needs a
     // moderator-authenticated client). Seeded once for the whole suite.
-    suiteModeratorUid = await seedUser();
+    suiteModeratorUid = await seedUser(h);
     await admin.from('admin_role_grants').insert({ user_id: suiteModeratorUid, role: 'moderator' });
     cleanup.push(async () => {
       await admin
@@ -64,7 +78,7 @@ d('admin portal hardening (integration)', () => {
         .eq('role', 'moderator')
         .is('revoked_at', null);
     });
-    suiteModeratorClient = await signInAs(suiteModeratorUid);
+    suiteModeratorClient = await signInAs(h, suiteModeratorUid);
   }, 60_000);
 
   afterAll(async () => {
@@ -80,96 +94,11 @@ d('admin portal hardening (integration)', () => {
     }
   }, 30_000);
 
-  // ── helpers ───────────────────────────────────────────────────────────────
-  async function seedUser(): Promise<string> {
-    const stamp = `${Date.now()}-${Math.random().toString(36).slice(2)}`;
-    const email = `hardening-${stamp}@kc.test`;
-    const { data, error } = await admin.auth.admin.createUser({
-      email, password: 'p4ssword!!', email_confirm: true,
-    });
-    if (error || !data.user) throw error ?? new Error('no user');
-    const uid = data.user.id;
-    await admin.from('users').upsert({ user_id: uid, display_name: 'hardening test' });
-    cleanup.push(async () => {
-      try { await admin.auth.admin.deleteUser(uid); } catch { /* best-effort */ }
-    });
-    return uid;
-  }
-
-  async function signInAs(uid: string): Promise<SupabaseClient> {
-    // Re-fetch the email we set above; the auth.admin API requires it for
-    // password sign-in. We use service-role to mint a session via OTP-less
-    // shortcut: signInWithPassword. Since we set `email_confirm: true` at
-    // creation, the password is enough.
-    const { data: { user }, error: fetchErr } = await admin.auth.admin.getUserById(uid);
-    if (fetchErr || !user?.email) throw fetchErr ?? new Error('user missing email');
-    const c = createClient(URL!, ANON!, { auth: { persistSession: false } });
-    const { error } = await c.auth.signInWithPassword({
-      email: user.email, password: 'p4ssword!!',
-    });
-    if (error) throw error;
-    return c;
-  }
-
-  async function seedPost(): Promise<{ postId: string; ownerUid: string }> {
-    const ownerUid = await seedUser();
-    const { data: city } = await admin
-      .from('cities')
-      .select('city_id')
-      .limit(1)
-      .single();
-    if (!city) throw new Error('no city in dev db');
-    const { data, error } = await admin
-      .from('posts')
-      .insert({
-        owner_id: ownerUid,
-        type: 'Give',
-        title: 'hardening-' + Math.random().toString(36).slice(2, 8),
-        category: 'Other',
-        city: city.city_id,
-        street: 'Test St',
-        street_number: '1',
-      })
-      .select('post_id')
-      .single();
-    if (error || !data) throw error ?? new Error('post insert failed');
-    return { postId: data.post_id, ownerUid };
-  }
-
-  async function seedChatBetween(a: string, b: string): Promise<string> {
-    // chats_canonical_order requires participant_a < participant_b lexically.
-    const [pa, pb] = a < b ? [a, b] : [b, a];
-    const { data, error } = await admin
-      .from('chats')
-      .insert({ participant_a: pa, participant_b: pb })
-      .select('chat_id')
-      .single();
-    if (error || !data) throw error ?? new Error('chat insert failed');
-    return data.chat_id;
-  }
-
-  async function fileReportAs(
-    client: SupabaseClient,
-    reporterId: string,
-    targetType: 'post' | 'user' | 'chat',
-    targetId: string,
-  ): Promise<{ reportId: string; reporterId: string }> {
-    const { data, error } = await client
-      .from('reports')
-      .insert({
-        reporter_id: reporterId, target_type: targetType, target_id: targetId, reason: 'Spam',
-      })
-      .select('report_id')
-      .single();
-    if (error || !data) throw error ?? new Error('report insert failed');
-    return { reportId: data.report_id, reporterId };
-  }
-
   // ── 1. admin_delete_message widened to RBAC (moderator role) ──────────────
   it('admin_delete_message succeeds for a moderator role', async () => {
-    const senderUid = await seedUser();
-    const otherUid = await seedUser();
-    const chatId = await seedChatBetween(senderUid, otherUid);
+    const senderUid = await seedUser(h);
+    const otherUid = await seedUser(h);
+    const chatId = await seedChatBetween(h, senderUid, otherUid);
 
     // Service-role insert: the messages INSERT policy restricts kind to 'user'
     // for clients, but we want a user-kind message that the admin RPC can
@@ -200,16 +129,14 @@ d('admin portal hardening (integration)', () => {
 
   // ── 2. Freshness window: stale reports don't tip the threshold ────────────
   it('auto-removal counts only reports within the 14-day freshness window', async () => {
-    const { postId } = await seedPost();
+    const { postId } = await seedPost(h);
 
     // Three reporters file reports dated 20 days ago. Direct service-role
     // INSERT bypasses the BEFORE trigger's auth.uid() check so we can backdate
     // created_at — exactly what we want for "stale signal" simulation.
     const staleDate = new Date(Date.now() - 20 * 24 * 60 * 60 * 1000).toISOString();
-    const staleReporters: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const uid = await seedUser();
-      staleReporters.push(uid);
+      const uid = await seedUser(h);
       await admin
         .from('reports')
         .insert({
@@ -228,16 +155,16 @@ d('admin portal hardening (integration)', () => {
 
     // A fresh 4th report from a NEW reporter brings the fresh count to 1 →
     // still below threshold.
-    const freshUid1 = await seedUser();
-    const freshClient1 = await signInAs(freshUid1);
+    const freshUid1 = await seedUser(h);
+    const freshClient1 = await signInAs(h, freshUid1);
     await fileReportAs(freshClient1, freshUid1, 'post', postId);
     const { data: after1Fresh } = await admin
       .from('posts').select('status').eq('post_id', postId).single();
     expect(after1Fresh?.status).toBe('open');
 
     // 5th report (2nd distinct fresh reporter) → still below threshold.
-    const freshUid2 = await seedUser();
-    const freshClient2 = await signInAs(freshUid2);
+    const freshUid2 = await seedUser(h);
+    const freshClient2 = await signInAs(h, freshUid2);
     await fileReportAs(freshClient2, freshUid2, 'post', postId);
     const { data: after2Fresh } = await admin
       .from('posts').select('status').eq('post_id', postId).single();
@@ -245,8 +172,8 @@ d('admin portal hardening (integration)', () => {
 
     // 6th report (3rd distinct fresh reporter) → fresh count is now 3 →
     // auto-removal fires regardless of the 3 stale rows.
-    const freshUid3 = await seedUser();
-    const freshClient3 = await signInAs(freshUid3);
+    const freshUid3 = await seedUser(h);
+    const freshClient3 = await signInAs(h, freshUid3);
     await fileReportAs(freshClient3, freshUid3, 'post', postId);
     const { data: after3Fresh } = await admin
       .from('posts').select('status').eq('post_id', postId).single();
@@ -255,13 +182,13 @@ d('admin portal hardening (integration)', () => {
 
   // ── 3. Restore audit metadata carries distinct_reporters as UUID array ────
   it('admin_restore_target writes distinct_reporters into audit metadata', async () => {
-    const { postId } = await seedPost();
+    const { postId } = await seedPost(h);
 
     const reporterUids: string[] = [];
     for (let i = 0; i < 3; i++) {
-      const uid = await seedUser();
+      const uid = await seedUser(h);
       reporterUids.push(uid);
-      const c = await signInAs(uid);
+      const c = await signInAs(h, uid);
       await fileReportAs(c, uid, 'post', postId);
     }
 
@@ -298,23 +225,19 @@ d('admin portal hardening (integration)', () => {
   // ── 4. target_already_moderated raises SQLSTATE P0020 ─────────────────────
   it('reporting an already-moderated post raises P0020 target_already_moderated (defense in depth)', async () => {
     // Migration 0127 surfaces P0020 'target_already_moderated' as a
-    // defense-in-depth check ordered BEFORE the visibility gate. In
-    // practice, the public RLS policies (is_post_visible_to,
-    // is_chat_visible_to as of 0028, and users_select with account_status
-    // filtering) already hide moderated rows from non-owner viewers, so a
-    // regular reporter falls through to 'report_target_not_visible' (test
-    // #5 covers that path). The P0020 branch is exercised here through a
-    // service-role insert, which bypasses RLS and lets the EXISTS see the
-    // moderated row — proving the trigger's branch fires with the correct
-    // SQLSTATE for any future surface that legitimately exposes a
-    // moderated row to a reporter (e.g. an admin-search RPC).
+    // defense-in-depth check ordered BEFORE the visibility gate. In practice,
+    // the public RLS policies already hide moderated rows from non-owner
+    // viewers, so a regular reporter falls through to
+    // 'report_target_not_visible' (test #5 covers that path). The P0020 branch
+    // is exercised here through a service-role insert, which bypasses RLS and
+    // lets the EXISTS see the moderated row — proving the trigger's branch
+    // fires with the correct SQLSTATE for any future surface that legitimately
+    // exposes a moderated row to a reporter (e.g. an admin-search RPC).
     //
-    // Service role has auth.uid() = NULL. The trigger's reporter sanity
-    // check is `new.reporter_id is null or new.reporter_id <> auth.uid()`.
-    // With reporter_id set to a real UUID and auth.uid() NULL, the second
-    // branch evaluates to NULL (treated as false) and the first is false,
-    // so the check passes — letting us reach the P0020 branch.
-    const { postId } = await seedPost();
+    // Service role has auth.uid() = NULL. With reporter_id set to a real UUID
+    // and auth.uid() NULL, the sanity check passes and we reach the P0020
+    // branch.
+    const { postId } = await seedPost(h);
 
     const { error: flipErr } = await admin
       .from('posts')
@@ -322,7 +245,7 @@ d('admin portal hardening (integration)', () => {
       .eq('post_id', postId);
     expect(flipErr).toBeNull();
 
-    const reporterUid = await seedUser();
+    const reporterUid = await seedUser(h);
     const { error } = await admin
       .from('reports')
       .insert({
@@ -335,7 +258,7 @@ d('admin portal hardening (integration)', () => {
 
   // ── 5. Regression: report_target_not_visible still fires on privacy gate ──
   it('reporting a target the reporter cannot see still raises report_target_not_visible', async () => {
-    const { postId } = await seedPost();
+    const { postId } = await seedPost(h);
 
     // Make the post visibility-gated: OnlyMe (owner-only). A different
     // reporter then has no SELECT permission via RLS → posts.exists(...)
@@ -346,8 +269,8 @@ d('admin portal hardening (integration)', () => {
       .eq('post_id', postId);
     expect(flipErr).toBeNull();
 
-    const reporterUid = await seedUser();
-    const reporterClient = await signInAs(reporterUid);
+    const reporterUid = await seedUser(h);
+    const reporterClient = await signInAs(h, reporterUid);
 
     const { error } = await reporterClient
       .from('reports')
