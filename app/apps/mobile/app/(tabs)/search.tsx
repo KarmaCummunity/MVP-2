@@ -63,7 +63,15 @@ export default function SearchScreen() {
   }, []);
 
   // ── Store (filters, recent searches) ────────
-  const store = useSearchStore();
+  const store = useSearchStore(
+    useShallow((s) => ({
+      recentSearches: s.recentSearches,
+      addRecentSearch: s.addRecentSearch,
+      clearRecentSearches: s.clearRecentSearches,
+      setResultType: s.setResultType,
+      setSortBy: s.setSortBy,
+    })),
+  );
   const filters = useSearchStore(
     useShallow((s) => ({
       resultType: s.resultType,
