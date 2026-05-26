@@ -9,7 +9,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import type { PostWithOwner } from '@kc/application';
 import { PostFeedList } from '../../src/components/PostFeedList';
@@ -38,6 +38,7 @@ if (!feedFirstRenderStarted) {
 
 export default function HomeFeedScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
@@ -106,7 +107,12 @@ export default function HomeFeedScreen() {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, [feedQuery, resetNewPosts]);
 
-  useFeedRealtime(refetchAndReset);
+  useFeedRealtime({
+    queryClient,
+    queryKey: ['feed', viewerId, feedFilter] as const,
+    viewerId,
+    feedFilter,
+  });
 
   const nudge = useFirstPostNudge(viewerId);
 
