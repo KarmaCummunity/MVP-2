@@ -41,6 +41,58 @@ export type Database = {
           },
         ]
       }
+      admin_role_grants: {
+        Row: {
+          grant_id: string
+          granted_at: string
+          granted_by: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          grant_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          grant_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_role_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -1321,6 +1373,10 @@ export type Database = {
       active_posts_count_for_viewer: {
         Args: { p_owner: string; p_viewer: string }
         Returns: number
+      }
+      admin_assert_role: {
+        Args: { allowed: string[]; uid: string }
+        Returns: undefined
       }
       admin_audit_lookup: {
         Args: { p_limit?: number; p_user_id: string }
