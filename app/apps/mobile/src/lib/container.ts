@@ -15,6 +15,7 @@ import {
   SupabaseAccountGateRepository,
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
+  SupabaseReportsRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -45,6 +46,8 @@ import {
   ReportUserUseCase,
   UpdateNotificationPreferencesUseCase,
   GetMyAdminRolesUseCase,
+  ListOpenReportsUseCase,
+  GetReportCaseDetailUseCase,
 } from '@kc/application';
 
 /**
@@ -74,9 +77,12 @@ const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
+const reportsRepo = new SupabaseReportsRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 const getMyAdminRoles = new GetMyAdminRolesUseCase(adminRoleRepo);
+const listOpenReports = new ListOpenReportsUseCase(reportsRepo);
+const getReportCaseDetail = new GetReportCaseDetailUseCase(reportsRepo);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
@@ -86,9 +92,12 @@ export const container = {
   moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
   deviceRepo,
   adminRoleRepo,
+  reportsRepo,
 
-  // Admin portal (FR-ADMIN-011)
+  // Admin portal (FR-ADMIN-011, FR-ADMIN-012, FR-ADMIN-013)
   getMyAdminRoles,
+  listOpenReports,
+  getReportCaseDetail,
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

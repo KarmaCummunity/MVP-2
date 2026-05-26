@@ -66,21 +66,32 @@ What each feed card displays.
 
 ---
 
-## FR-FEED-003 — Free-text search — **DEPRECATED (P1.2)**
+## FR-FEED-003 — Home Feed free-text search (filter sheet)
 
-**Status.** ⚠️ Deprecated by P1.2 design decision (Q1, 2026-05-11). No search
-bar is rendered on the Home Feed. Free-text post search lives on the
-Universal Search tab (`FR-FEED-016` as superseded, see below) and continues
-to satisfy the original acceptance criteria (multi-field match, debounce,
-visibility-aware results) on that surface.
+**Status.** ✅ Active (2026-05-26) — revived on the Home Feed filter sheet;
+Universal Search (`FR-FEED-016`) remains the cross-entity discovery surface.
 
-The Home Feed exposes only the filter/sort affordances of `FR-FEED-004` and
-on those affordances the search query field is intentionally absent —
-filtering and sorting are post-shape operations, not text matching.
+**Description.**
+Free-text post matching inside the Home Feed filter/sort bottom sheet
+(`FR-FEED-004`). Composes AND with post-shape filters; does not replace the
+Search tab.
 
-**Original ACs** are preserved in `FR-FEED-016` (which now describes the
-shipped Universal Search engine) as the authoritative location for the
-text-matching contract.
+**Source.**
+- Design: `docs/superpowers/specs/2026-05-26-home-feed-filter-search-and-compact-sheet-design.md`.
+
+**Acceptance Criteria.**
+- AC1. A search field at the top of `PostFilterSheet` filters posts by
+   `title`, `description`, and `category` using case-insensitive substring
+   match (`ilike`), same semantics as Universal Search posts (`FR-FEED-016`).
+- AC2. **300 ms debounce** after typing stops; queries shorter than **2**
+   trimmed characters do not apply (feed uses shape filters only; badge does
+   not count search).
+- AC3. Results respect the same visibility predicate as `FR-FEED-001` (via
+   existing feed query paths).
+- AC4. `searchQuery` persists in `filterStore` with other feed filters
+   (`FR-FEED-005`).
+- AC5. Active filter badge (`FR-FEED-004`) counts active text search as **+1**
+   when AC2 applies.
 
 ---
 
@@ -99,6 +110,7 @@ of active filters when >0; the old in-feed "X filters active" chip
 
 **Acceptance Criteria.**
 - AC1. Filter set:
+   - **Search** (top of sheet): free-text field per `FR-FEED-003`.
    - **Sort**: `Newest first` (default) / `Oldest first` / `By proximity`. When
      `By proximity` is selected, a city picker resolves the center of the
      ranking; default is the viewer's registered city.
@@ -111,8 +123,10 @@ of active filters when >0; the old in-feed "X filters active" chip
      of the chosen center city. Defaults to no spatial filter.
    - **Status**: 3-mode — `Open only` (default) / `Closed only` / `All`.
 - AC2. Filters compose with AND semantics. Sort is independent of filters.
-- AC3. "Apply" commits to the persisted store; "Clear all" resets and
-   immediately commits the cleared state.
+- AC3. Changes **auto-commit** to the persisted store on every control change
+   (chips immediately; search text after `FR-FEED-003` debounce). There is
+   **no** Apply button. "Clear all" resets and immediately commits the cleared
+   state. Sheet `maxHeight` is ~55–60% (compact density pass).
 - AC4. The same filter vocabulary (post-shape) is available on the Universal
    Search tab via the shared design (`FR-FEED-018`). The Search tab keeps its
    additional dimensions (`resultType`, `donationCategory`, etc.) in its own
@@ -125,9 +139,8 @@ of active filters when >0; the old in-feed "X filters active" chip
 ## FR-FEED-005 — Persisted filter state — **EXTENDED (P1.2)**
 
 **Description.**
-The user's current filters are persisted across sessions. Only filter state
-persists — search text no longer applies to the Home Feed (`FR-FEED-003`
-deprecated).
+The user's current filters — including `searchQuery` (`FR-FEED-003`) — are
+persisted across sessions.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.3.1.3.
@@ -141,8 +154,9 @@ deprecated).
    from the prior contract is removed — see `FR-FEED-013` deprecated).
 - AC3. Tapping "Clear all" inside the filter sheet resets state and persists
    the cleared state.
-- AC4. The persistence key includes a schema version; legacy v1 state from
-   the old filter shape is dropped on first read and replaced by defaults.
+- AC4. The persistence key includes a schema version; legacy state from prior
+   versions is dropped on first read and replaced by defaults (includes
+   `searchQuery` from v4 onward).
 
 **Related.** Domain: `FeedFilter` value object · `FR-FEED-004` ·
 `FR-FEED-013` (deprecated).

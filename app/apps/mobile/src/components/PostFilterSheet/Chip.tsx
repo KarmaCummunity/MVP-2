@@ -24,8 +24,8 @@ export function Chip({ label, active, onPress }: ChipProps) {
 
 const useChipStyles = makeUseStyles(({ colors }) => ({
   chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: colors.border,

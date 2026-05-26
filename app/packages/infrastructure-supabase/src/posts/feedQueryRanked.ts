@@ -79,6 +79,7 @@ export async function fetchRankedFeedPage(
     p_cursor_distance: cursorParsed?.distanceKm ?? undefined,
     p_cursor_created_at: cursorParsed?.createdAt,
     p_cursor_post_id: cursorParsed?.postId,
+    p_filter_search_query: filter.searchQuery ?? undefined,
     p_followers_only: filter.followersOnly ?? false,
   });
   if (rpcError) throw new Error(`feed_ranked_ids: ${rpcError.message}`);

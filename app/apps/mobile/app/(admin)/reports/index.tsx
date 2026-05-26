@@ -1,3 +1,56 @@
-import type { ReactElement } from 'react';
-import { ComingSoon } from '../../../src/components/admin/ComingSoon';
-export default function Stub(): ReactElement { return <ComingSoon subProject="A1" />; }
+// app/apps/mobile/app/(admin)/reports/index.tsx
+// FR-ADMIN-012 — admin reports inbox screen. Cursor-paginated FlatList of
+// open reports with chip filters and reporter-id search.
+import { useState } from 'react';
+import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import type { ListOpenReportsFilters } from '@kc/application';
+import { useReportsInbox } from '../../../src/hooks/useReportsInbox';
+import { ReportFilters } from '../../../src/components/admin/reports/ReportFilters';
+import { ReportRow } from '../../../src/components/admin/reports/ReportRow';
+import he from '../../../src/i18n/locales/he';
+
+export default function ReportsInbox() {
+  const [filters, setFilters] = useState<ListOpenReportsFilters>({});
+  const q = useReportsInbox(filters);
+  const rows = q.data?.pages.flatMap((p) => p.rows) ?? [];
+
+  return (
+    <View style={styles.root}>
+      <Text style={styles.title}>{he.admin.reports.inboxTitle}</Text>
+      <ReportFilters value={filters} onChange={setFilters} />
+      <FlatList
+        data={rows}
+        keyExtractor={(r) => `${r.targetType}:${r.targetId}`}
+        renderItem={({ item }) => <ReportRow row={item} />}
+        onEndReached={() => {
+          if (q.hasNextPage) void q.fetchNextPage();
+        }}
+        onEndReachedThreshold={0.5}
+        refreshControl={
+          <RefreshControl
+            refreshing={q.isRefetching}
+            onRefresh={() => {
+              void q.refetch();
+            }}
+          />
+        }
+        ListEmptyComponent={
+          !q.isLoading ? (
+            <View style={styles.empty}>
+              <Text style={styles.emptyTitle}>{he.admin.reports.emptyTitle}</Text>
+              <Text style={styles.emptyHint}>{he.admin.reports.emptyHint}</Text>
+            </View>
+          ) : null
+        }
+      />
+    </View>
+  );
+}
+
+const styles = StyleSheet.create({
+  root:       { flex: 1 },
+  title:      { fontSize: 20, fontWeight: '700', padding: 16 },
+  empty:      { padding: 32, alignItems: 'center', gap: 8 },
+  emptyTitle: { fontSize: 16, fontWeight: '600' },
+  emptyHint:  { fontSize: 13, opacity: 0.6, textAlign: 'center' },
+});
