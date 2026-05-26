@@ -35,10 +35,15 @@ export function useRideDefaults() {
     return { id: u.city, name: u.cityName };
   }, [userQuery.data]);
 
+  const originStreet = userQuery.data?.profileStreet?.trim() ?? '';
+  const originStreetNumber = userQuery.data?.profileStreetNumber?.trim() ?? '';
+
   return {
     mode,
     setMode,
     originCity,
+    originStreet,
+    originStreetNumber,
     departsAt: new Date(),
     seatsAvailable: 3,
     isLoading: userQuery.isLoading || !modeReady,

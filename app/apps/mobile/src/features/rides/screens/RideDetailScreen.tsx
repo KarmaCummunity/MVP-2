@@ -27,6 +27,7 @@ import { contactRidePublisher } from '../lib/contactRidePublisher';
 import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 import { rowDirectionStart } from '../../../lib/rtlLayout';
 import { useShellTabBarScrollInset } from '../../../navigation/useShellTabBarVisibility';
+import { formatRideAddress } from '../lib/formatRideAddress';
 
 const useStyles = makeUseStyles(({ colors }) => ({
   scroll: { padding: spacing.lg, gap: spacing.lg, maxWidth: 480, alignSelf: 'center' as const, width: '100%' },
@@ -152,6 +153,8 @@ export function RideDetailScreen() {
   const isOffer = ride.mode === 'offer';
   const departsLabel = format(new Date(ride.departsAt), "EEEE dd/MM/yyyy HH:mm", { locale: dateFnsHe });
   const ownerName = ownerQuery.data?.displayName ?? t('profile.fallbackName');
+  const originLine = formatRideAddress(ride.originCityName, ride.originStreet, ride.originStreetNumber);
+  const destLine = formatRideAddress(ride.destCityName, ride.destStreet, ride.destStreetNumber);
 
   return (
     <Screen blobs="content">
@@ -164,9 +167,8 @@ export function RideDetailScreen() {
             </Text>
           </View>
           <Text style={styles.title}>{ride.title}</Text>
-          <Text style={styles.meta}>
-            {ride.originCityName} → {ride.destCityName}
-          </Text>
+          <Text style={styles.meta}>{originLine}</Text>
+          <Text style={styles.meta}>{destLine}</Text>
           <Text style={styles.meta}>{departsLabel}</Text>
           {isOffer && ride.seatsAvailable != null ? (
             <Text style={styles.meta}>{t('donations.rides.seats', { count: ride.seatsAvailable })}</Text>

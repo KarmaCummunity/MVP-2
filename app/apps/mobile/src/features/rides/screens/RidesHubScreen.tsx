@@ -17,7 +17,6 @@ import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { TopBar } from '../../../components/TopBar';
 import { Screen } from '../../../components/ui/Screen';
 import { MotionEntry, ENTRY_DELAY } from '../../../components/ui/MotionEntry';
-import { DonationLinksList } from '../../../components/DonationLinksList';
 import { EmptyState } from '../../../components/EmptyState';
 import { useAuthStore } from '../../../store/authStore';
 import { useShellTabBarScrollInset } from '../../../navigation/useShellTabBarVisibility';
@@ -27,6 +26,7 @@ import { getSearchRideListingsUseCase } from '../composition/ridesComposition';
 import { RideCard } from '../components/RideCard';
 import { RideFilterSheet } from '../sheets/RideFilterSheet';
 import { RideCreateSheet } from '../sheets/RideCreateSheet';
+import { RideTransportLinksSheet } from '../sheets/RideTransportLinksSheet';
 
 const DEBOUNCE_MS = 300;
 
@@ -81,14 +81,6 @@ const useHubStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   filterBadgeText: { ...typography.caption, color: colors.textInverse, fontSize: 10 },
   list: { paddingHorizontal: spacing.base, gap: spacing.base, paddingTop: spacing.sm },
-  linksHeading: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: rtlTextAlignStart,
-    marginTop: spacing.lg,
-    marginBottom: spacing.sm,
-    paddingHorizontal: spacing.base,
-  },
   fab: {
     position: 'absolute' as const,
     bottom: spacing.xl,
@@ -134,6 +126,7 @@ export function RidesHubScreen() {
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const [filterVisible, setFilterVisible] = useState(false);
   const [createVisible, setCreateVisible] = useState(false);
+  const [linksVisible, setLinksVisible] = useState(false);
 
   const filters = useRidesFilterStore(
     useShallow((s) => ({
@@ -253,14 +246,24 @@ export function RidesHubScreen() {
           }
         />
       ) : null}
-      <Text style={styles.linksHeading}>{t('donations.rides.linksSection')}</Text>
-      <DonationLinksList categorySlug="transport" />
     </>
+  );
+
+  const linksIcon = (
+    <TouchableOpacity
+      onPress={() => setLinksVisible(true)}
+      accessibilityRole="button"
+      accessibilityLabel={t('donations.rides.linksIconA11y')}
+      hitSlop={8}
+      style={{ padding: spacing.xs }}
+    >
+      <Ionicons name="link-outline" size={24} color={colors.textPrimary} />
+    </TouchableOpacity>
   );
 
   return (
     <Screen blobs="content">
-      <TopBar />
+      <TopBar extraIcon={linksIcon} />
       <FlatList
         data={rides}
         keyExtractor={(item) => item.rideId}
@@ -282,6 +285,7 @@ export function RidesHubScreen() {
 
       <RideFilterSheet visible={filterVisible} onClose={() => setFilterVisible(false)} />
       <RideCreateSheet visible={createVisible} onClose={() => setCreateVisible(false)} />
+      <RideTransportLinksSheet visible={linksVisible} onClose={() => setLinksVisible(false)} />
     </Screen>
   );
 }

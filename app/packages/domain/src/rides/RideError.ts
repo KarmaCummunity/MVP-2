@@ -1,7 +1,9 @@
 import { DomainError } from '../errors';
 
 export type RideErrorCode =
-  | 'same_cities'
+  | 'same_route'
+  | 'origin_street_required'
+  | 'dest_street_required'
   | 'seats_required'
   | 'seats_forbidden'
   | 'description_too_long'

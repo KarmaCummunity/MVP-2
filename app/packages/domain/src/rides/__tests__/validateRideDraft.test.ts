@@ -7,13 +7,31 @@ describe('validateRideDraft', () => {
     mode: 'offer' as const,
     originCityId: '5000',
     destCityId: '4000',
+    originStreet: 'רחוב א',
+    destStreet: 'רחוב ב',
     departsAt: new Date(Date.now() + 3600_000).toISOString(),
     seatsAvailable: 3,
     description: null,
   };
 
-  it('rejects same origin and dest', () => {
-    expect(() => validateRideDraft({ ...base, destCityId: '5000' })).toThrow(RideError);
+  it('rejects identical route (same city and street)', () => {
+    expect(() =>
+      validateRideDraft({
+        ...base,
+        destCityId: '5000',
+        destStreet: 'רחוב א',
+      }),
+    ).toThrow(RideError);
+  });
+
+  it('allows same city when streets differ', () => {
+    expect(() =>
+      validateRideDraft({
+        ...base,
+        destCityId: '5000',
+        destStreet: 'רחוב ב',
+      }),
+    ).not.toThrow();
   });
 
   it('requires seats for offer', () => {
