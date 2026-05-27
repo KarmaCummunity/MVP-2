@@ -2,9 +2,14 @@
 // Standardised image renderer. Anywhere a remote image is shown, use <KCImage>
 // — never react-native's <Image>. This lets us swap implementations (RN Image,
 // FastImage, future) in one place.
+//
+// Web platform note: the blurhash placeholder and crossfade transition each
+// add CPU + paint work that the browser doesn't need (it already manages
+// progressive image loading via the network layer). Both are kept on native
+// where the disk cache makes them feel snappy.
 import React from 'react';
 import { Image, type ImageProps, type ImageStyle } from 'expo-image';
-import { StyleProp } from 'react-native';
+import { Platform, StyleProp } from 'react-native';
 
 type Props = {
   uri: string | null | undefined;
@@ -14,9 +19,11 @@ type Props = {
   contentFit?: ImageProps['contentFit'];
   blurhash?: string;
   onLoad?: () => void;
+  onError?: () => void;
 };
 
 const DEFAULT_PLACEHOLDER = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
+const IS_WEB = Platform.OS === 'web';
 
 export function KCImage({
   uri,
@@ -24,19 +31,26 @@ export function KCImage({
   height,
   style,
   contentFit = 'cover',
-  blurhash = DEFAULT_PLACEHOLDER,
+  blurhash,
   onLoad,
+  onError,
 }: Props) {
   if (!uri) return null;
+  // Native: blurhash + 150ms crossfade make the disk-cache hit feel instant.
+  // Web: the browser already streams pixels progressively; the blurhash decode
+  // would just delay first paint. Skip both.
+  const placeholder = IS_WEB ? undefined : { blurhash: blurhash ?? DEFAULT_PLACEHOLDER };
+  const transition = IS_WEB ? 0 : 150;
   return (
     <Image
       source={uri}
       style={[{ width, height }, style]}
       contentFit={contentFit}
       cachePolicy="memory-disk"
-      transition={150}
-      placeholder={{ blurhash }}
+      transition={transition}
+      placeholder={placeholder}
       onLoad={onLoad}
+      onError={onError}
     />
   );
 }
