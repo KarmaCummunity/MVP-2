@@ -1,0 +1,28 @@
+{
+  "cli": {
+    "version": ">=5.0.0",
+    "appVersionSource": "remote"
+  },
+  "build": {
+    "development": {
+      "developmentClient": true,
+      "distribution": "internal"
+    },
+    "preview": {
+      "distribution": "internal",
+      "channel": "preview"
+    },
+    "production": {
+      "channel": "production",
+      "env": {
+        "EXPO_PUBLIC_SENTRY_DSN": "@kc/sentry_dsn"
+      }
+    }
+  },
+  "submit": {},
+  "hooks": {
+    "postPublish": [
+      { "file": "../scripts/sentry-upload-sourcemaps.sh", "config": {} }
+    ]
+  }
+}

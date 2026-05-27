@@ -1,7 +1,8 @@
 // app/apps/mobile/src/components/admin/AdminNav.tsx
 import type { ReactElement } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View, Platform } from 'react-native';
+import { Pressable, ScrollView, Text, View, Platform } from 'react-native';
 import { router, usePathname } from 'expo-router';
+import { makeUseStyles } from '@kc/ui';
 import he from '../../i18n/locales/he';
 
 type Item = { key: keyof typeof he.admin.nav; href: string };
@@ -25,6 +26,7 @@ const ITEMS: readonly Item[] = [
 export function AdminNav(): ReactElement {
   const pathname = usePathname();
   const labels = he.admin.nav;
+  const styles = useStyles();
 
   const content = (
     <>
@@ -60,11 +62,11 @@ export function AdminNav(): ReactElement {
   );
 }
 
-const styles = StyleSheet.create({
-  sidebar: { width: 200, paddingVertical: 16, paddingHorizontal: 8, borderStartWidth: 1, borderStartColor: '#eee', gap: 4 },
+const useStyles = makeUseStyles(({ colors }) => ({
+  sidebar: { width: 200, paddingVertical: 16, paddingHorizontal: 8, borderStartWidth: 1, borderStartColor: colors.border, gap: 4 },
   topbar:  { gap: 6, paddingHorizontal: 12, paddingVertical: 8 },
   item:    { paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8 },
-  itemActive: { backgroundColor: '#eef2ff' },
+  itemActive: { backgroundColor: colors.secondaryLight },
   label:   { fontSize: 14 },
   labelActive: { fontWeight: '600' },
-});
+}));

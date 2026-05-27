@@ -53,6 +53,7 @@ export default function OtherProfileScreen() {
     queryKey: ['profile-other', handle],
     queryFn: () => getUserRepo().findByHandle(handle!),
     enabled: Boolean(handle),
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
   const u = userQuery.data ?? null;
   const postOwner = React.useMemo(
@@ -64,6 +65,7 @@ export default function OtherProfileScreen() {
     queryKey: ['follow-state', me, u?.userId],
     queryFn: () => getGetFollowStateUseCase().execute({ viewerId: me!, targetUserId: u!.userId }),
     enabled: Boolean(me && u?.userId && me !== u.userId),
+    staleTime: 30_000, // PERF-3: follow state — short; follow actions flip this
   });
   const followInfo = stateQuery.data;
 
@@ -93,6 +95,7 @@ export default function OtherProfileScreen() {
       limit: 30,
     }),
     enabled: Boolean(u?.userId) && activeTab === 'open',
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
 
   const tabCounts = useProfileTabCounts({

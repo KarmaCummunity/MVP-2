@@ -43,6 +43,7 @@ export default function GuestPreviewFeedScreen() {
   const query = useQuery({
     queryKey: ['guest-feed'],
     queryFn: () => getFeedUseCase().execute({ viewerId: null, filter: {}, limit: 6 }),
+    staleTime: 60_000, // PERF-3: feed — realtime fills gaps; tight stale ensures focus-back refresh
   });
   const posts = useMemo(
     () => selectGuestPreviewPosts(query.data?.posts ?? []),

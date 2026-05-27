@@ -24,12 +24,14 @@ export function useFirstPostNudge(viewerId: string | null): UseFirstPostNudgeRes
     queryKey: ['user', viewerId, 'nudge'],
     queryFn: () => (viewerId ? getUserRepo().findById(viewerId) : null),
     enabled: viewerId !== null,
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — dismissForever refetches explicitly
   });
 
   const openPostsCountQuery = useQuery({
     queryKey: ['openPostsCount', viewerId, 'nudge'],
     queryFn: () => (viewerId ? getPostRepo().countOpenByUser(viewerId) : 0),
     enabled: viewerId !== null,
+    staleTime: 5 * 60_000, // PERF-3: nudge counter — publish actions invalidate the feed; tolerable lag
   });
 
   const show = Boolean(

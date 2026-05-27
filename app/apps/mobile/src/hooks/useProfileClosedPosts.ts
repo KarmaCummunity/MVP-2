@@ -34,6 +34,7 @@ export function useProfileClosedPosts({
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) => lastPage.nextCursor,
     enabled: Boolean(profileUserId) && enabled,
+    staleTime: 60_000, // PERF-3: profile closed posts — shared by self/others; closure actions invalidate
   });
 
   const items = query.data?.pages.flatMap((p) => p.items) ?? [];

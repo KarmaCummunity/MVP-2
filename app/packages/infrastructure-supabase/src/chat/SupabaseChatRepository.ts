@@ -26,7 +26,7 @@ export class SupabaseChatRepository implements IChatRepository {
   async findById(chatId: string): Promise<Chat | null> {
     const { data, error } = await this.client
       .from('chats')
-      .select('*')
+      .select('chat_id, participant_a, participant_b, anchor_post_id, anchor_ride_id, is_support_thread, last_message_at, inbox_hidden_at_a, inbox_hidden_at_b, removed_at, created_at')
       .eq('chat_id', chatId)
       .maybeSingle();
     if (error) throw mapChatError(error);
@@ -53,7 +53,7 @@ export class SupabaseChatRepository implements IChatRepository {
   ): Promise<Message[]> {
     let q = this.client
       .from('messages')
-      .select('*')
+      .select('message_id, chat_id, sender_id, body, kind, system_payload, status, created_at, delivered_at, read_at')
       .eq('chat_id', chatId)
       .order('created_at', { ascending: false })
       .limit(limit);
@@ -77,7 +77,7 @@ export class SupabaseChatRepository implements IChatRepository {
         kind: 'user',
         status: 'pending',
       })
-      .select('*')
+      .select('message_id, chat_id, sender_id, body, kind, system_payload, status, created_at, delivered_at, read_at')
       .single();
     if (error) throw mapChatError(error);
     return rowToMessage(data);

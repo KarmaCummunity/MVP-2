@@ -18,7 +18,12 @@ describe('ReportError', () => {
   });
 
   it('preserves every code in the ReportErrorCode union (small, exhaustive)', () => {
-    for (const code of ['invalid_target', 'duplicate_within_24h', 'unknown'] as const) {
+    for (const code of [
+      'invalid_target',
+      'duplicate_within_24h',
+      'target_already_moderated',
+      'unknown',
+    ] as const) {
       expect(new ReportError(code, code).code).toBe(code);
     }
   });

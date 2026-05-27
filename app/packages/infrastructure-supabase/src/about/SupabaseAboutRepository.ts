@@ -29,7 +29,8 @@ export class SupabaseAboutRepository implements IAboutRepository {
   async listTeamMembers(): Promise<AboutTeamMember[]> {
     const { data, error } = await this.client
       .from('about_team_profiles')
-      .select('role_key, sort_order, display_name, avatar_url, share_handle');
+      .select('role_key, sort_order, display_name, avatar_url, share_handle')
+      .limit(100);
 
     if (error) throw new Error(`listTeamMembers: ${error.message}`);
     return (data ?? []).map((row) => mapRow(row as AboutTeamRow));

@@ -4,10 +4,10 @@ import {
   ScrollView, StyleSheet, Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter, useFocusEffect } from 'expo-router';
+import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { PersonalActivityItem } from '@kc/domain';
 import { useAuthStore } from '../src/store/authStore';
@@ -30,36 +30,27 @@ export default function StatsScreen() {
   const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const queryClient = useQueryClient();
   const userId = useAuthStore((s) => s.session?.userId);
 
   const userQuery = useQuery({
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — stats row
   });
 
   const communityQuery = useQuery({
     queryKey: ['community-stats'],
     queryFn: () => getCommunityStatsSnapshotUseCase().execute(),
-    refetchInterval: 60_000,
-    staleTime: 55_000,
+    staleTime: 5 * 60_000, // PERF-3: stats — Realtime subscription in useCommunityStatsAbout keeps cache warm
   });
 
   const activityQuery = useQuery({
     queryKey: ['my-activity-timeline', userId],
     queryFn: () => getListMyActivityTimelineUseCase().execute(30),
     enabled: Boolean(userId),
-    staleTime: 20_000,
+    staleTime: 5 * 60_000, // PERF-3: stats — staleTime avoids refetch within 5 min
   });
-
-  useFocusEffect(
-    useCallback(() => {
-      if (!userId) return;
-      void queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
-      void queryClient.invalidateQueries({ queryKey: ['my-activity-timeline', userId] });
-    }, [queryClient, userId]),
-  );
 
   const resolveActivityLabel = useCallback(
     (item: PersonalActivityItem) =>

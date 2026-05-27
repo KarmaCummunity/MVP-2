@@ -7,7 +7,8 @@ import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { router } from 'expo-router';
 import { makeUseStyles, useTheme } from '@kc/ui';
-import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
+import { hasPermission, type AdminRole } from '@kc/domain';
+import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { useAdminPortalReportsFlag } from '../../../hooks/useAdminPortalReportsFlag';
 import { container } from '../../../lib/container';
 import he from '../../../i18n/locales/he';
@@ -21,7 +22,8 @@ export function ReportReceivedBubble({
   body,
   handledByLaterAction,
 }: SystemMessageBubbleProps) {
-  const isAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canViewReports = hasPermission(roles as readonly AdminRole[], 'reports.view');
   const portalActive = useAdminPortalReportsFlag();
   const styles = useReportReceivedBubbleStyles();
   const { colors } = useTheme();
@@ -41,11 +43,11 @@ export function ReportReceivedBubble({
   const reasonLabel = reason
     ? (t.reasons as Record<string, string>)[reason.toLowerCase()] ?? reason
     : undefined;
-  const showActions = isAdmin && !handledByLaterAction && !!reportId;
+  const showActions = canViewReports && !handledByLaterAction && !!reportId;
 
   const linkTarget = readLinkTarget(payload);
   const preview = readPreview(payload);
-  const showRichPreview = isAdmin && !!linkTarget && !!preview;
+  const showRichPreview = canViewReports && !!linkTarget && !!preview;
   const showChatNote = showRichPreview && targetType === 'chat';
 
   return (

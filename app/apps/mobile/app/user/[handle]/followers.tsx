@@ -39,6 +39,7 @@ export default function FollowersListScreen() {
     queryKey: ['profile-other', handle],
     queryFn: () => getUserRepo().findByHandle(handle!),
     enabled: Boolean(handle),
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
   const owner = userQuery.data;
   const isMe = me === owner?.userId;
@@ -47,6 +48,7 @@ export default function FollowersListScreen() {
     queryKey: ['followers', owner?.userId],
     queryFn: () => getListFollowersUseCase().execute({ userId: owner!.userId, limit: 50 }),
     enabled: Boolean(owner?.userId),
+    staleTime: 60_000, // PERF-3: profile (others) — remove-follower action invalidates explicitly
   });
 
   if (!owner) {

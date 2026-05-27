@@ -4,8 +4,9 @@
 // is the routing contract for deep-links (e.g. from chat ReportReceivedBubble
 // or future notification taps).
 import { useLocalSearchParams } from 'expo-router';
-import { ActivityIndicator, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
 import type { AdminReportTargetType } from '@kc/domain';
+import { makeUseStyles } from '@kc/ui';
 import { useReportCaseDetail } from '../../../../src/hooks/useReportCaseDetail';
 import { CaseReporterList } from '../../../../src/components/admin/reports/CaseReporterList';
 import { CaseAuditTimeline } from '../../../../src/components/admin/reports/CaseAuditTimeline';
@@ -34,6 +35,7 @@ export default function CaseDetail() {
     parsed?.type ?? null,
     parsed?.id ?? null,
   );
+  const styles = useStyles();
 
   if (!parsed) {
     return (
@@ -82,12 +84,12 @@ export default function CaseDetail() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors }) => ({
   root:         { padding: 16, gap: 16 },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   title:        { fontSize: 20, fontWeight: '700' },
   section:      { gap: 8 },
   sectionTitle: { fontSize: 14, fontWeight: '600', opacity: 0.7 },
-  targetBox:    { padding: 12, backgroundColor: '#fafafa', borderRadius: 8, gap: 4 },
+  targetBox:    { padding: 12, backgroundColor: colors.skeleton, borderRadius: 8, gap: 4 },
   kv:           { fontSize: 13 },
-});
+}));

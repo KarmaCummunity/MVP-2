@@ -37,4 +37,11 @@ describe('AdminPermission matrix', () => {
     expect(hasPermission(['moderator'], 'admins.grant_role')).toBe(false);
     expect(hasPermission(['super_admin'], 'admins.grant_role')).toBe(true);
   });
+
+  it('chat.delete_message is granted to super_admin and moderator only', () => {
+    expect(hasPermission(['super_admin'], 'chat.delete_message')).toBe(true);
+    expect(hasPermission(['moderator'], 'chat.delete_message')).toBe(true);
+    expect(hasPermission(['support'], 'chat.delete_message')).toBe(false);
+    expect(hasPermission([], 'chat.delete_message')).toBe(false);
+  });
 });

@@ -928,7 +928,29 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
-## D-48 — Server-driven surveys via Supabase Studio publish (mirrors legal-documents pattern)
+### D-41 — Support issues (Settings → "Report an issue") intentionally do not populate `public.reports`
+
+**Date:** 2026-05-26
+**Status:** Accepted
+
+**Decision.** Support tickets submitted via `rpc_submit_support_issue` continue to flow exclusively into a 1:1 support chat with the super admin (system message kind `'support_issue'`). They do NOT INSERT into `public.reports` and therefore do not appear in the Admin Portal Reports Dashboard (FR-ADMIN-012).
+
+**Rationale.** Tickets and moderation reports have different lifecycles, different escalation paths, and different audit needs. Conflating them into a single inbox would force the moderation UI to handle a payload it isn't designed for (free-text description, no target). When A3 Internal Tasks lands, the admin team will track ticket follow-ups there.
+
+**Implication.** The two surfaces stay separate: moderation work happens in `/admin/reports`; tickets stay in the support chat and (eventually) in `/admin/tasks`. Closes TD-94 sub-item (1) by reclassifying it as "by design" rather than a defect.
+
+---
+
+## D-48 — Sentry as the single observability sink for mobile + Edge Functions (2026-05-26)
+
+`@sentry/react-native` for mobile crash + 3 explicit performance marks (`app.cold_start`, `feed.first_render`, `image.first_paint`). Edge Functions use a `withTiming` wrapper logging structured JSON to Supabase function logs (read via `mcp__supabase__get_logs`).
+
+**Sample rates:** Performance 100% in dev, 25% in prod. Revisit at >1k DAU.
+**Why not Datadog/Honeycomb:** vendor cost + integration overhead exceed value at this scale.
+
+---
+
+## D-49 — Server-driven surveys via Supabase Studio publish (mirrors legal-documents pattern)
 
 **Date.** 2026-05-26
 
@@ -936,21 +958,21 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 **Rationale.** The product needs to iterate on community questions post-launch without shipping a new app binary. The legal-documents pattern (`legal_document_versions` + `publish_legal_document` RPC, D-40) already proves this model at the infrastructure level. Reusing the same publish pattern keeps operator training simple (one mental model for "push copy changes via Studio") and reuses existing migration and RLS patterns. PII isolation is achieved by placing contact emails in a dedicated `survey_contact_info` table with its own RLS policy, kept separate from the ratings/text answers.
 
-**Affected docs.** `spec/11_settings.md` FR-SETTINGS-015..017; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migrations `0118_surveys` + `0119_user_feedback` (planned).
+**Affected docs.** `spec/11_settings.md` FR-SETTINGS-015..017; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migration `0130_surveys_and_feedback.sql`.
 
 ---
 
-## D-49 — Anonymous public market research as a separate spec domain with PII-isolated contact storage (2026-05-26)
+## D-50 — Anonymous public market research as a separate spec domain with PII-isolated contact storage (2026-05-26)
 
 **Date.** 2026-05-26
 
-**Decision.** Survey B (anonymous public market research for the "Karma Phrasebook") lives in its own spec file `docs/SSOT/spec/16_public_research.md` (FR-RESEARCH-001..003) rather than in `11_settings.md`, and its Postgres schema ships in a dedicated migration `0131_public_research_responses.sql` separate from Survey A's `0122`. Contact emails collected at the thank-you page opt-in are stored in a separate table `public_research_contact_requests` (FK to `public_research_responses(id) ON DELETE CASCADE`) rather than in the same row as survey answers; RLS on the contact table denies all access to `anon` and `authenticated` roles — only `service_role` (via a super-admin RPC) can read it. The two tables are therefore independently deletable (a GDPR-required property: erasing a contact request must not cascade to the research data, and vice versa).
+**Decision.** Survey B (anonymous public market research for the "Karma Phrasebook") lives in its own spec file `docs/SSOT/spec/16_public_research.md` (FR-RESEARCH-001..003) rather than in `11_settings.md`, and its Postgres schema ships in a dedicated migration `0131_public_research_responses.sql` separate from Survey A's `0130`. Contact emails collected at the thank-you page opt-in are stored in a separate table `public_research_contact_requests` (FK to `public_research_responses(id) ON DELETE CASCADE`) rather than in the same row as survey answers; RLS on the contact table denies all access to `anon` and `authenticated` roles — only `service_role` (via a super-admin RPC) can read it. The two tables are therefore independently deletable (a GDPR-required property: erasing a contact request must not cascade to the research data, and vice versa).
 
 **Rationale.** Survey B is not a Settings feature: it is served at a public web URL with no auth shell, targets anonymous users on external platforms (Facebook, WhatsApp, Agora), and has entirely different abuse-mitigation requirements (honeypot, `Origin` allowlist, IP-hash rate limit, global circuit breaker) from any in-app survey. Grouping it under `11_settings.md` would pollute that file's scope and make it harder for future agents to locate the right spec. A dedicated spec file also lets FR-RESEARCH-* IDs track implementation progress independently of FR-SETTINGS-*. The two-table PII isolation pattern mirrors the design already established for legal-documents acceptances (D-42) and is the simplest way to satisfy the independent-deletion requirement without adding nullable columns. A separate migration enforces the security-review separation principle followed throughout this codebase (cf. D-40, D-47). See design spec `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md` §2, §4, §7.
 
 **Alternatives rejected.** Adding Survey B FRs to `11_settings.md` — conflates two unrelated user surfaces. Storing contact email in the same `public_research_responses` row — makes it impossible to delete PII without deleting the research data. Single migration for both surveys — blurs security review scope.
 
-**Affected docs.** `docs/SSOT/spec/16_public_research.md` (new); `docs/SSOT/BACKLOG.md` P1.7; `CLAUDE.md` §1 spec-files table; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migrations `0131_public_research_responses.sql` (planned).
+**Affected docs.** `docs/SSOT/spec/16_public_research.md` (new); `docs/SSOT/BACKLOG.md` P1.7; `CLAUDE.md` §1 spec-files table; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migration `0131_public_research_responses.sql`.
 
 ---
 
@@ -958,8 +980,9 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 3.2 | 2026-05-26 | Added `D-49` (anonymous public market research as separate spec domain `16_public_research.md`; PII-isolated contact storage; separate migration `0131`; FR-RESEARCH-001..003). |
-| 3.1 | 2026-05-26 | Added `D-48` (server-driven surveys via Studio publish, mirrors legal-documents pattern; FR-SETTINGS-015..017). |
+| 3.3 | 2026-05-26 | Added `D-50` (anonymous public market research as separate spec domain `16_public_research.md`; PII-isolated contact storage; separate migration `0131`; FR-RESEARCH-001..003). |
+| 3.2 | 2026-05-26 | Added `D-49` (server-driven surveys via Studio publish, mirrors legal-documents pattern; FR-SETTINGS-015..017; migration `0130`). |
+| 3.1 | 2026-05-26 | Added `D-41` (support tickets vs moderation reports stay on separate surfaces; closes TD-94 sub-item (1) as intentional). Added `D-48` (Sentry as single observability sink for mobile + Edge Functions). |
 | 3.0 | 2026-05-25 | Added `D-40` (Admin Portal foundation A0 — RBAC primitives + `(admin)` route group; closes TD-95 via partial unique index; A1..A4 follow as separate sub-projects). |
 | 2.9 | 2026-05-24 | Added `D-38` (share-post OG meta served by Railway Hono server; eliminates Supabase-domain leak from share URL and redirect chain; replaces `serve dist --single`). |
 | 2.9 | 2026-05-24 | Added `D-38` (profile display: `public.users` canonical; sync Auth `user_metadata` on write + cold-start reconcile; My Profile no JWT fallback). |

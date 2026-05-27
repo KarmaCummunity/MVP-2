@@ -7,7 +7,9 @@ import { SupabaseAboutRepository } from '../SupabaseAboutRepository';
 function makeFakeClient(rows: unknown[] | null, error: { message: string } | null = null) {
   const client = {
     from: () => ({
-      select: async () => ({ data: rows, error }),
+      select: () => ({
+        limit: async () => ({ data: rows, error }),
+      }),
     }),
   } as unknown as SupabaseClient<any>;
   return client;

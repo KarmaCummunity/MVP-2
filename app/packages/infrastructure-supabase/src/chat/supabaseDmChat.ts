@@ -28,7 +28,7 @@ async function fetchSupportThreadForOrderedPair(
 ): Promise<ChatRow | null> {
   const { data, error } = await client
     .from('chats')
-    .select('*')
+    .select('chat_id, participant_a, participant_b, anchor_post_id, anchor_ride_id, is_support_thread, last_message_at, inbox_hidden_at_a, inbox_hidden_at_b, removed_at, created_at')
     .eq('participant_a', a)
     .eq('participant_b', b)
     .eq('is_support_thread', true)
@@ -103,7 +103,7 @@ async function insertDmRowOrReuseSupportThread(
       participant_b: b,
       ...anchorInsertPayload(anchor),
     })
-    .select('*')
+    .select('chat_id, participant_a, participant_b, anchor_post_id, anchor_ride_id, is_support_thread, last_message_at, inbox_hidden_at_a, inbox_hidden_at_b, removed_at, created_at')
     .single();
 
   if (!insert.error) return rowToChat(insert.data);
@@ -142,11 +142,12 @@ export async function findOrCreateDmChat(
 
   const list = await client
     .from('chats')
-    .select('*')
+    .select('chat_id, participant_a, participant_b, anchor_post_id, anchor_ride_id, is_support_thread, last_message_at, inbox_hidden_at_a, inbox_hidden_at_b, removed_at, created_at')
     .eq('participant_a', a)
     .eq('participant_b', b)
     .eq('is_support_thread', false)
-    .order('last_message_at', { ascending: false });
+    .order('last_message_at', { ascending: false })
+    .limit(50);
   if (list.error) throw mapChatError(list.error);
 
   const rows = list.data ?? [];

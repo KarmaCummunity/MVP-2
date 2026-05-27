@@ -6,7 +6,8 @@ import { Ionicons } from '@expo/vector-icons';
 import type { OptimisticMessage } from '../store/chatStore';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { SystemMessageBubble } from './chat/system/SystemMessageBubble';
-import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
+import { hasPermission, type AdminRole } from '@kc/domain';
+import { useAdminRoles } from '../hooks/useAdminRoles';
 import { container } from '../lib/container';
 import { confirmAndRun, showAdminToast } from './chat/system/adminActions';
 import { formatMessageBubbleTime } from '../lib/chatMessageDisplayTime';
@@ -31,7 +32,8 @@ export function MessageBubble({
   handledByLaterAction?: boolean;
 }) {
   const [showTime, setShowTime] = useState(false);
-  const isAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canDeleteMessage = hasPermission(roles as readonly AdminRole[], 'chat.delete_message');
   const styles = useMessageBubbleStyles();
   const { colors } = useTheme();
   const mineMetaColor = { color: colors.textInverse, opacity: 0.7 };
@@ -63,7 +65,7 @@ export function MessageBubble({
 
   // FR-ADMIN-005 AC2 — admin hard-delete via long-press; deletion propagates
   // through Realtime DELETE events, so the bubble disappears on its own.
-  const onAdminLongPress = isAdmin && m.messageId
+  const onAdminLongPress = canDeleteMessage && m.messageId
     ? () => {
         const messageId = m.messageId!;
         confirmAndRun({

@@ -31,12 +31,9 @@ import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
 import { useSearchScreenStyles } from './search.styles';
 
 // ── Constants ─────────────────────────────────
-/** Debounce delay for search input to avoid excessive queries. */
-const DEBOUNCE_MS = 300;
-/** Number of results shown per section before "Show all" is tapped. */
-const PREVIEW_LIMIT = 5;
-/** Maximum results per section after "Show all" is tapped. */
-const FULL_LIMIT = 50;
+const DEBOUNCE_MS = 300; // debounce delay for search input
+const PREVIEW_LIMIT = 5; // results per section before "Show all"
+const FULL_LIMIT = 50;   // results per section after "Show all"
 
 export default function SearchScreen() {
   const styles = useSearchScreenStyles();
@@ -63,7 +60,15 @@ export default function SearchScreen() {
   }, []);
 
   // ── Store (filters, recent searches) ────────
-  const store = useSearchStore();
+  const store = useSearchStore(
+    useShallow((s) => ({
+      recentSearches: s.recentSearches,
+      addRecentSearch: s.addRecentSearch,
+      clearRecentSearches: s.clearRecentSearches,
+      setResultType: s.setResultType,
+      setSortBy: s.setSortBy,
+    })),
+  );
   const filters = useSearchStore(
     useShallow((s) => ({
       resultType: s.resultType,
@@ -106,6 +111,7 @@ export default function SearchScreen() {
       }),
     // Always enabled — empty query triggers explore mode
     enabled: !isSingleCharTyped,
+    staleTime: 60_000, // PERF-3: search results — fresh enough for explore; realtime fills gaps
   });
 
   const results = query.data;

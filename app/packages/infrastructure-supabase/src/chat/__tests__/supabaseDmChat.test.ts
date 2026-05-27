@@ -35,7 +35,10 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; cal
               : Promise.resolve({ data: null, error: null });
           }
           if (prop === 'order') {
-            return Promise.resolve({ data: opts.chatsList ?? [], error: opts.chatsListError ?? null });
+            // Return a chainable object so .limit() can be called after .order()
+            return {
+              limit: () => Promise.resolve({ data: opts.chatsList ?? [], error: opts.chatsListError ?? null }),
+            };
           }
           return makeChain(table);
         };

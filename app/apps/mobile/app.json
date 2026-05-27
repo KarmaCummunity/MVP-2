@@ -74,6 +74,14 @@
           "color": "#0A8754",
           "sounds": []
         }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "karma-community",
+          "project": "kc-mobile"
+        }
       ]
     ],
     "newArchEnabled": true,

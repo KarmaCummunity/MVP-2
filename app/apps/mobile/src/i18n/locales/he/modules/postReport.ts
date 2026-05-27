@@ -13,5 +13,7 @@ export const postReportHe = {
   reportSuccessBody: 'תודה, נבחן את הדיווח.',
   reportDuplicateTitle: 'כבר דיווחת',
   reportDuplicateBody: 'דיווחת על הפוסט הזה ב-24 השעות האחרונות.',
+  reportAlreadyModeratedTitle: 'הטיפול כבר נעשה',
+  reportAlreadyModeratedBody: 'הפריט הזה כבר טופל על ידי המנהלים. תודה על העזרה.',
   reportErrorBody: 'נסה שוב מאוחר יותר.',
 } as const;

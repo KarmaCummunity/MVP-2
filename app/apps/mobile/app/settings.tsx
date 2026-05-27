@@ -38,6 +38,7 @@ export default function SettingsScreen() {
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const showFollowRequests = userQuery.data?.privacyMode === 'Private';
   const { isPrivate, canToggle, onToggle, confirmModal } = usePrivateProfileToggle(userId);

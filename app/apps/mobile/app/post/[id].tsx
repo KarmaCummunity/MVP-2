@@ -70,6 +70,7 @@ export default function PostDetailScreen() {
         identityListingHostUserId,
       }),
     enabled: Boolean(postIdParam),
+    staleTime: 60_000, // PERF-3: post detail — closure/edit actions invalidate explicitly
   });
 
   const [contactPosterBusy, setContactPosterBusy] = useState(false);

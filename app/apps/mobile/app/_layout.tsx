@@ -1,3 +1,7 @@
+import { initSentry } from '../src/lib/observability/sentry';
+initSentry();
+import { startMark, finishMark } from '../src/lib/observability/perfMarks';
+startMark('app.cold_start');
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
@@ -117,7 +121,13 @@ SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 2, retry: 2 },
+    queries: {
+      staleTime: 10 * 60_000,       // 10 min default — most data is fine for 10 min
+      gcTime: 30 * 60_000,          // 30 min — keep in memory longer
+      refetchOnWindowFocus: false,  // explicit; Realtime + per-query overrides handle live data
+      refetchOnMount: true,         // default — respects staleTime
+      retry: 2,
+    },
   },
 });
 
@@ -151,6 +161,7 @@ function NotificationsBridge(): null {
 // the active palette (web html bg, surface backgrounds in screen headers,
 // StatusBar style) read fresh values when the user toggles dark mode.
 function ThemedRootShell() {
+  React.useEffect(() => { finishMark('app.cold_start'); }, []);
   const { colors, isDark } = useTheme();
   const detailStackScreenOptions = useDetailStackScreenOptions();
 
