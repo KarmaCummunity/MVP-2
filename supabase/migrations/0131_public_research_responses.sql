@@ -111,8 +111,27 @@ alter table public.public_research_responses       enable row level security;
 alter table public.public_research_contact_requests enable row level security;
 alter table public.research_secrets                enable row level security;
 
--- No policies created on these three tables.
--- Service-role bypasses RLS and is the only read path outside the SECURITY DEFINER RPC.
+-- Explicit deny-all policies for anon + authenticated. Service-role bypasses
+-- RLS and is the only read/write path outside the SECURITY DEFINER RPC.
+-- rls-lint.sql requires every public table with RLS to have at least one policy.
+
+drop policy if exists public_research_responses_deny_all on public.public_research_responses;
+create policy public_research_responses_deny_all
+  on public.public_research_responses
+  for all to anon, authenticated
+  using (false) with check (false);
+
+drop policy if exists public_research_contact_requests_deny_all on public.public_research_contact_requests;
+create policy public_research_contact_requests_deny_all
+  on public.public_research_contact_requests
+  for all to anon, authenticated
+  using (false) with check (false);
+
+drop policy if exists research_secrets_deny_all on public.research_secrets;
+create policy research_secrets_deny_all
+  on public.research_secrets
+  for all to anon, authenticated
+  using (false) with check (false);
 
 -- ---------------------------------------------------------------------------
 -- Table grants: no direct access for anon or authenticated
