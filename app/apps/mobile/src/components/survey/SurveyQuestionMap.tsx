@@ -1,16 +1,18 @@
+// Production survey question map — accepts SurveyQuestion[] from @kc/domain.
+// FR-SETTINGS-016 AC1: compact map with number + short label + completion dot.
 import React from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import type { SurveyQuestion } from '@kc/domain';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
-import type { SurveyDemoQuestion } from './surveyDemoQuestions';
 
 export type QuestionCompletion = 'empty' | 'partial' | 'done';
 
 export function getQuestionCompletion(
-  rating: number | null,
+  rating: number | null | undefined,
   text: string,
 ): QuestionCompletion {
   if (rating != null) return 'done';
@@ -18,10 +20,12 @@ export function getQuestionCompletion(
   return 'empty';
 }
 
+type AnswerMap = Readonly<Record<string, { rating: number | null; answerText: string | null }>>;
+
 type SurveyQuestionMapProps = {
-  readonly questions: readonly SurveyDemoQuestion[];
+  readonly questions: readonly SurveyQuestion[];
   readonly activeIndex: number;
-  readonly answers: Readonly<Record<string, { rating: number | null; text: string }>>;
+  readonly answers: AnswerMap;
   readonly onSelect: (index: number) => void;
   readonly variant: 'rail' | 'chips';
 };
@@ -38,9 +42,9 @@ export function SurveyQuestionMap({
   const { t } = useTranslation();
   const isCompact = variant === 'chips';
 
-  const renderCompactChip = (q: SurveyDemoQuestion, index: number) => {
-    const answer = answers[q.id] ?? { rating: null, text: '' };
-    const completion = getQuestionCompletion(answer.rating, answer.text);
+  const renderCompactChip = (q: SurveyQuestion, index: number) => {
+    const answer = answers[q.id] ?? { rating: null, answerText: null };
+    const completion = getQuestionCompletion(answer.rating, answer.answerText ?? '');
     const isActive = index === activeIndex;
     const dotColor =
       completion === 'done'
@@ -56,7 +60,7 @@ export function SurveyQuestionMap({
         style={[styles.compactChip, isActive && styles.compactChipActive]}
         accessibilityRole="button"
         accessibilityState={{ selected: isActive }}
-        accessibilityLabel={t('surveyDemo.questionA11y', { index: index + 1, label: q.shortLabel })}
+        accessibilityLabel={t('surveyDemo.questionA11y', { index: index + 1, label: q.shortLabelHe })}
       >
         <Text style={[styles.compactNumber, isActive && styles.compactNumberActive]}>
           {index + 1}
@@ -65,16 +69,16 @@ export function SurveyQuestionMap({
           style={[styles.compactLabel, isActive && styles.compactLabelActive]}
           numberOfLines={1}
         >
-          {q.shortLabel}
+          {q.shortLabelHe}
         </Text>
         <View style={[styles.compactDot, { backgroundColor: dotColor }]} />
       </Pressable>
     );
   };
 
-  const renderRailItem = (q: SurveyDemoQuestion, index: number) => {
-    const answer = answers[q.id] ?? { rating: null, text: '' };
-    const completion = getQuestionCompletion(answer.rating, answer.text);
+  const renderRailItem = (q: SurveyQuestion, index: number) => {
+    const answer = answers[q.id] ?? { rating: null, answerText: null };
+    const completion = getQuestionCompletion(answer.rating, answer.answerText ?? '');
     const isActive = index === activeIndex;
     const statusIcon =
       completion === 'done'
@@ -96,7 +100,7 @@ export function SurveyQuestionMap({
         style={[styles.railItem, isActive && styles.itemActive]}
         accessibilityRole="button"
         accessibilityState={{ selected: isActive }}
-        accessibilityLabel={t('surveyDemo.questionA11y', { index: index + 1, label: q.shortLabel })}
+        accessibilityLabel={t('surveyDemo.questionA11y', { index: index + 1, label: q.shortLabelHe })}
       >
         <Text style={[styles.itemNumber, isActive && styles.itemNumberActive]}>
           {index + 1}
@@ -105,7 +109,7 @@ export function SurveyQuestionMap({
           style={[styles.itemLabel, isActive && styles.itemLabelActive]}
           numberOfLines={2}
         >
-          {q.shortLabel}
+          {q.shortLabelHe}
         </Text>
         <Ionicons name={statusIcon as never} size={16} color={statusColor} />
       </Pressable>

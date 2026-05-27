@@ -1,3 +1,5 @@
+// Production survey floating nav — bottom-anchored prev/next pills.
+// FR-SETTINGS-016 AC3: floating controls above tab bar, never hidden.
 import React from 'react';
 import { Pressable, Text, View, type ViewStyle } from 'react-native';
 import { useTranslation } from 'react-i18next';

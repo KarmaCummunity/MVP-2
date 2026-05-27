@@ -17,6 +17,8 @@ import { TopBar } from '../../src/components/TopBar';
 import { FeedFilterIcon } from '../../src/components/FeedFilterIcon';
 import { NewPostsBanner } from '../../src/components/NewPostsBanner';
 import { FirstPostNudge } from '../../src/components/FirstPostNudge';
+import { SurveyPromptBanner } from '../../src/components/survey/SurveyPromptBanner';
+import { useSurveyBanner } from '../../src/hooks/useSurveyBanner';
 import { FeedEmptyState } from '../../src/components/FeedEmptyState';
 import { PostFilterSheet, type PostFilterValue } from '../../src/components/PostFilterSheet';
 import { Screen } from '../../src/components/ui/Screen';
@@ -120,6 +122,7 @@ export default function HomeFeedScreen() {
   });
 
   const nudge = useFirstPostNudge(viewerId);
+  const surveyBanner = useSurveyBanner();
 
   const sheetValue: PostFilterValue = {
     type: filter.type,
@@ -153,6 +156,9 @@ export default function HomeFeedScreen() {
 
   const header = (
     <View>
+      {surveyBanner.shouldShow && (
+        <SurveyPromptBanner slug={surveyBanner.slug} onSnooze={surveyBanner.onSnooze} />
+      )}
       {nudge.show && (
         <FirstPostNudge
           onShare={() => router.push('/(tabs)/create')}

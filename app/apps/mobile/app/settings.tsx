@@ -145,14 +145,27 @@ export default function SettingsScreen() {
           />
         </View>
 
-        <Text style={styles.sectionTitle}>{t('surveyDemo.entryTitle')}</Text>
+        <Text style={styles.sectionTitle}>{t('survey.entryTitle')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
-            label={t('surveyDemo.entryLabel')}
+            label={t('survey.entryTitle')}
             icon="clipboard-outline"
-            onPress={() => router.push('/settings/survey-demo' as never)}
+            onPress={() => router.push('/settings/surveys')}
           />
         </View>
+
+        {SHOW_SETTINGS_DEBUG_TOOLS ? (
+          <>
+            <Text style={styles.sectionTitle}>{t('surveyDemo.entryTitle')}</Text>
+            <View style={styles.section}>
+              <SettingsScreenRow
+                label={t('surveyDemo.entryLabel')}
+                icon="flask-outline"
+                onPress={() => router.push('/settings/survey-demo' as never)}
+              />
+            </View>
+          </>
+        ) : null}
 
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>

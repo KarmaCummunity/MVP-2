@@ -16,6 +16,8 @@ import {
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
   SupabaseReportsRepository,
+  SupabaseSurveyRepository,
+  SupabasePublicResearchRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -48,6 +50,13 @@ import {
   GetMyAdminRolesUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
+  ListActiveSurveysUseCase,
+  LoadSurveyBundleUseCase,
+  SaveSurveyAnswersUseCase,
+  CheckSurveyPromptUseCase,
+  SubmitFreeFeedbackUseCase,
+  LoadPublicResearchBundleUseCase,
+  SubmitPublicResearchResponseUseCase,
 } from '@kc/application';
 
 /**
@@ -78,6 +87,8 @@ const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
+const surveyRepo = new SupabaseSurveyRepository(supabase);
+const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
 const getMyAdminRoles = new GetMyAdminRolesUseCase(adminRoleRepo);
@@ -138,4 +149,17 @@ export const container = {
   updateDonationLink: new UpdateDonationLinkUseCase(donationLinksRepo),
   removeDonationLink: new RemoveDonationLinkUseCase(donationLinksRepo),
   reportDonationLink: new ReportDonationLinkUseCase(donationLinksRepo),
+
+  // Surveys + free feedback (FR-SETTINGS-015..017)
+  surveyRepo,
+  listActiveSurveys: new ListActiveSurveysUseCase(surveyRepo),
+  loadSurveyBundle: new LoadSurveyBundleUseCase(surveyRepo),
+  saveSurveyAnswers: new SaveSurveyAnswersUseCase(surveyRepo),
+  checkSurveyPrompt: new CheckSurveyPromptUseCase(surveyRepo),
+  submitFreeFeedback: new SubmitFreeFeedbackUseCase(surveyRepo),
+
+  // Public research — Survey B (FR-RESEARCH-001..003)
+  publicResearchRepo,
+  loadPublicResearchBundle: new LoadPublicResearchBundleUseCase(publicResearchRepo),
+  submitPublicResearchResponse: new SubmitPublicResearchResponseUseCase(publicResearchRepo),
 } as const;
