@@ -101,19 +101,19 @@ describe('SupabaseDeviceRepository — deactivate', () => {
 });
 
 describe('SupabaseDeviceRepository — listForUser', () => {
-  it('selects * from devices filtered by user_id', async () => {
+  it('selects explicit columns from devices filtered by user_id', async () => {
     const { client, calls } = makeListClient({ data: [] });
     const repo = new SupabaseDeviceRepository(client);
 
     await repo.listForUser('u_1');
 
     expect(calls).toHaveLength(1);
-    expect(calls[0]).toEqual({
-      table: 'devices',
-      selected: '*',
-      eqCol: 'user_id',
-      eqVal: 'u_1',
-    });
+    expect(calls[0]?.table).toBe('devices');
+    expect(calls[0]?.selected).toContain('device_id');
+    expect(calls[0]?.selected).toContain('push_token');
+    expect(calls[0]?.selected).not.toBe('*');
+    expect(calls[0]?.eqCol).toBe('user_id');
+    expect(calls[0]?.eqVal).toBe('u_1');
   });
 
   it('maps each row to a Device entity', async () => {

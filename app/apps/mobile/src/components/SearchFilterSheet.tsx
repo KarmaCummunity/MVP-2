@@ -7,6 +7,7 @@ import { useTheme } from '@kc/ui';
 import { ALL_CATEGORIES, DONATION_CATEGORY_SLUGS, RADIUS_OPTIONS_KM } from '@kc/domain';
 import type { Category, DonationCategorySlug, PostType, SearchSortBy } from '@kc/domain';
 import { search as t } from '../i18n/locales/he/donations';
+import { useShallow } from 'zustand/react/shallow';
 import { useSearchStore } from '../store/searchStore';
 import { CityPicker } from './CityPicker';
 import { SearchChip } from './search/SearchChip';
@@ -22,7 +23,24 @@ interface Props {
 export function SearchFilterSheet({ visible, onClose }: Props) {
   const styles = useSearchFilterSheetStyles();
   const { colors } = useTheme();
-  const store = useSearchStore();
+  const store = useSearchStore(
+    useShallow((s) => ({
+      postType: s.postType,
+      category: s.category,
+      donationCategory: s.donationCategory,
+      city: s.city,
+      cityName: s.cityName,
+      radiusKm: s.radiusKm,
+      sortBy: s.sortBy,
+      setPostType: s.setPostType,
+      setCategory: s.setCategory,
+      setDonationCategory: s.setDonationCategory,
+      setCity: s.setCity,
+      setRadiusKm: s.setRadiusKm,
+      setSortBy: s.setSortBy,
+      clearFilters: s.clearFilters,
+    })),
+  );
   const [postType, setPostType] = useState<PostType | null>(store.postType);
   const [category, setCategory] = useState<Category | null>(store.category);
   const [donationCategory, setDonationCategory] = useState<DonationCategorySlug | null>(store.donationCategory);

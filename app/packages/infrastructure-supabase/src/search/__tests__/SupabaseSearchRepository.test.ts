@@ -67,24 +67,24 @@ describe('SupabaseSearchRepository — explore vs search path', () => {
     expect(explorePosts).not.toHaveBeenCalled();
   });
 
-  it('forwards (client, query, filters, limit) to each search helper', async () => {
+  it('forwards (client, query, filters, limit, viewerId) to each search helper', async () => {
     const repo = new SupabaseSearchRepository(FAKE_CLIENT);
     const filters: SearchFilters = { category: 'Electronics' };
 
     await repo.search('car', filters, 'u_viewer', { posts: 5, users: 7, links: 9 });
 
-    expect(searchPosts).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 5);
+    expect(searchPosts).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 5, 'u_viewer');
     expect(searchUsers).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 'u_viewer', 7);
     expect(searchLinks).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 9);
   });
 
-  it('forwards (client, filters, limit) to each explore helper (no query arg)', async () => {
+  it('forwards (client, filters, limit, viewerId) to each explore helper (no query arg)', async () => {
     const repo = new SupabaseSearchRepository(FAKE_CLIENT);
     const filters: SearchFilters = { city: 'tel-aviv' };
 
     await repo.search('', filters, 'u_viewer', { posts: 5, users: 7, links: 9 });
 
-    expect(explorePosts).toHaveBeenCalledWith(FAKE_CLIENT, filters, 5);
+    expect(explorePosts).toHaveBeenCalledWith(FAKE_CLIENT, filters, 5, 'u_viewer');
     expect(exploreUsers).toHaveBeenCalledWith(FAKE_CLIENT, filters, 'u_viewer', 7);
     expect(exploreLinks).toHaveBeenCalledWith(FAKE_CLIENT, filters, 9);
   });

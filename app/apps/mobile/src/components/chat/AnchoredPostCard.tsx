@@ -49,6 +49,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     queryKey: ['post', anchorPostId, viewerId],
     queryFn: () => getPostByIdUseCase().execute({ postId: anchorPostId!, viewerId }),
     enabled: Boolean(anchorPostId),
+    staleTime: 60_000, // PERF-3: chat anchored post — closure event invalidates explicitly
   });
 
   // FR-CHAT-014 AC7 — surface counterpart's optional contact phone as a tel: link.

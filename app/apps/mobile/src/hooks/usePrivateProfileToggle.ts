@@ -13,6 +13,7 @@ export function usePrivateProfileToggle(userId: string | undefined) {
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — privacy toggle invalidates explicitly
   });
   const user = userQuery.data;
   const isPrivate = user?.privacyMode === 'Private';

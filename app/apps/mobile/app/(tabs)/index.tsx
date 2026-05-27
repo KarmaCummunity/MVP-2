@@ -9,7 +9,8 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery } from '@tanstack/react-query';
+import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useShallow } from 'zustand/react/shallow';
 import type { PostWithOwner } from '@kc/application';
 import { PostFeedList } from '../../src/components/PostFeedList';
 import { TopBar } from '../../src/components/TopBar';
@@ -25,13 +26,46 @@ import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { useFeedRealtime } from '../../src/hooks/useFeedRealtime';
 import { useFirstPostNudge } from '../../src/hooks/useFirstPostNudge';
 import { getFeedUseCase } from '../../src/services/postsComposition';
+import { startMark } from '../../src/lib/observability/perfMarks';
+
+// Module-scope guard: fires once per JS context (cold home-tab mount).
+let feedFirstRenderStarted = false;
+if (!feedFirstRenderStarted) {
+  feedFirstRenderStarted = true;
+  startMark('feed.first_render');
+  startMark('image.first_paint');
+}
 
 export default function HomeFeedScreen() {
   const router = useRouter();
+  const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
-  const filter = useFilterStore();
+  const filter = useFilterStore(
+    useShallow((s) => ({
+      type: s.type,
+      categories: s.categories,
+      itemConditions: s.itemConditions,
+      locationFilter: s.locationFilter,
+      statusFilter: s.statusFilter,
+      sortOrder: s.sortOrder,
+      proximitySortCity: s.proximitySortCity,
+      proximitySortCityName: s.proximitySortCityName,
+      followersOnly: s.followersOnly,
+      searchQuery: s.searchQuery,
+      setType: s.setType,
+      setCategories: s.setCategories,
+      setItemConditions: s.setItemConditions,
+      setLocationFilter: s.setLocationFilter,
+      setStatusFilter: s.setStatusFilter,
+      setSortOrder: s.setSortOrder,
+      setProximitySortCity: s.setProximitySortCity,
+      setFollowersOnly: s.setFollowersOnly,
+      setSearchQuery: s.setSearchQuery,
+      clearAll: s.clearAll,
+    })),
+  );
   const activeCount = useFilterStore((s) => s.activeCount());
   const newPostsCount = useFeedSessionStore((s) => s.newPostsCount);
   const resetNewPosts = useFeedSessionStore((s) => s.resetNewPosts);
@@ -69,6 +103,7 @@ export default function HomeFeedScreen() {
     queryKey: ['feed', viewerId, feedFilter],
     queryFn: () =>
       getFeedUseCase().execute({ viewerId, filter: feedFilter, limit: 20 }),
+    staleTime: 60_000, // PERF-3: feed — realtime fills gaps; tight stale ensures focus-back refresh
   });
 
   const refetchAndReset = useCallback(() => {
@@ -77,7 +112,12 @@ export default function HomeFeedScreen() {
     listRef.current?.scrollToOffset({ offset: 0, animated: true });
   }, [feedQuery, resetNewPosts]);
 
-  useFeedRealtime(refetchAndReset);
+  useFeedRealtime({
+    queryClient,
+    queryKey: ['feed', viewerId, feedFilter] as const,
+    viewerId,
+    feedFilter,
+  });
 
   const nudge = useFirstPostNudge(viewerId);
 

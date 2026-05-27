@@ -23,6 +23,7 @@ export function useProfileTabCounts({
         excludeOnlyMe: isSelf,
       }),
     enabled: Boolean(profileUserId) && enabled,
+    staleTime: 60_000, // PERF-3: profile tab counts — shared by self/others; post actions invalidate
   });
 
   const closedQuery = useQuery({
@@ -30,6 +31,7 @@ export function useProfileTabCounts({
     queryFn: () =>
       getPostRepo().countProfileClosedPosts(profileUserId!, viewerUserId),
     enabled: Boolean(profileUserId) && enabled,
+    staleTime: 60_000, // PERF-3: profile tab counts — shared by self/others; post actions invalidate
   });
 
   const openCount = openQuery.data;

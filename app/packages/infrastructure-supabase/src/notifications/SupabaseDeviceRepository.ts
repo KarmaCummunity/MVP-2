@@ -36,7 +36,7 @@ export class SupabaseDeviceRepository implements IDeviceRepository {
         },
         { onConflict: 'push_token' },
       )
-      .select('*')
+      .select('device_id, user_id, push_token, platform, last_seen_at, active')
       .single();
     if (error) throw error;
     return mapRow(data);
@@ -53,7 +53,7 @@ export class SupabaseDeviceRepository implements IDeviceRepository {
   async listForUser(userId: string): Promise<Device[]> {
     const { data, error } = await this.client
       .from('devices')
-      .select('*')
+      .select('device_id, user_id, push_token, platform, last_seen_at, active')
       .eq('user_id', userId);
     if (error) throw error;
     return (data ?? []).map(mapRow);

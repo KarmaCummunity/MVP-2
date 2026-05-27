@@ -36,6 +36,7 @@ export default function FollowRequestsScreen() {
     queryKey: ['user-profile', me],
     queryFn: () => getUserRepo().findById(me!),
     enabled: Boolean(me),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — privacy toggle invalidates explicitly
   });
   const isPrivate = userQuery.data?.privacyMode === 'Private';
 
@@ -43,6 +44,7 @@ export default function FollowRequestsScreen() {
     queryKey: ['pending-requests', me],
     queryFn: () => getListPendingFollowRequestsUseCase().execute({ targetId: me!, limit: 50 }),
     enabled: Boolean(me && isPrivate),
+    staleTime: 5 * 60_000, // PERF-3: follow requests — accept/reject actions invalidate explicitly
   });
 
   // FR-FOLLOW-007 AC4 — auto-dismiss when toggling to Public.

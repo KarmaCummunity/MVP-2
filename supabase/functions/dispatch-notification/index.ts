@@ -2,6 +2,7 @@ import { createClient } from 'https://esm.sh/@supabase/supabase-js@2';
 import { coalesceChat, coalesceFollowStarted } from './coalesce.ts';
 import { sendExpoPush, type ExpoMessage, type ExpoTicket } from './expoPushClient.ts';
 import i18n from './i18n.json' with { type: 'json' };
+import { type Handler, withTiming } from '../_shared/withTiming.ts';
 
 interface OutboxRow {
   notification_id: string;
@@ -48,7 +49,7 @@ function bumpAttempt(notificationId: string, error: string) {
   return supabase.rpc('notifications_bump_attempt', { p_id: notificationId, p_error: error });
 }
 
-Deno.serve(async (req) => {
+const handler: Handler = async (req) => {
   // Auth: dashboard webhook passes the service-role bearer.
   const auth = req.headers.get('Authorization') ?? '';
   if (auth !== `Bearer ${SERVICE_ROLE_KEY}`) {
@@ -187,4 +188,6 @@ Deno.serve(async (req) => {
     await bumpAttempt(row.notification_id, String(err));
     return new Response('Internal Error', { status: 500 });
   }
-});
+};
+
+Deno.serve(withTiming('dispatch-notification', handler));

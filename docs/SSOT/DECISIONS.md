@@ -941,6 +941,15 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-48 — Sentry as the single observability sink for mobile + Edge Functions (2026-05-26)
+
+`@sentry/react-native` for mobile crash + 3 explicit performance marks (`app.cold_start`, `feed.first_render`, `image.first_paint`). Edge Functions use a `withTiming` wrapper logging structured JSON to Supabase function logs (read via `mcp__supabase__get_logs`).
+
+**Sample rates:** Performance 100% in dev, 25% in prod. Revisit at >1k DAU.
+**Why not Datadog/Honeycomb:** vendor cost + integration overhead exceed value at this scale.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |

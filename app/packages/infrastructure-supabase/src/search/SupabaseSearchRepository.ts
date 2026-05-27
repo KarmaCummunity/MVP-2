@@ -25,8 +25,8 @@ export class SupabaseSearchRepository implements ISearchRepository {
     const [postBucket, userBucket, linkBucket] = await Promise.all([
       wantPosts
         ? isExplore
-          ? explorePosts(this.client, filters, limits.posts)
-          : searchPosts(this.client, query, filters, limits.posts)
+          ? explorePosts(this.client, filters, limits.posts, viewerId)
+          : searchPosts(this.client, query, filters, limits.posts, viewerId)
         : Promise.resolve(EMPTY_SEARCH_BUCKET),
       wantUsers
         ? isExplore

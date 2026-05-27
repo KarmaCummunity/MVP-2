@@ -24,7 +24,7 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
       if (table === 'chats') {
         const chatsPromise = () =>
           Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
-        return { select: () => ({ or: () => ({ order: () => chatsPromise() }) }) };
+        return { select: () => ({ or: () => ({ order: () => ({ limit: () => chatsPromise() }) }) }) };
       }
       if (table === 'messages') {
         return {
@@ -32,7 +32,7 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
             in: () => {
               messagesCallCount++;
               if (messagesCallCount === 1) {
-                return { order: async () => ({ data: opts.messages ?? [], error: opts.messagesError ?? null }) };
+                return { order: () => ({ limit: async () => ({ data: opts.messages ?? [], error: opts.messagesError ?? null }) }) };
               }
               return Promise.resolve({ data: opts.unread ?? [], error: opts.unreadError ?? null });
             },

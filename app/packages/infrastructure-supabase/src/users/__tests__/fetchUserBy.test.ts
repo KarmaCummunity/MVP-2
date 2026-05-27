@@ -72,18 +72,18 @@ const FAKE_USER_ROW = {
 
 describe('fetchUserBy', () => {
   describe('query shape', () => {
-    it('queries users table selecting * with eq(user_id, value).maybeSingle', async () => {
+    it('queries users table with an explicit column list and eq(user_id, value).maybeSingle', async () => {
       const { client, calls } = makeFakeClient({ data: null });
 
       await fetchUserBy(client, 'user_id', 'u_target');
 
       expect(calls).toHaveLength(1);
-      expect(calls[0]).toEqual({
-        table: 'users',
-        selected: '*',
-        eqCol: 'user_id',
-        eqVal: 'u_target',
-      });
+      expect(calls[0]?.table).toBe('users');
+      expect(calls[0]?.selected).toContain('user_id');
+      expect(calls[0]?.selected).toContain('share_handle');
+      expect(calls[0]?.selected).not.toBe('*');
+      expect(calls[0]?.eqCol).toBe('user_id');
+      expect(calls[0]?.eqVal).toBe('u_target');
     });
 
     it('queries by share_handle when that column variant is requested', async () => {

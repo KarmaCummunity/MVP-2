@@ -50,7 +50,7 @@ export async function fetchPostActorIdentitiesByPostIds(
   const uniqueIds = [...new Set(postIds)];
   const { data, error } = await client
     .from('post_actor_identity')
-    .select('*')
+    .select('post_id, user_id, identity_visibility, hide_from_counterparty, surface_visibility, updated_at')
     .in('post_id', uniqueIds);
   if (error) {
     if (isPostgrestRelationMissing(error)) return out;

@@ -98,7 +98,7 @@ export class SupabaseUserRepository implements IUserRepository {
       .from('users')
       .update({ privacy_mode: mode, privacy_changed_at: new Date().toISOString() })
       .eq('user_id', userId)
-      .select('*')
+      .select('user_id, auth_provider, share_handle, display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url, privacy_mode, privacy_changed_at, account_status, onboarding_state, notification_preferences, is_super_admin, closure_explainer_dismissed, first_post_nudge_dismissed, items_given_count, items_received_count, active_posts_count_internal, followers_count, following_count, created_at, updated_at')
       .single();
     if (error) throw new Error(`setPrivacyMode: ${error.message}`);
     return mapUserRow(data as unknown as UserRow);

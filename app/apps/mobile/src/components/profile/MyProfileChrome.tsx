@@ -62,6 +62,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const user = userQuery.data ?? null;
   const tabCounts = useProfileTabCounts({

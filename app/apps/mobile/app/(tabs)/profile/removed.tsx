@@ -35,6 +35,7 @@ export default function MyProfileRemovedScreen() {
         limit: 30,
       }),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — admin removal invalidates explicitly
   });
 
   const { openLane, closedLane } = useMemo(() => {
