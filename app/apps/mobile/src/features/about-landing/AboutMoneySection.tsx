@@ -19,19 +19,19 @@ export function AboutMoneySection() {
 
       <View style={styles.layerList}>
         <Layer
-          phase="היום"
+          phase={t('aboutContent.phaseLabelToday')}
           title={t('aboutContent.moneyTodayTitle')}
           body={t('aboutContent.moneyTodayBody')}
           tone="current"
         />
         <Layer
-          phase="בקרוב"
+          phase={t('aboutContent.phaseLabelSoon')}
           title={t('aboutContent.moneySoonTitle')}
           body={t('aboutContent.moneySoonBody')}
           tone="soon"
         />
         <Layer
-          phase="בעתיד"
+          phase={t('aboutContent.phaseLabelFuture')}
           title={t('aboutContent.moneyFutureTitle')}
           body={t('aboutContent.moneyFutureBody')}
           tone="future"

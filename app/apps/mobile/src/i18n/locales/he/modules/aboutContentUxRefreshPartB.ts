@@ -68,6 +68,31 @@ export const aboutContentUxRefreshPartB = {
     },
   ],
 
+  // Phase labels shared by Governance + Money sections
+  phaseLabelToday: 'היום',
+  phaseLabelSoon: 'בקרוב',
+  phaseLabelFuture: 'בעתיד',
+
+  // Logo "More on the Logo" dropdown (v1.0 §2.2–§2.3)
+  logoTitle: 'עוד על הלוגו',
+  logoLead: 'לב שלם, עולם אחד, ומראה שמחברת בין שניהם.',
+  logoA11yLabel: 'הלוגו של קהילת קארמה',
+  logoExpandOpen: 'הסיפור מאחורי הלוגו',
+  logoExpandClose: 'פחות',
+  logoParagraph1:
+    'הסתכלו רגע בלוגו. בצד שמאל יש את הצורה היסודית שלנו — K של Karma, ו-C של Community. בלעדי הצד השני, זו צורה לא גמורה: חצי לב, חצי עיגול.',
+  logoParagraph2:
+    'ואז יש את הצד הימני — והוא לא צד חדש. הוא מראה. כל מה שיש בשמאל, חוזר בימין כתמונת ראי. ברגע שהמראה נכנסת, חצי הלב של ה-K הופך ללב שלם, וה-C נסגרת לעיגול — כדור הארץ, עם היבשות במרכז.',
+  logoParagraph3:
+    'קארמה היא הלב — נתינה. קהילה היא הגלובוס — אחדות. אחד לא חי בלי השני.',
+  logoPullQuoteCaption: 'בעיניים אנגליות, הלוגו נקרא בנגיעה אחת.',
+  logoParagraph4:
+    'ובעברית? יש פה הפתעה קטנה. נסו להקליד את האותיות K ו-C כשהמקלדת בעברית — תקבלו בדיוק את המילה לב. את זה לא תכננו. זה פשוט קרה לבד.',
+  logoJourneyKicker: 'מסע קטן',
+  logoJourneyText:
+    'התחלנו ברישום על נייר — לב, מסך, רעיון של חיבור. שש גרסאות של חידוד אחר כך, הגענו ללוגו של היום.',
+  logoImageA11yLabel: 'גרסת לוגו {{n}} מתוך 6',
+
   // Governance — new section (v1.0 §10)
   governanceTitle: 'המסגרת — מי מחליט',
   governanceLead: 'המסגרת קבועה. הקהילה מחליטה את הדרך.',

@@ -19,19 +19,19 @@ export function AboutGovernanceSection() {
 
       <View style={styles.stageList}>
         <Stage
-          phase="היום"
+          phase={t('aboutContent.phaseLabelToday')}
           title={t('aboutContent.governanceTodayTitle')}
           body={t('aboutContent.governanceTodayBody')}
           tone="current"
         />
         <Stage
-          phase="בקרוב"
+          phase={t('aboutContent.phaseLabelSoon')}
           title={t('aboutContent.governanceAmutaTitle')}
           body={t('aboutContent.governanceAmutaBody')}
           tone="soon"
         />
         <Stage
-          phase="בעתיד"
+          phase={t('aboutContent.phaseLabelFuture')}
           title={t('aboutContent.governanceFutureTitle')}
           body={t('aboutContent.governanceFutureBody')}
           tone="future"
