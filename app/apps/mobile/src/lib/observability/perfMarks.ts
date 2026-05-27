@@ -3,9 +3,13 @@
 //   - don't crash if Sentry isn't initialised (tests, no-DSN dev builds)
 //   - idempotent (`startMark` is a no-op for an active name)
 //   - finish returns boolean so callers can detect double-finish bugs
+//
+// Sentry v7 used span.finish(); Sentry v8 renamed it to span.end(). We call
+// whichever exists so the helper survives major-version bumps without crashing
+// the host app (which is what TypeError: s.finish is not a function would do).
 
 type MarkName = 'app.cold_start' | 'feed.first_render' | 'image.first_paint';
-type Span = { finish(): void };
+type Span = { end?(): void; finish?(): void };
 
 const active = new Map<MarkName, Span>();
 
@@ -18,7 +22,21 @@ function getSentry(): typeof import('@sentry/react-native') | null {
   }
 }
 
-const noopSpan: Span = { finish() { /* no-op when Sentry unavailable */ } };
+const noopSpan: Span = { end() { /* no-op when Sentry unavailable */ } };
+
+function endSpan(span: Span): void {
+  try {
+    if (typeof span.end === 'function') {
+      span.end();
+      return;
+    }
+    if (typeof span.finish === 'function') {
+      span.finish();
+    }
+  } catch {
+    // Never crash the host app on a Sentry span-end failure.
+  }
+}
 
 export function startMark(name: MarkName): void {
   if (active.has(name)) return;
@@ -34,7 +52,7 @@ export function startMark(name: MarkName): void {
 export function finishMark(name: MarkName): boolean {
   const span = active.get(name);
   if (!span) return false;
-  span.finish();
+  endSpan(span);
   active.delete(name);
   return true;
 }
