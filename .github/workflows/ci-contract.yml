@@ -10,12 +10,14 @@ on:
       - 'app/packages/infrastructure-supabase/**'
       - 'app/packages/application/**'
       - 'app/packages/domain/**'
+      - 'app/apps/mobile/app/**'
       - 'app/scripts/check-architecture.mjs'
       - 'supabase/migrations/**'
       - 'supabase/functions/**'
       - 'scripts/check-rpc-contract.mjs'
       - 'scripts/check-rpc-contract.allowlist.json'
       - 'scripts/check-web-manifest.mjs'
+      - 'scripts/check-expo-router-platform-extensions.mjs'
       - 'app/apps/mobile/src/i18n/locales/he/**'
       - '.github/workflows/ci-contract.yml'
   push:
@@ -24,12 +26,14 @@ on:
       - 'app/packages/infrastructure-supabase/**'
       - 'app/packages/application/**'
       - 'app/packages/domain/**'
+      - 'app/apps/mobile/app/**'
       - 'app/scripts/check-architecture.mjs'
       - 'supabase/migrations/**'
       - 'supabase/functions/**'
       - 'scripts/check-rpc-contract.mjs'
       - 'scripts/check-rpc-contract.allowlist.json'
       - 'scripts/check-web-manifest.mjs'
+      - 'scripts/check-expo-router-platform-extensions.mjs'
       - 'app/apps/mobile/src/i18n/locales/he/**'
       - '.github/workflows/ci-contract.yml'
 
@@ -79,3 +83,18 @@ jobs:
           node-version: 20
       - name: Verify he locale appName is present and non-empty
         run: node scripts/check-web-manifest.mjs
+
+  expo-router-platform-extensions:
+    name: expo-router · platform extension fallbacks
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - name: Verify every *.web.tsx (etc.) route has a non-platform sibling
+        run: node scripts/check-expo-router-platform-extensions.mjs
+      - name: Run guard's own unit tests
+        run: node --test scripts/check-expo-router-platform-extensions.test.mjs
