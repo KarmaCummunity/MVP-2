@@ -1,5 +1,6 @@
 import React, { useCallback, useState } from 'react';
 import { View, Text, Image, Pressable, ScrollView, LayoutAnimation, Platform } from 'react-native';
+import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
@@ -25,6 +26,7 @@ const JOURNEY_STAGES = [
 ];
 
 export function AboutLogoEvolutionSection() {
+  const { t } = useTranslation();
   const styles = useStyles();
   const { colors } = useTheme();
   const [open, setOpen] = useState(false);
@@ -40,14 +42,12 @@ export function AboutLogoEvolutionSection() {
         <Image
           source={LOGO_TODAY}
           style={styles.headerLogo}
-          accessibilityLabel="הלוגו של קהילת קארמה"
+          accessibilityLabel={t('aboutContent.logoA11yLabel')}
           resizeMode="contain"
         />
         <View style={styles.headerText}>
-          <Text style={styles.title}>עוד על הלוגו</Text>
-          <Text style={styles.lead}>
-            לב שלם, עולם אחד, ומראה שמחברת בין שניהם.
-          </Text>
+          <Text style={styles.title}>{t('aboutContent.logoTitle')}</Text>
+          <Text style={styles.lead}>{t('aboutContent.logoLead')}</Text>
         </View>
       </View>
 
@@ -59,44 +59,32 @@ export function AboutLogoEvolutionSection() {
       >
         <Ionicons name={open ? 'chevron-up' : 'chevron-down'} size={22} color={colors.secondary} />
         <Text style={styles.expandTitle}>
-          {open ? 'פחות' : 'הסיפור מאחורי הלוגו'}
+          {open ? t('aboutContent.logoExpandClose') : t('aboutContent.logoExpandOpen')}
         </Text>
       </Pressable>
 
       {open ? (
         <View style={styles.body}>
-          <Text style={styles.paragraph}>
-            הסתכלו רגע בלוגו. בצד שמאל יש את הצורה היסודית שלנו — <Text style={styles.bold}>K</Text> של Karma, ו-<Text style={styles.bold}>C</Text> של Community. בלעדי הצד השני, זו צורה לא גמורה: חצי לב, חצי עיגול.
-          </Text>
+          <Text style={styles.paragraph}>{t('aboutContent.logoParagraph1')}</Text>
 
-          <Text style={styles.paragraph}>
-            ואז יש את הצד הימני — והוא לא צד חדש. <Text style={styles.bold}>הוא מראה.</Text> כל מה שיש בשמאל, חוזר בימין כתמונת ראי. ברגע שהמראה נכנסת, חצי הלב של ה-K הופך ל<Text style={styles.bold}>לב שלם</Text>, וה-C נסגרת לעיגול — <Text style={styles.bold}>כדור הארץ, עם היבשות במרכז.</Text>
-          </Text>
+          <Text style={styles.paragraph}>{t('aboutContent.logoParagraph2')}</Text>
 
-          <Text style={styles.paragraph}>
-            קארמה היא הלב — נתינה. קהילה היא הגלובוס — אחדות. אחד לא חי בלי השני.
-          </Text>
+          <Text style={styles.paragraph}>{t('aboutContent.logoParagraph3')}</Text>
 
           <View style={styles.pullQuote}>
             <View style={styles.pullQuoteRule} />
             <Text style={styles.pullQuoteText}>I ♥ the world</Text>
             <View style={styles.pullQuoteRule} />
-            <Text style={styles.pullQuoteCap}>
-              בעיניים אנגליות, הלוגו נקרא בנגיעה אחת.
-            </Text>
+            <Text style={styles.pullQuoteCap}>{t('aboutContent.logoPullQuoteCaption')}</Text>
           </View>
 
-          <Text style={styles.paragraph}>
-            ובעברית? יש פה הפתעה קטנה. נסו להקליד את האותיות K ו-C כשהמקלדת בעברית — תקבלו בדיוק את המילה <Text style={styles.bold}>לב</Text>. את זה לא תכננו. זה פשוט קרה לבד.
-          </Text>
+          <Text style={styles.paragraph}>{t('aboutContent.logoParagraph4')}</Text>
 
           <View style={styles.divider} />
 
           <View>
-            <Text style={styles.journeyKicker}>מסע קטן</Text>
-            <Text style={styles.paragraph}>
-              התחלנו ברישום על נייר — לב, מסך, רעיון של חיבור. שש גרסאות של חידוד אחר כך, הגענו ללוגו של היום.
-            </Text>
+            <Text style={styles.journeyKicker}>{t('aboutContent.logoJourneyKicker')}</Text>
+            <Text style={styles.paragraph}>{t('aboutContent.logoJourneyText')}</Text>
             <ScrollView
               horizontal
               showsHorizontalScrollIndicator={false}
@@ -107,7 +95,7 @@ export function AboutLogoEvolutionSection() {
                   <Image
                     source={src}
                     style={styles.journeyImage}
-                    accessibilityLabel={`גרסה ${i + 1} מתוך 6`}
+                    accessibilityLabel={t('aboutContent.logoImageA11yLabel', { n: i + 1 })}
                     resizeMode="contain"
                   />
                 </View>
@@ -173,7 +161,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
     ...aboutRtlText,
     lineHeight: 28,
   },
-  bold: { fontWeight: '800', color: colors.textPrimary },
 
   pullQuote: {
     alignItems: 'center',
