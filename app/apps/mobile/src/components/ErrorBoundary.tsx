@@ -35,8 +35,9 @@ export class ErrorBoundary extends React.Component<Props, State> {
     if (__DEV__) console.error('ErrorBoundary caught:', error, info.componentStack);
     try {
       // eslint-disable-next-line @typescript-eslint/no-require-imports
-      const { Sentry, isInitialised } = require('../lib/observability/sentry');
-      if (isInitialised()) {
+      const { getSentryIfInit } = require('../lib/observability/sentry');
+      const Sentry = getSentryIfInit();
+      if (Sentry) {
         Sentry.captureException(error, { extra: { componentStack: info.componentStack ?? null } });
       }
     } catch { /* never crash the boundary */ }

@@ -1,7 +1,22 @@
 import { initSentry } from '../src/lib/observability/sentry';
-initSentry();
 import { startMark, finishMark } from '../src/lib/observability/perfMarks';
+
+// Cold-start mark always fires (cheap — local noopSpan when no DSN; real span
+// once the SDK has loaded). Sentry SDK init is deferred to a post-first-paint
+// callback so the ~250 KB module never enters the first-paint critical path.
 startMark('app.cold_start');
+deferSentryInit();
+function deferSentryInit() {
+  const run = () => { void initSentry(); };
+  if (typeof globalThis !== 'undefined') {
+    const w = globalThis as { requestIdleCallback?: (cb: () => void) => void };
+    if (typeof w.requestIdleCallback === 'function') {
+      w.requestIdleCallback(run);
+      return;
+    }
+  }
+  setTimeout(run, 0);
+}
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
