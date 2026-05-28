@@ -47,4 +47,17 @@ export const surveyHe = {
   bannerBody: 'עזור לנו לשפר את הקהילה — פחות מדקה.',
   bannerCta: 'מלא סקר',
   bannerSnooze: 'אחר כך',
+
+  // FR-RESEARCH-004 — in-app Settings → Surveys row (placement 3)
+  shareResearch: {
+    rowTitle: 'שתפו את מחקר השוק עם חברים',
+    rowSubtitle: 'עוזרים לנו להבין מה אנשים שלא באפליקציה צריכים — אנונימי, בלי הרשמה',
+    shareTitle: 'מחקר שוק קארמה',
+    shareMessage:
+      'אנחנו בונים אפליקציה ישראלית לנתינה בחינם, בלי הבלגן של הקבוצות. ' +
+      'שאלון אנונימי קצר, בלי הרשמה — התשובות שלך משנות איך זה ייראה בפועל.',
+    toastShared: 'הקישור שותף',
+    toastCopied: 'הקישור הועתק',
+    toastFailed: 'לא הצלחנו לשתף, נסה/י שוב',
+  },
 } as const;

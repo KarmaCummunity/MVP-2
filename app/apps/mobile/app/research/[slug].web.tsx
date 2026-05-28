@@ -1,6 +1,7 @@
 // Web-only public research form — FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003.
+// FR-RESEARCH-004 placement 2 lives inside SurveyIntroBlock (extracted file).
 // .web.tsx extension: file is excluded from iOS/Android bundles entirely.
-// Heavy sub-components extracted: ResearchRunner.tsx, ResearchQuestionPanel.tsx.
+// Heavy sub-components extracted: ResearchRunner.tsx, ResearchQuestionPanel.tsx, SurveyIntroBlock.tsx.
 import React, { useCallback, useEffect, useState } from 'react';
 import {
   ActivityIndicator,
@@ -13,9 +14,10 @@ import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { container } from '../../src/lib/container';
-import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
+import { webTextRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { ResearchRunner, errorKey, type AnswerEntry } from './ResearchRunner';
+import { SurveyIntroBlock } from './SurveyIntroBlock';
 
 // ─── src persistence helpers ─────────────────────────────────────────────────
 
@@ -30,22 +32,6 @@ function readPersistedSrc(slug: string): string | null {
     return window.localStorage.getItem(`kc-research-src-${slug}`);
   }
   return null;
-}
-
-// ─── intro block ─────────────────────────────────────────────────────────────
-
-function SurveyIntroBlock() {
-  const styles = useScreenStyles();
-  const { t } = useTranslation();
-
-  return (
-    <View style={[styles.introBlock, webViewRtl]}>
-      <Text style={styles.introHeading}>{t('research.introHeading')}</Text>
-      <Text style={styles.introLine}>{t('research.introLine1')}</Text>
-      <Text style={styles.introLine}>{t('research.introLine2')}</Text>
-      <Text style={styles.introLine}>{t('research.introLine3')}</Text>
-    </View>
-  );
 }
 
 // ─── screen ───────────────────────────────────────────────────────────────────
@@ -180,26 +166,6 @@ const useScreenStyles = makeUseStyles(({ colors }) => ({
   screen: { flex: 1, direction: 'rtl' as never },
   flex: { flex: 1 },
   pageContent: { paddingHorizontal: spacing.base, paddingTop: spacing.base, gap: spacing.base },
-  introBlock: {
-    gap: spacing.xs,
-    padding: spacing.base,
-    borderRadius: 12,
-    backgroundColor: colors.primarySurface,
-    borderWidth: 1,
-    borderColor: colors.primary,
-  },
-  introHeading: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: rtlTextAlignStart,
-    ...webTextRtl,
-  },
-  introLine: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: rtlTextAlignStart,
-    ...webTextRtl,
-  },
   centered: {
     flex: 1,
     alignItems: 'center',

@@ -1,6 +1,7 @@
 # 2.15 Public Market Research
 
 > **Status:** 🟡 Code complete, post-merge QA pending — Survey B captures pain-language from alt-platform users (FB / WhatsApp / Agora). Output: Karma Phrasebook (see design spec §2). Migration `0123`, Edge Functions `public-research-submit` + `rotate-research-salt`, and `.web.tsx` routes are implemented; individual FR statuses remain ⏳ Planned until manual QA on dev confirms ACs.
+> **In progress:** FR-RESEARCH-004 (share affordance) — three viral surfaces (public thank-you page, public survey header, in-app Settings row) to make the survey self-spreading among non-registered users.
 
 Prefix: `FR-RESEARCH-*`
 
@@ -49,6 +50,24 @@ A public, anonymous web form at `/research/[slug]?src=...`, served from the Expo
 
 ---
 
+## FR-RESEARCH-004 — Share affordance for public research survey
+
+**Status.** 🟡 Code complete, post-merge QA pending
+
+**Acceptance Criteria.**
+- AC1. On `/research/thanks` (web-only), a share button labeled "שתפו את הסקר עם חבר/ה" renders as a primary CTA, visible immediately on page load (not gated by the 5-second visit-CTA reveal timer), alongside the existing "Visit Karma site" CTA.
+- AC2. On `/research/[slug]` (web-only), a small share affordance — icon + label "שתפו" — renders in the screen header area, visible from page load, positioned so the question rows remain the visual focus.
+- AC3. A row "שתפו את מחקר השוק עם חברים" renders at the top of `/settings/surveys` (all platforms), above the active-surveys list and above the free-feedback entry.
+- AC4. Share flow: native iOS/Android uses `Share.share` (placement 3 only); web with `navigator.share` uses the Web Share API; web without uses `navigator.clipboard.writeText`. The flow never throws — it returns one of `{ kind: 'shared' | 'copied' | 'dismissed' | 'failed' }`.
+- AC5. Shared URL is `${webBaseUrl}/research/alt-platforms-research?src=<placement-src>` where `<placement-src>` ∈ {`share-thanks`, `share-during-survey`, `in-app-share-settings`}. All three pass the CHECK regex `^[a-z0-9_-]{1,32}$`.
+- AC6. The URL appears in the share message body exactly once on every platform (mirrors the FR-POST-023 fix).
+- AC7. Recipients can open the link and submit answers without registration, login, or app install (already guaranteed by FR-RESEARCH-001 AC1-AC2; this AC asserts the invariant survives the new entry paths).
+- AC8. Status feedback: `shared` → "הקישור שותף" (2.2s success), `copied` → "הקישור הועתק" (2.2s success), `failed` → "לא הצלחנו לשתף, נסה/י שוב" (2.2s error), `dismissed` → silent. On web placements 1 and 2 where no toast host is mounted, an inline status line below the button (auto-clearing after 2.2s) is acceptable.
+- AC9. `track('research_share_initiated', { src, outcome })` fires on every share attempt. Production-noop today per TD-161; will produce data once analytics ingest lands.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-26 | Initial draft. FR-RESEARCH-001..003 (public market research runner, anti-abuse, contact opt-in). |
+| 0.2 | 2026-05-28 | FR-RESEARCH-004 (share affordance) — three viral surfaces to self-spread the survey. |

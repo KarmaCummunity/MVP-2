@@ -4,12 +4,18 @@
 // V1: email opt-in shown but not wired to a separate DB write (the main form
 // already captures email at Q11). Full separate opt-in capture deferred.
 // TD-FE-research: thanks page email opt-in separate DB write not wired in V1.
-import React, { useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useState } from 'react';
 import { Linking, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import {
+  shareResearchSurvey,
+  RESEARCH_SHARE_SRC_THANKS,
+  type ShareResearchOutcome,
+} from '../../src/lib/shareResearchSurvey';
+import { track } from '../../src/lib/analytics';
 
 // TODO: replace with official marketing site URL when available.
 const KARMA_SITE_URL = 'https://karma.community';
@@ -20,6 +26,7 @@ export default function ResearchThanksScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const [showVisitLink, setShowVisitLink] = useState(false);
+  const [shareStatus, setShareStatus] = useState<ShareResearchOutcome['kind'] | null>(null);
 
   // After AUTO_REDIRECT_MS, reveal the "visit site" CTA.
   useEffect(() => {
@@ -30,6 +37,32 @@ export default function ResearchThanksScreen() {
   function handleVisitKarma() {
     Linking.openURL(KARMA_SITE_URL);
   }
+
+  // FR-RESEARCH-004 placement 1 — primary share CTA
+  const handleShare = useCallback(async () => {
+    const origin =
+      globalThis.window?.location?.origin
+      ?? (process.env.EXPO_PUBLIC_WEB_BASE_URL as string | undefined)
+      ?? '';
+
+    const outcome = await shareResearchSurvey({
+      webBaseUrl: origin,
+      src: RESEARCH_SHARE_SRC_THANKS,
+      title: t('research.share.shareTitle'),
+      message: t('research.share.shareMessage'),
+    });
+
+    track('research_share_initiated', {
+      slug: 'alt-platforms-research',
+      src: RESEARCH_SHARE_SRC_THANKS,
+      outcome: outcome.kind,
+    });
+
+    if (outcome.kind !== 'dismissed') {
+      setShareStatus(outcome.kind);
+      setTimeout(() => setShareStatus(null), 2200);
+    }
+  }, [t]);
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
@@ -42,6 +75,30 @@ export default function ResearchThanksScreen() {
           <Text style={styles.optInLabel}>{t('research.thanksEmailOptInLabel')}</Text>
           <Text style={styles.optInHint}>{t('research.thanksEmailPlaceholder')}</Text>
         </View>
+
+        {/* FR-RESEARCH-004 placement 1 — primary share CTA */}
+        <Pressable
+          style={styles.shareBtn}
+          onPress={handleShare}
+          accessibilityRole="button"
+          accessibilityLabel={t('research.share.thanksTitle')}
+        >
+          <Text style={styles.shareBtnText}>{t('research.share.thanksTitle')}</Text>
+        </Pressable>
+        <Text style={styles.shareHelp}>{t('research.share.thanksHelp')}</Text>
+
+        {shareStatus && (
+          <Text
+            style={[
+              styles.shareStatus,
+              shareStatus === 'failed' && styles.shareStatusError,
+            ]}
+          >
+            {shareStatus === 'shared' && t('research.share.statusShared')}
+            {shareStatus === 'copied' && t('research.share.statusCopied')}
+            {shareStatus === 'failed' && t('research.share.statusFailed')}
+          </Text>
+        )}
 
         {showVisitLink ? (
           <Pressable
@@ -63,7 +120,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
-    direction: 'rtl' as never,
     ...webViewRtl,
   },
   card: {
@@ -123,5 +179,37 @@ const useStyles = makeUseStyles(({ colors }) => ({
     ...typography.button,
     color: colors.textInverse,
     ...webTextRtl,
+  },
+  // FR-RESEARCH-004 placement 1 — primary share CTA
+  shareBtn: {
+    marginTop: spacing.md,
+    backgroundColor: colors.primary,
+    borderRadius: 12,
+    paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xl,
+    alignItems: 'center',
+  },
+  shareBtnText: {
+    ...typography.button,
+    color: colors.textInverse,
+    fontWeight: '700',
+    ...webTextRtl,
+  },
+  shareHelp: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    marginTop: spacing.xs,
+    ...webTextRtl,
+  },
+  shareStatus: {
+    ...typography.bodySmall,
+    color: colors.primary,
+    textAlign: rtlTextAlignStart,
+    marginTop: spacing.xs,
+    ...webTextRtl,
+  },
+  shareStatusError: {
+    color: colors.error,
   },
 }));
