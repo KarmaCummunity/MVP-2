@@ -32,6 +32,10 @@ export async function upsertPostActorIdentityRow(
   client: SupabaseClient<Database>,
   input: UpsertPostActorIdentityInput,
 ): Promise<void> {
+  // updated_at is stamped server-side: INSERT path uses the column default;
+  // UPDATE path is set by the post_actor_identity_set_updated_at trigger
+  // (migration 0152, TD-85). The column was dropped from the client UPDATE
+  // grant in the same migration, so sending it from here would fail.
   const { error } = await client.from('post_actor_identity').upsert(
     {
       post_id: input.postId,
@@ -39,7 +43,6 @@ export async function upsertPostActorIdentityRow(
       surface_visibility: input.surfaceVisibility,
       identity_visibility: 'Public',
       hide_from_counterparty: input.hideFromCounterparty,
-      updated_at: new Date().toISOString(),
     },
     { onConflict: 'post_id,user_id' },
   );
