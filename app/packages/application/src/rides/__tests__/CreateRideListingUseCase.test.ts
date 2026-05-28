@@ -39,6 +39,66 @@ describe('CreateRideListingUseCase', () => {
     expect(repo.lastCreateArgs?.title).toContain('חיפה');
   });
 
+  it('defaults visibility to Public when caller omits it', async () => {
+    const repo = new FakeRideListingRepository();
+    const uc = new CreateRideListingUseCase(repo, fakeCities);
+
+    await uc.execute({
+      ownerId: 'u_1',
+      mode: 'offer',
+      originCityId: '5000',
+      destCityId: '4000',
+      originStreet: 'דיזנגוף',
+      originStreetNumber: null,
+      destStreet: 'הנביאים',
+      destStreetNumber: null,
+      departsAt: new Date(Date.now() + 3600_000).toISOString(),
+      seatsAvailable: 3,
+      description: null,
+    });
+
+    expect(repo.lastCreateArgs?.visibility).toBe('Public');
+  });
+
+  it('honors an explicit visibility input (FollowersOnly / OnlyMe)', async () => {
+    const repo = new FakeRideListingRepository();
+    const uc = new CreateRideListingUseCase(repo, fakeCities);
+
+    await uc.execute({
+      ownerId: 'u_1',
+      mode: 'offer',
+      originCityId: '5000',
+      destCityId: '4000',
+      originStreet: 'דיזנגוף',
+      originStreetNumber: null,
+      destStreet: 'הנביאים',
+      destStreetNumber: null,
+      departsAt: new Date(Date.now() + 3600_000).toISOString(),
+      seatsAvailable: 3,
+      description: null,
+      visibility: 'FollowersOnly',
+    });
+
+    expect(repo.lastCreateArgs?.visibility).toBe('FollowersOnly');
+
+    await uc.execute({
+      ownerId: 'u_2',
+      mode: 'request',
+      originCityId: '5000',
+      destCityId: '4000',
+      originStreet: 'דיזנגוף',
+      originStreetNumber: null,
+      destStreet: 'הנביאים',
+      destStreetNumber: null,
+      departsAt: new Date(Date.now() + 3600_000).toISOString(),
+      seatsAvailable: null,
+      description: null,
+      visibility: 'OnlyMe',
+    });
+
+    expect(repo.lastCreateArgs?.visibility).toBe('OnlyMe');
+  });
+
   it('propagates RideError from validateRideDraft', async () => {
     const repo = new FakeRideListingRepository();
     const uc = new CreateRideListingUseCase(repo, fakeCities);
