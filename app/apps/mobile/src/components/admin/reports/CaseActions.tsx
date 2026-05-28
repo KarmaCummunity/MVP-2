@@ -52,15 +52,18 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
     setBusy(true);
     try {
       const openReports = detail.reporters.filter((r) => r.status === 'open');
-      const oneReportId = openReports[0]?.reportId;
       switch (action) {
         case 'confirm':
-          if (!oneReportId) return;
-          await container.confirmReport.execute({ reportId: oneReportId });
+          if (openReports.length === 0) return;
+          for (const r of openReports) {
+            await container.confirmReport.execute({ reportId: r.reportId });
+          }
           break;
         case 'dismiss':
-          if (!oneReportId) return;
-          await container.dismissReport.execute({ reportId: oneReportId });
+          if (openReports.length === 0) return;
+          for (const r of openReports) {
+            await container.dismissReport.execute({ reportId: r.reportId });
+          }
           break;
         case 'restore':
           await container.restoreTarget.execute({

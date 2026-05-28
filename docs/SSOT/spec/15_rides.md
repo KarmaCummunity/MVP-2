@@ -74,12 +74,50 @@ Prefix: `FR-RIDE-*`
 - AC3. Owner close/cancel via `CloseRideListingUseCase` and cron-driven expiry both trigger the same emission via the AFTER UPDATE trigger.
 - AC4. The trigger function `ride_listings_clear_chat_anchor` is replaced (CREATE OR REPLACE) — the 0137 trigger registration still binds to it.
 
+## FR-RIDE-016 — Realtime subscriptions ✅
+- AC1. Tables `ride_listings` and `ride_participants` are members of `supabase_realtime` publication (broadcast still gated by RLS).
+- AC2. `IRidesRealtime.subscribeToPublicRideInserts(cb)` — INSERT on `ride_listings` filtered to `visibility=Public`. Signals only; consumer refetches.
+- AC3. `IRidesRealtime.subscribeToUserParticipantUpdates(userId, cb)` — UPDATE on `ride_participants` filtered to `user_id=eq.<userId>`. Fires for status transitions on the user's own rows.
+- AC4. `IRidesRealtime.subscribeToRideParticipantInserts(rideId, cb)` — INSERT on `ride_participants` filtered to `ride_id=eq.<rideId>`. Lets the owner see new join requests live.
+- AC5. Adapter `SupabaseRidesRealtime` mirrors `SupabaseFeedRealtime` (unique topics per call; CHANNEL_ERROR / TIMED_OUT → onError; returned unsubscribe calls `removeChannel`).
+
 ## FR-RIDE-014 — Inverse-mode ride matches ✅
 - AC1. RPC `ride_listings_find_matches(p_ride_id, p_window_hours, p_limit)` returns rides with the inverse `mode` (offer ↔ request), the same origin/dest city pair, `status='open'`, `visibility='Public'`, and `departs_at` within ±`window_hours` of the source ride.
 - AC2. Caller must own the source ride (`auth.uid() = ride.owner_id`); otherwise the RPC raises `not_ride_owner`.
 - AC3. Results are ordered by absolute time delta from `source.departs_at` ascending; ties break by `created_at` descending.
 - AC4. `window_hours` is clamped to [1, 72] (default 12); `limit` to [1, 50] (default 20).
 - AC5. Application: `FindRideMatchesUseCase` + `IRideListingRepository.findMatches`.
+
+## FR-RIDE-018 — Visibility tiers honored end-to-end ✅
+- AC1. SELECT RLS on `ride_listings` permits: owner; or (`status='open'` AND (`visibility='Public'` OR (`visibility='FollowersOnly'` AND `is_following(viewer, owner)`))). `OnlyMe` rides are visible only to the owner.
+- AC2. `ride_listings_search` widens its visibility predicate identically (SECURITY DEFINER bypasses RLS, so the function body is the source of truth for search results).
+- AC3. `rpc_ride_participants_request` widens the joinability check the same way — a follower can request to join a FollowersOnly ride.
+- AC4. Creation paths in V2.0 still default to `Public` (FR-RIDE-007). Allowing creation with non-Public tiers requires `CreateRideListingUseCase` to accept a `visibility` input — out of scope for this PR.
+
+## FR-RIDE-022 — Recurring ride templates application layer ✅
+- AC1. Domain entity `RideTemplate` + value object `RideTemplateStatus`.
+- AC2. `validateRideTemplateDraft` mirrors `validateRideDraft` (route distinctness + seats-by-mode + description ≤ 500) and adds the recurrence checks (`weekday_mask` ∈ [1,127], `lookahead_days` ∈ [1,30]).
+- AC3. Application use cases: `CreateRideTemplateUseCase` (validates + city-catalog check + defaults visibility to `Public`), `ListMyRideTemplatesUseCase`, `SetRideTemplateStatusUseCase` (enforces the status machine — `archived` is terminal), `DeleteRideTemplateUseCase`.
+- AC4. Adapter `SupabaseRideTemplateRepository` calls `from('ride_templates')` directly (owner-only RLS handles authz; no SECURITY DEFINER RPCs required for templates).
+- AC5. Snake_case → camelCase mapping via `mapRideTemplateRow`.
+
+## FR-RIDE-021 — Recurring ride templates ✅
+> DB schema + materializer + application layer in place; UI follows when the rides hub returns.
+
+- AC1. `ride_templates` table holds one row per recurring slot: owner, mode, route (cities + streets + optional house numbers), `depart_time time`, `weekday_mask` (bitmask Sun=1..Sat=64), `seats_available` (offer-only, NULL on request), `visibility`, `status` ∈ {`active`,`paused`,`archived`}, `lookahead_days` (default 7, clamped 1..30).
+- AC2. `ride_listings.template_id` (nullable FK) links materialized instances to their template; `ON DELETE SET NULL` preserves historical rides if the template is deleted.
+- AC3. Partial unique index on `(template_id, departs_at::date)` makes the materializer idempotent — concurrent runs cannot duplicate a day.
+- AC4. `ride_templates_materialize()` runs daily at `0 2 * * *` UTC. For each active template, it inserts a `ride_listings` row for every matching day in the next `lookahead_days` window that doesn't already have one.
+- AC5. RLS on `ride_templates`: owner-only for SELECT/INSERT/UPDATE/DELETE. Templates are private intent; only the materialized public ride instances surface to other users (still gated by their own RLS + visibility tier).
+- AC6. Status machine: `active ↔ paused`; either ⇒ `archived` (terminal — owner can re-create a new template if needed). Paused/archived templates do not materialize.
+- AC7. Application layer + RPCs (`rpc_ride_templates_*`) ⏳ — follow in a sibling PR.
+
+## FR-RIDE-020 — Owner can update ride visibility ✅
+- AC1. RPC `rpc_ride_update_visibility(p_ride_id, p_visibility)` lets the ride owner change visibility on an existing open ride. `p_visibility` ∈ {`Public`, `FollowersOnly`, `OnlyMe`}; anything else raises `invalid_visibility`.
+- AC2. Caller authenticated and the ride owner; otherwise `auth_required` or `not_ride_owner`.
+- AC3. Target ride must be `status='open'`; closed/cancelled/expired raise `ride_not_open` (re-publish a new ride instead).
+- AC4. Idempotent: if `p_visibility` matches the current value, the RPC returns the existing row without writing.
+- AC5. Application: `UpdateRideVisibilityUseCase` + `IRideListingRepository.updateVisibility`. Errors map to typed `RideError` codes.
 
 ## FR-RIDE-017 — Auto-cancel stale participant requests ✅
 - AC1. pg_cron job `ride_participants_expire_stale_check` runs `*/15 * * * *`. It cancels every `requested` row where `ride.departs_at + interval '3 hours' < now()`.

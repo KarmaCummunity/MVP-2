@@ -54,6 +54,15 @@ const KIND_ROUTES: Record<NotificationKind, KindHandler> = {
   // requests screen, which is a safer default than "user not found".
   follow_started: () => ({ pathname: '/settings/follow-requests', params: {} }),
   follow_approved: () => ({ pathname: '/settings/follow-requests', params: {} }),
+  // FR-ADMIN-018 AC6 — task_assigned notifications deep-link to the task
+  // detail screen. data.params.task_id is the UUID; anything malformed
+  // falls back to the tasks list which is a safe default for any active admin.
+  task_assigned: (d): ResolvedRoute | null => {
+    const id = requireUuid(d.params?.task_id ?? d.params?.id);
+    return id
+      ? { pathname: '/(admin)/tasks/[taskId]', params: { taskId: id } }
+      : { pathname: '/(admin)/tasks', params: {} as Record<string, string> };
+  },
 };
 
 export function resolvePushRoute(data: Partial<PushData>): ResolvedRoute | null {

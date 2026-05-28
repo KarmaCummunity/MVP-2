@@ -1107,6 +1107,7 @@ export type Database = {
           ride_id: string
           seats_available: number | null
           status: string
+          template_id: string | null
           title: string
           updated_at: string
           visibility: string
@@ -1126,6 +1127,7 @@ export type Database = {
           ride_id?: string
           seats_available?: number | null
           status?: string
+          template_id?: string | null
           title: string
           updated_at?: string
           visibility?: string
@@ -1145,6 +1147,7 @@ export type Database = {
           ride_id?: string
           seats_available?: number | null
           status?: string
+          template_id?: string | null
           title?: string
           updated_at?: string
           visibility?: string
@@ -1166,6 +1169,91 @@ export type Database = {
           },
           {
             foreignKeyName: "ride_listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ride_templates: {
+        Row: {
+          created_at: string
+          depart_time: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          lookahead_days: number
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          seats_available: number | null
+          status: string
+          template_id: string
+          updated_at: string
+          visibility: string
+          weekday_mask: number
+        }
+        Insert: {
+          created_at?: string
+          depart_time: string
+          description?: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number?: string | null
+          lookahead_days?: number
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number?: string | null
+          owner_id: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visibility?: string
+          weekday_mask: number
+        }
+        Update: {
+          created_at?: string
+          depart_time?: string
+          description?: string | null
+          dest_city_id?: string
+          dest_street?: string
+          dest_street_number?: string | null
+          lookahead_days?: number
+          mode?: string
+          origin_city_id?: string
+          origin_street?: string
+          origin_street_number?: string | null
+          owner_id?: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visibility?: string
+          weekday_mask?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_templates_dest_city_id_fkey"
+            columns: ["dest_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_templates_origin_city_id_fkey"
+            columns: ["origin_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_templates_owner_id_fkey"
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
@@ -2261,6 +2349,10 @@ export type Database = {
       ride_listings_find_matches: {
         Args: { p_ride_id: string; p_window_hours?: number; p_limit?: number }
         Returns: Database['public']['Tables']['ride_listings']['Row'][]
+      }
+      rpc_ride_update_visibility: {
+        Args: { p_ride_id: string; p_visibility: string }
+        Returns: Database['public']['Tables']['ride_listings']['Row']
       }
       rpc_ride_participants_request: {
         Args: { p_ride_id: string; p_note?: string | null }

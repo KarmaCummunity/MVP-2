@@ -53,6 +53,19 @@ export class FakeRideListingRepository implements IRideListingRepository {
     }
   }
 
+  async updateVisibility(input: {
+    rideId: string;
+    visibility: RideListingRow['visibility'];
+  }): Promise<RideListingRow> {
+    const idx = this.rows.findIndex((r) => r.rideId === input.rideId);
+    if (idx < 0) throw new Error('ride_not_found');
+    const row = this.rows[idx]!;
+    if (row.status !== 'open') throw new Error('ride_not_open');
+    const updated: RideListingRow = { ...row, visibility: input.visibility };
+    this.rows[idx] = updated;
+    return updated;
+  }
+
   async findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]> {
     const source = this.rows.find((r) => r.rideId === input.rideId);
     if (!source) return [];

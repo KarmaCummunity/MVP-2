@@ -1,6 +1,11 @@
 import { generateRideTitle, validateRideDraft, RideError } from '@kc/domain';
 import type { ICityRepository } from '../ports/ICityRepository';
-import type { CreateRideListingRepoInput, IRideListingRepository, RideListingRow } from '../ports/IRideListingRepository';
+import type {
+  CreateRideListingRepoInput,
+  IRideListingRepository,
+  RideListingRow,
+  RideVisibility,
+} from '../ports/IRideListingRepository';
 import type { RideMode } from '@kc/domain';
 
 export interface CreateRideListingInput {
@@ -15,6 +20,8 @@ export interface CreateRideListingInput {
   departsAt: string;
   seatsAvailable: number | null;
   description: string | null;
+  /** Defaults to 'Public' for backwards compatibility with the V2.0 surface. */
+  visibility?: RideVisibility;
 }
 
 export class CreateRideListingUseCase {
@@ -66,7 +73,7 @@ export class CreateRideListingUseCase {
       seatsAvailable: input.seatsAvailable,
       description,
       title,
-      visibility: 'Public',
+      visibility: input.visibility ?? 'Public',
     };
 
     return this.repo.create(payload);

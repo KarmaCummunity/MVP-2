@@ -47,6 +47,28 @@ describe('resolvePushRoute', () => {
     ).toBeNull();
   });
 
+  it('routes task_assigned to /(admin)/tasks/[taskId] when task_id is a UUID', () => {
+    expect(
+      resolvePushRoute({
+        category: 'social',
+        kind: 'task_assigned',
+        notification_id: 'n6',
+        params: { task_id: UUID },
+      }),
+    ).toEqual({ pathname: '/(admin)/tasks/[taskId]', params: { taskId: UUID } });
+  });
+
+  it('falls back to the tasks list when task_id is missing or malformed', () => {
+    expect(
+      resolvePushRoute({
+        category: 'social',
+        kind: 'task_assigned',
+        notification_id: 'n7',
+        params: { task_id: 'not-a-uuid' },
+      }),
+    ).toEqual({ pathname: '/(admin)/tasks', params: {} });
+  });
+
   it('ignores attacker-supplied data.route', () => {
     expect(
       resolvePushRoute({
