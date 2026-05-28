@@ -11,26 +11,42 @@ interface PostgresErrorShape {
   readonly details?: string;
 }
 
+function detailOf(err: unknown): string {
+  const pg = (err ?? {}) as PostgresErrorShape;
+  return `${pg.message ?? ''} ${pg.details ?? ''}`.toLowerCase();
+}
+
 // Postgres error codes:
 //   23502 not_null_violation       → required column missing
 //   23503 foreign_key_violation    → city_id not in cities (city_not_found) / other FK
-//   23514 check_violation          → street_number regex / posts_type_fields_chk / other CHECK
-//   42501 insufficient_privilege   → RLS policy denied
+//   23514 check_violation          → street_number regex / posts_type_fields_chk / active cap / …
+//   42501 insufficient_privilege   → RLS policy denied (incl. FollowersOnly without Private profile)
 export function mapInsertError(err: unknown): PostError {
   const pg = (err ?? {}) as PostgresErrorShape;
   const pgCode = pg.code ?? '';
-  const detail = `${pg.message ?? ''} ${pg.details ?? ''}`;
+  const detail = detailOf(err);
   let code: PostErrorCode = 'unknown';
-  if (pgCode === '23503') {
-    code = detail.includes('city') ? 'city_not_found' : 'address_invalid';
+
+  if (
+    detail.includes('active_post_limit_exceeded')
+    || detail.includes('limit=20')
+  ) {
+    code = 'active_post_limit_exceeded';
+  } else if (pgCode === '23503') {
+    if (detail.includes('city')) code = 'city_not_found';
+    else if (detail.includes('owner')) code = 'forbidden';
+    else code = 'address_invalid';
   } else if (pgCode === '23514') {
     if (detail.includes('street_number')) code = 'street_number_invalid';
     else if (detail.includes('type_fields')) code = 'invalid_post_type';
+    else if (detail.includes('item_condition')) code = 'condition_required_for_give';
+    else if (detail.includes('street')) code = 'address_required';
     else code = 'address_invalid';
   } else if (pgCode === '23502') {
-    code = 'address_required';
+    code = detail.includes('title') ? 'title_required' : 'address_required';
   } else if (pgCode === '42501') {
-    code = 'forbidden';
+    code = 'followers_only_requires_private';
   }
+
   return new PostError(code, `create.post: ${pg.message ?? pgCode}`, err);
 }

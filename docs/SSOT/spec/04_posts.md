@@ -55,7 +55,7 @@ The set of required fields depends on `Post.type`.
 - AC1. For `type = Give`: `title` (≤80 chars) and at least one image are required.
 - AC2. For `type = Request`: only `title` (≤80 chars) is required.
 - AC3. For both types: `address` (city + street + number) is required (`R-MVP-Items-13`).
-- AC4. The "Publish" control stays tappable while required fields are incomplete; tapping it shows a short Hebrew toast listing what is still missing (instead of a disabled-looking control). When all required fields validate, publish proceeds as usual. A second "Publish" control appears at the bottom of the create form for users who scroll past the header action.
+- AC4. The "Publish" control stays tappable while required fields are incomplete. Tapping it reveals validation: **address** gaps (city / street / house number) show a persistent red inline message under the address block (including feed-projection copy when street or number is missing); **other** gaps (title, Give photo) show a short Hebrew toast. Inline address errors appear only after the first Publish attempt and stay until the address validates. When all required fields validate, publish proceeds as usual. A second "Publish" control appears at the bottom of the create form for users who scroll past the header action.
 
 **Related.** Screens: 2.4 · Domain: `Post`, `Address`.
 
