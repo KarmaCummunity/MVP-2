@@ -10,7 +10,8 @@ export type NotificationKind =
   | 'auto_removed'
   | 'follow_request'
   | 'follow_started'
-  | 'follow_approved';
+  | 'follow_approved'
+  | 'task_assigned';
 
 /** Payload attached to every Expo push under `data`. The client reads this on tap. */
 export interface PushData {
