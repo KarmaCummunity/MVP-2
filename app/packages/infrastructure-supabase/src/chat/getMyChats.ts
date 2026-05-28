@@ -22,11 +22,21 @@ export function counterpartId(r: ChatRow, userId: string): string | null {
   return r.participant_a === userId ? r.participant_b : r.participant_a;
 }
 
-/** One row per human counterpart — highest last_message_at wins (FR-CHAT-016). */
+/**
+ * One row per human counterpart — highest last_message_at wins (FR-CHAT-016).
+ *
+ * TD-110 bug 3: when `counterpartId` returns null (counterpart user deleted),
+ * the previous implementation collapsed every deleted-counterpart chat to a
+ * single `'__deleted__'` bucket — multiple distinct threads with different
+ * deleted users appeared as one row. Each deleted-counterpart chat is with a
+ * *different* user, so we key by `chat_id` in that case to keep them
+ * separate. Active counterparts continue to dedupe by user_id as before.
+ */
 export function dedupeRowsByCounterpart(userId: string, rows: ChatRow[]): ChatRow[] {
   const best = new Map<string, ChatRow>();
   for (const r of rows) {
-    const other = counterpartId(r, userId) ?? '__deleted__';
+    const counterpart = counterpartId(r, userId);
+    const other = counterpart ?? `__deleted__:${r.chat_id}`;
     const prev = best.get(other);
     if (!prev) {
       best.set(other, r);

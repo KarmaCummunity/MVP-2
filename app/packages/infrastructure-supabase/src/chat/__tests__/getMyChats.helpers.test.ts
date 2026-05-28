@@ -114,14 +114,14 @@ describe('dedupeRowsByCounterpart', () => {
     expect(out.map((r) => r.chat_id).sort((a, b) => a.localeCompare(b))).toEqual(['c1', 'c2']);
   });
 
-  it('groups all null-counterpart rows under one synthetic bucket', () => {
+  it('TD-110 bug 3: keeps each null-counterpart chat as its own row (different deleted users, not one bucket)', () => {
     const rows = [
       chatRow({ chat_id: 'c1', participant_a: 'u_me', participant_b: null, last_message_at: '2026-05-01T00:00:00.000Z' }),
       chatRow({ chat_id: 'c2', participant_a: 'u_me', participant_b: null, last_message_at: '2026-05-10T00:00:00.000Z' }),
     ];
     const out = dedupeRowsByCounterpart('u_me', rows);
-    expect(out).toHaveLength(1);
-    expect(out[0]?.chat_id).toBe('c2');
+    expect(out).toHaveLength(2);
+    expect(out.map((r) => r.chat_id).sort()).toEqual(['c1', 'c2']);
   });
 
   it('returns an empty array for an empty input', () => {

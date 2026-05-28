@@ -70,4 +70,35 @@ describe('reduceBumpInboxForIncomingInsert', () => {
     expect(out?.unreadTotal).toBe(4);
     expect(out?.inbox?.[0]?.unreadCount).toBe(2);
   });
+
+  it('TD-110: skips unread bump when viewer is actively reading this chat', () => {
+    const m = msg({ senderId: 'u2' });
+    const row = baseRow({ unreadCount: 1 });
+    const out = reduceBumpInboxForIncomingInsert(
+      { inbox: [row], unreadTotal: 3 },
+      'u1',
+      m,
+      true /* isActiveChat */,
+    );
+    // Counters stay; lastMessage preview still updates so the row reflects the new content.
+    expect(out?.unreadTotal).toBe(3);
+    expect(out?.inbox?.[0]?.unreadCount).toBe(1);
+    expect(out?.inbox?.[0]?.lastMessage?.messageId).toBe('m-new');
+  });
+
+  it('TD-110: peer message in OTHER chat still bumps when viewer is reading a different one', () => {
+    // Reducer doesn't itself know which chat is active — the caller computes
+    // that from activeRoute. When peer message arrives in chat the viewer
+    // is NOT currently reading, `isActiveChat` is false and the bump happens.
+    const m = msg({ senderId: 'u2', chatId: 'c1' });
+    const row = baseRow({ chatId: 'c1', unreadCount: 1 });
+    const out = reduceBumpInboxForIncomingInsert(
+      { inbox: [row], unreadTotal: 3 },
+      'u1',
+      m,
+      false /* isActiveChat */,
+    );
+    expect(out?.unreadTotal).toBe(4);
+    expect(out?.inbox?.[0]?.unreadCount).toBe(2);
+  });
 });
