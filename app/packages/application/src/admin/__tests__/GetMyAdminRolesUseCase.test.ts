@@ -4,7 +4,12 @@ import { GetMyAdminRolesUseCase } from '../GetMyAdminRolesUseCase';
 import type { IAdminRoleRepository } from '../IAdminRoleRepository';
 
 function fakeRepo(roles: readonly AdminRole[]): IAdminRoleRepository {
-  return { getMyRoles: vi.fn().mockResolvedValue(roles) };
+  return {
+    getMyRoles: vi.fn().mockResolvedValue(roles),
+    listAdmins: vi.fn(),
+    grantRole: vi.fn(),
+    revokeRole: vi.fn(),
+  };
 }
 
 describe('GetMyAdminRolesUseCase', () => {

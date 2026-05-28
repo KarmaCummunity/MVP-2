@@ -48,6 +48,9 @@ import {
   ReportUserUseCase,
   UpdateNotificationPreferencesUseCase,
   GetMyAdminRolesUseCase,
+  GrantAdminRoleUseCase,
+  RevokeAdminRoleUseCase,
+  ListAdminsUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -105,10 +108,13 @@ export const container = {
   adminRoleRepo,
   reportsRepo,
 
-  // Admin portal (FR-ADMIN-011, FR-ADMIN-012, FR-ADMIN-013)
+  // Admin portal (FR-ADMIN-011, FR-ADMIN-012, FR-ADMIN-013, FR-ADMIN-015, FR-ADMIN-016)
   getMyAdminRoles,
   listOpenReports,
   getReportCaseDetail,
+  listAdmins: new ListAdminsUseCase(adminRoleRepo),
+  grantAdminRole: new GrantAdminRoleUseCase(adminRoleRepo),
+  revokeAdminRole: new RevokeAdminRoleUseCase(adminRoleRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

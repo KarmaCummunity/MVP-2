@@ -1,0 +1,30 @@
+// app/apps/mobile/src/hooks/useAdminsList.ts
+// FR-ADMIN-015 — admins list for the RBAC management screen.
+import { useQuery } from '@tanstack/react-query';
+import type { AdminGrant } from '@kc/domain';
+import { container } from '../lib/container';
+
+const EMPTY: readonly AdminGrant[] = [];
+
+export interface AdminsListState {
+  readonly grants: readonly AdminGrant[];
+  readonly isLoading: boolean;
+  readonly isRefetching: boolean;
+  readonly refetch: () => void;
+  readonly error: unknown;
+}
+
+export function useAdminsList(includeRevoked: boolean): AdminsListState {
+  const q = useQuery({
+    queryKey: ['admin.admins.list', { includeRevoked }],
+    queryFn: () => container.listAdmins.execute({ includeRevoked }),
+    staleTime: 30_000,
+  });
+  return {
+    grants: q.data ?? EMPTY,
+    isLoading: q.isLoading,
+    isRefetching: q.isRefetching,
+    refetch: () => { void q.refetch(); },
+    error: q.error,
+  };
+}
