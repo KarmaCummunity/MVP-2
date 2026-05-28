@@ -15,6 +15,7 @@ export type {
 } from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
+export type { IRidesRealtime, RidesRealtimeCallbacks } from './ports/IRidesRealtime';
 export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRepository';
 export type { IAboutRepository } from './ports/IAboutRepository';
 
@@ -160,6 +161,19 @@ export * from './admin/GetMyAdminRolesUseCase';
 export * from './admin/GrantAdminRoleUseCase';
 export * from './admin/RevokeAdminRoleUseCase';
 export * from './admin/ListAdminsUseCase';
+export * from './admin/IAdminTaskRepository';
+export * from './admin/ListAdminTasksUseCase';
+export * from './admin/GetAdminTaskDetailUseCase';
+export * from './admin/CreateAdminTaskUseCase';
+export * from './admin/UpdateAdminTaskUseCase';
+export * from './admin/SetAdminTaskStatusUseCase';
+export * from './admin/AssignAdminTaskUseCase';
+export * from './admin/AddAdminTaskCommentUseCase';
+export * from './admin/DeleteAdminTaskUseCase';
+export * from './admin/IAdminContentRepository';
+export * from './admin/AdminSearchUsersUseCase';
+export * from './admin/AdminSearchPostsUseCase';
+export * from './admin/AdminSearchAuditUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
@@ -172,6 +186,7 @@ export type {
   RideListingRow,
   CreateRideListingRepoInput,
   SearchRideListingsInput,
+  RideVisibility,
 } from './ports/IRideListingRepository';
 export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
 export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';
@@ -182,6 +197,20 @@ export { CloseRideListingUseCase } from './rides/CloseRideListingUseCase';
 export type { CloseRideListingInput } from './rides/CloseRideListingUseCase';
 export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
 export type { FindRideMatchesInput } from './ports/IRideListingRepository';
+export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
+export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+
+// Ride templates (FR-RIDE-021 / FR-RIDE-022)
+export type {
+  IRideTemplateRepository,
+  CreateRideTemplateInput,
+} from './ports/IRideTemplateRepository';
+export { CreateRideTemplateUseCase } from './rides/CreateRideTemplateUseCase';
+export type { CreateRideTemplateUseCaseInput } from './rides/CreateRideTemplateUseCase';
+export { ListMyRideTemplatesUseCase } from './rides/ListMyRideTemplatesUseCase';
+export { SetRideTemplateStatusUseCase } from './rides/SetRideTemplateStatusUseCase';
+export { DeleteRideTemplateUseCase } from './rides/DeleteRideTemplateUseCase';
+
 export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
 export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
 export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';

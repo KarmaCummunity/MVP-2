@@ -31,5 +31,7 @@
   "notifications.rideRejectedTitle": "{{ownerName}}",
   "notifications.rideRejectedBody": "דחה את הבקשה שלך לטרמפ: {{rideTitle}}",
   "notifications.rideParticipantCancelledTitle": "{{riderName}}",
-  "notifications.rideParticipantCancelledBody": "ביטל את הצטרפותו לטרמפ: {{rideTitle}}"
+  "notifications.rideParticipantCancelledBody": "ביטל את הצטרפותו לטרמפ: {{rideTitle}}",
+  "notifications.taskAssignedTitle": "משימת ניהול חדשה הוקצתה לך",
+  "notifications.taskAssignedBody": "{{title}}"
 }

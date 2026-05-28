@@ -160,6 +160,17 @@ If any check fails, stop and point the user to `SETUP_GIT_AGENT.md`. Do not impr
 
 When in doubt, open a PR.
 
+### `main` production gates (agent CTO — `D-53`)
+
+No human reviewers on deploy environments. Before every `dev` → `main` release PR:
+
+1. All CI jobs green, including **CI — main release guard** (`dev` head branch + migration safety scan).
+2. Migrations must be backward-compatible; destructive SQL (`DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, unqualified `DELETE`) fails CI unless the line includes `migration-safety: allow` with justification in the PR body.
+3. After merge: **DB deploy** dry-runs prod before apply; **Prod smoke** must pass when `PROD_WEB_URL` is set.
+4. Never mutate prod SQL outside `supabase/migrations/` + the `db-deploy` workflow. PM confirmation for ad-hoc SQL (§7) still applies if a human operator runs SQL manually.
+
+Details: [`docs/SSOT/RELEASE_CHECKLIST.md`](docs/SSOT/RELEASE_CHECKLIST.md), [`docs/SSOT/ENVIRONMENTS.md`](docs/SSOT/ENVIRONMENTS.md) § DB deploy automation.
+
 ### Branch naming
 
 `<type>/<FR-id-or-scope>-<kebab-short-desc>`
