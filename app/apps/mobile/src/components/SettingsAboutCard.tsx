@@ -4,66 +4,34 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
+import { warmPromptCardBase } from './warmPromptCardStyles';
 
-const useStyles = makeUseStyles(({ colors, isDark }) => ({
-  card: {
-    backgroundColor: colors.primarySurface,
-    borderRadius: radius.xl,
-    paddingVertical: spacing.lg,
-    paddingHorizontal: spacing.lg,
-    borderWidth: 1,
-    borderColor: isDark ? colors.border : colors.primaryLight,
-    alignItems: 'stretch' as const,
-    gap: spacing.sm,
-    shadowColor: colors.shadow,
-    shadowOpacity: isDark ? 0 : 0.06,
-    shadowRadius: 12,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: isDark ? 0 : 2,
-  },
-  iconBadge: {
-    alignSelf: 'center' as const,
-    width: 52,
-    height: 52,
-    borderRadius: 26,
-    backgroundColor: colors.primary,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    marginBottom: spacing.xs,
-    shadowColor: colors.primary,
-    shadowOpacity: isDark ? 0 : 0.35,
-    shadowRadius: 10,
-    shadowOffset: { width: 0, height: 4 },
-    elevation: isDark ? 0 : 4,
-  },
-  title: {
-    ...typography.h3,
-    color: colors.textPrimary,
-    textAlign: 'center' as const,
-  },
-  subtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center' as const,
-    lineHeight: 22,
-  },
-  ctaRow: {
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    justifyContent: 'center' as const,
-    gap: spacing.xs,
-    marginTop: spacing.xs,
-    paddingTop: spacing.sm,
-    borderTopWidth: 1,
-    borderTopColor: isDark ? colors.border : colors.primaryLight,
-  },
-  cta: {
-    ...typography.button,
-    color: colors.primary,
-    fontWeight: '600' as const,
-  },
-}));
+const useStyles = makeUseStyles((theme) => {
+  const base = warmPromptCardBase(theme);
+  const { colors, isDark } = theme;
+  return {
+    card: base.card,
+    iconBadge: base.iconBadge,
+    title: base.title,
+    subtitle: base.bodyLine,
+    ctaRow: {
+      flexDirection: 'row' as const,
+      alignItems: 'center' as const,
+      justifyContent: 'center' as const,
+      gap: spacing.xs,
+      marginTop: spacing.xs,
+      paddingTop: spacing.sm,
+      borderTopWidth: 1,
+      borderTopColor: isDark ? colors.border : colors.primaryLight,
+    },
+    cta: {
+      ...typography.button,
+      color: colors.primary,
+      fontWeight: '600' as const,
+    },
+  };
+});
 
 export function SettingsAboutCard() {
   const router = useRouter();
