@@ -19,6 +19,7 @@ import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScr
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { ShareResearchRow } from '../../src/components/survey/ShareResearchRow';
 import { container } from '../../src/lib/container';
 
 type ChipColors = { bg: string; text: string };
@@ -108,6 +109,7 @@ export default function SurveysHubScreen() {
         <ActivityIndicator color={colors.primary} style={{ marginTop: spacing.lg }} />
       ) : (
         <ScrollView contentContainerStyle={styles.scrollContent}>
+          <ShareResearchRow />
           {surveys.length === 0 ? (
             <Text style={styles.empty}>{t('survey.emptyState')}</Text>
           ) : (
