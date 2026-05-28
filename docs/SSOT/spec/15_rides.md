@@ -94,8 +94,15 @@ Prefix: `FR-RIDE-*`
 - AC3. `rpc_ride_participants_request` widens the joinability check the same way — a follower can request to join a FollowersOnly ride.
 - AC4. Creation paths in V2.0 still default to `Public` (FR-RIDE-007). Allowing creation with non-Public tiers requires `CreateRideListingUseCase` to accept a `visibility` input — out of scope for this PR.
 
-## FR-RIDE-021 — Recurring ride templates 🟡
-> DB schema + materializer in place; application layer + UI follow.
+## FR-RIDE-022 — Recurring ride templates application layer ✅
+- AC1. Domain entity `RideTemplate` + value object `RideTemplateStatus`.
+- AC2. `validateRideTemplateDraft` mirrors `validateRideDraft` (route distinctness + seats-by-mode + description ≤ 500) and adds the recurrence checks (`weekday_mask` ∈ [1,127], `lookahead_days` ∈ [1,30]).
+- AC3. Application use cases: `CreateRideTemplateUseCase` (validates + city-catalog check + defaults visibility to `Public`), `ListMyRideTemplatesUseCase`, `SetRideTemplateStatusUseCase` (enforces the status machine — `archived` is terminal), `DeleteRideTemplateUseCase`.
+- AC4. Adapter `SupabaseRideTemplateRepository` calls `from('ride_templates')` directly (owner-only RLS handles authz; no SECURITY DEFINER RPCs required for templates).
+- AC5. Snake_case → camelCase mapping via `mapRideTemplateRow`.
+
+## FR-RIDE-021 — Recurring ride templates ✅
+> DB schema + materializer + application layer in place; UI follows when the rides hub returns.
 
 - AC1. `ride_templates` table holds one row per recurring slot: owner, mode, route (cities + streets + optional house numbers), `depart_time time`, `weekday_mask` (bitmask Sun=1..Sat=64), `seats_available` (offer-only, NULL on request), `visibility`, `status` ∈ {`active`,`paused`,`archived`}, `lookahead_days` (default 7, clamped 1..30).
 - AC2. `ride_listings.template_id` (nullable FK) links materialized instances to their template; `ON DELETE SET NULL` preserves historical rides if the template is deleted.
