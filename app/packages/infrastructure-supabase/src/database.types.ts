@@ -2837,6 +2837,14 @@ export type Database = {
         Returns: string
       }
       suspension_expiry_lift: { Args: never; Returns: number }
+      upsert_post_actor_identity: {
+        Args: {
+          p_hide_from_counterparty: boolean
+          p_post_id: string
+          p_surface_visibility: string
+        }
+        Returns: undefined
+      }
       upsert_survey_answers: {
         Args: { p_answers: Json; p_slug: string }
         Returns: undefined

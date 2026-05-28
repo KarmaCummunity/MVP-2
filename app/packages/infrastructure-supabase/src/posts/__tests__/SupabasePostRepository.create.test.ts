@@ -46,6 +46,10 @@ function makeFakeClient(steps: Step[]): { client: SupabaseClient<any>; ops: Op[]
       ops.push({ kind: 'from', table, args: [table] });
       return makeChain(table);
     },
+    rpc: (name: string, params: unknown) => {
+      ops.push({ kind: 'rpc', args: [name, params] });
+      return Promise.resolve(consume());
+    },
   } as unknown as SupabaseClient<any>;
   // Silence unused-warning on currentTable (used implicitly through ops).
   void currentTable;
@@ -111,7 +115,7 @@ describe('SupabasePostRepository.create — happy paths', () => {
     ]);
   });
 
-  it('upserts post_actor_identity when hideFromCounterparty is true (FR-POST-021)', async () => {
+  it('calls upsert_post_actor_identity RPC when hideFromCounterparty is true (FR-POST-021)', async () => {
     const { client, ops } = makeFakeClient([
       { data: { post_id: 'p_new' } },
       { data: FETCH_ROW },
@@ -120,15 +124,15 @@ describe('SupabasePostRepository.create — happy paths', () => {
     const repo = new SupabasePostRepository(client);
     await repo.create({ ...VALID_INPUT, mediaAssets: [], hideFromCounterparty: true });
 
-    const upsertOp = ops.find((o) => o.kind === 'upsert' && o.table === 'post_actor_identity');
-    expect(upsertOp).toBeDefined();
-    expect(upsertOp?.args?.[0]).toMatchObject({
-      post_id: 'p_new',
-      user_id: 'u_me',
-      surface_visibility: 'Public',
-      identity_visibility: 'Public',
-      hide_from_counterparty: true,
-    });
+    const rpcOp = ops.find((o) => o.kind === 'rpc');
+    expect(rpcOp?.args).toEqual([
+      'upsert_post_actor_identity',
+      {
+        p_post_id: 'p_new',
+        p_surface_visibility: 'Public',
+        p_hide_from_counterparty: true,
+      },
+    ]);
   });
 
   it('inserts the posts row with the address fields flattened (city/street/street_number)', async () => {

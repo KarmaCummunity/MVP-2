@@ -14,10 +14,14 @@ export interface AdminsListState {
   readonly error: unknown;
 }
 
-export function useAdminsList(includeRevoked: boolean): AdminsListState {
+export function useAdminsList(
+  includeRevoked: boolean,
+  enabled = true,
+): AdminsListState {
   const q = useQuery({
     queryKey: ['admin.admins.list', { includeRevoked }],
     queryFn: () => container.listAdmins.execute({ includeRevoked }),
+    enabled,
     staleTime: 30_000,
   });
   return {
