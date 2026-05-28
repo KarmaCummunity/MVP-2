@@ -162,6 +162,7 @@ export * from './reports/IReportsRepository';
 export * from './reports/ListOpenReportsUseCase';
 export * from './reports/GetReportCaseDetailUseCase';
 
+// Rides V2.0 (FR-RIDE-*)
 export type {
   IRideListingRepository,
   RideListingRow,
@@ -179,3 +180,20 @@ export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
 export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
 export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
 export { ChronologicalRideMatchScorer } from './rides/ChronologicalRideMatchScorer';
+
+// Survey use cases (FR-SETTINGS-015..017)
+export type { ISurveyRepository } from './ports/ISurveyRepository';
+export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';
+export type { LoadSurveyBundleInput } from './survey/LoadSurveyBundleUseCase';
+export { SaveSurveyAnswersUseCase } from './survey/SaveSurveyAnswersUseCase';
+export type { SaveSurveyAnswersInput } from './survey/SaveSurveyAnswersUseCase';
+export { ListActiveSurveysUseCase } from './survey/ListActiveSurveysUseCase';
+export { CheckSurveyPromptUseCase } from './survey/CheckSurveyPromptUseCase';
+export type { CheckSurveyPromptInput } from './survey/CheckSurveyPromptUseCase';
+export { SubmitFreeFeedbackUseCase } from './survey/SubmitFreeFeedbackUseCase';
+export type { SubmitFreeFeedbackInput } from './survey/SubmitFreeFeedbackUseCase';
+
+// Public research use cases (FR-RESEARCH-001..003)
+export type { IPublicResearchRepository } from './ports/IPublicResearchRepository';
+export { LoadPublicResearchBundleUseCase } from './research/LoadPublicResearchBundleUseCase';
+export { SubmitPublicResearchResponseUseCase } from './research/SubmitPublicResearchResponseUseCase';

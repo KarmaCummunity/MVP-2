@@ -3,7 +3,7 @@ import { webTextRtl } from '../../lib/webRtlStyle';
 
 /**
  * Hebrew survey TextInput alignment — physical `right` on every platform so
- * placeholders and typed text hug the visual right edge (matches CreatePostForm).
+ * placeholders and typed text hug the visual right edge.
  */
 export const SURVEY_TEXT_ALIGN = 'right' as const;
 

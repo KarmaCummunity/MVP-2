@@ -27,7 +27,8 @@ docs/SSOT/spec/
 ├── 12_super_admin.md             FR-ADMIN-*
 ├── 13_donations.md               FR-DONATE-*
 ├── 14_responsive_desktop.md      FR-RESP-*
-└── 15_rides.md                   FR-RIDE-*
+├── 15_rides.md                   FR-RIDE-*
+└── 16_public_research.md         FR-RESEARCH-*
 ```
 
 ## 2. Spec Validation Gate

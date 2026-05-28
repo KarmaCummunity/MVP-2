@@ -11,6 +11,9 @@ import { AboutValuesGrid } from './AboutValuesGrid';
 import { AboutVisionSection } from './AboutVisionSection';
 import { AboutScopedSection } from './AboutScopedSection';
 import { AboutMissionTeamSection } from './AboutMissionTeamSection';
+import { AboutGovernanceSection } from './AboutGovernanceSection';
+import { AboutMoneySection } from './AboutMoneySection';
+import { AboutLogoEvolutionSection } from './AboutLogoEvolutionSection';
 import { DonationSupportCard } from '../../components/DonationSupportCard';
 
 function SectionCard({
@@ -78,6 +81,18 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
         >
           <SectionCard>
             <AboutVisionSection />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
+      <View onLayout={track('logo', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutLogoEvolutionSection />
           </SectionCard>
         </AnimatedEntry>
       </View>
@@ -173,6 +188,30 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
             <Text style={styles.p}>{t('aboutContent.valuesText')}</Text>
             <View style={styles.valuesSpacer} />
             <AboutValuesGrid />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
+      <View onLayout={track('governance', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutGovernanceSection />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
+      <View onLayout={track('money', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutMoneySection />
           </SectionCard>
         </AnimatedEntry>
       </View>

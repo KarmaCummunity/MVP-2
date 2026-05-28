@@ -60,7 +60,7 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
     );
 
   return {
-    paragraph: (node, children) => (
+    paragraph: (node: any, children: any) => (
       <Text
         key={node.key}
         style={{
@@ -86,17 +86,17 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
     // via rowDirectionStart so the bullet/number sits on the inline-start
     // edge (right in RTL) on both native and web. The content slot is a
     // <Text> so children inherit RTL alignment.
-    bullet_list: (node, children) => (
+    bullet_list: (node: any, children: any) => (
       <View key={node.key} style={{ marginBottom: spacing.md }}>
         {children}
       </View>
     ),
-    ordered_list: (node, children) => (
+    ordered_list: (node: any, children: any) => (
       <View key={node.key} style={{ marginBottom: spacing.md }}>
         {children}
       </View>
     ),
-    list_item: (node, children, parent) => {
+    list_item: (node: any, children: any, parent: any) => {
       const isOrdered = parent[0]?.type === 'ordered_list';
       const bulletChar = isOrdered ? `${node.index + 1}.` : '•';
       const rowStyle: ViewStyle = {
@@ -133,7 +133,7 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
       );
     },
 
-    blockquote: (node, children) => (
+    blockquote: (node: any, children: any) => (
       <View
         key={node.key}
         style={{
@@ -156,7 +156,7 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
     // Link rule has a slightly different signature in the library
     // (it receives `onLinkPress` as a 5th arg). We open URLs directly via
     // `Linking.openURL` so the rule stays self-contained.
-    link: (node, children) => {
+    link: (node: any, children: any) => {
       const href = (node.attributes?.href as string | undefined) ?? '';
       return (
         <Text
