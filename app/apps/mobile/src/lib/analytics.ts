@@ -8,7 +8,8 @@ export type SurveyAnalyticsEvent =
   | 'survey_question_answered'
   | 'survey_completed'
   | 'survey_prompt_snoozed'
-  | 'feedback_submitted';
+  | 'feedback_submitted'
+  | 'research_share_initiated';
 
 type AnalyticsEvent = SurveyAnalyticsEvent;
 

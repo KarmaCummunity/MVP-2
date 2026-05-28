@@ -44,4 +44,28 @@ export const researchHe = {
   thanksEmailOptInLabel: 'רוצה לראות את האפליקציה ראשון/ה כשהיא יוצאת?',
   thanksEmailPlaceholder: 'השאר/י מייל',
   thanksVisitCta: 'בקר/י באתר קארמה',
+
+  // FR-RESEARCH-004 — share affordance copy for public surfaces (placements 1 + 2)
+  share: {
+    // Placement 1 — thank-you page primary CTA
+    thanksTitle: 'שתפו את הסקר עם חבר/ה',
+    thanksHelp: 'עזרו לקול שלכם להגיע גם לאחרים שעוד לא באפליקציה',
+
+    // Placement 2 — small button in survey form header
+    duringSurveyLabel: 'שתפו',
+    duringSurveyAria: 'שתפו את הסקר עם חבר/ה',
+
+    // Web-platform OS share-sheet title
+    shareTitle: 'מחקר שוק קארמה',
+
+    // Body of the share message — identical to in-app variant
+    shareMessage:
+      'אנחנו בונים אפליקציה ישראלית לנתינה בחינם, בלי הבלגן של הקבוצות. ' +
+      'שאלון אנונימי קצר, בלי הרשמה — התשובות שלך משנות איך זה ייראה בפועל.',
+
+    // Status feedback (inline status line per AC8)
+    statusShared: 'הקישור שותף',
+    statusCopied: 'הקישור הועתק',
+    statusFailed: 'לא הצלחנו לשתף, נסה/י שוב',
+  },
 } as const;
