@@ -51,7 +51,21 @@ export default function OtherProfileScreen() {
 
   const userQuery = useQuery({
     queryKey: ['profile-other', handle],
-    queryFn: () => getUserRepo().findByHandle(handle!),
+    queryFn: async () => {
+      // TD-73: notification triggers historically emitted the user_id as the
+      // `handle` param. Triggers were corrected in migration 0134, but any
+      // notification already enqueued before that runs through this route
+      // with a UUID — `findByHandle` (queries `share_handle`) would silently
+      // miss. Detect UUID-shaped params and route to `findById` so old taps
+      // also resolve.
+      const repo = getUserRepo();
+      const handleByName = await repo.findByHandle(handle!);
+      if (handleByName) return handleByName;
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(handle!)) {
+        return repo.findById(handle!);
+      }
+      return null;
+    },
     enabled: Boolean(handle),
     staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
