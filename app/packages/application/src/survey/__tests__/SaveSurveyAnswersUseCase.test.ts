@@ -33,16 +33,29 @@ describe('SaveSurveyAnswersUseCase', () => {
     await expect(uc.execute({ slug: 'ux-experience', bundle, answers })).resolves.toBeUndefined();
   });
 
-  it('throws SurveyError validation when a question has no matching answer', async () => {
+  it('accepts partial answers — does not require every bundle question to have an answer', async () => {
+    // Partial saves are intentional: the runner debounces save after each
+    // change, so q2 not yet being answered must NOT block saving q1.
     const q2 = makeQuestion({ id: 'q2', sortOrder: 2 });
     const bundle = makeBundle({ questions: [makeQuestion(), q2] });
-    const answers = [makeAnswer({ questionId: 'q1', rating: 4 })]; // q2 missing
+    const answers = [makeAnswer({ questionId: 'q1', rating: 4 })]; // q2 deliberately missing
+    const repo = makeFakeRepo();
+    const uc = new SaveSurveyAnswersUseCase(repo);
+
+    await uc.execute({ slug: 'ux-experience', bundle, answers });
+
+    expect(repo.upsertAnswers).toHaveBeenCalledWith('ux-experience', answers);
+  });
+
+  it('throws SurveyError validation when an answer references a question_id not in the bundle', async () => {
+    const bundle = makeBundle();
+    const answers = [makeAnswer({ questionId: 'q-unknown', rating: 5 })];
     const repo = makeFakeRepo();
     const uc = new SaveSurveyAnswersUseCase(repo);
 
     await expect(uc.execute({ slug: 'ux-experience', bundle, answers })).rejects.toMatchObject({
       code: 'validation',
-      detail: 'missing_rating_for_question_q2',
+      detail: 'unknown_question_q-unknown',
     });
     expect(repo.upsertAnswers).not.toHaveBeenCalled();
   });

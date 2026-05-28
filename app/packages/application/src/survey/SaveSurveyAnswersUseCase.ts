@@ -16,17 +16,24 @@ function isValidRating(rating: number): boolean {
 }
 
 function validateAnswers(bundle: SurveyBundle, answers: SurveyAnswerDraft[]): void {
-  const answerMap = new Map<string, SurveyAnswerDraft>();
+  // Partial saves are intentional — the runner debounces save after each
+  // answer change, so we routinely upsert before every question has a
+  // rating (FR-SETTINGS-016 AC4). We only validate that:
+  //   1. each provided answer's rating is in [1,7]
+  //   2. each provided answer's question_id belongs to the bundle
+  // We do NOT require every question to have an answer.
+  const validQids = new Set(bundle.questions.map((q) => q.id));
   for (const answer of answers) {
-    answerMap.set(answer.questionId, answer);
-  }
-
-  for (const question of bundle.questions) {
-    const answer = answerMap.get(question.id);
-    if (answer === undefined || !isValidRating(answer.rating)) {
+    if (!validQids.has(answer.questionId)) {
       throw new SurveyError(
         'validation',
-        `missing_rating_for_question_${question.id}`,
+        `unknown_question_${answer.questionId}`,
+      );
+    }
+    if (!isValidRating(answer.rating)) {
+      throw new SurveyError(
+        'validation',
+        `invalid_rating_for_question_${answer.questionId}`,
       );
     }
   }
