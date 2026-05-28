@@ -1,0 +1,95 @@
+#!/usr/bin/env node
+/**
+ * Flags destructive SQL in migration files (prod safety gate).
+ * Per-line override: append `migration-safety: allow` on the same line.
+ */
+import { readFileSync, readdirSync } from 'node:fs';
+import { join, dirname } from 'node:path';
+import { fileURLToPath } from 'node:url';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const DEFAULT_DIR = join(__dirname, '..', 'supabase', 'migrations');
+
+/** @type {{ id: string; re: RegExp; hint: string }[]} */
+export const DESTRUCTIVE_RULES = [
+  { id: 'drop-table', re: /\bDROP\s+TABLE\b/i, hint: 'DROP TABLE' },
+  { id: 'drop-column', re: /\bDROP\s+COLUMN\b/i, hint: 'DROP COLUMN' },
+  { id: 'truncate', re: /\bTRUNCATE\b/i, hint: 'TRUNCATE' },
+  {
+    id: 'delete-without-where',
+    re: /\bDELETE\s+FROM\s+[a-z0-9_."]+\s*;/i,
+    hint: 'DELETE FROM without WHERE',
+  },
+];
+
+const ALLOW_MARKER = 'migration-safety: allow';
+
+/**
+ * @param {string} content
+ * @param {string} filename
+ */
+export function scanMigrationSql(content, filename) {
+  const errors = [];
+  const lines = content.split('\n');
+
+  for (let i = 0; i < lines.length; i++) {
+    let line = lines[i];
+    if (line.includes(ALLOW_MARKER)) continue;
+
+    const trimmed = line.trim();
+    if (!trimmed || trimmed.startsWith('--')) continue;
+
+    const commentIdx = line.indexOf('--');
+    if (commentIdx >= 0) line = line.slice(0, commentIdx);
+
+    const sql = line.trim();
+    if (!sql) continue;
+
+    for (const rule of DESTRUCTIVE_RULES) {
+      if (rule.re.test(sql)) {
+        errors.push(`${filename}:${i + 1}: ${rule.hint} (rule ${rule.id})`);
+      }
+    }
+  }
+
+  return errors;
+}
+
+/**
+ * @param {string} migrationsDir
+ */
+export function checkMigrationSafety(migrationsDir) {
+  const files = readdirSync(migrationsDir)
+    .filter((f) => f.endsWith('.sql'))
+    .sort();
+
+  const errors = [];
+  for (const file of files) {
+    const path = join(migrationsDir, file);
+    const content = readFileSync(path, 'utf8');
+    errors.push(...scanMigrationSql(content, file));
+  }
+
+  return { ok: errors.length === 0, errors };
+}
+
+function main() {
+  const dir = process.argv[2] ?? DEFAULT_DIR;
+  const result = checkMigrationSafety(dir);
+  if (!result.ok) {
+    console.error(
+      `✗ Migration safety check failed (${result.errors.length} issue(s)):\n`
+    );
+    for (const err of result.errors) console.error(`  • ${err}`);
+    console.error(
+      '\nSplit into a backward-compatible migration, or add `migration-safety: allow` on the line with a PR justification.'
+    );
+    process.exit(1);
+  }
+  const count = readdirSync(dir).filter((f) => f.endsWith('.sql')).length;
+  console.log(`✓ Migration safety check passed — ${count} files scanned.`);
+}
+
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
