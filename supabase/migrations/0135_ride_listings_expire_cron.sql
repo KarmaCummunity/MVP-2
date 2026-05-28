@@ -1,4 +1,4 @@
--- 0134_ride_listings_expire_cron.sql — FR-RIDE-002 backend hardening.
+-- 0135_ride_listings_expire_cron.sql — FR-RIDE-002 backend hardening.
 --
 -- Auto-expire `open` rides whose departure is in the past. Without this,
 -- the rides feed accumulates listings whose `departs_at` has already passed
