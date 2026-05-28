@@ -74,6 +74,13 @@ Prefix: `FR-RIDE-*`
 - AC3. Owner close/cancel via `CloseRideListingUseCase` and cron-driven expiry both trigger the same emission via the AFTER UPDATE trigger.
 - AC4. The trigger function `ride_listings_clear_chat_anchor` is replaced (CREATE OR REPLACE) — the 0137 trigger registration still binds to it.
 
+## FR-RIDE-016 — Realtime subscriptions ✅
+- AC1. Tables `ride_listings` and `ride_participants` are members of `supabase_realtime` publication (broadcast still gated by RLS).
+- AC2. `IRidesRealtime.subscribeToPublicRideInserts(cb)` — INSERT on `ride_listings` filtered to `visibility=Public`. Signals only; consumer refetches.
+- AC3. `IRidesRealtime.subscribeToUserParticipantUpdates(userId, cb)` — UPDATE on `ride_participants` filtered to `user_id=eq.<userId>`. Fires for status transitions on the user's own rows.
+- AC4. `IRidesRealtime.subscribeToRideParticipantInserts(rideId, cb)` — INSERT on `ride_participants` filtered to `ride_id=eq.<rideId>`. Lets the owner see new join requests live.
+- AC5. Adapter `SupabaseRidesRealtime` mirrors `SupabaseFeedRealtime` (unique topics per call; CHANNEL_ERROR / TIMED_OUT → onError; returned unsubscribe calls `removeChannel`).
+
 ## FR-RIDE-014 — Inverse-mode ride matches ✅
 - AC1. RPC `ride_listings_find_matches(p_ride_id, p_window_hours, p_limit)` returns rides with the inverse `mode` (offer ↔ request), the same origin/dest city pair, `status='open'`, `visibility='Public'`, and `departs_at` within ±`window_hours` of the source ride.
 - AC2. Caller must own the source ride (`auth.uid() = ride.owner_id`); otherwise the RPC raises `not_ride_owner`.
