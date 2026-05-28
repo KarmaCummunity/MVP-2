@@ -175,6 +175,11 @@ export * from './admin/IAdminContentRepository';
 export * from './admin/AdminSearchUsersUseCase';
 export * from './admin/AdminSearchPostsUseCase';
 export * from './admin/AdminSearchAuditUseCase';
+export * from './admin/IFinanceLedgerRepository';
+export * from './admin/ListFinanceLedgerUseCase';
+export * from './admin/GetFinanceSummaryUseCase';
+export * from './admin/UpsertFinanceEntryUseCase';
+export * from './admin/DeleteFinanceEntryUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';

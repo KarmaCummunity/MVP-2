@@ -17,6 +17,7 @@ import {
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
   SupabaseAdminContentRepository,
+  SupabaseFinanceLedgerRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -64,6 +65,10 @@ import {
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
+  ListFinanceLedgerUseCase,
+  GetFinanceSummaryUseCase,
+  UpsertFinanceEntryUseCase,
+  DeleteFinanceEntryUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -104,6 +109,7 @@ const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -141,6 +147,11 @@ export const container = {
   adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
   adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
   adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
+  // V2-ADMIN-MONEY-9
+  listFinanceLedger:   new ListFinanceLedgerUseCase(financeLedgerRepo),
+  getFinanceSummary:   new GetFinanceSummaryUseCase(financeLedgerRepo),
+  upsertFinanceEntry:  new UpsertFinanceEntryUseCase(financeLedgerRepo),
+  deleteFinanceEntry:  new DeleteFinanceEntryUseCase(financeLedgerRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),
