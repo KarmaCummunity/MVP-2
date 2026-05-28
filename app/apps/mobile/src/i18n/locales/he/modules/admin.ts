@@ -32,6 +32,11 @@ export const adminHe = {
     openReportsKpi: 'דיווחים פתוחים',
     openTasksKpi: 'משימות פתוחות',
     comingSoonKpi: 'יזמין בקרוב',
+    adminsKpi: 'חברי צוות',
+    usersKpi: 'משתמשים',
+    postsKpi: 'פוסטים',
+    auditKpi: 'יומן פעולות',
+    noCount: '—',
   },
   comingSoon: {
     title: 'מסך זה יזמין בקרוב',
