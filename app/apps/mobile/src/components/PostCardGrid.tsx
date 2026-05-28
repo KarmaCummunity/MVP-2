@@ -11,7 +11,7 @@ import type { PostWithOwner } from '@kc/application';
 import type { IdentityRoleForViewedProfile } from '@kc/domain';
 import { PROFILE_GRID_COLUMNS, usePostGridCardWidth } from '../hooks/useShellContentWidth';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
-import { getSupabasePublicImageUrl } from '../lib/imageUrl';
+import { getSupabasePublicImageUrl, getSupabaseImageThumbUrl } from '../lib/imageUrl';
 import { AvatarInitials } from './AvatarInitials';
 import { PostMenuButton } from './post/PostMenuButton';
 import { KCImage } from './ui/KCImage';
@@ -62,9 +62,19 @@ function PostCardGridInner({
     : `${post.address.cityName}, ${post.address.street}`;
 
   const firstImagePath = post.mediaAssets[0]?.path ?? null;
-  const imageUrl = React.useMemo(
+  // PERF-4: serve the 400px thumb for the grid surface (~25-40KB vs ~300-500KB
+  // for the 2048px full). KCImage falls back to the full URL if the thumb is
+  // missing (e.g., for posts uploaded before the thumb pipeline shipped — the
+  // backfill Edge Function eventually fills these in).
+  const thumbUrl = React.useMemo(
     () => firstImagePath
-      ? getSupabasePublicImageUrl({ bucket: 'post-images', path: firstImagePath, width: 400, quality: 80 })
+      ? getSupabaseImageThumbUrl({ bucket: 'post-images', path: firstImagePath })
+      : null,
+    [firstImagePath],
+  );
+  const fullUrl = React.useMemo(
+    () => firstImagePath
+      ? getSupabasePublicImageUrl({ bucket: 'post-images', path: firstImagePath })
       : null,
     [firstImagePath],
   );
@@ -100,8 +110,8 @@ function PostCardGridInner({
       onPress={navigateToPost}
     >
       <View style={[styles.imageArea, { height: cardWidth * 0.78, backgroundColor: placeholderBg }]}>
-        {imageUrl ? (
-          <KCImage uri={imageUrl} style={styles.image} contentFit="cover" onLoad={onImageLoadOnce} />
+        {thumbUrl ? (
+          <KCImage uri={thumbUrl} fallbackUri={fullUrl} style={styles.image} contentFit="cover" onLoad={onImageLoadOnce} />
         ) : (
           <View style={styles.placeholderTint}>
             <Ionicons

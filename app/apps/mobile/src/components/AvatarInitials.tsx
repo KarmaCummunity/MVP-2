@@ -1,7 +1,11 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { makeUseStyles, typography, radius, useTheme } from '@kc/ui';
-import { getSupabasePublicImageUrl } from '../lib/imageUrl';
+import {
+  getSupabasePublicImageUrl,
+  getSupabaseImageThumbUrl,
+  deriveThumbUrl,
+} from '../lib/imageUrl';
 import { KCImage } from './ui/KCImage';
 
 interface AvatarInitialsProps {
@@ -34,16 +38,26 @@ function AvatarInitialsInner({ name, avatarUrl, size = 40 }: AvatarInitialsProps
 
   const bgColor = getAvatarColor(name);
 
-  const transformedUrl = React.useMemo(() => {
-    if (!avatarUrl) return null;
-    if (avatarUrl.startsWith('http')) return avatarUrl;
-    return getSupabasePublicImageUrl({ bucket: 'avatars', path: avatarUrl, width: 96, quality: 75 });
+  // PERF-4: chrome avatars (≤96px) get the 96px thumb. KCImage's `fallbackUri`
+  // covers the transition window — old avatars without a thumb fall back to the
+  // full image until the backfill pass writes the thumb. Google OAuth URLs are
+  // already small and pass through `deriveThumbUrl` unchanged.
+  const { primaryUrl, fallbackUrl } = React.useMemo(() => {
+    if (!avatarUrl) return { primaryUrl: null, fallbackUrl: null };
+    if (avatarUrl.startsWith('http')) {
+      return { primaryUrl: deriveThumbUrl(avatarUrl), fallbackUrl: avatarUrl };
+    }
+    return {
+      primaryUrl: getSupabaseImageThumbUrl({ bucket: 'avatars', path: avatarUrl }),
+      fallbackUrl: getSupabasePublicImageUrl({ bucket: 'avatars', path: avatarUrl }),
+    };
   }, [avatarUrl]);
 
-  if (transformedUrl) {
+  if (primaryUrl) {
     return (
       <KCImage
-        uri={transformedUrl}
+        uri={primaryUrl}
+        fallbackUri={fallbackUrl}
         width={size}
         height={size}
         style={[styles.avatar, { borderRadius: size / 2 }]}

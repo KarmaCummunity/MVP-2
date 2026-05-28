@@ -1,18 +1,19 @@
-// Mapped to docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md § Wave 1.
 // Standardised image renderer. Anywhere a remote image is shown, use <KCImage>
-// — never react-native's <Image>. This lets us swap implementations (RN Image,
+// — never react-native's <Image>. Lets us swap implementations (RN Image,
 // FastImage, future) in one place.
 //
-// Web platform note: the blurhash placeholder and crossfade transition each
-// add CPU + paint work that the browser doesn't need (it already manages
-// progressive image loading via the network layer). Both are kept on native
-// where the disk cache makes them feel snappy.
+// `fallbackUri` covers the PERF-4 transition: small surfaces pass the
+// `-thumb` URL as `uri` and the full URL as `fallbackUri`. New uploads have
+// both versions in Storage; existing uploads only have the full version
+// until the backfill pass runs, so the fallback keeps old content visible.
 import React from 'react';
 import { Image, type ImageProps, type ImageStyle } from 'expo-image';
-import { Platform, StyleProp } from 'react-native';
+import { StyleProp } from 'react-native';
 
 type Props = {
   uri: string | null | undefined;
+  /** Tried once if the primary `uri` fails to load. Useful for thumb → full graceful degrade. */
+  fallbackUri?: string | null;
   width?: number;
   height?: number;
   style?: StyleProp<ImageStyle>;
@@ -23,10 +24,10 @@ type Props = {
 };
 
 const DEFAULT_PLACEHOLDER = 'L6PZfSi_.AyE_3t7t7R**0o#DgR4';
-const IS_WEB = Platform.OS === 'web';
 
 export function KCImage({
   uri,
+  fallbackUri,
   width,
   height,
   style,
@@ -35,22 +36,34 @@ export function KCImage({
   onLoad,
   onError,
 }: Props) {
-  if (!uri) return null;
-  // Native: blurhash + 150ms crossfade make the disk-cache hit feel instant.
-  // Web: the browser already streams pixels progressively; the blurhash decode
-  // would just delay first paint. Skip both.
-  const placeholder = IS_WEB ? undefined : { blurhash: blurhash ?? DEFAULT_PLACEHOLDER };
-  const transition = IS_WEB ? 0 : 150;
+  const [currentUri, setCurrentUri] = React.useState<string | null | undefined>(uri);
+  const [didFallback, setDidFallback] = React.useState(false);
+
+  React.useEffect(() => {
+    setCurrentUri(uri);
+    setDidFallback(false);
+  }, [uri]);
+
+  const handleError = React.useCallback(() => {
+    if (!didFallback && fallbackUri && fallbackUri !== uri) {
+      setCurrentUri(fallbackUri);
+      setDidFallback(true);
+      return;
+    }
+    onError?.();
+  }, [didFallback, fallbackUri, uri, onError]);
+
+  if (!currentUri) return null;
   return (
     <Image
-      source={uri}
+      source={currentUri}
       style={[{ width, height }, style]}
       contentFit={contentFit}
       cachePolicy="memory-disk"
-      transition={transition}
-      placeholder={placeholder}
+      transition={150}
+      placeholder={{ blurhash: blurhash ?? DEFAULT_PLACEHOLDER }}
       onLoad={onLoad}
-      onError={onError}
+      onError={handleError}
     />
   );
 }

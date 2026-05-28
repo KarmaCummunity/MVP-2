@@ -1,15 +1,14 @@
 // FR-CHAT-014 — first post image (Storage) or type placeholder for anchored chat banner.
-import { Image, StyleSheet, View } from 'react-native';
+// PERF-4: serves the 96px-scope thumb via KCImage with fallback to full so the
+// chat inbox / anchored banner stops pulling 2048px JPEGs for a 52px square.
+import { StyleSheet, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { makeUseStyles, radius, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
+import { KCImage } from '../ui/KCImage';
+import { getSupabasePublicImageUrl, getSupabaseImageThumbUrl } from '../../lib/imageUrl';
 
 const STORAGE_BUCKET = 'post-images';
-
-function publicUrl(path: string): string {
-  return getSupabaseClient().storage.from(STORAGE_BUCKET).getPublicUrl(path).data.publicUrl;
-}
 
 interface Props {
   type: PostType;
@@ -22,13 +21,14 @@ export function AnchoredPostCardPreview({ type, mediaPaths, size = 52 }: Props) 
   const styles = useAnchoredPostCardPreviewStyles();
   const { colors } = useTheme();
   const path0 = mediaPaths[0]?.path;
-  const uri = path0 ? publicUrl(path0) : null;
+  const thumbUri = path0 ? getSupabaseImageThumbUrl({ bucket: STORAGE_BUCKET, path: path0 }) : null;
+  const fullUri = path0 ? getSupabasePublicImageUrl({ bucket: STORAGE_BUCKET, path: path0 }) : null;
   const isGive = type === 'Give';
 
   return (
     <View style={[styles.frame, { width: size, height: size, borderRadius: radius.md }]}>
-      {uri ? (
-        <Image source={{ uri }} style={styles.image} resizeMode="cover" />
+      {thumbUri ? (
+        <KCImage uri={thumbUri} fallbackUri={fullUri} style={styles.image} contentFit="cover" />
       ) : (
         <View style={styles.placeholder}>
           <Ionicons
