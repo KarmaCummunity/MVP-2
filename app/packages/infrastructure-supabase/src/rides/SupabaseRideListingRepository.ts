@@ -4,8 +4,10 @@ import type {
   FindRideMatchesInput,
   IRideListingRepository,
   RideListingRow,
+  RideVisibility,
   SearchRideListingsInput,
 } from '@kc/application';
+import { RideError } from '@kc/domain';
 import type { Database } from '../database.types';
 import { mapRideRow } from './mapRideRow';
 
@@ -104,6 +106,36 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
       .eq('ride_id', rideId)
       .eq('owner_id', ownerId);
     if (error) throw new Error(error.message);
+  }
+
+  async updateVisibility(input: {
+    rideId: string;
+    visibility: RideVisibility;
+  }): Promise<RideListingRow> {
+    const { data, error } = await this.client.rpc('rpc_ride_update_visibility', {
+      p_ride_id: input.rideId,
+      p_visibility: input.visibility,
+    });
+    if (error) {
+      const code = (error.message ?? '').trim();
+      switch (code) {
+        case 'auth_required':
+        case 'invalid_visibility':
+        case 'ride_not_found':
+        case 'not_ride_owner':
+        case 'ride_not_open':
+          throw new RideError(code, code);
+        default:
+          throw new Error(error.message);
+      }
+    }
+    // The RPC returns the updated row, but without the joined city names.
+    // Fall back to a SELECT to get the camelCase shape with names attached.
+    const row = data as { ride_id: string } | null;
+    if (!row?.ride_id) throw new Error('updateVisibility: empty response');
+    const fetched = await this.getById(row.ride_id, ''); // viewerId unused in adapter
+    if (!fetched) throw new Error('updateVisibility: row not visible after update');
+    return fetched;
   }
 
   async findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]> {

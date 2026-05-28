@@ -87,6 +87,13 @@ Prefix: `FR-RIDE-*`
 - AC3. `rpc_ride_participants_request` widens the joinability check the same way — a follower can request to join a FollowersOnly ride.
 - AC4. Creation paths in V2.0 still default to `Public` (FR-RIDE-007). Allowing creation with non-Public tiers requires `CreateRideListingUseCase` to accept a `visibility` input — out of scope for this PR.
 
+## FR-RIDE-020 — Owner can update ride visibility ✅
+- AC1. RPC `rpc_ride_update_visibility(p_ride_id, p_visibility)` lets the ride owner change visibility on an existing open ride. `p_visibility` ∈ {`Public`, `FollowersOnly`, `OnlyMe`}; anything else raises `invalid_visibility`.
+- AC2. Caller authenticated and the ride owner; otherwise `auth_required` or `not_ride_owner`.
+- AC3. Target ride must be `status='open'`; closed/cancelled/expired raise `ride_not_open` (re-publish a new ride instead).
+- AC4. Idempotent: if `p_visibility` matches the current value, the RPC returns the existing row without writing.
+- AC5. Application: `UpdateRideVisibilityUseCase` + `IRideListingRepository.updateVisibility`. Errors map to typed `RideError` codes.
+
 ## FR-RIDE-017 — Auto-cancel stale participant requests ✅
 - AC1. pg_cron job `ride_participants_expire_stale_check` runs `*/15 * * * *`. It cancels every `requested` row where `ride.departs_at + interval '3 hours' < now()`.
 - AC2. System cancellation: `status = 'cancelled'`, `decided_at = now()`, `decided_by = NULL` (system marker).
