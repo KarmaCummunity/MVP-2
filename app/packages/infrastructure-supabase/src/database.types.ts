@@ -2203,6 +2203,10 @@ export type Database = {
         }
       }
       rpc_chat_unread_total: { Args: never; Returns: number }
+      rpc_unread_counts_for_chats: {
+        Args: { p_viewer_id: string; p_chat_ids: string[] }
+        Returns: { chat_id: string; unread_count: number }[]
+      }
       rpc_get_or_create_support_thread: {
         Args: never
         Returns: {

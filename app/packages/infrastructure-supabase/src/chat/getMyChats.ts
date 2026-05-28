@@ -72,16 +72,18 @@ export async function getMyChats(
     if (!lastMessageByChat.has(m.chatId)) lastMessageByChat.set(m.chatId, m);
   }
 
-  const unreadRes = await client
-    .from('messages')
-    .select('chat_id, status, sender_id')
-    .in('chat_id', chatIds);
+  // PERF-5: server-side per-chat unread count. Replaces the prior fan-out
+  // (SELECT every non-read message + group client-side) which was the
+  // worst payload offender in this query family — for heavy chat users it
+  // pulled tens of MB just to compute small integers.
+  const unreadRes = await client.rpc('rpc_unread_counts_for_chats', {
+    p_viewer_id: userId,
+    p_chat_ids: chatIds,
+  });
   if (unreadRes.error) throw mapChatError(unreadRes.error);
   const unreadByChat: Record<string, number> = {};
   for (const r of unreadRes.data ?? []) {
-    if (r.status !== 'read' && r.sender_id !== userId) {
-      unreadByChat[r.chat_id] = (unreadByChat[r.chat_id] ?? 0) + 1;
-    }
+    unreadByChat[r.chat_id] = r.unread_count;
   }
 
   const otherIds = chats
