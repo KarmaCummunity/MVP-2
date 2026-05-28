@@ -4,7 +4,7 @@ export const researchHe = {
   // Survey intro block (rendered above Q1, design spec §9)
   introHeading: 'לפני שאת/ה מתחיל/ה — שתי שורות.',
   introLine1: 'אנחנו בונים אפליקציה ישראלית לנתינה בחינם, בלי הבלגן של הקבוצות.',
-  introLine2: '11 שאלות. אנונימי לגמרי. ~4 דקות.',
+  introLine2: '11 שאלות. אנונימי לגמרי. כמה דקות.',
   introLine3: 'כל תשובה כאן משנה איך האפליקציה תיראה בפועל. תודה.',
 
   // Progress
@@ -38,6 +38,8 @@ export const researchHe = {
   errorRateLimited: 'ניסית כבר היום, ננסה שוב בעוד דקה',
   errorCircuitOpen: 'השרת עמוס כרגע, נסה שוב בעוד כמה דקות',
   errorSurveyNotFound: 'הסקר הזה לא פעיל',
+  errorInvalidEmail: 'כתובת המייל לא תקינה — תקנו או השאירו ריק',
+  errorInvalidSource: 'קישור הסקר לא תקין — נסו שוב מהקישור המקורי',
   errorGeneric: 'אירעה שגיאה, נסה שוב',
   retryBtn: 'נסה שוב',
 
@@ -45,6 +47,8 @@ export const researchHe = {
   thanksHeading: 'תודה. ברצינות.',
   thanksLine1: 'קראנו כל מילה — וזה משנה את מה שאנחנו בונים עכשיו.',
   thanksLine2: 'עכשיו הכי עוזר לנו שתעביר/י את הסקר לאנשים שעדיין לא שמעו על קארמה.',
+  thanksSignUpLead:
+    'רוצים לקבל התראות, לפרסם ולקבל כשהאפליקציה תהיה מוכנה? הצטרפו עכשיו — הסקר נשאר אנונימי.',
   thanksEmailOptInLabel: 'רוצה לראות את האפליקציה ראשון/ה כשהיא יוצאת?',
   thanksEmailPlaceholder: 'השאר/י מייל',
   thanksVisitCta: 'בקר/י באתר קארמה',

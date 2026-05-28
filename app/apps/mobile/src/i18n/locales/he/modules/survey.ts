@@ -50,7 +50,7 @@ export const surveyHe = {
 
   // Prompt banner (FR-SETTINGS-016 AC6)
   bannerTitle: 'יש לנו שאלה אליך',
-  bannerBody: 'עזור לנו לשפר את הקהילה — פחות מדקה.',
+  bannerBody: 'עזור לנו לשפר את הקהילה — כמה דקות.',
   bannerCta: 'מלא סקר',
   bannerSnooze: 'אחר כך',
 

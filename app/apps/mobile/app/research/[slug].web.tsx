@@ -1,7 +1,7 @@
 // Web-only public research form — FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003.
 import React, { useCallback, useEffect, useState } from 'react';
-import { ActivityIndicator, Text, View } from 'react-native';
-import { useLocalSearchParams, useRouter } from 'expo-router';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
+import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
@@ -10,11 +10,13 @@ import { webTextRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { ResearchRunner, errorKey, type AnswerEntry } from './ResearchRunner';
 import { SurveyIntroBlock } from './SurveyIntroBlock';
-import { SurveyThankYouModal } from '../../src/components/survey/SurveyThankYouModal';
-import {
-  RESEARCH_SHARE_SRC_DURING_SURVEY,
-} from '../../src/lib/shareResearchSurvey';
-import { triggerResearchShare } from '../../src/lib/triggerResearchShare';
+
+const SOURCE_REGEX = /^[a-z0-9_-]{1,32}$/;
+
+function normalizeRouteParam(value: string | string[] | undefined): string {
+  if (Array.isArray(value)) return value[0] ?? '';
+  return value ?? '';
+}
 
 function persistSrc(slug: string, src: string): void {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -29,8 +31,18 @@ function readPersistedSrc(slug: string): string | null {
   return null;
 }
 
+function resolveSource(slug: string, rawSrc: string | undefined): string {
+  const candidate = rawSrc?.trim() ?? '';
+  if (candidate && SOURCE_REGEX.test(candidate)) return candidate;
+  const persisted = readPersistedSrc(slug);
+  if (persisted && SOURCE_REGEX.test(persisted)) return persisted;
+  return 'direct';
+}
+
 export default function PublicResearchScreen() {
-  const { slug, src } = useLocalSearchParams<{ slug: string; src?: string }>();
+  const params = useLocalSearchParams<{ slug: string | string[]; src?: string | string[] }>();
+  const slug = normalizeRouteParam(params.slug);
+  const srcParam = normalizeRouteParam(params.src) || undefined;
   const router = useRouter();
   const styles = useScreenStyles();
   const { colors } = useTheme();
@@ -43,14 +55,13 @@ export default function PublicResearchScreen() {
   const [honeypot, setHoneypot] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<unknown>(null);
-  const [thankYouOpen, setThankYouOpen] = useState(false);
   const [missingRatingsHint, setMissingRatingsHint] = useState(false);
 
-  const effectiveSrc = src ?? readPersistedSrc(slug) ?? 'direct';
+  const effectiveSrc = resolveSource(slug, srcParam);
 
   useEffect(() => {
-    if (src) persistSrc(slug, src);
-  }, [slug, src]);
+    if (srcParam && SOURCE_REGEX.test(srcParam)) persistSrc(slug, srcParam);
+  }, [slug, srcParam]);
 
   const bundleQuery = useQuery({
     queryKey: ['public-research-bundle', slug] as const,
@@ -64,19 +75,10 @@ export default function PublicResearchScreen() {
     (qid: string, rating: number | null, text: string | null) => {
       setAnswers((prev) => ({ ...prev, [qid]: { rating, answerText: text } }));
       setMissingRatingsHint(false);
+      setSubmitError(null);
     },
     [],
   );
-
-  const handleShare = useCallback(async () => {
-    await triggerResearchShare(RESEARCH_SHARE_SRC_DURING_SURVEY, {
-      title: t('research.share.shareTitle'),
-      message: t('research.share.endSurveyMessage'),
-      toastShared: t('research.share.statusShared'),
-      toastCopied: t('research.share.statusCopied'),
-      toastFailed: t('research.share.statusFailed'),
-    });
-  }, [t]);
 
   async function submitAnswers(): Promise<boolean> {
     if (!bundle) return false;
@@ -109,7 +111,7 @@ export default function PublicResearchScreen() {
   }
 
   async function handleAttemptFinish() {
-    if (!bundle) return;
+    if (!bundle || submitting) return;
     const firstUnrated = bundle.questions.findIndex(
       (q) => (answers[q.id]?.rating ?? null) === null,
     );
@@ -119,12 +121,9 @@ export default function PublicResearchScreen() {
       return;
     }
     const ok = await submitAnswers();
-    if (ok) setThankYouOpen(true);
-  }
-
-  function handleThankYouDismiss() {
-    setThankYouOpen(false);
-    router.replace('/research/thanks');
+    if (ok) {
+      router.replace('/research/thanks' as Href);
+    }
   }
 
   function renderBody() {
@@ -166,23 +165,27 @@ export default function PublicResearchScreen() {
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
       <input
-        name="hp_field"
-        style={{ position: 'absolute', left: -9999, height: 0, width: 0, opacity: 0 }}
-        aria-hidden
+        type="text"
+        name="company_website"
+        autoComplete="off"
         tabIndex={-1}
+        aria-hidden
+        style={{ position: 'absolute', left: -9999, height: 0, width: 0, opacity: 0 }}
         value={honeypot}
         onChange={(e) => setHoneypot(e.target.value)}
       />
 
+      {submitError ? (
+        <View style={styles.stickyError}>
+          <Text style={styles.stickyErrorText}>{t(errorKey(submitError))}</Text>
+          <Pressable onPress={() => setSubmitError(null)} accessibilityRole="button">
+            <Text style={styles.stickyErrorDismiss}>{t('research.thankYouModal.dismiss')}</Text>
+          </Pressable>
+        </View>
+      ) : null}
+
       <SurveyIntroBlock />
       <View style={styles.runnerArea}>{renderBody()}</View>
-
-      <SurveyThankYouModal
-        visible={thankYouOpen}
-        variant="publicResearch"
-        onDismiss={handleThankYouDismiss}
-        onShare={handleShare}
-      />
     </View>
   );
 }
@@ -205,6 +208,29 @@ const useScreenStyles = makeUseStyles(({ colors }) => ({
   errorText: {
     ...typography.body,
     color: colors.error,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  stickyError: {
+    marginHorizontal: spacing.base,
+    marginBottom: spacing.sm,
+    padding: spacing.md,
+    borderRadius: 10,
+    backgroundColor: colors.errorLight,
+    borderWidth: 1,
+    borderColor: colors.error,
+    gap: spacing.xs,
+  },
+  stickyErrorText: {
+    ...typography.bodySmall,
+    color: colors.error,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  stickyErrorDismiss: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    fontWeight: '600',
     textAlign: rtlTextAlignStart,
     ...webTextRtl,
   },

@@ -55,13 +55,17 @@ export default function ResearchThanksScreen() {
         </View>
 
         {!isAuthenticated ? (
-          <Pressable
-            style={styles.signUpBtn}
-            onPress={() => router.push('/(auth)' as Href)}
-            accessibilityRole="button"
-          >
-            <Text style={styles.signUpBtnText}>{t('research.guestInvite.signUpCta')}</Text>
-          </Pressable>
+          <View style={styles.signUpBlock}>
+            <Text style={styles.signUpLead}>{t('research.thanksSignUpLead')}</Text>
+            <Pressable
+              style={styles.signUpBtn}
+              onPress={() => router.push('/(auth)' as Href)}
+              accessibilityRole="button"
+            >
+              <Text style={styles.signUpBtnText}>{t('research.guestInvite.signUpCta')}</Text>
+              <Ionicons name="arrow-back" size={18} color={colors.primary} />
+            </Pressable>
+          </View>
         ) : null}
 
         {showVisitLink ? (
@@ -144,12 +148,30 @@ const useStyles = makeUseStyles(({ colors }) => ({
     fontWeight: '700',
     ...webTextRtl,
   },
+  signUpBlock: {
+    gap: spacing.sm,
+    marginTop: spacing.sm,
+    paddingTop: spacing.md,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  signUpLead: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 22,
+    ...webTextRtl,
+  },
   signUpBtn: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    gap: spacing.xs,
     borderRadius: 12,
     paddingVertical: spacing.md,
-    alignItems: 'center',
     borderWidth: 1,
     borderColor: colors.primary,
+    backgroundColor: colors.primarySurface,
   },
   signUpBtnText: {
     ...typography.button,

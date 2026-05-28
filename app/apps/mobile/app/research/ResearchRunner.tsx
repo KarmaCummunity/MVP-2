@@ -18,6 +18,7 @@ import {
 } from '../../src/components/survey/SurveyFloatingNav';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { ResearchEndShareCard } from '../../src/components/research/ResearchEndShareCard';
 import { ResearchQuestionPanel } from './ResearchQuestionPanel';
 
 export type AnswerEntry = { rating: number | null; answerText: string | null };
@@ -27,6 +28,15 @@ export function errorKey(err: unknown): string {
     if (err.code === 'rate_limited') return 'research.errorRateLimited';
     if (err.code === 'circuit_open') return 'research.errorCircuitOpen';
     if (err.code === 'survey_not_found') return 'research.errorSurveyNotFound';
+    if (err.code === 'validation' && err.detail === 'invalid_email') {
+      return 'research.errorInvalidEmail';
+    }
+    if (err.code === 'validation' && err.detail === 'invalid_source_format') {
+      return 'research.errorInvalidSource';
+    }
+    if (err.code === 'network' && err.detail === 'origin_not_allowed') {
+      return 'research.errorGeneric';
+    }
   }
   return 'research.errorGeneric';
 }
@@ -73,9 +83,17 @@ export function ResearchRunner({
   const isLast = activeIndex === total - 1;
   const currentRated = answer.rating !== null;
 
+  let nextLabel: string | undefined;
+  if (submitting) {
+    nextLabel = t('research.submitting');
+  } else if (isLast) {
+    nextLabel = t('research.navFinish');
+  }
+
   const goPrev = () => setActiveIndex((i) => Math.max(0, i - 1));
 
   function handleNext() {
+    if (!currentRated) return;
     if (isLast) {
       onAttemptFinish();
       return;
@@ -126,6 +144,8 @@ export function ResearchRunner({
           onContactWindow={setContactWindowHe}
         />
 
+        {isLast ? <ResearchEndShareCard /> : null}
+
         {submitError ? (
           <View style={styles.errorBox}>
             <Text style={styles.errorText}>{t(errorKey(submitError))}</Text>
@@ -144,8 +164,8 @@ export function ResearchRunner({
         onPrev={goPrev}
         onNext={handleNext}
         prevDisabled={activeIndex === 0 || submitting}
-        nextDisabled={isLast ? !currentRated || submitting : submitting}
-        nextLabel={isLast ? t('research.navFinish') : undefined}
+        nextDisabled={!currentRated || submitting}
+        nextLabel={nextLabel}
         bottom={spacing.xl}
       />
     </KeyboardAvoidingView>
