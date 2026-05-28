@@ -7,6 +7,7 @@ import type { ChatWithPreview } from '@kc/application';
 import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { formatRelativeChatTime } from '../../lib/formatRelativeChatTime';
+import { formatInboxPreview } from '../../lib/formatInboxPreview';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
@@ -35,7 +36,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
             <Text style={styles.chatName}>{item.otherParticipant.displayName ?? t('common.deletedUser')}</Text>
           </View>
           <Text style={styles.chatPreview} numberOfLines={1}>
-            {item.lastMessage?.body ?? ''}
+            {formatInboxPreview(item.lastMessage, t)}
           </Text>
         </View>
       </TouchableOpacity>

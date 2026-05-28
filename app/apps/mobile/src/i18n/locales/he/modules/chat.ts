@@ -18,6 +18,9 @@ export const chatHe = {
 
   // InboxChatRow
   hideChatA11y: 'הסר שיחה מהאינבוקס',
+  // Inbox preview prefixes — TD-110 bug 2.
+  inboxSystemPrefix: '(הודעת מערכת)',
+  inboxNewConversation: '(שיחה חדשה)',
 
   // AnchoredPostCard (FR-CHAT-014/015)
   anchoredOpenA11y: 'פתח את הפוסט',
