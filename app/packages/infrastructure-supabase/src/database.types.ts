@@ -2258,6 +2258,10 @@ export type Database = {
         }
       }
       rpc_chat_unread_total: { Args: never; Returns: number }
+      ride_listings_find_matches: {
+        Args: { p_ride_id: string; p_window_hours?: number; p_limit?: number }
+        Returns: Database['public']['Tables']['ride_listings']['Row'][]
+      }
       rpc_ride_participants_request: {
         Args: { p_ride_id: string; p_note?: string | null }
         Returns: {

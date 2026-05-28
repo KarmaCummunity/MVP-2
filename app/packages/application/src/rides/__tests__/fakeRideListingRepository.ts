@@ -1,5 +1,6 @@
 import type {
   CreateRideListingRepoInput,
+  FindRideMatchesInput,
   IRideListingRepository,
   RideListingRow,
   SearchRideListingsInput,
@@ -50,5 +51,29 @@ export class FakeRideListingRepository implements IRideListingRepository {
     if (row) {
       this.rows[idx] = { ...row, status };
     }
+  }
+
+  async findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]> {
+    const source = this.rows.find((r) => r.rideId === input.rideId);
+    if (!source) return [];
+    const windowMs = (input.windowHours ?? 12) * 60 * 60 * 1000;
+    const srcTs = new Date(source.departsAt).getTime();
+    return this.rows
+      .filter(
+        (r) =>
+          r.rideId !== source.rideId &&
+          r.status === 'open' &&
+          r.visibility === 'Public' &&
+          r.mode !== source.mode &&
+          r.originCityId === source.originCityId &&
+          r.destCityId === source.destCityId &&
+          Math.abs(new Date(r.departsAt).getTime() - srcTs) <= windowMs,
+      )
+      .sort(
+        (a, b) =>
+          Math.abs(new Date(a.departsAt).getTime() - srcTs) -
+          Math.abs(new Date(b.departsAt).getTime() - srcTs),
+      )
+      .slice(0, input.limit ?? 20);
   }
 }
