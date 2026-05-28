@@ -57,6 +57,7 @@ export default function FollowRequestsScreen() {
     try {
       if (action === 'accept') {
         await getAcceptFollowRequestUseCase().execute({
+          sessionUserId: me,
           targetId: me,
           requesterId: req.requester.userId,
         });

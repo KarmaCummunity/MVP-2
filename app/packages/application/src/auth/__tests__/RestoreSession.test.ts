@@ -35,6 +35,7 @@ describe('RestoreSessionUseCase', () => {
 
     const out = await uc.execute();
     expect(out.session).toBeNull();
+    expect(auth.signOutCalled).toBe(1);
     // Gate should not be consulted for an already-expired session.
     expect(gate.calls).toHaveLength(0);
   });
