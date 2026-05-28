@@ -1,0 +1,52 @@
+// app/apps/mobile/src/components/admin/content/AuditLogRow.tsx
+// FR-ADMIN-020 — single row in the admin audit log viewer.
+import { StyleSheet, Text, View } from 'react-native';
+import type { AdminAuditRow } from '@kc/domain';
+import { makeUseStyles } from '@kc/ui';
+import he from '../../../i18n/locales/he';
+
+export interface AuditLogRowProps {
+  readonly row: AdminAuditRow;
+}
+
+function fmtTs(d: Date): string {
+  return d.toLocaleString('he-IL', {
+    year: 'numeric', month: '2-digit', day: '2-digit', hour: '2-digit', minute: '2-digit',
+  });
+}
+
+export function AuditLogRow({ row }: AuditLogRowProps) {
+  const styles = useStyles();
+  return (
+    <View style={styles.root}>
+      <View style={styles.headerRow}>
+        <Text style={styles.action}>
+          {he.admin.content.auditAction[row.action as keyof typeof he.admin.content.auditAction]
+            ?? row.action}
+        </Text>
+        <Text style={styles.ts}>{fmtTs(row.createdAt)}</Text>
+      </View>
+      <Text style={styles.actor}>
+        {row.actorDisplayName ?? he.admin.content.systemActor}
+        {row.targetDisplayName && ` → ${row.targetDisplayName}`}
+      </Text>
+      {Object.keys(row.metadata).length > 0 && (
+        <Text style={styles.meta} numberOfLines={2}>
+          {JSON.stringify(row.metadata)}
+        </Text>
+      )}
+    </View>
+  );
+}
+
+const useStyles = makeUseStyles(({ colors }) => ({
+  root: {
+    paddingVertical: 10, paddingHorizontal: 16, gap: 4,
+    borderBottomWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
+  },
+  headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  action:    { fontSize: 13, fontWeight: '700', color: colors.primary },
+  ts:        { fontSize: 11, opacity: 0.55 },
+  actor:     { fontSize: 12, opacity: 0.85 },
+  meta:      { fontSize: 11, opacity: 0.55, fontFamily: 'monospace' },
+}));
