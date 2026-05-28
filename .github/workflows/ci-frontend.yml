@@ -81,6 +81,9 @@ jobs:
       - name: Lint
         run: pnpm lint
 
+      - name: Dependency audit
+        run: pnpm audit --audit-level=high
+
   web-build:
     name: web export (production bundle)
     # Runs on every non-draft PR/push to main or dev. Builds the production
@@ -96,7 +99,7 @@ jobs:
 
     env:
       EXPO_PUBLIC_ENVIRONMENT: production
-      EXPO_PUBLIC_SUPABASE_URL: https://slxijdfvinbjmrsfgbzx.supabase.co
+      EXPO_PUBLIC_SUPABASE_URL: https://roeefqpdbftlndzsvhfj.supabase.co
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-web-build-placeholder-not-for-runtime
 
     steps:
