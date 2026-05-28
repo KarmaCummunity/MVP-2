@@ -1173,6 +1173,61 @@ export type Database = {
           },
         ]
       }
+      ride_participants: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          note?: string | null
+          participant_id?: string
+          requested_at?: string
+          ride_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          note?: string | null
+          participant_id?: string
+          requested_at?: string
+          ride_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_participants_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_participants_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+          {
+            foreignKeyName: "ride_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       saved_posts: {
         Row: {
           post_id: string
@@ -2203,6 +2258,45 @@ export type Database = {
         }
       }
       rpc_chat_unread_total: { Args: never; Returns: number }
+      rpc_ride_participants_request: {
+        Args: { p_ride_id: string; p_note?: string | null }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+      }
+      rpc_ride_participants_decide: {
+        Args: { p_participant_id: string; p_status: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+      }
+      rpc_ride_participants_cancel: {
+        Args: { p_participant_id: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+      }
       rpc_unread_counts_for_chats: {
         Args: { p_viewer_id: string; p_chat_ids: string[] }
         Returns: { chat_id: string; unread_count: number }[]

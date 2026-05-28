@@ -24,3 +24,6 @@ export * from './rides/RideListing';
 export * from './rides/RideError';
 export * from './rides/generateRideTitle';
 export * from './rides/validateRideDraft';
+export * from './rides/RideParticipant';
+export * from './rides/RideParticipantStatus';
+export * from './rides/RideParticipantError';

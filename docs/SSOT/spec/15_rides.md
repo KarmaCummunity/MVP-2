@@ -1,6 +1,6 @@
 # 2.14 Rides (Hitchhiking V2.0)
 
-> **Status:** 🟡 V2.0 minimal product shipped 2026-05-26 (FR-RIDE-001..010 ✅); UI temporarily hidden 2026-05-28 (D-51) while backend hardens. FR-RIDE-011 schema in place; FR-RIDE-012 application layer ⏳. Requires migrations `0122` + `0127` + `0135` + `0137` + `0138` + `0139` on dev DB before runtime use.
+> **Status:** 🟡 V2.0 minimal product shipped 2026-05-26 (FR-RIDE-001..010 ✅); UI temporarily hidden 2026-05-28 (D-51) while backend hardens. FR-RIDE-011 schema ✅ + FR-RIDE-012 application layer ✅ (no UI yet). Requires migrations `0122` + `0127` + `0135` + `0137` + `0138` + `0139` on dev DB before runtime use.
 
 Prefix: `FR-RIDE-*`
 
@@ -49,7 +49,7 @@ Prefix: `FR-RIDE-*`
 ## FR-RIDE-010 — Extension ports (no UI)
 - AC1. `IRideJoinPolicy` + `IRideMatchScorer` interfaces exist; V2.0 uses DirectChat + chronological sort only.
 
-## FR-RIDE-011 — Ride participants (request / approve / reject / cancel) 🟡
+## FR-RIDE-011 — Ride participants (request / approve / reject / cancel) ✅
 > Backend-only as of writing (UI hidden under D-31). Adds a structured "intent of record" alongside the chat thread so rides have a real join model with seat enforcement.
 
 - AC1. `ride_participants` table with row per (ride, user, attempt). Status machine: `requested → {approved, rejected, cancelled}`; `approved → cancelled`. `rejected` / `cancelled` are terminal.
@@ -61,7 +61,7 @@ Prefix: `FR-RIDE-*`
 - AC7. RLS SELECT: row visible to its `user_id` or the ride owner. INSERT/UPDATE/DELETE revoked — all mutations through the RPCs.
 - AC8. Domain entity `RideParticipant` + value object `RideParticipantStatus`; application use cases mirror the three RPCs.
 
-## FR-RIDE-012 — Ride participants application use cases ⏳
+## FR-RIDE-012 — Ride participants application use cases ✅
 - AC1. `RequestRideJoinUseCase` — wraps `rpc_ride_participants_request`, maps PG errors to domain `RideParticipantError`.
 - AC2. `DecideRideJoinUseCase` — wraps `rpc_ride_participants_decide`; rejects non-owner / non-requested / non-open / `ride_full` paths via typed errors.
 - AC3. `CancelRideJoinUseCase` — wraps `rpc_ride_participants_cancel`; idempotent on already-cancelled.
