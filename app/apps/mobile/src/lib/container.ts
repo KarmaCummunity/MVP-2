@@ -17,6 +17,7 @@ import {
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
   SupabaseAdminContentRepository,
+  SupabaseTimesheetsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -64,6 +65,12 @@ import {
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
+  ListTimesheetsUseCase,
+  UpsertTimesheetUseCase,
+  SubmitTimesheetUseCase,
+  ApproveTimesheetUseCase,
+  RejectTimesheetUseCase,
+  DeleteTimesheetUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -104,6 +111,7 @@ const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -141,6 +149,13 @@ export const container = {
   adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
   adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
   adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
+  // V2-ADMIN-TIME-10
+  listTimesheets:   new ListTimesheetsUseCase(timesheetsRepo),
+  upsertTimesheet:  new UpsertTimesheetUseCase(timesheetsRepo),
+  submitTimesheet:  new SubmitTimesheetUseCase(timesheetsRepo),
+  approveTimesheet: new ApproveTimesheetUseCase(timesheetsRepo),
+  rejectTimesheet:  new RejectTimesheetUseCase(timesheetsRepo),
+  deleteTimesheet:  new DeleteTimesheetUseCase(timesheetsRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

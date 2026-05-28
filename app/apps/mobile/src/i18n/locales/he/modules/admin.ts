@@ -1,5 +1,6 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
 import { adminContentHe } from './adminContent';
+import { adminTimeHe } from './adminTime';
 
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
@@ -8,6 +9,7 @@ export const adminHe = {
     dashboard: 'לוח בקרה',
     reports: 'דיווחים',
     tasks: 'משימות צוות',
+    time: 'שעות',
     admins: 'צוות ניהול',
     users: 'משתמשים',
     posts: 'פוסטים',
@@ -238,4 +240,5 @@ export const adminHe = {
     },
   },
   content: adminContentHe,
+  time: adminTimeHe,
 } as const;
