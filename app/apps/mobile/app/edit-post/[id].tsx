@@ -18,7 +18,12 @@ import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { useAuthStore } from '../../src/store/authStore';
 import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
-import { getPostByIdUseCase, getUpdatePostUseCase } from '../../src/services/postsComposition';
+import {
+  getPostByIdUseCase,
+  getRepublishPostUseCase,
+  getUpdatePostUseCase,
+} from '../../src/services/postsComposition';
+import { ExpiredRepublishView } from '../../src/components/post/ExpiredRepublishView';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
@@ -201,6 +206,22 @@ export default function EditPostScreen() {
   }
 
   if (post.status !== 'open') {
+    if (post.status === 'expired' && viewerId && post.ownerId === viewerId) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <ExpiredRepublishView
+            postId={post.postId}
+            viewerId={viewerId}
+            onRepublished={(newId) => {
+              queryClient.invalidateQueries({ queryKey: ['post'] });
+              queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+              queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+              router.replace(`/post/${newId}`);
+            }}
+          />
+        </SafeAreaView>
+      );
+    }
     return (
       <SafeAreaView style={styles.container}>
         <EmptyState

@@ -1099,6 +1099,8 @@ export type Database = {
         Args: { p_post_id: string }
         Returns: Database["public"]["Tables"]["posts"]["Row"]
       }
+      // FR-POST-013 AC3 (0099) — clones an expired post into a new open post.
+      rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
       // P0.6 cleanup cron (0016) — manually added until next typegen run.
       closure_cleanup_expired: { Args: Record<string, never>; Returns: number }
       closure_cleanup_expired_with_metric: { Args: Record<string, never>; Returns: number }

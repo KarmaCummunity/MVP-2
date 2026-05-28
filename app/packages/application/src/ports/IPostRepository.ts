@@ -164,6 +164,13 @@ export interface IPostRepository {
   //   current status closed_delivered      → RPC `reopen_post_marked` (delete recipient row + status)
   //   current status deleted_no_recipient  → UPDATE status='open', delete_after=null
   reopen(postId: string): Promise<Post>;
+  /**
+   * FR-POST-013 AC3 — clones an expired post (and its media_assets rows) into
+   * a new `status='open'` post. Returns the new post id. Errors:
+   *   republish_not_owner, republish_wrong_status, republish_not_found,
+   *   active_post_limit_exceeded, followers_only_requires_private.
+   */
+  republish(postId: string): Promise<string>;
   // FR-CLOSURE-007: recipient removes their own credit (→ deleted_no_recipient, 7d window).
   unmrkRecipientSelf(postId: string): Promise<void>;
   /** Recipient picker source: distinct chat partners on this post, sorted by latest message recency. */

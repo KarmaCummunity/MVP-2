@@ -117,11 +117,14 @@ export class FakePostRepository implements IPostRepository {
   // ── Closure (P0.6) ───────────────────────────────────────────────────────
   closeResult: Post | null = null;
   reopenResult: Post | null = null;
+  republishResult: string | null = null;
   closeError: PostError | Error | null = null;
   reopenError: PostError | Error | null = null;
+  republishError: PostError | Error | null = null;
   closureCandidatesResult: ClosureCandidate[] = [];
   lastCloseArgs: { postId: string; recipientUserId: string | null } | null = null;
   lastReopenArgs: { postId: string } | null = null;
+  lastRepublishArgs: { postId: string } | null = null;
   lastGetClosureCandidatesPostId: string | null = null;
 
   close = async (postId: string, recipientUserId: string | null): Promise<Post> => {
@@ -136,6 +139,13 @@ export class FakePostRepository implements IPostRepository {
     if (this.reopenError) throw this.reopenError;
     if (!this.reopenResult) throw new Error('FakePostRepository: reopenResult not configured');
     return this.reopenResult;
+  };
+
+  republish = async (postId: string): Promise<string> => {
+    this.lastRepublishArgs = { postId };
+    if (this.republishError) throw this.republishError;
+    if (!this.republishResult) throw new Error('FakePostRepository: republishResult not configured');
+    return this.republishResult;
   };
 
   unmrkRecipientSelf = async (_postId: string): Promise<void> => {};
