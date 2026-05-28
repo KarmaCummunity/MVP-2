@@ -1,6 +1,6 @@
 # 2.14 Rides (Hitchhiking V2.0)
 
-> **Status:** ✅ Complete — V2.0 minimal product shipped on `feat/FR-RIDE-rides-v2` (2026-05-26). Requires migration `0122_ride_listings.sql` on dev DB before runtime use.
+> **Status:** 🟡 V2.0 minimal product shipped 2026-05-26 (FR-RIDE-001..010 ✅); UI temporarily hidden 2026-05-28 (D-51) while backend hardens. FR-RIDE-011 schema in place; FR-RIDE-012 application layer ⏳. Requires migrations `0122` + `0127` + `0135` + `0137` + `0138` + `0139` on dev DB before runtime use.
 
 Prefix: `FR-RIDE-*`
 
@@ -48,3 +48,22 @@ Prefix: `FR-RIDE-*`
 
 ## FR-RIDE-010 — Extension ports (no UI)
 - AC1. `IRideJoinPolicy` + `IRideMatchScorer` interfaces exist; V2.0 uses DirectChat + chronological sort only.
+
+## FR-RIDE-011 — Ride participants (request / approve / reject / cancel) 🟡
+> Backend-only as of writing (UI hidden under D-31). Adds a structured "intent of record" alongside the chat thread so rides have a real join model with seat enforcement.
+
+- AC1. `ride_participants` table with row per (ride, user, attempt). Status machine: `requested → {approved, rejected, cancelled}`; `approved → cancelled`. `rejected` / `cancelled` are terminal.
+- AC2. Unique-active invariant: at most one `requested` or `approved` row per (ride, user) at any time. Terminal rows accumulate as audit trail; a re-request requires a new row (insert-only via RPC).
+- AC3. Seat cap enforced atomically at approve time: `count(status = 'approved') < ride.seats_available` (offers); requests have `seats_available = NULL` ⇒ no cap.
+- AC4. RPC `rpc_ride_participants_request(p_ride_id, p_note)` — caller authenticated, not the ride owner, ride is `open` + `Public`. Note ≤ 500 chars optional.
+- AC5. RPC `rpc_ride_participants_decide(p_participant_id, p_status)` — caller is ride owner, target row is `requested`, p_status ∈ {`approved`, `rejected`}; on `approved` also revalidates ride still `open` and seat cap.
+- AC6. RPC `rpc_ride_participants_cancel(p_participant_id)` — caller is the participant; `rejected` rows are not transitionable; `cancelled` is idempotent.
+- AC7. RLS SELECT: row visible to its `user_id` or the ride owner. INSERT/UPDATE/DELETE revoked — all mutations through the RPCs.
+- AC8. Domain entity `RideParticipant` + value object `RideParticipantStatus`; application use cases mirror the three RPCs.
+
+## FR-RIDE-012 — Ride participants application use cases ⏳
+- AC1. `RequestRideJoinUseCase` — wraps `rpc_ride_participants_request`, maps PG errors to domain `RideParticipantError`.
+- AC2. `DecideRideJoinUseCase` — wraps `rpc_ride_participants_decide`; rejects non-owner / non-requested / non-open / `ride_full` paths via typed errors.
+- AC3. `CancelRideJoinUseCase` — wraps `rpc_ride_participants_cancel`; idempotent on already-cancelled.
+- AC4. `ListRideParticipantsUseCase(rideId)` — returns rows for the ride owner (any status); for non-owners, only their own row.
+- AC5. `ListUserRideRequestsUseCase(userId)` — returns rows the caller owns, recent first.

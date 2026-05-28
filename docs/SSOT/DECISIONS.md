@@ -976,10 +976,37 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-51 — Temporarily hide rides UI; keep backend live (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** The rides hub screen (`/(tabs)/donations/rides`) is reverted to the standard donation-category links pattern (`DonationLinksList categorySlug="transport"`) at the UI layer only; all backend code (use cases, sheets, stores, the rides repository + adapter, the `ride_listings` schema + RPCs + cron) stays in place and continues to evolve. Backend hardening + advanced feature work continues in autonomous mode (CLAUDE.md §13) under FR-RIDE-011..012 and beyond.
+
+**Rationale.** Operator feedback on V2.0 indicated the in-app rides mechanism wasn't ready for end users; the existing NGO links view is a safe stopgap that delivers user value while we keep iterating. Removing the feature outright would erase work already merged and force a rebuild when the UI comes back; freezing it would block backend hardening (cron-driven expiry, chat anchor cleanup, participant model, RPC validation). UI-only hide preserves both options.
+
+**Alternatives rejected.** Revert all rides commits (loses backend that will be reused). Ship V2.0 UI as-is (operator said no). Feature-flag the screen body (extra plumbing for what's effectively a single screen render swap).
+
+**Affected docs.** `apps/mobile/src/features/rides/screens/RidesHubScreen.tsx`; `docs/SSOT/spec/15_rides.md` header (status flipped 🟡 with hide reference); ongoing rides hardening PRs (#414, #416, #417, #419, #420, #421+).
+
+## D-52 — Rides participant model uses RPC-only writes with seat enforcement at approve time (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** The `ride_participants` model (FR-RIDE-011) revokes direct INSERT/UPDATE/DELETE from client roles and routes all mutations through three SECURITY DEFINER RPCs (`rpc_ride_participants_request`, `rpc_ride_participants_decide`, `rpc_ride_participants_cancel`). The seat cap is enforced inside `rpc_ride_participants_decide` under `SELECT FOR UPDATE` on both the ride row and the participant row, recounting approved rows inside the transaction.
+
+**Rationale.** RLS alone cannot enforce a count-based invariant (last-seat race between two simultaneous approvals); a CHECK constraint can't span rows. The RPC-only pattern is already used in this codebase for chat anchor mutations (`rpc_chat_set_anchor`, `rpc_chat_set_anchor_ride`) and report mutations — extending it to participants keeps the surface area uniform. The `FOR UPDATE` locks are cheap (point lookups on PK indexes) and guarantee linearizable approve semantics.
+
+**Alternatives rejected.** RLS + client retry on conflict — exposes the race to clients and adds latency. Trigger-side validation — same FOR UPDATE locking needed; less testable. SERIALIZABLE isolation per call — heavier than needed; the two locks are sufficient.
+
+**Affected docs.** `docs/SSOT/spec/15_rides.md` FR-RIDE-011 AC2/AC3/AC5; migration `0139_ride_participants.sql`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |
 | 3.3 | 2026-05-26 | Added `D-50` (anonymous public market research as separate spec domain `16_public_research.md`; PII-isolated contact storage; separate migration `0131`; FR-RESEARCH-001..003). |
 | 3.2 | 2026-05-26 | Added `D-49` (server-driven surveys via Studio publish, mirrors legal-documents pattern; FR-SETTINGS-015..017; migration `0130`). |
 | 3.1 | 2026-05-26 | Added `D-41` (support tickets vs moderation reports stay on separate surfaces; closes TD-94 sub-item (1) as intentional). Added `D-48` (Sentry as single observability sink for mobile + Edge Functions). |
