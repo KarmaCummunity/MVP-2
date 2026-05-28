@@ -16,22 +16,54 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminTasksList } from '../../../src/hooks/useAdminTasks';
 import { TaskRow } from '../../../src/components/admin/tasks/TaskRow';
+import {
+  TaskAssigneeFilter,
+  UNASSIGNED_TOKEN,
+  type AssigneeFilterValue,
+} from '../../../src/components/admin/tasks/TaskAssigneeFilter';
+import {
+  TaskDueRangeFilter,
+  isValidIsoDate,
+} from '../../../src/components/admin/tasks/TaskDueRangeFilter';
 import he from '../../../src/i18n/locales/he';
+
+function parseDueFrom(value: string): Date | undefined {
+  if (!isValidIsoDate(value) || value.length === 0) return undefined;
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
+function parseDueTo(value: string): Date | undefined {
+  if (!isValidIsoDate(value) || value.length === 0) return undefined;
+  // End-of-day so a "to" of 2026-06-01 includes anything dated that day.
+  return new Date(`${value}T23:59:59.999Z`);
+}
 
 export default function TasksScreen() {
   const styles = useStyles();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [statusFilter, setStatusFilter] = useState<AdminTaskStatus | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<AdminTaskCategory | null>(null);
+  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilterValue>(null);
+  const [dueFromText, setDueFromText] = useState('');
+  const [dueToText, setDueToText] = useState('');
   const [onlyMine, setOnlyMine] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
 
-  const filters = useMemo<AdminTaskListFilters>(() => ({
-    status:    statusFilter   ?? undefined,
-    category:  categoryFilter ?? undefined,
-    onlyMine,
-    overdue:   overdueOnly,
-  }), [statusFilter, categoryFilter, onlyMine, overdueOnly]);
+  const filters = useMemo<AdminTaskListFilters>(() => {
+    const baseAssignee = assigneeFilter && assigneeFilter !== UNASSIGNED_TOKEN
+      ? assigneeFilter
+      : undefined;
+    return {
+      status:         statusFilter   ?? undefined,
+      category:       categoryFilter ?? undefined,
+      assigneeId:     baseAssignee,
+      unassignedOnly: assigneeFilter === UNASSIGNED_TOKEN ? true : undefined,
+      dueFrom:        parseDueFrom(dueFromText),
+      dueTo:          parseDueTo(dueToText),
+      onlyMine,
+      overdue:        overdueOnly,
+    };
+  }, [statusFilter, categoryFilter, assigneeFilter, dueFromText, dueToText, onlyMine, overdueOnly]);
 
   const q = useAdminTasksList(filters);
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
@@ -103,6 +135,17 @@ export default function TasksScreen() {
           />
         ))}
       </ScrollView>
+
+      {can('admins.view') && (
+        <TaskAssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
+      )}
+
+      <TaskDueRangeFilter
+        fromValue={dueFromText}
+        toValue={dueToText}
+        onChange={({ from, to }) => { setDueFromText(from); setDueToText(to); }}
+        onClear={() => { setDueFromText(''); setDueToText(''); }}
+      />
 
       <FlatList
         data={[...q.tasks]}
