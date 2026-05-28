@@ -6,6 +6,7 @@ import { StyleSheet, View } from 'react-native';
 import { Slot } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@kc/ui';
+import { ResearchGuestInviteBanner } from '../../src/components/research/ResearchGuestInviteBanner';
 
 export default function ResearchLayout() {
   const { colors } = useTheme();
@@ -13,6 +14,7 @@ export default function ResearchLayout() {
   return (
     <SafeAreaView style={[styles.safe, { backgroundColor: colors.background }]}>
       <View style={styles.container}>
+        <ResearchGuestInviteBanner />
         <Slot />
       </View>
     </SafeAreaView>

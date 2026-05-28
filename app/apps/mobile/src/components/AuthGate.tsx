@@ -23,6 +23,7 @@ import { usePostDraftStore } from '../store/postDraftStore';
 import { useRedirectIntentStore } from '../store/redirectIntentStore';
 import { container } from '../lib/container';
 import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
+import { isPublicResearchPath } from '../navigation/publicResearchPaths';
 
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
   const { colors } = useTheme();
@@ -182,6 +183,11 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     const isAboutSurface =
       (segments[0] as string | undefined) === 'about' ||
       (segments[0] as string | undefined) === 'about-site';
+    // FR-RESEARCH-001 AC2 / FR-RESEARCH-004 AC7 — public survey is web-only and
+    // must stay reachable from shared links without sign-in.
+    const isResearchSurface =
+      (segments[0] as string | undefined) === 'research' ||
+      (typeof pathname === 'string' && isPublicResearchPath(pathname));
 
     if (!isAuthenticated) {
       if (
@@ -190,7 +196,8 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
         !isOAuthCallback &&
         !isEmailVerify &&
         !isAccountBlocked &&
-        !isAboutSurface
+        !isAboutSurface &&
+        !isResearchSurface
       ) {
         // FR-POST-023 AC6 — remember the deep-link target so we can restore
         // it after the user completes sign-in / onboarding.

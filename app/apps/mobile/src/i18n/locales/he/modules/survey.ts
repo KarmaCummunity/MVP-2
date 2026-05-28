@@ -27,6 +27,12 @@ export const surveyHe = {
   loadErrorTitle: 'שגיאת טעינה',
   loadErrorMessage: 'לא ניתן היה לטעון את הסקר. נסה שוב.',
 
+  thankYouModal: {
+    title: 'תודה שעניתם על הסקר',
+    message: 'התשובות נשמרו. המשוב שלכם עוזר לנו לשפר את הקהילה — אפשר לחזור ולערוך בכל עת.',
+    dismiss: 'מעולה',
+  },
+
   // Free feedback (FR-SETTINGS-017)
   feedbackRatingLow: 'לא מספיק',
   feedbackRatingHigh: 'מצוין',
@@ -52,6 +58,7 @@ export const surveyHe = {
   shareResearch: {
     rowTitle: 'שתפו את מחקר השוק עם חברים',
     rowSubtitle: 'עוזרים לנו להבין מה אנשים שלא באפליקציה צריכים — אנונימי, בלי הרשמה',
+    cardShareA11y: 'שתפו את מחקר השוק',
     shareTitle: 'מחקר שוק קארמה',
     shareMessage:
       'אנחנו בונים אפליקציה ישראלית לנתינה בחינם, בלי הבלגן של הקבוצות. ' +

@@ -23,10 +23,13 @@ export const researchHe = {
   contactWindowLabel: 'שעה שנוחה לשיחה',
   contactWindowPlaceholder: 'לדוגמה: ימים א׳–ה׳ אחרי 18:00',
 
+  // Floating nav on last question
+  navFinish: 'סיום',
+
   // Submit
   submitBtn: 'שלח תשובות',
   submitting: 'שולח...',
-  submitRequiresAllRatings: 'יש לדרג את כל השאלות לפני שליחה',
+  submitRequiresAllRatings: 'יש לדרג את כל השאלות לפני הסיום — בדקו את השאלות שסומנו',
 
   // Loading
   loading: 'טוען סקר...',
@@ -41,15 +44,45 @@ export const researchHe = {
   // Thank-you page (design spec §9)
   thanksHeading: 'תודה. ברצינות.',
   thanksLine1: 'קראנו כל מילה — וזה משנה את מה שאנחנו בונים עכשיו.',
+  thanksLine2: 'עכשיו הכי עוזר לנו שתעביר/י את הסקר לאנשים שעדיין לא שמעו על קארמה.',
   thanksEmailOptInLabel: 'רוצה לראות את האפליקציה ראשון/ה כשהיא יוצאת?',
   thanksEmailPlaceholder: 'השאר/י מייל',
   thanksVisitCta: 'בקר/י באתר קארמה',
+
+  thankYouModal: {
+    title: 'תודה שעניתם על הסקר!',
+    message:
+      'רגע — מכירים מישהו/י שזה רלוונטי להם? ' +
+      'אם מישהו/י סביבכם נותן/ת או מקבל/ת בקבוצות — שיתוף הקישור עוזר לנו לשמוע עוד קולות.',
+    dismiss: 'סגור',
+  },
+
+  guestInvite: {
+    kicker: 'בלי הרשמה — אפשר להמשיך',
+    title: 'מחקר שוק קארמה — פתוח לכולם',
+    body:
+      'אפשר למלא את הסקר גם בלי חשבון. אם תרצו לקבל התראות, לפרסם ולקבל — הצטרפו לאפליקציה כשמתאים לכם.',
+    signUpCta: 'הצטרפו לקארמה',
+    finePrint: 'הסקר נשאר אנונימי גם אחרי הרשמה.',
+  },
 
   // FR-RESEARCH-004 — share affordance copy for public surfaces (placements 1 + 2)
   share: {
     // Placement 1 — thank-you page primary CTA
     thanksTitle: 'שתפו את הסקר עם חבר/ה',
     thanksHelp: 'עזרו לקול שלכם להגיע גם לאחרים שעוד לא באפליקציה',
+    thanksBlockTitle: 'עוד מישהו/י שצריך/ה לשמוע את זה?',
+    thanksBlockBody:
+      'שלחו את הקישור לחבר/ה, לקבוצה, או למי שעדיין נותן/ת בפייסבוק וואטסאפ — כל תשובה נוספת מחזקת את מה שאנחנו בונים.',
+
+    // End-of-survey card (before submit)
+    endSurveyEyebrow: 'לפני ששולחים',
+    endSurveyTitle: 'רגע — מכירים מישהו/י שזה רלוונטי להם?',
+    endSurveyBody:
+      'אם מישהו/י סביבכם נותן/ת או מקבל/ת בקבוצות — שיתוף הקישור לוקח שנייה ועוזר לנו לשמוע עוד קולות.',
+    endSurveyCta: 'שתפו את הסקר עכשיו',
+    endSurveyMessage:
+      'מלאתי סקר קצר של קארמה על נתינה בחינם בישראל — אנונימי, בלי הרשמה. אשמח אם גם אתם תענו:',
 
     // Placement 2 — small button in survey form header
     duringSurveyLabel: 'שתפו',

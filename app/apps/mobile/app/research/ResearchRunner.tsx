@@ -1,6 +1,4 @@
-// ResearchRunner — extracted from [slug].web.tsx to stay under 300-LOC cap.
-// Renders the live question runner: map + question panel + floating nav + submit.
-// FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003.
+// ResearchRunner — public research question flow (FR-RESEARCH-001).
 import React from 'react';
 import {
   KeyboardAvoidingView,
@@ -43,10 +41,11 @@ type RunnerProps = {
   readonly contactWindowHe: string;
   readonly setContactEmail: (v: string) => void;
   readonly setContactWindowHe: (v: string) => void;
-  readonly onSubmit: () => void;
+  readonly onAttemptFinish: () => void;
   readonly submitting: boolean;
   readonly submitError: unknown;
   readonly onRetry: () => void;
+  readonly missingRatingsHint: boolean;
 };
 
 export function ResearchRunner({
@@ -59,10 +58,11 @@ export function ResearchRunner({
   contactWindowHe,
   setContactEmail,
   setContactWindowHe,
-  onSubmit,
+  onAttemptFinish,
   submitting,
   submitError,
   onRetry,
+  missingRatingsHint,
 }: RunnerProps) {
   const styles = useRunnerStyles();
   const { t } = useTranslation();
@@ -70,10 +70,18 @@ export function ResearchRunner({
   const total = questions.length;
   const question = questions[activeIndex];
   const answer = answers[question.id] ?? { rating: null, answerText: null };
-  const allRated = questions.every((q) => (answers[q.id]?.rating ?? null) !== null);
+  const isLast = activeIndex === total - 1;
+  const currentRated = answer.rating !== null;
 
   const goPrev = () => setActiveIndex((i) => Math.max(0, i - 1));
-  const goNext = () => setActiveIndex((i) => Math.min(total - 1, i + 1));
+
+  function handleNext() {
+    if (isLast) {
+      onAttemptFinish();
+      return;
+    }
+    setActiveIndex((i) => Math.min(total - 1, i + 1));
+  }
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior="padding">
@@ -92,11 +100,18 @@ export function ResearchRunner({
         variant="chips"
       />
 
+      {missingRatingsHint ? (
+        <Text style={styles.missingHint}>{t('research.submitRequiresAllRatings')}</Text>
+      ) : null}
+
       <ScrollView
         style={styles.flex}
-        contentContainerStyle={[styles.scrollContent, { paddingBottom: SURVEY_FLOAT_NAV_CLEARANCE + 80 }]}
+        contentContainerStyle={[
+          styles.scrollContent,
+          { paddingBottom: SURVEY_FLOAT_NAV_CLEARANCE + spacing.xl },
+        ]}
         keyboardShouldPersistTaps="handled"
-        showsVerticalScrollIndicator={false}
+        showsVerticalScrollIndicator
       >
         <ResearchQuestionPanel
           question={question}
@@ -120,25 +135,17 @@ export function ResearchRunner({
           </View>
         ) : null}
 
-        {allRated ? (
-          <Pressable
-            style={[styles.submitBtn, submitting && styles.submitBtnDisabled]}
-            onPress={onSubmit}
-            disabled={submitting}
-            accessibilityRole="button"
-          >
-            <Text style={styles.submitBtnText}>
-              {submitting ? t('research.submitting') : t('research.submitBtn')}
-            </Text>
-          </Pressable>
+        {submitting ? (
+          <Text style={styles.submittingHint}>{t('research.submitting')}</Text>
         ) : null}
       </ScrollView>
 
       <SurveyFloatingNav
         onPrev={goPrev}
-        onNext={goNext}
-        prevDisabled={activeIndex === 0}
-        nextDisabled={activeIndex >= total - 1}
+        onNext={handleNext}
+        prevDisabled={activeIndex === 0 || submitting}
+        nextDisabled={isLast ? !currentRated || submitting : submitting}
+        nextLabel={isLast ? t('research.navFinish') : undefined}
         bottom={spacing.xl}
       />
     </KeyboardAvoidingView>
@@ -146,7 +153,7 @@ export function ResearchRunner({
 }
 
 const useRunnerStyles = makeUseStyles(({ colors }) => ({
-  flex: { flex: 1 },
+  flex: { flex: 1, minHeight: 0 },
   progressRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -163,6 +170,14 @@ const useRunnerStyles = makeUseStyles(({ colors }) => ({
   progressHint: {
     ...typography.caption,
     color: colors.textSecondary,
+    ...webTextRtl,
+  },
+  missingHint: {
+    ...typography.bodySmall,
+    color: colors.error,
+    textAlign: rtlTextAlignStart,
+    paddingHorizontal: spacing.base,
+    paddingBottom: spacing.xs,
     ...webTextRtl,
   },
   scrollContent: {
@@ -198,18 +213,10 @@ const useRunnerStyles = makeUseStyles(({ colors }) => ({
     color: colors.textPrimary,
     ...webTextRtl,
   },
-  submitBtn: {
-    backgroundColor: colors.primary,
-    borderRadius: 12,
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.xl,
-    alignItems: 'center',
-  },
-  submitBtnDisabled: { opacity: 0.6 },
-  submitBtnText: {
-    ...typography.button,
-    color: colors.textInverse,
-    fontSize: 17,
+  submittingHint: {
+    ...typography.bodySmall,
+    color: colors.textSecondary,
+    textAlign: 'center',
     ...webTextRtl,
   },
 }));

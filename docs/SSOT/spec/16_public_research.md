@@ -17,7 +17,7 @@ A public, anonymous web form at `/research/[slug]?src=...`, served from the Expo
 
 **Acceptance Criteria.**
 - AC1. Web-only route `/research/[slug]` rendered via Expo Router `.web.tsx` platform extension. The route file does not exist in iOS/Android bundles (bundle-inspection test).
-- AC2. No auth shell, no tab bar, no app navigation. Standalone landing.
+- AC2. No auth shell, no tab bar, no app navigation. Standalone landing. `AuthGate` treats `/research/*` as a public surface (same class as `/about`) so shared links never redirect to `/(auth)`.
 - AC3. Reuses Survey A's question runner components; supports 11 questions for slug `alt-platforms-research`.
 - AC4. Optional `?src=` query param captured and persisted on submission (regex `^[a-z0-9_-]{1,32}$`; defaults to `direct`).
 - AC5. On submit, navigates to `/research/thanks` which offers an optional email opt-in for launch updates.
@@ -62,6 +62,7 @@ A public, anonymous web form at `/research/[slug]?src=...`, served from the Expo
 - AC5. Shared URL is `${webBaseUrl}/research/alt-platforms-research?src=<placement-src>` where `<placement-src>` ∈ {`share-thanks`, `share-during-survey`, `in-app-share-settings`}. All three pass the CHECK regex `^[a-z0-9_-]{1,32}$`.
 - AC6. The URL appears in the share message body exactly once on every platform (mirrors the FR-POST-023 fix).
 - AC7. Recipients can open the link and submit answers without registration, login, or app install (already guaranteed by FR-RESEARCH-001 AC1-AC2; this AC asserts the invariant survives the new entry paths).
+- AC10. Unauthenticated visitors see a guest-invite banner on `/research/*` (sign-up CTA, survey remains fully usable). After all questions are rated, an end-of-survey share card appears before submit. Both surveys show a thank-you modal on completion (public: on `/research/thanks`; in-app: on `/settings/survey/[slug]`).
 - AC8. Status feedback: `shared` → "הקישור שותף" (2.2s success), `copied` → "הקישור הועתק" (2.2s success), `failed` → "לא הצלחנו לשתף, נסה/י שוב" (2.2s error), `dismissed` → silent. On web placements 1 and 2 where no toast host is mounted, an inline status line below the button (auto-clearing after 2.2s) is acceptable.
 - AC9. `track('research_share_initiated', { src, outcome })` fires on every share attempt. Production-noop today per TD-161; will produce data once analytics ingest lands.
 

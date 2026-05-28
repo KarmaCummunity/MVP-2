@@ -21,6 +21,12 @@ import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { ShareResearchRow } from '../../src/components/survey/ShareResearchRow';
 import { container } from '../../src/lib/container';
+import {
+  RESEARCH_SHARE_SLUG,
+  RESEARCH_SHARE_SRC_SETTINGS,
+} from '../../src/lib/shareResearchSurvey';
+import { triggerResearchShare } from '../../src/lib/triggerResearchShare';
+import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 
 type ChipColors = { bg: string; text: string };
 
@@ -36,6 +42,7 @@ function getChipColors(
 type SurveyRowProps = {
   readonly item: SurveyListItem;
   readonly onPress: () => void;
+  readonly onShare?: () => void;
 };
 
 function resolveChipLabel(
@@ -47,7 +54,7 @@ function resolveChipLabel(
   return t('survey.statusNotStarted');
 }
 
-function SurveyRow({ item, onPress }: SurveyRowProps) {
+function SurveyRow({ item, onPress, onShare }: SurveyRowProps) {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useSurveysHubStyles();
@@ -55,25 +62,40 @@ function SurveyRow({ item, onPress }: SurveyRowProps) {
   const chipLabel = resolveChipLabel(item.completionStatus, t);
 
   return (
-    <Pressable
-      style={styles.row}
-      onPress={onPress}
-      accessibilityRole="button"
-      accessibilityLabel={item.titleHe}
-    >
-      <View style={styles.rowContent}>
-        <Text style={styles.rowTitle}>{item.titleHe}</Text>
-        {item.descriptionHe ? (
-          <Text style={styles.rowDesc} numberOfLines={2}>
-            {item.descriptionHe}
-          </Text>
-        ) : null}
-      </View>
-      <View style={[styles.chip, { backgroundColor: chip.bg }]}>
-        <Text style={[styles.chipText, { color: chip.text }]}>{chipLabel}</Text>
-      </View>
-      <Ionicons name="chevron-back" size={18} color={colors.textDisabled} />
-    </Pressable>
+    <View style={styles.row}>
+      <Pressable
+        style={styles.rowMain}
+        onPress={onPress}
+        accessibilityRole="button"
+        accessibilityLabel={item.titleHe}
+      >
+        <View style={styles.rowContent}>
+          <Text style={styles.rowTitle}>{item.titleHe}</Text>
+          {item.descriptionHe ? (
+            <Text style={styles.rowDesc} numberOfLines={2}>
+              {item.descriptionHe}
+            </Text>
+          ) : null}
+        </View>
+        <View style={[styles.chip, { backgroundColor: chip.bg }]}>
+          <Text style={[styles.chipText, { color: chip.text }]}>{chipLabel}</Text>
+        </View>
+      </Pressable>
+      {onShare ? (
+        <Pressable
+          style={({ pressed }) => [styles.shareBtn, pressed && styles.shareBtnPressed]}
+          onPress={onShare}
+          accessibilityRole="button"
+          accessibilityLabel={t('survey.shareResearch.cardShareA11y')}
+          hitSlop={8}
+        >
+          <Ionicons name="share-social-outline" size={22} color={colors.primary} />
+        </Pressable>
+      ) : null}
+      <Pressable onPress={onPress} accessibilityRole="button" hitSlop={8}>
+        <Ionicons name="chevron-back" size={18} color={colors.textDisabled} />
+      </Pressable>
+    </View>
   );
 }
 
@@ -95,6 +117,21 @@ export default function SurveysHubScreen() {
   }, [surveysQuery.isError]);
 
   const surveys = surveysQuery.data ?? [];
+  const showToast = useFeedSessionStore((s) => s.showEphemeralToast);
+
+  function shareMarketResearch() {
+    void triggerResearchShare(
+      RESEARCH_SHARE_SRC_SETTINGS,
+      {
+        title: t('survey.shareResearch.shareTitle'),
+        message: t('survey.shareResearch.shareMessage'),
+        toastShared: t('survey.shareResearch.toastShared'),
+        toastCopied: t('survey.shareResearch.toastCopied'),
+        toastFailed: t('survey.shareResearch.toastFailed'),
+      },
+      showToast,
+    );
+  }
 
   return (
     <SafeAreaView style={styles.container}>
@@ -123,6 +160,9 @@ export default function SurveysHubScreen() {
                       pathname: '/settings/survey/[slug]',
                       params: { slug: item.slug },
                     })
+                  }
+                  onShare={
+                    item.slug === RESEARCH_SHARE_SLUG ? shareMarketResearch : undefined
                   }
                 />
               ))}
@@ -172,13 +212,26 @@ const useSurveysHubStyles = makeUseStyles(({ colors }) => ({
     alignItems: 'center',
     gap: spacing.sm,
     backgroundColor: colors.surface,
-    padding: spacing.md,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.md,
     borderRadius: radius.md,
     borderWidth: 1,
     borderColor: colors.border,
     ...webViewRtl,
   },
+  rowMain: {
+    flex: 1,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+    ...webViewRtl,
+  },
   rowContent: { flex: 1 },
+  shareBtn: {
+    padding: spacing.xs,
+    borderRadius: radius.sm,
+  },
+  shareBtnPressed: { opacity: 0.6 },
   rowTitle: {
     ...typography.body,
     fontWeight: '600',

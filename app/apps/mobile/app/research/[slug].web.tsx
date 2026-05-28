@@ -1,14 +1,6 @@
 // Web-only public research form — FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003.
-// FR-RESEARCH-004 placement 2 lives inside SurveyIntroBlock (extracted file).
-// .web.tsx extension: file is excluded from iOS/Android bundles entirely.
-// Heavy sub-components extracted: ResearchRunner.tsx, ResearchQuestionPanel.tsx, SurveyIntroBlock.tsx.
 import React, { useCallback, useEffect, useState } from 'react';
-import {
-  ActivityIndicator,
-  ScrollView,
-  Text,
-  View,
-} from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -18,8 +10,11 @@ import { webTextRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { ResearchRunner, errorKey, type AnswerEntry } from './ResearchRunner';
 import { SurveyIntroBlock } from './SurveyIntroBlock';
-
-// ─── src persistence helpers ─────────────────────────────────────────────────
+import { SurveyThankYouModal } from '../../src/components/survey/SurveyThankYouModal';
+import {
+  RESEARCH_SHARE_SRC_DURING_SURVEY,
+} from '../../src/lib/shareResearchSurvey';
+import { triggerResearchShare } from '../../src/lib/triggerResearchShare';
 
 function persistSrc(slug: string, src: string): void {
   if (typeof window !== 'undefined' && window.localStorage) {
@@ -33,8 +28,6 @@ function readPersistedSrc(slug: string): string | null {
   }
   return null;
 }
-
-// ─── screen ───────────────────────────────────────────────────────────────────
 
 export default function PublicResearchScreen() {
   const { slug, src } = useLocalSearchParams<{ slug: string; src?: string }>();
@@ -50,6 +43,8 @@ export default function PublicResearchScreen() {
   const [honeypot, setHoneypot] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [submitError, setSubmitError] = useState<unknown>(null);
+  const [thankYouOpen, setThankYouOpen] = useState(false);
+  const [missingRatingsHint, setMissingRatingsHint] = useState(false);
 
   const effectiveSrc = src ?? readPersistedSrc(slug) ?? 'direct';
 
@@ -68,12 +63,23 @@ export default function PublicResearchScreen() {
   const onAnswerChange = useCallback(
     (qid: string, rating: number | null, text: string | null) => {
       setAnswers((prev) => ({ ...prev, [qid]: { rating, answerText: text } }));
+      setMissingRatingsHint(false);
     },
     [],
   );
 
-  async function handleSubmit() {
-    if (!bundle) return;
+  const handleShare = useCallback(async () => {
+    await triggerResearchShare(RESEARCH_SHARE_SRC_DURING_SURVEY, {
+      title: t('research.share.shareTitle'),
+      message: t('research.share.endSurveyMessage'),
+      toastShared: t('research.share.statusShared'),
+      toastCopied: t('research.share.statusCopied'),
+      toastFailed: t('research.share.statusFailed'),
+    });
+  }, [t]);
+
+  async function submitAnswers(): Promise<boolean> {
+    if (!bundle) return false;
     setSubmitting(true);
     setSubmitError(null);
 
@@ -93,12 +99,32 @@ export default function PublicResearchScreen() {
         contactWindowHe: contactWindowHe.trim() || null,
         honeypot: honeypot || null,
       });
-      router.replace('/research/thanks');
+      return true;
     } catch (err) {
       setSubmitError(err);
+      return false;
     } finally {
       setSubmitting(false);
     }
+  }
+
+  async function handleAttemptFinish() {
+    if (!bundle) return;
+    const firstUnrated = bundle.questions.findIndex(
+      (q) => (answers[q.id]?.rating ?? null) === null,
+    );
+    if (firstUnrated >= 0) {
+      setActiveIndex(firstUnrated);
+      setMissingRatingsHint(true);
+      return;
+    }
+    const ok = await submitAnswers();
+    if (ok) setThankYouOpen(true);
+  }
+
+  function handleThankYouDismiss() {
+    setThankYouOpen(false);
+    router.replace('/research/thanks');
   }
 
   function renderBody() {
@@ -128,17 +154,17 @@ export default function PublicResearchScreen() {
         contactWindowHe={contactWindowHe}
         setContactEmail={setContactEmail}
         setContactWindowHe={setContactWindowHe}
-        onSubmit={handleSubmit}
+        onAttemptFinish={handleAttemptFinish}
         submitting={submitting}
         submitError={submitError}
         onRetry={() => setSubmitError(null)}
+        missingRatingsHint={missingRatingsHint}
       />
     );
   }
 
   return (
     <View style={[styles.screen, { backgroundColor: colors.background }]}>
-      {/* Honeypot — hidden from humans, passed to RPC (FR-RESEARCH-002 AC1) */}
       <input
         name="hp_field"
         style={{ position: 'absolute', left: -9999, height: 0, width: 0, opacity: 0 }}
@@ -148,24 +174,22 @@ export default function PublicResearchScreen() {
         onChange={(e) => setHoneypot(e.target.value)}
       />
 
-      <ScrollView
-        contentContainerStyle={styles.pageContent}
-        showsVerticalScrollIndicator={false}
-        style={styles.flex}
-      >
-        <SurveyIntroBlock />
-        <View style={styles.flex}>{renderBody()}</View>
-      </ScrollView>
+      <SurveyIntroBlock />
+      <View style={styles.runnerArea}>{renderBody()}</View>
+
+      <SurveyThankYouModal
+        visible={thankYouOpen}
+        variant="publicResearch"
+        onDismiss={handleThankYouDismiss}
+        onShare={handleShare}
+      />
     </View>
   );
 }
 
-// ─── styles ───────────────────────────────────────────────────────────────────
-
 const useScreenStyles = makeUseStyles(({ colors }) => ({
   screen: { flex: 1 },
-  flex: { flex: 1 },
-  pageContent: { paddingHorizontal: spacing.base, paddingTop: spacing.base, gap: spacing.base },
+  runnerArea: { flex: 1, minHeight: 0 },
   centered: {
     flex: 1,
     alignItems: 'center',

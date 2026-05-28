@@ -1,22 +1,7 @@
 import { initSentry } from '../src/lib/observability/sentry';
+initSentry();
 import { startMark, finishMark } from '../src/lib/observability/perfMarks';
-
-// Cold-start mark always fires (cheap — local noopSpan when no DSN; real span
-// once the SDK has loaded). Sentry SDK init is deferred to a post-first-paint
-// callback so the ~250 KB module never enters the first-paint critical path.
 startMark('app.cold_start');
-deferSentryInit();
-function deferSentryInit() {
-  const run = () => { void initSentry(); };
-  if (typeof globalThis !== 'undefined') {
-    const w = globalThis as { requestIdleCallback?: (cb: () => void) => void };
-    if (typeof w.requestIdleCallback === 'function') {
-      w.requestIdleCallback(run);
-      return;
-    }
-  }
-  setTimeout(run, 0);
-}
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
@@ -227,6 +212,8 @@ function ThemedRootShell() {
               <Stack.Screen name="settings" />
               <Stack.Screen name="about" options={{ headerShown: false }} />
               <Stack.Screen name="about-site" options={{ headerShown: false }} />
+              {/* FR-RESEARCH-001 — public web survey; no auth shell */}
+              <Stack.Screen name="research" options={{ headerShown: false }} />
               <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
               <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
               {/* user/[handle]/* owns its own header via the nested _layout */}

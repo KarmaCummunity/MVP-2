@@ -1,6 +1,6 @@
 // Settings → survey runner — FR-SETTINGS-016.
 // Loads a SurveyBundle, lets the user answer each question, and debounce-saves.
-import React, { useEffect, useRef } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   KeyboardAvoidingView,
@@ -22,6 +22,7 @@ import {
   SurveyFloatingNav,
 } from '../../../src/components/survey/SurveyFloatingNav';
 import { NotifyModal } from '../../../src/components/NotifyModal';
+import { SurveyThankYouModal } from '../../../src/components/survey/SurveyThankYouModal';
 import {
   shellTabBarHeightPx,
   useShellTabBarVisibility,
@@ -161,6 +162,7 @@ export default function SurveyRunnerScreen() {
 
   // Analytics: survey_completed when all questions have a rating.
   const completedTrackedRef = useRef(false);
+  const [thankYouOpen, setThankYouOpen] = useState(false);
   useEffect(() => {
     if (!bundle || completedTrackedRef.current) return;
     const total = bundle.questions.length;
@@ -169,6 +171,7 @@ export default function SurveyRunnerScreen() {
     if (answeredCount >= total) {
       completedTrackedRef.current = true;
       track('survey_completed', { slug, version: bundle.version });
+      setThankYouOpen(true);
     }
   }, [answers, bundle, slug]);
 
@@ -204,6 +207,11 @@ export default function SurveyRunnerScreen() {
         title={t('survey.saveErrorTitle')}
         message={t('survey.saveErrorMessage')}
         onDismiss={() => setSaveErrorOpen(false)}
+      />
+      <SurveyThankYouModal
+        visible={thankYouOpen}
+        variant="inApp"
+        onDismiss={() => setThankYouOpen(false)}
       />
     </SafeAreaView>
   );

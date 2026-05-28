@@ -13,6 +13,8 @@ type SurveyFloatingNavProps = {
   readonly prevDisabled: boolean;
   readonly nextDisabled: boolean;
   readonly bottom: number;
+  /** Overrides default "הבא" label (e.g. "סיום" on the last question). */
+  readonly nextLabel?: string;
 };
 
 const DOCK_HORIZONTAL_INSETS: Pick<ViewStyle, 'left' | 'right'> = {
@@ -26,6 +28,7 @@ export function SurveyFloatingNav({
   prevDisabled,
   nextDisabled,
   bottom,
+  nextLabel,
 }: SurveyFloatingNavProps) {
   const styles = useNavStyles();
   const { colors } = useTheme();
@@ -73,7 +76,7 @@ export function SurveyFloatingNav({
         accessibilityState={{ disabled: nextDisabled }}
       >
         <Text style={[styles.pillTextPrimary, nextDisabled && styles.pillTextDisabledOnPrimary]}>
-          {t('surveyDemo.navNext')}
+          {nextLabel ?? t('surveyDemo.navNext')}
         </Text>
         <Ionicons
           name="chevron-back"
