@@ -8,6 +8,7 @@ import {
   SupabaseRideListingRepository,
   SupabaseRideParticipantRepository,
   SupabaseRideTemplateRepository,
+  SupabaseRideEmergencyRepository,
   SupabaseRidesRealtime,
   SupabaseCityRepository,
   type SupabaseAuthStorage,
@@ -22,6 +23,9 @@ import {
   ListMyRidesUseCase,
   StartRideUseCase,
   ArriveRideUseCase,
+  TriggerRideEmergencyUseCase,
+  ListRideEmergencyEventsUseCase,
+  type IRideEmergencyRepository,
   RequestRideJoinUseCase,
   DecideRideJoinUseCase,
   CancelRideJoinUseCase,
@@ -54,6 +58,9 @@ let _updateVisibility: UpdateRideVisibilityUseCase | null = null;
 let _listMyRides: ListMyRidesUseCase | null = null;
 let _startRide: StartRideUseCase | null = null;
 let _arriveRide: ArriveRideUseCase | null = null;
+let _emergency: IRideEmergencyRepository | null = null;
+let _triggerEmergency: TriggerRideEmergencyUseCase | null = null;
+let _listEmergencies: ListRideEmergencyEventsUseCase | null = null;
 let _requestJoin: RequestRideJoinUseCase | null = null;
 let _decideJoin: DecideRideJoinUseCase | null = null;
 let _cancelJoin: CancelRideJoinUseCase | null = null;
@@ -146,6 +153,21 @@ export function getStartRideUseCase(): StartRideUseCase {
 export function getArriveRideUseCase(): ArriveRideUseCase {
   if (!_arriveRide) _arriveRide = new ArriveRideUseCase(getRepo());
   return _arriveRide;
+}
+
+function getEmergencyRepo(): IRideEmergencyRepository {
+  if (!_emergency) _emergency = new SupabaseRideEmergencyRepository(getClient());
+  return _emergency;
+}
+
+export function getTriggerRideEmergencyUseCase(): TriggerRideEmergencyUseCase {
+  if (!_triggerEmergency) _triggerEmergency = new TriggerRideEmergencyUseCase(getEmergencyRepo());
+  return _triggerEmergency;
+}
+
+export function getListRideEmergencyEventsUseCase(): ListRideEmergencyEventsUseCase {
+  if (!_listEmergencies) _listEmergencies = new ListRideEmergencyEventsUseCase(getEmergencyRepo());
+  return _listEmergencies;
 }
 
 export function getRequestRideJoinUseCase(): RequestRideJoinUseCase {

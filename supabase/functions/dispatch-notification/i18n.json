@@ -40,6 +40,8 @@
   "notifications.rideArrivedBody": "{{rideTitle}} — נא לדרג בקרוב",
   "notifications.rideBreakdownTitle": "תקלה ברכב",
   "notifications.rideBreakdownBody": "הנסיעה הסתיימה בעקבות תקלה: {{rideTitle}}",
+  "notifications.rideEmergencyTitle": "🚨 קריאת חירום בנסיעה",
+  "notifications.rideEmergencyBody": "{{rideTitle}} — נדרשת בדיקה",
   "notifications.taskAssignedTitle": "משימת ניהול חדשה הוקצתה לך",
   "notifications.taskAssignedBody": "{{title}}"
 }

@@ -65,4 +65,7 @@ export const notificationsHe = {
   // FR-RIDE-045 AC4 — breakdown early-arrive variant.
   rideBreakdownTitle: 'תקלה ברכב',
   rideBreakdownBody: 'הנסיעה הסתיימה בעקבות תקלה: {{rideTitle}}',
+  // FR-RIDE-035 — emergency button.
+  rideEmergencyTitle: '🚨 קריאת חירום בנסיעה',
+  rideEmergencyBody: '{{rideTitle}} — נדרשת בדיקה',
 } as const;

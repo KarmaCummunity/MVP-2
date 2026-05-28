@@ -1190,6 +1190,64 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_emergency_events: {
+        Row: {
+          event_id: string
+          ride_id: string
+          triggered_by: string
+          triggered_at: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        Insert: {
+          event_id?: string
+          ride_id: string
+          triggered_by: string
+          triggered_at?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Update: {
+          event_id?: string
+          ride_id?: string
+          triggered_by?: string
+          triggered_at?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_emergency_events_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       ride_listings: {
         Row: {
           arrive_reason: string | null
@@ -2848,6 +2906,31 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_emergency_trigger: {
+        Args: {
+          p_ride_id: string
+          p_lat?: number | null
+          p_lng?: number | null
+          p_note?: string | null
+        }
+        Returns: {
+          event_id: string
+          ride_id: string
+          triggered_by: string
+          triggered_at: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_emergency_events"
           isOneToOne: true
           isSetofReturn: false
         }

@@ -53,9 +53,35 @@ export const rides = {
   },
   status: {
     open: 'פתוחה',
+    in_transit: 'בנסיעה',
+    completed_pending_rating: 'הסתיימה — לדירוג',
     closed: 'סגורה',
     cancelled: 'בוטלה',
     expired: 'פגה',
+  },
+  // FR-RIDE-034 — active ride screen
+  active: {
+    title: 'נסיעה פעילה',
+    startedAt: 'יצא ב',
+    arrivedAt: 'הגיע ב',
+    startCta: '🚗 התחל נסיעה',
+    arriveCta: '🏁 סיימתי — הגעתי ליעד',
+    breakdownCta: 'תקלה ברכב — עצירה מוקדמת',
+    openWaze: 'פתח בווייז ↗',
+    confirmTitle: 'אישור',
+    confirmArrive: 'לסיים את הנסיעה? לאחר מכן ייפתח חלון דירוג של 7 ימים.',
+    confirmBreakdown: 'לסיים את הנסיעה בעקבות תקלה? כל הנוסעים יקבלו התראה.',
+    confirmYes: 'כן, אישור',
+    emergencyCta: '🚨 חירום',
+    emergencyCtaA11y: 'הפעל קריאת חירום',
+    emergencyConfirmTitle: 'הפעלת חירום',
+    emergencyConfirmMessage:
+      'המערכת תשלח התראה לתמיכה ולשאר הנוסעים בנסיעה. להפעיל?',
+    emergencyConfirmYes: 'כן, להפעיל חירום',
+    emergencyActive: '🚨 קריאת חירום פעילה — תמיכה בדרך',
+    errorStart: 'לא הצלחנו להתחיל את הנסיעה',
+    errorArrive: 'לא הצלחנו לסיים את הנסיעה',
+    errorEmergency: 'לא הצלחנו להפעיל קריאת חירום',
   },
   // FR-RIDE-025 — passenger requests
   requests: {

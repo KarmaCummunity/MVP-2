@@ -21,7 +21,9 @@ export type NotificationKind =
   // FR-RIDE-031..033 + FR-RIDE-045 AC4 — active ride transitions.
   | 'ride_started'
   | 'ride_arrived'
-  | 'ride_breakdown';
+  | 'ride_breakdown'
+  // FR-RIDE-035 — emergency button.
+  | 'ride_emergency';
 
 /** Payload attached to every Expo push under `data`. The client reads this on tap. */
 export interface PushData {

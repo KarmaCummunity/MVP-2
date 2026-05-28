@@ -29,6 +29,7 @@ export { SupabaseRideListingRepository } from './rides/SupabaseRideListingReposi
 export { SupabaseRideParticipantRepository } from './rides/SupabaseRideParticipantRepository';
 export { SupabaseRideTemplateRepository } from './rides/SupabaseRideTemplateRepository';
 export { SupabaseRideStopsRepository } from './rides/SupabaseRideStopsRepository';
+export { SupabaseRideEmergencyRepository } from './rides/SupabaseRideEmergencyRepository';
 export { SupabaseRidesRealtime } from './rides/SupabaseRidesRealtime';
 export { SupabaseSurveyRepository } from './survey/SupabaseSurveyRepository';
 export { SupabasePublicResearchRepository } from './research/SupabasePublicResearchRepository';

@@ -211,6 +211,12 @@ export type { SetRideStopsUseCaseInput } from './rides/SetRideStopsUseCase';
 export { StartRideUseCase } from './rides/StartRideUseCase';
 export { ArriveRideUseCase } from './rides/ArriveRideUseCase';
 export type { ArriveRideInput } from './rides/ArriveRideUseCase';
+export type {
+  IRideEmergencyRepository,
+  TriggerRideEmergencyInput,
+} from './ports/IRideEmergencyRepository';
+export { TriggerRideEmergencyUseCase } from './rides/TriggerRideEmergencyUseCase';
+export { ListRideEmergencyEventsUseCase } from './rides/ListRideEmergencyEventsUseCase';
 
 // Ride templates (FR-RIDE-021 / FR-RIDE-022)
 export type {

@@ -93,6 +93,7 @@ describe('resolvePushRoute', () => {
       'ride_started',
       'ride_arrived',
       'ride_breakdown',
+      'ride_emergency',
     ] as const;
 
     for (const kind of RIDE_KINDS) {

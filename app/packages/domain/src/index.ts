@@ -30,3 +30,4 @@ export * from './rides/RideParticipantStatus';
 export * from './rides/RideParticipantError';
 export * from './rides/RideTemplate';
 export * from './rides/validateRideTemplateDraft';
+export * from './rides/RideEmergencyEvent';
