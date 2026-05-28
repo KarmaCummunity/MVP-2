@@ -21,7 +21,8 @@
 // edge (right in RTL) on both native and web.
 
 import React from 'react';
-import { Linking, Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { Text, View, type TextStyle, type ViewStyle } from 'react-native';
+import { openExternalUrl } from '../../utils/openExternalUrl';
 import type { ASTNode, RenderRules } from 'react-native-markdown-display';
 import type { ColorPalette } from '@kc/ui';
 import { typography, spacing } from '@kc/ui';
@@ -153,16 +154,23 @@ export function makeLegalMarkdownRules(colors: ColorPalette): RenderRules {
       </View>
     ),
 
-    // Link rule has a slightly different signature in the library
-    // (it receives `onLinkPress` as a 5th arg). We open URLs directly via
-    // `Linking.openURL` so the rule stays self-contained.
     link: (node: any, children: any) => {
       const href = (node.attributes?.href as string | undefined) ?? '';
       return (
         <Text
           key={node.key}
           accessibilityRole="link"
-          onPress={href ? () => void Linking.openURL(href) : undefined}
+          onPress={
+            href
+              ? () => {
+                  try {
+                    openExternalUrl(href);
+                  } catch {
+                    /* ignore unsafe schemes */
+                  }
+                }
+              : undefined
+          }
           style={{
             color: colors.primary,
             textDecorationLine: 'underline',

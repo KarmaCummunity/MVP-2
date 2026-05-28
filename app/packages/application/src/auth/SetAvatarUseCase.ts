@@ -5,8 +5,10 @@
  *  Reused by FR-PROFILE-007 Edit Profile flow when it ships. */
 import type { IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
+import { assertSessionUser } from './assertSessionUser';
 
 export interface SetAvatarInput {
+  readonly sessionUserId: string;
   readonly userId: string;
   readonly avatarUrl: string | null;
 }
@@ -18,6 +20,7 @@ export class SetAvatarUseCase {
   ) {}
 
   async execute(input: SetAvatarInput): Promise<void> {
+    assertSessionUser(input.sessionUserId, input.userId);
     if (!input.userId.trim()) {
       throw new Error('invalid_user_id');
     }
