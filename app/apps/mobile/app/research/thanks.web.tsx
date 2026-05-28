@@ -41,9 +41,9 @@ export default function ResearchThanksScreen() {
   // FR-RESEARCH-004 placement 1 — primary share CTA
   const handleShare = useCallback(async () => {
     const origin =
-      typeof globalThis.window !== 'undefined' && globalThis.window.location
-        ? globalThis.window.location.origin
-        : (process.env.EXPO_PUBLIC_WEB_BASE_URL as string | undefined) ?? '';
+      globalThis.window?.location?.origin
+      ?? (process.env.EXPO_PUBLIC_WEB_BASE_URL as string | undefined)
+      ?? '';
 
     const outcome = await shareResearchSurvey({
       webBaseUrl: origin,
