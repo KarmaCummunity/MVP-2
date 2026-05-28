@@ -2699,14 +2699,6 @@ export type Database = {
         Returns: undefined
       }
       rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
-      upsert_post_actor_identity: {
-        Args: {
-          p_post_id: string
-          p_surface_visibility: string
-          p_hide_from_counterparty: boolean
-        }
-        Returns: undefined
-      }
       rpc_ride_participants_cancel: {
         Args: { p_participant_id: string }
         Returns: {
@@ -2845,6 +2837,14 @@ export type Database = {
         Returns: string
       }
       suspension_expiry_lift: { Args: never; Returns: number }
+      upsert_post_actor_identity: {
+        Args: {
+          p_hide_from_counterparty: boolean
+          p_post_id: string
+          p_surface_visibility: string
+        }
+        Returns: undefined
+      }
       upsert_survey_answers: {
         Args: { p_answers: Json; p_slug: string }
         Returns: undefined
