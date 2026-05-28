@@ -12,8 +12,8 @@ import { AboutVisionSection } from './AboutVisionSection';
 import { AboutScopedSection } from './AboutScopedSection';
 import { AboutMissionTeamSection } from './AboutMissionTeamSection';
 import { AboutGovernanceSection } from './AboutGovernanceSection';
-import { AboutMoneySection } from './AboutMoneySection';
 import { AboutLogoEvolutionSection } from './AboutLogoEvolutionSection';
+import { AboutAudienceSection } from './AboutAudienceSection';
 import { DonationSupportCard } from '../../components/DonationSupportCard';
 
 function SectionCard({
@@ -158,10 +158,7 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           distance={12}
           scaleEntrance={0.985}
         >
-          <SectionCard>
-            <Text style={styles.h}>{t('aboutContent.audienceTitle')}</Text>
-            <Text style={styles.p}>{t('aboutContent.audienceText')}</Text>
-          </SectionCard>
+          <AboutAudienceSection />
         </AnimatedEntry>
       </View>
       <View onLayout={trackMissionTeam(onSectionY)} collapsable={false}>
@@ -200,18 +197,6 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
         >
           <SectionCard>
             <AboutGovernanceSection />
-          </SectionCard>
-        </AnimatedEntry>
-      </View>
-      <View onLayout={track('money', onSectionY)} collapsable={false}>
-        <AnimatedEntry
-          delay={next()}
-          duration={MOTION.duration.slow}
-          distance={12}
-          scaleEntrance={0.985}
-        >
-          <SectionCard>
-            <AboutMoneySection />
           </SectionCard>
         </AnimatedEntry>
       </View>

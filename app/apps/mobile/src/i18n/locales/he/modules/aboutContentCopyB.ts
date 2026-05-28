@@ -20,12 +20,22 @@ export const aboutContentCopyB = {
     '4. קשר ישיר — צ׳אט ותיאום.\n' +
     '5. מסירה וסגירה — קשר אנושי + חיזוק הקהילה.',
 
-  // Audience
+  // Audience — emphasized block (AboutAudienceSection)
   audienceTitle: 'למי זה מתאים',
-  audienceText:
-    'לכל מי שרוצה לתת או לקבל — בלי הבדלים ובלי שיפוט.\n\n' +
-    'משפחות שמצמצמות חפצים, סטודנטים שעוברים דירה, עולים שמתחילים מחדש, קשישים שצריכים עזרה, שכנים וקהילות מקומיות — וכל מי שמעדיף לתת ולקבל דרך אנשים, לא דרך זירת מכירות.\n\n' +
-    'בשלב הראשון מתמקדים באנשים פרטיים. עמותות וארגונים — בהמשך, אחרי קהילה חזקה.',
+  audienceLead: 'לכל מי שרוצה לתת או לקבל — בלי הבדלים ובלי שיפוט.',
+  audienceGroups: [
+    { icon: 'home-outline', label: 'משפחות שמצמצמות חפצים' },
+    { icon: 'school-outline', label: 'סטודנטים שעוברים דירה' },
+    { icon: 'airplane-outline', label: 'עולים שמתחילים מחדש' },
+    { icon: 'heart-outline', label: 'קשישים שצריכים עזרה' },
+    { icon: 'people-outline', label: 'שכנים וקהילות מקומיות' },
+    {
+      icon: 'hand-left-outline',
+      label: 'מי שמעדיף לתת ולקבל דרך אנשים, לא דרך זירת מכירות',
+    },
+  ],
+  audienceFootnote:
+    'בשלב הראשון מתמקדים באנשים פרטיים. עמותות וארגונים — בהמשך.',
 
   // Values (copy + chips — aboutContentUxRefreshPartB)
   valuesTitle: 'הערכים שלנו',

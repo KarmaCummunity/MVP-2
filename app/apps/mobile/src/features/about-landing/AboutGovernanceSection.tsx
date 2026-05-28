@@ -48,20 +48,33 @@ interface StageProps {
   readonly tone: 'current' | 'soon' | 'future';
 }
 
+function stageToneStyles(
+  tone: StageProps['tone'],
+  styles: ReturnType<typeof useStyles>,
+): { readonly card: object; readonly phase: object } {
+  switch (tone) {
+    case 'current':
+      return { card: styles.toneCurrent, phase: styles.stagePhaseCurrent };
+    case 'soon':
+      return { card: styles.toneSoon, phase: styles.stagePhaseSoon };
+    case 'future':
+      return { card: styles.toneFuture, phase: styles.stagePhaseFuture };
+  }
+}
+
 function Stage({ phase, title, body, tone }: StageProps) {
   const styles = useStyles();
-  const toneStyle =
-    tone === 'current' ? styles.toneCurrent : tone === 'soon' ? styles.toneSoon : styles.toneFuture;
+  const { card, phase: phaseStyle } = stageToneStyles(tone, styles);
   return (
-    <View style={[styles.stage, toneStyle]}>
-      <Text style={styles.stagePhase}>{phase}</Text>
+    <View style={[styles.stage, card]}>
+      <Text style={[styles.stagePhase, phaseStyle]}>{phase}</Text>
       <Text style={styles.stageTitle}>{title}</Text>
       <Text style={styles.stageBody}>{body}</Text>
     </View>
   );
 }
 
-const useStyles = makeUseStyles(({ colors }) => ({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.xs },
   lead: {
     ...typography.body,
@@ -77,15 +90,26 @@ const useStyles = makeUseStyles(({ colors }) => ({
     padding: spacing.md,
     gap: spacing.xs,
   },
-  toneCurrent: { backgroundColor: colors.successLight, borderColor: colors.success },
-  toneSoon: { backgroundColor: colors.infoLight, borderColor: colors.info },
-  toneFuture: { backgroundColor: colors.warningLight, borderColor: colors.warning },
+  toneCurrent: {
+    backgroundColor: colors.primarySurface,
+    borderColor: isDark ? colors.primary : colors.primaryLight,
+  },
+  toneSoon: {
+    backgroundColor: colors.secondaryLight,
+    borderColor: isDark ? colors.secondary : colors.border,
+  },
+  toneFuture: {
+    backgroundColor: isDark ? colors.surfaceRaised : colors.surface,
+    borderColor: colors.border,
+  },
   stagePhase: {
     ...typography.label,
     fontWeight: '800',
-    color: colors.textPrimary,
     ...aboutRtlText,
   },
+  stagePhaseCurrent: { color: colors.primary },
+  stagePhaseSoon: { color: colors.secondary },
+  stagePhaseFuture: { color: colors.textSecondary },
   stageTitle: {
     ...typography.body,
     fontWeight: '700',

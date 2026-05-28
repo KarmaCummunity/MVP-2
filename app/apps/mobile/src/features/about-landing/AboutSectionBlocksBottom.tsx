@@ -46,6 +46,7 @@ export function AboutSectionBlocksBottom({ onSectionY, delayStart }: AboutSectio
         >
           <View style={styles.card}>
             <Text style={styles.h}>{t('aboutContent.roadmapTitle')}</Text>
+            <Text style={styles.lead}>{t('aboutContent.roadmapLead')}</Text>
             <View style={styles.spacer} />
             <AboutRoadmapTimeline />
           </View>
@@ -145,7 +146,14 @@ const useAboutSectionBlocksBottomStyles = makeUseStyles(({ colors }) => ({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.md },
+  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.xs },
+  lead: {
+    ...typography.body,
+    color: colors.textSecondary,
+    ...aboutRtlText,
+    lineHeight: 24,
+    marginBottom: spacing.sm,
+  },
   p: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 24 },
   spacer: { height: spacing.sm },
 }));

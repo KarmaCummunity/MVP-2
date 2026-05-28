@@ -163,7 +163,7 @@ export default function PublicResearchScreen() {
 // ─── styles ───────────────────────────────────────────────────────────────────
 
 const useScreenStyles = makeUseStyles(({ colors }) => ({
-  screen: { flex: 1, direction: 'rtl' as never },
+  screen: { flex: 1 },
   flex: { flex: 1 },
   pageContent: { paddingHorizontal: spacing.base, paddingTop: spacing.base, gap: spacing.base },
   centered: {
