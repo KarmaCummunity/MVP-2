@@ -297,6 +297,65 @@ Heuristic: same `submitted_by`, same `category_slug`, same `url`, two rows with 
 
 ---
 
+## Backfill image thumbnails (PERF-4, 2026-05-28)
+
+After PR-1a (`perf(images): upload-time thumbs ...`) ships, **new** post / avatar uploads always write a sibling `-thumb.jpg` object. **Existing** objects need a one-time backfill pass to get the same wins.
+
+The `backfill-image-thumbs` Edge Function scans `post-images` and `avatars` buckets, downloads each non-thumb object, resizes via ImageMagick WASM (400px for posts, 96px for avatars), and uploads the thumb with `cache-control: public, max-age=31536000, immutable`. Idempotent: existing thumbs are skipped, so it's safe to re-run.
+
+### Run against dev
+
+From a machine with the Supabase CLI logged in (or a service-role JWT in `$SR`):
+
+```bash
+SUPABASE_REF=roeefqpdbftlndzsvhfj
+SR="$(cat ~/.kc-dev-secrets.env | grep SUPABASE_SERVICE_ROLE_KEY | cut -d= -f2-)"
+
+# Dry-run first to see what would be processed:
+curl -sS -X POST "https://${SUPABASE_REF}.supabase.co/functions/v1/backfill-image-thumbs" \
+  -H "Authorization: Bearer ${SR}" \
+  -H "Content-Type: application/json" \
+  -d '{"dryRun":true,"pageLimit":500}'
+
+# Real run — invoke repeatedly until `results[*].more === false`:
+curl -sS -X POST "https://${SUPABASE_REF}.supabase.co/functions/v1/backfill-image-thumbs" \
+  -H "Authorization: Bearer ${SR}" \
+  -H "Content-Type: application/json" \
+  -d '{"pageLimit":100}'
+```
+
+Per-invocation budget is bounded by Edge Function timeout (25s on free tier). `pageLimit: 100` is a safe default that fits inside that envelope. Bump or lower based on dashboard latency.
+
+### Body options
+
+| Field | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `bucket` | `"post-images" \| "avatars" \| "both"` | `"both"` | Narrow the scope. |
+| `pageLimit` | `number` (1-500) | `100` | Max objects processed per invocation. |
+| `lookbackHours` | `number` | _all_ | Only objects newer than `now - hours`. |
+| `dryRun` | `boolean` | `false` | Count + log without writing. |
+
+### Response
+
+```json
+{
+  "ok": true,
+  "dryRun": false,
+  "results": [
+    { "bucket": "post-images", "scanned": 100, "generated": 87, "skipped_existing": 13, "errors": 0, "more": true },
+    { "bucket": "avatars",     "scanned":  42, "generated": 39, "skipped_existing":  3, "errors": 0, "more": false }
+  ]
+}
+```
+
+Re-invoke until every entry's `more` is `false`.
+
+### Run against prod
+
+Same flow, swap `SUPABASE_REF` and use the prod service-role bearer. The function is deployed automatically by `.github/workflows/supabase-functions-deploy.yml` when `supabase/functions/**` changes land on `main`.
+
+---
+
 ## Publishing legal documents (FR-SETTINGS-010)
 
 Editable from Supabase Studio without a frontend deploy. Each publish is an immutable `legal_document_versions` row plus an update to the current-pointer row in `legal_documents`. The trigger computes `content_hash` (SHA-256) automatically.
