@@ -169,6 +169,10 @@ export * from './admin/SetAdminTaskStatusUseCase';
 export * from './admin/AssignAdminTaskUseCase';
 export * from './admin/AddAdminTaskCommentUseCase';
 export * from './admin/DeleteAdminTaskUseCase';
+export * from './admin/IAdminContentRepository';
+export * from './admin/AdminSearchUsersUseCase';
+export * from './admin/AdminSearchPostsUseCase';
+export * from './admin/AdminSearchAuditUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';

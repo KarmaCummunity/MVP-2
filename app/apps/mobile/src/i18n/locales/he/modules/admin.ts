@@ -1,4 +1,6 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
+import { adminContentHe } from './adminContent';
+
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
   settingsRow: 'פורטל ניהול',
@@ -229,4 +231,5 @@ export const adminHe = {
       unknown:             'אירעה שגיאה. נסה שוב.',
     },
   },
+  content: adminContentHe,
 } as const;
