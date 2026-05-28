@@ -124,6 +124,7 @@
 | TD-102 | 🟡 | **Add date-of-birth field at signup (FR-AUTH-002).** Required to satisfy תיקון 13 heightened expectations around minors (the v1 privacy text already says 13+ but doesn't collect DOB). Combine with parental-consent verification when COPPA path is added. | Pre-launch hardening |
 | TD-103 | 🟢 | **"View my consent history" surface in Settings → Privacy.** Reads `user_legal_acceptances` for `auth.uid()` and renders the per-version acceptance log. Lets users self-serve GDPR Art. 7 transparency. | Post-MVP |
 | TD-108 | 🟢 | **Wire `useActiveModalReservation` into existing sheets/modals.** Currently the `ModalStackProvider` (introduced by FR-SETTINGS-010) only the `LegalConsentGate` reads from it — `PhotoSourceSheet`, `ClosureSheet`, `PostFilterSheet`, composer modals, etc. do not `push()`/`pop()`. Result: the gate may render over an open sheet on edge cases. Migrate each sheet to call `useActiveModalReservation(visible)`. | Opportunistic |
+| TD-130 | 🟢 | **FR-RESEARCH-004 share-message body duplicated across two locale modules.** `research.share.shareMessage` (used by public web placements 1+2) and `survey.shareResearch.shareMessage` (used by in-app placement 3) carry the same Hebrew string verbatim. Copy edits require touching both files. Acceptable today (namespace isolation) but a future maintenance trap. Consider extracting to a shared key once the cross-module dependency is acceptable. | Opportunistic |
 ### Process · docs · tooling
 
 | ID | Sev | Item | Closing slice |

@@ -4,7 +4,8 @@
 import React, { useCallback, useState } from 'react';
 import { Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { makeUseStyles, spacing, typography } from '@kc/ui';
+import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import {
@@ -17,6 +18,7 @@ import { track } from '../../src/lib/analytics';
 export function SurveyIntroBlock(): React.JSX.Element {
   const { t } = useTranslation();
   const styles = useStyles();
+  const { colors } = useTheme();
   const [shareStatus, setShareStatus] = useState<ShareResearchOutcome['kind'] | null>(null);
 
   const handleShare = useCallback(async () => {
@@ -57,6 +59,7 @@ export function SurveyIntroBlock(): React.JSX.Element {
           accessibilityRole="button"
           accessibilityLabel={t('research.share.duringSurveyAria')}
         >
+          <Ionicons name="share-social-outline" size={14} color={colors.primary} />
           <Text style={styles.shareBtnSmallText}>
             {t('research.share.duringSurveyLabel')}
           </Text>
@@ -110,6 +113,9 @@ const useStyles = makeUseStyles(({ colors }) => ({
     ...webTextRtl,
   },
   shareBtnSmall: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
     paddingVertical: 4,
     paddingHorizontal: spacing.sm,
     borderRadius: 8,

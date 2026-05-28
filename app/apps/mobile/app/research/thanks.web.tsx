@@ -81,6 +81,7 @@ export default function ResearchThanksScreen() {
           style={styles.shareBtn}
           onPress={handleShare}
           accessibilityRole="button"
+          accessibilityLabel={t('research.share.thanksTitle')}
         >
           <Text style={styles.shareBtnText}>{t('research.share.thanksTitle')}</Text>
         </Pressable>
@@ -119,7 +120,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
     alignItems: 'center',
     justifyContent: 'center',
     padding: spacing.xl,
-    direction: 'rtl' as never,
     ...webViewRtl,
   },
   card: {
