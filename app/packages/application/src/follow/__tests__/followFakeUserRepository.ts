@@ -113,6 +113,10 @@ export class FollowFakeUserRepository implements IUserRepository {
   async findById(): Promise<User | null> {
     return this.user;
   }
+  async getChatCounterpartyContact(): Promise<string | null> {
+    return null;
+  }
+
   async findByHandle(): Promise<User | null> {
     return this.user;
   }
