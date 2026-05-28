@@ -181,6 +181,19 @@ export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
 export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
 export { ChronologicalRideMatchScorer } from './rides/ChronologicalRideMatchScorer';
 
+// Ride participants (FR-RIDE-011 / FR-RIDE-012)
+export type { IRideParticipantRepository } from './ports/IRideParticipantRepository';
+export { RequestRideJoinUseCase } from './rides/RequestRideJoinUseCase';
+export type { RequestRideJoinInput } from './rides/RequestRideJoinUseCase';
+export { DecideRideJoinUseCase } from './rides/DecideRideJoinUseCase';
+export type { DecideRideJoinInput } from './rides/DecideRideJoinUseCase';
+export { CancelRideJoinUseCase } from './rides/CancelRideJoinUseCase';
+export type { CancelRideJoinInput } from './rides/CancelRideJoinUseCase';
+export { ListRideParticipantsUseCase } from './rides/ListRideParticipantsUseCase';
+export type { ListRideParticipantsInput } from './rides/ListRideParticipantsUseCase';
+export { ListUserRideRequestsUseCase } from './rides/ListUserRideRequestsUseCase';
+export type { ListUserRideRequestsInput } from './rides/ListUserRideRequestsUseCase';
+
 // Survey use cases (FR-SETTINGS-015..017)
 export type { ISurveyRepository } from './ports/ISurveyRepository';
 export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';
