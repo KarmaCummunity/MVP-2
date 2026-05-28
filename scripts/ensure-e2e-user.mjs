@@ -2,7 +2,7 @@
 // Verifies E2E credentials can sign in to Supabase dev. Run locally or in CI setup.
 // Does not print passwords. Requires: E2E_TEST_EMAIL, E2E_TEST_PASSWORD, EXPO_PUBLIC_SUPABASE_URL, EXPO_PUBLIC_SUPABASE_ANON_KEY
 
-const email = process.env.E2E_TEST_EMAIL;
+const email = process.env.E2E_TEST_EMAIL ?? 'e2e-ci@karma-community.test';
 const password = process.env.E2E_TEST_PASSWORD;
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL;
 const anon = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY ?? process.env.SUPABASE_ANON_KEY;

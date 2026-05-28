@@ -5,7 +5,7 @@
 // Usage:
 //   E2E_TEST_EMAIL=e2e@example.test E2E_TEST_PASSWORD='…' node scripts/create-e2e-user.mjs
 
-const email = process.env.E2E_TEST_EMAIL;
+const email = process.env.E2E_TEST_EMAIL ?? 'e2e-ci@karma-community.test';
 const password = process.env.E2E_TEST_PASSWORD;
 const url = (process.env.SUPABASE_URL ?? process.env.EXPO_PUBLIC_SUPABASE_URL ?? '').replace(/\/$/, '');
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;

@@ -23,9 +23,21 @@
 
 ## E2E test user (dev only)
 
-- Credentials in GitHub secrets: `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_ANON_KEY` (dev publishable anon).
-- User must exist in Supabase dev (`roeefqpdbftlndzsvhfj`) with **Auto Confirm** (Dashboard → Authentication → Users → Add user). The human `/sign-in` UI may be broken or unused — E2E does not depend on it.
-- Preflight: `node scripts/ensure-e2e-user.mjs` (REST `grant_type=password` — same path as Playwright setup).
+**Canonical dev CI user** (created 2026-05-29, Supabase dev `roeefqpdbftlndzsvhfj`):
+
+| Field | Value |
+| --- | --- |
+| Email | `e2e-ci@karma-community.test` |
+| Password | In operator file `~/.kc-dev-secrets.env` as `E2E_TEST_PASSWORD` — **never commit** |
+| Auth user id | `284c9fb6-6c69-4b56-94b0-fee65cf330df` |
+
+Re-create if deleted: `source ~/.kc-dev-secrets.env && node scripts/create-e2e-user.mjs` (uses service role from management API).
+
+GitHub Actions secrets (repo settings): `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD` (same values as local file), `E2E_SUPABASE_ANON_KEY` (dev publishable anon).
+
+The human `/sign-in` UI may be broken — E2E uses API session injection, not that form.
+
+Preflight: `set -a && source ~/.kc-dev-secrets.env && set +a && node scripts/ensure-e2e-user.mjs`
 - **Auth in E2E (option 3):** Playwright injects the Supabase session into `localStorage` via API — no Google SSO, no `/sign-in` form, no `EXPO_PUBLIC_DEV_*` shortcuts.
 
 ## P0 release journeys (automated)
