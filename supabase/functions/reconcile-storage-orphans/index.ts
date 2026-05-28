@@ -74,13 +74,16 @@ serve(async (req: Request) => {
     }
 
     // 2. Find which paths still have a media_assets row.
+    //    Column is `path` per migration 0002_init_posts.sql:130 — relative
+    //    path inside the post-images bucket, same shape that
+    //    `listAllObjects` returns above.
     const { data: rows, error: queryErr } = await adminClient
       .from('media_assets')
-      .select('storage_path')
-      .in('storage_path', allPaths);
+      .select('path')
+      .in('path', allPaths);
     if (queryErr) throw new Error(`media_assets query: ${queryErr.message}`);
 
-    const activePaths = new Set((rows ?? []).map((r: { storage_path: string }) => r.storage_path));
+    const activePaths = new Set((rows ?? []).map((r: { path: string }) => r.path));
     const orphans = allPaths.filter((p) => !activePaths.has(p));
 
     if (orphans.length === 0) {

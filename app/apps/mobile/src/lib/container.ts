@@ -15,6 +15,8 @@ import {
   SupabaseAccountGateRepository,
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
+  SupabaseAdminTaskRepository,
+  SupabaseAdminContentRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -51,6 +53,17 @@ import {
   GrantAdminRoleUseCase,
   RevokeAdminRoleUseCase,
   ListAdminsUseCase,
+  ListAdminTasksUseCase,
+  GetAdminTaskDetailUseCase,
+  CreateAdminTaskUseCase,
+  UpdateAdminTaskUseCase,
+  SetAdminTaskStatusUseCase,
+  AssignAdminTaskUseCase,
+  AddAdminTaskCommentUseCase,
+  DeleteAdminTaskUseCase,
+  AdminSearchUsersUseCase,
+  AdminSearchPostsUseCase,
+  AdminSearchAuditUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -89,6 +102,8 @@ const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
+const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
+const adminContentRepo = new SupabaseAdminContentRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -108,13 +123,24 @@ export const container = {
   adminRoleRepo,
   reportsRepo,
 
-  // Admin portal (FR-ADMIN-011, FR-ADMIN-012, FR-ADMIN-013, FR-ADMIN-015, FR-ADMIN-016)
+  // Admin portal (FR-ADMIN-011..018)
   getMyAdminRoles,
   listOpenReports,
   getReportCaseDetail,
   listAdmins: new ListAdminsUseCase(adminRoleRepo),
   grantAdminRole: new GrantAdminRoleUseCase(adminRoleRepo),
   revokeAdminRole: new RevokeAdminRoleUseCase(adminRoleRepo),
+  listAdminTasks: new ListAdminTasksUseCase(adminTaskRepo),
+  getAdminTaskDetail: new GetAdminTaskDetailUseCase(adminTaskRepo),
+  createAdminTask: new CreateAdminTaskUseCase(adminTaskRepo),
+  updateAdminTask: new UpdateAdminTaskUseCase(adminTaskRepo),
+  setAdminTaskStatus: new SetAdminTaskStatusUseCase(adminTaskRepo),
+  assignAdminTask: new AssignAdminTaskUseCase(adminTaskRepo),
+  addAdminTaskComment: new AddAdminTaskCommentUseCase(adminTaskRepo),
+  deleteAdminTask: new DeleteAdminTaskUseCase(adminTaskRepo),
+  adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
+  adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
+  adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { PostError } from '@kc/application';
-import { closePost, reopenPost } from '../closureMethods';
+import { closePost, reopenPost, republishPost } from '../closureMethods';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -9,7 +9,8 @@ import { closePost, reopenPost } from '../closureMethods';
 // getClosureCandidates (dedupe + sort logic) separately.
 
 interface FakeOpts {
-  rpcError?: { message: string } | null;
+  rpcError?: { message: string; code?: string } | null;
+  rpcData?: unknown;
   postsUpdateData?: any[] | null;
   postsUpdateError?: { message: string } | null;
   postReadData?: { status: string; reopen_count: number } | null;
@@ -32,7 +33,7 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any>; rpcs: { 
     }),
     rpc: async (fn: string, args: any) => {
       rpcs.push({ fn, args });
-      return { data: null, error: opts.rpcError ?? null };
+      return { data: opts.rpcData ?? null, error: opts.rpcError ?? null };
     },
   } as unknown as SupabaseClient<any>;
   return { client, rpcs };
@@ -174,5 +175,56 @@ describe('reopenPost — branches by current status', () => {
       postRereadData: null,
     });
     await expect(reopenPost(client, 'p_1')).rejects.toBeInstanceOf(PostError);
+  });
+});
+
+describe('republishPost — wraps rpc_republish_post', () => {
+  it('calls rpc_republish_post with the post id and returns the new id', async () => {
+    const { client, rpcs } = makeFakeClient({ rpcData: 'p_new' });
+    const out = await republishPost(client, 'p_old');
+    expect(rpcs).toEqual([{ fn: 'rpc_republish_post', args: { p_post_id: 'p_old' } }]);
+    expect(out).toBe('p_new');
+  });
+
+  it('maps republish_not_owner error message via mapClosurePgError', async () => {
+    const { client } = makeFakeClient({ rpcError: { message: 'republish_not_owner' } });
+    await expect(republishPost(client, 'p_old')).rejects.toMatchObject({
+      name: 'PostError',
+      code: 'republish_not_owner',
+    });
+  });
+
+  it('maps republish_wrong_status error message via mapClosurePgError', async () => {
+    const { client } = makeFakeClient({ rpcError: { message: 'republish_wrong_status' } });
+    await expect(republishPost(client, 'p_old')).rejects.toMatchObject({
+      name: 'PostError',
+      code: 'republish_wrong_status',
+    });
+  });
+
+  it('maps active_post_limit_exceeded error message via mapClosurePgError', async () => {
+    const { client } = makeFakeClient({ rpcError: { message: 'active_post_limit_exceeded' } });
+    await expect(republishPost(client, 'p_old')).rejects.toMatchObject({
+      name: 'PostError',
+      code: 'active_post_limit_exceeded',
+    });
+  });
+
+  it('maps 42501 RLS denial to followers_only_requires_private', async () => {
+    const { client } = makeFakeClient({
+      rpcError: { code: '42501', message: 'new row violates row-level security policy' },
+    });
+    await expect(republishPost(client, 'p_old')).rejects.toMatchObject({
+      name: 'PostError',
+      code: 'followers_only_requires_private',
+    });
+  });
+
+  it('throws "republish_no_id_returned" when rpc returns non-string', async () => {
+    const { client } = makeFakeClient({ rpcData: null });
+    await expect(republishPost(client, 'p_old')).rejects.toMatchObject({
+      name: 'PostError',
+      code: 'unknown',
+    });
   });
 });

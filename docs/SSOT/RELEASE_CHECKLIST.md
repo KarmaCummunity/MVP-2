@@ -3,7 +3,7 @@
 > **Scope:** Web app on Railway + Supabase prod (`slxijdfvinbjmrsfgbzx`).
 > **Branch topology:** [`ENVIRONMENTS.md`](./ENVIRONMENTS.md) · **DB/Functions runbook:** [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md)
 
-Use this checklist for every production release. CI automates several gates; the operator owns the rest.
+Use this checklist for every production release. CI automates gates; the agent (CTO) executes the flow — no human approval on deploy environments (`D-53`).
 
 ---
 
@@ -30,6 +30,7 @@ Required on the release PR (GitHub branch protection on `main`):
 | DB + RLS + types | CI — backend | `apply migrations · rls · types · sql probes` |
 | Contract | CI — contract | `rpc · table contract` |
 | PR hygiene | CI — PR hygiene | `PR hygiene` |
+| Main release guard | CI — main release guard | `release PR source is dev` + `migration destructive-op scan` |
 
 > Path-filtered workflows: a release PR that only touches `docs/**` will not run the frontend/backend/contract workflows. Such PRs are rare; release PRs typically touch app + supabase paths and trigger the full set. `CI — PR hygiene` always runs on non-draft PRs.
 
@@ -42,9 +43,9 @@ Do **not** require post-merge deploy jobs on the PR rule (`DB deploy`, `Supabase
 Watch **Actions** on `main` (in order, as applicable):
 
 1. **CI** — push workflow green.
-2. **DB deploy** — runs when migration paths changed; **requires approval** if `supabase-prod` environment has required reviewers.
+2. **DB deploy** — when migration paths changed: **dry-run then apply** to `supabase-prod` (no human gate).
 3. **Supabase Functions deploy** — runs when `supabase/functions/**` changed.
-4. **Prod smoke** — polls `PROD_WEB_URL` after Railway redeploy (app or Dockerfile paths).
+4. **Prod smoke** — polls `PROD_WEB_URL` after app, Dockerfile, migration, or function changes on `main`.
 5. **Sync main → dev** — must succeed; if it fails (merge conflict), fix before any further `dev` work.
 
 Watch **Railway → prod** — new deployment from `main` reaches **Success**.
@@ -79,9 +80,9 @@ Automated **Prod smoke** only checks HTTP 200 on the prod URL. Complete these ma
 
 | Setting | Location | Value |
 | --- | --- | --- |
-| Required reviews on `main` | Settings → Branches → `main` | ≥ 1 |
-| Required status checks | Same | CI + DB validate jobs (see table above) |
-| Prod DB deploy gate | Settings → Environments → `supabase-prod` | Required reviewers + secrets |
+| Branch protection on `main` | Settings → Branches → `main` | Block direct pushes; require status checks (table above) — **no required human reviewers** (`D-53`) |
+| Required status checks | Same | Include **CI — main release guard** on `dev` → `main` PRs |
+| `supabase-prod` environment | Settings → Environments → `supabase-prod` | Secrets only (`SUPABASE_*`); **do not** enable required reviewers |
 | Prod web URL for smoke | Settings → Secrets and variables → Actions → **Variables** | `PROD_WEB_URL` = `https://<your-prod>.up.railway.app` |
 
 Document the canonical prod URL in [`ENVIRONMENTS.md`](./ENVIRONMENTS.md) once confirmed.
