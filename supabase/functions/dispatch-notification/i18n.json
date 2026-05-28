@@ -23,5 +23,13 @@
   "notifications.followStartedBody": "התחיל לעקוב אחריך",
   "notifications.followStartedCoalesced": "{{count}} עוקבים חדשים",
   "notifications.followApprovedTitle": "{{targetName}}",
-  "notifications.followApprovedBody": "אישר את בקשת המעקב שלך"
+  "notifications.followApprovedBody": "אישר את בקשת המעקב שלך",
+  "notifications.rideRequestTitle": "{{riderName}}",
+  "notifications.rideRequestBody": "מבקש להצטרף לטרמפ: {{rideTitle}}",
+  "notifications.rideApprovedTitle": "{{ownerName}}",
+  "notifications.rideApprovedBody": "אישר את הצטרפותך לטרמפ: {{rideTitle}}",
+  "notifications.rideRejectedTitle": "{{ownerName}}",
+  "notifications.rideRejectedBody": "דחה את הבקשה שלך לטרמפ: {{rideTitle}}",
+  "notifications.rideParticipantCancelledTitle": "{{riderName}}",
+  "notifications.rideParticipantCancelledBody": "ביטל את הצטרפותו לטרמפ: {{rideTitle}}"
 }

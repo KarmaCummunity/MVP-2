@@ -67,3 +67,11 @@ Prefix: `FR-RIDE-*`
 - AC3. `CancelRideJoinUseCase` — wraps `rpc_ride_participants_cancel`; idempotent on already-cancelled.
 - AC4. `ListRideParticipantsUseCase(rideId)` — returns rows for the ride owner (any status); for non-owners, only their own row.
 - AC5. `ListUserRideRequestsUseCase(userId)` — returns rows the caller owns, recent first.
+
+## FR-RIDE-013 — Ride participants notifications ✅
+- AC1. On INSERT (`status = 'requested'`), the ride owner gets a `ride_request` critical notification with the rider's display name and the ride title; deep-link route `/donations/rides/[id]`.
+- AC2. On UPDATE `requested → approved`, the participant gets `ride_approved` with the owner's name + ride title.
+- AC3. On UPDATE `requested → rejected`, the participant gets `ride_rejected` with the owner's name + ride title.
+- AC4. On UPDATE `approved → cancelled` (rider-initiated withdrawal of an approved seat), the ride owner gets `ride_participant_cancelled` with the rider's name + ride title. `requested → cancelled` is intentionally silent (polite withdrawal).
+- AC5. Dedupe keys are per (participant, transition) so retries are idempotent.
+- AC6. i18n keys live in `apps/mobile/src/i18n/locales/he/modules/notifications.ts` and the matching `supabase/functions/dispatch-notification/i18n.json` (server mirror).

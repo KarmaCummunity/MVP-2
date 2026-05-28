@@ -44,4 +44,13 @@ export const notificationsHe = {
   followStartedCoalesced: '{{count}} עוקבים חדשים',
   followApprovedTitle: '{{targetName}}',
   followApprovedBody: 'אישר את בקשת המעקב שלך',
+  // FR-RIDE-013 — ride participant lifecycle.
+  rideRequestTitle: '{{riderName}}',
+  rideRequestBody: 'מבקש להצטרף לטרמפ: {{rideTitle}}',
+  rideApprovedTitle: '{{ownerName}}',
+  rideApprovedBody: 'אישר את הצטרפותך לטרמפ: {{rideTitle}}',
+  rideRejectedTitle: '{{ownerName}}',
+  rideRejectedBody: 'דחה את הבקשה שלך לטרמפ: {{rideTitle}}',
+  rideParticipantCancelledTitle: '{{riderName}}',
+  rideParticipantCancelledBody: 'ביטל את הצטרפותו לטרמפ: {{rideTitle}}',
 } as const;
