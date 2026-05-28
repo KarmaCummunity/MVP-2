@@ -1951,7 +1951,7 @@ export function EnglishRun({ children, mode = 'isolate', style, ...rest }: Props
 
 Picking the right `mode` per call site:
 - `@handle` / phone / code / URL / hashtag → `mode="force-ltr"`.
-- Display name (could be Hebrew "נווה" or English "Nave") → `mode="isolate"` (default).
+- Display name (could be Hebrew "נוה" or English "Nave") → `mode="isolate"` (default).
 - Post snippet preview where the source could be either language → `mode="isolate"`.
 
 - [ ] **Step 2: Write the test**

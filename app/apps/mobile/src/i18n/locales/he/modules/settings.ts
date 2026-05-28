@@ -13,6 +13,12 @@ export const settingsHe = {
   termsOfService: 'תנאי שימוש',
   privacyPolicy: 'מדיניות פרטיות',
   about: 'אודות',
+  aboutCard: {
+    title: 'אודות קהילת קארמה',
+    subtitle: 'החזון, איך זה עובד, צוות, שאלות נפוצות ויצירת קשר',
+    cta: 'למידע נוסף',
+    a11y: 'אודות קהילת קארמה — פתיחת עמוד אודות',
+  },
   logout: 'התנתקות',
   loggingOut: 'מתנתק...',
   deleteAccount: 'מחק חשבון',

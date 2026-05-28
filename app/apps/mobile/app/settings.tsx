@@ -17,6 +17,7 @@ import { useChatStore } from '../src/store/chatStore';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 import { DonationSupportCard } from '../src/components/DonationSupportCard';
+import { SettingsAboutCard } from '../src/components/SettingsAboutCard';
 import { SettingsScreenRow } from '../src/components/SettingsScreenRow';
 import { ConfirmActionModal } from '../src/components/post/ConfirmActionModal';
 import { usePrivateProfileToggle } from '../src/hooks/usePrivateProfileToggle';
@@ -87,6 +88,10 @@ export default function SettingsScreen() {
           <DonationSupportCard />
         </View>
 
+        <View style={styles.supportCardWrap}>
+          <SettingsAboutCard />
+        </View>
+
         <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
@@ -154,19 +159,6 @@ export default function SettingsScreen() {
           />
         </View>
 
-        {SHOW_SETTINGS_DEBUG_TOOLS ? (
-          <>
-            <Text style={styles.sectionTitle}>{t('surveyDemo.entryTitle')}</Text>
-            <View style={styles.section}>
-              <SettingsScreenRow
-                label={t('surveyDemo.entryLabel')}
-                icon="flask-outline"
-                onPress={() => router.push('/settings/survey-demo' as never)}
-              />
-            </View>
-          </>
-        ) : null}
-
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
@@ -197,11 +189,6 @@ export default function SettingsScreen() {
             label={t('settings.privacyPolicy')}
             icon="shield-checkmark-outline"
             onPress={() => router.push('/legal/privacy')}
-          />
-          <SettingsScreenRow
-            label={t('settings.about')}
-            icon="information-circle-outline"
-            onPress={() => router.push('/about')}
           />
         </View>
 
