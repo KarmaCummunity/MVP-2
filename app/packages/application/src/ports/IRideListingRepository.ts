@@ -14,7 +14,7 @@ export interface RideListingRow {
   seatsAvailable: number | null;
   description: string | null;
   title: string;
-  status: 'open' | 'closed' | 'cancelled';
+  status: 'open' | 'closed' | 'cancelled' | 'expired';
   visibility: 'Public' | 'FollowersOnly' | 'OnlyMe';
   createdAt: string;
   updatedAt: string;
