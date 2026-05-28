@@ -14,7 +14,7 @@ import type {
 import type { Database } from '../database.types';
 
 function uniqueTopic(prefix: string): string {
-  return `${prefix}:${Math.random().toString(36).slice(2, 10)}`;
+  return `${prefix}:${crypto.randomUUID()}`;
 }
 
 export class SupabaseRidesRealtime implements IRidesRealtime {

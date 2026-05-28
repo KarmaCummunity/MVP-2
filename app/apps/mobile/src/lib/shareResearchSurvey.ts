@@ -30,8 +30,14 @@ type WebShareNavigator = {
   clipboard?: { writeText: (text: string) => Promise<void> };
 };
 
+function trimTrailingSlashes(url: string): string {
+  let end = url.length;
+  while (end > 0 && url[end - 1] === '/') end -= 1;
+  return url.slice(0, end);
+}
+
 export function buildResearchShareUrl(webBaseUrl: string, src: string): string {
-  const trimmed = webBaseUrl.replace(/\/+$/, '');
+  const trimmed = trimTrailingSlashes(webBaseUrl);
   return `${trimmed}/research/${RESEARCH_SHARE_SLUG}?src=${src}`;
 }
 
