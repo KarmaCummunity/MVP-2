@@ -23,11 +23,31 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
-import { ImageMagick, initialize, MagickFormat } from 'https://deno.land/x/imagemagick_deno@0.0.30/mod.ts';
+import { Jimp } from 'https://esm.sh/jimp@1.6.0';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SERVICE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY')!;
 const LIST_PAGE = 100;
+
+/**
+ * The Supabase gateway already verifies the JWT signature before forwarding
+ * to this function (verify_jwt: true is the default). We additionally check
+ * the role claim equals "service_role" so anon / authenticated users with
+ * valid JWTs can't trigger the backfill. Robust to env-var format drift
+ * between legacy JWT and new `sb_secret_` key formats.
+ */
+function isServiceRoleJwt(bearer: string): boolean {
+  if (!bearer.startsWith('Bearer ')) return false;
+  const token = bearer.slice(7);
+  const parts = token.split('.');
+  if (parts.length !== 3) return false;
+  try {
+    const payload = JSON.parse(atob(parts[1].replace(/-/g, '+').replace(/_/g, '/')));
+    return payload?.role === 'service_role';
+  } catch {
+    return false;
+  }
+}
 const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 // Bucket-specific thumb sizing.
@@ -35,13 +55,6 @@ const THUMB_CONFIG: Record<string, { maxEdge: number; quality: number }> = {
   'post-images': { maxEdge: 400, quality: 75 },
   'avatars': { maxEdge: 96, quality: 75 },
 };
-
-let imagemagickReady = false;
-async function ensureImageMagick(): Promise<void> {
-  if (imagemagickReady) return;
-  await initialize();
-  imagemagickReady = true;
-}
 
 function json(body: unknown, status = 200): Response {
   return new Response(JSON.stringify(body), {
@@ -65,74 +78,63 @@ function isThumbPath(name: string): boolean {
   return /-thumb(\.[a-zA-Z0-9]+)?$/.test(name);
 }
 
-async function listRecentPaths(
+interface ListedBucket {
+  /** Non-thumb object paths, oldest-first. */
+  originals: string[];
+  /** Set of paths that already exist as thumbs (e.g., `a/b/0-thumb.jpg`). */
+  existingThumbs: Set<string>;
+}
+
+async function listBucket(
   admin: AdminClient,
   bucket: string,
   sinceIso: string | null,
   prefix = '',
-): Promise<string[]> {
-  const paths: string[] = [];
+): Promise<ListedBucket> {
+  const originals: string[] = [];
+  const existingThumbs = new Set<string>();
   let offset = 0;
   while (true) {
     const { data, error } = await admin.storage
       .from(bucket)
-      .list(prefix, { limit: LIST_PAGE, offset, sortBy: { column: 'created_at', order: 'desc' } });
+      .list(prefix, { limit: LIST_PAGE, offset, sortBy: { column: 'created_at', order: 'asc' } });
     if (error) throw new Error(`list(${bucket}/${prefix}): ${error.message}`);
     if (!data || data.length === 0) break;
 
-    let hasOld = false;
     for (const obj of data) {
       const fullPath = prefix ? `${prefix}/${obj.name}` : obj.name;
       if (obj.metadata) {
-        // File: skip thumbs themselves; check freshness window.
-        if (isThumbPath(obj.name)) continue;
+        if (isThumbPath(obj.name)) {
+          existingThumbs.add(fullPath);
+          continue;
+        }
         if (sinceIso) {
           const created = obj.created_at ?? obj.updated_at ?? '';
-          if (created < sinceIso) {
-            hasOld = true;
-            continue;
-          }
+          if (created < sinceIso) continue;
         }
-        paths.push(fullPath);
+        originals.push(fullPath);
       } else {
-        // Folder — recurse.
-        const nested = await listRecentPaths(admin, bucket, sinceIso, fullPath);
-        paths.push(...nested);
+        const nested = await listBucket(admin, bucket, sinceIso, fullPath);
+        originals.push(...nested.originals);
+        for (const t of nested.existingThumbs) existingThumbs.add(t);
       }
     }
-    if (hasOld || data.length < LIST_PAGE) break;
+    if (data.length < LIST_PAGE) break;
     offset += LIST_PAGE;
   }
-  return paths;
-}
-
-async function thumbExists(admin: AdminClient, bucket: string, thumbPath: string): Promise<boolean> {
-  const lastSlash = thumbPath.lastIndexOf('/');
-  const prefix = lastSlash === -1 ? '' : thumbPath.slice(0, lastSlash);
-  const name = lastSlash === -1 ? thumbPath : thumbPath.slice(lastSlash + 1);
-  const { data, error } = await admin.storage
-    .from(bucket)
-    .list(prefix, { limit: 1, search: name });
-  if (error) return false;
-  return (data ?? []).some((o) => o.name === name);
+  return { originals, existingThumbs };
 }
 
 async function resizeToJpeg(bytes: Uint8Array, maxEdge: number, quality: number): Promise<Uint8Array> {
-  await ensureImageMagick();
-  return await new Promise<Uint8Array>((resolve, reject) => {
-    try {
-      ImageMagick.read(bytes, (img) => {
-        const ratio = Math.min(maxEdge / img.width, maxEdge / img.height, 1);
-        const targetW = Math.max(1, Math.round(img.width * ratio));
-        const targetH = Math.max(1, Math.round(img.height * ratio));
-        img.resize(targetW, targetH);
-        img.quality = quality;
-        img.write(MagickFormat.Jpeg, (data) => resolve(new Uint8Array(data)));
-      });
-    } catch (err) {
-      reject(err);
-    }
-  });
+  // Jimp accepts ArrayBuffer / Uint8Array directly via `Jimp.read(buffer)`.
+  // The v1 API uses static `Jimp.read(...)` returning a `Jimp` instance.
+  const img = await Jimp.read(bytes.buffer.slice(bytes.byteOffset, bytes.byteOffset + bytes.byteLength) as ArrayBuffer);
+  const ratio = Math.min(maxEdge / img.width, maxEdge / img.height, 1);
+  const targetW = Math.max(1, Math.round(img.width * ratio));
+  const targetH = Math.max(1, Math.round(img.height * ratio));
+  if (ratio < 1) img.resize({ w: targetW, h: targetH });
+  const out = await img.getBuffer('image/jpeg', { quality });
+  return new Uint8Array(out);
 }
 
 interface BackfillStats {
@@ -142,6 +144,7 @@ interface BackfillStats {
   skipped_existing: number;
   errors: number;
   more: boolean;
+  first_error?: string;
 }
 
 async function backfillBucket(
@@ -152,36 +155,56 @@ async function backfillBucket(
   const cfg = THUMB_CONFIG[bucket];
   if (!cfg) throw new Error(`unknown bucket: ${bucket}`);
 
-  const paths = await listRecentPaths(admin, bucket, opts.sinceIso);
+  const { originals, existingThumbs } = await listBucket(admin, bucket, opts.sinceIso);
   const stats: BackfillStats = {
     bucket,
     scanned: 0,
     generated: 0,
     skipped_existing: 0,
     errors: 0,
-    more: paths.length > opts.pageLimit,
+    more: false,
   };
-  const work = paths.slice(0, opts.pageLimit);
 
-  for (const path of work) {
+  const recordError = (path: string, stage: string, err: unknown) => {
+    stats.errors++;
+    const msg = err instanceof Error ? err.message : String(err);
+    if (!stats.first_error) stats.first_error = `${stage}@${bucket}/${path}: ${msg}`;
+    console.error(`[backfill-image-thumbs] ${stage}@${bucket}/${path}:`, msg);
+  };
+
+  // Walk all originals oldest-first; pageLimit caps the number of *new* thumbs
+  // generated per invocation, not the total scanned. Already-thumbed objects
+  // are recognised via the in-memory `existingThumbs` set populated by
+  // listBucket (no per-object list ops).
+  for (const path of originals) {
+    if (stats.generated >= opts.pageLimit) {
+      stats.more = true;
+      break;
+    }
     stats.scanned++;
     const thumbPath = deriveThumbPath(path);
+    if (existingThumbs.has(thumbPath)) {
+      stats.skipped_existing++;
+      continue;
+    }
     try {
-      if (await thumbExists(admin, bucket, thumbPath)) {
-        stats.skipped_existing++;
-        continue;
-      }
       if (opts.dryRun) {
         stats.generated++;
         continue;
       }
       const { data: blob, error: dlErr } = await admin.storage.from(bucket).download(path);
       if (dlErr || !blob) {
-        stats.errors++;
+        recordError(path, 'download', dlErr ?? new Error('null blob'));
         continue;
       }
       const originalBytes = new Uint8Array(await blob.arrayBuffer());
-      const thumbBytes = await resizeToJpeg(originalBytes, cfg.maxEdge, cfg.quality);
+      let thumbBytes: Uint8Array;
+      try {
+        thumbBytes = await resizeToJpeg(originalBytes, cfg.maxEdge, cfg.quality);
+      } catch (err) {
+        recordError(path, 'resize', err);
+        continue;
+      }
       const { error: upErr } = await admin.storage
         .from(bucket)
         .upload(thumbPath, thumbBytes, {
@@ -190,13 +213,12 @@ async function backfillBucket(
           cacheControl: IMMUTABLE_CACHE_CONTROL,
         });
       if (upErr) {
-        stats.errors++;
+        recordError(path, 'upload', upErr);
         continue;
       }
       stats.generated++;
     } catch (err) {
-      console.error(`[backfill-image-thumbs] ${bucket}/${path}:`, err);
-      stats.errors++;
+      recordError(path, 'unknown', err);
     }
   }
   return stats;
@@ -206,7 +228,7 @@ serve(async (req: Request) => {
   if (req.method !== 'POST') return json({ ok: false, error: 'method_not_allowed' }, 405);
 
   const auth = req.headers.get('Authorization') ?? '';
-  if (!auth.startsWith('Bearer ') || auth.slice(7) !== SERVICE_KEY) {
+  if (!isServiceRoleJwt(auth)) {
     return json({ ok: false, error: 'unauthenticated' }, 401);
   }
 
