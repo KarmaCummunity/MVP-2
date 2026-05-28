@@ -2157,6 +2157,8 @@ export type Database = {
         }
       }
       report_donation_link: { Args: { p_link_id: string }; Returns: undefined }
+      // FR-POST-013 AC3 (0148) — clones an expired post into a new open post. Returns the new post id.
+      rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
       reports_case_detail: {
         Args: { p_target_id: string; p_target_type: string }
         Returns: Json

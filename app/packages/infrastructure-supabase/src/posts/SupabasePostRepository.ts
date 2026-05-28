@@ -37,6 +37,7 @@ import { fetchRankedFeedPage, needsRankedPath } from './feedQueryRanked';
 import {
   closePost as closePostHelper,
   reopenPost as reopenPostHelper,
+  republishPost as republishPostHelper,
   getClosureCandidates as getClosureCandidatesHelper,
 } from './closureMethods';
 import { executePostUpdate } from './executePostUpdate';
@@ -214,6 +215,9 @@ export class SupabasePostRepository implements IPostRepository {
   }
   reopen(postId: string): Promise<Post> {
     return reopenPostHelper(this.client, postId);
+  }
+  republish(postId: string): Promise<string> {
+    return republishPostHelper(this.client, postId);
   }
   async unmrkRecipientSelf(postId: string): Promise<void> {
     const { error } = await this.client.rpc('rpc_recipient_unmark_self', { p_post_id: postId });
