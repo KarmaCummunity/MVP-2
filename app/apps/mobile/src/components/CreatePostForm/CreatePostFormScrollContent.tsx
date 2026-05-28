@@ -28,6 +28,8 @@ export interface CreatePostFormScrollContentProps {
   readonly onStreetChange: (next: string) => void;
   readonly streetNumber: string;
   readonly onStreetNumberChange: (next: string) => void;
+  /** Shown after Publish is tapped while address fields are incomplete (FR-POST-002 AC4). */
+  readonly addressInlineError: string | null;
   readonly category: Category;
   readonly onCategoryChange: (next: Category) => void;
   readonly isGive: boolean;
@@ -65,6 +67,7 @@ export function CreatePostFormScrollContent({
   onStreetChange,
   streetNumber,
   onStreetNumberChange,
+  addressInlineError,
   category,
   onCategoryChange,
   isGive,
@@ -182,6 +185,11 @@ export function CreatePostFormScrollContent({
             editable={!isPublishing && !!city}
           />
         </View>
+        {addressInlineError ? (
+          <Text style={styles.sectionHint} accessibilityRole="alert">
+            {addressInlineError}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.section}>

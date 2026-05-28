@@ -36,6 +36,7 @@ export function EditPostExposureSection({
   return (
     <View style={styles.wrap}>
       <Text style={styles.sectionTitle}>{t('post.exposureSettingsSectionTitle')}</Text>
+      <Text style={styles.sectionIntro}>{t('post.exposureSettingsIntro')}</Text>
       <VisibilityChooser
         value={visibility}
         onChange={handleVisibilityChange}
@@ -73,6 +74,13 @@ const useEditPostExposureSectionStyles = makeUseStyles(({ colors }) => ({
     fontSize: 15,
     color: colors.textPrimary,
     textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
+  sectionIntro: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: textAlignStart(),
+    lineHeight: 18,
     ...layoutWritingDirectionStyle(),
   },
 }));
