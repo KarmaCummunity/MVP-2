@@ -13,7 +13,7 @@ type SurveyFloatingNavProps = {
   readonly prevDisabled: boolean;
   readonly nextDisabled: boolean;
   readonly bottom: number;
-  /** Overrides default "הבא" label (e.g. "סיום" on the last question). */
+  /** Overrides the default `survey.nextLabel` value (e.g. the `survey.lastLabel` finish copy on the final question). */
   readonly nextLabel?: string;
 };
 

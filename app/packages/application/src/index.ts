@@ -54,6 +54,7 @@ export * from './posts/ListSavedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
+export * from './posts/RepublishPostUseCase';
 export * from './posts/UnmarkRecipientSelfUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
 export { ListPostActorIdentityUseCase, type ListPostActorIdentityInput } from './posts/ListPostActorIdentityUseCase';
