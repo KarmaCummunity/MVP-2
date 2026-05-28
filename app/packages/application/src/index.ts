@@ -187,6 +187,7 @@ export type {
   CreateRideListingRepoInput,
   SearchRideListingsInput,
   RideVisibility,
+  ListMyRidesInput,
 } from './ports/IRideListingRepository';
 export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
 export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';
@@ -199,6 +200,7 @@ export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
 export type { FindRideMatchesInput } from './ports/IRideListingRepository';
 export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
 export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+export { ListMyRidesUseCase } from './rides/ListMyRidesUseCase';
 
 // Ride templates (FR-RIDE-021 / FR-RIDE-022)
 export type {

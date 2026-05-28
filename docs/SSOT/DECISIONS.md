@@ -1024,12 +1024,25 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 **Affected docs.** `.github/workflows/ci-dev-guard.yml`, `db-deploy.yml`, `app/package.json`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`, `SETUP_GIT_AGENT.md`; plan `docs/superpowers/plans/2026-05-28-dev-branch-ci-hardening.md`.
 
+## D-55 — Rides UI restored + V3.0 scope expansion (supersedes D-51) (2026-05-29)
+
+**Date.** 2026-05-29
+
+**Decision.** Reverse `D-51`'s UI-only hide: `RidesHubScreen` now renders the live in-app rides experience (feed + `RideCreateSheet` FAB + `RideFilterSheet`) as the primary view, with the NGO `DonationLinksList categorySlug="transport"` collapsed into a secondary section (FR-RIDE-023). Concurrently expand the spec to V3.0 by adding FR-RIDE-019 + FR-RIDE-023..045 covering: advanced publish (cargo / food / payment / requirements / intermediate stops), driver dashboard + passenger requests, active-ride lifecycle (`open → in_transit → completed_pending_rating → closed`), emergency button (`R-Rides-8`), ratings system (1..5 stars, ≤300 char comments), late-cancel penalty path (`R-Rides-5`/`R-Rides-6`), payment cap enforcement (`R-Rides-1`/`R-Rides-2`), driver license + insurance declarations (`R-Rides-3`/`R-Rides-4`), minor consent (`R-Rides-9`), edge-case catalog (`R-Rides-10` food spoilage + international ban + breakdown + no-show), and first cross-world hook (items post ↔ ride request, FR-RIDE-044).
+
+**Rationale.** The backend hardened cycle (#414..#447) closed every gap that motivated the hide: cron-driven expiry, RPC-only writes with seat enforcement (`D-52`), realtime publication, visibility tiers honored end-to-end, templates schema + materializer, lifecycle chat messages, and notifications. Continuing to hide the UI now leaves the donation-world headline modality with no native flow while we have a fully-tested backend underneath. The V3.0 expansion is the natural product cadence — the PRD (`PRD_V2_NOT_FOR_MVP/donation_worlds/06_Rides.md`) was always the target; we shipped V2.0 as a minimum-viable foundation, hardened it, and now ascend to V3.0 with the full carpooling-for-good feature set: safety overlay, ratings, business rules, cross-world.
+
+**Alternatives rejected.** Keep hidden + ship V3.0 entirely backend-only (defeats the purpose; users still see only NGO links). Ship UI without spec expansion (un-scoped scope creep; FR-IDs and ACs must lead implementation). Split V3.0 into 12 separate PRs (overhead vs reviewability tradeoff lands on one focused PR per logical chunk; spec lands first as the contract).
+
+**Affected docs.** `docs/SSOT/spec/15_rides.md` (status flipped 🟡 V3.0 + new FRs); `apps/mobile/src/features/rides/screens/RidesHubScreen.tsx` (un-hide); `docs/SSOT/BACKLOG.md` V2.X line + new V3.X umbrella; migrations `0161`..`0170` (new); PRD `PRD_V2_NOT_FOR_MVP/donation_worlds/06_Rides.md` (existing — drives ACs).
+
 ---
 
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.7 | 2026-05-29 | Added `D-55` (rides UI restored + V3.0 scope: FR-RIDE-019 + FR-RIDE-023..045 — advanced publish, dashboard, active-ride + emergency, ratings, business rules, cross-world). Supersedes `D-51`. |
 | 3.6 | 2026-05-28 | Added `D-54` (selective dev CI hardening: `ci-dev-guard`, dev+prod DB dry-run, dev branch-protection doc; not 1:1 main copy). |
 | 3.5 | 2026-05-28 | Added `D-53` (automated `main` prod gates: dev→main PR enforcement, migration safety scan, prod DB dry-run before apply, expanded prod smoke; no human deploy approvers). |
 | 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |

@@ -3,6 +3,7 @@ import type {
   CreateRideListingRepoInput,
   FindRideMatchesInput,
   IRideListingRepository,
+  ListMyRidesInput,
   RideListingRow,
   RideVisibility,
   SearchRideListingsInput,
@@ -136,6 +137,31 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
     const fetched = await this.getById(row.ride_id, ''); // viewerId unused in adapter
     if (!fetched) throw new Error('updateVisibility: row not visible after update');
     return fetched;
+  }
+
+  async listMyRides(input: ListMyRidesInput): Promise<RideListingRow[]> {
+    const statuses = input.statuses ?? (['open', 'closed', 'cancelled', 'expired'] as const);
+    const limit = Math.min(input.limit ?? 50, 200);
+    // FR-RIDE-024 AC2 — bound the past window so a long-tenured user doesn't
+    // pull their entire history. Default 30 days; callers can pass `null` to
+    // disable. RLS already restricts to rides where owner_id = auth.uid().
+    const since =
+      input.since === null
+        ? null
+        : (input.since ?? new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString());
+
+    let query = this.client
+      .from('ride_listings')
+      .select(RIDE_SELECT)
+      .eq('owner_id', input.ownerId)
+      .in('status', statuses as readonly string[])
+      .order('departs_at', { ascending: false })
+      .limit(limit);
+    if (since !== null) query = query.gte('departs_at', since);
+
+    const { data, error } = await query;
+    if (error) throw new Error(error.message);
+    return ((data ?? []) as RideRowWithCities[]).map(mapJoinedRow);
   }
 
   async findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]> {

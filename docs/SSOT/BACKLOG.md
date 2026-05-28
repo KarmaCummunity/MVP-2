@@ -83,6 +83,27 @@
 | ID | Task | Owner | Status | Spec |
 |----|------|-------|--------|------|
 | V2.1 | Rides V2.0 (FR-RIDE-001..010) | agent-fullstack | ✅ Done | `spec/15_rides.md` |
+| V2.1.1 | Rides backend hardening (FR-RIDE-011..022) — participants RPC, lifecycle messages, realtime, find-matches, visibility tiers, templates schema + application | agent-be | ✅ Done | `spec/15_rides.md`; PRs #414..#441 |
+
+## V3.0 — Rides Carpooling for Good (FR-RIDE-019 + FR-RIDE-023..045)
+
+> Full-scope rides world per `PRD_V2_NOT_FOR_MVP/donation_worlds/06_Rides.md`. Reverses D-51's UI-only hide (D-55) and adds the safety overlay (active-ride + emergency button), ratings, business rules, and the first cross-world hook (items ↔ rides). Shipped as multiple PRs against `dev`.
+
+| ID | Task | Owner | Status | Spec |
+|----|------|-------|--------|------|
+| V3.0.0 | **Spec + decision** — extend `spec/15_rides.md` with FR-RIDE-019 + FR-RIDE-023..045; add `DECISIONS.md` `D-55` (supersedes `D-51`); register V3.0 umbrella in BACKLOG | agent-fullstack | 🟡 In progress | `spec/15_rides.md`; `DECISIONS.md` D-55 |
+| V3.0.1 | **Restore rides hub UI (FR-RIDE-023)** — un-hide `RidesHubScreen`; wire live feed + `RideCreateSheet` FAB + `RideFilterSheet` + realtime banner + collapsed NGO links | agent-fe | ⏳ Planned | `spec/15_rides.md` FR-RIDE-023 |
+| V3.0.2 | **Approved-participant cascade on ride leaving open (FR-RIDE-019)** — DB trigger auto-cancels every still-approved participant when a ride goes closed/cancelled/expired; fires `ride_participant_cancelled_by_owner` (FR-RIDE-013 AC4 variant) | agent-be | ⏳ Planned | `spec/15_rides.md` FR-RIDE-019 |
+| V3.0.3 | **Driver dashboard (FR-RIDE-024)** — `/donations/rides/my-rides` grouped (upcoming/active/past) with inline approve/reject of pending requests; realtime per-row participant subscription | agent-fe | ⏳ Planned | `spec/15_rides.md` FR-RIDE-024 |
+| V3.0.4 | **Passenger requests screen (FR-RIDE-025)** — `/donations/rides/my-requests` grouped (pending/approved/history); cancel with late-cancel rating-impact confirm | agent-fe | ⏳ Planned | `spec/15_rides.md` FR-RIDE-025 |
+| V3.0.5 | **Advanced publish: cargo + food + payment + requirements + stops (FR-RIDE-026..030)** — extends `ride_listings` schema; mutually-exclusive cargo/food gate; client + server payment-cap enforcement; `ride_stops` table + multi-stop route render | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-026..030 |
+| V3.0.6 | **Active ride lifecycle (FR-RIDE-031..033)** — extends status enum to `in_transit` / `completed_pending_rating`; RPCs `rpc_ride_start` / `rpc_ride_arrive`; participant snapshot frozen on start; owner check-in CTA window | agent-be | ⏳ Planned | `spec/15_rides.md` FR-RIDE-031..033 |
+| V3.0.7 | **Active ride screen + emergency button (FR-RIDE-034..035)** — `/donations/rides/[id]/active`; visible to snapshot only; 🚨 button → `rpc_ride_emergency_trigger`; rate-limit + admin notify + chat system message + persistent banner | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-034..035 |
+| V3.0.8 | **Ratings system (FR-RIDE-037..039)** — `ride_ratings` table + `rpc_ride_rate`; ratings screen route; rating-summary view + profile/detail rendering; forced 1-star late-cancel penalty path | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-037..039 |
+| V3.0.9 | **Business rules — declaration + cancellation + minor consent (FR-RIDE-040..043)** — `driver_declarations` table + first-publish gate; `minor_consent_tokens` table + Edge Function for parent SMS/email; payment cap third-layer enforcement; super-admin ban-driver action | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-040..043 |
+| V3.0.10 | **Cross-world: items post ↔ ride request (FR-RIDE-044)** — `linked_post_id` FK on rides; "**🚗 בקש שינוע**" CTA on give posts; post-card 🚗 chip when ride request exists; auto-close ride on post-close trigger | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-044 |
+| V3.0.11 | **Edge cases catalog (FR-RIDE-045)** — no-show auto-cancel + penalty; food spoilage handover trigger; international ban guard; breakdown flow via early-arrive with reason | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-045 |
+| V3.0.12 | **E2E test sweep + quality gates** — comprehensive unit + integration tests across all layers; RLS test sweep; vitest mobile component tests for hub, dashboard, active, ratings; `pnpm typecheck && pnpm test && pnpm lint` all green | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-045 |
 
 ## P3 — Post-MVP (Deferred)
 

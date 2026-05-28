@@ -81,4 +81,39 @@ describe('resolvePushRoute', () => {
       }),
     ).toEqual({ pathname: '/settings/follow-requests', params: {} });
   });
+
+  // FR-RIDE-013, FR-RIDE-019 — rides notification routing.
+  describe('rides notifications', () => {
+    const RIDE_KINDS = [
+      'ride_request',
+      'ride_approved',
+      'ride_rejected',
+      'ride_participant_cancelled',
+      'ride_participant_cancelled_by_owner',
+    ] as const;
+
+    for (const kind of RIDE_KINDS) {
+      it(`routes ${kind} to /(tabs)/donations/rides/[id] when params.id is a UUID`, () => {
+        expect(
+          resolvePushRoute({
+            category: 'critical',
+            kind,
+            notification_id: `n-${kind}`,
+            params: { id: UUID },
+          }),
+        ).toEqual({ pathname: '/(tabs)/donations/rides/[id]', params: { id: UUID } });
+      });
+
+      it(`rejects ${kind} when params.id is malformed`, () => {
+        expect(
+          resolvePushRoute({
+            category: 'critical',
+            kind,
+            notification_id: `n-bad-${kind}`,
+            params: { id: '../../etc/passwd' },
+          }),
+        ).toBeNull();
+      });
+    }
+  });
 });

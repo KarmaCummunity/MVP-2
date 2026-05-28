@@ -58,6 +58,19 @@ export interface FindRideMatchesInput {
   limit?: number | null;
 }
 
+export interface ListMyRidesInput {
+  ownerId: string;
+  /** Default: open + closed + cancelled + expired. */
+  statuses?: ReadonlyArray<'open' | 'closed' | 'cancelled' | 'expired'>;
+  /**
+   * Lower bound on `departs_at` so we don't fetch the entire history. Default
+   * = now() − 30 days; pass `null` to disable.
+   */
+  since?: string | null;
+  /** Result cap (server clamps to ≤ 200). */
+  limit?: number;
+}
+
 export interface IRideListingRepository {
   create(input: CreateRideListingRepoInput): Promise<RideListingRow>;
   getById(rideId: string, viewerId: string): Promise<RideListingRow | null>;
@@ -75,4 +88,11 @@ export interface IRideListingRepository {
    * ownership and that the ride is still 'open'. Idempotent on no-op.
    */
   updateVisibility(input: { rideId: string; visibility: RideVisibility }): Promise<RideListingRow>;
+
+  /**
+   * Rides authored by the caller, ordered `departs_at DESC`. RLS already
+   * allows owners to see all of their rides regardless of status/visibility,
+   * so the adapter is a plain SELECT.
+   */
+  listMyRides(input: ListMyRidesInput): Promise<RideListingRow[]>;
 }

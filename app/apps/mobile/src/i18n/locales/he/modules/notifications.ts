@@ -53,4 +53,8 @@ export const notificationsHe = {
   rideRejectedBody: 'דחה את הבקשה שלך לטרמפ: {{rideTitle}}',
   rideParticipantCancelledTitle: '{{riderName}}',
   rideParticipantCancelledBody: 'ביטל את הצטרפותו לטרמפ: {{rideTitle}}',
+  // FR-RIDE-019 AC3 — owner-driven cascade (ride closed/cancelled/expired)
+  // sends the participant a distinct variant so the message reads correctly.
+  rideCancelledByOwnerTitle: '{{ownerName}}',
+  rideCancelledByOwnerBody: 'הנסיעה בוטלה: {{rideTitle}}',
 } as const;

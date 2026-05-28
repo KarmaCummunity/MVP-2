@@ -26,5 +26,8 @@ export * from './admin/SupabaseAdminTaskRepository';
 export * from './admin/SupabaseAdminContentRepository';
 export * from './reports/SupabaseReportsRepository';
 export { SupabaseRideListingRepository } from './rides/SupabaseRideListingRepository';
+export { SupabaseRideParticipantRepository } from './rides/SupabaseRideParticipantRepository';
+export { SupabaseRideTemplateRepository } from './rides/SupabaseRideTemplateRepository';
+export { SupabaseRidesRealtime } from './rides/SupabaseRidesRealtime';
 export { SupabaseSurveyRepository } from './survey/SupabaseSurveyRepository';
 export { SupabasePublicResearchRepository } from './research/SupabasePublicResearchRepository';
