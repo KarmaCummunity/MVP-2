@@ -49,7 +49,11 @@ export function useCommunityStatsAbout(): StatsState & { refetch: () => void } {
     // Unique topic per mount: the client caches channels by topic. After
     // unsubscribe/removeChannel the cache entry can linger, so a remount
     // (navigation, StrictMode) would reuse a joined channel and `.on()` throws.
-    const topic = `community-stats-watch:${Math.random().toString(36).slice(2, 10)}`;
+    // Using crypto.randomUUID() (no cryptographic significance here — uniqueness
+    // is the only requirement — but avoids tripping Math.random security gates).
+    const suffix =
+      globalThis.crypto?.randomUUID?.() ?? `${Date.now()}-${performance.now()}`;
+    const topic = `community-stats-watch:${suffix}`;
     const channel = supabase
       .channel(topic)
       .on(
