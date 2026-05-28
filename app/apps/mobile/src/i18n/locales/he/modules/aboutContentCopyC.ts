@@ -1,7 +1,9 @@
 /** Hebrew About landing — roadmap, goals, contributions, contact (v1.0 master narrative). */
 export const aboutContentCopyC = {
   // Roadmap (legacy text keys kept for backward compat with text rendering)
-  roadmapTitle: 'מפת הדרכים — שלבים אל החזון',
+  roadmapTitle: 'מפת דרכים',
+  roadmapLead:
+    'מה שכבר בנוי, מה שבדרך, ומה שמגיע אחר כך — בלי להעמיד פנים שהכל כבר כאן.',
   roadmapPhase1Title: 'שלב א׳ — ליבה יציבה (מה שכבר עובד)',
   roadmapPhase1Body:
     'זהות, פוסטים, צ׳אט, פרטיות, דיווחים, סטטיסטיקות בסיסיות, ו-9 קטגוריות תרומה — כדי שהקהילה תוכל לגדול על בסיס אמון.',

@@ -9,7 +9,6 @@ export type AboutSectionId =
   | 'audience'
   | 'values'
   | 'governance'
-  | 'money'
   | 'roadmap'
   | 'goals'
   | 'contributions'
@@ -29,7 +28,6 @@ export const ABOUT_NAV_ITEMS: ReadonlyArray<{ readonly id: AboutSectionId; reado
   { id: 'audience', icon: 'people-outline' },
   { id: 'values', icon: 'heart-outline' },
   { id: 'governance', icon: 'shield-checkmark-outline' },
-  { id: 'money', icon: 'cash-outline' },
   { id: 'roadmap', icon: 'map-outline' },
   { id: 'goals', icon: 'flag-outline' },
   { id: 'contributions', icon: 'gift-outline' },
@@ -51,7 +49,6 @@ export const ABOUT_NAV_LABEL_KEYS: Record<AboutSectionId, string> = {
   audience: 'navAudience',
   values: 'navValues',
   governance: 'navGovernance',
-  money: 'navMoney',
   roadmap: 'navRoadmap',
   goals: 'navGoals',
   contributions: 'navContributions',

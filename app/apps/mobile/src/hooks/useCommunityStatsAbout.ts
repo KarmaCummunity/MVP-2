@@ -46,8 +46,12 @@ export function useCommunityStatsAbout(): StatsState & { refetch: () => void } {
     void fetchOnce(guard);
 
     const supabase = getSupabaseClient();
+    // Unique topic per mount: the client caches channels by topic. After
+    // unsubscribe/removeChannel the cache entry can linger, so a remount
+    // (navigation, StrictMode) would reuse a joined channel and `.on()` throws.
+    const topic = `community-stats-watch:${Math.random().toString(36).slice(2, 10)}`;
     const channel = supabase
-      .channel('community-stats-watch')
+      .channel(topic)
       .on(
         'postgres_changes',
         { event: '*', schema: 'public', table: 'community_stats' },
