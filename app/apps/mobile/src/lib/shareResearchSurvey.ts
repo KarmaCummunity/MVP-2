@@ -39,12 +39,27 @@ function composeMessage(message: string, url: string): string {
   return `${message.trim()}\n\n${url}`;
 }
 
+async function copyToClipboard(
+  nav: WebShareNavigator,
+  url: string,
+): Promise<ShareResearchOutcome> {
+  if (nav.clipboard?.writeText) {
+    try {
+      await nav.clipboard.writeText(url);
+      return { kind: 'copied' };
+    } catch (err) {
+      return { kind: 'failed', reason: (err as Error).message };
+    }
+  }
+  return { kind: 'failed', reason: 'no_share_or_clipboard' };
+}
+
 async function shareWeb(
   url: string,
   title: string,
   body: string,
 ): Promise<ShareResearchOutcome> {
-  const nav = (globalThis as { navigator?: WebShareNavigator }).navigator;
+  const nav = typeof navigator !== 'undefined' ? (navigator as unknown as WebShareNavigator) : undefined;
   if (!nav) return { kind: 'failed', reason: 'no_navigator' };
   if (typeof nav.share === 'function') {
     try {
@@ -55,15 +70,7 @@ async function shareWeb(
       if (name === 'AbortError') return { kind: 'dismissed' };
     }
   }
-  if (nav.clipboard?.writeText) {
-    try {
-      await nav.clipboard.writeText(url);
-      return { kind: 'copied' };
-    } catch (err) {
-      return { kind: 'failed', reason: (err as Error).message };
-    }
-  }
-  return { kind: 'failed', reason: 'no_share_or_clipboard' };
+  return copyToClipboard(nav, url);
 }
 
 async function shareNative(

@@ -113,6 +113,22 @@ describe('shareResearchSurvey — web (Platform.OS=web)', () => {
       'https://example.com/research/alt-platforms-research?src=in-app-share-settings',
     );
   });
+
+  it('falls through to clipboard when navigator.share throws non-AbortError', async () => {
+    const share = vi.fn().mockRejectedValue(new Error('not_supported'));
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { share, clipboard: { writeText } });
+
+    const result = await shareResearchSurvey({
+      webBaseUrl: 'https://example.com',
+      src: RESEARCH_SHARE_SRC_THANKS,
+      title: 'T',
+      message: 'M',
+    });
+
+    expect(result).toEqual({ kind: 'copied' });
+    expect(writeText).toHaveBeenCalledTimes(1);
+  });
 });
 
 describe('shareResearchSurvey — native (Platform.OS=ios)', () => {
