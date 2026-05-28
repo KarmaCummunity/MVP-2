@@ -156,6 +156,9 @@ export * from './legal/AcceptLegalDocumentUseCase';
 
 export * from './admin/IAdminRoleRepository';
 export * from './admin/GetMyAdminRolesUseCase';
+export * from './admin/GrantAdminRoleUseCase';
+export * from './admin/RevokeAdminRoleUseCase';
+export * from './admin/ListAdminsUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';

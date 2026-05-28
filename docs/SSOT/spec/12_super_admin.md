@@ -1,6 +1,6 @@
 # 2.12 Super Admin (in-chat moderation)
 
-> **Status:** 🟡 In progress — FR-ADMIN-001..014 ✅ shipped; FR-ADMIN-015..020 ⏳ planned (P3.A2/A3/A4). **P3.A0 + P3.A1 + Pre-A2 Hardening all merged to `dev` as of 2026-05-27** (PRs #384, #385, #387, #394). The portal infrastructure is production-ready for moderator/support roles: `admin_role_grants` table with PRD V2-wide role enum + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates wired into every moderation RPC (`admin_remove_post`, `admin_dismiss_report`, `admin_confirm_report`, `admin_restore_target`, `admin_delete_message`); `(admin)` route group with `AdminGate` redirect + responsive `AdminNav` + 7 nav entries (Reports live; Tasks/Admins/Users/Posts/Audit as A2..A4 stubs); reports inbox + per-case detail with permission-gated actions consuming the `@kc/domain` `PERMISSION_MATRIX` SSOT; chat-flow coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag; auto-removal protected by 14-day freshness window; 7 legacy `useIsSuperAdmin` callsites migrated to `hasPermission()`. **Closed TDs:** TD-95 (single-super-admin DB invariant), TD-94 #2 / #4 / #5 / #6 (already-moderated error / cascade-dismiss / audit metadata parity / freshness window). **Open TDs in this domain:** TD-93 (admin search visibility — closes in P3.A4); TD-94 #1 now by design per D-41 (tickets ≠ reports); TD-94 #3 (`is_post_visible_to` admin bypass — closes in P3.A4). **Suspect-queue producers (FR-MOD-008)** and **90-day re-registration block (FR-ADMIN-003 AC3)** deferred to TECH_DEBT. **Next:** P3.A2 RBAC management (FR-ADMIN-015..017) — gives super_admin a UI to grant moderator/support roles without raw SQL. See `docs/superpowers/specs/2026-05-25-admin-portal-design.md` for A2..A4 design and `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md` for the original audit.
+> **Status:** 🟡 In progress — FR-ADMIN-001..017 ✅ shipped; FR-ADMIN-018..020 ⏳ planned (P3.A3/A4). **P3.A0 + P3.A1 + Pre-A2 Hardening + P3.A2 all merged to `dev` as of 2026-05-28** (PRs #384, #385, #387, #394 + this PR). The portal infrastructure is production-ready for moderator/support roles: `admin_role_grants` table with PRD V2-wide role enum + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates wired into every moderation RPC (`admin_remove_post`, `admin_dismiss_report`, `admin_confirm_report`, `admin_restore_target`, `admin_delete_message`); `(admin)` route group with `AdminGate` redirect + responsive `AdminNav` + 7 nav entries (Reports live; Tasks/Admins/Users/Posts/Audit as A2..A4 stubs); reports inbox + per-case detail with permission-gated actions consuming the `@kc/domain` `PERMISSION_MATRIX` SSOT; chat-flow coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag; auto-removal protected by 14-day freshness window; 7 legacy `useIsSuperAdmin` callsites migrated to `hasPermission()`. **Closed TDs:** TD-95 (single-super-admin DB invariant), TD-94 #2 / #4 / #5 / #6 (already-moderated error / cascade-dismiss / audit metadata parity / freshness window). **Open TDs in this domain:** TD-93 (admin search visibility — closes in P3.A4); TD-94 #1 now by design per D-41 (tickets ≠ reports); TD-94 #3 (`is_post_visible_to` admin bypass — closes in P3.A4). **Suspect-queue producers (FR-MOD-008)** and **90-day re-registration block (FR-ADMIN-003 AC3)** deferred to TECH_DEBT. **Next:** P3.A2 RBAC management (FR-ADMIN-015..017) — gives super_admin a UI to grant moderator/support roles without raw SQL. See `docs/superpowers/specs/2026-05-25-admin-portal-design.md` for A2..A4 design and `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md` for the original audit.
 
 
 
@@ -122,8 +122,8 @@ Admin actions are gated by a server-side check that verifies `User.is_super_admi
 
 **Acceptance Criteria.**
 - AC1. The flag is **not** trusted from the client; every admin endpoint and every RLS policy revalidates it.
-- AC2. The flag is set by direct database operation (no UI to grant admin) and only one row may carry it at any time in MVP.
-- AC3. Attempts to perform admin actions without the flag fail with `FORBIDDEN`.
+- AC2. *(Amended by FR-ADMIN-017, 2026-05-28.)* At most one **active** `super_admin` grant exists at any time, enforced by the partial unique index on `admin_role_grants` (`role='super_admin' AND revoked_at IS NULL`); any number of active `moderator` and `support` grants may coexist. The `super_admin` grant is still set by direct database operation only (no UI escalation per `CLAUDE.md` §7); `moderator` and `support` grants are managed via the `(admin)/admins` portal screen (FR-ADMIN-015 / FR-ADMIN-016).
+- AC3. Attempts to perform admin actions without an active grant in any allowed role fail with `FORBIDDEN` (SQLSTATE 42501).
 
 ---
 
@@ -268,6 +268,58 @@ A new Expo Router group `(admin)` accessible only to users with an active admin 
 
 ---
 
+## §12 Admin Portal — RBAC management (A2)
+
+A2 makes `moderator` and `support` grants manageable from inside the portal so the team can expand without a Supabase shell session. `super_admin` escalation remains DB-only (per `CLAUDE.md` §7 and FR-ADMIN-006 AC2 amended).
+
+Migration: `0138_admin_rbac_management.sql`. Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum and the partial unique index were both established by A0 (D-40); A2 is a UI + RPC layer on top.
+
+---
+
+## FR-ADMIN-015 — Admin list
+
+**Description.**
+`(admin)/admins` lists active grants grouped by role with last-seen timestamp, and (for `super_admin`) supports toggling on revoked grants for audit visibility.
+
+**Acceptance Criteria.**
+- AC1. `(admin)/admins` lists active admins grouped by role (`super_admin`, then `moderator`, then `support`) with `display_name`, `last_seen_at`, `granted_at`, and `granted_by_display_name`.
+- AC2. `super_admin` may toggle "include revoked grants" — revoked rows render dimmed with the revocation timestamp instead of last-seen.
+- AC3. `moderator` sees the list read-only (no `+ Grant` button, no `Revoke` button per row); `support` does not access the route at all (deny card rendered if a stale flag lands them there).
+
+**Related.** RPC: `admin_list_admins(p_include_revoked boolean)` returns `(grant_id, user_id, display_name, avatar_url, role, granted_at, granted_by, granted_by_display_name, revoked_at, revoked_by, last_seen_at)`. Domain: `AdminGrant`. Application: `IAdminRoleRepository.listAdmins`, `ListAdminsUseCase`. Mobile: `useAdminsList`, `AdminRow`, `(admin)/admins/index.tsx`.
+
+---
+
+## FR-ADMIN-016 — Grant / revoke role
+
+**Description.**
+`super_admin` can grant `moderator` or `support` to any active user via display-name lookup, and can revoke any active grant. Revoking the last active `super_admin` is blocked at both the RPC and DB-index levels.
+
+**Acceptance Criteria.**
+- AC1. The grant modal performs a debounced lookup against `users` (`account_status='active'` + `display_name ILIKE '%q%'`, limit 8) and lists matches; selecting a match plus a role enables the submit button.
+- AC2. Submit calls `admin_grant_role(target_user_id, role)`; valid roles are `moderator` and `support`. Granting `super_admin` (or any PRD-V2-reserved role) is rejected server-side with `invalid_role` per `CLAUDE.md` §7 ("no UI to grant `super_admin`").
+- AC3. Revoking the last active `super_admin` raises `cannot_revoke_last_super_admin` (SQLSTATE `P0001`) — the partial unique index on `admin_role_grants` ensures the invariant even if a future code path skipped the guard.
+- AC4. Each grant and revoke emits an `audit_events` row (`action='admin_role_grant'` or `'admin_role_revoke'`, `target_type='user'`, `metadata={role, grant_id}`).
+- AC5. Errors mapped to user-visible Hebrew strings: `forbidden`, `target_not_found`, `target_not_active`, `role_already_active`, `invalid_role`, `cannot_revoke_last_super_admin`, `grant_not_found`, `grant_already_revoked`, `invalid_input`, plus a generic `unknown` fallback.
+
+**Related.** RPCs: `admin_grant_role(target_user_id uuid, role text) RETURNS uuid` and `admin_revoke_role(grant_id uuid) RETURNS void` (both `SECURITY DEFINER`, gated by `admin_assert_role(auth.uid(), ARRAY['super_admin'])`). Application: `GrantAdminRoleUseCase`, `RevokeAdminRoleUseCase`. Mobile: `useAdminRoleMutations`, `GrantRoleModal`.
+
+---
+
+## FR-ADMIN-017 — Single-super_admin invariant (replaces FR-ADMIN-006 AC2)
+
+**Description.**
+Originally `FR-ADMIN-006 AC2` read "only one row may carry `is_super_admin`". With A0's RBAC schema (`admin_role_grants` + partial unique index `role='super_admin' AND revoked_at IS NULL`), the invariant generalises to multiple roles cleanly. The amended wording is now in FR-ADMIN-006 AC2; this FR exists to record the change for traceability.
+
+**Acceptance Criteria.**
+- AC1. FR-ADMIN-006 AC2 reads: "at most one **active** `super_admin` grant; any number of active `moderator` and `support` grants."
+- AC2. The partial unique index (`admin_role_grants_single_super_admin_uniq`, established in migration `0112` for FR-ADMIN-010 AC5) enforces AC1 at the DB level.
+- AC3. `admin_revoke_role` adds an explicit "cannot revoke last super_admin" guard (FR-ADMIN-016 AC3) as defence in depth above the DB index — the index would otherwise let the row be revoked because revocation is an UPDATE that does not violate the partial unique index (the row leaves the partial-uniqueness set).
+
+**Related.** Migration: `0112_admin_role_grants_table.sql` (index). Migration: `0138_admin_rbac_management.sql` (RPC guard).
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
@@ -275,3 +327,4 @@ A new Expo Router group `(admin)` accessible only to users with an active admin 
 | 0.3 | 2026-05-12 | `FR-ADMIN-009 AC1` — Super Admin sees *Remove as admin* on own posts too; `FR-POST-008` alignment: admin may edit any open post (RLS `0049_admin_post_edit_rls.sql`). |
 | 0.4 | 2026-05-25 | Added §10 Admin Portal — Foundation (A0). FR-ADMIN-010 (RBAC primitives) and FR-ADMIN-011 (Portal scaffold). Status header ✅ → 🟡. FR-ADMIN-012..020 reserved for A1..A4. |
 | 0.5 | 2026-05-26 | Added §11 Admin Portal — Reports Dashboard (A1). FR-ADMIN-012/013/014. Closed cascade-dismiss sub-item of TD-94 (migration 0119). Widened admin_dismiss_report / admin_remove_post / admin_confirm_report from `is_admin()` to RBAC (migration 0118). Added deprecation note on FR-ADMIN-003/004/005/009 referencing FR-ADMIN-014. |
+| 0.6 | 2026-05-28 | Added §12 Admin Portal — RBAC management (A2). FR-ADMIN-015 (admin list), FR-ADMIN-016 (grant/revoke), FR-ADMIN-017 (amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support"). Migration `0138_admin_rbac_management.sql` ships `admin_grant_role` + `admin_revoke_role` + `admin_list_admins` (all gated by `admin_assert_role`). |
