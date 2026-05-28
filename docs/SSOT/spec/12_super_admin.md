@@ -272,7 +272,7 @@ A new Expo Router group `(admin)` accessible only to users with an active admin 
 
 A2 makes `moderator` and `support` grants manageable from inside the portal so the team can expand without a Supabase shell session. `super_admin` escalation remains DB-only (per `CLAUDE.md` §7 and FR-ADMIN-006 AC2 amended).
 
-Migration: `0138_admin_rbac_management.sql`. Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum and the partial unique index were both established by A0 (D-40); A2 is a UI + RPC layer on top.
+Migration: `0143_admin_rbac_management.sql`. Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum and the partial unique index were both established by A0 (D-40); A2 is a UI + RPC layer on top.
 
 ---
 
@@ -316,7 +316,7 @@ Originally `FR-ADMIN-006 AC2` read "only one row may carry `is_super_admin`". Wi
 - AC2. The partial unique index (`admin_role_grants_single_super_admin_uniq`, established in migration `0112` for FR-ADMIN-010 AC5) enforces AC1 at the DB level.
 - AC3. `admin_revoke_role` adds an explicit "cannot revoke last super_admin" guard (FR-ADMIN-016 AC3) as defence in depth above the DB index — the index would otherwise let the row be revoked because revocation is an UPDATE that does not violate the partial unique index (the row leaves the partial-uniqueness set).
 
-**Related.** Migration: `0112_admin_role_grants_table.sql` (index). Migration: `0138_admin_rbac_management.sql` (RPC guard).
+**Related.** Migration: `0112_admin_role_grants_table.sql` (index). Migration: `0143_admin_rbac_management.sql` (RPC guard).
 
 ---
 
@@ -327,4 +327,4 @@ Originally `FR-ADMIN-006 AC2` read "only one row may carry `is_super_admin`". Wi
 | 0.3 | 2026-05-12 | `FR-ADMIN-009 AC1` — Super Admin sees *Remove as admin* on own posts too; `FR-POST-008` alignment: admin may edit any open post (RLS `0049_admin_post_edit_rls.sql`). |
 | 0.4 | 2026-05-25 | Added §10 Admin Portal — Foundation (A0). FR-ADMIN-010 (RBAC primitives) and FR-ADMIN-011 (Portal scaffold). Status header ✅ → 🟡. FR-ADMIN-012..020 reserved for A1..A4. |
 | 0.5 | 2026-05-26 | Added §11 Admin Portal — Reports Dashboard (A1). FR-ADMIN-012/013/014. Closed cascade-dismiss sub-item of TD-94 (migration 0119). Widened admin_dismiss_report / admin_remove_post / admin_confirm_report from `is_admin()` to RBAC (migration 0118). Added deprecation note on FR-ADMIN-003/004/005/009 referencing FR-ADMIN-014. |
-| 0.6 | 2026-05-28 | Added §12 Admin Portal — RBAC management (A2). FR-ADMIN-015 (admin list), FR-ADMIN-016 (grant/revoke), FR-ADMIN-017 (amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support"). Migration `0138_admin_rbac_management.sql` ships `admin_grant_role` + `admin_revoke_role` + `admin_list_admins` (all gated by `admin_assert_role`). |
+| 0.6 | 2026-05-28 | Added §12 Admin Portal — RBAC management (A2). FR-ADMIN-015 (admin list), FR-ADMIN-016 (grant/revoke), FR-ADMIN-017 (amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support"). Migration `0143_admin_rbac_management.sql` ships `admin_grant_role` + `admin_revoke_role` + `admin_list_admins` (all gated by `admin_assert_role`). |
