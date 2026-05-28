@@ -84,7 +84,7 @@ ALTER TABLE public.ride_listings
 
 -- Idempotency on materialization: at most one instance per (template, day).
 CREATE UNIQUE INDEX ride_listings_template_day_unique
-  ON public.ride_listings (template_id, (departs_at::date))
+  ON public.ride_listings (template_id, ((departs_at AT TIME ZONE 'UTC')::date))
   WHERE template_id IS NOT NULL;
 
 ALTER TABLE public.ride_templates ENABLE ROW LEVEL SECURITY;
