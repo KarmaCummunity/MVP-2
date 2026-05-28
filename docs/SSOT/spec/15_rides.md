@@ -81,6 +81,12 @@ Prefix: `FR-RIDE-*`
 - AC4. `window_hours` is clamped to [1, 72] (default 12); `limit` to [1, 50] (default 20).
 - AC5. Application: `FindRideMatchesUseCase` + `IRideListingRepository.findMatches`.
 
+## FR-RIDE-017 — Auto-cancel stale participant requests ✅
+- AC1. pg_cron job `ride_participants_expire_stale_check` runs `*/15 * * * *`. It cancels every `requested` row where `ride.departs_at + interval '3 hours' < now()`.
+- AC2. System cancellation: `status = 'cancelled'`, `decided_at = now()`, `decided_by = NULL` (system marker).
+- AC3. Silent — the decision-notification trigger (FR-RIDE-013) ignores `requested → cancelled` transitions, so no user-visible ping fires.
+- AC4. Cadence matches the ride-listings expiry cron (15 minutes ⇒ bounded staleness ≤ ~3h15m past departure).
+
 ## FR-RIDE-013 — Ride participants notifications ✅
 - AC1. On INSERT (`status = 'requested'`), the ride owner gets a `ride_request` critical notification with the rider's display name and the ride title; deep-link route `/donations/rides/[id]`.
 - AC2. On UPDATE `requested → approved`, the participant gets `ride_approved` with the owner's name + ride title.
