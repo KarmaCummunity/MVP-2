@@ -185,6 +185,18 @@ export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
 export type { FindRideMatchesInput } from './ports/IRideListingRepository';
 export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
 export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+
+// Ride templates (FR-RIDE-021 / FR-RIDE-022)
+export type {
+  IRideTemplateRepository,
+  CreateRideTemplateInput,
+} from './ports/IRideTemplateRepository';
+export { CreateRideTemplateUseCase } from './rides/CreateRideTemplateUseCase';
+export type { CreateRideTemplateUseCaseInput } from './rides/CreateRideTemplateUseCase';
+export { ListMyRideTemplatesUseCase } from './rides/ListMyRideTemplatesUseCase';
+export { SetRideTemplateStatusUseCase } from './rides/SetRideTemplateStatusUseCase';
+export { DeleteRideTemplateUseCase } from './rides/DeleteRideTemplateUseCase';
+
 export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
 export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
 export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
