@@ -16,6 +16,7 @@ import {
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
+  SupabaseAdminContentRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -60,6 +61,9 @@ import {
   AssignAdminTaskUseCase,
   AddAdminTaskCommentUseCase,
   DeleteAdminTaskUseCase,
+  AdminSearchUsersUseCase,
+  AdminSearchPostsUseCase,
+  AdminSearchAuditUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -99,6 +103,7 @@ const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
+const adminContentRepo = new SupabaseAdminContentRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -133,6 +138,9 @@ export const container = {
   assignAdminTask: new AssignAdminTaskUseCase(adminTaskRepo),
   addAdminTaskComment: new AddAdminTaskCommentUseCase(adminTaskRepo),
   deleteAdminTask: new DeleteAdminTaskUseCase(adminTaskRepo),
+  adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
+  adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
+  adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

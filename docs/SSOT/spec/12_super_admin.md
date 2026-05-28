@@ -1,6 +1,6 @@
 # 2.12 Super Admin (in-chat moderation)
 
-> **Status:** 🟡 In progress — FR-ADMIN-001..018 ✅ shipped; FR-ADMIN-019/020 ⏳ planned (P3.A4). **P3.A0 + P3.A1 + Pre-A2 Hardening + P3.A2 + P3.A3 all merged to `dev` as of 2026-05-28** (PRs #384, #385, #387, #394, #426/#428 + this PR). The portal infrastructure is production-ready for moderator/support roles: `admin_role_grants` table with PRD V2-wide role enum + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates wired into every moderation RPC (`admin_remove_post`, `admin_dismiss_report`, `admin_confirm_report`, `admin_restore_target`, `admin_delete_message`); `(admin)` route group with `AdminGate` redirect + responsive `AdminNav` + 7 nav entries (Reports live; Tasks/Admins/Users/Posts/Audit as A2..A4 stubs); reports inbox + per-case detail with permission-gated actions consuming the `@kc/domain` `PERMISSION_MATRIX` SSOT; chat-flow coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag; auto-removal protected by 14-day freshness window; 7 legacy `useIsSuperAdmin` callsites migrated to `hasPermission()`. **Closed TDs:** TD-95 (single-super-admin DB invariant), TD-94 #2 / #4 / #5 / #6 (already-moderated error / cascade-dismiss / audit metadata parity / freshness window). **Open TDs in this domain:** TD-93 (admin search visibility — closes in P3.A4); TD-94 #1 now by design per D-41 (tickets ≠ reports); TD-94 #3 (`is_post_visible_to` admin bypass — closes in P3.A4). **Suspect-queue producers (FR-MOD-008)** and **90-day re-registration block (FR-ADMIN-003 AC3)** deferred to TECH_DEBT. **Next:** P3.A2 RBAC management (FR-ADMIN-015..017) — gives super_admin a UI to grant moderator/support roles without raw SQL. See `docs/superpowers/specs/2026-05-25-admin-portal-design.md` for A2..A4 design and `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md` for the original audit.
+> **Status:** ✅ Done — FR-ADMIN-001..020 shipped. **P3.A0 + P3.A1 + Pre-A2 Hardening + P3.A2 + P3.A3 + P3.A4 all merged to `dev` as of 2026-05-28** (PRs #384, #385, #387, #394, #426/#428, #439 + this PR). Admin Portal roadmap is complete. TD-93 closed at the UX layer via `admin_search_users` (banned/suspended users now searchable from the portal). The portal infrastructure is production-ready for moderator/support roles: `admin_role_grants` table with PRD V2-wide role enum + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates wired into every moderation RPC (`admin_remove_post`, `admin_dismiss_report`, `admin_confirm_report`, `admin_restore_target`, `admin_delete_message`); `(admin)` route group with `AdminGate` redirect + responsive `AdminNav` + 7 nav entries (Reports live; Tasks/Admins/Users/Posts/Audit as A2..A4 stubs); reports inbox + per-case detail with permission-gated actions consuming the `@kc/domain` `PERMISSION_MATRIX` SSOT; chat-flow coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag; auto-removal protected by 14-day freshness window; 7 legacy `useIsSuperAdmin` callsites migrated to `hasPermission()`. **Closed TDs:** TD-95 (single-super-admin DB invariant), TD-94 #2 / #4 / #5 / #6 (already-moderated error / cascade-dismiss / audit metadata parity / freshness window). **Open TDs in this domain:** TD-93 (admin search visibility — closes in P3.A4); TD-94 #1 now by design per D-41 (tickets ≠ reports); TD-94 #3 (`is_post_visible_to` admin bypass — closes in P3.A4). **Suspect-queue producers (FR-MOD-008)** and **90-day re-registration block (FR-ADMIN-003 AC3)** deferred to TECH_DEBT. **Next:** P3.A2 RBAC management (FR-ADMIN-015..017) — gives super_admin a UI to grant moderator/support roles without raw SQL. See `docs/superpowers/specs/2026-05-25-admin-portal-design.md` for A2..A4 design and `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md` for the original audit.
 
 
 
@@ -345,6 +345,45 @@ Internal admin tasks with title / description / priority / assignee / due date /
 
 ---
 
+## §14 Admin Portal — Content & Users management (A4)
+
+A4 closes the Admin Portal roadmap. Three SECURITY DEFINER RPCs (`admin_search_users`, `admin_search_posts`, `admin_audit_search`) expose server-paginated search across the full user/post tables (including moderated rows hidden from regular RLS) plus a role-tiered audit viewer that replaces the FR-ADMIN-007 Settings sub-page.
+
+Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(admin)/posts`, `(admin)/audit`.
+
+---
+
+## FR-ADMIN-019 — User & post search
+
+**Description.**
+`/admin/users` and `/admin/posts` provide server-paginated text search across users and posts including moderated rows (banned/suspended users, removed/expired posts) that the regular `users_select_active` and feed RLS hide from non-admin callers. Closes `TD-93` at the UX level — the underlying RLS policy gap remains intentional for non-admin sessions.
+
+**Acceptance Criteria.**
+- AC1. `/admin/users` accepts a free-text query (matches `display_name` or `share_handle` ILIKE) and a status chip filter (`active`, `pending_verification`, `banned`, `suspended_admin`, `suspended_for_false_reports`, `deleted`). Results show display name, handle, status badge with semantic colour, city, with the total count rendered above the list.
+- AC2. `/admin/posts` accepts a free-text query (matches `title` or `description` ILIKE) and a status chip filter (`open`, `closed_delivered`, `deleted_no_recipient`, `removed_admin`, `expired`). Results render title, owner display name, and a status badge.
+- AC3. Tapping a user row navigates to `/user/[handle]` when the row has a `share_handle`; tapping a post row navigates to `/post/[id]`. The "admin actions sidebar" referenced in the original design is deferred to a follow-up TD — current Admin Portal screens (Tasks / Reports / RBAC / Audit) cover the moderation workflows.
+
+**Related.** RPCs: `admin_search_users(p_query, p_status, p_limit, p_offset)` and `admin_search_posts(p_query, p_status, p_limit, p_offset)`; both return rows with `total_count` for server-paginated UI. Domain: `AdminUserSearchResult`, `AdminPostSearchResult`, `AdminSearchPage<T>`, `AdminContentError`. Application: `IAdminContentRepository`, `AdminSearchUsersUseCase`, `AdminSearchPostsUseCase`. Mobile: `useAdminUserSearch / useAdminPostSearch`, `UserSearchRow / PostSearchRow`.
+
+---
+
+## FR-ADMIN-020 — RBAC-tiered audit viewer
+
+**Description.**
+`/admin/audit` provides a paginated audit-event search with role-tiered row-level visibility, replacing the FR-ADMIN-007 Settings sub-page on a per-role basis.
+
+**Acceptance Criteria.**
+- AC1. The page accepts target-user-id, actor-id, and action filters. Common actions are exposed as chip filters; arbitrary actions can be requested via the URL or future advanced filter UI.
+- AC2. Visibility is row-filtered inside `admin_audit_search` per the matrix:
+   - `super_admin` sees every row.
+   - `moderator` sees rows where `actor_id = caller` OR `target_id = caller` (own actions + targets they handled).
+   - `support` sees rows where `actor_id = caller` only.
+- AC3. The legacy Settings sub-page from FR-ADMIN-007 stays in place for backward compatibility (it surfaces user-affecting events to the affected user — a different audience). Removing the admin-side Settings entry is a follow-up cleanup (TD candidate) — the new `/admin/audit` is the primary admin surface.
+
+**Related.** RPC: `admin_audit_search(p_target_user_id, p_actor_id, p_action, p_limit, p_offset)` — SECURITY DEFINER, gated by `admin_assert_role` then row-filtered by RBAC. Domain: `AdminAuditRow`. Application: `AdminSearchAuditUseCase`. Mobile: `useAdminAuditSearch`, `AuditLogRow`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
@@ -354,3 +393,4 @@ Internal admin tasks with title / description / priority / assignee / due date /
 | 0.5 | 2026-05-26 | Added §11 Admin Portal — Reports Dashboard (A1). FR-ADMIN-012/013/014. Closed cascade-dismiss sub-item of TD-94 (migration 0119). Widened admin_dismiss_report / admin_remove_post / admin_confirm_report from `is_admin()` to RBAC (migration 0118). Added deprecation note on FR-ADMIN-003/004/005/009 referencing FR-ADMIN-014. |
 | 0.6 | 2026-05-28 | Added §12 Admin Portal — RBAC management (A2). FR-ADMIN-015 (admin list), FR-ADMIN-016 (grant/revoke), FR-ADMIN-017 (amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support"). Migration `0143_admin_rbac_management.sql` ships `admin_grant_role` + `admin_revoke_role` + `admin_list_admins` (all gated by `admin_assert_role`). |
 | 0.7 | 2026-05-28 | Added §13 Admin Portal — Internal Tasks tracker (A3). FR-ADMIN-018. Migrations `0144_admin_tasks.sql` (tables + RLS + audit-action widen v4 → v5 with `admin_task_create`/`admin_task_update`/`admin_task_delete`) and `0145_admin_task_rpcs.sql` (8 SECURITY DEFINER RPCs for create/update/set_status/assign/add_comment/delete/list/detail). New `notifications.task_assigned*` i18n keys + `task_assigned` NotificationKind + pushRouteAllowlist handler for `(admin)/tasks/[taskId]`. |
+| 0.8 | 2026-05-28 | Added §14 Admin Portal — Content & Users management (A4). FR-ADMIN-019 (user + post search) and FR-ADMIN-020 (RBAC-tiered audit viewer). Migration `0149_admin_content_search.sql` ships `admin_search_users` (closes TD-93 at the UX layer), `admin_search_posts`, and `admin_audit_search` (super_admin sees all; moderator sees own + handled-target; support sees own only). Status header flipped 🟡 → ✅. |

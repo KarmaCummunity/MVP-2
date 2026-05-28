@@ -1,6 +1,6 @@
 # 2.4 Posts: Create, Edit, Discover
 
-> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
+> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013** ✅ full FSM transition + Republish CTA shipped under P2.17 (migrations `0146`/`0147`/`0148`; TD-70 closed). **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81).
 
 
 

@@ -1000,12 +1000,25 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 **Affected docs.** `docs/SSOT/spec/15_rides.md` FR-RIDE-011 AC2/AC3/AC5; migration `0139_ride_participants.sql`.
 
+## D-53 — Automated `main` production gates without human deploy approvers (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** Production protection on `main` is enforced entirely by CI and branch protection — no required reviewers on the `supabase-prod` GitHub Environment and no human deploy approvers. The agent acts as CTO; the PM owns product scope only. Gates: (1) PRs to `main` must use head branch `dev`; (2) `scripts/check-migration-safety.mjs` blocks destructive migration SQL unless a line carries `migration-safety: allow`; (3) `db-deploy` runs `supabase db push --dry-run` before apply for `supabase-prod`; (4) `prod-smoke` runs after app, migration, or Edge Function changes on `main`.
+
+**Rationale.** Human approval gates conflict with the AI-driven delivery model and add latency without catching logic errors CI already covers. Dry-run + migration safety scan + dev-only release branch + existing RLS/validate jobs provide defense in depth without blocking the autonomous loop.
+
+**Alternatives rejected.** Required reviewers on `supabase-prod` or `main` PRs — rejected for AI CTO workflow. Relying on dry-run only without migration SQL scan — misses destructive DDL merged via squash. Skipping prod smoke on DB-only merges — misses broken prod after schema change.
+
+**Affected docs.** `.github/workflows/ci-main-guard.yml`, `db-deploy.yml`, `prod-smoke.yml`; `scripts/check-migration-safety.mjs`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`; `CLAUDE.md` §6.
+
 ---
 
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.5 | 2026-05-28 | Added `D-53` (automated `main` prod gates: dev→main PR enforcement, migration safety scan, prod DB dry-run before apply, expanded prod smoke; no human deploy approvers). |
 | 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |
 | 3.3 | 2026-05-26 | Added `D-50` (anonymous public market research as separate spec domain `16_public_research.md`; PII-isolated contact storage; separate migration `0131`; FR-RESEARCH-001..003). |
 | 3.2 | 2026-05-26 | Added `D-49` (server-driven surveys via Studio publish, mirrors legal-documents pattern; FR-SETTINGS-015..017; migration `0130`). |

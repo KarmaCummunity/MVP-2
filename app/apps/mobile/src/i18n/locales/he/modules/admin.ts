@@ -1,4 +1,6 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
+import { adminContentHe } from './adminContent';
+
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
   settingsRow: 'פורטל ניהול',
@@ -30,6 +32,11 @@ export const adminHe = {
     openReportsKpi: 'דיווחים פתוחים',
     openTasksKpi: 'משימות פתוחות',
     comingSoonKpi: 'יזמין בקרוב',
+    adminsKpi: 'חברי צוות',
+    usersKpi: 'משתמשים',
+    postsKpi: 'פוסטים',
+    auditKpi: 'יומן פעולות',
+    noCount: '—',
   },
   comingSoon: {
     title: 'מסך זה יזמין בקרוב',
@@ -229,4 +236,5 @@ export const adminHe = {
       unknown:             'אירעה שגיאה. נסה שוב.',
     },
   },
+  content: adminContentHe,
 } as const;

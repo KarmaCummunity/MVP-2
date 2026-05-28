@@ -3,8 +3,9 @@
 // caseId encodes "<target_type>:<target_id>" (URL-encoded). The same encoding
 // is the routing contract for deep-links (e.g. from chat ReportReceivedBubble
 // or future notification taps).
-import { useLocalSearchParams } from 'expo-router';
+import { router, useLocalSearchParams } from 'expo-router';
 import { ActivityIndicator, ScrollView, Text, View } from 'react-native';
+import { useQueryClient } from '@tanstack/react-query';
 import type { AdminReportTargetType } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { useReportCaseDetail } from '../../../../src/hooks/useReportCaseDetail';
@@ -31,10 +32,11 @@ function parseCaseId(
 export default function CaseDetail() {
   const { caseId } = useLocalSearchParams<{ caseId: string }>();
   const parsed = parseCaseId(caseId);
-  const { data, isLoading, refetch } = useReportCaseDetail(
+  const { data, isLoading } = useReportCaseDetail(
     parsed?.type ?? null,
     parsed?.id ?? null,
   );
+  const queryClient = useQueryClient();
   const styles = useStyles();
 
   if (!parsed) {
@@ -68,7 +70,18 @@ export default function CaseDetail() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{he.admin.caseDetail.actions}</Text>
-        <CaseActions detail={data} onActed={() => { void refetch(); }} />
+        <CaseActions
+          detail={data}
+          onActed={() => {
+            // After a successful action all open reports on this target are
+            // resolved, so the case will drop out of the inbox. Refresh both
+            // the case detail and inbox queries, then return to the inbox so
+            // the admin isn't stranded on an empty case screen.
+            void queryClient.invalidateQueries({ queryKey: ['admin.reports.case'] });
+            void queryClient.invalidateQueries({ queryKey: ['admin.reports.inbox'] });
+            router.back();
+          }}
+        />
       </View>
 
       <View style={styles.section}>

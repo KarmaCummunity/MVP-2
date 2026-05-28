@@ -74,7 +74,11 @@ Checklist in order:
 - **Auto** — on push to `dev` or `main` when any of these paths change: `supabase/migrations/**`, `supabase/seed.sql`, `supabase/config.toml`, or the workflow file. Pending migrations are applied via `supabase db push` to the matching GitHub Environment: `dev` → `supabase-dev` (`roeefqpdbftlndzsvhfj`); `main` → `supabase-prod` (`slxijdfvinbjmrsfgbzx`). PRs must keep **DB validate** (`.github/workflows/db-validate.yml`) green before merge — it applies all migrations on a fresh local stack.
 - **Manual** — `workflow_dispatch` lets an operator target `supabase-prod` or `supabase-dev`. Defaults to dry-run; flip `apply` to true to push (useful for inspection, retries, or one-off applies).
 
-Concurrency group `db-deploy-<environment>` (with `cancel-in-progress: false`) ensures back-to-back migration pushes queue rather than race. Optional: add **required reviewers** on the `supabase-prod` GitHub Environment if you want a human gate on automated prod pushes.
+Concurrency group `db-deploy-<environment>` (with `cancel-in-progress: false`) ensures back-to-back migration pushes queue rather than race.
+
+**Prod apply gate (2026-05-28, `D-53`):** pushes to `main` (and manual `workflow_dispatch` applies targeting `supabase-prod`) run `supabase db push --dry-run` immediately before the real `db push`. No human reviewers on the `supabase-prod` environment — protection is automated CI only.
+
+**Main release guard:** `.github/workflows/ci-main-guard.yml` on PRs to `main` enforces head branch `dev` and runs `scripts/check-migration-safety.mjs` over all migrations (blocks `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, unqualified `DELETE FROM` unless the line includes `migration-safety: allow`).
 
 ## Production release
 
