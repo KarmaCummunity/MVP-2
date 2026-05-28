@@ -69,4 +69,10 @@ export interface IRideListingRepository {
    * visibility='Public', and `departs_at` within ±windowHours of the source.
    */
   findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]>;
+
+  /**
+   * Owner updates the visibility tier on an open ride. Server validates
+   * ownership and that the ride is still 'open'. Idempotent on no-op.
+   */
+  updateVisibility(input: { rideId: string; visibility: RideVisibility }): Promise<RideListingRow>;
 }

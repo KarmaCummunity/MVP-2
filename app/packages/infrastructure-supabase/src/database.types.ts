@@ -2262,6 +2262,10 @@ export type Database = {
         Args: { p_ride_id: string; p_window_hours?: number; p_limit?: number }
         Returns: Database['public']['Tables']['ride_listings']['Row'][]
       }
+      rpc_ride_update_visibility: {
+        Args: { p_ride_id: string; p_visibility: string }
+        Returns: Database['public']['Tables']['ride_listings']['Row']
+      }
       rpc_ride_participants_request: {
         Args: { p_ride_id: string; p_note?: string | null }
         Returns: {

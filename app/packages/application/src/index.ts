@@ -182,6 +182,8 @@ export { CloseRideListingUseCase } from './rides/CloseRideListingUseCase';
 export type { CloseRideListingInput } from './rides/CloseRideListingUseCase';
 export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
 export type { FindRideMatchesInput } from './ports/IRideListingRepository';
+export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
+export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
 export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
 export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
 export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
