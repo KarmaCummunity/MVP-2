@@ -17,6 +17,8 @@ import { ClosureExplainerSheet } from '../closure/ClosureExplainerSheet';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { invalidateMyProfilePostQueries } from '../../lib/invalidateMyProfilePostQueries';
 import { AnchoredPostCardPreview } from './AnchoredPostCardPreview';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   chatId: string;
@@ -47,6 +49,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     queryKey: ['post', anchorPostId, viewerId],
     queryFn: () => getPostByIdUseCase().execute({ postId: anchorPostId!, viewerId }),
     enabled: Boolean(anchorPostId),
+    staleTime: 60_000, // PERF-3: chat anchored post — closure event invalidates explicitly
   });
 
   // FR-CHAT-014 AC7 — surface counterpart's optional contact phone as a tel: link.
@@ -190,7 +193,7 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
 
 const useAnchoredPostCardStyles = makeUseStyles(({ colors }) => ({
   card: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     gap: spacing.md,
     marginHorizontal: spacing.base,
@@ -218,11 +221,11 @@ const useAnchoredPostCardStyles = makeUseStyles(({ colors }) => ({
   title: {
     ...typography.body,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     fontWeight: '600',
   },
   phoneRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-end',

@@ -4,6 +4,7 @@ import React from 'react';
 import { View, Text } from 'react-native';
 import { makeUseStyles, radius, typography } from '@kc/ui';
 import he from '../../../i18n/locales/he';
+import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 const useStyles = makeUseStyles(({ colors }) => ({
@@ -15,7 +16,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
     alignSelf: 'center',
     maxWidth: '90%',
   },
-  body: { ...typography.bodySmall, color: colors.error, textAlign: 'right' },
+  body: { ...typography.bodySmall, color: colors.error, textAlign: rtlTextAlignStart },
 }));
 
 export function OwnerAutoRemovedBubble(_props: SystemMessageBubbleProps) {

@@ -3,7 +3,7 @@ import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import Animated, { FadeIn, FadeOut } from 'react-native-reanimated';
 import { makeUseStyles, typography, spacing } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 import { MOTION } from '../../lib/animations/motion';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
 import { AboutScopeToggle } from './AboutScopeToggle';
@@ -92,7 +92,7 @@ const BADGE = 28;
 const useAboutScopedSectionStyles = makeUseStyles(({ colors }) => ({
   h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.xs },
   list: { gap: spacing.md },
-  row: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.md },
+  row: { flexDirection: aboutRtlRow, alignItems: 'flex-start', gap: spacing.md },
   badge: {
     width: BADGE,
     height: BADGE,

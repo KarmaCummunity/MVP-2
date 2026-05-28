@@ -16,6 +16,7 @@ import { PressableScale } from './animations/PressableScale';
 import { Card } from './ui/Card';
 import { IconTile } from './ui/IconTile';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
+import { rowDirectionStart } from '../lib/rtlLayout';
 
 interface DonationTileProps {
   icon: keyof typeof Ionicons.glyphMap;
@@ -29,7 +30,7 @@ interface DonationTileProps {
 const useStyles = makeUseStyles(({ colors }) => ({
   row: {
     minHeight: 96,
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     gap: spacing.lg,
     borderRadius: radius.lg,

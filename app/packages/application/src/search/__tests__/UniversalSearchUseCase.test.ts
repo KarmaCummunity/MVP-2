@@ -19,7 +19,9 @@ class StubSearchRepo implements ISearchRepository {
     posts: [],
     users: [],
     links: [],
-    totalCount: 0,
+    postsTotal: 0,
+    usersTotal: 0,
+    linksTotal: 0,
   };
 
   async search(
@@ -48,7 +50,14 @@ describe('UniversalSearchUseCase — gating, viewerId, pass-through', () => {
       });
 
       expect(repo.calls).toHaveLength(0);
-      expect(result).toEqual({ posts: [], users: [], links: [], totalCount: 0 });
+      expect(result).toEqual({
+        posts: [],
+        users: [],
+        links: [],
+        postsTotal: 0,
+        usersTotal: 0,
+        linksTotal: 0,
+      });
     });
 
     it('treats whitespace-only query as a single char after trim and returns empty', async () => {
@@ -62,7 +71,7 @@ describe('UniversalSearchUseCase — gating, viewerId, pass-through', () => {
       });
 
       expect(repo.calls).toHaveLength(0);
-      expect(result.totalCount).toBe(0);
+      expect(result.usersTotal).toBe(0);
     });
 
     it('calls the repo with the empty string for an empty query (explore mode)', async () => {
@@ -135,7 +144,9 @@ describe('UniversalSearchUseCase — gating, viewerId, pass-through', () => {
           },
         ],
         links: [],
-        totalCount: 1,
+        postsTotal: 0,
+        usersTotal: 1,
+        linksTotal: 0,
       };
       repo.toReturn = expected;
       const uc = new UniversalSearchUseCase(repo);

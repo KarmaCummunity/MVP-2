@@ -1,12 +1,24 @@
 import React from 'react';
 import {
-  ActivityIndicator, Image, Text, TouchableOpacity, View,
+  ActivityIndicator, Image, Platform, Text, TouchableOpacity, View, type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { MAX_MEDIA_ASSETS } from '@kc/domain';
 import type { UploadedAsset } from '../../services/imageUpload';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { isLayoutRtl } from '../../lib/rtlLayout';
+
+/**
+ * Pin the remove (X) button to the thumbnail's reading-end corner.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function removeBtnCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 4 };
+  return isLayoutRtl() ? { left: 4 } : { right: 4 };
+}
 
 interface Props {
   uploads: UploadedAsset[];
@@ -21,7 +33,7 @@ const THUMB = 96;
 
 const usePhotoPickerStyles = makeUseStyles(({ colors, isDark }) => ({
   section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   required: { color: colors.error },
   grid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: spacing.sm },
   thumb: {
@@ -48,7 +60,7 @@ const usePhotoPickerStyles = makeUseStyles(({ colors, isDark }) => ({
   removeBtn: {
     position: 'absolute' as const,
     top: 4,
-    right: 4,
+    ...removeBtnCornerEnd(),
     width: 22,
     height: 22,
     borderRadius: 11,
@@ -56,7 +68,7 @@ const usePhotoPickerStyles = makeUseStyles(({ colors, isDark }) => ({
     justifyContent: 'center' as const,
     alignItems: 'center' as const,
   },
-  hint: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' as const },
+  hint: { ...typography.caption, color: colors.textDisabled, textAlign: rtlTextAlignStart },
 }));
 
 export function PhotoPicker({ uploads, isUploading, uploadingCount, required, onAdd, onRemove }: Props) {

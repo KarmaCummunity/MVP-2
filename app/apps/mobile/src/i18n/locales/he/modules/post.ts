@@ -1,10 +1,14 @@
 // FR-POST strings split from main bundle (TD-35 file-size budget).
+// `editPost` lives in postEdit.ts; menu/report in their own modules.
+// TD-117 closed by extracting editPost into postEdit.ts.
 import { postMenuHe } from './postMenu';
 import { postReportHe } from './postReport';
+import { postEditHe } from './postEdit';
 
 export const postHe = {
   ...postMenuHe,
   ...postReportHe,
+  ...postEditHe,
   give: 'לתת חפץ',
   request: 'לבקש חפץ',
   title: 'כותרת',
@@ -126,6 +130,9 @@ export const postHe = {
 
   /** Collapsible block on create post — address display, visibility, partner-surface mask. */
   exposureSettingsSectionTitle: 'הגדרות חשיפה',
+  menuExposureClosedHint:
+    'פוסט סגור: כאן מגדירים מי רואה את הכרטיס בפרופיל של המתאם (בנפרד מנראות בפיד).',
+  menuExposureSaving: 'שומר…',
 
   /** FR-POST-021 + D-31 — third-party viewers on the partner's closed-post profile (not the partner in chat). */
   counterpartyMaskLabel: 'להסתיר את הזהות שלי מצופים אחרים ב״פוסטים סגורים״ של המתאם',
@@ -176,46 +183,4 @@ export const postHe = {
     publishedBy: 'פורסם על-ידי',
   },
 
-  // Edit post screen (edit-post/[id].tsx) — PR5b i18n sweep.
-  editPost: {
-    notifyErrorTitle: 'שגיאה',
-    needReauthBody: 'יש להתחבר מחדש לפני שמירת פוסט.',
-    uploadFailedTitle: 'העלאת התמונה נכשלה',
-    uploadFailedFallback: 'נסה שוב.',
-    networkError: 'שגיאת רשת. נסה שוב.',
-    saveFailedTitle: 'שמירה נכשלה',
-    loadErrorTitle: 'שגיאה בטעינת הפוסט',
-    retry: 'נסה שוב',
-    notFoundTitle: 'הפוסט לא נמצא',
-    notFoundSubtitle: 'ייתכן שהוא נסגר או שאין לך הרשאה לצפייה.',
-    forbiddenTitle: 'אין הרשאה',
-    forbiddenSubtitle: 'רק בעל הפוסט או מנהל על יכולים לערוך אותו.',
-    notEditableTitle: 'לא ניתן לערוך',
-    notEditableExpired: 'הפוסט פג תוקף. פרסם אותו מחדש כדי לערוך.',
-    notEditableRemoved: 'הפוסט הוסר על ידי מנהל ולא ניתן לעריכה.',
-    visibilityDowngradeSub: 'לא ניתן להוריד פרטיות לאחר פרסום',
-    visibilityPublicLabel: '🌍 כולם',
-    visibilityPublicSub: 'הפוסט יוצג בפיד הראשי לכל המשתמשים',
-    visibilityFollowersLabel: '👥 עוקבים בלבד',
-    visibilityFollowersSub: 'הפוסט יוצג רק לעוקבים שלך',
-    visibilityOnlyMeLabel: '🔒 רק אני',
-    visibilityOnlyMeSub: 'הפוסט נשמר באופן פרטי',
-    headerTitle: 'עריכת פוסט',
-    saveCta: 'שמור',
-    typeBadgeGive: '🎁 לתת חפץ',
-    typeBadgeRequest: '🔍 לבקש חפץ',
-    typeBadgeSub: 'לא ניתן לשנות את סוג הפוסט לאחר פרסום',
-    sectionTitle: 'כותרת',
-    titlePlaceholder: 'מה אתה נותן/מבקש?',
-    sectionAddress: 'כתובת',
-    streetPlaceholder: 'רחוב',
-    streetNumberPlaceholder: 'מס׳',
-    sectionDescription: 'תיאור (אופציונלי)',
-    descriptionPlaceholder: 'פרטים נוספים על החפץ...',
-    sectionCategory: 'קטגוריה',
-    sectionCondition: 'מצב החפץ',
-    sectionUrgency: 'דחיפות (אופציונלי)',
-    urgencyPlaceholder: 'לדוגמה: צריך עד שישי',
-    sectionVisibility: 'מי יראה את הפוסט',
-  },
 } as const;

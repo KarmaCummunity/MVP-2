@@ -32,9 +32,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    if (__DEV__) {
-      console.error('ErrorBoundary caught:', error, info.componentStack);
-    }
+    if (__DEV__) console.error('ErrorBoundary caught:', error, info.componentStack);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSentryIfInit } = require('../lib/observability/sentry');
+      const Sentry = getSentryIfInit();
+      if (Sentry) {
+        Sentry.captureException(error, { extra: { componentStack: info.componentStack ?? null } });
+      }
+    } catch { /* never crash the boundary */ }
   }
 
   reset = (): void => this.setState({ error: null });

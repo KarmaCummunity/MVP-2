@@ -36,6 +36,7 @@ export default function DonationsLayout() {
       <Stack.Screen name="money" options={{ ...detailHeader, headerTitle: t('donations.moneyScreen.title') }} />
       <Stack.Screen name="time" options={{ ...detailHeader, headerTitle: t('donations.timeScreen.title') }} />
       <Stack.Screen name="category/[slug]" options={{ ...detailHeader, headerTitle: '' }} />
+      <Stack.Screen name="rides" options={{ headerShown: false }} />
     </Stack>
   );
 }

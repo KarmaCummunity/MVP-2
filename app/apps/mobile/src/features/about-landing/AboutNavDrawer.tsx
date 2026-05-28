@@ -4,15 +4,28 @@ import {
   View,
   Text,
   Pressable,
+  Platform,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
+import { isLayoutRtl } from '../../lib/rtlLayout';
 import type { AboutSectionId } from './aboutSectionModel';
 import { ABOUT_NAV_ITEMS } from './aboutSectionModel';
+
+/**
+ * Anchor the drawer to the reading-end edge.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function drawerEdgeAnchor(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 0 };
+  return isLayoutRtl() ? { left: 0 } : { right: 0 };
+}
 
 export interface AboutNavDrawerProps {
   readonly visible: boolean;
@@ -74,7 +87,7 @@ const useAboutNavDrawerStyles = makeUseStyles(({ colors }) => ({
     position: 'absolute',
     top: 0,
     bottom: 0,
-    right: 0,
+    ...drawerEdgeAnchor(),
     width: '82%',
     maxWidth: 340,
     backgroundColor: colors.surface,
@@ -83,7 +96,7 @@ const useAboutNavDrawerStyles = makeUseStyles(({ colors }) => ({
     borderBottomLeftRadius: radius.xl,
   },
   sheetHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
@@ -99,7 +112,7 @@ const useAboutNavDrawerStyles = makeUseStyles(({ colors }) => ({
   },
   list: { paddingBottom: spacing['2xl'] },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.md,

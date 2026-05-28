@@ -4,12 +4,22 @@
 import type { Post } from '@kc/domain';
 import type { PostWithOwner } from '@kc/application';
 
-export function postWithOwnerFromPost(post: Post): PostWithOwner {
+export type ProfilePostOwnerContext = {
+  ownerId: string;
+  ownerName: string;
+  ownerAvatarUrl: string | null;
+  ownerHandle: string;
+};
+
+export function postWithOwnerFromPost(
+  post: Post,
+  owner?: ProfilePostOwnerContext,
+): PostWithOwner {
   return {
     ...post,
-    ownerName: null,
-    ownerAvatarUrl: null,
-    ownerHandle: '',
+    ownerName: owner?.ownerName ?? null,
+    ownerAvatarUrl: owner?.ownerAvatarUrl ?? null,
+    ownerHandle: owner?.ownerHandle ?? '',
     ownerPrivacyMode: 'Public',
     recipientUser: null,
     distanceKm: null,

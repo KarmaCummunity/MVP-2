@@ -1,4 +1,5 @@
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 
 export const useEditPostScreenStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
@@ -23,7 +24,7 @@ export const useEditPostScreenStyles = makeUseStyles(({ colors }) => ({
   typeBadgeText: { ...typography.button, color: colors.textPrimary },
   typeBadgeSub: { ...typography.caption, color: colors.textSecondary },
   section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   required: { color: colors.error },
   input: {
     backgroundColor: colors.surface, borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
@@ -54,6 +55,6 @@ export const useEditPostScreenStyles = makeUseStyles(({ colors }) => ({
   visRowDisabled: { opacity: 0.5 },
   radio: { width: 20, height: 20, borderRadius: 10, borderWidth: 2, borderColor: colors.border },
   radioActive: { borderColor: colors.primary, backgroundColor: colors.primary },
-  visLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
-  visSub: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' as const },
+  visLabel: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  visSub: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart },
 }));

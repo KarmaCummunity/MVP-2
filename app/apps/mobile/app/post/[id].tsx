@@ -23,6 +23,7 @@ import { PostShareButton } from '../../src/components/post/PostShareButton';
 import { PostDetailScrollContent } from './PostDetailScrollContent';
 import { usePostDetailStyles } from './postDetailScreen.styles';
 import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../src/navigation/useShellTabBarVisibility';
+import { nativeStackHeaderRightIconOnly } from '../../src/navigation/nativeHeaderIconOnly';
 
 function normalizeRoutePostId(raw: string | string[] | undefined): string | undefined {
   const id = Array.isArray(raw) ? raw[0] : raw;
@@ -69,6 +70,7 @@ export default function PostDetailScreen() {
         identityListingHostUserId,
       }),
     enabled: Boolean(postIdParam),
+    staleTime: 60_000, // PERF-3: post detail — closure/edit actions invalidate explicitly
   });
 
   const [contactPosterBusy, setContactPosterBusy] = useState(false);
@@ -141,12 +143,12 @@ export default function PostDetailScreen() {
           // Under forceRTL=true, the inner row visually flips so the *first*
           // child lands at the screen's right edge (= the corner). Share is
           // first so it sits in the corner, with the ⋮ menu to its left.
-          headerRight: () => (
+          ...nativeStackHeaderRightIconOnly(() => (
             <View style={styles.headerActions}>
-              <PostShareButton post={post} />
-              <PostMenuButton post={post} />
+              <PostShareButton post={post} placement="header" />
+              <PostMenuButton post={post} placement="header" showShareInMenu={false} />
             </View>
-          ),
+          )),
         }}
       />
       <PostDetailScrollContent

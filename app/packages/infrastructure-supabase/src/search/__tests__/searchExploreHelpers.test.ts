@@ -12,6 +12,7 @@ import {
 interface FakeOpts {
   data?: unknown;
   error?: { message: string } | null;
+  count?: number | null;
 }
 interface Op {
   kind: 'from' | 'select' | 'eq' | 'in' | 'is' | 'or' | 'gte' | 'order' | 'limit';
@@ -20,7 +21,11 @@ interface Op {
 
 function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; ops: Op[] } {
   const ops: Op[] = [];
-  const result = () => ({ data: opts.data ?? null, error: opts.error ?? null });
+  const result = () => ({
+    data: opts.data ?? null,
+    error: opts.error ?? null,
+    count: opts.count ?? null,
+  });
   function makeChain(): any {
     return new Proxy({}, {
       get(_t, prop: string) {
@@ -76,15 +81,22 @@ describe('explorePosts', () => {
     await expect(explorePosts(client, {}, 10)).rejects.toThrow('explorePosts: rls denied');
   });
 
-  it('returns mapped PostWithOwner rows on success', async () => {
-    const { client } = makeFakeClient({ data: [POST_ROW] });
-    const out = await explorePosts(client, {}, 10);
-    expect(out[0]?.postId).toBe('p_1');
+  it('requests count: "exact" on select', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    await explorePosts(client, {}, 10);
+    expect(ops.find((o) => o.kind === 'select')?.args?.[1]).toEqual({ count: 'exact' });
   });
 
-  it('returns [] when data is null', async () => {
+  it('returns mapped PostWithOwner rows and total from PostgREST count', async () => {
+    const { client } = makeFakeClient({ data: [POST_ROW], count: 41 });
+    const out = await explorePosts(client, {}, 5);
+    expect(out.items[0]?.postId).toBe('p_1');
+    expect(out.total).toBe(41);
+  });
+
+  it('returns empty bucket when data is null', async () => {
     const { client } = makeFakeClient({ data: null });
-    expect(await explorePosts(client, {}, 10)).toEqual([]);
+    expect(await explorePosts(client, {}, 10)).toEqual({ items: [], total: 0 });
   });
 });
 

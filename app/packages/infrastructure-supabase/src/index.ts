@@ -19,3 +19,12 @@ export { SupabaseAccountGateRepository } from './auth/SupabaseAccountGateReposit
 export { SupabaseDonationLinksRepository } from './donations/SupabaseDonationLinksRepository';
 export { SupabaseSearchRepository } from './search/SupabaseSearchRepository';
 export { SupabaseDeviceRepository } from './notifications/SupabaseDeviceRepository';
+export { SupabaseLegalDocumentRepository } from './legal/SupabaseLegalDocumentRepository';
+export { LegalDocumentCache, type AsyncKVStorage } from './legal/legalCache';
+export * from './admin/SupabaseAdminRoleRepository';
+export * from './admin/SupabaseAdminTaskRepository';
+export * from './admin/SupabaseAdminContentRepository';
+export * from './reports/SupabaseReportsRepository';
+export { SupabaseRideListingRepository } from './rides/SupabaseRideListingRepository';
+export { SupabaseSurveyRepository } from './survey/SupabaseSurveyRepository';
+export { SupabasePublicResearchRepository } from './research/SupabasePublicResearchRepository';

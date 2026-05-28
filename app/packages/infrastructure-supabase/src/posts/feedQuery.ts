@@ -7,6 +7,7 @@ import type { PostFeedFilter } from '@kc/application';
 import type { Database } from '../database.types';
 import { POST_SELECT_OWNER } from './mapPostRow';
 import { decodeCursor } from './cursor';
+import { feedTextSearchOrClause } from './applyFeedTextSearch';
 
 // Return type is inferred so the Supabase PostgrestFilterBuilder<...> with all
 // its nested generics doesn't need to be named here.
@@ -31,6 +32,7 @@ export function buildFeedQuery(
   if (filter.type) q = q.eq('type', filter.type);
   if (filter.categories?.length) q = q.in('category', filter.categories);
   if (filter.itemConditions?.length) q = q.in('item_condition', filter.itemConditions);
+  if (filter.searchQuery) q = q.or(feedTextSearchOrClause(filter.searchQuery));
   // locationFilter is intentionally not handled here — any valid radius
   // request reaches us through the ranked RPC path. GetFeedUseCase already
   // drops incoherent locationFilters (missing city / radius<=0).

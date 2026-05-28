@@ -1,5 +1,6 @@
 // Shared styles for UserResultCard, PostResultCard, LinkResultCard.
 import { makeUseStyles, radius, shadow, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export const useSearchResultCardStyles = makeUseStyles(({ colors, isDark }) => ({
   card: {
@@ -22,13 +23,13 @@ export const useSearchResultCardStyles = makeUseStyles(({ colors, isDark }) => (
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
   },
-  cardHandle: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' as const },
+  cardHandle: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   cardSubtitle: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     marginTop: 2,
   },
   metaRow: {
@@ -69,7 +70,7 @@ export const useSearchResultCardStyles = makeUseStyles(({ colors, isDark }) => (
   linkUrl: {
     ...typography.caption,
     color: colors.textDisabled,
-    textAlign: 'right' as const,
+    textAlign: rtlTextAlignStart,
     fontSize: 10,
     marginTop: 2,
   },

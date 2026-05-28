@@ -1,13 +1,12 @@
 // FR-POST-014/022 — post ⋮ menu strings (split from post.ts for LOC cap).
 export const postMenuHe = {
   menuA11y: 'תפריט פעולות',
+  menuShare: 'שתף פוסט',
   menuEdit: 'ערוך פוסט',
   menuSave: 'שמור',
   menuUnsave: 'הסר מהשמורים',
   menuDelete: 'מחק את הפוסט',
   menuAdminRemove: 'הסר כאדמין',
-  exposureOnlyMeActive: 'הפוסט מוסתר (רק אני). להגדלת החשיפה:',
-  exposureHideOnlyMe: 'הסתר (רק אני)',
   saveSuccess: 'הפוסט נשמר.',
   saveError: 'השמירה נכשלה, נסה שוב.',
   unsaveSuccess: 'הוסר מהשמורים.',

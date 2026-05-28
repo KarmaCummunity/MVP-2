@@ -14,6 +14,12 @@ import {
   SupabaseModerationAdminRepository,
   SupabaseAccountGateRepository,
   SupabaseDeviceRepository,
+  SupabaseAdminRoleRepository,
+  SupabaseAdminTaskRepository,
+  SupabaseAdminContentRepository,
+  SupabaseReportsRepository,
+  SupabaseSurveyRepository,
+  SupabasePublicResearchRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -43,6 +49,30 @@ import {
   LookupAuditUseCase,
   ReportUserUseCase,
   UpdateNotificationPreferencesUseCase,
+  GetMyAdminRolesUseCase,
+  GrantAdminRoleUseCase,
+  RevokeAdminRoleUseCase,
+  ListAdminsUseCase,
+  ListAdminTasksUseCase,
+  GetAdminTaskDetailUseCase,
+  CreateAdminTaskUseCase,
+  UpdateAdminTaskUseCase,
+  SetAdminTaskStatusUseCase,
+  AssignAdminTaskUseCase,
+  AddAdminTaskCommentUseCase,
+  DeleteAdminTaskUseCase,
+  AdminSearchUsersUseCase,
+  AdminSearchPostsUseCase,
+  AdminSearchAuditUseCase,
+  ListOpenReportsUseCase,
+  GetReportCaseDetailUseCase,
+  ListActiveSurveysUseCase,
+  LoadSurveyBundleUseCase,
+  SaveSurveyAnswersUseCase,
+  CheckSurveyPromptUseCase,
+  SubmitFreeFeedbackUseCase,
+  LoadPublicResearchBundleUseCase,
+  SubmitPublicResearchResponseUseCase,
 } from '@kc/application';
 
 /**
@@ -71,8 +101,17 @@ const postRepo = new SupabasePostRepository(supabase);
 const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
+const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
+const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
+const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const reportsRepo = new SupabaseReportsRepository(supabase);
+const surveyRepo = new SupabaseSurveyRepository(supabase);
+const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
+const getMyAdminRoles = new GetMyAdminRolesUseCase(adminRoleRepo);
+const listOpenReports = new ListOpenReportsUseCase(reportsRepo);
+const getReportCaseDetail = new GetReportCaseDetailUseCase(reportsRepo);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
@@ -81,6 +120,27 @@ export const container = {
   chatRealtime,
   moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
   deviceRepo,
+  adminRoleRepo,
+  reportsRepo,
+
+  // Admin portal (FR-ADMIN-011..018)
+  getMyAdminRoles,
+  listOpenReports,
+  getReportCaseDetail,
+  listAdmins: new ListAdminsUseCase(adminRoleRepo),
+  grantAdminRole: new GrantAdminRoleUseCase(adminRoleRepo),
+  revokeAdminRole: new RevokeAdminRoleUseCase(adminRoleRepo),
+  listAdminTasks: new ListAdminTasksUseCase(adminTaskRepo),
+  getAdminTaskDetail: new GetAdminTaskDetailUseCase(adminTaskRepo),
+  createAdminTask: new CreateAdminTaskUseCase(adminTaskRepo),
+  updateAdminTask: new UpdateAdminTaskUseCase(adminTaskRepo),
+  setAdminTaskStatus: new SetAdminTaskStatusUseCase(adminTaskRepo),
+  assignAdminTask: new AssignAdminTaskUseCase(adminTaskRepo),
+  addAdminTaskComment: new AddAdminTaskCommentUseCase(adminTaskRepo),
+  deleteAdminTask: new DeleteAdminTaskUseCase(adminTaskRepo),
+  adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
+  adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
+  adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),
@@ -121,4 +181,17 @@ export const container = {
   updateDonationLink: new UpdateDonationLinkUseCase(donationLinksRepo),
   removeDonationLink: new RemoveDonationLinkUseCase(donationLinksRepo),
   reportDonationLink: new ReportDonationLinkUseCase(donationLinksRepo),
+
+  // Surveys + free feedback (FR-SETTINGS-015..017)
+  surveyRepo,
+  listActiveSurveys: new ListActiveSurveysUseCase(surveyRepo),
+  loadSurveyBundle: new LoadSurveyBundleUseCase(surveyRepo),
+  saveSurveyAnswers: new SaveSurveyAnswersUseCase(surveyRepo),
+  checkSurveyPrompt: new CheckSurveyPromptUseCase(surveyRepo),
+  submitFreeFeedback: new SubmitFreeFeedbackUseCase(surveyRepo),
+
+  // Public research — Survey B (FR-RESEARCH-001..003)
+  publicResearchRepo,
+  loadPublicResearchBundle: new LoadPublicResearchBundleUseCase(publicResearchRepo),
+  submitPublicResearchResponse: new SubmitPublicResearchResponseUseCase(publicResearchRepo),
 } as const;

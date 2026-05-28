@@ -4,6 +4,7 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { SearchFilters } from '@kc/domain';
 import type { ISearchRepository, UniversalSearchResults } from '@kc/application';
 import type { Database } from '../database.types';
+import { EMPTY_SEARCH_BUCKET } from './searchBucket';
 import { explorePosts, exploreUsers, exploreLinks } from './searchExploreHelpers';
 import { searchPosts, searchUsers, searchLinks } from './searchQueryHelpers';
 
@@ -21,21 +22,31 @@ export class SupabaseSearchRepository implements ISearchRepository {
     const wantLinks = !filters.resultType || filters.resultType === 'link';
     const isExplore = !query || query.trim().length === 0;
 
-    const [posts, users, links] = await Promise.all([
+    const [postBucket, userBucket, linkBucket] = await Promise.all([
       wantPosts
-        ? isExplore ? explorePosts(this.client, filters, limits.posts)
-                    : searchPosts(this.client, query, filters, limits.posts)
-        : Promise.resolve([]),
+        ? isExplore
+          ? explorePosts(this.client, filters, limits.posts, viewerId)
+          : searchPosts(this.client, query, filters, limits.posts, viewerId)
+        : Promise.resolve(EMPTY_SEARCH_BUCKET),
       wantUsers
-        ? isExplore ? exploreUsers(this.client, filters, viewerId, limits.users)
-                    : searchUsers(this.client, query, filters, viewerId, limits.users)
-        : Promise.resolve([]),
+        ? isExplore
+          ? exploreUsers(this.client, filters, viewerId, limits.users)
+          : searchUsers(this.client, query, filters, viewerId, limits.users)
+        : Promise.resolve(EMPTY_SEARCH_BUCKET),
       wantLinks
-        ? isExplore ? exploreLinks(this.client, filters, limits.links)
-                    : searchLinks(this.client, query, filters, limits.links)
-        : Promise.resolve([]),
+        ? isExplore
+          ? exploreLinks(this.client, filters, limits.links)
+          : searchLinks(this.client, query, filters, limits.links)
+        : Promise.resolve(EMPTY_SEARCH_BUCKET),
     ]);
 
-    return { posts, users, links, totalCount: posts.length + users.length + links.length };
+    return {
+      posts: [...postBucket.items],
+      users: [...userBucket.items],
+      links: [...linkBucket.items],
+      postsTotal: postBucket.total,
+      usersTotal: userBucket.total,
+      linksTotal: linkBucket.total,
+    };
   }
 }

@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet, LayoutAnimation, Platform } from 're
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 export function AboutVisionSection() {
   const { t } = useTranslation();
@@ -75,7 +75,7 @@ const useAboutVisionSectionStyles = makeUseStyles(({ colors }) => ({
   },
   p: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 24 },
   ol: { gap: spacing.sm, marginTop: spacing.xs },
-  olRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.sm },
+  olRow: { flexDirection: aboutRtlRow, alignItems: 'flex-start', gap: spacing.sm },
   olBadge: {
     width: BADGE,
     height: BADGE,
@@ -89,7 +89,7 @@ const useAboutVisionSectionStyles = makeUseStyles(({ colors }) => ({
   olNum: { ...typography.caption, color: colors.primary, fontWeight: '800' },
   olText: { flex: 1, ...typography.body, color: colors.textPrimary, ...aboutRtlText, lineHeight: 22 },
   expandHead: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.lg,

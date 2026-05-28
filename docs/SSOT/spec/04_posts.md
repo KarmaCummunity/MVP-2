@@ -1,6 +1,6 @@
 # 2.4 Posts: Create, Edit, Discover
 
-> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
+> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013** ✅ full FSM transition + Republish CTA shipped under P2.17 (migrations `0146`/`0147`/`0148`; TD-70 closed). **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81).
 
 
 
@@ -485,7 +485,7 @@ A signed-in viewer of a `Public` post that is `open` or `closed_delivered` may s
 - Product request (2026-05-23). Re-scoped 2026-05-24 to eliminate the Supabase-domain leak observed in the prior shipped version.
 
 **Acceptance Criteria.**
-- AC1. The post-detail screen exposes a share affordance in the header — **in the trailing corner** (rightmost in RTL), with the existing ⋮ menu placed to its left — when `post.status` is `open` or `closed_delivered` and either (a) `post.visibility === 'Public'` for any viewer, or (b) the viewer is a **participant** on a `closed_delivered` post (post owner **or** marked recipient — including after Hide / `surface_visibility` / counterparty privacy). Image presence is not required.
+- AC1. When `post.status` is `open` or `closed_delivered` and either (a) `post.visibility === 'Public'` for any viewer, or (b) the viewer is a **participant** on a `closed_delivered` post (post owner **or** marked recipient — including after Hide / `surface_visibility` / counterparty privacy), a share affordance is available. Image presence is not required. **Surfaces:** (i) post-detail header — **in the trailing corner** (rightmost in RTL), with the existing ⋮ menu placed to its left; (ii) the post ⋮ menu on feed cards and profile post grids (same visibility gate, first row in the sheet).
 - AC2. Tapping the affordance opens the platform share sheet. The accompanying message body is composed per-post by `buildPostShareMessage` as a structured, scannable block of labeled lines (WhatsApp-style bold via `*…*`). All literal strings resolve through the active i18next locale (MVP: Hebrew only; keys live under `post.detail.share*` and reuse `post.detail.statusOpen` / `statusClosed`). Headline and CTA vary by **post type** (`Give` / `Request`) and **lifecycle** (`open` vs `closed_delivered`):
    1. `shareHeadlineGiveOpen` / `shareHeadlineGiveClosed` / `shareHeadlineRequestOpen` / `shareHeadlineRequestClosed` + blank line.
    2. `*מפרסם:* <ownerDisplay>` — resolved via the same rules as post-detail owner chrome (`postOwnerDisplayLabel`): full name when identity is visible, `אנונימי` when masked.

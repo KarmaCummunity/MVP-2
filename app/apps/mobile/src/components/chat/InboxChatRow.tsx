@@ -7,6 +7,8 @@ import type { ChatWithPreview } from '@kc/application';
 import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { formatRelativeChatTime } from '../../lib/formatRelativeChatTime';
+import { formatInboxPreview } from '../../lib/formatInboxPreview';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   readonly item: ChatWithPreview;
@@ -34,7 +36,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
             <Text style={styles.chatName}>{item.otherParticipant.displayName ?? t('common.deletedUser')}</Text>
           </View>
           <Text style={styles.chatPreview} numberOfLines={1}>
-            {item.lastMessage?.body ?? ''}
+            {formatInboxPreview(item.lastMessage, t)}
           </Text>
         </View>
       </TouchableOpacity>
@@ -81,10 +83,10 @@ const useInboxChatRowStyles = makeUseStyles(({ colors }) => ({
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
   chatTime: { ...typography.caption, color: colors.textSecondary },
-  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   badge: {
     width: 22,
     height: 22,

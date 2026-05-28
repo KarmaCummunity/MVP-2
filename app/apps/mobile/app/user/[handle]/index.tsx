@@ -13,6 +13,8 @@ import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
+import { useProfileTabCounts } from '../../../src/hooks/useProfileTabCounts';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useTheme } from '@kc/ui';
 import { ProfileHeader } from '../../../src/components/profile/ProfileHeader';
 import { ProfileStatsRow } from '../../../src/components/profile/ProfileStatsRow';
@@ -22,13 +24,14 @@ import { ProfileClosedPostsGrid } from '../../../src/components/profile/ProfileC
 import { FollowButton } from '../../../src/components/profile/FollowButton';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getUserRepo } from '../../../src/services/userComposition';
-import { getPostRepo, getMyPostsUseCase } from '../../../src/services/postsComposition';
+import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { useOtherProfileActions } from '../../../src/hooks/useOtherProfileActions';
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
+import { profilePostOwnerFromUser } from '../../../src/lib/profilePostOwnerContext';
 import { getRestoredProfileTab, persistProfileTab } from '../../../src/lib/profileTabSession';
 import { useOtherProfileScreenStyles } from '../../../src/components/profile/otherProfileScreen.styles';
 import { nativeStackHeaderRightIconOnly } from '../../../src/navigation/nativeHeaderIconOnly';
@@ -48,23 +51,37 @@ export default function OtherProfileScreen() {
 
   const userQuery = useQuery({
     queryKey: ['profile-other', handle],
-    queryFn: () => getUserRepo().findByHandle(handle!),
+    queryFn: async () => {
+      // TD-73: notification triggers historically emitted the user_id as the
+      // `handle` param. Triggers were corrected in migration 0134, but any
+      // notification already enqueued before that runs through this route
+      // with a UUID — `findByHandle` (queries `share_handle`) would silently
+      // miss. Detect UUID-shaped params and route to `findById` so old taps
+      // also resolve.
+      const repo = getUserRepo();
+      const handleByName = await repo.findByHandle(handle!);
+      if (handleByName) return handleByName;
+      if (/^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(handle!)) {
+        return repo.findById(handle!);
+      }
+      return null;
+    },
     enabled: Boolean(handle),
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
   const u = userQuery.data ?? null;
+  const postOwner = React.useMemo(
+    () => (u ? profilePostOwnerFromUser(u, t('profile.fallbackName')) : undefined),
+    [u, t],
+  );
 
   const stateQuery = useQuery({
     queryKey: ['follow-state', me, u?.userId],
     queryFn: () => getGetFollowStateUseCase().execute({ viewerId: me!, targetUserId: u!.userId }),
     enabled: Boolean(me && u?.userId && me !== u.userId),
+    staleTime: 30_000, // PERF-3: follow state — short; follow actions flip this
   });
   const followInfo = stateQuery.data;
-
-  const postsCountQuery = useQuery({
-    queryKey: ['profile-other-post-count', u?.userId],
-    queryFn: () => getPostRepo().countOpenByUser(u!.userId),
-    enabled: Boolean(u?.userId),
-  });
 
   const isMe = me === u?.userId;
 
@@ -92,6 +109,13 @@ export default function OtherProfileScreen() {
       limit: 30,
     }),
     enabled: Boolean(u?.userId) && activeTab === 'open',
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
+  });
+
+  const tabCounts = useProfileTabCounts({
+    profileUserId: u?.userId,
+    viewerUserId: me ?? null,
+    enabled: Boolean(u?.userId),
   });
 
   const closed = useProfileClosedPosts({
@@ -142,7 +166,7 @@ export default function OtherProfileScreen() {
           <ProfileStatsRow
             followersCount={u.followersCount}
             followingCount={u.followingCount}
-            postsCount={postsCountQuery.data ?? 0}
+            postsCount={tabCounts.totalCount ?? 0}
             enabled
             onPressFollowers={() => router.push({ pathname: '/user/[handle]/followers' as never, params: { handle } } as never)}
             onPressFollowing={() => router.push({ pathname: '/user/[handle]/following' as never, params: { handle } } as never)}
@@ -175,12 +199,15 @@ export default function OtherProfileScreen() {
             if (handle) persistProfileTab({ otherHandle: handle }, t);
             setActiveTab(t);
           }}
+          openCount={tabCounts.openCount}
+          closedCount={tabCounts.closedCount}
         />
         {activeTab === 'open' ? (
           <ProfilePostsGrid
             posts={postsQuery.data?.posts ?? []}
             isLoading={postsQuery.isLoading}
             empty="other_open"
+            postOwner={postOwner}
           />
         ) : (
           <ProfileClosedPostsGrid
@@ -191,6 +218,7 @@ export default function OtherProfileScreen() {
             isLoadingMore={closed.isLoadingMore}
             onLoadMore={closed.loadMore}
             profileUserId={u.userId}
+            postOwner={postOwner}
           />
         )}
       </ScrollView>

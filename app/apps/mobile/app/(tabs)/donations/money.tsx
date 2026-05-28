@@ -8,14 +8,16 @@ import { DonationLinksList } from '../../../src/components/DonationLinksList';
 import { Screen } from '../../../src/components/ui/Screen';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 const useStyles = makeUseStyles(({ colors }) => ({
   scrollView: { flex: 1 },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last link clears the floating tab-bar pill (FR-RESP-006).
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
     maxWidth: 580,
     width: '100%',
     alignSelf: 'center' as const,
@@ -35,12 +37,13 @@ const useStyles = makeUseStyles(({ colors }) => ({
 export default function DonationsMoneyScreen() {
   const { t } = useTranslation();
   const styles = useStyles();
+  const tabBarPad = useShellTabBarScrollInset();
 
   return (
-    <Screen blobs="content" edges={['bottom']}>
+    <Screen blobs="content">
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
         showsVerticalScrollIndicator={false}
       >
         <MotionEntry variant="hero" delay={ENTRY_DELAY.hero} style={styles.hero}>

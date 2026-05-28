@@ -5,13 +5,15 @@
 import React from 'react';
 import { View, Text, Pressable } from 'react-native';
 import { makeUseStyles, useTheme } from '@kc/ui';
-import { useIsSuperAdmin } from '../../../hooks/useIsSuperAdmin';
+import { hasPermission, type AdminRole } from '@kc/domain';
+import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { useAuthStore } from '../../../store/authStore';
 import { container } from '../../../lib/container';
 import he from '../../../i18n/locales/he';
 import { confirmAndRun, showAdminToast } from './adminActions';
 import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
+import { rowDirectionStart } from '../../../lib/rtlLayout';
 
 type TargetType = 'post' | 'user' | 'chat';
 
@@ -20,18 +22,19 @@ export function AutoRemovedBubble({
   body,
   handledByLaterAction,
 }: SystemMessageBubbleProps) {
-  const isAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canViewReports = hasPermission(roles as readonly AdminRole[], 'reports.view');
   const me = useAuthStore((s) => s.session?.userId ?? null);
   const styles = useAutoRemovedBubbleStyles();
   const { colors } = useTheme();
   const t = he.moderation;
   const targetType = payload?.target_type as TargetType | undefined;
   const targetId = payload?.target_id as string | undefined;
-  const showActions = isAdmin && !handledByLaterAction && !!targetType && !!targetId;
+  const showActions = canViewReports && !handledByLaterAction && !!targetType && !!targetId;
 
   const linkTarget = readLinkTarget(payload);
   const preview = readPreview(payload);
-  const showRichPreview = isAdmin && !!linkTarget && !!preview;
+  const showRichPreview = canViewReports && !!linkTarget && !!preview;
   const showChatNote = showRichPreview && targetType === 'chat';
 
   return (
@@ -105,6 +108,6 @@ const useAutoRemovedBubbleStyles = makeUseStyles(({ colors }) => ({
   body: { marginTop: 2, fontSize: 13, color: colors.textPrimary },
   note: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 2 },
   evidence: { fontSize: 11, color: colors.textSecondary, fontStyle: 'italic' as const, marginTop: 4 },
-  row: { flexDirection: 'row-reverse' as const, gap: 16, marginTop: 8 },
+  row: { flexDirection: rowDirectionStart, gap: 16, marginTop: 8 },
   btn: { color: colors.secondary, fontWeight: '600' as const },
 }));

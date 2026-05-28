@@ -9,6 +9,7 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface Props {
   readonly visible: boolean;
@@ -61,8 +62,8 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     padding: spacing.lg,
     gap: spacing.md,
   },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
-  body: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  body: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   row: { flexDirection: 'row', justifyContent: 'flex-end', gap: spacing.sm, marginTop: spacing.sm },
   cancelBtn: {
     paddingVertical: spacing.sm,

@@ -29,7 +29,10 @@ import { Card } from '../ui/Card';
 import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
+import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 /**
  * RN-Web: absolute `start` ignores RTL like native. `I18nManager.isRTL` is also false at
@@ -59,8 +62,14 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const user = userQuery.data ?? null;
+  const tabCounts = useProfileTabCounts({
+    profileUserId: userId,
+    viewerUserId: userId ?? null,
+    enabled: Boolean(userId),
+  });
   const profileLoading = userQuery.isLoading && user === null;
   const displayName = user?.displayName?.trim() || fallbackName;
   const avatarUrl = user?.avatarUrl ?? null;
@@ -96,13 +105,13 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
                   avatarUrl={avatarUrl}
                   biography={biography}
                   privacyMode={user?.privacyMode ?? 'Public'}
-                  onLockPress={() => router.push('/settings/privacy' as never)}
+                  onLockPress={() => router.push('/settings')}
                   size={72}
                 />
                 <ProfileStatsRow
                   followersCount={user?.followersCount ?? 0}
                   followingCount={user?.followingCount ?? 0}
-                  postsCount={user?.activePostsCountInternal ?? 0}
+                  postsCount={tabCounts.totalCount ?? 0}
                   enabled={Boolean(user)}
                   onPressFollowers={() =>
                     router.push({
@@ -141,7 +150,12 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
         </View>
       </MotionEntry>
       <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
-        <ProfileTabs active={activeTab} onChange={goToTab} />
+        <ProfileTabs
+          active={activeTab}
+          onChange={goToTab}
+          openCount={tabCounts.openCount}
+          closedCount={tabCounts.closedCount}
+        />
       </MotionEntry>
     </>
   );
@@ -186,7 +200,7 @@ const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
     alignItems: 'center' as const,
   },
   statsLink: {
-    flexDirection: 'row-reverse' as const,
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     justifyContent: 'space-between' as const,
     paddingVertical: spacing.sm,
@@ -194,5 +208,5 @@ const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
     borderTopColor: colors.border,
     gap: spacing.sm,
   },
-  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' as const },
+  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
 }));

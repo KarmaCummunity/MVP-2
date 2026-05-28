@@ -6,6 +6,8 @@ import { Modal, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   visible: boolean;
@@ -94,22 +96,22 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     width: '100%',
     maxWidth: 440,
   },
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 12, color: colors.textPrimary },
-  body: { fontSize: 15, color: colors.textPrimary, textAlign: 'right', marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 12, color: colors.textPrimary },
+  body: { fontSize: 15, color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: 8 },
   bullet: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 8,
     lineHeight: 22,
   },
   error: {
     fontSize: 14,
     color: colors.error,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginTop: 8,
   },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 16 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 16 },
   btn: {
     flex: 1,
     paddingVertical: 12,

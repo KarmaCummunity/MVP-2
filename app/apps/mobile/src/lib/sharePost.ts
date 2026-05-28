@@ -85,6 +85,24 @@ async function shareWeb(
   return { kind: 'failed', reason: 'no_share_api' };
 }
 
+const SHARE_IMAGE_DOWNLOAD_MS = 2_500;
+
+async function withShareImageDownloadTimeout<T>(promise: Promise<T>): Promise<T | null> {
+  let timer: ReturnType<typeof setTimeout> | undefined;
+  try {
+    return await Promise.race([
+      promise,
+      new Promise<null>((resolve) => {
+        timer = setTimeout(() => resolve(null), SHARE_IMAGE_DOWNLOAD_MS);
+      }),
+    ]);
+  } catch {
+    return null;
+  } finally {
+    if (timer !== undefined) clearTimeout(timer);
+  }
+}
+
 export async function sharePost(input: PostShareInput): Promise<SharePostOutcome> {
   const url = buildPostShareUrl(input.postId, input.webBaseUrl);
 
@@ -98,7 +116,9 @@ export async function sharePost(input: PostShareInput): Promise<SharePostOutcome
   // it onto EXTRA_TEXT, surfacing the link twice in WhatsApp.
   let localImageUri: string | undefined;
   if (Platform.OS === 'ios' && input.remoteImageUrl && input.remoteImageUrl.trim() !== '') {
-    const downloaded = await downloadPostImageForShare(input.remoteImageUrl, input.postId);
+    const downloaded = await withShareImageDownloadTimeout(
+      downloadPostImageForShare(input.remoteImageUrl, input.postId),
+    );
     localImageUri = downloaded?.uri;
   }
 

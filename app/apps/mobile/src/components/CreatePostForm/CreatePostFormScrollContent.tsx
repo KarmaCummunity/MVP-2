@@ -14,6 +14,7 @@ import { CreatePostExposureSection } from './CreatePostExposureSection';
 import { PhotoPicker } from './PhotoPicker';
 import type { UploadedAsset } from '../../services/imageUpload';
 import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
+import { useShellTabBarScrollInset } from '../../navigation/useShellTabBarVisibility';
 import type { CreatePostCitySelection } from '../../hooks/useCreatePostPublish';
 
 export interface CreatePostFormScrollContentProps {
@@ -92,9 +93,13 @@ export function CreatePostFormScrollContent({
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useCreatePostStyles();
+  const tabBarPad = useShellTabBarScrollInset();
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}
+    >
       <View style={styles.typeToggle}>
         <TouchableOpacity
           style={[styles.typeBtn, type === 'Request' && styles.typeBtnActive]}

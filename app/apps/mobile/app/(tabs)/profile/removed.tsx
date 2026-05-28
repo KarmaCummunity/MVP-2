@@ -14,6 +14,9 @@ import { ProfilePostsGrid } from '../../../src/components/profile/ProfilePostsGr
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
+import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 export default function MyProfileRemovedScreen() {
   const styles = useStyles();
@@ -21,6 +24,7 @@ export default function MyProfileRemovedScreen() {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
+  const postOwner = useMyProfilePostOwner();
 
   const removedPostsQuery = useQuery({
     queryKey: ['my-removed-posts', userId],
@@ -31,6 +35,7 @@ export default function MyProfileRemovedScreen() {
         limit: 30,
       }),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — admin removal invalidates explicitly
   });
 
   const { openLane, closedLane } = useMemo(() => {
@@ -64,12 +69,14 @@ export default function MyProfileRemovedScreen() {
           posts={openLane}
           isLoading={removedPostsQuery.isLoading}
           empty="self_removed_open"
+          postOwner={postOwner}
         />
         <Text style={styles.sectionTitle}>{t('profile.removedSectionClosed')}</Text>
         <ProfilePostsGrid
           posts={closedLane}
           isLoading={removedPostsQuery.isLoading}
           empty="self_removed_closed"
+          postOwner={postOwner}
         />
       </ScrollView>
     </SafeAreaView>
@@ -80,7 +87,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   scroll: { flex: 1, width: '100%', alignSelf: 'stretch' as const },
   banner: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'flex-start',
     gap: spacing.sm,
     marginHorizontal: spacing.base,
@@ -91,20 +98,20 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     borderWidth: isDark ? 1 : 0,
     borderColor: isDark ? colors.border : 'transparent',
     borderRadius: 8,
-    borderLeftWidth: 3,
-    borderLeftColor: colors.error,
+    borderStartWidth: 3,
+    borderStartColor: colors.error,
   },
   bannerText: {
     flex: 1,
     ...typography.bodySmall,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     lineHeight: 20,
   },
   sectionTitle: {
     ...typography.semiBold,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginHorizontal: spacing.base,
     marginTop: spacing.sm,
     marginBottom: spacing.xs,

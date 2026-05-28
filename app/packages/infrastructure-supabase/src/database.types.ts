@@ -41,6 +41,157 @@ export type Database = {
           },
         ]
       }
+      admin_role_grants: {
+        Row: {
+          grant_id: string
+          granted_at: string
+          granted_by: string | null
+          revoked_at: string | null
+          revoked_by: string | null
+          role: string
+          user_id: string
+        }
+        Insert: {
+          grant_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role: string
+          user_id: string
+        }
+        Update: {
+          grant_id?: string
+          granted_at?: string
+          granted_by?: string | null
+          revoked_at?: string | null
+          revoked_by?: string | null
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_role_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      admin_task_activities: {
+        Row: {
+          activity_id: string
+          actor_id: string | null
+          created_at: string
+          kind: string
+          payload: Json
+          task_id: string
+        }
+        Insert: {
+          activity_id?: string
+          actor_id?: string | null
+          created_at?: string
+          kind: string
+          payload?: Json
+          task_id: string
+        }
+        Update: {
+          activity_id?: string
+          actor_id?: string | null
+          created_at?: string
+          kind?: string
+          payload?: Json
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_task_activities_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_task_activities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["task_id"]
+          },
+        ]
+      }
+      admin_tasks: {
+        Row: {
+          assignee_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          labels: string[]
+          priority: string
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at?: string | null
+          labels?: string[]
+          priority?: string
+          status?: string
+          task_id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          labels?: string[]
+          priority?: string
+          status?: string
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_tasks_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -147,6 +298,7 @@ export type Database = {
       chats: {
         Row: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -159,6 +311,7 @@ export type Database = {
         }
         Insert: {
           anchor_post_id?: string | null
+          anchor_ride_id?: string | null
           chat_id?: string
           created_at?: string
           inbox_hidden_at_a?: string | null
@@ -171,6 +324,7 @@ export type Database = {
         }
         Update: {
           anchor_post_id?: string | null
+          anchor_ride_id?: string | null
           chat_id?: string
           created_at?: string
           inbox_hidden_at_a?: string | null
@@ -188,6 +342,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "posts"
             referencedColumns: ["post_id"]
+          },
+          {
+            foreignKeyName: "chats_anchor_ride_id_fkey"
+            columns: ["anchor_ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
           },
           {
             foreignKeyName: "chats_participant_a_fkey"
@@ -430,6 +591,81 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      legal_document_versions: {
+        Row: {
+          body_md: string
+          change_summary: string | null
+          content_hash: string
+          created_at: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_date: string
+          id: string
+          language: string
+          published_at: string
+          published_by: string
+          severity: string
+          version: number
+        }
+        Insert: {
+          body_md: string
+          change_summary?: string | null
+          content_hash?: string
+          created_at?: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          effective_date: string
+          id?: string
+          language?: string
+          published_at?: string
+          published_by: string
+          severity: string
+          version: number
+        }
+        Update: {
+          body_md?: string
+          change_summary?: string | null
+          content_hash?: string
+          created_at?: string
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          effective_date?: string
+          id?: string
+          language?: string
+          published_at?: string
+          published_by?: string
+          severity?: string
+          version?: number
+        }
+        Relationships: []
+      }
+      legal_documents: {
+        Row: {
+          current_effective_date: string
+          current_version: number
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id: string
+          last_material_severity: string | null
+          last_material_version: number
+          updated_at: string
+        }
+        Insert: {
+          current_effective_date: string
+          current_version?: number
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          last_material_severity?: string | null
+          last_material_version?: number
+          updated_at?: string
+        }
+        Update: {
+          current_effective_date?: string
+          current_version?: number
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          last_material_severity?: string | null
+          last_material_version?: number
+          updated_at?: string
+        }
+        Relationships: []
       }
       media_assets: {
         Row: {
@@ -752,6 +988,71 @@ export type Database = {
           },
         ]
       }
+      public_research_contact_requests: {
+        Row: {
+          consent_at: string
+          contact_email: string
+          contact_window_he: string | null
+          id: string
+          response_id: string
+        }
+        Insert: {
+          consent_at?: string
+          contact_email: string
+          contact_window_he?: string | null
+          id?: string
+          response_id: string
+        }
+        Update: {
+          consent_at?: string
+          contact_email?: string
+          contact_window_he?: string | null
+          id?: string
+          response_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "public_research_contact_requests_response_id_fkey"
+            columns: ["response_id"]
+            isOneToOne: false
+            referencedRelation: "public_research_responses"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      public_research_responses: {
+        Row: {
+          answers: Json
+          created_at: string
+          id: string
+          ip_hash: string
+          source: string
+          survey_slug: string
+          user_agent_hash: string | null
+          version: number
+        }
+        Insert: {
+          answers: Json
+          created_at?: string
+          id?: string
+          ip_hash: string
+          source?: string
+          survey_slug: string
+          user_agent_hash?: string | null
+          version: number
+        }
+        Update: {
+          answers?: Json
+          created_at?: string
+          id?: string
+          ip_hash?: string
+          source?: string
+          survey_slug?: string
+          user_agent_hash?: string | null
+          version?: number
+        }
+        Relationships: []
+      }
       recipients: {
         Row: {
           marked_at: string
@@ -865,6 +1166,256 @@ export type Database = {
           {
             foreignKeyName: "reports_resolved_by_fkey"
             columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      research_secrets: {
+        Row: {
+          key: string
+          rotated_at: string
+          value: string
+        }
+        Insert: {
+          key: string
+          rotated_at?: string
+          value: string
+        }
+        Update: {
+          key?: string
+          rotated_at?: string
+          value?: string
+        }
+        Relationships: []
+      }
+      ride_listings: {
+        Row: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        Insert: {
+          created_at?: string
+          departs_at: string
+          description?: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number?: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number?: string | null
+          owner_id: string
+          ride_id?: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string | null
+          title: string
+          updated_at?: string
+          visibility?: string
+        }
+        Update: {
+          created_at?: string
+          departs_at?: string
+          description?: string | null
+          dest_city_id?: string
+          dest_street?: string
+          dest_street_number?: string | null
+          mode?: string
+          origin_city_id?: string
+          origin_street?: string
+          origin_street_number?: string | null
+          owner_id?: string
+          ride_id?: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string | null
+          title?: string
+          updated_at?: string
+          visibility?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_listings_dest_city_id_fkey"
+            columns: ["dest_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_origin_city_id_fkey"
+            columns: ["origin_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "ride_templates"
+            referencedColumns: ["template_id"]
+          },
+        ]
+      }
+      ride_participants: {
+        Row: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        Insert: {
+          decided_at?: string | null
+          decided_by?: string | null
+          note?: string | null
+          participant_id?: string
+          requested_at?: string
+          ride_id: string
+          status?: string
+          user_id: string
+        }
+        Update: {
+          decided_at?: string | null
+          decided_by?: string | null
+          note?: string | null
+          participant_id?: string
+          requested_at?: string
+          ride_id?: string
+          status?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_participants_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_participants_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+          {
+            foreignKeyName: "ride_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ride_templates: {
+        Row: {
+          created_at: string
+          depart_time: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          lookahead_days: number
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          seats_available: number | null
+          status: string
+          template_id: string
+          updated_at: string
+          visibility: string
+          weekday_mask: number
+        }
+        Insert: {
+          created_at?: string
+          depart_time: string
+          description?: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number?: string | null
+          lookahead_days?: number
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number?: string | null
+          owner_id: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visibility?: string
+          weekday_mask: number
+        }
+        Update: {
+          created_at?: string
+          depart_time?: string
+          description?: string | null
+          dest_city_id?: string
+          dest_street?: string
+          dest_street_number?: string | null
+          lookahead_days?: number
+          mode?: string
+          origin_city_id?: string
+          origin_street?: string
+          origin_street_number?: string | null
+          owner_id?: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visibility?: string
+          weekday_mask?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_templates_dest_city_id_fkey"
+            columns: ["dest_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_templates_origin_city_id_fkey"
+            columns: ["origin_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_templates_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
@@ -993,6 +1544,237 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cities"
             referencedColumns: ["city_id"]
+          },
+        ]
+      }
+      survey_answers: {
+        Row: {
+          answer_text: string | null
+          created_at: string
+          id: string
+          question_id: string
+          rating: number
+          survey_id: string
+          updated_at: string
+          user_id: string
+          version: number
+        }
+        Insert: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id: string
+          rating: number
+          survey_id: string
+          updated_at?: string
+          user_id: string
+          version: number
+        }
+        Update: {
+          answer_text?: string | null
+          created_at?: string
+          id?: string
+          question_id?: string
+          rating?: number
+          survey_id?: string
+          updated_at?: string
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_answers_question_id_fkey"
+            columns: ["question_id"]
+            isOneToOne: false
+            referencedRelation: "survey_questions"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "survey_answers_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_questions: {
+        Row: {
+          context_he: string
+          id: string
+          prompt_he: string
+          question_type: Database["public"]["Enums"]["survey_question_type"]
+          rating_anchor_high_he: string
+          rating_anchor_low_he: string
+          short_label_he: string
+          sort_order: number
+          survey_version_id: string
+          text_placeholder_he: string
+        }
+        Insert: {
+          context_he?: string
+          id?: string
+          prompt_he: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          rating_anchor_high_he?: string
+          rating_anchor_low_he?: string
+          short_label_he: string
+          sort_order: number
+          survey_version_id: string
+          text_placeholder_he?: string
+        }
+        Update: {
+          context_he?: string
+          id?: string
+          prompt_he?: string
+          question_type?: Database["public"]["Enums"]["survey_question_type"]
+          rating_anchor_high_he?: string
+          rating_anchor_low_he?: string
+          short_label_he?: string
+          sort_order?: number
+          survey_version_id?: string
+          text_placeholder_he?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_questions_survey_version_id_fkey"
+            columns: ["survey_version_id"]
+            isOneToOne: false
+            referencedRelation: "survey_versions"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_versions: {
+        Row: {
+          id: string
+          published_at: string
+          published_by: string
+          survey_id: string
+          version: number
+        }
+        Insert: {
+          id?: string
+          published_at?: string
+          published_by: string
+          survey_id: string
+          version: number
+        }
+        Update: {
+          id?: string
+          published_at?: string
+          published_by?: string
+          survey_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_versions_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      surveys: {
+        Row: {
+          created_at: string
+          current_version: number
+          description_he: string | null
+          id: string
+          is_active: boolean
+          prompt_rules: Json
+          slug: string
+          title_he: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          current_version?: number
+          description_he?: string | null
+          id?: string
+          is_active?: boolean
+          prompt_rules?: Json
+          slug: string
+          title_he: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          current_version?: number
+          description_he?: string | null
+          id?: string
+          is_active?: boolean
+          prompt_rules?: Json
+          slug?: string
+          title_he?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_feedback: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          rating: number | null
+          user_id: string
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          user_id: string
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          rating?: number | null
+          user_id?: string
+        }
+        Relationships: []
+      }
+      user_legal_acceptances: {
+        Row: {
+          accepted_at: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id: string
+          ip_inet: unknown
+          locale: string | null
+          user_agent: string | null
+          user_id: string
+          version: number
+        }
+        Insert: {
+          accepted_at?: string
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          ip_inet?: unknown
+          locale?: string | null
+          user_agent?: string | null
+          user_id: string
+          version: number
+        }
+        Update: {
+          accepted_at?: string
+          doc_type?: Database["public"]["Enums"]["legal_doc_type"]
+          id?: string
+          ip_inet?: unknown
+          locale?: string | null
+          user_agent?: string | null
+          user_id?: string
+          version?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_legal_acceptances_version_fk"
+            columns: ["doc_type", "version"]
+            isOneToOne: false
+            referencedRelation: "legal_document_versions"
+            referencedColumns: ["doc_type", "version"]
           },
         ]
       }
@@ -1174,11 +1956,41 @@ export type Database = {
         }
         Relationships: []
       }
+      user_legal_acceptances_latest: {
+        Row: {
+          accepted_at: string | null
+          doc_type: Database["public"]["Enums"]["legal_doc_type"] | null
+          user_id: string | null
+          version: number | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "user_legal_acceptances_version_fk"
+            columns: ["doc_type", "version"]
+            isOneToOne: false
+            referencedRelation: "legal_document_versions"
+            referencedColumns: ["doc_type", "version"]
+          },
+        ]
+      }
     }
     Functions: {
+      accept_legal_document: {
+        Args: {
+          p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          p_locale: string
+          p_user_agent: string
+          p_version: number
+        }
+        Returns: Json
+      }
       active_posts_count_for_viewer: {
         Args: { p_owner: string; p_viewer: string }
         Returns: number
+      }
+      admin_assert_role: {
+        Args: { allowed: string[]; uid: string }
+        Returns: undefined
       }
       admin_audit_lookup: {
         Args: { p_limit?: number; p_user_id: string }
@@ -1216,6 +2028,27 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_audit_search: {
+        Args: {
+          p_action?: string
+          p_actor_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_target_user_id?: string
+        }
+        Returns: {
+          action: string
+          actor_display_name: string
+          actor_id: string
+          created_at: string
+          event_id: string
+          metadata: Json
+          target_display_name: string
+          target_id: string
+          target_type: string
+          total_count: number
+        }[]
+      }
       admin_ban_user: {
         Args: { p_note: string; p_reason: string; p_target_user_id: string }
         Returns: undefined
@@ -1232,9 +2065,164 @@ export type Database = {
         Args: { p_report_id: string }
         Returns: undefined
       }
+      admin_grant_role: {
+        Args: { p_role: string; p_target_user_id: string }
+        Returns: string
+      }
+      admin_list_admins: {
+        Args: { p_include_revoked?: boolean }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          grant_id: string
+          granted_at: string
+          granted_by: string
+          granted_by_display_name: string
+          last_seen_at: string
+          revoked_at: string
+          revoked_by: string
+          role: string
+          user_id: string
+        }[]
+      }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
         Args: { p_target_id: string; p_target_type: string }
+        Returns: undefined
+      }
+      admin_revoke_role: { Args: { p_grant_id: string }; Returns: undefined }
+      admin_search_posts: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+        }
+        Returns: {
+          created_at: string
+          owner_display_name: string
+          owner_id: string
+          post_id: string
+          status: string
+          title: string
+          total_count: number
+          type: string
+          updated_at: string
+          visibility: string
+        }[]
+      }
+      admin_search_users: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+        }
+        Returns: {
+          account_status: string
+          city_name: string
+          created_at: string
+          display_name: string
+          last_seen_at: string
+          share_handle: string
+          total_count: number
+          user_id: string
+        }[]
+      }
+      admin_task_add_comment: {
+        Args: { p_body: string; p_task_id: string }
+        Returns: string
+      }
+      admin_task_assign: {
+        Args: { p_new_assignee: string; p_task_id: string }
+        Returns: undefined
+      }
+      admin_task_create: {
+        Args: {
+          p_assignee_id?: string
+          p_description?: string
+          p_due_at?: string
+          p_labels?: string[]
+          p_priority?: string
+          p_title: string
+        }
+        Returns: string
+      }
+      admin_task_delete: { Args: { p_task_id: string }; Returns: undefined }
+      admin_task_detail: {
+        Args: { p_task_id: string }
+        Returns: {
+          activities: Json
+          assignee_display_name: string
+          assignee_id: string
+          created_at: string
+          created_by: string
+          created_by_display_name: string
+          description: string
+          due_at: string
+          labels: string[]
+          priority: string
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      admin_task_enqueue_assigned_notification: {
+        Args: {
+          p_actor_id: string
+          p_assignee_id: string
+          p_task_id: string
+          p_title: string
+        }
+        Returns: undefined
+      }
+      admin_task_is_owner_or_assignee: {
+        Args: { p_task_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      admin_task_list: {
+        Args: {
+          p_assignee?: string
+          p_label?: string
+          p_limit?: number
+          p_offset?: number
+          p_only_mine?: boolean
+          p_overdue?: boolean
+          p_priority?: string
+          p_status?: string
+        }
+        Returns: {
+          assignee_display_name: string
+          assignee_id: string
+          comment_count: number
+          created_at: string
+          created_by: string
+          created_by_display_name: string
+          description: string
+          due_at: string
+          labels: string[]
+          priority: string
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      admin_task_set_status: {
+        Args: { p_new_status: string; p_task_id: string }
+        Returns: undefined
+      }
+      admin_task_update: {
+        Args: {
+          p_clear_due?: boolean
+          p_description?: string
+          p_due_at?: string
+          p_labels?: string[]
+          p_priority?: string
+          p_task_id: string
+          p_title?: string
+        }
         Returns: undefined
       }
       auth_check_account_gate: {
@@ -1244,6 +2232,10 @@ export type Database = {
           reason: string
           until_at: string
         }[]
+      }
+      check_survey_prompt_eligibility: {
+        Args: { p_session_count: number; p_slug: string }
+        Returns: Json
       }
       close_post_with_recipient: {
         Args: { p_post_id: string; p_recipient_user_id: string }
@@ -1293,6 +2285,7 @@ export type Database = {
         }
         Returns: string
       }
+      escape_ilike: { Args: { p: string }; Returns: string }
       feed_ranked_ids:
         | {
             Args: {
@@ -1305,6 +2298,29 @@ export type Database = {
               p_filter_radius_km?: number
               p_filter_status?: string
               p_filter_type?: string
+              p_page_limit?: number
+              p_proximity_sort_city?: string
+              p_sort_order?: string
+              p_viewer_id: string
+            }
+            Returns: {
+              distance_km: number
+              post_id: string
+            }[]
+          }
+        | {
+            Args: {
+              p_cursor_created_at?: string
+              p_cursor_distance?: number
+              p_cursor_post_id?: string
+              p_filter_categories?: string[]
+              p_filter_center_city?: string
+              p_filter_item_conditions?: string[]
+              p_filter_radius_km?: number
+              p_filter_search_query?: string
+              p_filter_status?: string
+              p_filter_type?: string
+              p_followers_only?: boolean
               p_page_limit?: number
               p_proximity_sort_city?: string
               p_sort_order?: string
@@ -1338,6 +2354,13 @@ export type Database = {
             }[]
           }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
+      get_my_admin_roles: { Args: never; Returns: string[] }
+      get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
+      get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      has_admin_role: {
+        Args: { role_name: string; uid: string }
+        Returns: boolean
+      }
       has_blocked: {
         Args: { blocked: string; blocker: string }
         Returns: boolean
@@ -1371,6 +2394,19 @@ export type Database = {
         }
         Returns: boolean
       }
+      list_active_surveys: { Args: never; Returns: Json }
+      needs_legal_reacknowledgement: {
+        Args: never
+        Returns: {
+          block_mode: string
+          current_effective_date: string
+          current_version: number
+          doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          last_accepted_version: number
+          last_material_severity: string
+          last_material_version: number
+        }[]
+      }
       notifications_backlog_check: { Args: never; Returns: undefined }
       notifications_bump_attempt: {
         Args: { p_error: string; p_id: string }
@@ -1385,6 +2421,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      posts_expiry_transition: { Args: never; Returns: number }
       profile_closed_posts: {
         Args: {
           p_cursor?: string
@@ -1398,6 +2435,35 @@ export type Database = {
           identity_role: string
           post_id: string
         }[]
+      }
+      profile_closed_posts_count: {
+        Args: {
+          p_list_mode?: string
+          p_profile_user_id: string
+          p_viewer_user_id: string
+        }
+        Returns: number
+      }
+      publish_legal_document: {
+        Args: {
+          p_body_md: string
+          p_change_summary: string
+          p_doc_type: Database["public"]["Enums"]["legal_doc_type"]
+          p_effective_date: string
+          p_severity: string
+        }
+        Returns: Json
+      }
+      publish_survey_version: {
+        Args: {
+          p_description_he: string
+          p_is_active: boolean
+          p_prompt_rules: Json
+          p_questions: Json
+          p_slug: string
+          p_title_he: string
+        }
+        Returns: Json
       }
       reopen_post_deleted_no_recipient: {
         Args: { p_post_id: string }
@@ -1462,6 +2528,90 @@ export type Database = {
         }
       }
       report_donation_link: { Args: { p_link_id: string }; Returns: undefined }
+      reports_case_detail: {
+        Args: { p_target_id: string; p_target_type: string }
+        Returns: Json
+      }
+      reports_open_inbox: {
+        Args: {
+          p_cursor?: Json
+          p_limit?: number
+          p_max_age_days?: number
+          p_reporter_filter?: string
+          p_target_type_filter?: string
+        }
+        Returns: Json
+      }
+      ride_listings_expire_check: { Args: never; Returns: number }
+      ride_listings_find_matches: {
+        Args: { p_limit?: number; p_ride_id: string; p_window_hours?: number }
+        Returns: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      ride_listings_search: {
+        Args: {
+          p_cursor?: string
+          p_depart_from?: string
+          p_depart_to?: string
+          p_dest_city_id?: string
+          p_limit?: number
+          p_mode?: string
+          p_origin_city_id?: string
+          p_query?: string
+        }
+        Returns: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      ride_participants_expire_stale_check: { Args: never; Returns: number }
+      ride_templates_materialize: { Args: never; Returns: number }
       rpc_chat_hide_for_viewer: {
         Args: { p_chat_id: string }
         Returns: undefined
@@ -1471,6 +2621,29 @@ export type Database = {
         Args: { p_anchor_post_id: string; p_chat_id: string }
         Returns: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
+          chat_id: string
+          created_at: string
+          inbox_hidden_at_a: string | null
+          inbox_hidden_at_b: string | null
+          is_support_thread: boolean
+          last_message_at: string
+          participant_a: string | null
+          participant_b: string | null
+          removed_at: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "chats"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_chat_set_anchor_ride: {
+        Args: { p_anchor_ride_id: string; p_chat_id: string }
+        Returns: {
+          anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -1493,6 +2666,7 @@ export type Database = {
         Args: never
         Returns: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -1524,10 +2698,98 @@ export type Database = {
         Args: { p_post_id: string }
         Returns: undefined
       }
+      rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
+      rpc_ride_participants_cancel: {
+        Args: { p_participant_id: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_participants_decide: {
+        Args: { p_participant_id: string; p_status: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_participants_request: {
+        Args: { p_note?: string; p_ride_id: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_update_visibility: {
+        Args: { p_ride_id: string; p_visibility: string }
+        Returns: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rpc_submit_support_issue: {
         Args: { p_category: string; p_description: string }
         Returns: {
           anchor_post_id: string | null
+          anchor_ride_id: string | null
           chat_id: string
           created_at: string
           inbox_hidden_at_a: string | null
@@ -1545,6 +2807,13 @@ export type Database = {
           isSetofReturn: false
         }
       }
+      rpc_unread_counts_for_chats: {
+        Args: { p_chat_ids: string[]; p_viewer_id: string }
+        Returns: {
+          chat_id: string
+          unread_count: number
+        }[]
+      }
       stats_recompute_personal_counters_nightly: {
         Args: never
         Returns: {
@@ -1553,14 +2822,33 @@ export type Database = {
         }[]
       }
       stats_safe_dec: { Args: { p_value: number }; Returns: number }
+      submit_public_research_response: {
+        Args: {
+          p_answers: Json
+          p_contact_email?: string
+          p_contact_window_he?: string
+          p_honeypot: string
+          p_ip_hash: string
+          p_slug: string
+          p_source: string
+          p_user_agent_hash: string
+          p_version: number
+        }
+        Returns: string
+      }
       suspension_expiry_lift: { Args: never; Returns: number }
+      upsert_survey_answers: {
+        Args: { p_answers: Json; p_slug: string }
+        Returns: undefined
+      }
       users_merge_notification_preferences: {
         Args: { p_merge: Json; p_user_id: string }
         Returns: Json
       }
     }
     Enums: {
-      [_ in never]: never
+      legal_doc_type: "terms" | "privacy"
+      survey_question_type: "rating_1_7_with_optional_text"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1687,7 +2975,10 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      legal_doc_type: ["terms", "privacy"],
+      survey_question_type: ["rating_1_7_with_optional_text"],
+    },
   },
 } as const
 

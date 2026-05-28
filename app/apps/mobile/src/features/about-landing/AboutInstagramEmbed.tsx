@@ -8,7 +8,8 @@ import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { MOTION, staggerDelay } from '../../lib/animations/motion';
 import { ABOUT_INSTAGRAM_EMBED_URL, ABOUT_INSTAGRAM_PROFILE_URL } from './aboutExternalLinks';
 import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
-import { aboutWebTextRtl } from './aboutWebRtlStyle';
+import { aboutWebTextRtl, aboutRtlRow } from './aboutWebRtlStyle';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export interface AboutInstagramEmbedProps {
   readonly title: string;
@@ -75,11 +76,11 @@ export function AboutInstagramEmbed({
 
 const useAboutInstagramEmbedStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.md },
-  title: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', ...aboutWebTextRtl },
+  title: { ...typography.h4, color: colors.textPrimary, textAlign: rtlTextAlignStart, ...aboutWebTextRtl },
   caption: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     ...aboutWebTextRtl,
     lineHeight: 24,
   },
@@ -92,9 +93,9 @@ const useAboutInstagramEmbedStyles = makeUseStyles(({ colors }) => ({
     backgroundColor: colors.surface,
   },
   web: { flex: 1, backgroundColor: colors.surface },
-  note: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', ...aboutWebTextRtl },
+  note: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart, ...aboutWebTextRtl },
   cta: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,

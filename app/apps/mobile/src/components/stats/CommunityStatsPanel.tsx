@@ -4,6 +4,7 @@ import React from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 type Props = {
   readonly users: number;
@@ -76,8 +77,8 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     gap: spacing.sm,
     justifyContent: 'flex-end',
   },
-  title: { ...typography.h4, color: colors.textPrimary, flex: 1, textAlign: 'right' },
-  hint: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
+  title: { ...typography.h4, color: colors.textPrimary, flex: 1, textAlign: rtlTextAlignStart },
+  hint: { ...typography.caption, color: colors.textDisabled, textAlign: rtlTextAlignStart },
   card: {
     backgroundColor: colors.primarySurface,
     borderRadius: radius.lg,
@@ -93,7 +94,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     paddingHorizontal: spacing.base,
   },
   rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
-  rowLabel: { ...typography.body, color: colors.textSecondary, flex: 1, textAlign: 'right' },
+  rowLabel: { ...typography.body, color: colors.textSecondary, flex: 1, textAlign: rtlTextAlignStart },
   rowValue: { ...typography.h4, color: colors.textPrimary, marginStart: spacing.base },
   loader: { paddingVertical: spacing.lg },
   retryBox: {

@@ -15,6 +15,7 @@ export type {
 } from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
+export type { IRidesRealtime, RidesRealtimeCallbacks } from './ports/IRidesRealtime';
 export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRepository';
 export type { IAboutRepository } from './ports/IAboutRepository';
 
@@ -53,6 +54,7 @@ export * from './posts/ListSavedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
+export * from './posts/RepublishPostUseCase';
 export * from './posts/UnmarkRecipientSelfUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
 export { ListPostActorIdentityUseCase, type ListPostActorIdentityInput } from './posts/ListPostActorIdentityUseCase';
@@ -148,3 +150,98 @@ export type { IDeviceRepository } from './notifications/IDeviceRepository';
 export { RegisterDeviceUseCase } from './notifications/RegisterDeviceUseCase';
 export { DeactivateDeviceUseCase } from './notifications/DeactivateDeviceUseCase';
 export { UpdateNotificationPreferencesUseCase } from './notifications/UpdateNotificationPreferencesUseCase';
+
+export * from './ports/ILegalDocumentRepository';
+export * from './legal/LoadLegalDocumentUseCase';
+export * from './legal/CheckPendingLegalAcksUseCase';
+export * from './legal/AcceptLegalDocumentUseCase';
+
+export * from './admin/IAdminRoleRepository';
+export * from './admin/GetMyAdminRolesUseCase';
+export * from './admin/GrantAdminRoleUseCase';
+export * from './admin/RevokeAdminRoleUseCase';
+export * from './admin/ListAdminsUseCase';
+export * from './admin/IAdminTaskRepository';
+export * from './admin/ListAdminTasksUseCase';
+export * from './admin/GetAdminTaskDetailUseCase';
+export * from './admin/CreateAdminTaskUseCase';
+export * from './admin/UpdateAdminTaskUseCase';
+export * from './admin/SetAdminTaskStatusUseCase';
+export * from './admin/AssignAdminTaskUseCase';
+export * from './admin/AddAdminTaskCommentUseCase';
+export * from './admin/DeleteAdminTaskUseCase';
+export * from './admin/IAdminContentRepository';
+export * from './admin/AdminSearchUsersUseCase';
+export * from './admin/AdminSearchPostsUseCase';
+export * from './admin/AdminSearchAuditUseCase';
+
+// A1 — admin reports inbox & case detail
+export * from './reports/IReportsRepository';
+export * from './reports/ListOpenReportsUseCase';
+export * from './reports/GetReportCaseDetailUseCase';
+
+// Rides V2.0 (FR-RIDE-*)
+export type {
+  IRideListingRepository,
+  RideListingRow,
+  CreateRideListingRepoInput,
+  SearchRideListingsInput,
+  RideVisibility,
+} from './ports/IRideListingRepository';
+export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
+export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';
+export { SearchRideListingsUseCase } from './rides/SearchRideListingsUseCase';
+export { GetRideListingUseCase } from './rides/GetRideListingUseCase';
+export type { GetRideListingInput } from './rides/GetRideListingUseCase';
+export { CloseRideListingUseCase } from './rides/CloseRideListingUseCase';
+export type { CloseRideListingInput } from './rides/CloseRideListingUseCase';
+export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
+export type { FindRideMatchesInput } from './ports/IRideListingRepository';
+export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
+export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+
+// Ride templates (FR-RIDE-021 / FR-RIDE-022)
+export type {
+  IRideTemplateRepository,
+  CreateRideTemplateInput,
+} from './ports/IRideTemplateRepository';
+export { CreateRideTemplateUseCase } from './rides/CreateRideTemplateUseCase';
+export type { CreateRideTemplateUseCaseInput } from './rides/CreateRideTemplateUseCase';
+export { ListMyRideTemplatesUseCase } from './rides/ListMyRideTemplatesUseCase';
+export { SetRideTemplateStatusUseCase } from './rides/SetRideTemplateStatusUseCase';
+export { DeleteRideTemplateUseCase } from './rides/DeleteRideTemplateUseCase';
+
+export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
+export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
+export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
+export { ChronologicalRideMatchScorer } from './rides/ChronologicalRideMatchScorer';
+
+// Ride participants (FR-RIDE-011 / FR-RIDE-012)
+export type { IRideParticipantRepository } from './ports/IRideParticipantRepository';
+export { RequestRideJoinUseCase } from './rides/RequestRideJoinUseCase';
+export type { RequestRideJoinInput } from './rides/RequestRideJoinUseCase';
+export { DecideRideJoinUseCase } from './rides/DecideRideJoinUseCase';
+export type { DecideRideJoinInput } from './rides/DecideRideJoinUseCase';
+export { CancelRideJoinUseCase } from './rides/CancelRideJoinUseCase';
+export type { CancelRideJoinInput } from './rides/CancelRideJoinUseCase';
+export { ListRideParticipantsUseCase } from './rides/ListRideParticipantsUseCase';
+export type { ListRideParticipantsInput } from './rides/ListRideParticipantsUseCase';
+export { ListUserRideRequestsUseCase } from './rides/ListUserRideRequestsUseCase';
+export type { ListUserRideRequestsInput } from './rides/ListUserRideRequestsUseCase';
+
+// Survey use cases (FR-SETTINGS-015..017)
+export type { ISurveyRepository } from './ports/ISurveyRepository';
+export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';
+export type { LoadSurveyBundleInput } from './survey/LoadSurveyBundleUseCase';
+export { SaveSurveyAnswersUseCase } from './survey/SaveSurveyAnswersUseCase';
+export type { SaveSurveyAnswersInput } from './survey/SaveSurveyAnswersUseCase';
+export { ListActiveSurveysUseCase } from './survey/ListActiveSurveysUseCase';
+export { CheckSurveyPromptUseCase } from './survey/CheckSurveyPromptUseCase';
+export type { CheckSurveyPromptInput } from './survey/CheckSurveyPromptUseCase';
+export { SubmitFreeFeedbackUseCase } from './survey/SubmitFreeFeedbackUseCase';
+export type { SubmitFreeFeedbackInput } from './survey/SubmitFreeFeedbackUseCase';
+
+// Public research use cases (FR-RESEARCH-001..003)
+export type { IPublicResearchRepository } from './ports/IPublicResearchRepository';
+export { LoadPublicResearchBundleUseCase } from './research/LoadPublicResearchBundleUseCase';
+export { SubmitPublicResearchResponseUseCase } from './research/SubmitPublicResearchResponseUseCase';

@@ -1,3 +1,7 @@
+import { initSentry } from '../src/lib/observability/sentry';
+initSentry();
+import { startMark, finishMark } from '../src/lib/observability/perfMarks';
+startMark('app.cold_start');
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
@@ -110,12 +114,20 @@ import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
 import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
+import { LegalConsentGate } from '../src/components/legal/LegalConsentGate';
+import { ModalStackProvider } from '../src/components/legal/useActiveModalStack';
 
 SplashScreen.preventAutoHideAsync();
 
 const queryClient = new QueryClient({
   defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 2, retry: 2 },
+    queries: {
+      staleTime: 10 * 60_000,       // 10 min default — most data is fine for 10 min
+      gcTime: 30 * 60_000,          // 30 min — keep in memory longer
+      refetchOnWindowFocus: false,  // explicit; Realtime + per-query overrides handle live data
+      refetchOnMount: true,         // default — respects staleTime
+      retry: 2,
+    },
   },
 });
 
@@ -149,6 +161,7 @@ function NotificationsBridge(): null {
 // the active palette (web html bg, surface backgrounds in screen headers,
 // StatusBar style) read fresh values when the user toggles dark mode.
 function ThemedRootShell() {
+  React.useEffect(() => { finishMark('app.cold_start'); }, []);
   const { colors, isDark } = useTheme();
   const detailStackScreenOptions = useDetailStackScreenOptions();
 
@@ -167,8 +180,10 @@ function ThemedRootShell() {
       <DevBanner />
       <NotificationsBridge />
       <AuthGate>
-        <SoftGateProvider>
-          <ShellWithResponsiveChrome>
+        <ModalStackProvider>
+          <LegalConsentGate>
+            <SoftGateProvider>
+              <ShellWithResponsiveChrome>
             <Stack
               screenOptions={{
                 headerShown: false,
@@ -185,6 +200,11 @@ function ThemedRootShell() {
               <Stack.Screen name="(guest)" />
               <Stack.Screen name="(onboarding)" />
               <Stack.Screen name="(tabs)" />
+              {/* FR-ADMIN-011 AC1 — register the admin group at the root so
+                  native stack navigation can resolve `/(admin)` targets.
+                  Without this, `router.push('/(admin)')` is a no-op on iOS /
+                  Android (web URL routing falls back to resolved path). */}
+              <Stack.Screen name="(admin)" />
               <Stack.Screen name="auth/callback" />
               <Stack.Screen name="auth/verify" />
               {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
@@ -192,6 +212,8 @@ function ThemedRootShell() {
               <Stack.Screen name="settings" />
               <Stack.Screen name="about" options={{ headerShown: false }} />
               <Stack.Screen name="about-site" options={{ headerShown: false }} />
+              {/* FR-RESEARCH-001 — public web survey; no auth shell */}
+              <Stack.Screen name="research" options={{ headerShown: false }} />
               <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
               <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
               {/* user/[handle]/* owns its own header via the nested _layout */}
@@ -202,8 +224,10 @@ function ThemedRootShell() {
               {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
               <Stack.Screen name="chat/index" options={{ headerShown: false }} />
             </Stack>
-          </ShellWithResponsiveChrome>
-        </SoftGateProvider>
+              </ShellWithResponsiveChrome>
+            </SoftGateProvider>
+          </LegalConsentGate>
+        </ModalStackProvider>
       </AuthGate>
     </>
   );

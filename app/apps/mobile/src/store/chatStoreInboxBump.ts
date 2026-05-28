@@ -1,4 +1,12 @@
 // Inbox row bump on Realtime message INSERT (FR-CHAT-012 implementation note).
+//
+// TD-110 bug 1: previously the reducer unconditionally bumped `unreadCount` +
+// `unreadTotal` on incoming non-self messages, even when the viewer was
+// actively reading the chat that the message arrived in. The badge would
+// flicker +1 / 0 against `markChatLocallyRead` racing the Realtime tick. Now
+// the caller passes `isActiveChat` (`activeRoute === '/chat/<chatId>'`) and
+// the reducer skips both counters in that case — the lastMessage preview
+// still updates so the row reflects the new content.
 import type { Message } from '@kc/domain';
 import type { ChatWithPreview } from '@kc/application';
 import type { ChatState } from './chatStoreTypes';
@@ -9,6 +17,7 @@ export function reduceBumpInboxForIncomingInsert(
   s: Pick<ChatState, 'inbox' | 'unreadTotal'>,
   viewerId: string,
   msg: Message,
+  isActiveChat = false,
 ): Partial<Pick<ChatState, 'inbox' | 'unreadTotal'>> | null {
   const inbox = s.inbox;
   if (!inbox) return null;
@@ -20,7 +29,7 @@ export function reduceBumpInboxForIncomingInsert(
   if (row.lastMessage?.messageId === msg.messageId) return null;
 
   const fromSelf = msg.senderId === viewerId;
-  const deltaUnread = fromSelf ? 0 : 1;
+  const deltaUnread = fromSelf || isActiveChat ? 0 : 1;
 
   const msgMs = lastAtMs(msg.createdAt);
   const rowMs = lastAtMs(row.lastMessageAt);

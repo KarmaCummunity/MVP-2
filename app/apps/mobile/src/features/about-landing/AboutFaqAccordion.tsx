@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 import { MOTION } from '../../lib/animations/motion';
 
 interface FaqItem {
@@ -82,7 +82,7 @@ const useAboutFaqAccordionStyles = makeUseStyles(({ colors }) => ({
   row: { paddingHorizontal: spacing.md },
   rowBorder: { borderBottomWidth: StyleSheet.hairlineWidth, borderBottomColor: colors.border },
   question: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,

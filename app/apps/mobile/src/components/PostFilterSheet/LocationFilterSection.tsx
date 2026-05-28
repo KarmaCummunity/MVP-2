@@ -5,6 +5,7 @@ import type { TFunction } from 'i18next';
 import { RADIUS_OPTIONS_KM, type LocationFilter } from '@kc/domain';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { CityPicker } from '../CityPicker';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface LocationFilterSectionProps {
   value: LocationFilter | null;
@@ -78,18 +79,18 @@ function RadiusChip({ km, active, onPress, t }: { km: number; active: boolean; o
 }
 
 const useLocationFilterSectionStyles = makeUseStyles(({ colors }) => ({
-  section: { gap: spacing.sm, marginBottom: spacing.lg },
+  section: { gap: spacing.xs, marginBottom: spacing.md },
   titleRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
-  subLabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  title: { ...typography.label, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  subLabel: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   clearText: { ...typography.caption, color: colors.primary, fontWeight: '500' as const },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
 }));
 
 const useRadiusChipStyles = makeUseStyles(({ colors }) => ({
   chip: {
-    paddingHorizontal: spacing.md,
-    paddingVertical: spacing.xs + 2,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: spacing.xs,
     borderRadius: radius.full,
     borderWidth: 1.5,
     borderColor: colors.border,

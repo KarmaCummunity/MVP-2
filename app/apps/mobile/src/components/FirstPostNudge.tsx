@@ -8,6 +8,8 @@ import { useTranslation } from 'react-i18next';
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { Card } from './ui/Card';
 import { IconTile } from './ui/IconTile';
+import { rowDirectionStart } from '../lib/rtlLayout';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface FirstPostNudgeProps {
   onShare: () => void;
@@ -46,9 +48,9 @@ export function FirstPostNudge({ onShare, onRemindLater, onDismissForever }: Fir
 const useFirstPostNudgeStyles = makeUseStyles(({ colors }) => ({
   outer: { margin: spacing.base },
   card: { gap: spacing.sm },
-  headline: { flexDirection: 'row-reverse' as const, alignItems: 'center' as const, gap: spacing.sm },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' as const, flex: 1 },
-  body: { ...typography.body, color: colors.textSecondary, textAlign: 'right' as const },
+  headline: { flexDirection: rowDirectionStart, alignItems: 'center' as const, gap: spacing.sm },
+  title: { ...typography.h3, color: colors.textPrimary, textAlign: rtlTextAlignStart, flex: 1 },
+  body: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   btn: {
     height: 48,
     borderRadius: radius.lg,

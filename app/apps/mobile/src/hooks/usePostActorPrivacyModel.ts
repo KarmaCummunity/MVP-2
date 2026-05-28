@@ -14,10 +14,6 @@ import { getUserRepo } from '../services/userComposition';
 import { useFeedSessionStore } from '../store/feedSessionStore';
 import { mapPostErrorToHebrew } from '../services/postMessages';
 
-export function hasMarkedCounterparty(post: PostWithOwner): boolean {
-  return Boolean(post.recipientUser ?? post.recipient?.recipientUserId);
-}
-
 function inferredClosedSurface(post: PostWithOwner, viewerId: string): PostVisibility {
   if (post.ownerId === viewerId) return post.visibility;
   return 'Public';
@@ -54,12 +50,14 @@ export function usePostActorPrivacyModel(
     queryKey: ['user-profile', viewerId],
     queryFn: () => getUserRepo().findById(viewerId),
     enabled: Boolean(viewerId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
 
   const identityQuery = useQuery({
     queryKey: ['post-actor-identity', post.postId],
     queryFn: () => getListPostActorIdentityUseCase().execute({ postId: post.postId }),
+    staleTime: 5 * 60_000, // PERF-3: post actor identity (self) — upsert mutations invalidate explicitly
   });
 
   const myRow = identityQuery.data?.find((r) => r.userId === viewerId);
@@ -79,6 +77,8 @@ export function usePostActorPrivacyModel(
     await qc.invalidateQueries({ queryKey: ['post-actor-identity', post.postId] });
     await qc.invalidateQueries({ queryKey: ['post', post.postId] });
     await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+    await qc.invalidateQueries({ queryKey: ['profile-tab-open-count'] });
+    await qc.invalidateQueries({ queryKey: ['profile-tab-closed-count'] });
     await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
     await qc.invalidateQueries({ queryKey: ['feed'] });
     await qc.invalidateQueries({ queryKey: ['my-posts'] });
@@ -118,8 +118,18 @@ export function usePostActorPrivacyModel(
 
   const saving = updatePostVisibility.isPending || upsertIdentity.isPending;
 
+  // FR-POST-021 AC7 — mask preference is editable on open posts (pre-close) and on closed posts.
   const showCounterpartyRow =
-    post.status === 'closed_delivered' && hasMarkedCounterparty(post);
+    isOwner || (post.status === 'closed_delivered' && post.recipient?.recipientUserId === viewerId);
+
+  const persistIdentity = (next: {
+    surfaceVisibility: PostVisibility;
+    hideFromCounterparty: boolean;
+  }) => {
+    setSurface(next.surfaceVisibility);
+    setHide(next.hideFromCounterparty);
+    upsertIdentity.mutate(next);
+  };
 
   const persistClosed = (next: { surfaceVisibility?: PostVisibility; hideFromCounterparty?: boolean }) => {
     const sv = next.surfaceVisibility ?? surface;
@@ -130,7 +140,13 @@ export function usePostActorPrivacyModel(
 
   const onAudienceChange = (next: PostVisibility) => {
     if (isOpenOwner) {
-      updatePostVisibility.mutate(next);
+      updatePostVisibility.mutate(next, {
+        onSuccess: () => {
+          if (next === 'OnlyMe') {
+            persistIdentity({ surfaceVisibility: next, hideFromCounterparty: true });
+          }
+        },
+      });
       return;
     }
     // D-39 (dual-surface): closed-post audience lives entirely on
@@ -148,7 +164,10 @@ export function usePostActorPrivacyModel(
   };
 
   const onHideChange = (next: boolean) => {
-    setHide(next);
+    if (isOpenOwner) {
+      persistIdentity({ surfaceVisibility: audienceValue, hideFromCounterparty: next });
+      return;
+    }
     persistClosed({ hideFromCounterparty: next });
   };
 

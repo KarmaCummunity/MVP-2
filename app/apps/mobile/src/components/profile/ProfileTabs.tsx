@@ -12,14 +12,30 @@ import { makeUseStyles, spacing, typography } from '@kc/ui';
 export type ProfilePostsTab = 'open' | 'closed';
 
 export function ProfileTabs({
-  active, onChange,
-}: { active: ProfilePostsTab; onChange: (t: ProfilePostsTab) => void }) {
+  active,
+  onChange,
+  openCount,
+  closedCount,
+}: {
+  active: ProfilePostsTab;
+  onChange: (t: ProfilePostsTab) => void;
+  openCount?: number;
+  closedCount?: number;
+}) {
   const styles = useProfileTabsStyles();
   const { t } = useTranslation();
+  const openLabel =
+    openCount !== undefined
+      ? t('profile.tabOpenWithCount', { count: openCount })
+      : t('profile.tabOpen');
+  const closedLabel =
+    closedCount !== undefined
+      ? t('profile.tabClosedWithCount', { count: closedCount })
+      : t('profile.tabClosed');
   return (
     <View style={styles.row}>
-      <Tab label={t('profile.tabOpen')} active={active === 'open'} onPress={() => onChange('open')} styles={styles} />
-      <Tab label={t('profile.tabClosed')} active={active === 'closed'} onPress={() => onChange('closed')} styles={styles} />
+      <Tab label={openLabel} active={active === 'open'} onPress={() => onChange('open')} styles={styles} />
+      <Tab label={closedLabel} active={active === 'closed'} onPress={() => onChange('closed')} styles={styles} />
     </View>
   );
 }
@@ -50,11 +66,12 @@ const useProfileTabsStyles = makeUseStyles(({ colors }) => ({
   tab: {
     flex: 1,
     paddingVertical: spacing.md,
+    paddingHorizontal: spacing.xs,
     alignItems: 'center' as const,
     borderBottomWidth: 2,
     borderBottomColor: 'transparent',
   },
   tabActive: { borderBottomColor: colors.primary },
-  text: { ...typography.button, color: colors.textSecondary },
+  text: { ...typography.button, color: colors.textSecondary, textAlign: 'center' as const },
   textActive: { color: colors.primary },
 }));

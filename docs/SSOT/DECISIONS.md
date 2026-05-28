@@ -826,10 +826,217 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-40 — Legal docs delivery model: server-driven Markdown, native render (2026-05-25)
+
+**Decision.** Legal documents (Terms of Service + Privacy Policy) are delivered as server-driven Markdown stored in `legal_document_versions.body_md` and rendered natively in the mobile app via `react-native-markdown-display`. No WebView; no remote-config URL pointing at a canonical web copy.
+
+**Rationale.** Native rendering keeps RTL, theming, and offline behavior consistent across iOS, Android, and web. Avoids depending on a separate website CMS during an MVP that doesn't yet have one. Editing workflow is one SQL snippet (`publish_legal_document` RPC) against Supabase Studio rather than a CMS publish + cache invalidation.
+
+**Trade-off.** Markdown is the ceiling for layout richness — no embedded video, no complex tables. Acceptable for legal copy.
+
+---
+
+## D-41 — Severity tiers: minor / standard / critical (2026-05-25)
+
+**Decision.** `publish_legal_document` takes a three-valued `severity`: `minor` (no re-ack), `standard` (re-ack within 7 days, banner→modal promoted server-side), `critical` (blocking modal on next foreground; `effective_date` must be within 1 hour).
+
+**Rationale.** Replaces the originally-proposed `is_material_change` boolean. Protects users from "wall of text on app open" for typo fixes while still meeting consent requirements for material changes. The publisher decides per release.
+
+---
+
+## D-42 — Append-only acceptance log (2026-05-25)
+
+**Decision.** `user_legal_acceptances` is an append-only event log: one row per acceptance event per (user_id, doc_type, version). `UPDATE` and `DELETE` are blocked by a BEFORE trigger. RLS allows users to read only their own rows and insert only their own rows (but the insert path is the SECURITY-DEFINER RPC anyway).
+
+**Rationale.** GDPR Art. 7(1) requires demonstrating consent per version with a timestamp. An upsert-only table would let one user's later acceptance overwrite the audit record of their earlier one. Council legal review identified this as the highest-priority blocker on the original design.
+
+---
+
+## D-43 — No grandfather backfill of acceptances (2026-05-25)
+
+**Decision.** Existing users at the launch of FR-SETTINGS-010 are NOT issued fabricated `accepted_at = users.created_at` rows. The migration seeds v1 with `severity='standard'` so every existing user enters the 7-day soft-grace flow on their next foreground.
+
+**Rationale.** A backfilled timestamp for a v1 text that the user never actually saw is a fabricated audit record — exactly what GDPR Art. 7 audit-readiness is supposed to prevent. The one-time soft-grace UX cost (a banner for ≤ 7 days) is the right trade against falsifying the consent log.
+
+---
+
+## D-44 — Server-computed `block_mode` (2026-05-25)
+
+**Decision.** The 7-day `standard` → `critical` promotion (banner → blocking modal) is computed inside the `needs_legal_reacknowledgement` SQL function from `now() - current_effective_date >= '7 days'`. The mobile client does not derive `block_mode` from local time; it consumes the server-supplied `block_mode` field verbatim.
+
+**Rationale.** Client clocks can be wrong (DST, deliberate tampering, OS bug, plane mode timezone confusion). The legally-enforceable promotion must live with the source of truth. Client uses the server-supplied `currentEffectiveDate` only to *display* a countdown.
+
+---
+
+## D-45 — `critical` severity must publish immediately (2026-05-25)
+
+**Decision.** `publish_legal_document` rejects `severity='critical'` with `effective_date > now() + interval '1 hour'`.
+
+**Rationale.** Critical = urgent. A scheduled rollout is exactly the case where `standard` (with the 7-day soft-grace) is the right tool. Allowing a "future critical" is an "alarm bomb": users would foreground the app at the appointed time and find themselves blocked with no warning. The 1-hour window is operational slack for a publish that misses `now()` by seconds.
+
+---
+
+## D-46 — Legal tables `authenticated`-only read (2026-05-25) — superseded by D-47
+
+**Decision.** SELECT on `legal_documents` and `legal_document_versions` is granted to `authenticated` only, not `anon`. The RPCs follow the same posture.
+
+**Rationale.** Sign-up happens through OAuth (or email-OTP) — by the time the user needs to read a legal document for the first time, they are always already authenticated. Removing the anon grant shrinks the public-facing read surface by two tables for no UX cost.
+
+**Superseded.** See D-47 (same day). The "always authenticated by read time" premise broke in practice: expired sessions, pre-signup readers, and shared `/legal/*` deep links all hit `PGRST205` ("table not in schema cache") because PostgREST hides tables from anon when no GRANT exists.
+
+---
+
+## D-47 — Legal docs SELECT is public; acceptances stay private (2026-05-25)
+
+**Decision.** Grant SELECT on `legal_documents` and `legal_document_versions` to both `anon` and `authenticated` (migration `0109_legal_documents_public_read.sql`). RLS policies follow the same posture (`for select to anon, authenticated using (true)`). Acceptance writes (`user_legal_acceptances`) remain `authenticated`-only — anon has no `auth.uid()` to own a row, and the insert RPC asserts `auth.uid() IS NOT NULL` directly.
+
+**Rationale.**
+1. **Bug fix.** D-46's posture broke three real flows on dev:
+   - Expired session / failed token refresh → React store still says authenticated, Supabase client falls back to anon, PostgREST returns 404 (`PGRST205`).
+   - Pre-signup readers tapping "Terms" / "Privacy" on the welcome screen — AuthGate punts them to `/(auth)` but the link target is still `/legal/*`, which 404'd.
+   - Shared `/legal/terms` deep links — recipients without a session got 404.
+2. **No security value to gate.** Legal documents are public-by-definition published content; the contents are the same for every user. Hiding the table from anon doesn't protect any secret, it just creates fragile dependence on session state.
+3. **Smaller blast radius for re-publish accidents.** With public SELECT, a misfired publish surfaces immediately on any device (signed in or not), not only after a sign-in round-trip — easier to spot and roll back.
+
+**Trade-off accepted.** Public read means scrapers can pull the documents at will. This is fine — these are the published terms of service and privacy policy, intended for public consumption.
+
+---
+
+### D-41 — Dedicated `ride_listings` table (not `posts` extension)
+
+**Date:** 2026-05-26
+**Decision:** Hitchhiking ships as `ride_listings` + `features/rides/` module. Item posts remain unchanged.
+**Rationale:** Posts schema is item-shaped (single city address, item categories, closure/recipient). Rides need origin/dest cities, `departs_at`, seats, and a simpler status FSM. Extension ports allow join-approval and route matching later without migrating posts.
+**Affected:** `spec/15_rides.md`, migration `0122_ride_listings.sql`, chat `anchor_ride_id`.
+
+---
+
+### D-40 — Replace in-chat moderation with a dedicated Admin Portal + RBAC
+
+**Date:** 2026-05-25
+**Status:** Accepted
+
+**Decision.** Build a dedicated `(admin)` route group with an extensible RBAC store (`admin_role_grants`) instead of continuing to scale the single-super-admin chat-flow. Roles are gated at the DB level via `admin_assert_role`; the client gate (`AdminGate` + permission matrix in `@kc/domain`) is UX only.
+
+**Rationale.** The chat-flow is a single point of failure (one super-admin), discovery is poor (actions scattered), audit search is RLS-blocked (TD-93), restore cascades incorrectly (TD-94), and the single-admin invariant has no DB enforcement (TD-95). The portal addresses all four and unblocks the broader role hierarchy from PRD V2 (`02_Personas_Roles.md`: Operator, Org Admin, Volunteer Manager, …).
+
+**Decomposition.** A0 (this PR) ships the foundation. A1..A4 follow as separate sub-projects per `docs/superpowers/specs/2026-05-25-admin-portal-design.md`.
+
+**Alternatives considered.**
+1. Extend the chat-flow with multi-admin support. Rejected — does not address discoverability, scattered actions, or the deeper TDs.
+2. Use Supabase Studio as the only admin surface. Rejected — not accessible to non-engineers, no in-app context.
+
+---
+
+### D-41 — Support issues (Settings → "Report an issue") intentionally do not populate `public.reports`
+
+**Date:** 2026-05-26
+**Status:** Accepted
+
+**Decision.** Support tickets submitted via `rpc_submit_support_issue` continue to flow exclusively into a 1:1 support chat with the super admin (system message kind `'support_issue'`). They do NOT INSERT into `public.reports` and therefore do not appear in the Admin Portal Reports Dashboard (FR-ADMIN-012).
+
+**Rationale.** Tickets and moderation reports have different lifecycles, different escalation paths, and different audit needs. Conflating them into a single inbox would force the moderation UI to handle a payload it isn't designed for (free-text description, no target). When A3 Internal Tasks lands, the admin team will track ticket follow-ups there.
+
+**Implication.** The two surfaces stay separate: moderation work happens in `/admin/reports`; tickets stay in the support chat and (eventually) in `/admin/tasks`. Closes TD-94 sub-item (1) by reclassifying it as "by design" rather than a defect.
+
+---
+
+## D-48 — Sentry as the single observability sink for mobile + Edge Functions (2026-05-26)
+
+`@sentry/react-native` for mobile crash + 3 explicit performance marks (`app.cold_start`, `feed.first_render`, `image.first_paint`). Edge Functions use a `withTiming` wrapper logging structured JSON to Supabase function logs (read via `mcp__supabase__get_logs`).
+
+**Sample rates:** Performance 100% in dev, 25% in prod. Revisit at >1k DAU.
+**Why not Datadog/Honeycomb:** vendor cost + integration overhead exceed value at this scale.
+
+---
+
+## D-49 — Server-driven surveys via Supabase Studio publish (mirrors legal-documents pattern)
+
+**Date.** 2026-05-26
+
+**Decision.** Survey A (in-app community feedback) is delivered as a set of server-driven question definitions stored in Supabase (`surveys`, `survey_versions`, `survey_questions`) and edited through Supabase Studio via a `publish_survey_version` RPC — exactly the same Studio-publish pattern used for legal documents (`D-40`, `D-41`). Survey answers are written per `(user_id, survey_id, version, question_id)` into `survey_answers`; free-form feedback lands in a separate `user_feedback` table. No app deploy is required to update question copy or publish a new version; a new published version resets the completion state for that survey.
+
+**Rationale.** The product needs to iterate on community questions post-launch without shipping a new app binary. The legal-documents pattern (`legal_document_versions` + `publish_legal_document` RPC, D-40) already proves this model at the infrastructure level. Reusing the same publish pattern keeps operator training simple (one mental model for "push copy changes via Studio") and reuses existing migration and RLS patterns. PII isolation is achieved by placing contact emails in a dedicated `survey_contact_info` table with its own RLS policy, kept separate from the ratings/text answers.
+
+**Affected docs.** `spec/11_settings.md` FR-SETTINGS-015..017; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migration `0130_surveys_and_feedback.sql`.
+
+---
+
+## D-50 — Anonymous public market research as a separate spec domain with PII-isolated contact storage (2026-05-26)
+
+**Date.** 2026-05-26
+
+**Decision.** Survey B (anonymous public market research for the "Karma Phrasebook") lives in its own spec file `docs/SSOT/spec/16_public_research.md` (FR-RESEARCH-001..003) rather than in `11_settings.md`, and its Postgres schema ships in a dedicated migration `0131_public_research_responses.sql` separate from Survey A's `0130`. Contact emails collected at the thank-you page opt-in are stored in a separate table `public_research_contact_requests` (FK to `public_research_responses(id) ON DELETE CASCADE`) rather than in the same row as survey answers; RLS on the contact table denies all access to `anon` and `authenticated` roles — only `service_role` (via a super-admin RPC) can read it. The two tables are therefore independently deletable (a GDPR-required property: erasing a contact request must not cascade to the research data, and vice versa).
+
+**Rationale.** Survey B is not a Settings feature: it is served at a public web URL with no auth shell, targets anonymous users on external platforms (Facebook, WhatsApp, Agora), and has entirely different abuse-mitigation requirements (honeypot, `Origin` allowlist, IP-hash rate limit, global circuit breaker) from any in-app survey. Grouping it under `11_settings.md` would pollute that file's scope and make it harder for future agents to locate the right spec. A dedicated spec file also lets FR-RESEARCH-* IDs track implementation progress independently of FR-SETTINGS-*. The two-table PII isolation pattern mirrors the design already established for legal-documents acceptances (D-42) and is the simplest way to satisfy the independent-deletion requirement without adding nullable columns. A separate migration enforces the security-review separation principle followed throughout this codebase (cf. D-40, D-47). See design spec `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md` §2, §4, §7.
+
+**Alternatives rejected.** Adding Survey B FRs to `11_settings.md` — conflates two unrelated user surfaces. Storing contact email in the same `public_research_responses` row — makes it impossible to delete PII without deleting the research data. Single migration for both surveys — blurs security review scope.
+
+**Affected docs.** `docs/SSOT/spec/16_public_research.md` (new); `docs/SSOT/BACKLOG.md` P1.7; `CLAUDE.md` §1 spec-files table; design `docs/superpowers/specs/2026-05-25-surveys-and-feedback-design.md`; migration `0131_public_research_responses.sql`.
+
+---
+
+## D-51 — Temporarily hide rides UI; keep backend live (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** The rides hub screen (`/(tabs)/donations/rides`) is reverted to the standard donation-category links pattern (`DonationLinksList categorySlug="transport"`) at the UI layer only; all backend code (use cases, sheets, stores, the rides repository + adapter, the `ride_listings` schema + RPCs + cron) stays in place and continues to evolve. Backend hardening + advanced feature work continues in autonomous mode (CLAUDE.md §13) under FR-RIDE-011..012 and beyond.
+
+**Rationale.** Operator feedback on V2.0 indicated the in-app rides mechanism wasn't ready for end users; the existing NGO links view is a safe stopgap that delivers user value while we keep iterating. Removing the feature outright would erase work already merged and force a rebuild when the UI comes back; freezing it would block backend hardening (cron-driven expiry, chat anchor cleanup, participant model, RPC validation). UI-only hide preserves both options.
+
+**Alternatives rejected.** Revert all rides commits (loses backend that will be reused). Ship V2.0 UI as-is (operator said no). Feature-flag the screen body (extra plumbing for what's effectively a single screen render swap).
+
+**Affected docs.** `apps/mobile/src/features/rides/screens/RidesHubScreen.tsx`; `docs/SSOT/spec/15_rides.md` header (status flipped 🟡 with hide reference); ongoing rides hardening PRs (#414, #416, #417, #419, #420, #421+).
+
+## D-52 — Rides participant model uses RPC-only writes with seat enforcement at approve time (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** The `ride_participants` model (FR-RIDE-011) revokes direct INSERT/UPDATE/DELETE from client roles and routes all mutations through three SECURITY DEFINER RPCs (`rpc_ride_participants_request`, `rpc_ride_participants_decide`, `rpc_ride_participants_cancel`). The seat cap is enforced inside `rpc_ride_participants_decide` under `SELECT FOR UPDATE` on both the ride row and the participant row, recounting approved rows inside the transaction.
+
+**Rationale.** RLS alone cannot enforce a count-based invariant (last-seat race between two simultaneous approvals); a CHECK constraint can't span rows. The RPC-only pattern is already used in this codebase for chat anchor mutations (`rpc_chat_set_anchor`, `rpc_chat_set_anchor_ride`) and report mutations — extending it to participants keeps the surface area uniform. The `FOR UPDATE` locks are cheap (point lookups on PK indexes) and guarantee linearizable approve semantics.
+
+**Alternatives rejected.** RLS + client retry on conflict — exposes the race to clients and adds latency. Trigger-side validation — same FOR UPDATE locking needed; less testable. SERIALIZABLE isolation per call — heavier than needed; the two locks are sufficient.
+
+**Affected docs.** `docs/SSOT/spec/15_rides.md` FR-RIDE-011 AC2/AC3/AC5; migration `0139_ride_participants.sql`.
+
+## D-53 — Automated `main` production gates without human deploy approvers (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** Production protection on `main` is enforced entirely by CI and branch protection — no required reviewers on the `supabase-prod` GitHub Environment and no human deploy approvers. The agent acts as CTO; the PM owns product scope only. Gates: (1) PRs to `main` must use head branch `dev`; (2) `scripts/check-migration-safety.mjs` blocks destructive migration SQL unless a line carries `migration-safety: allow`; (3) `db-deploy` runs `supabase db push --dry-run` before apply for `supabase-prod`; (4) `prod-smoke` runs after app, migration, or Edge Function changes on `main`.
+
+**Rationale.** Human approval gates conflict with the AI-driven delivery model and add latency without catching logic errors CI already covers. Dry-run + migration safety scan + dev-only release branch + existing RLS/validate jobs provide defense in depth without blocking the autonomous loop.
+
+**Alternatives rejected.** Required reviewers on `supabase-prod` or `main` PRs — rejected for AI CTO workflow. Relying on dry-run only without migration SQL scan — misses destructive DDL merged via squash. Skipping prod smoke on DB-only merges — misses broken prod after schema change.
+
+**Affected docs.** `.github/workflows/ci-main-guard.yml`, `db-deploy.yml`, `prod-smoke.yml`; `scripts/check-migration-safety.mjs`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`; `CLAUDE.md` §6.
+
+## D-54 — Selective dev-branch CI parity (not 1:1 main copy) (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** Harden `dev` with gates that catch defects **before** they reach production, without copying prod-only workflows. Add: (1) `.github/workflows/ci-dev-guard.yml` — migration destructive-op scan on every non-draft PR to `dev`; (2) `db-deploy` dry-run before apply for **both** `supabase-dev` and `supabase-prod`; (3) documented required status checks for GitHub branch protection on `dev` in `ENVIRONMENTS.md`. Explicitly **do not** add to `dev`: `ci-main-guard` release-source job, `prod-smoke`, or Edge Functions deploy to prod.
+
+**Rationale.** Most quality CI already runs on `dev`. The gap was destructive migrations reaching `supabase-dev` before the main release scan, and dev DB apply without dry-run. Full main parity would slow the autonomous loop and add meaningless checks (e.g. enforcing `dev` as PR head on `dev`).
+
+**Alternatives rejected.** 1:1 copy of all `main` branch protection — rejected (redundant + prod-only semantics). Migration safety only on `main` — rejected (too late for shared dev DB).
+
+**Affected docs.** `.github/workflows/ci-dev-guard.yml`, `db-deploy.yml`, `app/package.json`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`, `SETUP_GIT_AGENT.md`; plan `docs/superpowers/plans/2026-05-28-dev-branch-ci-hardening.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.6 | 2026-05-28 | Added `D-54` (selective dev CI hardening: `ci-dev-guard`, dev+prod DB dry-run, dev branch-protection doc; not 1:1 main copy). |
+| 3.5 | 2026-05-28 | Added `D-53` (automated `main` prod gates: dev→main PR enforcement, migration safety scan, prod DB dry-run before apply, expanded prod smoke; no human deploy approvers). |
+| 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |
+| 3.3 | 2026-05-26 | Added `D-50` (anonymous public market research as separate spec domain `16_public_research.md`; PII-isolated contact storage; separate migration `0131`; FR-RESEARCH-001..003). |
+| 3.2 | 2026-05-26 | Added `D-49` (server-driven surveys via Studio publish, mirrors legal-documents pattern; FR-SETTINGS-015..017; migration `0130`). |
+| 3.1 | 2026-05-26 | Added `D-41` (support tickets vs moderation reports stay on separate surfaces; closes TD-94 sub-item (1) as intentional). Added `D-48` (Sentry as single observability sink for mobile + Edge Functions). |
+| 3.0 | 2026-05-25 | Added `D-40` (Admin Portal foundation A0 — RBAC primitives + `(admin)` route group; closes TD-95 via partial unique index; A1..A4 follow as separate sub-projects). |
 | 2.9 | 2026-05-24 | Added `D-38` (share-post OG meta served by Railway Hono server; eliminates Supabase-domain leak from share URL and redirect chain; replaces `serve dist --single`). |
 | 2.9 | 2026-05-24 | Added `D-38` (profile display: `public.users` canonical; sync Auth `user_metadata` on write + cold-start reconcile; My Profile no JWT fallback). |
 | 2.8 | 2026-05-22 | Added `D-RESP-001` (desktop adaptation strategy: adapted side rail + 280px aside panel, inbox chat, split-screen auth, 4-tier breakpoints, `SHELL_V2_ENABLED` flag, five-PR delivery `FR-RESP-001..005`). |

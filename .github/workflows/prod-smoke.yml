@@ -1,6 +1,7 @@
 name: Prod smoke
 
-# Post-merge HTTP check after Railway redeploys the web app from `main`.
+# Post-merge HTTP check after Railway redeploys the web app from `main`, or after
+# DB / Edge Function changes that can break the live site.
 # Set repository variable PROD_WEB_URL (Settings → Actions → Variables).
 
 on:
@@ -9,7 +10,10 @@ on:
     paths:
       - 'app/**'
       - 'Dockerfile'
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
       - '.github/workflows/prod-smoke.yml'
+      - '.github/workflows/db-deploy.yml'
   workflow_dispatch:
 
 concurrency:
@@ -39,7 +43,7 @@ jobs:
           fi
           echo "Target: ${PROD_WEB_URL}"
 
-      - name: Wait for Railway deploy window
+      - name: Wait for deploy window
         run: sleep 90
 
       - name: Poll prod URL (HTTP 200)

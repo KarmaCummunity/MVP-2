@@ -4,13 +4,16 @@ import React, { useState } from 'react';
 import { Modal, Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@kc/ui';
-import { ALL_CATEGORIES, DONATION_CATEGORY_SLUGS } from '@kc/domain';
+import { ALL_CATEGORIES, DONATION_CATEGORY_SLUGS, RADIUS_OPTIONS_KM } from '@kc/domain';
 import type { Category, DonationCategorySlug, PostType, SearchSortBy } from '@kc/domain';
 import { search as t } from '../i18n/locales/he/donations';
+import { useShallow } from 'zustand/react/shallow';
 import { useSearchStore } from '../store/searchStore';
 import { CityPicker } from './CityPicker';
 import { SearchChip } from './search/SearchChip';
 import { useSearchFilterSheetStyles } from './search/searchFilterSheet.styles';
+
+const DEFAULT_RADIUS_KM = 5;
 
 interface Props {
   visible: boolean;
@@ -20,20 +23,51 @@ interface Props {
 export function SearchFilterSheet({ visible, onClose }: Props) {
   const styles = useSearchFilterSheetStyles();
   const { colors } = useTheme();
-  const store = useSearchStore();
+  const store = useSearchStore(
+    useShallow((s) => ({
+      postType: s.postType,
+      category: s.category,
+      donationCategory: s.donationCategory,
+      city: s.city,
+      cityName: s.cityName,
+      radiusKm: s.radiusKm,
+      sortBy: s.sortBy,
+      setPostType: s.setPostType,
+      setCategory: s.setCategory,
+      setDonationCategory: s.setDonationCategory,
+      setCity: s.setCity,
+      setRadiusKm: s.setRadiusKm,
+      setSortBy: s.setSortBy,
+      clearFilters: s.clearFilters,
+    })),
+  );
   const [postType, setPostType] = useState<PostType | null>(store.postType);
   const [category, setCategory] = useState<Category | null>(store.category);
   const [donationCategory, setDonationCategory] = useState<DonationCategorySlug | null>(store.donationCategory);
   const [city, setCity] = useState<{ id: string; name: string } | null>(
     store.city ? { id: store.city, name: store.cityName ?? '' } : null,
   );
+  const [radiusKm, setRadiusKm] = useState<number | null>(store.radiusKm);
   const [sortBy, setSortBy] = useState<SearchSortBy>(store.sortBy);
+
+  // Whenever the city changes, gate the radius accordingly: pick a sensible
+  // default the first time a city is set; drop the radius when the city is
+  // cleared (radius alone is meaningless).
+  const handleCityChange = (next: { id: string; name: string } | null) => {
+    setCity(next);
+    if (!next) {
+      setRadiusKm(null);
+    } else if (radiusKm == null) {
+      setRadiusKm(DEFAULT_RADIUS_KM);
+    }
+  };
 
   const handleApply = () => {
     store.setPostType(postType);
     store.setCategory(category);
     store.setDonationCategory(donationCategory);
     store.setCity(city?.id ?? null, city?.name ?? null);
+    store.setRadiusKm(city ? radiusKm : null);
     store.setSortBy(sortBy);
     onClose();
   };
@@ -43,6 +77,7 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
     setCategory(null);
     setDonationCategory(null);
     setCity(null);
+    setRadiusKm(null);
     setSortBy('relevance');
     store.clearFilters();
     onClose();
@@ -111,7 +146,28 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
             </View>
 
             <Text style={styles.sectionTitle}>{t.filterCity}</Text>
-            <CityPicker value={city} onChange={(sel: { id: string; name: string }) => setCity(sel)} />
+            <CityPicker
+              value={city}
+              onChange={(sel: { id: string; name: string }) => handleCityChange(sel)}
+            />
+
+            {/* Radius picker — only visible after a city is selected. Mirrors
+                the PostFilterSheet pattern (FR-FEED-006). */}
+            {city && (
+              <>
+                <Text style={styles.sectionTitle}>{t.filterRadius}</Text>
+                <View style={styles.chipRow}>
+                  {RADIUS_OPTIONS_KM.map((km) => (
+                    <SearchChip
+                      key={km}
+                      label={t.radiusKm.replace('{km}', String(km))}
+                      active={radiusKm === km}
+                      onPress={() => setRadiusKm(km)}
+                    />
+                  ))}
+                </View>
+              </>
+            )}
           </ScrollView>
 
           <View style={styles.footer}>

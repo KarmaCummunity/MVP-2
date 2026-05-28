@@ -9,10 +9,12 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
+import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
 
 export default function MyProfileOpenScreen() {
   const tabBarPad = useShellTabBarScrollInset();
   const userId = useAuthStore((s) => s.session?.userId);
+  const postOwner = useMyProfilePostOwner();
 
   const myPostsQuery = useQuery({
     queryKey: ['my-posts', userId],
@@ -24,6 +26,7 @@ export default function MyProfileOpenScreen() {
         excludeVisibility: 'OnlyMe',
       }),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
 
   return (
@@ -38,6 +41,7 @@ export default function MyProfileOpenScreen() {
           posts={myPostsQuery.data?.posts ?? []}
           isLoading={myPostsQuery.isLoading}
           empty="self_open"
+          postOwner={postOwner}
         />
       </ScrollView>
     </Screen>

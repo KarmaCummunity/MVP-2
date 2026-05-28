@@ -7,6 +7,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { FeedCommunityCounter } from './FeedCommunityCounter';
+import { rowDirectionStart } from '../lib/rtlLayout';
 
 interface FeedEmptyStateProps {
   hasActiveFilters: boolean;
@@ -57,7 +58,7 @@ const useFeedEmptyStateStyles = makeUseStyles(({ colors }) => ({
     textAlign: 'center' as const,
     marginBottom: spacing.sm,
   },
-  actions: { flexDirection: 'row-reverse' as const, gap: spacing.sm, marginTop: spacing.base },
+  actions: { flexDirection: rowDirectionStart, gap: spacing.sm, marginTop: spacing.base },
   btn: {
     height: 48,
     paddingHorizontal: spacing.xl,

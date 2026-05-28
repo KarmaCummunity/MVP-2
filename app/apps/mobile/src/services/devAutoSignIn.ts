@@ -15,7 +15,8 @@ import { getSignInUseCase } from './authComposition';
 
 const FLAG_VAR = 'EXPO_PUBLIC_DEV_AUTO_SIGN_IN';
 const EMAIL_VAR = 'EXPO_PUBLIC_DEV_TEST_EMAIL';
-const PASSWORD_VAR = 'EXPO_PUBLIC_DEV_TEST_PASSWORD';
+// Env var name only — value comes from process.env at runtime (not a hard-coded secret).
+const DEV_TEST_PASSWORD_ENV = 'EXPO_PUBLIC_DEV_TEST_PASSWORD'; // NOSONAR typescript:S2068
 
 export function isDevAutoSignInEnabled(): boolean {
   if (!__DEV__) return false;
@@ -34,10 +35,10 @@ export async function tryDevAutoSignIn(
   if (currentSession) return null;
 
   const email = process.env[EMAIL_VAR];
-  const password = process.env[PASSWORD_VAR];
+  const password = process.env[DEV_TEST_PASSWORD_ENV];
   if (!email || !password) {
     console.warn(
-      `[devAutoSignIn] ${FLAG_VAR}=1 but ${EMAIL_VAR}/${PASSWORD_VAR} are missing — skipping.`,
+      `[devAutoSignIn] ${FLAG_VAR}=1 but ${EMAIL_VAR}/${DEV_TEST_PASSWORD_ENV} are missing — skipping.`,
     );
     return null;
   }

@@ -1,6 +1,10 @@
 // ─────────────────────────────────────────────
 // Post-image pick + upload pipeline (FR-POST-005).
 // Gallery → resize-2048 + JPEG q=0.85 → post-images bucket.
+// PERF-4: also generates a 400px thumb at upload time (sibling
+// `<batchUuid>/<ordinal>-thumb.jpg`). Both objects are uploaded with
+// `cache-control: public, max-age=31536000, immutable` — paths are unique
+// per upload, so the bucket can be safely cached forever.
 // AC4 EXIF strip is best-effort (re-encode) until the server-side Edge
 // Function lands per TD-23.
 // Avatar pipeline lives in ./avatarUpload.ts.
@@ -16,15 +20,19 @@ import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { MediaAssetInput } from '@kc/application';
 import { MAX_MEDIA_ASSETS } from '@kc/domain';
 import { base64ToUint8Array } from './mediaEncoding';
+import { deriveThumbPath } from '../lib/imageUrl';
 
 const POST_RESIZE_MAX_EDGE = 2048;
+const POST_THUMB_MAX_EDGE = 400;
 const COMPRESS = 0.85; // JPEG quality (FR-POST-005 AC3)
+const THUMB_COMPRESS = 0.75; // smaller surfaces tolerate a touch more compression
 // Audit §4.8 — cap the post-resize byte budget so a 50MP camera at q=0.85
 // can't produce a >5 MB JPEG that chews cellular bandwidth + Storage quota.
 // If the first encode is too big, fall back to q=0.6; reject if still over.
 const POST_MAX_BYTES = 5 * 1024 * 1024;
 const POST_FALLBACK_COMPRESS = 0.6;
 const POST_BUCKET = 'post-images';
+const IMMUTABLE_CACHE_CONTROL = 'public, max-age=31536000, immutable';
 
 export interface PickedImage {
   uri: string;
@@ -98,13 +106,26 @@ export function buildPostImagePath(userId: string, batchUuid: string, ordinal: n
 }
 
 /**
+ * Sibling thumb path for a built post image path.
+ * The RLS Storage policy keys on the first folder segment (= auth.uid()), so
+ * the same upload policy covers both the full and the thumb object.
+ */
+export function buildPostImageThumbPath(userId: string, batchUuid: string, ordinal: number): string {
+  return deriveThumbPath(buildPostImagePath(userId, batchUuid, ordinal));
+}
+
+/**
  * Resize the image to a max-edge size, JPEG-encode, and return raw bytes.
- * Audit §4.8 — if the encode is over POST_MAX_BYTES, re-encode once at a
- * lower quality. If still over, reject (a 5 MB JPEG at 2048px is already
- * implausible for normal photos; rejecting protects cellular users).
+ * `capBytes` (only for the full encode) re-runs once at a lower quality if the
+ * first pass is too large, and throws if still over — protects cellular users
+ * from a 5 MB JPEG. The thumb encode never needs this guard.
  * fetch(file://).blob() is unreliable on iOS — see `mediaEncoding.ts` for context.
  */
-async function resizeImage(uri: string, maxEdge: number): Promise<{ bytes: Uint8Array; sizeBytes: number }> {
+async function resizeImage(
+  uri: string,
+  maxEdge: number,
+  opts: { compress: number; capBytes?: number; fallbackCompress?: number },
+): Promise<{ bytes: Uint8Array; sizeBytes: number }> {
   const encode = async (compress: number) => {
     const r = await ImageManipulator.manipulateAsync(
       uri,
@@ -114,11 +135,14 @@ async function resizeImage(uri: string, maxEdge: number): Promise<{ bytes: Uint8
     if (!r.base64) throw new Error('image_resize: manipulator returned no base64 payload');
     return base64ToUint8Array(r.base64);
   };
-  let bytes = await encode(COMPRESS);
-  if (bytes.byteLength > POST_MAX_BYTES) {
-    bytes = await encode(POST_FALLBACK_COMPRESS);
-    if (bytes.byteLength > POST_MAX_BYTES) {
-      throw new Error(`image_resize: too large after fallback compress (${bytes.byteLength} > ${POST_MAX_BYTES})`);
+  let bytes = await encode(opts.compress);
+  if (opts.capBytes != null && bytes.byteLength > opts.capBytes) {
+    if (opts.fallbackCompress == null) {
+      throw new Error(`image_resize: too large (${bytes.byteLength} > ${opts.capBytes})`);
+    }
+    bytes = await encode(opts.fallbackCompress);
+    if (bytes.byteLength > opts.capBytes) {
+      throw new Error(`image_resize: too large after fallback compress (${bytes.byteLength} > ${opts.capBytes})`);
     }
   }
   return { bytes, sizeBytes: bytes.byteLength };
@@ -127,6 +151,10 @@ async function resizeImage(uri: string, maxEdge: number): Promise<{ bytes: Uint8
 /**
  * Resize, upload, and return the MediaAssetInput shape expected by CreatePostInput.
  * Throws if upload fails so the caller can show "Failed: retry" UI.
+ *
+ * Two encodes (full + thumb) are produced sequentially. `ImageManipulator`
+ * marshals through a single native bridge — running them in parallel doesn't
+ * speed it up and can spike memory on lower-end devices.
  */
 export async function resizeAndUploadImage(
   picked: PickedImage,
@@ -134,22 +162,46 @@ export async function resizeAndUploadImage(
   batchUuid: string,
   ordinal: number,
 ): Promise<UploadedAsset> {
-  const { bytes, sizeBytes } = await resizeImage(picked.uri, POST_RESIZE_MAX_EDGE);
+  const full = await resizeImage(picked.uri, POST_RESIZE_MAX_EDGE, {
+    compress: COMPRESS,
+    capBytes: POST_MAX_BYTES,
+    fallbackCompress: POST_FALLBACK_COMPRESS,
+  });
+  const thumb = await resizeImage(picked.uri, POST_THUMB_MAX_EDGE, {
+    compress: THUMB_COMPRESS,
+  });
+
   const path = buildPostImagePath(userId, batchUuid, ordinal);
+  const thumbPath = buildPostImageThumbPath(userId, batchUuid, ordinal);
 
   const client = getSupabaseClient();
-  const { error } = await client.storage
+  const fullUpload = await client.storage
     .from(POST_BUCKET)
-    .upload(path, bytes, {
+    .upload(path, full.bytes, {
       contentType: 'image/jpeg',
-      upsert: true, // tolerate retries for the same ordinal
+      upsert: true,
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
     });
-  if (error) throw new Error(`upload[${ordinal}]: ${error.message}`);
+  if (fullUpload.error) throw new Error(`upload[${ordinal}]: ${fullUpload.error.message}`);
+
+  // Thumb upload is best-effort — if it fails the full image still renders
+  // (KCImage's `fallbackUri` covers the missing thumb), and the daily
+  // backfill Edge Function will eventually fill it in.
+  const thumbUpload = await client.storage
+    .from(POST_BUCKET)
+    .upload(thumbPath, thumb.bytes, {
+      contentType: 'image/jpeg',
+      upsert: true,
+      cacheControl: IMMUTABLE_CACHE_CONTROL,
+    });
+  if (thumbUpload.error) {
+    console.warn(`upload-thumb[${ordinal}]: ${thumbUpload.error.message}`);
+  }
 
   return {
     path,
     mimeType: 'image/jpeg',
-    sizeBytes,
+    sizeBytes: full.sizeBytes,
     previewUri: picked.uri,
   };
 }

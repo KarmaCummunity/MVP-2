@@ -1,15 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { View, Text, ActivityIndicator, Pressable } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 import { AvatarInitials } from '../../components/AvatarInitials';
 import { useAboutTeamMembers } from '../../hooks/useAboutTeamMembers';
 
 interface TeamRoleCopy {
   readonly role: string;
   readonly bio: string;
+  readonly bioFull?: string;
 }
 
 const AVATAR = 56;
@@ -23,9 +25,91 @@ function resolveRoleCopy(
   return copy;
 }
 
-export function AboutMissionTeamSection() {
+interface TeamCardProps {
+  readonly displayName: string;
+  readonly avatarUrl: string | null;
+  readonly shareHandle: string;
+  readonly copy: TeamRoleCopy;
+}
+
+function TeamCard({ displayName, avatarUrl, shareHandle, copy }: TeamCardProps) {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useAboutMissionTeamSectionStyles();
+  const { colors } = useTheme();
+  const [expanded, setExpanded] = useState(false);
+
+  const hasFullStory = typeof copy.bioFull === 'string' && copy.bioFull.length > 0;
+
+  const goToProfile = () => router.push(`/user/${shareHandle}`);
+  const toggleExpand = () => setExpanded((v) => !v);
+
+  return (
+    <View style={styles.card}>
+      <Pressable
+        onPress={goToProfile}
+        accessibilityRole="button"
+        accessibilityLabel={`${displayName} — ${copy.role}`}
+        style={({ pressed }) => [styles.cardHeader, pressed && styles.cardPressed]}
+      >
+        <View style={styles.row}>
+          <AvatarInitials name={displayName} avatarUrl={avatarUrl} size={AVATAR} />
+          <View style={styles.meta}>
+            <Text style={styles.name}>{displayName}</Text>
+            <Text style={styles.role}>{copy.role}</Text>
+          </View>
+        </View>
+      </Pressable>
+
+      <Text style={styles.bio}>{copy.bio}</Text>
+
+      {hasFullStory && expanded ? (
+        <Text style={styles.bioFull}>{copy.bioFull}</Text>
+      ) : null}
+
+      <View style={styles.cardActions}>
+        {hasFullStory ? (
+          <Pressable
+            onPress={toggleExpand}
+            accessibilityRole="button"
+            accessibilityLabel={
+              expanded
+                ? t('aboutContent.teamStoryExpandLess')
+                : t('aboutContent.teamStoryExpandMore')
+            }
+            style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+            hitSlop={8}
+          >
+            <Ionicons
+              name={expanded ? 'chevron-up' : 'chevron-down'}
+              size={16}
+              color={colors.primary}
+            />
+            <Text style={styles.actionText}>
+              {expanded
+                ? t('aboutContent.teamStoryExpandLess')
+                : t('aboutContent.teamStoryExpandMore')}
+            </Text>
+          </Pressable>
+        ) : null}
+
+        <Pressable
+          onPress={goToProfile}
+          accessibilityRole="link"
+          accessibilityLabel={t('aboutContent.teamProfileLinkLabel')}
+          style={({ pressed }) => [styles.actionBtn, pressed && styles.actionBtnPressed]}
+          hitSlop={8}
+        >
+          <Ionicons name="open-outline" size={16} color={colors.primary} />
+          <Text style={styles.actionText}>{t('aboutContent.teamProfileLinkLabel')}</Text>
+        </Pressable>
+      </View>
+    </View>
+  );
+}
+
+export function AboutMissionTeamSection() {
+  const { t } = useTranslation();
   const styles = useAboutMissionTeamSectionStyles();
   const { members, loading, error, refetch } = useAboutTeamMembers();
   const roleCopy = t('aboutContent.teamRoles', { returnObjects: true }) as Record<string, TeamRoleCopy>;
@@ -59,22 +143,13 @@ export function AboutMissionTeamSection() {
       {!loading && !error && visibleMembers.length > 0 ? (
         <View style={styles.list}>
           {visibleMembers.map(({ member, copy }) => (
-            <Pressable
+            <TeamCard
               key={member.roleKey}
-              style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
-              onPress={() => router.push(`/user/${member.shareHandle}`)}
-              accessibilityRole="button"
-              accessibilityLabel={`${member.displayName} — ${copy.role}`}
-            >
-              <View style={styles.row}>
-                <AvatarInitials name={member.displayName} avatarUrl={member.avatarUrl} size={AVATAR} />
-                <View style={styles.meta}>
-                  <Text style={styles.name}>{member.displayName}</Text>
-                  <Text style={styles.role}>{copy.role}</Text>
-                </View>
-              </View>
-              <Text style={styles.bio}>{copy.bio}</Text>
-            </Pressable>
+              displayName={member.displayName}
+              avatarUrl={member.avatarUrl}
+              shareHandle={member.shareHandle}
+              copy={copy}
+            />
           ))}
         </View>
       ) : null}
@@ -109,16 +184,48 @@ const useAboutMissionTeamSectionStyles = makeUseStyles(({ colors }) => ({
     borderColor: colors.border,
     padding: spacing.md,
     backgroundColor: colors.surfaceRaised,
+    gap: spacing.sm,
+  },
+  cardHeader: {
+    marginBottom: spacing.xs,
   },
   cardPressed: {
     opacity: 0.85,
-    backgroundColor: colors.surface,
   },
-  row: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.md, marginBottom: spacing.sm },
+  row: { flexDirection: aboutRtlRow, alignItems: 'center', gap: spacing.md },
   meta: { flex: 1, gap: 2 },
   name: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText },
   role: { ...typography.body, color: colors.primary, ...aboutRtlText, fontWeight: '700' },
   bio: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 22 },
+  bioFull: {
+    ...typography.body,
+    color: colors.textPrimary,
+    ...aboutRtlText,
+    lineHeight: 26,
+    paddingTop: spacing.sm,
+    marginTop: spacing.xs,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+  },
+  cardActions: {
+    flexDirection: aboutRtlRow,
+    alignItems: 'center',
+    flexWrap: 'wrap',
+    gap: spacing.md,
+    paddingTop: spacing.xs,
+  },
+  actionBtn: {
+    flexDirection: aboutRtlRow,
+    alignItems: 'center',
+    gap: spacing.xs,
+  },
+  actionBtnPressed: { opacity: 0.6 },
+  actionText: {
+    ...typography.label,
+    color: colors.primary,
+    ...aboutRtlText,
+    fontWeight: '700',
+  },
   ctaBox: {
     marginTop: spacing.lg,
     padding: spacing.md,

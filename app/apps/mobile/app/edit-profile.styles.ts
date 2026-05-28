@@ -1,4 +1,5 @@
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { rtlTextAlignStart } from '../src/lib/rtlTextAlignStart';
 
 export const useEditProfileStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
@@ -10,7 +11,7 @@ export const useEditProfileStyles = makeUseStyles(({ colors }) => ({
   },
   scroll: { padding: spacing.lg, gap: spacing.base, paddingBottom: spacing['3xl'] },
   field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   input: {
     backgroundColor: colors.surface,
     borderRadius: radius.md,

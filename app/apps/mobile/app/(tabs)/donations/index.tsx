@@ -21,6 +21,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 interface CategoryTile {
@@ -47,7 +48,7 @@ const TILES: CategoryTile[] = [
   { key: 'money',     icon: 'cash-outline',       titleKey: 'donations.money.title',                subtitleKey: 'donations.money.subtitle',                 href: '/(tabs)/donations/money',              testID: 'donation-tile-money' },
   { key: 'food',      icon: 'restaurant-outline', titleKey: 'donations.categories.food.title',      subtitleKey: 'donations.categories.food.subtitle',       href: '/(tabs)/donations/category/food',      testID: 'donation-tile-food' },
   { key: 'housing',   icon: 'home-outline',       titleKey: 'donations.categories.housing.title',   subtitleKey: 'donations.categories.housing.subtitle',    href: '/(tabs)/donations/category/housing',   testID: 'donation-tile-housing' },
-  { key: 'transport', icon: 'car-outline',        titleKey: 'donations.categories.transport.title', subtitleKey: 'donations.categories.transport.subtitle',  href: '/(tabs)/donations/category/transport', testID: 'donation-tile-transport' },
+  { key: 'transport', icon: 'car-outline',        titleKey: 'donations.rides.hubTitle', subtitleKey: 'donations.rides.hubSubtitle',  href: '/(tabs)/donations/rides', testID: 'donation-tile-rides' },
   { key: 'knowledge', icon: 'school-outline',     titleKey: 'donations.categories.knowledge.title', subtitleKey: 'donations.categories.knowledge.subtitle',  href: '/(tabs)/donations/category/knowledge', testID: 'donation-tile-knowledge' },
   { key: 'animals',   icon: 'paw-outline',        titleKey: 'donations.categories.animals.title',   subtitleKey: 'donations.categories.animals.subtitle',    href: '/(tabs)/donations/category/animals',   testID: 'donation-tile-animals' },
   { key: 'medical',   icon: 'medical-outline',    titleKey: 'donations.categories.medical.title',   subtitleKey: 'donations.categories.medical.subtitle',    href: '/(tabs)/donations/category/medical',   testID: 'donation-tile-medical' },
@@ -55,12 +56,13 @@ const TILES: CategoryTile[] = [
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   scrollView: { flex: 1, width: '100%', alignSelf: 'stretch' as const },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last row clears the floating tab-bar pill (FR-RESP-006).
   scroll: {
     flexGrow: 1,
     alignSelf: 'stretch' as const,
     minWidth: '100%',
     paddingHorizontal: spacing.lg,
-    paddingBottom: spacing['3xl'],
     width: '100%',
   },
 
@@ -174,6 +176,7 @@ export default function DonationsHubScreen() {
   const { t } = useTranslation();
   const { colors } = useTheme();
   const styles = useStyles();
+  const tabBarPad = useShellTabBarScrollInset();
 
   // Pair grid tiles into rows of 2 — single row when count is odd.
   const rows: CategoryTile[][] = [];
@@ -188,7 +191,7 @@ export default function DonationsHubScreen() {
         style={styles.scrollView}
         // RN-Web + `dir=rtl`: content can shrink-wrap and hug the inline-start
         // edge (visual right), leaving empty space on the left — stretch to viewport.
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
         showsVerticalScrollIndicator={false}
       >
         {/* ── Hero ─────────────────────────── */}

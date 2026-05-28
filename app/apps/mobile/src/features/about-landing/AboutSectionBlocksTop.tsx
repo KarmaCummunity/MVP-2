@@ -11,6 +11,9 @@ import { AboutValuesGrid } from './AboutValuesGrid';
 import { AboutVisionSection } from './AboutVisionSection';
 import { AboutScopedSection } from './AboutScopedSection';
 import { AboutMissionTeamSection } from './AboutMissionTeamSection';
+import { AboutGovernanceSection } from './AboutGovernanceSection';
+import { AboutLogoEvolutionSection } from './AboutLogoEvolutionSection';
+import { AboutAudienceSection } from './AboutAudienceSection';
 import { DonationSupportCard } from '../../components/DonationSupportCard';
 
 function SectionCard({
@@ -81,6 +84,18 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           </SectionCard>
         </AnimatedEntry>
       </View>
+      <View onLayout={track('logo', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutLogoEvolutionSection />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
       <AnimatedEntry
         delay={next()}
         duration={MOTION.duration.slow}
@@ -143,10 +158,7 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           distance={12}
           scaleEntrance={0.985}
         >
-          <SectionCard>
-            <Text style={styles.h}>{t('aboutContent.audienceTitle')}</Text>
-            <Text style={styles.p}>{t('aboutContent.audienceText')}</Text>
-          </SectionCard>
+          <AboutAudienceSection />
         </AnimatedEntry>
       </View>
       <View onLayout={trackMissionTeam(onSectionY)} collapsable={false}>
@@ -173,6 +185,18 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
             <Text style={styles.p}>{t('aboutContent.valuesText')}</Text>
             <View style={styles.valuesSpacer} />
             <AboutValuesGrid />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
+      <View onLayout={track('governance', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutGovernanceSection />
           </SectionCard>
         </AnimatedEntry>
       </View>

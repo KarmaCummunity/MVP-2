@@ -27,6 +27,7 @@ export function useShellTabBarVisibility(): boolean {
   // dynamic `[id]` route hides it.
   const onChatConversation = head === 'chat' && segments[1] === '[id]';
   const onAboutSurface = isAboutMarketingPath(pathname);
+  const onResearchSurface = head === 'research';
   const hideBottomBar = onAboutSurface && parseTruthyQueryParam(params.hideBottomBar);
 
   const base =
@@ -36,7 +37,8 @@ export function useShellTabBarVisibility(): boolean {
     head !== '(guest)' &&
     head !== '(onboarding)' &&
     !isAuthLanding &&
-    !onChatConversation;
+    !onChatConversation &&
+    !onResearchSurface;
 
   return base && !hideBottomBar;
 }

@@ -5,6 +5,8 @@ import { makeUseStyles, useTheme } from '@kc/ui';
 import type { ClosureCandidate } from '@kc/application';
 import type { PickMode } from '../../store/closureStore';
 import { RecipientPickerRow } from './RecipientPickerRow';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export function ModeTabs({
   pickMode,
@@ -121,8 +123,8 @@ export function SearchPane({
 }
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
-  body: { fontSize: 14, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
-  tabs: { flexDirection: 'row-reverse', gap: 4, marginBottom: 12, backgroundColor: colors.skeleton, borderRadius: 8, padding: 3 },
+  body: { fontSize: 14, color: colors.textSecondary, textAlign: rtlTextAlignStart, lineHeight: 22 },
+  tabs: { flexDirection: rowDirectionStart, gap: 4, marginBottom: 12, backgroundColor: colors.skeleton, borderRadius: 8, padding: 3 },
   tab: { flex: 1, paddingVertical: 8, borderRadius: 6, alignItems: 'center' },
   tabActive: { backgroundColor: colors.surface },
   tabText: { fontSize: 14, color: colors.textSecondary, fontWeight: '500' },

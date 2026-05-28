@@ -5,9 +5,10 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
-import { spacing, useTheme } from '@kc/ui';
+import { PlatformSwitch, spacing, useTheme } from '@kc/ui';
 import { BackButton } from '../src/components/BackButton';
 import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
+import { useAdminRoles } from '../src/hooks/useAdminRoles';
 import { useSettingsAccountActions } from '../src/hooks/useSettingsAccountActions';
 import { container } from '../src/lib/container';
 import he from '../src/i18n/locales/he';
@@ -16,7 +17,10 @@ import { useChatStore } from '../src/store/chatStore';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
 import { DeleteAccountSuccessOverlay } from '../src/components/DeleteAccountSuccessOverlay';
 import { DonationSupportCard } from '../src/components/DonationSupportCard';
+import { SettingsAboutCard } from '../src/components/SettingsAboutCard';
 import { SettingsScreenRow } from '../src/components/SettingsScreenRow';
+import { ConfirmActionModal } from '../src/components/post/ConfirmActionModal';
+import { usePrivateProfileToggle } from '../src/hooks/usePrivateProfileToggle';
 import { useSettingsScreenStyles } from './settings.styles';
 import { getUserRepo } from '../src/services/userComposition';
 
@@ -35,9 +39,12 @@ export default function SettingsScreen() {
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const showFollowRequests = userQuery.data?.privacyMode === 'Private';
+  const { isPrivate, canToggle, onToggle, confirmModal } = usePrivateProfileToggle(userId);
   const isSuperAdmin = useIsSuperAdmin();
+  const { roles: adminRoles } = useAdminRoles();
   const queryClient = useQueryClient();
   const [hardRefreshing, setHardRefreshing] = React.useState(false);
   const {
@@ -81,6 +88,10 @@ export default function SettingsScreen() {
           <DonationSupportCard />
         </View>
 
+        <View style={styles.supportCardWrap}>
+          <SettingsAboutCard />
+        </View>
+
         <Text style={styles.sectionTitle}>{t('settings.account')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
@@ -113,7 +124,13 @@ export default function SettingsScreen() {
           <SettingsScreenRow
             label={t('settings.privateProfileToggle')}
             icon="lock-closed-outline"
-            onPress={() => router.push('/settings/privacy' as never)}
+            rightElement={
+              <PlatformSwitch
+                value={isPrivate}
+                onValueChange={onToggle}
+                disabled={!canToggle}
+              />
+            }
           />
           {showFollowRequests ? (
             <SettingsScreenRow
@@ -133,6 +150,15 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <Text style={styles.sectionTitle}>{t('survey.entryTitle')}</Text>
+        <View style={styles.section}>
+          <SettingsScreenRow
+            label={t('survey.entryTitle')}
+            icon="clipboard-outline"
+            onPress={() => router.push('/settings/surveys')}
+          />
+        </View>
+
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
@@ -147,15 +173,22 @@ export default function SettingsScreen() {
               onPress={() => router.push('/settings/audit' as never)}
             />
           ) : null}
+          {adminRoles.length > 0 ? (
+            <SettingsScreenRow
+              label={he.admin.settingsRow}
+              icon="shield-checkmark-outline"
+              onPress={() => router.push('/(admin)')}
+            />
+          ) : null}
           <SettingsScreenRow
-            label={t('settings.termsAndPrivacy')}
+            label={t('settings.termsOfService')}
             icon="document-text-outline"
-            onPress={() => router.push('/legal')}
+            onPress={() => router.push('/legal/terms')}
           />
           <SettingsScreenRow
-            label={t('settings.about')}
-            icon="information-circle-outline"
-            onPress={() => router.push('/about')}
+            label={t('settings.privacyPolicy')}
+            icon="shield-checkmark-outline"
+            onPress={() => router.push('/legal/privacy')}
           />
         </View>
 
@@ -196,6 +229,18 @@ export default function SettingsScreen() {
 
         <Text style={styles.version}>{t('settings.version')} v0.1.0</Text>
       </ScrollView>
+
+      {confirmModal ? (
+        <ConfirmActionModal
+          visible={confirmModal.visible}
+          title={confirmModal.title}
+          message={confirmModal.message}
+          confirmLabel={confirmModal.confirmLabel}
+          isBusy={confirmModal.isBusy}
+          onCancel={confirmModal.onCancel}
+          onConfirm={confirmModal.onConfirm}
+        />
+      ) : null}
 
       <DeleteAccountConfirmModal
         visible={deleteModalVisible}

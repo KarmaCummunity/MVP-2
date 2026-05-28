@@ -1,6 +1,6 @@
 // FR-AUTH-015 — Soft gate before first meaningful action
 // Provider + hook. Modal lives in OnboardingSoftGateModal.tsx.
-import React, { createContext, useCallback, useContext, useState } from 'react';
+import React, { createContext, useCallback, useContext, useMemo, useState } from 'react';
 import { useAuthStore } from '../store/authStore';
 import { OnboardingSoftGateModal } from './OnboardingSoftGateModal';
 
@@ -44,8 +44,10 @@ export function SoftGateProvider({ children }: Readonly<{ children: React.ReactN
     });
   }, []);
 
+  const value = useMemo(() => ({ requestSoftGate }), [requestSoftGate]);
+
   return (
-    <SoftGateContext.Provider value={{ requestSoftGate }}>
+    <SoftGateContext.Provider value={value}>
       {children}
       <OnboardingSoftGateModal
         visible={pending !== null}

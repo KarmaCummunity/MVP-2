@@ -1,5 +1,6 @@
 import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import { crossAxisAlignStart, layoutDirectionStyle, layoutWritingDirectionStyle, textAlignStart } from '../../src/lib/rtlLayout';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 
 const cardShadow = (isDark: boolean, shadowColor: string) =>
   isDark
@@ -35,7 +36,9 @@ export const useCreatePostStyles = makeUseStyles(({ colors, isDark }) => ({
   publishBtnFooter: { alignSelf: 'stretch' as const, marginTop: spacing.md },
   publishBtnText: { ...typography.button, color: colors.textInverse },
   scroll: { flex: 1 },
-  scrollContent: { padding: spacing.base, gap: spacing.base, paddingBottom: spacing['3xl'] },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the publish CTA clears the floating tab-bar pill (FR-RESP-006).
+  scrollContent: { padding: spacing.base, gap: spacing.base },
   typeToggle: {
     flexDirection: 'row' as const,
     backgroundColor: colors.surface,
@@ -58,7 +61,7 @@ export const useCreatePostStyles = makeUseStyles(({ colors, isDark }) => ({
   typeBtnText: { ...typography.button, color: colors.textSecondary },
   typeBtnTextActive: { color: colors.textPrimary },
   section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' as const },
+  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   required: { color: colors.error },
   input: {
     backgroundColor: colors.surface,

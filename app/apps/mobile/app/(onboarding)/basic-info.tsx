@@ -14,6 +14,7 @@ import { useOnboardingBasicInfoFlow } from '../../src/hooks/useOnboardingBasicIn
 import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
 import { PressableScale } from '../../src/components/animations/PressableScale';
 import { staggerDelay } from '../../src/lib/animations/motion';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 
 export default function OnboardingBasicInfoScreen() {
   const styles = useStyles();
@@ -70,7 +71,7 @@ export default function OnboardingBasicInfoScreen() {
                   placeholder={t('onboarding.fullNamePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!loading}
                 />
               </View>
@@ -101,7 +102,7 @@ export default function OnboardingBasicInfoScreen() {
                       onChangeText={setStreetNumber}
                       placeholder={t('profile.streetNumberShort')}
                       placeholderTextColor={colors.textDisabled}
-                      textAlign="right"
+                      textAlign={rtlTextAlignStart}
                       editable={!loading}
                       maxLength={10}
                     />
@@ -121,7 +122,7 @@ export default function OnboardingBasicInfoScreen() {
                   placeholderTextColor={colors.textDisabled}
                   maxLength={20}
                   keyboardType="phone-pad"
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!loading}
                 />
               </View>
@@ -193,7 +194,7 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     alignSelf: 'center',
     gap: spacing.xs,
   },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   streetRow: {
     flexDirection: 'row',
     gap: spacing.sm,

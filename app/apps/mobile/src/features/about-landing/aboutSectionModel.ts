@@ -1,12 +1,14 @@
 export type AboutSectionId =
   | 'numbers'
   | 'vision'
+  | 'logo'
   | 'problems'
   | 'features'
   | 'mission'
   | 'how'
   | 'audience'
   | 'values'
+  | 'governance'
   | 'roadmap'
   | 'goals'
   | 'contributions'
@@ -18,12 +20,14 @@ export type AboutSectionId =
 export const ABOUT_NAV_ITEMS: ReadonlyArray<{ readonly id: AboutSectionId; readonly icon: string }> = [
   { id: 'numbers', icon: 'bar-chart-outline' },
   { id: 'vision', icon: 'bulb-outline' },
+  { id: 'logo', icon: 'image-outline' },
   { id: 'problems', icon: 'alert-circle-outline' },
   { id: 'features', icon: 'apps-outline' },
   { id: 'mission', icon: 'information-circle-outline' },
   { id: 'how', icon: 'help-circle-outline' },
   { id: 'audience', icon: 'people-outline' },
   { id: 'values', icon: 'heart-outline' },
+  { id: 'governance', icon: 'shield-checkmark-outline' },
   { id: 'roadmap', icon: 'map-outline' },
   { id: 'goals', icon: 'flag-outline' },
   { id: 'contributions', icon: 'gift-outline' },
@@ -37,12 +41,14 @@ export const ABOUT_NAV_ITEMS: ReadonlyArray<{ readonly id: AboutSectionId; reado
 export const ABOUT_NAV_LABEL_KEYS: Record<AboutSectionId, string> = {
   numbers: 'navNumbers',
   vision: 'navVision',
+  logo: 'navLogo',
   problems: 'navProblems',
   features: 'navFeatures',
   mission: 'navMission',
   how: 'navHow',
   audience: 'navAudience',
   values: 'navValues',
+  governance: 'navGovernance',
   roadmap: 'navRoadmap',
   goals: 'navGoals',
   contributions: 'navContributions',

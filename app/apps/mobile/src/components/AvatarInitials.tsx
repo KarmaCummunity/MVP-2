@@ -1,6 +1,12 @@
 import React from 'react';
-import { View, Text, Image } from 'react-native';
+import { View, Text } from 'react-native';
 import { makeUseStyles, typography, radius, useTheme } from '@kc/ui';
+import {
+  getSupabasePublicImageUrl,
+  getSupabaseImageThumbUrl,
+  deriveThumbUrl,
+} from '../lib/imageUrl';
+import { KCImage } from './ui/KCImage';
 
 interface AvatarInitialsProps {
   name: string;
@@ -21,7 +27,7 @@ function getAvatarColor(name: string): string {
   return AVATAR_COLORS[Math.abs(hash) % AVATAR_COLORS.length] ?? AVATAR_COLORS[0]!;
 }
 
-export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsProps) {
+function AvatarInitialsInner({ name, avatarUrl, size = 40 }: AvatarInitialsProps) {
   const styles = useStyles();
   const { colors } = useTheme();
   const initials = name
@@ -32,12 +38,30 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
 
   const bgColor = getAvatarColor(name);
 
-  if (avatarUrl) {
+  // PERF-4: chrome avatars (≤96px) get the 96px thumb. KCImage's `fallbackUri`
+  // covers the transition window — old avatars without a thumb fall back to the
+  // full image until the backfill pass writes the thumb. Google OAuth URLs are
+  // already small and pass through `deriveThumbUrl` unchanged.
+  const { primaryUrl, fallbackUrl } = React.useMemo(() => {
+    if (!avatarUrl) return { primaryUrl: null, fallbackUrl: null };
+    if (avatarUrl.startsWith('http')) {
+      return { primaryUrl: deriveThumbUrl(avatarUrl), fallbackUrl: avatarUrl };
+    }
+    return {
+      primaryUrl: getSupabaseImageThumbUrl({ bucket: 'avatars', path: avatarUrl }),
+      fallbackUrl: getSupabasePublicImageUrl({ bucket: 'avatars', path: avatarUrl }),
+    };
+  }, [avatarUrl]);
+
+  if (primaryUrl) {
     return (
-      <Image
-        source={{ uri: avatarUrl }}
-        style={[styles.avatar, { width: size, height: size, borderRadius: size / 2 }]}
-        resizeMode="cover"
+      <KCImage
+        uri={primaryUrl}
+        fallbackUri={fallbackUrl}
+        width={size}
+        height={size}
+        style={[styles.avatar, { borderRadius: size / 2 }]}
+        contentFit="cover"
       />
     );
   }
@@ -58,6 +82,8 @@ export function AvatarInitials({ name, avatarUrl, size = 40 }: AvatarInitialsPro
     </View>
   );
 }
+
+export const AvatarInitials = React.memo(AvatarInitialsInner);
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
   /** No outer margin — parents use `gap` / padding so fixed-size clips (e.g. search cards) stay circular on iOS. */

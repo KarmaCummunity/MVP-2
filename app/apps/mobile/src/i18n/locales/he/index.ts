@@ -23,6 +23,11 @@ import { profileHe } from './modules/profile';
 import { closureHe } from './modules/closure';
 import { filtersHe } from './modules/filters';
 import { commonHe } from './modules/common';
+import { legalHe } from './modules/legal';
+import { surveyDemoHe } from './modules/surveyDemo';
+import { surveyHe } from './modules/survey';
+import { researchHe } from './modules/research';
+import { adminHe } from './modules/admin';
 
 const he = {
   // App
@@ -60,21 +65,26 @@ const he = {
   audit: auditHe,
   accountBlocked: accountBlockedHe,
 
+  // Admin portal (FR-ADMIN-010/011) — see modules/admin.ts
+  admin: adminHe,
+
   // Settings — see modules/settings.ts
   settings: settingsHe,
 
   // Stats (FR-STATS-001..004) — see stats.ts
   stats,
 
-  // Legal
-  legalContent: {
-    title: 'תנאי שימוש ומדיניות פרטיות',
-    lastUpdated: 'עודכן לאחרונה: מאי 2026',
-    termsTitle: 'תנאי שימוש',
-    termsText: 'ברוכים הבאים לקהילת קארמה. השימוש באפליקציה מהווה הסכמה לתנאים אלו. האפליקציה נועדה למסירה וקבלת חפצים בחינם בלבד. חל איסור מוחלט על סחר, מכירה, או דרישת תמורה כלשהי. המשתמש אחראי בלעדית על טיב החפצים שהוא מוסר. אין לפרסם תוכן פוגעני, שקרי או מפר זכויות יוצרים. הנהלת האפליקציה שומרת לעצמה את הזכות להסיר תכנים או לחסום משתמשים שיפרו כללים אלו.',
-    privacyTitle: 'מדיניות פרטיות',
-    privacyText: 'פרטיותכם חשובה לנו. אנו אוספים מידע בסיסי כגון שם, עיר ומיקום למטרת הצגת הפוסטים בקהילה בלבד. איננו משתפים מידע זה עם צדדים שלישיים ללא הסכמתכם. הכתובת המלאה תוצג אך ורק בהתאם להגדרת הפרטיות שתבחרו בכל פוסט. האפליקציה משתמשת בשירותי התחברות מאובטחים (Google/Apple) ואינה שומרת סיסמאות שרת. ניתן לבקש מחיקת חשבון וכלל הנתונים דרך הגדרות האפליקציה.',
-  },
+  // Legal (FR-SETTINGS-010) — see modules/legal.ts; bodies are server-driven Markdown.
+  legal: legalHe,
+
+  // Survey UX demo (internal preview) — see modules/surveyDemo.ts.
+  surveyDemo: surveyDemoHe,
+
+  // Production surveys + free feedback (FR-SETTINGS-015..017) — see modules/survey.ts.
+  survey: surveyHe,
+
+  // Public market research — Survey B (FR-RESEARCH-001..003) — see modules/research.ts.
+  research: researchHe,
 
   // About — see modules/aboutContentBundle.ts (FR-SETTINGS About narrative)
   aboutContent: aboutContentMerged,

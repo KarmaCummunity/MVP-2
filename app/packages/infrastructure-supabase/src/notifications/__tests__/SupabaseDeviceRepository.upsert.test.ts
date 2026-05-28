@@ -63,7 +63,9 @@ describe('SupabaseDeviceRepository — upsert', () => {
       platform: 'ios',
     });
     expect(calls[0]?.options).toEqual({ onConflict: 'push_token' });
-    expect(calls[0]?.selected).toBe('*');
+    expect(calls[0]?.selected).toContain('device_id');
+    expect(calls[0]?.selected).toContain('push_token');
+    expect(calls[0]?.selected).not.toBe('*');
     expect(calls[0]?.singled).toBe(true);
   });
 

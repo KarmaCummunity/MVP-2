@@ -13,7 +13,7 @@ import {
   ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE,
 } from './aboutExternalLinks';
 import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 type Row = {
   readonly key: string;
@@ -102,7 +102,7 @@ const useAboutContactLinksStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.sm },
   h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.sm },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,
@@ -134,7 +134,7 @@ const useAboutContactLinksStyles = makeUseStyles(({ colors }) => ({
     marginTop: spacing.xs,
   },
   cta: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,

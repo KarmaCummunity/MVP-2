@@ -5,6 +5,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { OnboardingProgressBar } from './animations/OnboardingProgressBar';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 export interface OnboardingStepHeaderProps {
   readonly step: 1 | 2 | 3 | 4;
@@ -81,6 +82,6 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     color: colors.textSecondary,
     textAlign: 'center',
   },
-  skip: { ...typography.body, color: colors.primary, textAlign: 'right' },
+  skip: { ...typography.body, color: colors.primary, textAlign: rtlTextAlignStart },
   muted: { color: colors.textDisabled },
 }));

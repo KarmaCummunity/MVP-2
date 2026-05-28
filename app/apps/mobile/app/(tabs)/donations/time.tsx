@@ -12,7 +12,6 @@ import {
 } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { ChatError } from '@kc/application';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useAuthStore } from '../../../src/store/authStore';
 import { container } from '../../../src/lib/container';
@@ -21,16 +20,20 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { webTextRtl } from '../../../src/lib/webRtlStyle';
 
 const COMPOSER_MAX_CHARS = 2000;
 
 const useStyles = makeUseStyles(({ colors }) => ({
   scrollView: { flex: 1 },
+  // `paddingBottom` is supplied dynamically by `useShellTabBarScrollInset()`
+  // so the last link clears the floating tab-bar pill (FR-RESP-006).
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
-    paddingBottom: spacing['2xl'],
     maxWidth: 480,
     width: '100%',
     alignSelf: 'center' as const,
@@ -63,7 +66,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
     ...typography.body,
     color: colors.textPrimary,
     textAlign: rtlTextAlignStart,
-    writingDirection: 'rtl' as const,
+    ...webTextRtl,
   },
   send: {
     height: 52,
@@ -76,7 +79,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
   sendDisabled: { backgroundColor: colors.primaryLight, opacity: 0.6 },
   sendText: { ...typography.button, color: colors.textInverse },
   sendTextDisabled: { color: colors.textInverse, opacity: 0.7 },
-  errorRow: { flexDirection: 'row-reverse' as const, alignItems: 'center' as const, gap: spacing.sm },
+  errorRow: { flexDirection: rowDirectionStart, alignItems: 'center' as const, gap: spacing.sm },
   errorText: { ...typography.bodySmall, color: colors.error, textAlign: rtlTextAlignStart },
   retryText: { ...typography.bodySmall, color: colors.primary, fontWeight: '600' as const },
 }));
@@ -87,6 +90,7 @@ export default function DonationsTimeScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const userId = useAuthStore((s) => s.session?.userId ?? null);
+  const tabBarPad = useShellTabBarScrollInset();
   const [text, setText] = useState('');
   const [busy, setBusy] = useState(false);
   const [sendError, setSendError] = useState(false);
@@ -106,22 +110,18 @@ export default function DonationsTimeScreen() {
         body: `${t('donations.timeScreen.volunteerPrefix')}${body}`,
       });
       router.push({ pathname: '/chat/[id]', params: { id: chat.chatId } });
-    } catch (err) {
-      if (err instanceof ChatError && err.code === 'super_admin_not_found') {
-        setSendError(true);
-      } else {
-        setSendError(true);
-      }
+    } catch {
+      setSendError(true);
     } finally {
       setBusy(false);
     }
   };
 
   return (
-    <Screen blobs="content" edges={['bottom']}>
+    <Screen blobs="content">
       <ScrollView
         style={styles.scrollView}
-        contentContainerStyle={styles.scroll}
+        contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >

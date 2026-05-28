@@ -14,6 +14,8 @@ import { makeUseStyles, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { useClosureStore } from '../../store/closureStore';
 import { ChatsPane, ModeTabs, SearchPane } from './ClosureRecipientPanes';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   ownerId: string;
@@ -110,10 +112,10 @@ export function ClosureStep2({
 }
 
 const useStyles = makeUseStyles(({ colors, isDark }) => ({
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 12, color: colors.textPrimary },
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 12, color: colors.textPrimary },
   helper: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6 },
-  error: { fontSize: 14, color: colors.error, textAlign: 'right', marginBottom: 8 },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  error: { fontSize: 14, color: colors.error, textAlign: rtlTextAlignStart, marginBottom: 8 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },

@@ -3,7 +3,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
 import { useTranslation } from 'react-i18next';
 import { useAboutContentScope } from './AboutContentScopeContext';
-import { aboutRtlText } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 export interface AboutScopeToggleProps {
   /** Shown in accessibilityLabel alongside the option name. */
@@ -49,7 +49,7 @@ export function AboutScopeToggle({ sectionA11yName }: AboutScopeToggleProps) {
 const useAboutScopeToggleStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.sm, marginBottom: spacing.md },
   track: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     gap: spacing.xs,
     padding: spacing.xs,
     borderRadius: radius.lg,

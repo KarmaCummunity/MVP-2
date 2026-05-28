@@ -3,10 +3,21 @@
 // >0 (FR-FEED-004 / replaces the deprecated FR-FEED-013 in-feed chip).
 
 import React from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Platform, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, useTheme } from '@kc/ui';
+import { isLayoutRtl } from '../lib/rtlLayout';
+
+/**
+ * Pin the count badge to the icon's reading-end corner.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function badgeCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 0 };
+  return isLayoutRtl() ? { left: 0 } : { right: 0 };
+}
 
 interface FeedFilterIconProps {
   activeCount: number;
@@ -40,7 +51,7 @@ const useFeedFilterIconStyles = makeUseStyles(({ colors }) => ({
   badge: {
     position: 'absolute' as const,
     top: 0,
-    right: 0,
+    ...badgeCornerEnd(),
     backgroundColor: colors.error,
     borderRadius: 10,
     minWidth: 18,
