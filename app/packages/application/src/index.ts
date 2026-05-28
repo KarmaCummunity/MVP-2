@@ -159,6 +159,15 @@ export * from './admin/GetMyAdminRolesUseCase';
 export * from './admin/GrantAdminRoleUseCase';
 export * from './admin/RevokeAdminRoleUseCase';
 export * from './admin/ListAdminsUseCase';
+export * from './admin/IAdminTaskRepository';
+export * from './admin/ListAdminTasksUseCase';
+export * from './admin/GetAdminTaskDetailUseCase';
+export * from './admin/CreateAdminTaskUseCase';
+export * from './admin/UpdateAdminTaskUseCase';
+export * from './admin/SetAdminTaskStatusUseCase';
+export * from './admin/AssignAdminTaskUseCase';
+export * from './admin/AddAdminTaskCommentUseCase';
+export * from './admin/DeleteAdminTaskUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
