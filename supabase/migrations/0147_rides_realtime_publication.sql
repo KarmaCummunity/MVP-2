@@ -1,4 +1,4 @@
--- 0143_rides_realtime_publication.sql — FR-RIDE-016 add rides tables to supabase_realtime.
+-- 0147_rides_realtime_publication.sql — FR-RIDE-016 add rides tables to supabase_realtime.
 --
 -- Mirrors the existing pattern (0007 for users, posts in 0002). RLS still gates
 -- per-row visibility on broadcast — subscribers only see rides their SELECT
