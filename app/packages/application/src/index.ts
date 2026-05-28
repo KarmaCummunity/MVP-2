@@ -171,6 +171,7 @@ export type {
   RideListingRow,
   CreateRideListingRepoInput,
   SearchRideListingsInput,
+  RideVisibility,
 } from './ports/IRideListingRepository';
 export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
 export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';

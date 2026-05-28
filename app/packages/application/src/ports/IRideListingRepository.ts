@@ -20,6 +20,8 @@ export interface RideListingRow {
   updatedAt: string;
 }
 
+export type RideVisibility = 'Public' | 'FollowersOnly' | 'OnlyMe';
+
 export interface CreateRideListingRepoInput {
   ownerId: string;
   mode: 'offer' | 'request';
@@ -33,7 +35,7 @@ export interface CreateRideListingRepoInput {
   seatsAvailable: number | null;
   description: string | null;
   title: string;
-  visibility: 'Public';
+  visibility: RideVisibility;
 }
 
 export interface SearchRideListingsInput {
