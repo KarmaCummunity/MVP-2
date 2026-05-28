@@ -94,6 +94,17 @@ Prefix: `FR-RIDE-*`
 - AC3. `rpc_ride_participants_request` widens the joinability check the same way — a follower can request to join a FollowersOnly ride.
 - AC4. Creation paths in V2.0 still default to `Public` (FR-RIDE-007). Allowing creation with non-Public tiers requires `CreateRideListingUseCase` to accept a `visibility` input — out of scope for this PR.
 
+## FR-RIDE-021 — Recurring ride templates 🟡
+> DB schema + materializer in place; application layer + UI follow.
+
+- AC1. `ride_templates` table holds one row per recurring slot: owner, mode, route (cities + streets + optional house numbers), `depart_time time`, `weekday_mask` (bitmask Sun=1..Sat=64), `seats_available` (offer-only, NULL on request), `visibility`, `status` ∈ {`active`,`paused`,`archived`}, `lookahead_days` (default 7, clamped 1..30).
+- AC2. `ride_listings.template_id` (nullable FK) links materialized instances to their template; `ON DELETE SET NULL` preserves historical rides if the template is deleted.
+- AC3. Partial unique index on `(template_id, departs_at::date)` makes the materializer idempotent — concurrent runs cannot duplicate a day.
+- AC4. `ride_templates_materialize()` runs daily at `0 2 * * *` UTC. For each active template, it inserts a `ride_listings` row for every matching day in the next `lookahead_days` window that doesn't already have one.
+- AC5. RLS on `ride_templates`: owner-only for SELECT/INSERT/UPDATE/DELETE. Templates are private intent; only the materialized public ride instances surface to other users (still gated by their own RLS + visibility tier).
+- AC6. Status machine: `active ↔ paused`; either ⇒ `archived` (terminal — owner can re-create a new template if needed). Paused/archived templates do not materialize.
+- AC7. Application layer + RPCs (`rpc_ride_templates_*`) ⏳ — follow in a sibling PR.
+
 ## FR-RIDE-020 — Owner can update ride visibility ✅
 - AC1. RPC `rpc_ride_update_visibility(p_ride_id, p_visibility)` lets the ride owner change visibility on an existing open ride. `p_visibility` ∈ {`Public`, `FollowersOnly`, `OnlyMe`}; anything else raises `invalid_visibility`.
 - AC2. Caller authenticated and the ride owner; otherwise `auth_required` or `not_ride_owner`.
