@@ -27,10 +27,13 @@ export const selfAlignStart: FlexStyle['alignSelf'] = 'flex-start';
 /** Main-axis inline-start for rows. */
 export const mainAxisAlignStart: FlexStyle['justifyContent'] = 'flex-start';
 
-/** Web-only `direction` for the active locale; empty on native. */
+/**
+ * Legacy spread hook for web layout bidi. Intentionally empty: RN-Web does not
+ * support CSS `direction` on views (see `webRtlStyle.ts`). Html `dir` + flex helpers
+ * own layout direction; callers may keep `...layoutDirectionStyle()` harmlessly.
+ */
 export function layoutDirectionStyle(): ViewStyle {
-  if (Platform.OS !== 'web') return {};
-  return { direction: isLayoutRtl() ? 'rtl' : 'ltr' };
+  return {};
 }
 
 /** Web-only text `writingDirection` for the active locale. */

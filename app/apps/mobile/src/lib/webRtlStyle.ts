@@ -9,12 +9,13 @@ function isWebPlatform(): boolean {
 }
 
 /**
- * RN-web: reinforce RTL layout/text bidi where DOM `dir=rtl` + RN-web
- * don't match native `I18nManager.forceRTL` parity.
+ * View-level RTL on web comes from `document.documentElement.dir` (see `_layout.tsx`).
+ * RN-Web rejects the CSS `direction` property on `View` styles — it logs once per
+ * affected node ("Did you mean writingDirection?"), which floods LogBox when spread
+ * widely. Keep this empty; use `webTextRtl`, `rowDirectionStart`, and `textAlignStart`.
  *
- * iOS/Android: **omit** — `I18nManager.forceRTL(true)` already mirrors the tree;
- * adding `direction` / `writingDirection` again inverts rows + text vs web.
+ * iOS/Android: **omit** — `I18nManager.forceRTL(true)` already mirrors the tree.
  */
-export const webViewRtl: ViewStyle = isWebPlatform() ? { direction: 'rtl' } : {};
+export const webViewRtl: ViewStyle = {};
 
 export const webTextRtl: TextStyle = isWebPlatform() ? { writingDirection: 'rtl' } : {};

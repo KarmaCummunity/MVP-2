@@ -29,11 +29,11 @@ describe('rtlLayout', () => {
     expect(textAlignStart()).toBe('left');
   });
 
-  it('layoutDirectionStyle follows document dir on web', () => {
+  it('layoutDirectionStyle is a no-op (RN-Web rejects View direction)', () => {
     vi.stubGlobal('document', {
       documentElement: { getAttribute: () => 'ltr' },
     });
     expect(isLayoutRtl()).toBe(false);
-    expect(layoutDirectionStyle()).toEqual({ direction: 'ltr' });
+    expect(layoutDirectionStyle()).toEqual({});
   });
 });

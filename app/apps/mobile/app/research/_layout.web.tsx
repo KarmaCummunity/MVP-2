@@ -22,7 +22,6 @@ export default function ResearchLayout() {
 const styles = StyleSheet.create({
   safe: {
     flex: 1,
-    direction: 'rtl',
   },
   container: {
     flex: 1,
