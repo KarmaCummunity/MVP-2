@@ -4,7 +4,7 @@ name: DB deploy
 #   1. Manual (workflow_dispatch): targets either supabase-prod or supabase-dev,
 #      defaults to dry-run (use for ad-hoc inspection or emergency applies).
 #   2. Auto on push to `dev` or `main` when migration-related paths change:
-#      `dev` → supabase-dev; `main` → supabase-prod (dry-run, then apply).
+#      `dev` → supabase-dev; `main` → supabase-prod. Both targets dry-run, then apply.
 #      DB validate (fresh local stack) must stay green on PRs before merge.
 #
 # Required secrets on the selected GitHub Environment (supabase-prod / supabase-dev):
@@ -55,7 +55,6 @@ jobs:
 
     env:
       DEPLOY_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
-      IS_PROD_TARGET: ${{ (github.event_name == 'workflow_dispatch' && inputs.target == 'supabase-prod') || (github.event_name == 'push' && github.ref_name == 'main') }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
@@ -106,12 +105,10 @@ jobs:
       - name: List pending migrations
         run: supabase migration list --linked --yes
 
-      - name: Dry-run push (prod targets before apply)
+      - name: Dry-run push (before apply)
         if: >-
-          env.IS_PROD_TARGET == 'true' && (
-            github.event_name == 'push' ||
-            (github.event_name == 'workflow_dispatch' && inputs.apply)
-          )
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && inputs.apply)
         run: supabase db push --dry-run --include-all --linked --yes
 
       - name: Push migrations to remote

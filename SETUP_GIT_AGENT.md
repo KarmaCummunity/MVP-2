@@ -74,6 +74,21 @@ Easiest path is the GitHub UI:
 
 > To do this from CLI instead: see https://cli.github.com/manual/gh_api and the `repos/{owner}/{repo}/branches/{branch}/protection` endpoint. The UI is faster for the first time.
 
+## 5b. Add branch protection on `dev` (required for working branch)
+
+All feature PRs target `dev`. After the first CI run on a PR to `dev`, configure:
+
+1. Open https://github.com/KarmaCummunity/MVP-2/settings/branches
+2. **Add rule** → branch name pattern: `dev`
+3. Enable:
+   - **Require a pull request before merging** (0 approvals).
+   - **Block force pushes** and **Do not allow deletions**.
+   - **Require status checks to pass** — select checks from the table in `docs/SSOT/ENVIRONMENTS.md` § Dev merge gates, including:
+     - `migration destructive-op scan` (CI — dev guard)
+     - `typecheck · test · lint`, `PR hygiene`, and the other jobs listed there.
+   - Do **not** require **CI — main release guard** (prod-only).
+4. Save.
+
 ## 6. (Optional) Pre-commit secret scan
 
 Stops you from accidentally committing tokens / `.env` files:

@@ -1012,12 +1012,25 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 **Affected docs.** `.github/workflows/ci-main-guard.yml`, `db-deploy.yml`, `prod-smoke.yml`; `scripts/check-migration-safety.mjs`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`; `CLAUDE.md` §6.
 
+## D-54 — Selective dev-branch CI parity (not 1:1 main copy) (2026-05-28)
+
+**Date.** 2026-05-28
+
+**Decision.** Harden `dev` with gates that catch defects **before** they reach production, without copying prod-only workflows. Add: (1) `.github/workflows/ci-dev-guard.yml` — migration destructive-op scan on every non-draft PR to `dev`; (2) `db-deploy` dry-run before apply for **both** `supabase-dev` and `supabase-prod`; (3) documented required status checks for GitHub branch protection on `dev` in `ENVIRONMENTS.md`. Explicitly **do not** add to `dev`: `ci-main-guard` release-source job, `prod-smoke`, or Edge Functions deploy to prod.
+
+**Rationale.** Most quality CI already runs on `dev`. The gap was destructive migrations reaching `supabase-dev` before the main release scan, and dev DB apply without dry-run. Full main parity would slow the autonomous loop and add meaningless checks (e.g. enforcing `dev` as PR head on `dev`).
+
+**Alternatives rejected.** 1:1 copy of all `main` branch protection — rejected (redundant + prod-only semantics). Migration safety only on `main` — rejected (too late for shared dev DB).
+
+**Affected docs.** `.github/workflows/ci-dev-guard.yml`, `db-deploy.yml`, `app/package.json`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`, `SETUP_GIT_AGENT.md`; plan `docs/superpowers/plans/2026-05-28-dev-branch-ci-hardening.md`.
+
 ---
 
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.6 | 2026-05-28 | Added `D-54` (selective dev CI hardening: `ci-dev-guard`, dev+prod DB dry-run, dev branch-protection doc; not 1:1 main copy). |
 | 3.5 | 2026-05-28 | Added `D-53` (automated `main` prod gates: dev→main PR enforcement, migration safety scan, prod DB dry-run before apply, expanded prod smoke; no human deploy approvers). |
 | 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |
 | 3.3 | 2026-05-26 | Added `D-50` (anonymous public market research as separate spec domain `16_public_research.md`; PII-isolated contact storage; separate migration `0131`; FR-RESEARCH-001..003). |

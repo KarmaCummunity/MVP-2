@@ -76,12 +76,19 @@ Automated **Prod smoke** only checks HTTP 200 on the prod URL. Complete these ma
 
 ---
 
+## Dev branch protection (`dev` — working branch)
+
+Feature PRs merge into `dev` first. One-time setup: Settings → Branches → `dev` — require PR, block force-push/deletion, require status checks from the **Dev merge gates** table in [`ENVIRONMENTS.md`](./ENVIRONMENTS.md#dev-merge-gates-branch-protection) (includes **CI — dev guard / migration destructive-op scan**). Do not add **CI — main release guard** to `dev`.
+
+---
+
 ## GitHub settings (one-time)
 
 | Setting | Location | Value |
 | --- | --- | --- |
+| Branch protection on `dev` | Settings → Branches → `dev` | PR required; status checks per ENVIRONMENTS dev table (`D-54`) |
 | Branch protection on `main` | Settings → Branches → `main` | Block direct pushes; require status checks (table above) — **no required human reviewers** (`D-53`) |
-| Required status checks | Same | Include **CI — main release guard** on `dev` → `main` PRs |
+| Required status checks | Same (`main`) | Include **CI — main release guard** on `dev` → `main` PRs |
 | `supabase-prod` environment | Settings → Environments → `supabase-prod` | Secrets only (`SUPABASE_*`); **do not** enable required reviewers |
 | Prod web URL for smoke | Settings → Secrets and variables → Actions → **Variables** | `PROD_WEB_URL` = `https://<your-prod>.up.railway.app` |
 
