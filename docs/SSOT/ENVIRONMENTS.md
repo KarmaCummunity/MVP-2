@@ -137,11 +137,15 @@ Playwright P0 journeys run against the live dev deployment before every `dev` �
 
 Workflow: `.github/workflows/ci-e2e-dev.yml` — required status check on `main`: **CI — E2E dev / user journeys (P0)**.
 
+Create user (once, if needed): `E2E_TEST_EMAIL=… E2E_TEST_PASSWORD=… node scripts/create-e2e-user.mjs` (requires dev `SUPABASE_SERVICE_ROLE_KEY`).
+
 Local run (after deploy on dev):
 
 ```bash
 export DEV_WEB_URL=https://mvp-2-dev.up.railway.app
 export E2E_TEST_EMAIL=…
 export E2E_TEST_PASSWORD=…
+export E2E_SUPABASE_ANON_KEY=…
+node scripts/ensure-e2e-user.mjs
 cd tests/e2e && npm install && npm run install:browsers && npm test
 ```

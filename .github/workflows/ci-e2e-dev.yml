@@ -53,12 +53,13 @@ jobs:
         with:
           node-version: 20
 
-      - name: Verify E2E credentials (Supabase auth)
+      - name: Verify E2E credentials (Supabase auth API)
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
           EXPO_PUBLIC_SUPABASE_URL: https://roeefqpdbftlndzsvhfj.supabase.co
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
         run: node scripts/ensure-e2e-user.mjs
 
       - name: Install Playwright
@@ -73,6 +74,8 @@ jobs:
           DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_SUPABASE_URL: https://roeefqpdbftlndzsvhfj.supabase.co
         run: npm test
 
       - uses: actions/upload-artifact@v4

@@ -1028,11 +1028,11 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ### D-55 — E2E release gate on dev deployment (Web Playwright)
 
-**Decision.** Production releases (`dev` → `main`) require green **CI — E2E dev / user journeys (P0)** against repository variable `DEV_WEB_URL` (`https://mvp-2-dev.up.railway.app`). Auth in CI uses email/password via GitHub secrets `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`, not Google SSO. Feature PRs to `dev` do not require E2E (advisory `workflow_dispatch` / future push hook optional).
+**Decision.** Production releases (`dev` → `main`) require green **CI — E2E dev / user journeys (P0)** against repository variable `DEV_WEB_URL` (`https://mvp-2-dev.up.railway.app`). Auth in CI uses a dedicated dev test user (`E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`): REST `grant_type=password`, then **session injection** into browser `localStorage` — not the `/sign-in` UI and not Google SSO. Feature PRs to `dev` do not require E2E (advisory `workflow_dispatch` / future push hook optional).
 
-**Rationale.** Manual dev smoke in `RELEASE_CHECKLIST.md` does not scale for an AI-only dev workflow (`D-53`). Playwright is already used for bundle smoke; live-dev E2E catches RLS, env wiring, and deploy regressions that unit tests miss. Humans remain the final prod sanity check (~5 min), not the gate on every change.
+**Rationale.** Manual dev smoke in `RELEASE_CHECKLIST.md` does not scale for an AI-only dev workflow (`D-53`). Playwright is already used for bundle smoke; live-dev E2E catches RLS, env wiring, and deploy regressions that unit tests miss. Human operators may use Google only; API injection still validates authenticated journeys. Humans remain the final prod sanity check (~5 min), not the gate on every change.
 
-**Alternatives rejected.** Gate every PR to `dev` on E2E — too slow/flaky early. Cypress — no advantage over existing Playwright. Google SSO in CI — brittle. Dev ghost-session / auto-sign-in in E2E bundle — not a human path.
+**Alternatives rejected.** Gate every PR to `dev` on E2E — too slow/flaky early. Cypress — no advantage over existing Playwright. Google SSO in CI — brittle. Dev ghost-session / auto-sign-in in E2E bundle — not a human path. Playwright UI `/sign-in` — rejected when the form is unreliable for operators; product login UX remains a separate fix (`TD-104`).
 
 **Affected docs.** `docs/SSOT/TESTING.md`, `RELEASE_CHECKLIST.md`, `ENVIRONMENTS.md`, `.github/workflows/ci-e2e-dev.yml`; plan `docs/superpowers/plans/2026-05-28-comprehensive-quality-automation.md`.
 

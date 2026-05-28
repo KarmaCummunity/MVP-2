@@ -23,10 +23,10 @@
 
 ## E2E test user (dev only)
 
-- Email/password in GitHub secrets `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD` (never in repo).
-- User must exist in Supabase dev (`roeefqpdbftlndzsvhfj`) with `account_status = 'active'` and verified email.
-- Setup script: `node scripts/ensure-e2e-user.mjs` (documents checks; does not store passwords).
-- E2E uses **email/password sign-in** at `/sign-in` — not Google SSO, not `EXPO_PUBLIC_DEV_*` shortcuts.
+- Credentials in GitHub secrets: `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_ANON_KEY` (dev publishable anon).
+- User must exist in Supabase dev (`roeefqpdbftlndzsvhfj`) with **Auto Confirm** (Dashboard → Authentication → Users → Add user). The human `/sign-in` UI may be broken or unused — E2E does not depend on it.
+- Preflight: `node scripts/ensure-e2e-user.mjs` (REST `grant_type=password` — same path as Playwright setup).
+- **Auth in E2E (option 3):** Playwright injects the Supabase session into `localStorage` via API — no Google SSO, no `/sign-in` form, no `EXPO_PUBLIC_DEV_*` shortcuts.
 
 ## P0 release journeys (automated)
 

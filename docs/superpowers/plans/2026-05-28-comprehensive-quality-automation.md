@@ -264,7 +264,7 @@ git commit -m "docs(ssot): backlog rows for quality automation waves"
 **Duration:** ~3–5 days  
 **Maps to:** `RELEASE_CHECKLIST.md` (auth, feed, create-post, chat inbox)
 
-**Repo deliverables:** `tests/e2e/`, `.github/workflows/ci-e2e-dev.yml`, `testID` hooks, `pnpm test:e2e`.
+**Repo deliverables:** `tests/e2e/`, `ci-e2e-dev.yml`, `testID` hooks, `pnpm test:e2e`. **Auth:** API session injection (`lib/supabaseSession.ts`) — option 3, not `/sign-in` UI.
 
 ### Task 1.1: E2E package scaffold
 
