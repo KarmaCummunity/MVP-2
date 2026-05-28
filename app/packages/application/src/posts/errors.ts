@@ -26,6 +26,11 @@ export type PostErrorCode =
   | 'reopen_window_expired'
   | 'post_not_open'
   | 'post_owner_delete_forbidden'
+  | 'republish_not_owner'
+  | 'republish_wrong_status'
+  | 'republish_not_found'
+  | 'active_post_limit_exceeded'
+  | 'followers_only_requires_private'
   | 'unknown';
 
 export class PostError extends Error {

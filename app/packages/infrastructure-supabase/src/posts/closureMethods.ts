@@ -12,12 +12,22 @@ const CLOSURE_CODES = new Set<PostErrorCode>([
   'closure_wrong_status',
   'closure_recipient_not_in_chat',
   'reopen_window_expired',
+  'republish_not_owner',
+  'republish_wrong_status',
+  'republish_not_found',
+  'active_post_limit_exceeded',
 ]);
 
 export function mapClosurePgError(error: PostgrestError): PostError {
   const msg = error.message?.trim() ?? '';
   if (CLOSURE_CODES.has(msg as PostErrorCode))
     return new PostError(msg as PostErrorCode, msg, error);
+  // INSERT policy WITH CHECK miss for FollowersOnly without Private profile
+  // surfaces as 42501 with a generic message — map it explicitly so callers
+  // can show the right copy.
+  if (error.code === '42501') {
+    return new PostError('followers_only_requires_private', 'followers_only_requires_private', error);
+  }
   return new PostError('unknown', error.message ?? 'closure_unknown', error);
 }
 
@@ -101,6 +111,18 @@ export async function reopenPost(
   const reread = await fetchPostById(client, postId);
   if (!reread) throw new PostError('unknown', `post ${postId} disappeared after reopen`);
   return reread;
+}
+
+export async function republishPost(
+  client: SupabaseClient<Database>,
+  postId: string,
+): Promise<string> {
+  const { data, error } = await client.rpc('rpc_republish_post', { p_post_id: postId });
+  if (error) throw mapClosurePgError(error);
+  if (typeof data !== 'string') {
+    throw new PostError('unknown', 'republish_no_id_returned');
+  }
+  return data;
 }
 
 export async function getClosureCandidates(

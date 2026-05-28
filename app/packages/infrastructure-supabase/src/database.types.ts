@@ -2421,6 +2421,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      posts_expiry_transition: { Args: never; Returns: number }
       profile_closed_posts: {
         Args: {
           p_cursor?: string
@@ -2697,6 +2698,7 @@ export type Database = {
         Args: { p_post_id: string }
         Returns: undefined
       }
+      rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
       rpc_ride_participants_cancel: {
         Args: { p_participant_id: string }
         Returns: {
