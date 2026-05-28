@@ -6,13 +6,16 @@ import {
   Pressable, ScrollView, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import {
-  ADMIN_TASK_PRIORITIES, type AdminPermission, type AdminRole, type AdminTaskPriority,
+  ADMIN_TASK_CATEGORY_DEFAULT,
+  ADMIN_TASK_PRIORITIES, type AdminPermission, type AdminRole,
+  type AdminTaskCategory, type AdminTaskPriority,
   hasPermission, isAdminTaskError,
 } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useCreateAdminTask } from '../../../src/hooks/useAdminTaskMutations';
 import { AssigneePicker } from '../../../src/components/admin/tasks/AssigneePicker';
+import { TaskCategoryPicker } from '../../../src/components/admin/tasks/TaskCategoryPicker';
 import he from '../../../src/i18n/locales/he';
 
 export default function NewTaskScreen() {
@@ -23,6 +26,7 @@ export default function NewTaskScreen() {
   const [title, setTitle] = useState('');
   const [description, setDescription] = useState('');
   const [priority, setPriority] = useState<AdminTaskPriority>('medium');
+  const [category, setCategory] = useState<AdminTaskCategory>(ADMIN_TASK_CATEGORY_DEFAULT);
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [labelsRaw, setLabelsRaw] = useState('');
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -52,6 +56,7 @@ export default function NewTaskScreen() {
         title: title.trim(),
         description: description.trim() || null,
         priority,
+        category,
         assigneeId,
         labels,
       });
@@ -105,6 +110,9 @@ export default function NewTaskScreen() {
           </Pressable>
         ))}
       </View>
+
+      <Text style={styles.label}>{he.admin.tasks.form.categoryLabel}</Text>
+      <TaskCategoryPicker value={category} onChange={setCategory} />
 
       {can('admins.view') && (
         <>

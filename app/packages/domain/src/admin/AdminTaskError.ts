@@ -3,6 +3,7 @@ export type AdminTaskErrorCode =
   | 'invalid_title'
   | 'title_too_long'
   | 'invalid_priority'
+  | 'invalid_category'
   | 'invalid_status'
   | 'invalid_transition'
   | 'invalid_input'
