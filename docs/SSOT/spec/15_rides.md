@@ -81,6 +81,12 @@ Prefix: `FR-RIDE-*`
 - AC4. `window_hours` is clamped to [1, 72] (default 12); `limit` to [1, 50] (default 20).
 - AC5. Application: `FindRideMatchesUseCase` + `IRideListingRepository.findMatches`.
 
+## FR-RIDE-018 — Visibility tiers honored end-to-end ✅
+- AC1. SELECT RLS on `ride_listings` permits: owner; or (`status='open'` AND (`visibility='Public'` OR (`visibility='FollowersOnly'` AND `is_following(viewer, owner)`))). `OnlyMe` rides are visible only to the owner.
+- AC2. `ride_listings_search` widens its visibility predicate identically (SECURITY DEFINER bypasses RLS, so the function body is the source of truth for search results).
+- AC3. `rpc_ride_participants_request` widens the joinability check the same way — a follower can request to join a FollowersOnly ride.
+- AC4. Creation paths in V2.0 still default to `Public` (FR-RIDE-007). Allowing creation with non-Public tiers requires `CreateRideListingUseCase` to accept a `visibility` input — out of scope for this PR.
+
 ## FR-RIDE-017 — Auto-cancel stale participant requests ✅
 - AC1. pg_cron job `ride_participants_expire_stale_check` runs `*/15 * * * *`. It cancels every `requested` row where `ride.departs_at + interval '3 hours' < now()`.
 - AC2. System cancellation: `status = 'cancelled'`, `decided_at = now()`, `decided_by = NULL` (system marker).
