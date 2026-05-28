@@ -1,1 +1,1 @@
-export type RideStatus = 'open' | 'closed' | 'cancelled';
+export type RideStatus = 'open' | 'closed' | 'cancelled' | 'expired';
