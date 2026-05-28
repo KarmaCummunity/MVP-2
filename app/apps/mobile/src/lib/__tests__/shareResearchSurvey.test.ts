@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 vi.mock('react-native', () => ({
   Platform: { OS: 'ios' as 'ios' | 'android' | 'web' },
@@ -52,6 +52,66 @@ describe('buildResearchShareUrl', () => {
     expect(buildResearchShareUrl('https://ex.com', RESEARCH_SHARE_SRC_THANKS)).toContain('?src=share-thanks');
     expect(buildResearchShareUrl('https://ex.com', RESEARCH_SHARE_SRC_DURING_SURVEY)).toContain('?src=share-during-survey');
     expect(buildResearchShareUrl('https://ex.com', RESEARCH_SHARE_SRC_SETTINGS)).toContain('?src=in-app-share-settings');
+  });
+});
+
+describe('shareResearchSurvey — web (Platform.OS=web)', () => {
+  beforeEach(() => {
+    (Platform as { OS: string }).OS = 'web';
+    vi.clearAllMocks();
+    vi.unstubAllGlobals();
+  });
+
+  afterEach(() => {
+    vi.unstubAllGlobals();
+  });
+
+  it('returns kind: "shared" when navigator.share resolves', async () => {
+    const share = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { share });
+
+    const result = await shareResearchSurvey({
+      webBaseUrl: 'https://example.com',
+      src: RESEARCH_SHARE_SRC_SETTINGS,
+      title: 'T',
+      message: 'M',
+    });
+
+    expect(result).toEqual({ kind: 'shared' });
+    expect(share).toHaveBeenCalledTimes(1);
+  });
+
+  it('returns kind: "dismissed" when navigator.share rejects with AbortError', async () => {
+    const share = vi.fn().mockRejectedValue(
+      Object.assign(new Error('cancelled'), { name: 'AbortError' }),
+    );
+    vi.stubGlobal('navigator', { share });
+
+    const result = await shareResearchSurvey({
+      webBaseUrl: 'https://example.com',
+      src: RESEARCH_SHARE_SRC_SETTINGS,
+      title: 'T',
+      message: 'M',
+    });
+
+    expect(result).toEqual({ kind: 'dismissed' });
+  });
+
+  it('returns kind: "copied" when navigator.share is undefined but clipboard.writeText succeeds', async () => {
+    const writeText = vi.fn().mockResolvedValue(undefined);
+    vi.stubGlobal('navigator', { clipboard: { writeText } });
+
+    const result = await shareResearchSurvey({
+      webBaseUrl: 'https://example.com',
+      src: RESEARCH_SHARE_SRC_SETTINGS,
+      title: 'T',
+      message: 'M',
+    });
+
+    expect(result).toEqual({ kind: 'copied' });
+    expect(writeText).toHaveBeenCalledWith(
+      'https://example.com/research/alt-platforms-research?src=in-app-share-settings',
+    );
   });
 });
 
