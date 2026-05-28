@@ -39,6 +39,9 @@ function makeRow(rideId: string, departsAt: string, status: RideListingRow['stat
     reqSmokingAllowed: false,
     reqPetsAllowed: false,
     reqVerifiedOnly: false,
+    startedAt: null,
+    arrivedAt: null,
+    arriveReason: null,
   };
 }
 

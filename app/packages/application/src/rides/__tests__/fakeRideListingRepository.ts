@@ -48,9 +48,42 @@ export class FakeRideListingRepository implements IRideListingRepository {
       reqSmokingAllowed: input.reqSmokingAllowed ?? false,
       reqPetsAllowed: input.reqPetsAllowed ?? false,
       reqVerifiedOnly: input.reqVerifiedOnly ?? false,
+      startedAt: null,
+      arrivedAt: null,
+      arriveReason: null,
     };
     this.rows.push(row);
     return row;
+  }
+
+  async start(rideId: string): Promise<RideListingRow> {
+    const idx = this.rows.findIndex((r) => r.rideId === rideId);
+    if (idx < 0) throw new Error('ride_not_found');
+    const row = this.rows[idx]!;
+    if (row.status === 'in_transit') return row;
+    if (row.status !== 'open') throw new Error('invalid_status_transition');
+    if (new Date(row.departsAt).getTime() - 30 * 60_000 > Date.now()) {
+      throw new Error('start_window_not_open');
+    }
+    const updated: RideListingRow = { ...row, status: 'in_transit', startedAt: new Date().toISOString() };
+    this.rows[idx] = updated;
+    return updated;
+  }
+
+  async arrive(rideId: string, reason: 'arrived' | 'breakdown'): Promise<RideListingRow> {
+    const idx = this.rows.findIndex((r) => r.rideId === rideId);
+    if (idx < 0) throw new Error('ride_not_found');
+    const row = this.rows[idx]!;
+    if (row.status === 'completed_pending_rating') return row;
+    if (row.status !== 'in_transit') throw new Error('ride_not_in_transit');
+    const updated: RideListingRow = {
+      ...row,
+      status: 'completed_pending_rating',
+      arrivedAt: new Date().toISOString(),
+      arriveReason: reason,
+    };
+    this.rows[idx] = updated;
+    return updated;
   }
 
   async getById(rideId: string, _viewerId: string): Promise<RideListingRow | null> {

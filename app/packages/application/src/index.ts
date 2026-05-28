@@ -208,6 +208,9 @@ export type {
 export { ListRideStopsUseCase } from './rides/ListRideStopsUseCase';
 export { SetRideStopsUseCase } from './rides/SetRideStopsUseCase';
 export type { SetRideStopsUseCaseInput } from './rides/SetRideStopsUseCase';
+export { StartRideUseCase } from './rides/StartRideUseCase';
+export { ArriveRideUseCase } from './rides/ArriveRideUseCase';
+export type { ArriveRideInput } from './rides/ArriveRideUseCase';
 
 // Ride templates (FR-RIDE-021 / FR-RIDE-022)
 export type {

@@ -20,6 +20,8 @@ import {
   FindRideMatchesUseCase,
   UpdateRideVisibilityUseCase,
   ListMyRidesUseCase,
+  StartRideUseCase,
+  ArriveRideUseCase,
   RequestRideJoinUseCase,
   DecideRideJoinUseCase,
   CancelRideJoinUseCase,
@@ -50,6 +52,8 @@ let _close: CloseRideListingUseCase | null = null;
 let _findMatches: FindRideMatchesUseCase | null = null;
 let _updateVisibility: UpdateRideVisibilityUseCase | null = null;
 let _listMyRides: ListMyRidesUseCase | null = null;
+let _startRide: StartRideUseCase | null = null;
+let _arriveRide: ArriveRideUseCase | null = null;
 let _requestJoin: RequestRideJoinUseCase | null = null;
 let _decideJoin: DecideRideJoinUseCase | null = null;
 let _cancelJoin: CancelRideJoinUseCase | null = null;
@@ -132,6 +136,16 @@ export function getUpdateRideVisibilityUseCase(): UpdateRideVisibilityUseCase {
 export function getListMyRidesUseCase(): ListMyRidesUseCase {
   if (!_listMyRides) _listMyRides = new ListMyRidesUseCase(getRepo());
   return _listMyRides;
+}
+
+export function getStartRideUseCase(): StartRideUseCase {
+  if (!_startRide) _startRide = new StartRideUseCase(getRepo());
+  return _startRide;
+}
+
+export function getArriveRideUseCase(): ArriveRideUseCase {
+  if (!_arriveRide) _arriveRide = new ArriveRideUseCase(getRepo());
+  return _arriveRide;
 }
 
 export function getRequestRideJoinUseCase(): RequestRideJoinUseCase {

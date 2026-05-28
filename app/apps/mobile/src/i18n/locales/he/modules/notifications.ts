@@ -57,4 +57,12 @@ export const notificationsHe = {
   // sends the participant a distinct variant so the message reads correctly.
   rideCancelledByOwnerTitle: '{{ownerName}}',
   rideCancelledByOwnerBody: 'הנסיעה בוטלה: {{rideTitle}}',
+  // FR-RIDE-031..033 — active ride transitions broadcast to snapshot.
+  rideStartedTitle: 'הנסיעה החלה',
+  rideStartedBody: '{{rideTitle}}',
+  rideArrivedTitle: 'הנסיעה הסתיימה',
+  rideArrivedBody: '{{rideTitle}} — נא לדרג בקרוב',
+  // FR-RIDE-045 AC4 — breakdown early-arrive variant.
+  rideBreakdownTitle: 'תקלה ברכב',
+  rideBreakdownBody: 'הנסיעה הסתיימה בעקבות תקלה: {{rideTitle}}',
 } as const;

@@ -20,10 +20,22 @@ export interface RideListingRow {
   seatsAvailable: number | null;
   description: string | null;
   title: string;
-  status: 'open' | 'closed' | 'cancelled' | 'expired';
+  status:
+    | 'open'
+    | 'in_transit'
+    | 'completed_pending_rating'
+    | 'closed'
+    | 'cancelled'
+    | 'expired';
   visibility: 'Public' | 'FollowersOnly' | 'OnlyMe';
   createdAt: string;
   updatedAt: string;
+  /** FR-RIDE-031 — set when the owner taps "Start"; NULL until then. */
+  startedAt: string | null;
+  /** FR-RIDE-031 — set when the owner taps "Arrive"; NULL until then. */
+  arrivedAt: string | null;
+  /** FR-RIDE-045 AC4 — reason recorded with arrival ('arrived' | 'breakdown'). */
+  arriveReason: 'arrived' | 'breakdown' | null;
   // FR-RIDE-026 — cargo.
   cargoEnabled: boolean;
   cargoMaxVolumeL: number | null;
@@ -97,8 +109,15 @@ export interface FindRideMatchesInput {
 
 export interface ListMyRidesInput {
   ownerId: string;
-  /** Default: open + closed + cancelled + expired. */
-  statuses?: ReadonlyArray<'open' | 'closed' | 'cancelled' | 'expired'>;
+  /** Default: all of open/in_transit/completed_pending_rating/closed/cancelled/expired. */
+  statuses?: ReadonlyArray<
+    | 'open'
+    | 'in_transit'
+    | 'completed_pending_rating'
+    | 'closed'
+    | 'cancelled'
+    | 'expired'
+  >;
   /**
    * Lower bound on `departs_at` so we don't fetch the entire history. Default
    * = now() − 30 days; pass `null` to disable.
@@ -132,4 +151,10 @@ export interface IRideListingRepository {
    * so the adapter is a plain SELECT.
    */
   listMyRides(input: ListMyRidesInput): Promise<RideListingRow[]>;
+
+  /** FR-RIDE-031 — owner check-in. Idempotent on already-in_transit. */
+  start(rideId: string): Promise<RideListingRow>;
+
+  /** FR-RIDE-031 — owner marks arrival. Idempotent on already-completed_pending_rating. */
+  arrive(rideId: string, reason: 'arrived' | 'breakdown'): Promise<RideListingRow>;
 }

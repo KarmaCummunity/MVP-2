@@ -38,6 +38,10 @@ type RideRow = {
   req_smoking_allowed?: boolean | null;
   req_pets_allowed?: boolean | null;
   req_verified_only?: boolean | null;
+  // FR-RIDE-031 — active lifecycle.
+  started_at?: string | null;
+  arrived_at?: string | null;
+  arrive_reason?: string | null;
 };
 
 export function mapRideRow(
@@ -84,5 +88,9 @@ export function mapRideRow(
     reqSmokingAllowed: row.req_smoking_allowed ?? false,
     reqPetsAllowed: row.req_pets_allowed ?? false,
     reqVerifiedOnly: row.req_verified_only ?? false,
+    // FR-RIDE-031 — active lifecycle.
+    startedAt: row.started_at ?? null,
+    arrivedAt: row.arrived_at ?? null,
+    arriveReason: (row.arrive_reason ?? null) as RideListingRow['arriveReason'],
   };
 }

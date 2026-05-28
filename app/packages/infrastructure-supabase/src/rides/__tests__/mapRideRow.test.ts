@@ -61,6 +61,9 @@ describe('mapRideRow', () => {
       reqSmokingAllowed: false,
       reqPetsAllowed: false,
       reqVerifiedOnly: false,
+      startedAt: null,
+      arrivedAt: null,
+      arriveReason: null,
     });
   });
 

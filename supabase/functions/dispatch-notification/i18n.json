@@ -34,6 +34,12 @@
   "notifications.rideParticipantCancelledBody": "ביטל את הצטרפותו לטרמפ: {{rideTitle}}",
   "notifications.rideCancelledByOwnerTitle": "{{ownerName}}",
   "notifications.rideCancelledByOwnerBody": "הנסיעה בוטלה: {{rideTitle}}",
+  "notifications.rideStartedTitle": "הנסיעה החלה",
+  "notifications.rideStartedBody": "{{rideTitle}}",
+  "notifications.rideArrivedTitle": "הנסיעה הסתיימה",
+  "notifications.rideArrivedBody": "{{rideTitle}} — נא לדרג בקרוב",
+  "notifications.rideBreakdownTitle": "תקלה ברכב",
+  "notifications.rideBreakdownBody": "הנסיעה הסתיימה בעקבות תקלה: {{rideTitle}}",
   "notifications.taskAssignedTitle": "משימת ניהול חדשה הוקצתה לך",
   "notifications.taskAssignedBody": "{{title}}"
 }

@@ -200,6 +200,51 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
     return ((data ?? []) as RideRowWithCities[]).map(mapJoinedRow);
   }
 
+  async start(rideId: string): Promise<RideListingRow> {
+    const { error } = await this.client.rpc('rpc_ride_start', { p_ride_id: rideId });
+    if (error) {
+      const code = (error.message ?? '').trim();
+      switch (code) {
+        case 'auth_required':
+        case 'ride_not_found':
+        case 'not_ride_owner':
+        case 'invalid_status_transition':
+        case 'start_window_not_open':
+          throw new RideError(code, code);
+        default:
+          throw new Error(error.message);
+      }
+    }
+    // The RPC returns the updated row without city joins; refetch via getById
+    // so the consumer gets the camelCase shape with names.
+    const fetched = await this.getById(rideId, '');
+    if (!fetched) throw new Error('start: row not visible after update');
+    return fetched;
+  }
+
+  async arrive(rideId: string, reason: 'arrived' | 'breakdown'): Promise<RideListingRow> {
+    const { error } = await this.client.rpc('rpc_ride_arrive', {
+      p_ride_id: rideId,
+      p_reason: reason,
+    });
+    if (error) {
+      const code = (error.message ?? '').trim();
+      switch (code) {
+        case 'auth_required':
+        case 'ride_not_found':
+        case 'not_ride_owner':
+        case 'ride_not_in_transit':
+        case 'invalid_status_transition':
+          throw new RideError(code, code);
+        default:
+          throw new Error(error.message);
+      }
+    }
+    const fetched = await this.getById(rideId, '');
+    if (!fetched) throw new Error('arrive: row not visible after update');
+    return fetched;
+  }
+
   async findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]> {
     const { data, error } = await this.client.rpc('ride_listings_find_matches', {
       p_ride_id: input.rideId,

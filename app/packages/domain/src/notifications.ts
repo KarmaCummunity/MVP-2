@@ -17,7 +17,11 @@ export type NotificationKind =
   | 'ride_approved'
   | 'ride_rejected'
   | 'ride_participant_cancelled'
-  | 'ride_participant_cancelled_by_owner';
+  | 'ride_participant_cancelled_by_owner'
+  // FR-RIDE-031..033 + FR-RIDE-045 AC4 — active ride transitions.
+  | 'ride_started'
+  | 'ride_arrived'
+  | 'ride_breakdown';
 
 /** Payload attached to every Expo push under `data`. The client reads this on tap. */
 export interface PushData {
