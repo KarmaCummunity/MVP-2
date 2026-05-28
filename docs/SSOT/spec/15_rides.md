@@ -68,6 +68,12 @@ Prefix: `FR-RIDE-*`
 - AC4. `ListRideParticipantsUseCase(rideId)` — returns rows for the ride owner (any status); for non-owners, only their own row.
 - AC5. `ListUserRideRequestsUseCase(userId)` — returns rows the caller owns, recent first.
 
+## FR-RIDE-015 — Chat system message on ride lifecycle ✅
+- AC1. When a ride transitions OUT of `status='open'` (closed / cancelled / expired), every chat with `anchor_ride_id = ride_id` receives a Hebrew system message describing the transition and `system_payload = {kind: 'ride_lifecycle', ride_id, status}`.
+- AC2. The system message is emitted BEFORE `anchor_ride_id` is cleared (so the SELECT finds the anchored chats).
+- AC3. Owner close/cancel via `CloseRideListingUseCase` and cron-driven expiry both trigger the same emission via the AFTER UPDATE trigger.
+- AC4. The trigger function `ride_listings_clear_chat_anchor` is replaced (CREATE OR REPLACE) — the 0137 trigger registration still binds to it.
+
 ## FR-RIDE-014 — Inverse-mode ride matches ✅
 - AC1. RPC `ride_listings_find_matches(p_ride_id, p_window_hours, p_limit)` returns rides with the inverse `mode` (offer ↔ request), the same origin/dest city pair, `status='open'`, `visibility='Public'`, and `departs_at` within ±`window_hours` of the source ride.
 - AC2. Caller must own the source ride (`auth.uid() = ride.owner_id`); otherwise the RPC raises `not_ride_owner`.
