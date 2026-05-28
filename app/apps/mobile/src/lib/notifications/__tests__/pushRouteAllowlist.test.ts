@@ -96,6 +96,9 @@ describe('resolvePushRoute', () => {
       'ride_emergency',
     ] as const;
 
+    // ride_rate_prompt lives on a different path (/[id]/rate) — separate
+    // assertion below.
+
     for (const kind of RIDE_KINDS) {
       it(`routes ${kind} to /(tabs)/donations/rides/[id] when params.id is a UUID`, () => {
         expect(
@@ -119,5 +122,19 @@ describe('resolvePushRoute', () => {
         ).toBeNull();
       });
     }
+
+    it('routes ride_rate_prompt to /donations/rides/[id]/rate', () => {
+      expect(
+        resolvePushRoute({
+          category: 'social',
+          kind: 'ride_rate_prompt',
+          notification_id: 'n-rate',
+          params: { id: UUID },
+        }),
+      ).toEqual({
+        pathname: '/(tabs)/donations/rides/[id]/rate',
+        params: { id: UUID },
+      });
+    });
   });
 });

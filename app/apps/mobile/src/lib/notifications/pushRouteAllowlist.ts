@@ -103,6 +103,10 @@ const KIND_ROUTES: Record<NotificationKind, KindHandler> = {
     const id = requireUuid(d.params?.id);
     return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
   },
+  ride_rate_prompt: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]/rate', params: { id } } : null;
+  },
 };
 
 export function resolvePushRoute(data: Partial<PushData>): ResolvedRoute | null {

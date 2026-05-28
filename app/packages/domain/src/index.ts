@@ -31,3 +31,4 @@ export * from './rides/RideParticipantError';
 export * from './rides/RideTemplate';
 export * from './rides/validateRideTemplateDraft';
 export * from './rides/RideEmergencyEvent';
+export * from './rides/RideRating';

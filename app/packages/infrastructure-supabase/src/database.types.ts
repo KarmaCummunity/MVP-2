@@ -1446,6 +1446,61 @@ export type Database = {
           },
         ]
       }
+      ride_ratings: {
+        Row: {
+          rating_id: string
+          ride_id: string
+          rater_id: string
+          ratee_id: string
+          stars: number
+          comment: string | null
+          is_penalty: boolean
+          created_at: string
+        }
+        Insert: {
+          rating_id?: string
+          ride_id: string
+          rater_id: string
+          ratee_id: string
+          stars: number
+          comment?: string | null
+          is_penalty?: boolean
+          created_at?: string
+        }
+        Update: {
+          rating_id?: string
+          ride_id?: string
+          rater_id?: string
+          ratee_id?: string
+          stars?: number
+          comment?: string | null
+          is_penalty?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_ratings_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["ratee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       ride_stops: {
         Row: {
           city_id: string
@@ -2091,6 +2146,15 @@ export type Database = {
       }
     }
     Views: {
+      user_ride_rating_summary: {
+        Row: {
+          user_id: string | null
+          ratings_count: number | null
+          avg_stars: number | null
+          last_rated_at: string | null
+        }
+        Relationships: []
+      }
       about_team_profiles: {
         Row: {
           avatar_url: string | null
@@ -2906,6 +2970,31 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_rate: {
+        Args: {
+          p_ride_id: string
+          p_ratee_id: string
+          p_stars: number
+          p_comment?: string | null
+          p_is_penalty?: boolean
+        }
+        Returns: {
+          rating_id: string
+          ride_id: string
+          rater_id: string
+          ratee_id: string
+          stars: number
+          comment: string | null
+          is_penalty: boolean
+          created_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_ratings"
           isOneToOne: true
           isSetofReturn: false
         }

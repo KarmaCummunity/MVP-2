@@ -68,4 +68,7 @@ export const notificationsHe = {
   // FR-RIDE-035 — emergency button.
   rideEmergencyTitle: '🚨 קריאת חירום בנסיעה',
   rideEmergencyBody: '{{rideTitle}} — נדרשת בדיקה',
+  // FR-RIDE-037 — ratings prompt.
+  rideRatePromptTitle: 'איך הייתה הנסיעה?',
+  rideRatePromptBody: '{{rideTitle}} — נא לדרג בקרוב',
 } as const;

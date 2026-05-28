@@ -217,6 +217,17 @@ export type {
 } from './ports/IRideEmergencyRepository';
 export { TriggerRideEmergencyUseCase } from './rides/TriggerRideEmergencyUseCase';
 export { ListRideEmergencyEventsUseCase } from './rides/ListRideEmergencyEventsUseCase';
+export type {
+  IRideRatingRepository,
+  SubmitRideRatingInput,
+} from './ports/IRideRatingRepository';
+export { SubmitRideRatingUseCase } from './rides/SubmitRideRatingUseCase';
+export { ListRideRatingsUseCase } from './rides/ListRideRatingsUseCase';
+export {
+  GetUserRideRatingSummaryUseCase,
+  RATING_DISPLAY_MIN_COUNT,
+} from './rides/GetUserRideRatingSummaryUseCase';
+export type { GetUserRideRatingSummaryResult } from './rides/GetUserRideRatingSummaryUseCase';
 
 // Ride templates (FR-RIDE-021 / FR-RIDE-022)
 export type {

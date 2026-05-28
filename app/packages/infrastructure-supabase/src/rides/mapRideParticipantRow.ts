@@ -10,6 +10,7 @@ type Row = {
   requested_at: string;
   decided_at: string | null;
   decided_by: string | null;
+  joined_active_at?: string | null;
 };
 
 export function mapRideParticipantRow(row: Row): RideParticipant {
@@ -22,5 +23,6 @@ export function mapRideParticipantRow(row: Row): RideParticipant {
     requestedAt: row.requested_at,
     decidedAt: row.decided_at,
     decidedBy: row.decided_by,
+    joinedActiveAt: row.joined_active_at ?? null,
   };
 }

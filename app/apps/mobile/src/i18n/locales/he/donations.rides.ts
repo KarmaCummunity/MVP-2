@@ -83,6 +83,20 @@ export const rides = {
     errorArrive: 'לא הצלחנו לסיים את הנסיעה',
     errorEmergency: 'לא הצלחנו להפעיל קריאת חירום',
   },
+  // FR-RIDE-037 — ratings.
+  rate: {
+    title: 'דירוג הנסיעה',
+    nothingToRate: 'אין משתתפים לדירוג',
+    pickStars: 'בחרו דירוג בכוכבים',
+    commentPlaceholder: 'תגובה אופציונלית (עד 300 תווים)…',
+    submit: 'שלח דירוג',
+    alreadySubmitted: 'הדירוג נשלח',
+    roleOwner: 'נהג',
+    roleRider: 'נוסע/ת',
+    errorSubmit: 'לא הצלחנו לשלוח את הדירוג',
+    summarySingleLine: '⭐ {{stars}} · {{count}} דירוגי נסיעות',
+    summaryFew: 'עדיין מעט דירוגים',
+  },
   // FR-RIDE-025 — passenger requests
   requests: {
     title: 'בקשות הצטרפות שלי',

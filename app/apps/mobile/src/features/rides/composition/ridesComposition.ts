@@ -9,6 +9,7 @@ import {
   SupabaseRideParticipantRepository,
   SupabaseRideTemplateRepository,
   SupabaseRideEmergencyRepository,
+  SupabaseRideRatingRepository,
   SupabaseRidesRealtime,
   SupabaseCityRepository,
   type SupabaseAuthStorage,
@@ -25,7 +26,11 @@ import {
   ArriveRideUseCase,
   TriggerRideEmergencyUseCase,
   ListRideEmergencyEventsUseCase,
+  SubmitRideRatingUseCase,
+  ListRideRatingsUseCase,
+  GetUserRideRatingSummaryUseCase,
   type IRideEmergencyRepository,
+  type IRideRatingRepository,
   RequestRideJoinUseCase,
   DecideRideJoinUseCase,
   CancelRideJoinUseCase,
@@ -61,6 +66,10 @@ let _arriveRide: ArriveRideUseCase | null = null;
 let _emergency: IRideEmergencyRepository | null = null;
 let _triggerEmergency: TriggerRideEmergencyUseCase | null = null;
 let _listEmergencies: ListRideEmergencyEventsUseCase | null = null;
+let _ratings: IRideRatingRepository | null = null;
+let _submitRating: SubmitRideRatingUseCase | null = null;
+let _listRatings: ListRideRatingsUseCase | null = null;
+let _userRatingSummary: GetUserRideRatingSummaryUseCase | null = null;
 let _requestJoin: RequestRideJoinUseCase | null = null;
 let _decideJoin: DecideRideJoinUseCase | null = null;
 let _cancelJoin: CancelRideJoinUseCase | null = null;
@@ -168,6 +177,27 @@ export function getTriggerRideEmergencyUseCase(): TriggerRideEmergencyUseCase {
 export function getListRideEmergencyEventsUseCase(): ListRideEmergencyEventsUseCase {
   if (!_listEmergencies) _listEmergencies = new ListRideEmergencyEventsUseCase(getEmergencyRepo());
   return _listEmergencies;
+}
+
+function getRatingRepo(): IRideRatingRepository {
+  if (!_ratings) _ratings = new SupabaseRideRatingRepository(getClient());
+  return _ratings;
+}
+
+export function getSubmitRideRatingUseCase(): SubmitRideRatingUseCase {
+  if (!_submitRating) _submitRating = new SubmitRideRatingUseCase(getRatingRepo());
+  return _submitRating;
+}
+
+export function getListRideRatingsUseCase(): ListRideRatingsUseCase {
+  if (!_listRatings) _listRatings = new ListRideRatingsUseCase(getRatingRepo());
+  return _listRatings;
+}
+
+export function getUserRideRatingSummaryUseCase(): GetUserRideRatingSummaryUseCase {
+  if (!_userRatingSummary)
+    _userRatingSummary = new GetUserRideRatingSummaryUseCase(getRatingRepo());
+  return _userRatingSummary;
 }
 
 export function getRequestRideJoinUseCase(): RequestRideJoinUseCase {
