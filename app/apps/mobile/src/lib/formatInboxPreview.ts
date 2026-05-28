@@ -7,8 +7,9 @@
 //     `donation_link_reported`, etc.) — readable-only-to-the-developer text.
 //
 // The audit (TD-110) calls for a prefix on system messages so users see the
-// kind ("(הודעת מערכת)") and an explicit empty-conversation placeholder
-// ("(שיחה חדשה)").
+// kind (`chat.inboxSystemPrefix`, currently "(system message)" in Hebrew) and
+// an explicit empty-conversation placeholder (`chat.inboxNewConversation`,
+// currently "(new conversation)" in Hebrew).
 import type { Message } from '@kc/domain';
 import type { TFunction } from 'i18next';
 

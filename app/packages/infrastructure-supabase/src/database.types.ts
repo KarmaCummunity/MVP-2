@@ -93,6 +93,105 @@ export type Database = {
           },
         ]
       }
+      admin_task_activities: {
+        Row: {
+          activity_id: string
+          actor_id: string | null
+          created_at: string
+          kind: string
+          payload: Json
+          task_id: string
+        }
+        Insert: {
+          activity_id?: string
+          actor_id?: string | null
+          created_at?: string
+          kind: string
+          payload?: Json
+          task_id: string
+        }
+        Update: {
+          activity_id?: string
+          actor_id?: string | null
+          created_at?: string
+          kind?: string
+          payload?: Json
+          task_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_task_activities_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_task_activities_task_id_fkey"
+            columns: ["task_id"]
+            isOneToOne: false
+            referencedRelation: "admin_tasks"
+            referencedColumns: ["task_id"]
+          },
+        ]
+      }
+      admin_tasks: {
+        Row: {
+          assignee_id: string | null
+          created_at: string
+          created_by: string
+          description: string | null
+          due_at: string | null
+          labels: string[]
+          priority: string
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by: string
+          description?: string | null
+          due_at?: string | null
+          labels?: string[]
+          priority?: string
+          status?: string
+          task_id?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          assignee_id?: string | null
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          due_at?: string | null
+          labels?: string[]
+          priority?: string
+          status?: string
+          task_id?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "admin_tasks_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       audit_events: {
         Row: {
           action: string
@@ -1107,6 +1206,7 @@ export type Database = {
           ride_id: string
           seats_available: number | null
           status: string
+          template_id: string | null
           title: string
           updated_at: string
           visibility: string
@@ -1126,6 +1226,7 @@ export type Database = {
           ride_id?: string
           seats_available?: number | null
           status?: string
+          template_id?: string | null
           title: string
           updated_at?: string
           visibility?: string
@@ -1145,6 +1246,7 @@ export type Database = {
           ride_id?: string
           seats_available?: number | null
           status?: string
+          template_id?: string | null
           title?: string
           updated_at?: string
           visibility?: string
@@ -1170,6 +1272,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_template_id_fkey"
+            columns: ["template_id"]
+            isOneToOne: false
+            referencedRelation: "ride_templates"
+            referencedColumns: ["template_id"]
           },
         ]
       }
@@ -1222,6 +1331,91 @@ export type Database = {
           {
             foreignKeyName: "ride_participants_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ride_templates: {
+        Row: {
+          created_at: string
+          depart_time: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          lookahead_days: number
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          seats_available: number | null
+          status: string
+          template_id: string
+          updated_at: string
+          visibility: string
+          weekday_mask: number
+        }
+        Insert: {
+          created_at?: string
+          depart_time: string
+          description?: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number?: string | null
+          lookahead_days?: number
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number?: string | null
+          owner_id: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visibility?: string
+          weekday_mask: number
+        }
+        Update: {
+          created_at?: string
+          depart_time?: string
+          description?: string | null
+          dest_city_id?: string
+          dest_street?: string
+          dest_street_number?: string | null
+          lookahead_days?: number
+          mode?: string
+          origin_city_id?: string
+          origin_street?: string
+          origin_street_number?: string | null
+          owner_id?: string
+          seats_available?: number | null
+          status?: string
+          template_id?: string
+          updated_at?: string
+          visibility?: string
+          weekday_mask?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_templates_dest_city_id_fkey"
+            columns: ["dest_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_templates_origin_city_id_fkey"
+            columns: ["origin_city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_templates_owner_id_fkey"
+            columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
@@ -1834,6 +2028,27 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      admin_audit_search: {
+        Args: {
+          p_action?: string
+          p_actor_id?: string
+          p_limit?: number
+          p_offset?: number
+          p_target_user_id?: string
+        }
+        Returns: {
+          action: string
+          actor_display_name: string
+          actor_id: string
+          created_at: string
+          event_id: string
+          metadata: Json
+          target_display_name: string
+          target_id: string
+          target_type: string
+          total_count: number
+        }[]
+      }
       admin_ban_user: {
         Args: { p_note: string; p_reason: string; p_target_user_id: string }
         Returns: undefined
@@ -1850,9 +2065,164 @@ export type Database = {
         Args: { p_report_id: string }
         Returns: undefined
       }
+      admin_grant_role: {
+        Args: { p_role: string; p_target_user_id: string }
+        Returns: string
+      }
+      admin_list_admins: {
+        Args: { p_include_revoked?: boolean }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          grant_id: string
+          granted_at: string
+          granted_by: string
+          granted_by_display_name: string
+          last_seen_at: string
+          revoked_at: string
+          revoked_by: string
+          role: string
+          user_id: string
+        }[]
+      }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
         Args: { p_target_id: string; p_target_type: string }
+        Returns: undefined
+      }
+      admin_revoke_role: { Args: { p_grant_id: string }; Returns: undefined }
+      admin_search_posts: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+        }
+        Returns: {
+          created_at: string
+          owner_display_name: string
+          owner_id: string
+          post_id: string
+          status: string
+          title: string
+          total_count: number
+          type: string
+          updated_at: string
+          visibility: string
+        }[]
+      }
+      admin_search_users: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+        }
+        Returns: {
+          account_status: string
+          city_name: string
+          created_at: string
+          display_name: string
+          last_seen_at: string
+          share_handle: string
+          total_count: number
+          user_id: string
+        }[]
+      }
+      admin_task_add_comment: {
+        Args: { p_body: string; p_task_id: string }
+        Returns: string
+      }
+      admin_task_assign: {
+        Args: { p_new_assignee: string; p_task_id: string }
+        Returns: undefined
+      }
+      admin_task_create: {
+        Args: {
+          p_assignee_id?: string
+          p_description?: string
+          p_due_at?: string
+          p_labels?: string[]
+          p_priority?: string
+          p_title: string
+        }
+        Returns: string
+      }
+      admin_task_delete: { Args: { p_task_id: string }; Returns: undefined }
+      admin_task_detail: {
+        Args: { p_task_id: string }
+        Returns: {
+          activities: Json
+          assignee_display_name: string
+          assignee_id: string
+          created_at: string
+          created_by: string
+          created_by_display_name: string
+          description: string
+          due_at: string
+          labels: string[]
+          priority: string
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      admin_task_enqueue_assigned_notification: {
+        Args: {
+          p_actor_id: string
+          p_assignee_id: string
+          p_task_id: string
+          p_title: string
+        }
+        Returns: undefined
+      }
+      admin_task_is_owner_or_assignee: {
+        Args: { p_task_id: string; p_user_id: string }
+        Returns: boolean
+      }
+      admin_task_list: {
+        Args: {
+          p_assignee?: string
+          p_label?: string
+          p_limit?: number
+          p_offset?: number
+          p_only_mine?: boolean
+          p_overdue?: boolean
+          p_priority?: string
+          p_status?: string
+        }
+        Returns: {
+          assignee_display_name: string
+          assignee_id: string
+          comment_count: number
+          created_at: string
+          created_by: string
+          created_by_display_name: string
+          description: string
+          due_at: string
+          labels: string[]
+          priority: string
+          status: string
+          task_id: string
+          title: string
+          updated_at: string
+        }[]
+      }
+      admin_task_set_status: {
+        Args: { p_new_status: string; p_task_id: string }
+        Returns: undefined
+      }
+      admin_task_update: {
+        Args: {
+          p_clear_due?: boolean
+          p_description?: string
+          p_due_at?: string
+          p_labels?: string[]
+          p_priority?: string
+          p_task_id: string
+          p_title?: string
+        }
         Returns: undefined
       }
       auth_check_account_gate: {
@@ -2051,6 +2421,7 @@ export type Database = {
         }
         Returns: boolean
       }
+      posts_expiry_transition: { Args: never; Returns: number }
       profile_closed_posts: {
         Args: {
           p_cursor?: string
@@ -2171,6 +2542,36 @@ export type Database = {
         }
         Returns: Json
       }
+      ride_listings_expire_check: { Args: never; Returns: number }
+      ride_listings_find_matches: {
+        Args: { p_limit?: number; p_ride_id: string; p_window_hours?: number }
+        Returns: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       ride_listings_search: {
         Args: {
           p_cursor?: string
@@ -2197,6 +2598,7 @@ export type Database = {
           ride_id: string
           seats_available: number | null
           status: string
+          template_id: string | null
           title: string
           updated_at: string
           visibility: string
@@ -2208,6 +2610,8 @@ export type Database = {
           isSetofReturn: true
         }
       }
+      ride_participants_expire_stale_check: { Args: never; Returns: number }
+      ride_templates_materialize: { Args: never; Returns: number }
       rpc_chat_hide_for_viewer: {
         Args: { p_chat_id: string }
         Returns: undefined
@@ -2258,57 +2662,6 @@ export type Database = {
         }
       }
       rpc_chat_unread_total: { Args: never; Returns: number }
-      ride_listings_find_matches: {
-        Args: { p_ride_id: string; p_window_hours?: number; p_limit?: number }
-        Returns: Database['public']['Tables']['ride_listings']['Row'][]
-      }
-      rpc_ride_update_visibility: {
-        Args: { p_ride_id: string; p_visibility: string }
-        Returns: Database['public']['Tables']['ride_listings']['Row']
-      }
-      rpc_ride_participants_request: {
-        Args: { p_ride_id: string; p_note?: string | null }
-        Returns: {
-          decided_at: string | null
-          decided_by: string | null
-          note: string | null
-          participant_id: string
-          requested_at: string
-          ride_id: string
-          status: string
-          user_id: string
-        }
-      }
-      rpc_ride_participants_decide: {
-        Args: { p_participant_id: string; p_status: string }
-        Returns: {
-          decided_at: string | null
-          decided_by: string | null
-          note: string | null
-          participant_id: string
-          requested_at: string
-          ride_id: string
-          status: string
-          user_id: string
-        }
-      }
-      rpc_ride_participants_cancel: {
-        Args: { p_participant_id: string }
-        Returns: {
-          decided_at: string | null
-          decided_by: string | null
-          note: string | null
-          participant_id: string
-          requested_at: string
-          ride_id: string
-          status: string
-          user_id: string
-        }
-      }
-      rpc_unread_counts_for_chats: {
-        Args: { p_viewer_id: string; p_chat_ids: string[] }
-        Returns: { chat_id: string; unread_count: number }[]
-      }
       rpc_get_or_create_support_thread: {
         Args: never
         Returns: {
@@ -2345,6 +2698,93 @@ export type Database = {
         Args: { p_post_id: string }
         Returns: undefined
       }
+      rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
+      rpc_ride_participants_cancel: {
+        Args: { p_participant_id: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_participants_decide: {
+        Args: { p_participant_id: string; p_status: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_participants_request: {
+        Args: { p_note?: string; p_ride_id: string }
+        Returns: {
+          decided_at: string | null
+          decided_by: string | null
+          note: string | null
+          participant_id: string
+          requested_at: string
+          ride_id: string
+          status: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_participants"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_update_visibility: {
+        Args: { p_ride_id: string; p_visibility: string }
+        Returns: {
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          ride_id: string
+          seats_available: number | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rpc_submit_support_issue: {
         Args: { p_category: string; p_description: string }
         Returns: {
@@ -2366,6 +2806,13 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      rpc_unread_counts_for_chats: {
+        Args: { p_chat_ids: string[]; p_viewer_id: string }
+        Returns: {
+          chat_id: string
+          unread_count: number
+        }[]
       }
       stats_recompute_personal_counters_nightly: {
         Args: never

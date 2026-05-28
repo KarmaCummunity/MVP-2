@@ -5,3 +5,4 @@ export * from './AdminRoleError';
 export * from './AdminTask';
 export * from './AdminTaskActivity';
 export * from './AdminTaskError';
+export * from './AdminContentSearch';

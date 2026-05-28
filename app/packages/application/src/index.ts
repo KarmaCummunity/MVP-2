@@ -54,6 +54,7 @@ export * from './posts/ListSavedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
+export * from './posts/RepublishPostUseCase';
 export * from './posts/UnmarkRecipientSelfUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
 export { ListPostActorIdentityUseCase, type ListPostActorIdentityInput } from './posts/ListPostActorIdentityUseCase';
@@ -169,6 +170,10 @@ export * from './admin/SetAdminTaskStatusUseCase';
 export * from './admin/AssignAdminTaskUseCase';
 export * from './admin/AddAdminTaskCommentUseCase';
 export * from './admin/DeleteAdminTaskUseCase';
+export * from './admin/IAdminContentRepository';
+export * from './admin/AdminSearchUsersUseCase';
+export * from './admin/AdminSearchPostsUseCase';
+export * from './admin/AdminSearchAuditUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
@@ -194,6 +199,18 @@ export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
 export type { FindRideMatchesInput } from './ports/IRideListingRepository';
 export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
 export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+
+// Ride templates (FR-RIDE-021 / FR-RIDE-022)
+export type {
+  IRideTemplateRepository,
+  CreateRideTemplateInput,
+} from './ports/IRideTemplateRepository';
+export { CreateRideTemplateUseCase } from './rides/CreateRideTemplateUseCase';
+export type { CreateRideTemplateUseCaseInput } from './rides/CreateRideTemplateUseCase';
+export { ListMyRideTemplatesUseCase } from './rides/ListMyRideTemplatesUseCase';
+export { SetRideTemplateStatusUseCase } from './rides/SetRideTemplateStatusUseCase';
+export { DeleteRideTemplateUseCase } from './rides/DeleteRideTemplateUseCase';
+
 export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
 export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
 export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
