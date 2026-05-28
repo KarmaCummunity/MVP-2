@@ -52,7 +52,7 @@ A public, anonymous web form at `/research/[slug]?src=...`, served from the Expo
 
 ## FR-RESEARCH-004 — Share affordance for public research survey
 
-**Status.** ⏳ Planned
+**Status.** 🟡 Code complete, post-merge QA pending
 
 **Acceptance Criteria.**
 - AC1. On `/research/thanks` (web-only), a share button labeled "שתפו את הסקר עם חבר/ה" renders as a primary CTA, visible immediately on page load (not gated by the 5-second visit-CTA reveal timer), alongside the existing "Visit Karma site" CTA.
