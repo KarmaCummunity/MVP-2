@@ -1,6 +1,7 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type {
   CreateRideListingRepoInput,
+  FindRideMatchesInput,
   IRideListingRepository,
   RideListingRow,
   SearchRideListingsInput,
@@ -103,5 +104,32 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
       .eq('ride_id', rideId)
       .eq('owner_id', ownerId);
     if (error) throw new Error(error.message);
+  }
+
+  async findMatches(input: FindRideMatchesInput): Promise<RideListingRow[]> {
+    const { data, error } = await this.client.rpc('ride_listings_find_matches', {
+      p_ride_id: input.rideId,
+      p_window_hours: input.windowHours ?? undefined,
+      p_limit: input.limit ?? undefined,
+    });
+    if (error) throw new Error(error.message);
+    const rows = (data ?? []) as RideRow[];
+    if (rows.length === 0) return [];
+
+    const cityIds = [...new Set(rows.flatMap((r) => [r.origin_city_id, r.dest_city_id]))];
+    const { data: cities, error: cityErr } = await this.client
+      .from('cities')
+      .select('city_id, name_he')
+      .in('city_id', cityIds);
+    if (cityErr) throw new Error(cityErr.message);
+    const nameById = new Map((cities ?? []).map((c) => [c.city_id, c.name_he]));
+
+    return rows.map((r) =>
+      mapRideRow(
+        r,
+        nameById.get(r.origin_city_id) ?? '',
+        nameById.get(r.dest_city_id) ?? '',
+      ),
+    );
   }
 }

@@ -68,6 +68,13 @@ Prefix: `FR-RIDE-*`
 - AC4. `ListRideParticipantsUseCase(rideId)` — returns rows for the ride owner (any status); for non-owners, only their own row.
 - AC5. `ListUserRideRequestsUseCase(userId)` — returns rows the caller owns, recent first.
 
+## FR-RIDE-014 — Inverse-mode ride matches ✅
+- AC1. RPC `ride_listings_find_matches(p_ride_id, p_window_hours, p_limit)` returns rides with the inverse `mode` (offer ↔ request), the same origin/dest city pair, `status='open'`, `visibility='Public'`, and `departs_at` within ±`window_hours` of the source ride.
+- AC2. Caller must own the source ride (`auth.uid() = ride.owner_id`); otherwise the RPC raises `not_ride_owner`.
+- AC3. Results are ordered by absolute time delta from `source.departs_at` ascending; ties break by `created_at` descending.
+- AC4. `window_hours` is clamped to [1, 72] (default 12); `limit` to [1, 50] (default 20).
+- AC5. Application: `FindRideMatchesUseCase` + `IRideListingRepository.findMatches`.
+
 ## FR-RIDE-013 — Ride participants notifications ✅
 - AC1. On INSERT (`status = 'requested'`), the ride owner gets a `ride_request` critical notification with the rider's display name and the ride title; deep-link route `/donations/rides/[id]`.
 - AC2. On UPDATE `requested → approved`, the participant gets `ride_approved` with the owner's name + ride title.
