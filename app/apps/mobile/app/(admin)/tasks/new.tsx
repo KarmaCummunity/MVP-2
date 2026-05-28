@@ -26,6 +26,7 @@ export default function NewTaskScreen() {
   const [assigneeId, setAssigneeId] = useState<string | null>(null);
   const [labelsRaw, setLabelsRaw] = useState('');
   const [errorCode, setErrorCode] = useState<string | null>(null);
+  const [errorDetail, setErrorDetail] = useState<string | null>(null);
 
   const create = useCreateAdminTask();
   const canSubmit = title.trim().length > 0 && !create.isPending;
@@ -41,6 +42,7 @@ export default function NewTaskScreen() {
   async function submit() {
     if (!canSubmit) return;
     setErrorCode(null);
+    setErrorDetail(null);
     try {
       const labels = labelsRaw
         .split(',')
@@ -55,8 +57,14 @@ export default function NewTaskScreen() {
       });
       router.replace({ pathname: '/(admin)/tasks/[taskId]', params: { taskId } } as never);
     } catch (e) {
-      const code = isAdminTaskError(e) ? e.code : 'unknown';
-      setErrorCode(code);
+      console.error('[admin tasks] create failed', e);
+      if (isAdminTaskError(e)) {
+        setErrorCode(e.code);
+        setErrorDetail(null);
+      } else {
+        setErrorCode('unknown');
+        setErrorDetail(e instanceof Error ? e.message : String(e));
+      }
     }
   }
 
@@ -114,10 +122,15 @@ export default function NewTaskScreen() {
       />
 
       {errorCode !== null && (
-        <Text style={styles.error}>
-          {he.admin.tasks.errors[errorCode as keyof typeof he.admin.tasks.errors]
-            ?? he.admin.tasks.errors.unknown}
-        </Text>
+        <>
+          <Text style={styles.error}>
+            {he.admin.tasks.errors[errorCode as keyof typeof he.admin.tasks.errors]
+              ?? he.admin.tasks.errors.unknown}
+          </Text>
+          {errorDetail !== null && (
+            <Text style={styles.errorDetail}>{errorDetail}</Text>
+          )}
+        </>
       )}
 
       <View style={styles.actions}>
@@ -157,6 +170,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
   priorityChipText:       { fontSize: 13, fontWeight: '600' },
   priorityChipTextActive: { color: colors.textInverse },
   error:                  { color: colors.error, fontSize: 12, marginTop: 8 },
+  errorDetail:            { color: colors.error, fontSize: 11, marginTop: 2, opacity: 0.65 },
   actions:                { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 16 },
   cancelBtn:              { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8 },
   cancelBtnText:          { fontSize: 14, fontWeight: '500' },
