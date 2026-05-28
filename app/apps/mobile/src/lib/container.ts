@@ -17,6 +17,7 @@ import {
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
   SupabaseAdminContentRepository,
+  SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -64,6 +65,10 @@ import {
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
+  ListCrmContactsUseCase,
+  UpsertCrmContactUseCase,
+  DeleteCrmContactUseCase,
+  MarkCrmContactContactedUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -104,6 +109,7 @@ const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -141,6 +147,11 @@ export const container = {
   adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
   adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
   adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
+  // V2-ADMIN-CRM-8
+  listCrmContacts: new ListCrmContactsUseCase(crmContactsRepo),
+  upsertCrmContact: new UpsertCrmContactUseCase(crmContactsRepo),
+  deleteCrmContact: new DeleteCrmContactUseCase(crmContactsRepo),
+  markCrmContactContacted: new MarkCrmContactContactedUseCase(crmContactsRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

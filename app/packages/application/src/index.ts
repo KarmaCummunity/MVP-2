@@ -175,6 +175,11 @@ export * from './admin/IAdminContentRepository';
 export * from './admin/AdminSearchUsersUseCase';
 export * from './admin/AdminSearchPostsUseCase';
 export * from './admin/AdminSearchAuditUseCase';
+export * from './admin/ICrmContactsRepository';
+export * from './admin/ListCrmContactsUseCase';
+export * from './admin/UpsertCrmContactUseCase';
+export * from './admin/DeleteCrmContactUseCase';
+export * from './admin/MarkCrmContactContactedUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';

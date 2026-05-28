@@ -1,5 +1,6 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
 import { adminContentHe } from './adminContent';
+import { adminCrmHe } from './adminCrm';
 
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
@@ -11,6 +12,7 @@ export const adminHe = {
     admins: 'צוות ניהול',
     users: 'משתמשים',
     posts: 'פוסטים',
+    crm: 'CRM',
     audit: 'יומן פעולות',
   },
   roles: {
@@ -238,4 +240,5 @@ export const adminHe = {
     },
   },
   content: adminContentHe,
+  crm: adminCrmHe,
 } as const;
