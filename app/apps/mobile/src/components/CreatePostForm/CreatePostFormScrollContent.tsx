@@ -147,6 +147,7 @@ export function CreatePostFormScrollContent({
           {t('post.title')} <Text style={styles.required}>*</Text>
         </Text>
         <TextInput
+          testID="create-post-title"
           style={styles.input}
           value={title}
           onChangeText={onTitleChange}

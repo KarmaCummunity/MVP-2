@@ -1026,10 +1026,23 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+### D-55 — E2E release gate on dev deployment (Web Playwright)
+
+**Decision.** Production releases (`dev` → `main`) require green **CI — E2E dev / user journeys (P0)** against repository variable `DEV_WEB_URL` (`https://mvp-2-dev.up.railway.app`). Auth in CI uses email/password via GitHub secrets `E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`, not Google SSO. Feature PRs to `dev` do not require E2E (advisory `workflow_dispatch` / future push hook optional).
+
+**Rationale.** Manual dev smoke in `RELEASE_CHECKLIST.md` does not scale for an AI-only dev workflow (`D-53`). Playwright is already used for bundle smoke; live-dev E2E catches RLS, env wiring, and deploy regressions that unit tests miss. Humans remain the final prod sanity check (~5 min), not the gate on every change.
+
+**Alternatives rejected.** Gate every PR to `dev` on E2E — too slow/flaky early. Cypress — no advantage over existing Playwright. Google SSO in CI — brittle. Dev ghost-session / auto-sign-in in E2E bundle — not a human path.
+
+**Affected docs.** `docs/SSOT/TESTING.md`, `RELEASE_CHECKLIST.md`, `ENVIRONMENTS.md`, `.github/workflows/ci-e2e-dev.yml`; plan `docs/superpowers/plans/2026-05-28-comprehensive-quality-automation.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.7 | 2026-05-28 | Added `D-55` (Playwright P0 E2E on `DEV_WEB_URL` gates `dev` → `main`; email/password CI auth; `TESTING.md`). |
 | 3.6 | 2026-05-28 | Added `D-54` (selective dev CI hardening: `ci-dev-guard`, dev+prod DB dry-run, dev branch-protection doc; not 1:1 main copy). |
 | 3.5 | 2026-05-28 | Added `D-53` (automated `main` prod gates: dev→main PR enforcement, migration safety scan, prod DB dry-run before apply, expanded prod smoke; no human deploy approvers). |
 | 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |
