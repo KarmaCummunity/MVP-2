@@ -60,7 +60,9 @@ describe('SupabaseRidesRealtime.subscribeToPublicRideInserts', () => {
     const repo = new SupabaseRidesRealtime(client);
     repo.subscribeToPublicRideInserts({ onChange: vi.fn() });
     expect(channels).toHaveLength(1);
-    expect(channels[0]?.topic).toMatch(/^rides:public-feed:[a-z0-9]+$/);
+    expect(channels[0]?.topic).toMatch(
+      /^rides:public-feed:[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i,
+    );
   });
 
   it('produces a different topic per subscription', () => {
