@@ -15,7 +15,7 @@ const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
 const NAV_LABELS = he.admin.nav;
 
 export default function AdminDashboard(): ReactElement {
-  const { roles } = useAdminRoles();
+  const { roles, isLoading: rolesLoading } = useAdminRoles();
   const t = he.admin.dashboard;
   const router = useRouter();
   const styles = useStyles();
@@ -40,7 +40,7 @@ export default function AdminDashboard(): ReactElement {
   const canSearchPosts = hasPermission(roles, 'posts.search');
   const canViewAudit = hasPermission(roles, 'audit.view_own');
 
-  const adminsQuery = useAdminsList(false);
+  const adminsQuery = useAdminsList(false, !rolesLoading && canViewAdmins);
   const adminsLabel = !canViewAdmins
     ? t.noCount
     : adminsQuery.isLoading
