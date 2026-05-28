@@ -1,6 +1,7 @@
 // FR-POST-014/022 — post ⋮ menu strings (split from post.ts for LOC cap).
 export const postMenuHe = {
   menuA11y: 'תפריט פעולות',
+  menuShare: 'שתף פוסט',
   menuEdit: 'ערוך פוסט',
   menuSave: 'שמור',
   menuUnsave: 'הסר מהשמורים',

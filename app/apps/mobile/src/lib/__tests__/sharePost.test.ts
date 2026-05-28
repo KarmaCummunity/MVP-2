@@ -138,6 +138,22 @@ describe('sharePost — ios', () => {
     expect(arg.message).toContain('https://karma-community-kc.com/post/abc-123');
   });
 
+  it('opens share without image when image download hangs past the timeout', async () => {
+    vi.useFakeTimers();
+    (downloadPostImageForShare as ReturnType<typeof vi.fn>).mockReturnValue(new Promise(() => {}));
+    (Share.share as ReturnType<typeof vi.fn>).mockResolvedValue({ action: 'sharedAction' });
+
+    const pending = sharePost(baseInput);
+    await vi.advanceTimersByTimeAsync(2_500);
+    const outcome = await pending;
+
+    expect(outcome).toEqual({ kind: 'shared' });
+    const arg = (Share.share as ReturnType<typeof vi.fn>).mock.calls[0][0];
+    expect(arg.url).toBeUndefined();
+    expect(arg.message).toContain('https://karma-community-kc.com/post/abc-123');
+    vi.useRealTimers();
+  });
+
   it('omits the url field when remoteImageUrl is not provided', async () => {
     (Share.share as ReturnType<typeof vi.fn>).mockResolvedValue({ action: 'sharedAction' });
 

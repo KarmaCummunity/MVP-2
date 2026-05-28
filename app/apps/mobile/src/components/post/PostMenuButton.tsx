@@ -22,6 +22,8 @@ interface Props {
    * `header` uses a compact bar-button footprint (post detail nav).
    */
   placement?: 'overlay' | 'header';
+  /** When false, omits the share row (post detail already has a header share button). */
+  showShareInMenu?: boolean;
   /** Smaller ⋮ icon for dense profile 3-column grids. */
   overlaySize?: 'default' | 'compact';
 }
@@ -31,6 +33,7 @@ export function PostMenuButton({
   iconColor,
   placement = 'overlay',
   overlaySize = 'default',
+  showShareInMenu = true,
 }: Props) {
   const { t } = useTranslation();
   const router = useRouter();
@@ -74,6 +77,7 @@ export function PostMenuButton({
         visible={open}
         onClose={() => setOpen(false)}
         post={post}
+        showShareInMenu={showShareInMenu}
         viewerId={viewerId}
         isSuperAdmin={canManuallyRemovePost}
         isSaved={isSaved}

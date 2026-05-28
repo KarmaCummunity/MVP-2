@@ -11,13 +11,17 @@ import { webTextRtl, webViewRtl } from '../../lib/webRtlStyle';
 import { ConfirmActionModal } from './ConfirmActionModal';
 import { ReportPostModal } from './ReportPostModal';
 import { usePostMenuActions } from '../../hooks/usePostMenuActions';
+import { usePostShare } from '../../hooks/usePostShare';
 import { shouldShowPostExposureControls } from '../../hooks/usePostActorPrivacyModel';
 import { PostMenuExposureBlock } from './PostMenuExposureBlock';
+import { runAfterBottomSheetDismiss } from '../../lib/runAfterBottomSheetDismiss';
 
 interface Props {
   visible: boolean;
   onClose: () => void;
   post: PostWithOwner;
+  /** When false, share row is omitted (e.g. post detail has a header share button). */
+  showShareInMenu?: boolean;
   viewerId: string | null;
   isSuperAdmin: boolean;
   isSaved: boolean;
@@ -34,6 +38,7 @@ export function PostMenuSheet({
   visible,
   onClose,
   post,
+  showShareInMenu = true,
   viewerId,
   isSuperAdmin,
   isSaved,
@@ -48,6 +53,7 @@ export function PostMenuSheet({
   const [active, setActive] = useState<ActiveModal>(null);
   const { busy, error, clearError, handleOwnerDelete, handleAdminRemove } =
     usePostMenuActions({ post, onAfterRemoval, onSettle: () => setActive(null) });
+  const { canShare, share, busy: shareBusy } = usePostShare(post);
 
   const isOwner = viewerId !== null && post.ownerId === viewerId;
   const canEditPost = (isOwner || isSuperAdmin) && post.status === 'open';
@@ -73,6 +79,18 @@ export function PostMenuSheet({
             <View style={styles.handle} accessibilityElementsHidden importantForAccessibility="no" />
             <ScrollView keyboardShouldPersistTaps="handled" bounces={false}>
               <View style={[styles.actionsGroup, showExposureBlock && styles.actionsGroupBordered]}>
+                {showShareInMenu && canShare ? (
+                  <MenuItem
+                    icon="share-outline"
+                    label={t('post.menuShare')}
+                    disabled={shareBusy}
+                    onPress={() => {
+                      if (shareBusy) return;
+                      onClose();
+                      runAfterBottomSheetDismiss(() => share());
+                    }}
+                  />
+                ) : null}
                 {isOwner ? null : (
                   <MenuItem
                     icon="flag-outline"
