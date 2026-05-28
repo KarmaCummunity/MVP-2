@@ -17,3 +17,29 @@ comment on function public.submit_public_research_response(
 
 comment on function public.has_admin_role(uuid, text) is
   'Returns true iff the user holds an active grant for the given role. Anon EXECUTE revoked (0161); authenticated + RLS callers only. TD-161.';
+
+-- Self-test: grants must not be callable by anon (mirrors 0099 / supabase/tests/0161).
+do $check$
+declare
+  v_has_exec boolean;
+begin
+  select has_function_privilege(
+    'anon',
+    'public.submit_public_research_response(text,int,text,text,text,jsonb,text,text,text)',
+    'execute'
+  ) into v_has_exec;
+  if v_has_exec then
+    raise exception
+      'migration 0161: anon still has EXECUTE on submit_public_research_response';
+  end if;
+
+  select has_function_privilege(
+    'anon',
+    'public.has_admin_role(uuid,text)',
+    'execute'
+  ) into v_has_exec;
+  if v_has_exec then
+    raise exception 'migration 0161: anon still has EXECUTE on has_admin_role';
+  end if;
+end
+$check$;

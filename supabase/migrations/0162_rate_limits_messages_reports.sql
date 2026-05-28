@@ -17,6 +17,13 @@ comment on table public.rate_limit_buckets is
 
 alter table public.rate_limit_buckets enable row level security;
 
+-- rls-lint.sql requires ≥1 policy on every RLS-enabled public table.
+drop policy if exists rate_limit_buckets_deny_all on public.rate_limit_buckets;
+create policy rate_limit_buckets_deny_all
+  on public.rate_limit_buckets
+  for all to anon, authenticated
+  using (false) with check (false);
+
 revoke all on table public.rate_limit_buckets from public, anon, authenticated;
 
 -- ---------------------------------------------------------------------------
