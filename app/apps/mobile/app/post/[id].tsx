@@ -146,7 +146,7 @@ export default function PostDetailScreen() {
           ...nativeStackHeaderRightIconOnly(() => (
             <View style={styles.headerActions}>
               <PostShareButton post={post} placement="header" />
-              <PostMenuButton post={post} placement="header" />
+              <PostMenuButton post={post} placement="header" showShareInMenu={false} />
             </View>
           )),
         }}

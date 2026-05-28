@@ -1,0 +1,105 @@
+// FR-POST-023 — share sheet orchestration (header button + post ⋮ menu).
+import { useCallback, useState } from 'react';
+import { useTranslation } from 'react-i18next';
+import { formatDistanceToNow } from 'date-fns';
+import type { PostWithOwner } from '@kc/application';
+import { getSupabaseClient } from '@kc/infrastructure-supabase';
+import { canSharePost } from '../lib/canSharePost';
+import { resolveWebBaseUrl } from '../lib/buildPostShareUrl';
+import { resolveDateFnsLocale } from '../lib/resolveDateFnsLocale';
+import { sharePost } from '../lib/sharePost';
+import { buildPostShareMessage } from '../lib/buildPostShareMessage';
+import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
+import { postRecipientDisplayLabel } from '../lib/postRecipientDisplayLabel';
+import { useAuthStore } from '../store/authStore';
+import { useFeedSessionStore } from '../store/feedSessionStore';
+
+const POST_IMAGES_BUCKET = 'post-images';
+
+export function usePostShare(post: PostWithOwner) {
+  const { t, i18n } = useTranslation();
+  const viewerId = useAuthStore((s) => s.session?.userId ?? null);
+  const showToast = useFeedSessionStore((s) => s.showEphemeralToast);
+  const [busy, setBusy] = useState(false);
+  const canShare = canSharePost(post, viewerId);
+
+  const share = useCallback(async () => {
+    if (busy || !canShare) return;
+    setBusy(true);
+    try {
+      const webBaseUrl = resolveWebBaseUrl({
+        EXPO_PUBLIC_WEB_BASE_URL: process.env.EXPO_PUBLIC_WEB_BASE_URL,
+      });
+      const postedAt = formatDistanceToNow(new Date(post.createdAt), {
+        addSuffix: true,
+        locale: resolveDateFnsLocale(i18n.language),
+      });
+      const shareStatus = post.status === 'closed_delivered' ? 'closed_delivered' : 'open';
+      const recipientNavigable = (post.recipientProfileNavigableFromPost ?? true) === true;
+      const counterpartyLabel =
+        shareStatus === 'closed_delivered' && post.recipientUser
+          ? postRecipientDisplayLabel(post.recipientUser, recipientNavigable, t)
+          : null;
+      const message = buildPostShareMessage(
+        {
+          type: post.type,
+          status: shareStatus,
+          title: post.title,
+          description: post.description,
+          category: post.category,
+          address: post.address,
+          locationDisplayLevel: post.locationDisplayLevel,
+          postedAt,
+          publisherLabel: postOwnerDisplayLabel(post, t),
+          counterpartyLabel,
+        },
+        t,
+      );
+      const firstAsset = post.mediaAssets[0];
+      const remoteImageUrl = firstAsset
+        ? getSupabaseClient().storage
+            .from(POST_IMAGES_BUCKET)
+            .getPublicUrl(firstAsset.path).data.publicUrl
+        : undefined;
+      const outcome = await sharePost({
+        postId: post.postId,
+        title: post.title,
+        message,
+        webBaseUrl,
+        remoteImageUrl,
+      });
+      if (outcome.kind === 'copied') {
+        showToast(t('post.detail.shareCopiedToast'), 'success', 1800);
+      } else if (outcome.kind === 'failed') {
+        showToast(t('post.detail.shareFailedToast'), 'error', 2200);
+      }
+    } catch (err) {
+      console.warn('[usePostShare] share failed', err);
+      showToast(t('post.detail.shareFailedToast'), 'error', 2200);
+    } finally {
+      setBusy(false);
+    }
+  }, [
+    busy,
+    canShare,
+    post.postId,
+    post.title,
+    post.type,
+    post.status,
+    post.description,
+    post.category,
+    post.address,
+    post.locationDisplayLevel,
+    post.createdAt,
+    post.mediaAssets,
+    post.ownerName,
+    post.ownerProfileNavigableFromPost,
+    post.recipientUser,
+    post.recipientProfileNavigableFromPost,
+    showToast,
+    t,
+    i18n.language,
+  ]);
+
+  return { canShare, share, busy };
+}
