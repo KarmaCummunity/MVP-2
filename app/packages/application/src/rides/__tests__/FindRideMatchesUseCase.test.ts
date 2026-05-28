@@ -27,6 +27,20 @@ function row(
     visibility: 'Public',
     createdAt: '2026-05-01T00:00:00Z',
     updatedAt: '2026-05-01T00:00:00Z',
+    // FR-RIDE-026..029 — V3.0 defaults.
+    cargoEnabled: false,
+    cargoMaxVolumeL: null,
+    cargoMaxWeightKg: null,
+    cargoAllowedTypes: null,
+    foodShippingEnabled: false,
+    foodMaxKg: null,
+    foodChilled: null,
+    paymentModel: 'free',
+    paymentAmountIls: null,
+    reqGender: 'any',
+    reqSmokingAllowed: false,
+    reqPetsAllowed: false,
+    reqVerifiedOnly: false,
     ...partial,
   };
 }

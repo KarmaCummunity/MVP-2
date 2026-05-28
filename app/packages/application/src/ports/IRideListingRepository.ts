@@ -1,3 +1,9 @@
+import type {
+  RideCargoTypeSlug,
+  RideGenderRequirement,
+  RidePaymentModel,
+} from '@kc/domain';
+
 export interface RideListingRow {
   rideId: string;
   ownerId: string;
@@ -18,6 +24,23 @@ export interface RideListingRow {
   visibility: 'Public' | 'FollowersOnly' | 'OnlyMe';
   createdAt: string;
   updatedAt: string;
+  // FR-RIDE-026 — cargo.
+  cargoEnabled: boolean;
+  cargoMaxVolumeL: number | null;
+  cargoMaxWeightKg: number | null;
+  cargoAllowedTypes: ReadonlyArray<RideCargoTypeSlug> | null;
+  // FR-RIDE-027 — food shipping.
+  foodShippingEnabled: boolean;
+  foodMaxKg: number | null;
+  foodChilled: boolean | null;
+  // FR-RIDE-028 — payment.
+  paymentModel: RidePaymentModel;
+  paymentAmountIls: number | null;
+  // FR-RIDE-029 — requirements.
+  reqGender: RideGenderRequirement;
+  reqSmokingAllowed: boolean;
+  reqPetsAllowed: boolean;
+  reqVerifiedOnly: boolean;
 }
 
 export type RideVisibility = 'Public' | 'FollowersOnly' | 'OnlyMe';
@@ -36,6 +59,20 @@ export interface CreateRideListingRepoInput {
   description: string | null;
   title: string;
   visibility: RideVisibility;
+  // FR-RIDE-026..029 — optional advanced fields (defaults applied at adapter).
+  cargoEnabled?: boolean;
+  cargoMaxVolumeL?: number | null;
+  cargoMaxWeightKg?: number | null;
+  cargoAllowedTypes?: ReadonlyArray<RideCargoTypeSlug> | null;
+  foodShippingEnabled?: boolean;
+  foodMaxKg?: number | null;
+  foodChilled?: boolean | null;
+  paymentModel?: RidePaymentModel;
+  paymentAmountIls?: number | null;
+  reqGender?: RideGenderRequirement;
+  reqSmokingAllowed?: boolean;
+  reqPetsAllowed?: boolean;
+  reqVerifiedOnly?: boolean;
 }
 
 export interface SearchRideListingsInput {

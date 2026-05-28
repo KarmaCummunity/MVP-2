@@ -50,10 +50,46 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
         description: input.description,
         title: input.title,
         visibility: input.visibility,
+        // FR-RIDE-026..029 — advanced fields, NULL-or-set per the CHECK constraints.
+        cargo_enabled: input.cargoEnabled ?? false,
+        cargo_max_volume_l: input.cargoEnabled ? input.cargoMaxVolumeL ?? null : null,
+        cargo_max_weight_kg: input.cargoEnabled ? input.cargoMaxWeightKg ?? null : null,
+        cargo_allowed_types: input.cargoEnabled
+          ? (input.cargoAllowedTypes ? Array.from(input.cargoAllowedTypes) : null)
+          : null,
+        food_shipping_enabled: input.foodShippingEnabled ?? false,
+        food_max_kg: input.foodShippingEnabled ? input.foodMaxKg ?? null : null,
+        food_chilled: input.foodShippingEnabled ? input.foodChilled ?? null : null,
+        payment_model: input.paymentModel ?? 'free',
+        payment_amount_ils:
+          input.paymentModel === 'expense_share' ? input.paymentAmountIls ?? null : null,
+        req_gender: input.reqGender ?? 'any',
+        req_smoking_allowed: input.reqSmokingAllowed ?? false,
+        req_pets_allowed: input.reqPetsAllowed ?? false,
+        req_verified_only: input.reqVerifiedOnly ?? false,
       })
       .select(RIDE_SELECT)
       .single();
-    if (error) throw new Error(error.message);
+    if (error) {
+      // Map DB constraint violations to typed RideError codes.
+      const msg = (error.message ?? '').toLowerCase();
+      if (msg.includes('payment_cap_exceeded')) {
+        throw new RideError('payment_cap_exceeded', 'payment cap exceeded');
+      }
+      if (msg.includes('ride_listings_cargo_consistency')) {
+        throw new RideError('cargo_invalid_bounds', error.message);
+      }
+      if (msg.includes('ride_listings_food_consistency')) {
+        throw new RideError('food_invalid_bounds', error.message);
+      }
+      if (msg.includes('ride_listings_cargo_xor_food')) {
+        throw new RideError('cargo_food_mutually_exclusive', error.message);
+      }
+      if (msg.includes('ride_listings_payment_consistency')) {
+        throw new RideError('payment_amount_required', error.message);
+      }
+      throw new Error(error.message);
+    }
     return mapJoinedRow(data as RideRowWithCities);
   }
 

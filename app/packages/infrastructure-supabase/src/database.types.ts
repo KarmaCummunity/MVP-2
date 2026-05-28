@@ -1192,17 +1192,30 @@ export type Database = {
       }
       ride_listings: {
         Row: {
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
           status: string
@@ -1212,17 +1225,30 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          cargo_allowed_types?: string[] | null
+          cargo_enabled?: boolean
+          cargo_max_volume_l?: number | null
+          cargo_max_weight_kg?: number | null
           created_at?: string
           departs_at: string
           description?: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number?: string | null
+          food_chilled?: boolean | null
+          food_max_kg?: number | null
+          food_shipping_enabled?: boolean
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number?: string | null
           owner_id: string
+          payment_amount_ils?: number | null
+          payment_model?: string
+          req_gender?: string
+          req_pets_allowed?: boolean
+          req_smoking_allowed?: boolean
+          req_verified_only?: boolean
           ride_id?: string
           seats_available?: number | null
           status?: string
@@ -1232,17 +1258,30 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          cargo_allowed_types?: string[] | null
+          cargo_enabled?: boolean
+          cargo_max_volume_l?: number | null
+          cargo_max_weight_kg?: number | null
           created_at?: string
           departs_at?: string
           description?: string | null
           dest_city_id?: string
           dest_street?: string
           dest_street_number?: string | null
+          food_chilled?: boolean | null
+          food_max_kg?: number | null
+          food_shipping_enabled?: boolean
           mode?: string
           origin_city_id?: string
           origin_street?: string
           origin_street_number?: string | null
           owner_id?: string
+          payment_amount_ils?: number | null
+          payment_model?: string
+          req_gender?: string
+          req_pets_allowed?: boolean
+          req_smoking_allowed?: boolean
+          req_verified_only?: boolean
           ride_id?: string
           seats_available?: number | null
           status?: string
@@ -1334,6 +1373,51 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ride_stops: {
+        Row: {
+          city_id: string
+          created_at: string
+          notes: string | null
+          ride_id: string
+          sort_order: number
+          stop_id: string
+          street: string | null
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          notes?: string | null
+          ride_id: string
+          sort_order: number
+          stop_id?: string
+          street?: string | null
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          notes?: string | null
+          ride_id?: string
+          sort_order?: number
+          stop_id?: string
+          street?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_stops_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_stops_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
           },
         ]
       }

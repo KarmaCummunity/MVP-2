@@ -22,6 +22,7 @@ export * from './rides/RideMode';
 export * from './rides/RideStatus';
 export * from './rides/RideListing';
 export * from './rides/RideError';
+export * from './rides/RideAdvancedFields';
 export * from './rides/generateRideTitle';
 export * from './rides/validateRideDraft';
 export * from './rides/RideParticipant';

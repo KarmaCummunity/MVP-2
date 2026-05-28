@@ -33,6 +33,21 @@ export class FakeRideListingRepository implements IRideListingRepository {
       visibility: input.visibility,
       createdAt: new Date().toISOString(),
       updatedAt: new Date().toISOString(),
+      // FR-RIDE-026..029 — V3.0 advanced columns.
+      cargoEnabled: input.cargoEnabled ?? false,
+      cargoMaxVolumeL: input.cargoEnabled ? input.cargoMaxVolumeL ?? null : null,
+      cargoMaxWeightKg: input.cargoEnabled ? input.cargoMaxWeightKg ?? null : null,
+      cargoAllowedTypes: input.cargoEnabled ? (input.cargoAllowedTypes ?? null) : null,
+      foodShippingEnabled: input.foodShippingEnabled ?? false,
+      foodMaxKg: input.foodShippingEnabled ? input.foodMaxKg ?? null : null,
+      foodChilled: input.foodShippingEnabled ? input.foodChilled ?? null : null,
+      paymentModel: input.paymentModel ?? 'free',
+      paymentAmountIls:
+        input.paymentModel === 'expense_share' ? input.paymentAmountIls ?? null : null,
+      reqGender: input.reqGender ?? 'any',
+      reqSmokingAllowed: input.reqSmokingAllowed ?? false,
+      reqPetsAllowed: input.reqPetsAllowed ?? false,
+      reqVerifiedOnly: input.reqVerifiedOnly ?? false,
     };
     this.rows.push(row);
     return row;

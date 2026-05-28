@@ -1,4 +1,9 @@
 import type { RideListingRow } from '@kc/application';
+import type {
+  RideCargoTypeSlug,
+  RideGenderRequirement,
+  RidePaymentModel,
+} from '@kc/domain';
 
 type RideRow = {
   ride_id: string;
@@ -18,6 +23,21 @@ type RideRow = {
   visibility: string;
   created_at: string;
   updated_at: string;
+  // FR-RIDE-026..029 — V3.0 advanced columns. Optional in row shape because
+  // pre-V3.0 cached rows + the snapshot in older fakes may omit them.
+  cargo_enabled?: boolean | null;
+  cargo_max_volume_l?: number | null;
+  cargo_max_weight_kg?: number | null;
+  cargo_allowed_types?: string[] | null;
+  food_shipping_enabled?: boolean | null;
+  food_max_kg?: number | null;
+  food_chilled?: boolean | null;
+  payment_model?: string | null;
+  payment_amount_ils?: number | null;
+  req_gender?: string | null;
+  req_smoking_allowed?: boolean | null;
+  req_pets_allowed?: boolean | null;
+  req_verified_only?: boolean | null;
 };
 
 export function mapRideRow(
@@ -45,5 +65,24 @@ export function mapRideRow(
     visibility: row.visibility as RideListingRow['visibility'],
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    // FR-RIDE-026 — cargo (defaults preserve V2.0 row shape).
+    cargoEnabled: row.cargo_enabled ?? false,
+    cargoMaxVolumeL: row.cargo_max_volume_l ?? null,
+    cargoMaxWeightKg: row.cargo_max_weight_kg ?? null,
+    cargoAllowedTypes: row.cargo_allowed_types
+      ? (row.cargo_allowed_types as ReadonlyArray<RideCargoTypeSlug>)
+      : null,
+    // FR-RIDE-027 — food.
+    foodShippingEnabled: row.food_shipping_enabled ?? false,
+    foodMaxKg: row.food_max_kg ?? null,
+    foodChilled: row.food_chilled ?? null,
+    // FR-RIDE-028 — payment.
+    paymentModel: (row.payment_model ?? 'free') as RidePaymentModel,
+    paymentAmountIls: row.payment_amount_ils ?? null,
+    // FR-RIDE-029 — requirements.
+    reqGender: (row.req_gender ?? 'any') as RideGenderRequirement,
+    reqSmokingAllowed: row.req_smoking_allowed ?? false,
+    reqPetsAllowed: row.req_pets_allowed ?? false,
+    reqVerifiedOnly: row.req_verified_only ?? false,
   };
 }

@@ -1,4 +1,11 @@
 import { generateRideTitle, validateRideDraft, RideError } from '@kc/domain';
+import type {
+  RideCargoSpec,
+  RideFoodSpec,
+  RideMode,
+  RidePaymentSpec,
+  RideRequirementsSpec,
+} from '@kc/domain';
 import type { ICityRepository } from '../ports/ICityRepository';
 import type {
   CreateRideListingRepoInput,
@@ -6,7 +13,6 @@ import type {
   RideListingRow,
   RideVisibility,
 } from '../ports/IRideListingRepository';
-import type { RideMode } from '@kc/domain';
 
 export interface CreateRideListingInput {
   ownerId: string;
@@ -22,6 +28,11 @@ export interface CreateRideListingInput {
   description: string | null;
   /** Defaults to 'Public' for backwards compatibility with the V2.0 surface. */
   visibility?: RideVisibility;
+  // FR-RIDE-026..029 — optional advanced specs.
+  cargo?: RideCargoSpec;
+  food?: RideFoodSpec;
+  payment?: RidePaymentSpec;
+  requirements?: RideRequirementsSpec;
 }
 
 export class CreateRideListingUseCase {
@@ -45,6 +56,10 @@ export class CreateRideListingUseCase {
       departsAt: input.departsAt,
       seatsAvailable: input.seatsAvailable,
       description,
+      cargo: input.cargo,
+      food: input.food,
+      payment: input.payment,
+      requirements: input.requirements,
     });
 
     const cityList = await this.cities.listAll();
@@ -74,6 +89,22 @@ export class CreateRideListingUseCase {
       description,
       title,
       visibility: input.visibility ?? 'Public',
+      // FR-RIDE-026..029 — pass advanced fields through verbatim; the adapter
+      // applies CHECK-friendly NULL-or-set discipline based on the enabled flags.
+      cargoEnabled: input.cargo?.enabled ?? false,
+      cargoMaxVolumeL: input.cargo?.enabled ? input.cargo.maxVolumeL : null,
+      cargoMaxWeightKg: input.cargo?.enabled ? input.cargo.maxWeightKg : null,
+      cargoAllowedTypes: input.cargo?.enabled ? input.cargo.allowedTypes : null,
+      foodShippingEnabled: input.food?.enabled ?? false,
+      foodMaxKg: input.food?.enabled ? input.food.maxKg : null,
+      foodChilled: input.food?.enabled ? input.food.chilled : null,
+      paymentModel: input.payment?.model ?? 'free',
+      paymentAmountIls:
+        input.payment?.model === 'expense_share' ? input.payment.amountIls : null,
+      reqGender: input.requirements?.gender ?? 'any',
+      reqSmokingAllowed: input.requirements?.smokingAllowed ?? false,
+      reqPetsAllowed: input.requirements?.petsAllowed ?? false,
+      reqVerifiedOnly: input.requirements?.verifiedOnly ?? false,
     };
 
     return this.repo.create(payload);
