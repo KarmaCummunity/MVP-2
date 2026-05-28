@@ -17,6 +17,7 @@ import {
   type ICityRepository,
 } from '@kc/application';
 import { container } from '../../../lib/container';
+import { CachedCityRepository } from '../../../services/cityStreetCache';
 
 let _repo: IRideListingRepository | null = null;
 let _cities: ICityRepository | null = null;
@@ -43,7 +44,9 @@ function getRepo(): IRideListingRepository {
 }
 
 function getCityRepo(): ICityRepository {
-  if (!_cities) _cities = new SupabaseCityRepository(getClient());
+  // PERF-6: wraps in CachedCityRepository so both onboarding and rides flows
+  // share the same AsyncStorage-backed catalog cache.
+  if (!_cities) _cities = new CachedCityRepository(new SupabaseCityRepository(getClient()));
   return _cities;
 }
 

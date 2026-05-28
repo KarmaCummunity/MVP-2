@@ -28,6 +28,7 @@ import {
 } from '@kc/application';
 import type { City, OnboardingState, Street } from '@kc/domain';
 import { getAuthService } from './authComposition';
+import { CachedCityRepository, CachedStreetRepository } from './cityStreetCache';
 
 let _userRepo: IUserRepository | null = null;
 let _cityRepo: ICityRepository | null = null;
@@ -57,13 +58,19 @@ export function getUserRepo(): IUserRepository {
 
 function getCityRepo(): ICityRepository {
   if (_cityRepo) return _cityRepo;
-  _cityRepo = new SupabaseCityRepository(getSupabaseClient({ storage: pickStorage() }));
+  // PERF-6: AsyncStorage-backed cache layer; cuts onboarding city-picker
+  // open-to-first-row from 600-1500ms cold to <100ms on warm cache.
+  _cityRepo = new CachedCityRepository(
+    new SupabaseCityRepository(getSupabaseClient({ storage: pickStorage() })),
+  );
   return _cityRepo;
 }
 
 function getStreetRepo(): IStreetRepository {
   if (_streetRepo) return _streetRepo;
-  _streetRepo = new SupabaseStreetRepository(getSupabaseClient({ storage: pickStorage() }));
+  _streetRepo = new CachedStreetRepository(
+    new SupabaseStreetRepository(getSupabaseClient({ storage: pickStorage() })),
+  );
   return _streetRepo;
 }
 
