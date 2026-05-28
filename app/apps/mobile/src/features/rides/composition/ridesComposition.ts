@@ -10,6 +10,7 @@ import {
   SupabaseRideTemplateRepository,
   SupabaseRideEmergencyRepository,
   SupabaseRideRatingRepository,
+  SupabaseDriverDeclarationRepository,
   SupabaseRidesRealtime,
   SupabaseCityRepository,
   type SupabaseAuthStorage,
@@ -29,8 +30,11 @@ import {
   SubmitRideRatingUseCase,
   ListRideRatingsUseCase,
   GetUserRideRatingSummaryUseCase,
+  AcceptDriverDeclarationUseCase,
+  GetDriverDeclarationUseCase,
   type IRideEmergencyRepository,
   type IRideRatingRepository,
+  type IDriverDeclarationRepository,
   RequestRideJoinUseCase,
   DecideRideJoinUseCase,
   CancelRideJoinUseCase,
@@ -70,6 +74,9 @@ let _ratings: IRideRatingRepository | null = null;
 let _submitRating: SubmitRideRatingUseCase | null = null;
 let _listRatings: ListRideRatingsUseCase | null = null;
 let _userRatingSummary: GetUserRideRatingSummaryUseCase | null = null;
+let _declarations: IDriverDeclarationRepository | null = null;
+let _acceptDeclaration: AcceptDriverDeclarationUseCase | null = null;
+let _getDeclaration: GetDriverDeclarationUseCase | null = null;
 let _requestJoin: RequestRideJoinUseCase | null = null;
 let _decideJoin: DecideRideJoinUseCase | null = null;
 let _cancelJoin: CancelRideJoinUseCase | null = null;
@@ -198,6 +205,23 @@ export function getUserRideRatingSummaryUseCase(): GetUserRideRatingSummaryUseCa
   if (!_userRatingSummary)
     _userRatingSummary = new GetUserRideRatingSummaryUseCase(getRatingRepo());
   return _userRatingSummary;
+}
+
+function getDeclarationRepo(): IDriverDeclarationRepository {
+  if (!_declarations) _declarations = new SupabaseDriverDeclarationRepository(getClient());
+  return _declarations;
+}
+
+export function getAcceptDriverDeclarationUseCase(): AcceptDriverDeclarationUseCase {
+  if (!_acceptDeclaration)
+    _acceptDeclaration = new AcceptDriverDeclarationUseCase(getDeclarationRepo());
+  return _acceptDeclaration;
+}
+
+export function getGetDriverDeclarationUseCase(): GetDriverDeclarationUseCase {
+  if (!_getDeclaration)
+    _getDeclaration = new GetDriverDeclarationUseCase(getDeclarationRepo());
+  return _getDeclaration;
 }
 
 export function getRequestRideJoinUseCase(): RequestRideJoinUseCase {

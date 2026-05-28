@@ -517,6 +517,38 @@ export type Database = {
           },
         ]
       }
+      driver_declarations: {
+        Row: {
+          user_id: string
+          declared_at: string
+          license_declared: boolean
+          insurance_declared: boolean
+          no_profit_acknowledged: boolean
+        }
+        Insert: {
+          user_id: string
+          declared_at?: string
+          license_declared: boolean
+          insurance_declared: boolean
+          no_profit_acknowledged: boolean
+        }
+        Update: {
+          user_id?: string
+          declared_at?: string
+          license_declared?: boolean
+          insurance_declared?: boolean
+          no_profit_acknowledged?: boolean
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_declarations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       follow_edges: {
         Row: {
           created_at: string

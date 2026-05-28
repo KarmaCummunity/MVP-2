@@ -88,6 +88,9 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
       if (msg.includes('ride_listings_payment_consistency')) {
         throw new RideError('payment_amount_required', error.message);
       }
+      if (msg.includes('declaration_required')) {
+        throw new RideError('declaration_required', error.message);
+      }
       throw new Error(error.message);
     }
     return mapJoinedRow(data as RideRowWithCities);

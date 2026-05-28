@@ -258,6 +258,14 @@ export type { ListRideParticipantsInput } from './rides/ListRideParticipantsUseC
 export { ListUserRideRequestsUseCase } from './rides/ListUserRideRequestsUseCase';
 export type { ListUserRideRequestsInput } from './rides/ListUserRideRequestsUseCase';
 
+// Driver declaration gate (FR-RIDE-041)
+export type {
+  DriverDeclaration,
+  IDriverDeclarationRepository,
+} from './ports/IDriverDeclarationRepository';
+export { AcceptDriverDeclarationUseCase } from './rides/AcceptDriverDeclarationUseCase';
+export { GetDriverDeclarationUseCase } from './rides/GetDriverDeclarationUseCase';
+
 // Survey use cases (FR-SETTINGS-015..017)
 export type { ISurveyRepository } from './ports/ISurveyRepository';
 export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';

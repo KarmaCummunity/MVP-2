@@ -83,6 +83,18 @@ export const rides = {
     errorArrive: 'לא הצלחנו לסיים את הנסיעה',
     errorEmergency: 'לא הצלחנו להפעיל קריאת חירום',
   },
+  // FR-RIDE-041 — driver declaration gate.
+  declaration: {
+    title: 'הצהרת נהג',
+    intro:
+      'כדי לפרסם הצעת נסיעה, יש לאשר את ההצהרות הבאות. ההצהרה נשמרת חד-פעמית.',
+    license: 'יש ברשותי רישיון נהיגה תקף',
+    insurance: 'הרכב שלי מבוטח בביטוח חובה תקף',
+    noProfit:
+      'אני מבין/ה שאסור לגבות מחיר רווח על נסיעה — רק השתתפות סמלית בהוצאות (R-Rides-1)',
+    accept: 'אני מצהיר/ה ומאשר/ת',
+    error: 'לא הצלחנו לשמור את ההצהרה. נסו שוב.',
+  },
   // FR-RIDE-037 — ratings.
   rate: {
     title: 'דירוג הנסיעה',
@@ -148,6 +160,11 @@ export const rides = {
     seats_forbidden: 'בקשת נסיעה לא כוללת מקומות.',
     description_too_long: 'התיאור ארוך מדי (עד 500 תווים).',
     city_not_found: 'אחת הערים לא נמצאה. נסו שוב.',
+    declaration_required: 'יש לאשר את הצהרת הנהג לפני פרסום הצעת נסיעה.',
+    payment_cap_exceeded: 'מחיר ההשתתפות חורג מהמותר (₪70 בין-עירונית, ₪20 תוך-עירונית).',
+    cargo_invalid_bounds: 'נתוני שינוע החפצים אינם בטווח המותר.',
+    food_invalid_bounds: 'נתוני שינוע המזון אינם בטווח המותר.',
+    cargo_food_mutually_exclusive: 'לא ניתן לאפשר שינוע חפצים ושינוע מזון באותה נסיעה.',
     unknown: 'לא הצלחנו לפרסם. נסו שוב.',
   },
 } as const;
