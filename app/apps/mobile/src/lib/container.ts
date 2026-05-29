@@ -18,6 +18,7 @@ import {
   SupabaseAdminTaskRepository,
   SupabaseOrgApplicationsRepository,
   SupabaseAdminContentRepository,
+  SupabaseFinanceLedgerRepository,
   SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
@@ -68,6 +69,10 @@ import {
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
+  ListFinanceLedgerUseCase,
+  GetFinanceSummaryUseCase,
+  UpsertFinanceEntryUseCase,
+  DeleteFinanceEntryUseCase,
   ListCrmContactsUseCase,
   UpsertCrmContactUseCase,
   DeleteCrmContactUseCase,
@@ -112,6 +117,7 @@ const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
 const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
@@ -151,6 +157,11 @@ export const container = {
   adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
   adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
   adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
+  // V2-ADMIN-MONEY-9
+  listFinanceLedger:   new ListFinanceLedgerUseCase(financeLedgerRepo),
+  getFinanceSummary:   new GetFinanceSummaryUseCase(financeLedgerRepo),
+  upsertFinanceEntry:  new UpsertFinanceEntryUseCase(financeLedgerRepo),
+  deleteFinanceEntry:  new DeleteFinanceEntryUseCase(financeLedgerRepo),
   // V2-ADMIN-CRM-8
   listCrmContacts: new ListCrmContactsUseCase(crmContactsRepo),
   upsertCrmContact: new UpsertCrmContactUseCase(crmContactsRepo),

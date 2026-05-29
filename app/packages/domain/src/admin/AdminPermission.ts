@@ -20,6 +20,7 @@ export const ADMIN_PERMISSIONS = [
   'posts.search',
   'audit.view_own',
   'audit.view_any',
+  'money.manage',
   'crm.manage',
   'org.review_applications',
 ] as const;
@@ -46,6 +47,7 @@ export const PERMISSION_MATRIX: Readonly<Record<AdminPermission, readonly AdminR
   'posts.search':               ['super_admin', 'moderator', 'support'],
   'audit.view_own':             ['super_admin', 'moderator', 'support'],
   'audit.view_any':             ['super_admin'],
+  'money.manage':               ['super_admin', 'moderator'],
   'crm.manage':                 ['super_admin', 'moderator'],
   'org.review_applications':    ['super_admin', 'moderator'],
 };

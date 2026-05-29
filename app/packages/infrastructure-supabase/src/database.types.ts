@@ -701,6 +701,92 @@ export type Database = {
           },
         ]
       }
+      finance_ledger_entries: {
+        Row: {
+          amount_cents: number
+          category: string | null
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          description: string | null
+          direction: string
+          entry_id: string
+          kind: string
+          occurred_at: string
+          reference_url: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          direction: string
+          entry_id?: string
+          kind: string
+          occurred_at?: string
+          reference_url?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          direction?: string
+          entry_id?: string
+          kind?: string
+          occurred_at?: string
+          reference_url?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       follow_edges: {
         Row: {
           created_at: string
@@ -2938,6 +3024,62 @@ export type Database = {
               post_id: string
             }[]
           }
+      finance_ledger_delete: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
+      finance_ledger_list: {
+        Args: {
+          p_direction?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+        }
+        Returns: {
+          amount_cents: number
+          category: string
+          counterparty: string
+          created_at: string
+          currency: string
+          description: string
+          direction: string
+          entry_id: string
+          kind: string
+          occurred_at: string
+          reference_url: string
+          status: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      finance_ledger_summary: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          currency: string
+          entry_count: number
+          expense_cents: number
+          income_cents: number
+          net_cents: number
+        }[]
+      }
+      finance_ledger_upsert: {
+        Args: {
+          p_amount_cents?: number
+          p_category?: string
+          p_counterparty?: string
+          p_currency?: string
+          p_description?: string
+          p_entry_id?: string
+          p_kind?: string
+          p_occurred_at?: string
+          p_reference_url?: string
+          p_status?: string
+        }
+        Returns: string
+      }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
       get_chat_counterparty_contact: {
         Args: { p_chat_id: string }
