@@ -2208,6 +2208,86 @@ export type Database = {
         }
         Relationships: []
       }
+      timesheet_entries: {
+        Row: {
+          approval_note: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          entry_id: string
+          hours_x100: number
+          project: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+          work_date: string
+        }
+        Insert: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          entry_id?: string
+          hours_x100: number
+          project?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id: string
+          work_date: string
+        }
+        Update: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          entry_id?: string
+          hours_x100?: number
+          project?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_feedback: {
         Row: {
           body: string
@@ -3568,6 +3648,58 @@ export type Database = {
         Returns: string
       }
       suspension_expiry_lift: { Args: never; Returns: number }
+      timesheet_approve: {
+        Args: { p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_decide: {
+        Args: { p_approve: boolean; p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_delete: { Args: { p_entry_id: string }; Returns: undefined }
+      timesheet_list: {
+        Args: {
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+          p_user_id?: string
+        }
+        Returns: {
+          approval_note: string
+          approved_at: string
+          approved_by: string
+          approver_name: string
+          created_at: string
+          description: string
+          entry_id: string
+          hours_x100: number
+          project: string
+          status: string
+          submitted_at: string
+          total_count: number
+          updated_at: string
+          user_id: string
+          user_name: string
+          work_date: string
+        }[]
+      }
+      timesheet_reject: {
+        Args: { p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_submit: { Args: { p_entry_id: string }; Returns: undefined }
+      timesheet_upsert: {
+        Args: {
+          p_description?: string
+          p_entry_id?: string
+          p_hours_x100?: number
+          p_project?: string
+          p_work_date?: string
+        }
+        Returns: string
+      }
       upsert_post_actor_identity: {
         Args: {
           p_hide_from_counterparty: boolean
