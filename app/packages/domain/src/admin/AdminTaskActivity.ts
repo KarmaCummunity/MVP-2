@@ -8,6 +8,7 @@ export const ADMIN_TASK_ACTIVITY_KINDS = [
   'title_change',
   'description_change',
   'labels_change',
+  'category_change',
 ] as const;
 export type AdminTaskActivityKind = (typeof ADMIN_TASK_ACTIVITY_KINDS)[number];
 

@@ -40,6 +40,7 @@ interface ScreenProps {
    * Dynamic Island iPhones (FR-RESP-006 AC9).
    */
   readonly hasNativeHeader?: boolean;
+  readonly testID?: string;
 }
 
 export function Screen({
@@ -51,6 +52,7 @@ export function Screen({
   style,
   tabBarInset = true,
   hasNativeHeader = false,
+  testID,
 }: ScreenProps) {
   const { colors } = useTheme();
   // Both hooks always called (Rules of Hooks). When the bar is hidden, we
@@ -90,6 +92,7 @@ export function Screen({
 
   return (
     <SafeAreaView
+      testID={testID}
       style={[staticStyles.container, { backgroundColor: colors.surfaceCream }, style]}
       edges={effectiveEdges}
     >

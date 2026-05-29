@@ -7,7 +7,8 @@ import {
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import {
-  ADMIN_TASK_STATUSES, type AdminPermission, type AdminRole, type AdminTaskStatus,
+  ADMIN_TASK_STATUSES, type AdminPermission, type AdminRole,
+  type AdminTaskCategory, type AdminTaskStatus,
   hasPermission, isAdminTaskError, isStatusTransitionAllowed,
 } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
@@ -15,10 +16,12 @@ import { useAuthStore } from '../../../../src/store/authStore';
 import { useAdminRoles } from '../../../../src/hooks/useAdminRoles';
 import { useAdminTaskDetail } from '../../../../src/hooks/useAdminTasks';
 import {
-  useAddAdminTaskComment, useDeleteAdminTask, useSetAdminTaskStatus,
+  useAddAdminTaskComment, useDeleteAdminTask, useSetAdminTaskStatus, useUpdateAdminTask,
 } from '../../../../src/hooks/useAdminTaskMutations';
 import { TaskStatusChip } from '../../../../src/components/admin/tasks/TaskStatusChip';
 import { TaskPriorityChip } from '../../../../src/components/admin/tasks/TaskPriorityChip';
+import { TaskCategoryChip } from '../../../../src/components/admin/tasks/TaskCategoryChip';
+import { TaskCategoryPicker } from '../../../../src/components/admin/tasks/TaskCategoryPicker';
 import { TaskActivityTimeline } from '../../../../src/components/admin/tasks/TaskActivityTimeline';
 import he from '../../../../src/i18n/locales/he';
 
@@ -46,6 +49,7 @@ export default function TaskDetailScreen() {
   const setStatus = useSetAdminTaskStatus();
   const addComment = useAddAdminTaskComment();
   const remove = useDeleteAdminTask();
+  const update = useUpdateAdminTask();
 
   const [commentBody, setCommentBody] = useState('');
   const [errorCode, setErrorCode] = useState<string | null>(null);
@@ -73,6 +77,16 @@ export default function TaskDetailScreen() {
     setErrorCode(null);
     try {
       await setStatus.mutateAsync({ taskId, newStatus });
+    } catch (e) {
+      setErrorCode(isAdminTaskError(e) ? e.code : 'unknown');
+    }
+  }
+
+  async function changeCategory(next: AdminTaskCategory) {
+    if (q.detail && next === q.detail.task.category) return;
+    setErrorCode(null);
+    try {
+      await update.mutateAsync({ taskId, patch: { category: next } });
     } catch (e) {
       setErrorCode(isAdminTaskError(e) ? e.code : 'unknown');
     }
@@ -110,6 +124,7 @@ export default function TaskDetailScreen() {
       <View style={styles.headerRow}>
         <TaskStatusChip status={t.status} />
         <TaskPriorityChip priority={t.priority} />
+        <TaskCategoryChip category={t.category} />
       </View>
       <Text style={styles.title}>{t.title}</Text>
       {t.description && <Text style={styles.description}>{t.description}</Text>}
@@ -146,6 +161,17 @@ export default function TaskDetailScreen() {
                 </Pressable>
               ))}
           </View>
+        </View>
+      )}
+
+      {canMoveStatus && (
+        <View style={styles.section}>
+          <Text style={styles.sectionTitle}>{he.admin.tasks.detail.changeCategory}</Text>
+          <TaskCategoryPicker
+            value={t.category}
+            onChange={(c) => { void changeCategory(c); }}
+            disabled={update.isPending}
+          />
         </View>
       )}
 

@@ -1,4 +1,4 @@
--- 0166_crm_contacts — V2-ADMIN-CRM-8 — foundation for V2 §13.9 Admin CRM.
+-- 0169_crm_contacts — V2-ADMIN-CRM-8 — foundation for V2 §13.9 Admin CRM.
 --
 -- A minimal contacts table the admin team can use to track relationships with
 -- donors, partners, journalists, etc. — kept deliberately scoped: contact card +

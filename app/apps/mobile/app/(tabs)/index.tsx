@@ -183,7 +183,7 @@ export default function HomeFeedScreen() {
   );
 
   return (
-    <Screen blobs="content">
+    <Screen blobs="content" testID="feed-screen">
       <TopBar
         extraIcon={<FeedFilterIcon activeCount={activeCount} onPress={() => setSheetOpen(true)} />}
       />

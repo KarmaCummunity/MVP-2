@@ -16,6 +16,7 @@ import {
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
+  SupabaseOrgApplicationsRepository,
   SupabaseAdminContentRepository,
   SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
@@ -62,6 +63,8 @@ import {
   AssignAdminTaskUseCase,
   AddAdminTaskCommentUseCase,
   DeleteAdminTaskUseCase,
+  ListOrgApplicationsUseCase,
+  DecideOrgApplicationUseCase,
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
@@ -110,6 +113,7 @@ const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
 const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
+const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -152,6 +156,9 @@ export const container = {
   upsertCrmContact: new UpsertCrmContactUseCase(crmContactsRepo),
   deleteCrmContact: new DeleteCrmContactUseCase(crmContactsRepo),
   markCrmContactContacted: new MarkCrmContactContactedUseCase(crmContactsRepo),
+  // V2-ADMIN-ORG-7
+  listOrgApplications: new ListOrgApplicationsUseCase(orgApplicationsRepo),
+  decideOrgApplication: new DecideOrgApplicationUseCase(orgApplicationsRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),
