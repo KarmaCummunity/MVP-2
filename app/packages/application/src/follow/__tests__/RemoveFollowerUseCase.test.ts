@@ -7,7 +7,11 @@ describe('RemoveFollowerUseCase', () => {
     const repo = new FollowFakeUserRepository();
     const uc = new RemoveFollowerUseCase(repo);
 
-    await uc.execute({ ownerId: 'u_owner', followerId: 'u_follower' });
+    await uc.execute({
+      sessionUserId: 'u_owner',
+      ownerId: 'u_owner',
+      followerId: 'u_follower',
+    });
 
     // Edge orientation: followerId follows ownerId.
     // unfollow signature is (followerId, followedId) — when OWNER removes
@@ -23,7 +27,7 @@ describe('RemoveFollowerUseCase', () => {
     const uc = new RemoveFollowerUseCase(repo);
 
     await expect(
-      uc.execute({ ownerId: 'u_a', followerId: 'u_a' }),
+      uc.execute({ sessionUserId: 'u_a', ownerId: 'u_a', followerId: 'u_a' }),
     ).rejects.toMatchObject({ code: 'self_follow' });
   });
 });

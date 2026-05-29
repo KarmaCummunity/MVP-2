@@ -5,6 +5,8 @@ import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FollowRequest, FollowRequestStatus } from '@kc/domain';
 import type { FollowRequestWithUser, PaginatedRequests } from '@kc/application';
 import { mapUserRow, type UserRow } from '../mapUserRow';
+import { scrubUserForNonOwner } from '../scrubUserForViewer';
+import { USER_PUBLIC_EMBED } from '../userPublicColumns';
 import { mapFollowError } from './mapFollowError';
 
 interface FollowRequestRow {
@@ -104,7 +106,7 @@ export async function listPendingWithUsers(
   const base = client
     .from('follow_requests')
     .select(
-      'requester_id, target_id, status, created_at, cooldown_until, requester:requester_id(*)',
+      `requester_id, target_id, status, created_at, cooldown_until, requester:requester_id${USER_PUBLIC_EMBED}`,
     )
     .eq('target_id', targetId)
     .eq('status', 'pending')
@@ -116,7 +118,10 @@ export async function listPendingWithUsers(
   const rows = (data ?? []) as unknown as (FollowRequestRow & { requester: UserRow | null })[];
   const requests: FollowRequestWithUser[] = rows
     .filter((r) => r.requester !== null)
-    .map((r) => ({ request: rowToRequest(r), requester: mapUserRow(r.requester as UserRow) }));
+    .map((r) => ({
+      request: rowToRequest(r),
+      requester: scrubUserForNonOwner(mapUserRow(r.requester as UserRow)),
+    }));
   const last = rows[rows.length - 1];
   const nextCursor = requests.length === limit && last ? last.created_at : null;
   return { requests, nextCursor };

@@ -5,6 +5,8 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { FollowEdge, User } from '@kc/domain';
 import { mapUserRow, type UserRow } from '../mapUserRow';
+import { scrubUserForNonOwner } from '../scrubUserForViewer';
+import { USER_PUBLIC_EMBED } from '../userPublicColumns';
 import { mapFollowError } from './mapFollowError';
 
 export async function followEdge(
@@ -67,7 +69,7 @@ export async function listFollowers(
 ): Promise<User[]> {
   const base = client
     .from('follow_edges')
-    .select('follower:follower_id(*)')
+    .select(`follower:follower_id${USER_PUBLIC_EMBED}`)
     .eq('followed_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -76,7 +78,7 @@ export async function listFollowers(
   return ((data ?? []) as unknown as { follower: UserRow | null }[])
     .map((r) => r.follower)
     .filter((u): u is UserRow => u !== null)
-    .map(mapUserRow);
+    .map((row) => scrubUserForNonOwner(mapUserRow(row)));
 }
 
 export async function listFollowing(
@@ -87,7 +89,7 @@ export async function listFollowing(
 ): Promise<User[]> {
   const base = client
     .from('follow_edges')
-    .select('followed:followed_id(*)')
+    .select(`followed:followed_id${USER_PUBLIC_EMBED}`)
     .eq('follower_id', userId)
     .order('created_at', { ascending: false })
     .limit(limit);
@@ -96,5 +98,5 @@ export async function listFollowing(
   return ((data ?? []) as unknown as { followed: UserRow | null }[])
     .map((r) => r.followed)
     .filter((u): u is UserRow => u !== null)
-    .map(mapUserRow);
+    .map((row) => scrubUserForNonOwner(mapUserRow(row)));
 }
