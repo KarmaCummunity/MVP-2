@@ -263,14 +263,31 @@ Regenerate `database.types.ts` after applying (or merge the manually added table
 ## Edge Functions — CI deploy + prod smoke (2026-05-12)
 
 **Workflow:** `.github/workflows/supabase-functions-deploy.yml`  
-**Triggers:** `push` to `main` when `supabase/functions/**` or the workflow file changes; manual **Run workflow** (`workflow_dispatch`).
+**Triggers:** `push` to `dev` or `main` when `supabase/functions/**` or the workflow file changes (`dev` → `supabase-dev`, `main` → `supabase-prod`); manual **Run workflow** (`workflow_dispatch`) with target choice.
 
-**GitHub:** Repository → Settings → Environments → `supabase-prod` must expose the same secrets as DB deploy:
+**GitHub:** Repository → Settings → Environments → `supabase-prod` / `supabase-dev` must expose the same secrets as DB deploy:
 
 | Secret | Purpose |
 | ------ | ------- |
-| `SUPABASE_ACCESS_TOKEN` | Supabase account access token (dashboard → Account → Access tokens). |
+| `SUPABASE_ACCESS_TOKEN` | Supabase account access token (dashboard → Account → access tokens). |
 | `SUPABASE_PROJECT_REF` | Project ref from the dashboard URL (not `project_id` from local `config.toml`). |
+
+| Variable (optional, recommended) | Purpose |
+| -------------------------------- | ------- |
+| `PUBLIC_RESEARCH_ALLOWED_ORIGINS` | Comma-separated `Origin` allowlist for `public-research-submit`. Synced on each deploy when set. |
+
+**Survey B CORS values (2026-05-29 catch-up):**
+
+| Environment | `PUBLIC_RESEARCH_ALLOWED_ORIGINS` |
+| ------------- | --------------------------------- |
+| `supabase-dev` | `https://mvp-2-dev.up.railway.app,https://dev3.karma-community-kc.com,http://localhost:8081,http://localhost:19006` |
+| `supabase-prod` | `https://karma-community-kc.com` |
+
+CLI one-liner (from repo root, account token in env):
+
+```bash
+supabase secrets set PUBLIC_RESEARCH_ALLOWED_ORIGINS="<origins>" --project-ref <ref>
+```
 
 `SUPABASE_DB_PASSWORD` is **not** required for function deploy.
 
