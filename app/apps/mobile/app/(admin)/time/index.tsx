@@ -18,6 +18,8 @@ import { TimesheetEntryCard } from '../../../src/components/admin/time/Timesheet
 import { TimesheetFormModal } from '../../../src/components/admin/time/TimesheetFormModal';
 import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
 import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
+import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
+import { AdminScreenGuard } from '../../../src/components/admin/AdminScreenGuard';
 import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
 import he from '../../../src/i18n/locales/he';
 
@@ -65,21 +67,15 @@ export default function TimeScreen() {
   const approve = useMutation({ mutationFn: (id: string) => container.approveTimesheet.execute({ entryId: id }), onSuccess: invalidate });
   const reject  = useMutation({ mutationFn: (id: string) => container.rejectTimesheet.execute({ entryId: id }),  onSuccess: invalidate });
 
-  if (rolesLoading) {
-    return <View style={styles.center}><Text>{t.loading}</Text></View>;
-  }
-  if (!can('time.report')) {
-    return <View style={styles.center}><Text style={styles.deniedTitle}>{t.forbiddenTitle}</Text></View>;
-  }
-
   return (
+    <AdminScreenGuard
+      isLoading={rolesLoading}
+      allowed={can('time.report')}
+      loadingLabel={t.loading}
+      forbiddenLabel={t.forbiddenTitle}
+    >
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{t.title}</Text>
-        <Pressable accessibilityRole="button" onPress={() => setCreating(true)} style={styles.newBtn}>
-          <Text style={styles.newBtnText}>{t.newBtn}</Text>
-        </Pressable>
-      </View>
+      <AdminScreenHeader title={t.title} newLabel={t.newBtn} onNew={() => setCreating(true)} />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {(['mine', 'pending', 'all'] as readonly Tab[]).map((value) => (
@@ -141,18 +137,12 @@ export default function TimeScreen() {
         />
       )}
     </View>
+    </AdminScreenGuard>
   );
 }
 
 const useStyles = makeUseStyles(({ colors }) => ({
   root:        { flex: 1, backgroundColor: colors.background },
-  center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  deniedTitle: { fontSize: 18, fontWeight: '700' },
-  header:      { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8,
-                 flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title:       { fontSize: 22, fontWeight: '700' },
-  newBtn:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
-  newBtnText:  { color: colors.textInverse, fontSize: 13, fontWeight: '700' },
   chips:       { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
   totalLabel:  { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
 }));
