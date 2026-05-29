@@ -24,6 +24,7 @@ export { LegalDocumentCache, type AsyncKVStorage } from './legal/legalCache';
 export * from './admin/SupabaseAdminRoleRepository';
 export * from './admin/SupabaseAdminTaskRepository';
 export * from './admin/SupabaseAdminContentRepository';
+export * from './admin/SupabaseCrmContactsRepository';
 export * from './admin/SupabaseOrgApplicationsRepository';
 export * from './reports/SupabaseReportsRepository';
 export { SupabaseRideListingRepository } from './rides/SupabaseRideListingRepository';

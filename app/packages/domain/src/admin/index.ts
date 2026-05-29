@@ -6,4 +6,5 @@ export * from './AdminTask';
 export * from './AdminTaskActivity';
 export * from './AdminTaskError';
 export * from './AdminContentSearch';
+export * from './CrmContact';
 export * from './OrgApplication';

@@ -499,6 +499,89 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          last_contacted_at: string | null
+          name: string
+          notes: string | null
+          organization: string | null
+          phone: string | null
+          role_title: string | null
+          status: string
+          tags: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name?: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           active: boolean
@@ -2725,6 +2808,49 @@ export type Database = {
       }
       closure_cleanup_expired: { Args: never; Returns: number }
       closure_cleanup_expired_with_metric: { Args: never; Returns: number }
+      crm_contact_delete: { Args: { p_contact_id: string }; Returns: undefined }
+      crm_contact_list: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+          p_tag?: string
+        }
+        Returns: {
+          contact_id: string
+          created_at: string
+          email: string
+          last_contacted_at: string
+          name: string
+          notes: string
+          organization: string
+          phone: string
+          role_title: string
+          status: string
+          tags: string[]
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      crm_contact_mark_contacted: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
+      crm_contact_upsert: {
+        Args: {
+          p_contact_id?: string
+          p_email?: string
+          p_name?: string
+          p_notes?: string
+          p_organization?: string
+          p_phone?: string
+          p_role_title?: string
+          p_status?: string
+          p_tags?: string[]
+        }
+        Returns: string
+      }
       delete_account_data: { Args: never; Returns: Json }
       enforce_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
