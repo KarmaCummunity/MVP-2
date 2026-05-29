@@ -1,4 +1,8 @@
-import { AdminTaskError, ADMIN_TASK_PRIORITIES } from '@kc/domain';
+import {
+  AdminTaskError,
+  ADMIN_TASK_CATEGORIES,
+  ADMIN_TASK_PRIORITIES,
+} from '@kc/domain';
 import type { IAdminTaskRepository, UpdateAdminTaskInput } from './IAdminTaskRepository';
 
 export interface UpdateAdminTaskCommand {
@@ -21,6 +25,12 @@ export class UpdateAdminTaskUseCase {
       && !(ADMIN_TASK_PRIORITIES as readonly string[]).includes(patch.priority)
     ) {
       throw new AdminTaskError('invalid_priority');
+    }
+    if (
+      patch.category !== undefined
+      && !(ADMIN_TASK_CATEGORIES as readonly string[]).includes(patch.category)
+    ) {
+      throw new AdminTaskError('invalid_category', 'unknown category');
     }
     await this.repo.update(taskId, patch);
   }

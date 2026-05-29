@@ -6,7 +6,9 @@ import {
   FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import {
-  ADMIN_TASK_STATUSES, type AdminPermission, type AdminRole, type AdminTaskStatus,
+  ADMIN_TASK_CATEGORIES,
+  ADMIN_TASK_STATUSES, type AdminPermission, type AdminRole,
+  type AdminTaskCategory, type AdminTaskStatus,
   hasPermission,
 } from '@kc/domain';
 import type { AdminTaskListFilters } from '@kc/application';
@@ -20,14 +22,16 @@ export default function TasksScreen() {
   const styles = useStyles();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [statusFilter, setStatusFilter] = useState<AdminTaskStatus | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<AdminTaskCategory | null>(null);
   const [onlyMine, setOnlyMine] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
 
   const filters = useMemo<AdminTaskListFilters>(() => ({
-    status:    statusFilter ?? undefined,
+    status:    statusFilter   ?? undefined,
+    category:  categoryFilter ?? undefined,
     onlyMine,
     overdue:   overdueOnly,
-  }), [statusFilter, onlyMine, overdueOnly]);
+  }), [statusFilter, categoryFilter, onlyMine, overdueOnly]);
 
   const q = useAdminTasksList(filters);
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
@@ -82,6 +86,22 @@ export default function TasksScreen() {
           active={onlyMine}
           onPress={() => setOnlyMine((v) => !v)}
         />
+      </ScrollView>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <FilterChip
+          label={he.admin.tasks.categoryFilters.all}
+          active={categoryFilter === null}
+          onPress={() => setCategoryFilter(null)}
+        />
+        {ADMIN_TASK_CATEGORIES.map((c) => (
+          <FilterChip
+            key={c}
+            label={he.admin.tasks.category[c]}
+            active={categoryFilter === c}
+            onPress={() => setCategoryFilter(categoryFilter === c ? null : c)}
+          />
+        ))}
       </ScrollView>
 
       <FlatList

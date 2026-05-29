@@ -1,5 +1,6 @@
 import type {
   AdminTask,
+  AdminTaskCategory,
   AdminTaskPriority,
   AdminTaskStatus,
   AdminTaskWithActivities,
@@ -11,6 +12,7 @@ export interface AdminTaskListFilters {
   readonly onlyMine?: boolean;
   readonly overdue?: boolean;
   readonly priority?: AdminTaskPriority;
+  readonly category?: AdminTaskCategory;
   readonly label?: string;
   readonly limit?: number;
   readonly offset?: number;
@@ -20,6 +22,7 @@ export interface CreateAdminTaskInput {
   readonly title: string;
   readonly description?: string | null;
   readonly priority?: AdminTaskPriority;
+  readonly category?: AdminTaskCategory;
   readonly assigneeId?: string | null;
   readonly dueAt?: Date | null;
   readonly labels?: readonly string[];
@@ -29,6 +32,7 @@ export interface UpdateAdminTaskInput {
   readonly title?: string;
   readonly description?: string | null;
   readonly priority?: AdminTaskPriority;
+  readonly category?: AdminTaskCategory;
   readonly dueAt?: Date | null;
   readonly clearDue?: boolean;
   readonly labels?: readonly string[];
