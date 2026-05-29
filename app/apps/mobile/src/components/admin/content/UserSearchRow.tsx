@@ -1,9 +1,16 @@
 // app/apps/mobile/src/components/admin/content/UserSearchRow.tsx
 // FR-ADMIN-019 — single row for the admin users search.
+// V2-ADMIN-USERS-6 — inline "Ban" affordance routes the admin through the
+// existing FR-ADMIN-004 BanUserModal without forcing them through the user
+// profile screen first.
+import { useState } from 'react';
 import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { type AdminPermission, type AdminRole, hasPermission } from '@kc/domain';
 import type { AdminUserSearchResult } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
+import { useAdminRoles } from '../../../hooks/useAdminRoles';
+import { BanUserModal } from '../../profile/BanUserModal';
 import he from '../../../i18n/locales/he';
 
 export interface UserSearchRowProps {
@@ -17,32 +24,65 @@ function statusTone(status: string): 'good' | 'warn' | 'bad' | 'muted' {
   return 'muted';
 }
 
+// Banning is permanent in MVP (FR-ADMIN-004 AC3) — only offer it to users who
+// aren't already banned / deleted; deleted accounts are immutable.
+function canShowBanButton(status: string): boolean {
+  return status !== 'banned' && status !== 'deleted';
+}
+
 export function UserSearchRow({ row }: UserSearchRowProps) {
   const styles = useStyles();
   const tone = statusTone(row.accountStatus);
+  const { roles } = useAdminRoles();
+  const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
+  const showBan = can('reports.permanent_ban') && canShowBanButton(row.accountStatus);
+  const [banOpen, setBanOpen] = useState(false);
+
   return (
-    <Pressable
-      style={styles.root}
-      onPress={() => {
-        if (row.shareHandle) {
-          router.push({ pathname: '/user/[handle]', params: { handle: row.shareHandle } });
-        }
-      }}
-    >
-      <View style={styles.main}>
-        <Text style={styles.name} numberOfLines={1}>
-          {row.displayName ?? he.admin.admins.row.unnamed}
-        </Text>
-        {row.shareHandle && <Text style={styles.handle} numberOfLines={1}>@{row.shareHandle}</Text>}
-        {row.cityName && <Text style={styles.meta} numberOfLines={1}>{row.cityName}</Text>}
-      </View>
-      <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
-        <Text style={styles.chipText}>
-          {he.admin.content.userStatus[row.accountStatus as keyof typeof he.admin.content.userStatus]
-            ?? row.accountStatus}
-        </Text>
-      </View>
-    </Pressable>
+    <>
+      <Pressable
+        style={styles.root}
+        onPress={() => {
+          if (row.shareHandle) {
+            router.push({ pathname: '/user/[handle]', params: { handle: row.shareHandle } });
+          }
+        }}
+      >
+        <View style={styles.main}>
+          <Text style={styles.name} numberOfLines={1}>
+            {row.displayName ?? he.admin.admins.row.unnamed}
+          </Text>
+          {row.shareHandle && <Text style={styles.handle} numberOfLines={1}>@{row.shareHandle}</Text>}
+          {row.cityName && <Text style={styles.meta} numberOfLines={1}>{row.cityName}</Text>}
+        </View>
+        <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
+          <Text style={styles.chipText}>
+            {he.admin.content.userStatus[row.accountStatus as keyof typeof he.admin.content.userStatus]
+              ?? row.accountStatus}
+          </Text>
+        </View>
+        {showBan && (
+          <Pressable
+            accessibilityRole="button"
+            accessibilityLabel={he.admin.content.userInline.ban}
+            onPress={(e) => {
+              e.stopPropagation();
+              setBanOpen(true);
+            }}
+            style={styles.actionBtn}
+          >
+            <Text style={styles.actionText}>{he.admin.content.userInline.ban}</Text>
+          </Pressable>
+        )}
+      </Pressable>
+      {showBan && (
+        <BanUserModal
+          targetUserId={row.userId}
+          visible={banOpen}
+          onClose={() => setBanOpen(false)}
+        />
+      )}
+    </>
   );
 }
 
@@ -62,4 +102,9 @@ const useStyles = makeUseStyles(({ colors }) => ({
   chip_bad:    { backgroundColor: colors.errorLight },
   chip_muted:  { backgroundColor: colors.border },
   chipText:    { fontSize: 11, fontWeight: '700' },
+  actionBtn:   {
+    paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6,
+    backgroundColor: colors.errorLight,
+  },
+  actionText:  { fontSize: 11, fontWeight: '700', color: colors.error },
 }));

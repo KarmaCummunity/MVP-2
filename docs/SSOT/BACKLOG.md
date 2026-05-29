@@ -109,6 +109,14 @@
 | INFRA-CI-MAIN-P1 | Main-production CI/CD P1: pin Supabase CLI 2.99.0, web build gate on `main` PRs, prod smoke workflow, `RELEASE_CHECKLIST.md` | infra | ✅ Done | `docs/SSOT/RELEASE_CHECKLIST.md`, `docs/SSOT/ENVIRONMENTS.md` |
 | INFRA-CI-SPLIT-GUARDS | Split CI into `ci-frontend` / `ci-backend` / `ci-contract` / `ci-pr` workflows with path filters; add migration-chain guard, RLS lint, RPC contract, `database.types.ts` drift, manifest parity, local-stack sqlProbes | infra | ✅ Done | `docs/superpowers/plans/2026-05-22-ci-split-and-backend-guards.md` |
 | INFRA-DEV-CI-HARDENING | Dev branch CI parity: `ci-dev-guard` migration safety on `dev` PRs; `db-deploy` dry-run before apply on `supabase-dev` and `supabase-prod`; document dev branch-protection required checks | infra | ✅ Done | `docs/superpowers/plans/2026-05-28-dev-branch-ci-hardening.md`; `D-54` |
+| INFRA-QA-W0 | Testing policy (`TESTING.md`), `D-55`, E2E secrets/vars docs, `ensure-e2e-user.mjs` | infra | ✅ Done | `docs/SSOT/TESTING.md`, `D-55` |
+| INFRA-QA-W1 | Playwright P0 E2E gate on `dev` → `main` (`ci-e2e-dev.yml`, `tests/e2e/`) | infra | 🟡 In progress | `docs/superpowers/plans/2026-05-28-comprehensive-quality-automation.md` Wave 1 |
+| INFRA-QA-W2 | E2E domain expansion (posts, chat send, donations, research) | infra | ⏳ Planned | Wave 2 |
+| INFRA-QA-W3 | RLS persona integration suite | infra | ⏳ Planned | Wave 3 |
+| INFRA-QA-W4 | Performance budgets (Lighthouse + k6) | infra | ⏳ Planned | Wave 4 |
+| INFRA-QA-W5 | Accessibility axe gate | infra | ⏳ Planned | Wave 5 |
+| INFRA-QA-W6 | Maestro native smoke | infra | ⏳ Planned | Wave 6 |
+| INFRA-QA-W7 | Expanded prod synthetic monitoring | infra | ⏳ Planned | Wave 7 |
 | PERF-1 | Performance Wave 0 — Sentry crash + perf instrumentation + Edge Function timing logger | infra | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 0; `docs/superpowers/plans/2026-05-25-perf-wave-0-observability.md` |
 | PERF-2 | Performance Wave 1 — KCImage + transform URLs + React.memo + Zustand selectors + memoized date/URL composition | agent-fe | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 1; `docs/superpowers/plans/2026-05-25-perf-wave-1-images-rerenders.md` |
 | PERF-3 | Performance Wave 2 (partial) — column pruning + .limit() defenses + QueryClient defaults + per-query staleTime + stats Realtime + feed gap-fill on resume + actor identity projection completion. Wave 2 A+B (new feed/inbox RPCs) deferred to a separate PR for safety. | agent-fullstack | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 2; `docs/superpowers/plans/2026-05-25-perf-wave-2-db-rq.md` |
