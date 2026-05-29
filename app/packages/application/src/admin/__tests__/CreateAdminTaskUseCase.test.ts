@@ -38,7 +38,15 @@ describe('CreateAdminTaskUseCase', () => {
     });
   });
 
-  it('forwards optional fields (description, dueAt, labels, assignee)', async () => {
+  it('throws invalid_category for unknown category values', async () => {
+    const uc = new CreateAdminTaskUseCase(fakeAdminTaskRepo());
+    // @ts-expect-error testing runtime rejection of invalid category
+    await expect(uc.execute({ title: 'ok', category: 'unknown' })).rejects.toMatchObject({
+      code: 'invalid_category',
+    });
+  });
+
+  it('forwards optional fields (description, dueAt, labels, assignee, category)', async () => {
     const repo = fakeAdminTaskRepo();
     const uc = new CreateAdminTaskUseCase(repo);
     const due = new Date('2026-12-31');
@@ -47,6 +55,7 @@ describe('CreateAdminTaskUseCase', () => {
       description: 'd',
       assigneeId: 'u-1',
       priority: 'high',
+      category: 'moderation',
       dueAt: due,
       labels: ['p0', 'urgent'],
     });
@@ -55,6 +64,7 @@ describe('CreateAdminTaskUseCase', () => {
       description: 'd',
       assigneeId: 'u-1',
       priority: 'high',
+      category: 'moderation',
       dueAt: due,
       labels: ['p0', 'urgent'],
     });

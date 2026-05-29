@@ -138,6 +138,8 @@ export class SupabaseAdminContentRepository implements IAdminContentRepository {
       p_action:         filters.action       ?? null,
       p_limit:          filters.limit        ?? 100,
       p_offset:         filters.offset       ?? 0,
+      p_from:           filters.fromDate ? filters.fromDate.toISOString() : null,
+      p_to:             filters.toDate   ? filters.toDate.toISOString()   : null,
     });
     if (error) throw toError(error);
     const rows = Array.isArray(data) ? (data as AuditRow[]) : [];

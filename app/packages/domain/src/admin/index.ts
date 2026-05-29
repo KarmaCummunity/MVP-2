@@ -7,3 +7,5 @@ export * from './AdminTaskActivity';
 export * from './AdminTaskError';
 export * from './AdminContentSearch';
 export * from './FinanceLedger';
+export * from './CrmContact';
+export * from './OrgApplication';

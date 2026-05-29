@@ -1,4 +1,4 @@
--- 0167_finance_ledger — V2-ADMIN-MONEY-9 — foundation for V2 §13.3 Admin Money.
+-- 0170_finance_ledger — V2-ADMIN-MONEY-9 — foundation for V2 §13.3 Admin Money.
 --
 -- Single-table accounting ledger. Amounts in minor units (cents/agorot); the
 -- mobile UI formats by currency. Five movement kinds:

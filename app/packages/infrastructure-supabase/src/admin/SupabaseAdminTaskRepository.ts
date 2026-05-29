@@ -12,6 +12,7 @@ import {
   type AdminTaskWithActivities,
   AdminTaskError,
   type AdminTaskErrorCode,
+  coerceAdminTaskCategory,
   parseAdminTaskActivityKind,
   parseAdminTaskPriority,
   parseAdminTaskStatus,
@@ -23,6 +24,7 @@ interface AdminTaskRow {
   description: string | null;
   status: string;
   priority: string;
+  category?: string | null;
   assignee_id: string | null;
   assignee_display_name: string | null;
   created_by: string;
@@ -52,6 +54,7 @@ const KNOWN_ERROR_MESSAGES: ReadonlySet<AdminTaskErrorCode> = new Set([
   'invalid_title',
   'title_too_long',
   'invalid_priority',
+  'invalid_category',
   'invalid_status',
   'invalid_transition',
   'invalid_input',
@@ -81,6 +84,9 @@ function mapRowToTask(row: AdminTaskRow): AdminTask | null {
     description: row.description,
     status,
     priority,
+    // Tolerates rows from a pre-0161 deployment where the column isn't present —
+    // the row is still mapped, with category coerced to the default 'other'.
+    category: coerceAdminTaskCategory(row.category ?? null),
     assigneeId: row.assignee_id,
     assigneeDisplayName: row.assignee_display_name,
     createdBy: row.created_by,
@@ -118,14 +124,18 @@ export class SupabaseAdminTaskRepository implements IAdminTaskRepository {
 
   async list(filters: AdminTaskListFilters): Promise<readonly AdminTask[]> {
     const { data, error } = await this.client.rpc('admin_task_list', {
-      p_status:    filters.status    ?? null,
-      p_assignee:  filters.assigneeId ?? null,
-      p_only_mine: filters.onlyMine   ?? false,
-      p_overdue:   filters.overdue    ?? false,
-      p_priority:  filters.priority   ?? null,
-      p_label:     filters.label      ?? null,
-      p_limit:     filters.limit      ?? 50,
-      p_offset:    filters.offset     ?? 0,
+      p_status:           filters.status         ?? null,
+      p_assignee:         filters.assigneeId     ?? null,
+      p_only_mine:        filters.onlyMine       ?? false,
+      p_overdue:          filters.overdue        ?? false,
+      p_priority:         filters.priority       ?? null,
+      p_label:            filters.label          ?? null,
+      p_limit:            filters.limit          ?? 50,
+      p_offset:           filters.offset         ?? 0,
+      p_category:         filters.category       ?? null,
+      p_due_from:         filters.dueFrom ? filters.dueFrom.toISOString() : null,
+      p_due_to:           filters.dueTo   ? filters.dueTo.toISOString()   : null,
+      p_unassigned_only:  filters.unassignedOnly ?? false,
     });
     if (error) throw mapRpcError(error);
     if (!Array.isArray(data)) return [];
@@ -155,6 +165,7 @@ export class SupabaseAdminTaskRepository implements IAdminTaskRepository {
       p_assignee_id: input.assigneeId  ?? null,
       p_due_at:      input.dueAt ? input.dueAt.toISOString() : null,
       p_labels:      input.labels ? [...input.labels] : [],
+      p_category:    input.category    ?? 'other',
     });
     if (error) throw mapRpcError(error);
     if (typeof data !== 'string') {
@@ -172,6 +183,7 @@ export class SupabaseAdminTaskRepository implements IAdminTaskRepository {
       p_due_at:      patch.dueAt ? patch.dueAt.toISOString() : null,
       p_clear_due:   patch.clearDue    ?? false,
       p_labels:      patch.labels ? [...patch.labels] : null,
+      p_category:    patch.category    ?? null,
     });
     if (error) throw mapRpcError(error);
   }

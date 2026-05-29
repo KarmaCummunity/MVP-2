@@ -1,19 +1,23 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
 import { adminContentHe } from './adminContent';
 import { adminMoneyHe } from './adminMoney';
+import { adminCrmHe } from './adminCrm';
+import { adminOrgApprovalsHe } from './adminOrgApprovals';
 
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
   settingsRow: 'פורטל ניהול',
   nav: {
-    dashboard: 'לוח בקרה',
-    reports: 'דיווחים',
-    tasks: 'משימות צוות',
-    admins: 'צוות ניהול',
-    users: 'משתמשים',
-    posts: 'פוסטים',
-    money: 'כספים',
-    audit: 'יומן פעולות',
+    dashboard:     'לוח בקרה',
+    reports:       'דיווחים',
+    tasks:         'משימות צוות',
+    admins:        'צוות ניהול',
+    users:         'משתמשים',
+    posts:         'פוסטים',
+    money:         'כספים',
+    crm:           'CRM',
+    orgApprovals:  'אישור ארגונים',
+    audit:         'יומן פעולות',
   },
   roles: {
     super_admin: 'מנהל-על',
@@ -94,6 +98,23 @@ export const adminHe = {
     },
     notFound: 'לא נמצא תיק.',
     loading:  'טוען...',
+    openReporter: (name: string) => `פתח פרופיל של ${name}`,
+    targetCard: {
+      postKind:    'פוסט',
+      userKind:    'משתמש',
+      chatKind:    'צ׳אט',
+      noPreview:   '(אין תצוגה מקדימה)',
+      unnamedUser: '(משתמש ללא שם)',
+      openPost:    'פתח את הפוסט',
+      openProfile: 'פתח פרופיל',
+      openAuthor:  'פתח את היוצר',
+      createdAt:   (when: string) => `נוצר ב-${when}`,
+      signedUpAt:  (when: string) => `הצטרף ב-${when}`,
+      removedAt:   (when: string) => `הוסר ב-${when}`,
+      chatActive:  'פעיל',
+      chatRemoved: 'מוסר',
+      chatNoLink:  'תוכן הצ׳אט אינו נחשף כאן לטובת פרטיות שני הצדדים.',
+    },
   },
   coexistence: {
     bubbleReadOnly: 'הפעולות זמינות בפורטל הניהול',
@@ -172,6 +193,31 @@ export const adminHe = {
       high:   'גבוהה',
       urgent: 'דחופה',
     },
+    category: {
+      moderation:  'מודרציה',
+      support:     'תמיכה',
+      engineering: 'הנדסה',
+      product:     'מוצר',
+      operations:  'תפעול',
+      marketing:   'שיווק',
+      finance:     'כספים',
+      other:       'אחר',
+    },
+    categoryFilters: {
+      all: 'כל הקטגוריות',
+    },
+    assigneeFilter: {
+      all:        'כל המשויכים',
+      unassigned: 'לא משויך',
+    },
+    dueRange: {
+      fromLabel:   'מתאריך יעד',
+      toLabel:     'עד תאריך יעד',
+      placeholder: 'YYYY-MM-DD',
+      apply:       'החל',
+      clear:       'נקה',
+    },
+
     filters: {
       all:      'הכל',
       overdue:  'באיחור',
@@ -190,6 +236,7 @@ export const adminHe = {
       descriptionLabel:     'תיאור (אופציונלי)',
       descriptionPlaceholder: 'הקשר, קישורים, צעדים...',
       priorityLabel:        'עדיפות',
+      categoryLabel:        'קטגוריה',
       assigneeLabel:        'משויך ל-',
       unassigned:           'ללא משויך',
       labelsLabel:          'תוויות (מופרדות בפסיק)',
@@ -202,6 +249,7 @@ export const adminHe = {
       createdBy:          (name: string) => `נוצרה על-ידי ${name}`,
       activity:           'יומן פעולות',
       changeStatus:       'שינוי סטטוס',
+      changeCategory:     'שינוי קטגוריה',
       addComment:         'הוסף תגובה',
       commentPlaceholder: 'תגובה...',
       submitComment:      'שלח תגובה',
@@ -223,12 +271,14 @@ export const adminHe = {
       titleChanged:        'הכותרת עודכנה',
       descriptionChanged:  'התיאור עודכן',
       labelsChanged:       'התוויות עודכנו',
+      categoryChange:      (from: string, to: string) => `קטגוריה שונתה מ-${from} ל-${to}`,
     },
     errors: {
       forbidden:           'אין לך הרשאה לבצע פעולה זו.',
       invalid_title:       'כותרת חסרה או לא תקינה.',
       title_too_long:      'הכותרת ארוכה מדי (עד 200 תווים).',
       invalid_priority:    'עדיפות לא תקינה.',
+      invalid_category:    'קטגוריה לא תקינה.',
       invalid_status:      'סטטוס לא תקין.',
       invalid_transition:  'מעבר סטטוס לא חוקי.',
       invalid_input:       'קלט לא תקין.',
@@ -241,4 +291,6 @@ export const adminHe = {
   },
   content: adminContentHe,
   money: adminMoneyHe,
+  crm: adminCrmHe,
+  orgApprovals: adminOrgApprovalsHe,
 } as const;

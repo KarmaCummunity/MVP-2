@@ -173,6 +173,7 @@ export type Database = {
       admin_tasks: {
         Row: {
           assignee_id: string | null
+          category: string
           created_at: string
           created_by: string
           description: string | null
@@ -186,6 +187,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          category?: string
           created_at?: string
           created_by: string
           description?: string | null
@@ -199,6 +201,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          category?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -495,6 +498,89 @@ export type Database = {
           run_at?: string
         }
         Relationships: []
+      }
+      crm_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          last_contacted_at: string | null
+          name: string
+          notes: string | null
+          organization: string | null
+          phone: string | null
+          role_title: string | null
+          status: string
+          tags: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name?: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       devices: {
         Row: {
@@ -1003,6 +1089,80 @@ export type Database = {
           {
             foreignKeyName: "notifications_outbox_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      org_applications: {
+        Row: {
+          applicant_user_id: string
+          application_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          org_description: string | null
+          org_name: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          website_url: string | null
+        }
+        Insert: {
+          applicant_user_id: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Update: {
+          applicant_user_id?: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "users_public"
             referencedColumns: ["user_id"]
@@ -2368,9 +2528,11 @@ export type Database = {
         Args: {
           p_action?: string
           p_actor_id?: string
+          p_from?: string
           p_limit?: number
           p_offset?: number
           p_target_user_id?: string
+          p_to?: string
         }
         Returns: {
           action: string
@@ -2420,6 +2582,38 @@ export type Database = {
           role: string
           user_id: string
         }[]
+      }
+      admin_org_application_approve: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_decide: {
+        Args: { p_application_id: string; p_approve: boolean; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_list: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: {
+          applicant_name: string
+          applicant_user_id: string
+          application_id: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          org_description: string
+          org_name: string
+          review_note: string
+          reviewed_at: string
+          reviewed_by: string
+          reviewer_name: string
+          status: string
+          total_count: number
+          website_url: string
+        }[]
+      }
+      admin_org_application_reject: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
       }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
@@ -2476,6 +2670,7 @@ export type Database = {
       admin_task_create: {
         Args: {
           p_assignee_id?: string
+          p_category?: string
           p_description?: string
           p_due_at?: string
           p_labels?: string[]
@@ -2491,6 +2686,7 @@ export type Database = {
           activities: Json
           assignee_display_name: string
           assignee_id: string
+          category: string
           created_at: string
           created_by: string
           created_by_display_name: string
@@ -2520,6 +2716,9 @@ export type Database = {
       admin_task_list: {
         Args: {
           p_assignee?: string
+          p_category?: string
+          p_due_from?: string
+          p_due_to?: string
           p_label?: string
           p_limit?: number
           p_offset?: number
@@ -2527,10 +2726,12 @@ export type Database = {
           p_overdue?: boolean
           p_priority?: string
           p_status?: string
+          p_unassigned_only?: boolean
         }
         Returns: {
           assignee_display_name: string
           assignee_id: string
+          category: string
           comment_count: number
           created_at: string
           created_by: string
@@ -2551,6 +2752,7 @@ export type Database = {
       }
       admin_task_update: {
         Args: {
+          p_category?: string
           p_clear_due?: boolean
           p_description?: string
           p_due_at?: string
@@ -2606,6 +2808,49 @@ export type Database = {
       }
       closure_cleanup_expired: { Args: never; Returns: number }
       closure_cleanup_expired_with_metric: { Args: never; Returns: number }
+      crm_contact_delete: { Args: { p_contact_id: string }; Returns: undefined }
+      crm_contact_list: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+          p_tag?: string
+        }
+        Returns: {
+          contact_id: string
+          created_at: string
+          email: string
+          last_contacted_at: string
+          name: string
+          notes: string
+          organization: string
+          phone: string
+          role_title: string
+          status: string
+          tags: string[]
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      crm_contact_mark_contacted: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
+      crm_contact_upsert: {
+        Args: {
+          p_contact_id?: string
+          p_email?: string
+          p_name?: string
+          p_notes?: string
+          p_organization?: string
+          p_phone?: string
+          p_role_title?: string
+          p_status?: string
+          p_tags?: string[]
+        }
+        Returns: string
+      }
       delete_account_data: { Args: never; Returns: Json }
       enforce_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
