@@ -39,6 +39,7 @@ function PostCardInner({ post, onMessagePress, onPressOverride }: PostCardProps)
 
   return (
     <TouchableOpacity
+      testID="feed-post-card"
       style={styles.card}
       activeOpacity={0.8}
       onPress={() =>
