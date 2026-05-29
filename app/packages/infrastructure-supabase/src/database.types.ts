@@ -2371,9 +2371,11 @@ export type Database = {
         Args: {
           p_action?: string
           p_actor_id?: string
+          p_from?: string
           p_limit?: number
           p_offset?: number
           p_target_user_id?: string
+          p_to?: string
         }
         Returns: {
           action: string
