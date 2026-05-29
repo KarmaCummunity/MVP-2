@@ -3,7 +3,7 @@
 // V2-ADMIN-POSTS-6 — inline "Remove" / "Restore" affordance so admins can act
 // straight from the search results instead of opening every post detail.
 import { useState } from 'react';
-import { Platform, Pressable, StyleSheet, Text, View, Alert } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { router } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { type AdminPermission, type AdminRole, hasPermission } from '@kc/domain';
@@ -11,6 +11,7 @@ import type { AdminPostSearchResult } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { container } from '../../../lib/container';
+import { confirmAction as platformConfirm } from '../../../services/platformConfirm';
 import he from '../../../i18n/locales/he';
 
 export interface PostSearchRowProps {
@@ -24,15 +25,10 @@ function statusTone(status: string): 'good' | 'warn' | 'bad' | 'muted' {
   return 'warn';
 }
 
-async function confirmAction(message: string): Promise<boolean> {
-  if (Platform.OS === 'web') {
-    return typeof window !== 'undefined' && window.confirm(message);
-  }
-  return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.tasks.detail.confirmTitle, message, [
-      { text: he.admin.tasks.detail.cancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.tasks.detail.confirmOk, onPress: () => resolve(true) },
-    ]);
+function confirmAction(message: string): Promise<boolean> {
+  return platformConfirm(he.admin.tasks.detail.confirmTitle, message, {
+    confirmLabel: he.admin.tasks.detail.confirmOk,
+    cancelLabel:  he.admin.tasks.detail.cancel,
   });
 }
 
