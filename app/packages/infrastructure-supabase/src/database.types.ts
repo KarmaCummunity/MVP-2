@@ -1012,6 +1012,80 @@ export type Database = {
           },
         ]
       }
+      org_applications: {
+        Row: {
+          applicant_user_id: string
+          application_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          org_description: string | null
+          org_name: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          website_url: string | null
+        }
+        Insert: {
+          applicant_user_id: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Update: {
+          applicant_user_id?: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       post_actor_identity: {
         Row: {
           hide_from_counterparty: boolean
@@ -2425,6 +2499,38 @@ export type Database = {
           role: string
           user_id: string
         }[]
+      }
+      admin_org_application_approve: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_decide: {
+        Args: { p_application_id: string; p_approve: boolean; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_list: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: {
+          applicant_name: string
+          applicant_user_id: string
+          application_id: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          org_description: string
+          org_name: string
+          review_note: string
+          reviewed_at: string
+          reviewed_by: string
+          reviewer_name: string
+          status: string
+          total_count: number
+          website_url: string
+        }[]
+      }
+      admin_org_application_reject: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
       }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {

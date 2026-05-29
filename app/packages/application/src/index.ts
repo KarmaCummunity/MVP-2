@@ -175,6 +175,9 @@ export * from './admin/IAdminContentRepository';
 export * from './admin/AdminSearchUsersUseCase';
 export * from './admin/AdminSearchPostsUseCase';
 export * from './admin/AdminSearchAuditUseCase';
+export * from './admin/IOrgApplicationsRepository';
+export * from './admin/ListOrgApplicationsUseCase';
+export * from './admin/DecideOrgApplicationUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
