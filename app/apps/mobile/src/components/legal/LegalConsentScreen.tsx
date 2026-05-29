@@ -8,7 +8,10 @@ import { typography, spacing, useTheme } from '@kc/ui';
 import { LegalDocumentReader } from './LegalDocumentReader';
 import { LegalConsentCard } from './LegalConsentCard';
 import { getAcceptLegalDocumentUseCase } from '../../services/legalComposition';
+import { performFullSignOut } from '../../services/performFullSignOut';
 import { useAuthStore } from '../../store/authStore';
+import { container } from '../../lib/container';
+import { useQueryClient } from '@tanstack/react-query';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
@@ -22,6 +25,7 @@ interface LegalConsentScreenProps {
 
 export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentScreenProps) {
   const { t } = useTranslation();
+  const queryClient = useQueryClient();
   const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const [accepted, setAccepted] = useState<Record<string, boolean>>({});
@@ -53,7 +57,11 @@ export function LegalConsentScreen({ mode, pending, onResolved }: LegalConsentSc
 
   const onExit = async () => {
     setExitConfirmOpen(false);
-    useAuthStore.getState().signOut();
+    await performFullSignOut({
+      deviceRepo: container.deviceRepo,
+      queryClient,
+      signOutLocal: () => useAuthStore.getState().signOut(),
+    });
     router.replace('/');
   };
 

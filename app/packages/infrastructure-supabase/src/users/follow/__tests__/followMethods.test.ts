@@ -129,12 +129,29 @@ describe('isFollowingEdge', () => {
 });
 
 describe('listFollowers / listFollowing — pagination + mapping', () => {
+  it('listFollowers uses explicit public columns in the users embed (not *)', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    await listFollowers(client, 'u_target', 50);
+    const selectOp = ops.find((o) => o.kind === 'select');
+    expect(selectOp?.args?.[0]).toContain('follower:follower_id(');
+    expect(selectOp?.args?.[0]).not.toContain('follower_id(*)');
+    expect(selectOp?.args?.[0]).not.toContain('contact_phone');
+  });
+
   it('listFollowers maps joined { follower } rows to User[]', async () => {
     const { client } = makeFakeClient({
       data: [{ follower: FAKE_USER_ROW }, { follower: null }, { follower: { ...FAKE_USER_ROW, user_id: 'u_2' } }],
     });
     const out = await listFollowers(client, 'u_target', 50);
     expect(out.map((u) => u.userId)).toEqual(['u_1', 'u_2']);
+  });
+
+  it('listFollowers scrubs contact_phone from mapped users', async () => {
+    const { client } = makeFakeClient({
+      data: [{ follower: { ...FAKE_USER_ROW, contact_phone: '050-1111111' } }],
+    });
+    const out = await listFollowers(client, 'u_target', 50);
+    expect(out[0]?.contactPhone).toBeNull();
   });
 
   it('listFollowers returns [] when data is null', async () => {

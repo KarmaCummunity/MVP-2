@@ -24,7 +24,13 @@ import {
 } from './editableProfileSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { fetchUserBy } from './fetchUserBy';
+import { getChatCounterpartyContact } from './getChatCounterpartyContact';
 import { searchUsers } from './searchUsers';
+import { USER_PUBLIC_SELECT_COLUMNS } from './userPublicColumns';
+import {
+  fetchUsersSelfPrivateFields,
+  mergeSelfPrivateFields,
+} from './usersSelfPrivateFields';
 import {
   followEdge,
   unfollowEdge,
@@ -98,10 +104,13 @@ export class SupabaseUserRepository implements IUserRepository {
       .from('users')
       .update({ privacy_mode: mode, privacy_changed_at: new Date().toISOString() })
       .eq('user_id', userId)
-      .select('user_id, auth_provider, share_handle, display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url, privacy_mode, privacy_changed_at, account_status, onboarding_state, notification_preferences, is_super_admin, closure_explainer_dismissed, first_post_nudge_dismissed, items_given_count, items_received_count, active_posts_count_internal, followers_count, following_count, created_at, updated_at')
+      .select(USER_PUBLIC_SELECT_COLUMNS)
       .single();
     if (error) throw new Error(`setPrivacyMode: ${error.message}`);
-    return mapUserRow(data as unknown as UserRow);
+    let user = mapUserRow(data as unknown as UserRow);
+    const slice = await fetchUsersSelfPrivateFields(this.client);
+    if (slice) user = mergeSelfPrivateFields(user, slice);
+    return user;
   }
 
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */
@@ -149,6 +158,11 @@ export class SupabaseUserRepository implements IUserRepository {
   }
   async findByHandle(handle: string): Promise<User | null> {
     return fetchUserBy(this.client, 'share_handle', handle);
+  }
+
+  /** FR-CHAT-014 AC7 — counterpart contact_phone when viewer is a chat participant. */
+  getChatCounterpartyContact(chatId: string): Promise<string | null> {
+    return getChatCounterpartyContact(this.client, chatId);
   }
   async create(): Promise<never> {
     throw NOT_IMPL('create', 'auto-created by handle_new_user trigger');

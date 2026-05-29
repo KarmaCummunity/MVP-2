@@ -52,14 +52,14 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     staleTime: 60_000, // PERF-3: chat anchored post — closure event invalidates explicitly
   });
 
-  // FR-CHAT-014 AC7 — surface counterpart's optional contact phone as a tel: link.
-  const counterpartQuery = useQuery({
-    queryKey: ['user', counterpartId],
-    queryFn: () => getUserRepo().findById(counterpartId!),
+  // FR-CHAT-014 AC7 — counterpart contact phone via chat-scoped RPC (TD-163).
+  const counterpartPhoneQuery = useQuery({
+    queryKey: ['chat-counterparty-contact', chatId],
+    queryFn: () => getUserRepo().getChatCounterpartyContact(chatId),
     enabled: Boolean(counterpartId),
     staleTime: 60_000,
   });
-  const counterpartPhone = counterpartQuery.data?.contactPhone ?? null;
+  const counterpartPhone = counterpartPhoneQuery.data ?? null;
 
   // When a `post_closed` system message lands in this chat, invalidate the
   // post query so the card hides — but only when there is no active closure

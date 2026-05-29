@@ -76,6 +76,13 @@ export const useCreatePostStyles = makeUseStyles(({ colors, isDark }) => ({
   },
   textarea: { minHeight: 100, textAlignVertical: 'top' as const, paddingTop: spacing.md },
   charCount: { ...typography.caption, color: colors.textDisabled, textAlign: 'left' as const },
+  sectionHint: {
+    ...typography.caption,
+    color: colors.error,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 18,
+    ...layoutWritingDirectionStyle(),
+  },
   streetRow: { flexDirection: 'row' as const, gap: spacing.sm, alignItems: 'stretch' as const },
   streetInputStreet: { flex: 2, minWidth: 0 },
   streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120 },
@@ -134,6 +141,13 @@ export const useCreatePostStyles = makeUseStyles(({ colors, isDark }) => ({
     gap: spacing.sm,
     borderTopWidth: 1,
     borderTopColor: colors.border,
+  },
+  exposureIntro: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 18,
+    ...layoutWritingDirectionStyle(),
   },
   counterpartyPrivacy: {
     gap: spacing.xs,

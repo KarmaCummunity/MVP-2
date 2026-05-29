@@ -36,7 +36,11 @@ export function useOnboardingPhotoFlow() {
       const picked = await pickAvatarImage(source);
       if (!picked) return;
       const url = await resizeAndUploadAvatar(picked, session.userId);
-      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: url });
+      await getSetAvatarUseCase().execute({
+        sessionUserId: session.userId,
+        userId: session.userId,
+        avatarUrl: url,
+      });
       setSession({ ...session, avatarUrl: url });
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('general.unknownError');
@@ -51,7 +55,11 @@ export function useOnboardingPhotoFlow() {
     setUploading(true);
     try {
       await removeUploadedAvatar(session.userId); // TD-108: delete Storage object first.
-      await getSetAvatarUseCase().execute({ userId: session.userId, avatarUrl: null });
+      await getSetAvatarUseCase().execute({
+        sessionUserId: session.userId,
+        userId: session.userId,
+        avatarUrl: null,
+      });
       setSession({ ...session, avatarUrl: null });
     } catch (err) {
       const msg = err instanceof Error ? err.message : t('general.unknownError');
