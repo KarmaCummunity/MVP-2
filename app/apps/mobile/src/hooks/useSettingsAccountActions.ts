@@ -3,16 +3,16 @@ import { useCallback, useState } from 'react';
 import { useTranslation } from 'react-i18next';
 import { Alert, Platform } from 'react-native';
 import { useRouter } from 'expo-router';
-import { getSignOutUseCase } from '../services/authComposition';
+import { useQueryClient } from '@tanstack/react-query';
 import { getDeleteAccountUseCase, setOnboardingStateDirect } from '../services/userComposition';
+import { performFullSignOut } from '../services/performFullSignOut';
 import { useAuthStore } from '../store/authStore';
-import { clearAllPersistedStores } from '../store/persistedStoresReset';
-import { deactivateCurrentDevice } from '../lib/notifications/register';
 import { container } from '../lib/container';
 
 export function useSettingsAccountActions() {
   const { t } = useTranslation();
   const router = useRouter();
+  const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
   const setOnboardingStateLocal = useAuthStore((s) => s.setOnboardingState);
   const signOutLocal = useAuthStore((s) => s.signOut);
@@ -27,21 +27,17 @@ export function useSettingsAccountActions() {
     setDeleteSuccessVisible(true);
     setTimeout(async () => {
       try {
-        // Same TD-100 + TD-103 reasoning as handleSignOut, just on the
-        // delete-account path. The account is already gone server-side at
-        // this point; this is local cleanup only.
-        try {
-          await deactivateCurrentDevice({ deviceRepo: container.deviceRepo });
-        } catch { /* ignore */ }
-        await getSignOutUseCase().execute();
-        await clearAllPersistedStores();
+        await performFullSignOut({
+          deviceRepo: container.deviceRepo,
+          queryClient,
+          signOutLocal,
+        });
       } finally {
-        signOutLocal();
         setDeleteSuccessVisible(false);
         router.replace('/(auth)');
       }
     }, 1500);
-  }, [router, signOutLocal]);
+  }, [queryClient, router, signOutLocal]);
 
   const performReset = useCallback(async () => {
     if (!session) return;
@@ -60,7 +56,7 @@ export function useSettingsAccountActions() {
     } finally {
       setResettingOnboarding(false);
     }
-  }, [router, session, setOnboardingStateLocal]);
+  }, [router, session, setOnboardingStateLocal, t]);
 
   const handleResetOnboarding = useCallback(() => {
     if (!session || resettingOnboarding) return;
@@ -74,37 +70,24 @@ export function useSettingsAccountActions() {
       { text: t('general.cancel'), style: 'cancel' },
       { text: t('settings.resetOnboardingBtn'), style: 'destructive', onPress: () => void performReset() },
     ]);
-  }, [performReset, resettingOnboarding, session]);
+  }, [performReset, resettingOnboarding, session, t]);
 
   const handleSignOut = useCallback(async () => {
     if (signingOut) return;
     setSigningOut(true);
     try {
-      // TD-100 (folded under P2.14 because it sits inside this sign-out path):
-      // deactivate the Expo push token before clearing the session, otherwise
-      // the device row stays is_active=true against the signed-out user and
-      // the next user on this device receives pushes meant for the previous
-      // one. Best-effort — never block sign-out if it fails.
-      try {
-        await deactivateCurrentDevice({ deviceRepo: container.deviceRepo });
-      } catch {
-        /* ignore — sign-out must always succeed locally */
-      }
-
-      await getSignOutUseCase().execute();
-
-      // TD-103: persisted Zustand stores survive Supabase sign-out. Clear
-      // before navigating away so the next sign-in starts clean.
-      await clearAllPersistedStores();
-
-      signOutLocal();
+      await performFullSignOut({
+        deviceRepo: container.deviceRepo,
+        queryClient,
+        signOutLocal,
+      });
       router.replace('/(auth)');
     } catch {
       Alert.alert(t('general.error'), t('settings.signOutFailed'));
     } finally {
       setSigningOut(false);
     }
-  }, [router, signOutLocal, signingOut, t]);
+  }, [queryClient, router, signOutLocal, signingOut, t]);
 
   return {
     signingOut,

@@ -40,3 +40,6 @@ scripts/hebrew-text-report.md
 
 # Turborepo local cache — per-machine build artifacts, never committed.
 .turbo/
+
+# Git worktrees (local isolated checkouts — never commit contents).
+.worktrees/

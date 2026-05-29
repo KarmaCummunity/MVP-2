@@ -166,6 +166,7 @@ export default function EditProfileScreen() {
       // TD-108: drop the Storage object before persisting null on remove.
       if (avatarChanged && avatarUrl === null && initial.avatarUrl) await removeUploadedAvatar(session.userId);
       await getUpdateProfileUseCase().execute({
+        sessionUserId: session.userId,
         userId: session.userId,
         ...(includeBasicInfo
           ? { displayName: trimmedName, city: city.id, cityName: city.name }

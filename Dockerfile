@@ -29,8 +29,9 @@ FROM node:20-alpine AS runner
 WORKDIR /srv
 
 # Server package brings hono + @hono/node-server only. Tiny dep surface.
-COPY --from=builder /repo/app/apps/mobile/web-server/package.json ./package.json
-RUN npm install --omit=dev
+COPY --from=builder /repo/app/apps/mobile/web-server/package.json ./
+COPY --from=builder /repo/app/apps/mobile/web-server/package-lock.json ./
+RUN npm ci --omit=dev
 
 COPY --from=builder /repo/app/apps/mobile/web-server/server.mjs ./server.mjs
 COPY --from=builder /repo/app/apps/mobile/web-server/i18n ./i18n

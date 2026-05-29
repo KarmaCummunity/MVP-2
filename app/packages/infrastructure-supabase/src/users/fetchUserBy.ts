@@ -1,18 +1,24 @@
-// Shared helper: SELECT * FROM users WHERE <col> = <value>, mapped to domain.
+// Shared helper: SELECT public columns FROM users WHERE <col> = <value>, mapped to domain.
 // Extracted from SupabaseUserRepository to keep that file under the size cap
-// (TD-112). See TD-39 for the non-self scrub rationale.
+// (TD-112). See TD-39 / TD-163 for non-self scrub and column grants.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { User } from '@kc/domain';
 import { mapUserRow, type UserRow } from './mapUserRow';
+import { scrubUserForNonOwner } from './scrubUserForViewer';
+import { USER_PUBLIC_SELECT_COLUMNS } from './userPublicColumns';
+import {
+  fetchUsersSelfPrivateFields,
+  mergeSelfPrivateFields,
+} from './usersSelfPrivateFields';
 
 /**
  * TD-39: when the viewer is NOT the row's owner, blank out the internal
  * counter columns that would otherwise let a non-owner infer OnlyMe post
  * existence via counter deltas (internal excludes OnlyMe; public projection does not).
- * The DB
- * column-grants still return the raw numbers (RLS predicates apply per row,
- * not per column), so the privacy boundary is enforced here at the adapter.
+ *
+ * TD-163: PII columns are revoked at the DB grant layer; the adapter also
+ * scrubs any residual fields for non-owners. Owners merge private fields via RPC.
  *
  * `auth.getSession()` reads the cached JWT — no network roundtrip.
  */
@@ -23,20 +29,21 @@ export async function fetchUserBy(
 ): Promise<User | null> {
   const { data, error } = await client
     .from('users')
-    .select('user_id, auth_provider, share_handle, display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url, privacy_mode, privacy_changed_at, account_status, onboarding_state, notification_preferences, is_super_admin, closure_explainer_dismissed, first_post_nudge_dismissed, items_given_count, items_received_count, active_posts_count_internal, followers_count, following_count, created_at, updated_at')
+    .select(USER_PUBLIC_SELECT_COLUMNS)
     .eq(column, value)
     .maybeSingle();
   if (error) throw new Error(`fetchUserBy(${column}): ${error.message}`);
   if (!data) return null;
 
-  const user = mapUserRow(data as unknown as UserRow);
+  let user = mapUserRow(data as unknown as UserRow);
 
   const { data: sessionData } = await client.auth.getSession();
   const viewerId = sessionData.session?.user.id ?? null;
-  if (viewerId === user.userId) return user;
+  if (viewerId === user.userId) {
+    const slice = await fetchUsersSelfPrivateFields(client);
+    if (slice) user = mergeSelfPrivateFields(user, slice);
+    return user;
+  }
 
-  // Closure-side counters (items_given_count / items_received_count) stay
-  // visible — they're lifetime totals over closed_delivered posts and don't
-  // leak OnlyMe presence.
-  return { ...user, activePostsCountInternal: 0 };
+  return scrubUserForNonOwner(user);
 }

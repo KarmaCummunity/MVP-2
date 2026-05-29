@@ -4,9 +4,11 @@
 import { STREET_NUMBER_PATTERN } from '@kc/domain';
 import type { IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
+import { assertSessionUser } from './assertSessionUser';
 import { OnboardingError } from './errors';
 
 export interface CompleteBasicInfoInput {
+  readonly sessionUserId: string;
   readonly userId: string;
   readonly displayName: string;
   readonly cityId: string;
@@ -25,6 +27,7 @@ export class CompleteBasicInfoUseCase {
   ) {}
 
   async execute(input: CompleteBasicInfoInput): Promise<void> {
+    assertSessionUser(input.sessionUserId, input.userId);
     const trimmedName = input.displayName.trim();
     if (trimmedName.length === 0 || trimmedName.length > 50) {
       throw new Error('invalid_display_name');
