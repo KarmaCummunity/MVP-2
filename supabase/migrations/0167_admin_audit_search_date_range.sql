@@ -1,4 +1,4 @@
--- 0163_admin_audit_search_date_range — V2-ADMIN-AUDIT-5 — date range on audit search.
+-- 0167_admin_audit_search_date_range — V2-ADMIN-AUDIT-5 — date range on audit search.
 --
 -- Extends `admin_audit_search` with `p_from` / `p_to` so admins can scope by
 -- time (e.g. "all ban actions from last 7 days"). Existing callers stay
