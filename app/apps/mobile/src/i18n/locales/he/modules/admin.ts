@@ -1,5 +1,6 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
 import { adminContentHe } from './adminContent';
+import { adminTimeHe } from './adminTime';
 import { adminMoneyHe } from './adminMoney';
 import { adminCrmHe } from './adminCrm';
 import { adminOrgApprovalsHe } from './adminOrgApprovals';
@@ -11,6 +12,7 @@ export const adminHe = {
     dashboard:     'לוח בקרה',
     reports:       'דיווחים',
     tasks:         'משימות צוות',
+    time:          'שעות',
     admins:        'צוות ניהול',
     users:         'משתמשים',
     posts:         'פוסטים',
@@ -290,6 +292,7 @@ export const adminHe = {
     },
   },
   content: adminContentHe,
+  time: adminTimeHe,
   money: adminMoneyHe,
   crm: adminCrmHe,
   orgApprovals: adminOrgApprovalsHe,
