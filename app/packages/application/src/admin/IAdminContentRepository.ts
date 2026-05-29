@@ -23,6 +23,10 @@ export interface AdminAuditSearchFilters {
   readonly targetUserId?: string;
   readonly actorId?: string;
   readonly action?: string;
+  /** Inclusive lower bound on `audit_events.created_at`. */
+  readonly fromDate?: Date;
+  /** Inclusive upper bound on `audit_events.created_at`. */
+  readonly toDate?: Date;
   readonly limit?: number;
   readonly offset?: number;
 }

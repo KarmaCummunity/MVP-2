@@ -11,6 +11,7 @@ import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface AnimatedAuthInputProps extends TextInputProps {
   label: string;
+  testID?: string;
 }
 
 const useAnimatedAuthInputStyles = makeUseStyles(({ colors, isDark }) => ({

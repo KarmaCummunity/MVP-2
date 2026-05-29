@@ -86,4 +86,12 @@ export const adminContentHe = {
     admin_task_update:              'עדכון משימת ניהול',
     admin_task_delete:              'מחיקת משימת ניהול',
   },
+  dateFromLabel:    'מתאריך',
+  dateToLabel:      'עד תאריך',
+  csvExport: {
+    action:      'יצוא CSV',
+    busy:        'מייצא...',
+    failed:      'הייצוא נכשל. נסה שוב.',
+    unsupported: 'ייצוא CSV נתמך כרגע רק בדפדפן.',
+  },
 } as const;
