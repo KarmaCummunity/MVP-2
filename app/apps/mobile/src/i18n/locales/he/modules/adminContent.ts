@@ -13,6 +13,9 @@ export const adminContentHe = {
   usersTitle:             'משתמשים',
   searchUsersPlaceholder: 'חיפוש לפי שם או handle',
   usersEmpty:             'לא נמצאו משתמשים תואמים.',
+  userInline: {
+    ban: 'חסום',
+  },
   userStatusFilter: {
     all:               'הכל',
     active:            'פעיל',
@@ -34,6 +37,12 @@ export const adminContentHe = {
   postsTitle:             'פוסטים',
   searchPostsPlaceholder: 'חיפוש לפי כותרת או תיאור',
   postsEmpty:             'לא נמצאו פוסטים תואמים.',
+  postInline: {
+    remove:          'הסר',
+    restore:         'שחזר',
+    confirmRemove:   'להסיר את הפוסט כפעולת אדמין? הפעולה תירשם ביומן.',
+    confirmRestore:  'לשחזר את הפוסט? הוא יחזור לפיד.',
+  },
   postStatusFilter: {
     all:                'הכל',
     open:               'פתוח',
