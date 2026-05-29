@@ -124,15 +124,18 @@ export class SupabaseAdminTaskRepository implements IAdminTaskRepository {
 
   async list(filters: AdminTaskListFilters): Promise<readonly AdminTask[]> {
     const { data, error } = await this.client.rpc('admin_task_list', {
-      p_status:    filters.status    ?? null,
-      p_assignee:  filters.assigneeId ?? null,
-      p_only_mine: filters.onlyMine   ?? false,
-      p_overdue:   filters.overdue    ?? false,
-      p_priority:  filters.priority   ?? null,
-      p_label:     filters.label      ?? null,
-      p_limit:     filters.limit      ?? 50,
-      p_offset:    filters.offset     ?? 0,
-      p_category:  filters.category   ?? null,
+      p_status:           filters.status         ?? null,
+      p_assignee:         filters.assigneeId     ?? null,
+      p_only_mine:        filters.onlyMine       ?? false,
+      p_overdue:          filters.overdue        ?? false,
+      p_priority:         filters.priority       ?? null,
+      p_label:            filters.label          ?? null,
+      p_limit:            filters.limit          ?? 50,
+      p_offset:           filters.offset         ?? 0,
+      p_category:         filters.category       ?? null,
+      p_due_from:         filters.dueFrom ? filters.dueFrom.toISOString() : null,
+      p_due_to:           filters.dueTo   ? filters.dueTo.toISOString()   : null,
+      p_unassigned_only:  filters.unassignedOnly ?? false,
     });
     if (error) throw mapRpcError(error);
     if (!Array.isArray(data)) return [];

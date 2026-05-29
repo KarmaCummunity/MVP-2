@@ -173,6 +173,7 @@ export type Database = {
       admin_tasks: {
         Row: {
           assignee_id: string | null
+          category: string
           created_at: string
           created_by: string
           description: string | null
@@ -186,6 +187,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          category?: string
           created_at?: string
           created_by: string
           description?: string | null
@@ -199,6 +201,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          category?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -2476,6 +2479,7 @@ export type Database = {
       admin_task_create: {
         Args: {
           p_assignee_id?: string
+          p_category?: string
           p_description?: string
           p_due_at?: string
           p_labels?: string[]
@@ -2491,6 +2495,7 @@ export type Database = {
           activities: Json
           assignee_display_name: string
           assignee_id: string
+          category: string
           created_at: string
           created_by: string
           created_by_display_name: string
@@ -2520,6 +2525,9 @@ export type Database = {
       admin_task_list: {
         Args: {
           p_assignee?: string
+          p_category?: string
+          p_due_from?: string
+          p_due_to?: string
           p_label?: string
           p_limit?: number
           p_offset?: number
@@ -2527,10 +2535,12 @@ export type Database = {
           p_overdue?: boolean
           p_priority?: string
           p_status?: string
+          p_unassigned_only?: boolean
         }
         Returns: {
           assignee_display_name: string
           assignee_id: string
+          category: string
           comment_count: number
           created_at: string
           created_by: string
@@ -2551,6 +2561,7 @@ export type Database = {
       }
       admin_task_update: {
         Args: {
+          p_category?: string
           p_clear_due?: boolean
           p_description?: string
           p_due_at?: string

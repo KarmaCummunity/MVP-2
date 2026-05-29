@@ -183,6 +183,18 @@ export const adminHe = {
     categoryFilters: {
       all: 'כל הקטגוריות',
     },
+    assigneeFilter: {
+      all:        'כל המשויכים',
+      unassigned: 'לא משויך',
+    },
+    dueRange: {
+      fromLabel:   'מתאריך יעד',
+      toLabel:     'עד תאריך יעד',
+      placeholder: 'YYYY-MM-DD',
+      apply:       'החל',
+      clear:       'נקה',
+    },
+
     filters: {
       all:      'הכל',
       overdue:  'באיחור',

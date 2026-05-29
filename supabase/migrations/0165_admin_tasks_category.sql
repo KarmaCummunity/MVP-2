@@ -1,4 +1,4 @@
--- 0161_admin_tasks_category — V2-ADMIN-TASKS-2 — add `category` field to admin_tasks.
+-- 0165_admin_tasks_category — V2-ADMIN-TASKS-2 — add `category` field to admin_tasks.
 --
 -- The PRD V2 (§13.4 Admin Tasks) calls out category as a first-class attribute
 -- alongside priority and assignee. Today the codebase ships `labels text[]` as
