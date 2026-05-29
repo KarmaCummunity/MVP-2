@@ -1,4 +1,4 @@
--- 0169_fix_audit_events_target_type_task — fix admin_task_* RPCs that hit
+-- 0172_fix_audit_events_target_type_task — fix admin_task_* RPCs that hit
 -- target_type constraint violation when writing audit rows.
 --
 -- Migration 0144 widened audit_events.action to include admin_task_create /
