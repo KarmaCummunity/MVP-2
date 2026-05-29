@@ -141,15 +141,11 @@ export async function getClosureCandidates(
     throw new PostError('unknown', 'post_missing_owner');
   }
 
-  // Pull EVERY chat the owner is part of (not just chats anchored to THIS post).
-  // Reason: `findOrCreateChat` reuses an existing chat between two users and
-  // never re-anchors it to the new post — so a chat that started about post A
-  // remains anchor=A forever, even if the same two users are now talking about
-  // post B. Filtering by anchor_post_id was hiding real chat partners. Also
-  // exclude support threads (admin) and removed chats.
+  // FR-CLOSURE-003 AC1: partners in chats anchored to this post only.
   const { data: chats, error: chatErr } = await client
     .from('chats')
     .select('chat_id, participant_a, participant_b, last_message_at, is_support_thread, removed_at')
+    .eq('anchor_post_id', postId)
     .or(`participant_a.eq.${ownerId},participant_b.eq.${ownerId}`)
     .eq('is_support_thread', false)
     .is('removed_at', null);

@@ -158,7 +158,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <Screen blobs="off">
+    <Screen blobs="off" testID="create-post-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />

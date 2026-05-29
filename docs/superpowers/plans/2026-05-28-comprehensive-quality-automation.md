@@ -10,6 +10,22 @@
 
 **NFR mapping (archive SRS):** `docs/SSOT/archive/SRS/04_non_functional/01_performance_scalability_availability.md`, `03_accessibility_i18n.md`, `07_acceptance.md`.
 
+## Operating model (AI developers, human users)
+
+- **Developers:** AI agents only — PRs to `dev`, releases via PR `dev` → `main`.
+- **Users:** Humans on Web; E2E uses real email/password sign-in (no dev ghost-session shortcuts).
+- **PM gate:** Optional spot-check on dev; automated P0 E2E required on release PR to `main`.
+
+### Implementation status (2026-05-28)
+
+| Wave | Status | Notes |
+| --- | --- | --- |
+| 0 | ✅ Done | `TESTING.md`, `D-55`, scripts, SSOT |
+| 1 | 🟡 Code on `feat/INFRA-QA-W1-e2e-p0-gate` | Needs GitHub `DEV_WEB_URL` + `E2E_*` secrets + required check on `main` |
+| 2–7 | ⏳ Planned | |
+
+**PM one-time setup:** GitHub Variables/Secrets per `ENVIRONMENTS.md` § E2E automation; branch protection on `main` → require **CI — E2E dev / user journeys (P0)**.
+
 ---
 
 ## Current state (baseline)
@@ -76,9 +92,9 @@
 
 ---
 
-## Wave 0 — Policy, accounts, and operator setup
+## Wave 0 — Policy, accounts, and agent setup ✅
 
-**Backlog ID:** `INFRA-QA-W0`  
+**Backlog ID:** `INFRA-QA-W0` — **Done (2026-05-28)**  
 **Duration:** ~1 day  
 **Blocks:** all other waves
 
@@ -242,11 +258,13 @@ git commit -m "docs(ssot): backlog rows for quality automation waves"
 
 ---
 
-## Wave 1 — E2E P0 (release gate)
+## Wave 1 — E2E P0 (release gate) 🟡
 
-**Backlog ID:** `INFRA-QA-W1`  
+**Backlog ID:** `INFRA-QA-W1` — **Implemented in `feat/INFRA-QA-W1-e2e-p0-gate`; pending secrets + first green CI**  
 **Duration:** ~3–5 days  
-**Maps to:** manual items in `RELEASE_CHECKLIST.md` (auth, feed, write, chat)
+**Maps to:** `RELEASE_CHECKLIST.md` (auth, feed, create-post, chat inbox)
+
+**Repo deliverables:** `tests/e2e/`, `ci-e2e-dev.yml`, `testID` hooks, `pnpm test:e2e`. **Auth:** API session injection (`lib/supabaseSession.ts`) — option 3, not `/sign-in` UI.
 
 ### Task 1.1: E2E package scaffold
 

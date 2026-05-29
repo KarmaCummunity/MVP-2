@@ -7,6 +7,7 @@ export const legalHe = {
   futureEffective: 'ייכנס לתוקף ב-{{date}}',
   offlineBanner: 'מציג גרסה שמורה — לא ניתן לעדכן כרגע',
   loadFailed: 'לא הצלחנו לטעון את המסמך. נסה שוב מאוחר יותר.',
+  consentCheckFailed: 'לא הצלחנו לאמת את הסכמתך לתקנון. בדוק/י חיבור ונסה/י שוב.',
   closeReader: 'סגור',
 
   signupHeading: 'עוד דבר אחרון לפני שמתחילים — נשמח שתכיר/י את הכללים שלנו.',

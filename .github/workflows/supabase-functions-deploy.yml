@@ -1,18 +1,39 @@
 name: Supabase Functions deploy
 
-# Deploys every Edge Function under supabase/functions/ so prod cannot drift
-# behind main (see TD-53 — stale validate-donation-link caused duplicate rows on edit).
+# Deploys every Edge Function under supabase/functions/ so remote cannot drift
+# behind the branch (see TD-53 — stale validate-donation-link caused duplicate rows on edit).
+#
+# Trigger modes:
+#   1. Auto on push to `dev` or `main` when `supabase/functions/**` changes:
+#      `dev` → supabase-dev; `main` → supabase-prod.
+#   2. Manual (workflow_dispatch): pick target environment.
+#
+# Required secrets on the selected GitHub Environment (supabase-prod / supabase-dev):
+#   - SUPABASE_ACCESS_TOKEN    Account token (`sbp_…`) — same as db-deploy.yml
+#   - SUPABASE_PROJECT_REF   Remote project ref from dashboard URL
+#
+# Optional variable on the same environment (recommended for Survey B CORS):
+#   - PUBLIC_RESEARCH_ALLOWED_ORIGINS   Comma-separated Origin allowlist for
+#     `public-research-submit` (see OPERATOR_RUNBOOK § Edge Functions).
 
 on:
+  workflow_dispatch:
+    inputs:
+      target:
+        description: 'GitHub Environment that holds Supabase secrets for this deploy'
+        type: choice
+        options:
+          - supabase-prod
+          - supabase-dev
+        default: supabase-prod
   push:
-    branches: [main]
+    branches: [dev, main]
     paths:
       - 'supabase/functions/**'
       - '.github/workflows/supabase-functions-deploy.yml'
-  workflow_dispatch:
 
 concurrency:
-  group: supabase-functions-deploy
+  group: supabase-functions-deploy-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
   cancel-in-progress: false
 
 permissions:
@@ -20,11 +41,11 @@ permissions:
 
 jobs:
   deploy:
-    name: supabase functions deploy
+    name: ${{ github.event_name == 'push' && format('functions · {0} (push)', github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') || format('functions · {0}', inputs.target) }}
     runs-on: ubuntu-latest
     timeout-minutes: 20
     environment:
-      name: supabase-prod
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
 
     env:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
@@ -47,3 +68,8 @@ jobs:
 
       - name: Deploy all Edge Functions
         run: supabase functions deploy
+
+      - name: Sync public-research CORS origins
+        if: vars.PUBLIC_RESEARCH_ALLOWED_ORIGINS != ''
+        run: |
+          supabase secrets set PUBLIC_RESEARCH_ALLOWED_ORIGINS="${{ vars.PUBLIC_RESEARCH_ALLOWED_ORIGINS }}"
