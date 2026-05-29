@@ -175,6 +175,21 @@ export * from './admin/IAdminContentRepository';
 export * from './admin/AdminSearchUsersUseCase';
 export * from './admin/AdminSearchPostsUseCase';
 export * from './admin/AdminSearchAuditUseCase';
+export * from './admin/ITimesheetsRepository';
+export * from './admin/TimesheetUseCases';
+export * from './admin/IFinanceLedgerRepository';
+export * from './admin/ListFinanceLedgerUseCase';
+export * from './admin/GetFinanceSummaryUseCase';
+export * from './admin/UpsertFinanceEntryUseCase';
+export * from './admin/DeleteFinanceEntryUseCase';
+export * from './admin/ICrmContactsRepository';
+export * from './admin/ListCrmContactsUseCase';
+export * from './admin/UpsertCrmContactUseCase';
+export * from './admin/DeleteCrmContactUseCase';
+export * from './admin/MarkCrmContactContactedUseCase';
+export * from './admin/IOrgApplicationsRepository';
+export * from './admin/ListOrgApplicationsUseCase';
+export * from './admin/DecideOrgApplicationUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
