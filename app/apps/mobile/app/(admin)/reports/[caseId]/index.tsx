@@ -12,6 +12,7 @@ import { useReportCaseDetail } from '../../../../src/hooks/useReportCaseDetail';
 import { CaseReporterList } from '../../../../src/components/admin/reports/CaseReporterList';
 import { CaseAuditTimeline } from '../../../../src/components/admin/reports/CaseAuditTimeline';
 import { CaseActions } from '../../../../src/components/admin/reports/CaseActions';
+import { CaseTargetCard } from '../../../../src/components/admin/reports/CaseTargetCard';
 import he from '../../../../src/i18n/locales/he';
 
 function parseCaseId(
@@ -61,11 +62,11 @@ export default function CaseDetail() {
 
       <View style={styles.section}>
         <Text style={styles.sectionTitle}>{he.admin.caseDetail.targetSection}</Text>
-        <View style={styles.targetBox}>
-          {Object.entries(data.target).map(([k, v]) => (
-            <Text key={k} style={styles.kv}>{k}: {String(v)}</Text>
-          ))}
-        </View>
+        <CaseTargetCard
+          targetType={data.targetType}
+          targetId={data.targetId}
+          target={data.target}
+        />
       </View>
 
       <View style={styles.section}>
@@ -97,12 +98,10 @@ export default function CaseDetail() {
   );
 }
 
-const useStyles = makeUseStyles(({ colors }) => ({
+const useStyles = makeUseStyles(() => ({
   root:         { padding: 16, gap: 16 },
   center:       { flex: 1, alignItems: 'center', justifyContent: 'center', gap: 8 },
   title:        { fontSize: 20, fontWeight: '700' },
   section:      { gap: 8 },
   sectionTitle: { fontSize: 14, fontWeight: '600', opacity: 0.7 },
-  targetBox:    { padding: 12, backgroundColor: colors.skeleton, borderRadius: 8, gap: 4 },
-  kv:           { fontSize: 13 },
 }));
