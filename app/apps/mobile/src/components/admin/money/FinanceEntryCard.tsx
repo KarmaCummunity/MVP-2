@@ -1,7 +1,8 @@
 // V2-ADMIN-MONEY-9 — single ledger entry card.
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, Text, View } from 'react-native';
 import type { FinanceEntry } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
+import { AdminCardActions } from '../AdminCardActions';
 import he from '../../../i18n/locales/he';
 
 export interface FinanceEntryCardProps {
@@ -52,14 +53,12 @@ export function FinanceEntryCard({ entry, onEdit, onDelete }: FinanceEntryCardPr
       {entry.description && (
         <Text style={styles.description} numberOfLines={3}>{entry.description}</Text>
       )}
-      <View style={styles.actions}>
-        <Pressable onPress={onEdit} style={[styles.action, styles.actionPrimary]}>
-          <Text style={styles.actionPrimaryText}>{t.row.edit}</Text>
-        </Pressable>
-        <Pressable onPress={onDelete} style={[styles.action, styles.actionDanger]}>
-          <Text style={styles.actionDangerText}>{t.row.delete}</Text>
-        </Pressable>
-      </View>
+      <AdminCardActions
+        editLabel={t.row.edit}
+        deleteLabel={t.row.delete}
+        onEdit={onEdit}
+        onDelete={onDelete}
+      />
     </View>
   );
 }
@@ -84,10 +83,4 @@ const useStyles = makeUseStyles(({ colors }) => ({
   status_canceled: { backgroundColor: colors.border },
   metaText:    { fontSize: 12, opacity: 0.7 },
   description: { fontSize: 12, marginTop: 4 },
-  actions:     { flexDirection: 'row', gap: 6, marginTop: 8, justifyContent: 'flex-end' },
-  action:      { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6 },
-  actionPrimary: { backgroundColor: colors.primary },
-  actionPrimaryText: { fontSize: 12, fontWeight: '700', color: colors.textInverse },
-  actionDanger:  { backgroundColor: colors.errorLight },
-  actionDangerText: { fontSize: 12, fontWeight: '700', color: colors.error },
 }));

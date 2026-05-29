@@ -1,6 +1,6 @@
 // V2-ADMIN-MONEY-9 — bottom-sheet modal for create/edit a ledger entry.
 import { useState } from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
+import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useMutation } from '@tanstack/react-query';
 import {
   FINANCE_ENTRY_KINDS, FINANCE_ENTRY_STATUSES, isFinanceLedgerError,
@@ -8,6 +8,8 @@ import {
 } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
+import { AdminFormField } from '../AdminFormField';
+import { AdminFormActions } from '../AdminFormActions';
 import he from '../../../i18n/locales/he';
 
 export interface FinanceEntryFormModalProps {
@@ -88,13 +90,13 @@ export function FinanceEntryFormModal({ initial, onClose, onSaved }: FinanceEntr
           ))}
         </View>
 
-        <Field label={t.form.amountLabel}        value={amountText}  onChange={setAmount}     keyboardNumeric />
-        <Field label={t.form.currencyLabel}      value={currency}    onChange={setCurrency} />
-        <Field label={t.form.occurredAtLabel}    value={occurredText} onChange={setOccurred} />
-        <Field label={t.form.counterpartyLabel}  value={counterparty} onChange={setCounter} />
-        <Field label={t.form.categoryLabel}      value={category}     onChange={setCategory} />
-        <Field label={t.form.descriptionLabel}   value={description}  onChange={setDesc} multiline />
-        <Field label={t.form.referenceUrlLabel}  value={referenceUrl} onChange={setRefUrl} />
+        <AdminFormField label={t.form.amountLabel}        value={amountText}  onChange={setAmount}     keyboardNumeric />
+        <AdminFormField label={t.form.currencyLabel}      value={currency}    onChange={setCurrency} />
+        <AdminFormField label={t.form.occurredAtLabel}    value={occurredText} onChange={setOccurred} />
+        <AdminFormField label={t.form.counterpartyLabel}  value={counterparty} onChange={setCounter} />
+        <AdminFormField label={t.form.categoryLabel}      value={category}     onChange={setCategory} />
+        <AdminFormField label={t.form.descriptionLabel}   value={description}  onChange={setDesc} multiline />
+        <AdminFormField label={t.form.referenceUrlLabel}  value={referenceUrl} onChange={setRefUrl} />
 
         <Text style={styles.label}>{t.form.statusLabel}</Text>
         <View style={styles.optionsRow}>
@@ -111,47 +113,16 @@ export function FinanceEntryFormModal({ initial, onClose, onSaved }: FinanceEntr
           ))}
         </View>
 
-        {errorMsg && <Text style={styles.errorText}>{errorMsg}</Text>}
-
-        <View style={styles.actions}>
-          <Pressable style={styles.cancel} onPress={onClose} disabled={save.isPending}>
-            <Text style={styles.cancelText}>{t.form.cancel}</Text>
-          </Pressable>
-          <Pressable
-            style={[styles.submit, save.isPending && styles.submitDisabled]}
-            onPress={() => { void save.mutateAsync(); }}
-            disabled={save.isPending}
-          >
-            <Text style={styles.submitText}>
-              {save.isPending ? t.form.submitting : t.form.submit}
-            </Text>
-          </Pressable>
-        </View>
+        <AdminFormActions
+          cancelLabel={t.form.cancel}
+          submitLabel={t.form.submit}
+          submittingLabel={t.form.submitting}
+          isPending={save.isPending}
+          onCancel={onClose}
+          onSubmit={() => { void save.mutateAsync(); }}
+          errorMsg={errorMsg}
+        />
       </ScrollView>
-    </View>
-  );
-}
-
-function Field({
-  label, value, onChange, multiline = false, keyboardNumeric = false,
-}: {
-  readonly label: string;
-  readonly value: string;
-  readonly onChange: (v: string) => void;
-  readonly multiline?: boolean;
-  readonly keyboardNumeric?: boolean;
-}) {
-  const styles = useStyles();
-  return (
-    <View style={styles.fieldRow}>
-      <Text style={styles.label}>{label}</Text>
-      <TextInput
-        style={[styles.input, multiline && styles.inputMultiline]}
-        value={value}
-        onChangeText={onChange}
-        multiline={multiline}
-        keyboardType={keyboardNumeric ? 'decimal-pad' : 'default'}
-      />
     </View>
   );
 }
@@ -165,23 +136,10 @@ const useStyles = makeUseStyles(({ colors }) => ({
              borderTopLeftRadius: 16, borderTopRightRadius: 16 },
   content: { padding: 16, gap: 10 },
   title:   { fontSize: 18, fontWeight: '700' },
-  fieldRow:{ gap: 4 },
   label:   { fontSize: 12, opacity: 0.7 },
-  input: {
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border, borderRadius: 8,
-    padding: 10, fontSize: 13, backgroundColor: colors.background, textAlign: 'right',
-  },
-  inputMultiline: { minHeight: 80, textAlignVertical: 'top' },
   optionsRow:    { flexDirection: 'row', gap: 6, flexWrap: 'wrap' },
   option:        { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 6, backgroundColor: colors.secondaryLight },
   optionActive:  { backgroundColor: colors.primary },
   optionText:       { fontSize: 12, fontWeight: '600' },
   optionTextActive: { color: colors.textInverse },
-  errorText:  { color: colors.error, fontSize: 12 },
-  actions:    { flexDirection: 'row', justifyContent: 'flex-end', gap: 8, marginTop: 8 },
-  cancel:     { paddingHorizontal: 12, paddingVertical: 10, borderRadius: 8 },
-  cancelText: { fontSize: 13, fontWeight: '500' },
-  submit:     { paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8, backgroundColor: colors.primary },
-  submitDisabled: { opacity: 0.5 },
-  submitText: { color: colors.textInverse, fontSize: 13, fontWeight: '700' },
 }));

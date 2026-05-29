@@ -16,17 +16,17 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
 import { FinanceEntryCard } from '../../../src/components/admin/money/FinanceEntryCard';
 import { FinanceEntryFormModal } from '../../../src/components/admin/money/FinanceEntryFormModal';
+import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
 import he from '../../../src/i18n/locales/he';
 
 type DirFilter = FinanceDirection | 'all';
 
-async function confirmAction(message: string): Promise<boolean> {
-  if (Platform.OS === 'web') return typeof window !== 'undefined' && window.confirm(message);
-  return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.money.confirm.deleteTitle, message, [
-      { text: he.admin.money.confirm.deleteCancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.money.confirm.deleteOk, onPress: () => resolve(true) },
-    ]);
+function confirmDelete(message: string): Promise<boolean> {
+  const t = he.admin.money.confirm;
+  return platformConfirm(t.deleteTitle, message, {
+    confirmLabel: t.deleteOk,
+    cancelLabel:  t.deleteCancel,
+    destructive:  true,
   });
 }
 
@@ -133,7 +133,7 @@ export default function MoneyScreen() {
             entry={item}
             onEdit={() => setEditing(item)}
             onDelete={async () => {
-              const ok = await confirmAction(t.confirm.delete);
+              const ok = await confirmDelete(t.confirm.delete);
               if (!ok) return;
               try { await remove.mutateAsync(item.entryId); }
               catch (err) {
