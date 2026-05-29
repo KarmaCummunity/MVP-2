@@ -42,6 +42,8 @@ function makeRow(rideId: string, departsAt: string, status: RideListingRow['stat
     startedAt: null,
     arrivedAt: null,
     arriveReason: null,
+    linkedPostId: null,
+    foodHandoverToOrg: false,
   };
 }
 

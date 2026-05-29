@@ -33,6 +33,8 @@ export interface CreateRideListingInput {
   food?: RideFoodSpec;
   payment?: RidePaymentSpec;
   requirements?: RideRequirementsSpec;
+  /** FR-RIDE-044 — when set, the ride is linked to an items post (mode='request' only). */
+  linkedPostId?: string | null;
 }
 
 export class CreateRideListingUseCase {
@@ -45,6 +47,12 @@ export class CreateRideListingUseCase {
     const description = input.description?.trim() ?? null;
     if (description && description.length > 500) {
       throw new RideError('description_too_long', 'description exceeds 500 characters');
+    }
+
+    // FR-RIDE-044 — linked_post_id is only valid on request rides
+    // (CHECK constraint enforces server-side; fail fast in domain too).
+    if (input.linkedPostId && input.mode !== 'request') {
+      throw new RideError('seats_forbidden', 'linked_post_id requires mode=request');
     }
 
     validateRideDraft({
@@ -105,6 +113,7 @@ export class CreateRideListingUseCase {
       reqSmokingAllowed: input.requirements?.smokingAllowed ?? false,
       reqPetsAllowed: input.requirements?.petsAllowed ?? false,
       reqVerifiedOnly: input.requirements?.verifiedOnly ?? false,
+      linkedPostId: input.linkedPostId ?? null,
     };
 
     return this.repo.create(payload);

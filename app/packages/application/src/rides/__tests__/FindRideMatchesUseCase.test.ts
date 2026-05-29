@@ -44,6 +44,8 @@ function row(
     startedAt: null,
     arrivedAt: null,
     arriveReason: null,
+    linkedPostId: null,
+    foodHandoverToOrg: false,
     ...partial,
   };
 }

@@ -51,6 +51,8 @@ export class FakeRideListingRepository implements IRideListingRepository {
       startedAt: null,
       arrivedAt: null,
       arriveReason: null,
+      linkedPostId: input.linkedPostId ?? null,
+      foodHandoverToOrg: false,
     };
     this.rows.push(row);
     return row;

@@ -1295,8 +1295,10 @@ export type Database = {
           dest_street: string
           dest_street_number: string | null
           food_chilled: boolean | null
+          food_handover_to_org: boolean
           food_max_kg: number | null
           food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
@@ -1331,8 +1333,10 @@ export type Database = {
           dest_street: string
           dest_street_number?: string | null
           food_chilled?: boolean | null
+          food_handover_to_org?: boolean
           food_max_kg?: number | null
           food_shipping_enabled?: boolean
+          linked_post_id?: string | null
           mode: string
           origin_city_id: string
           origin_street: string
@@ -1367,8 +1371,10 @@ export type Database = {
           dest_street?: string
           dest_street_number?: string | null
           food_chilled?: boolean | null
+          food_handover_to_org?: boolean
           food_max_kg?: number | null
           food_shipping_enabled?: boolean
+          linked_post_id?: string | null
           mode?: string
           origin_city_id?: string
           origin_street?: string
@@ -1417,6 +1423,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "ride_templates"
             referencedColumns: ["template_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_linked_post_id_fkey"
+            columns: ["linked_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
           },
         ]
       }

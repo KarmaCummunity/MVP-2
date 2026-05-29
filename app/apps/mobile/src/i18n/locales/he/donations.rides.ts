@@ -83,6 +83,21 @@ export const rides = {
     errorArrive: 'לא הצלחנו לסיים את הנסיעה',
     errorEmergency: 'לא הצלחנו להפעיל קריאת חירום',
   },
+  // FR-RIDE-026..029 + FR-RIDE-044 — compact chips on card / detail.
+  chips: {
+    cargo: '📦 חפצים',
+    cargoFull: '📦 עד {{volume}} ל׳ · {{weight}} ק״ג',
+    food: '🍱 מזון',
+    foodChilled: '❄️',
+    foodFull: '🍱 עד {{kg}} ק״ג {{chilled}}',
+    payment: '₪{{amount}} / מקום',
+    womenOnly: 'נשים בלבד',
+    menOnly: 'גברים בלבד',
+    noSmoking: '🚭 ללא עישון',
+    petsOk: '🐾 חיות מחמד',
+    verifiedOnly: '✓ מאומתים בלבד',
+    linkedItem: '🔗 מקושר לחפץ',
+  },
   // FR-RIDE-041 — driver declaration gate.
   declaration: {
     title: 'הצהרת נהג',

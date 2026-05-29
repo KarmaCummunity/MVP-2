@@ -67,6 +67,7 @@ export class SupabaseRideListingRepository implements IRideListingRepository {
         req_smoking_allowed: input.reqSmokingAllowed ?? false,
         req_pets_allowed: input.reqPetsAllowed ?? false,
         req_verified_only: input.reqVerifiedOnly ?? false,
+        linked_post_id: input.linkedPostId ?? null,
       })
       .select(RIDE_SELECT)
       .single();

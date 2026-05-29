@@ -36,6 +36,10 @@ export interface RideListingRow {
   arrivedAt: string | null;
   /** FR-RIDE-045 AC4 — reason recorded with arrival ('arrived' | 'breakdown'). */
   arriveReason: 'arrived' | 'breakdown' | null;
+  /** FR-RIDE-044 — cross-world link to an items post (request rides only). */
+  linkedPostId: string | null;
+  /** FR-RIDE-045 AC2 — driver flagged food shipment as handed off to a regional org. */
+  foodHandoverToOrg: boolean;
   // FR-RIDE-026 — cargo.
   cargoEnabled: boolean;
   cargoMaxVolumeL: number | null;
@@ -85,6 +89,8 @@ export interface CreateRideListingRepoInput {
   reqSmokingAllowed?: boolean;
   reqPetsAllowed?: boolean;
   reqVerifiedOnly?: boolean;
+  /** FR-RIDE-044 — link to an items post; only valid for mode='request'. */
+  linkedPostId?: string | null;
 }
 
 export interface SearchRideListingsInput {

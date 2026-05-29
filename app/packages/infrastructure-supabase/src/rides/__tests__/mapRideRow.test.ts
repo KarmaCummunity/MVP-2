@@ -64,6 +64,8 @@ describe('mapRideRow', () => {
       startedAt: null,
       arrivedAt: null,
       arriveReason: null,
+      linkedPostId: null,
+      foodHandoverToOrg: false,
     });
   });
 

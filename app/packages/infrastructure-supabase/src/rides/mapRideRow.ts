@@ -42,6 +42,10 @@ type RideRow = {
   started_at?: string | null;
   arrived_at?: string | null;
   arrive_reason?: string | null;
+  // FR-RIDE-044 — cross-world linked items post.
+  linked_post_id?: string | null;
+  // FR-RIDE-045 AC2 — food handover flag.
+  food_handover_to_org?: boolean | null;
 };
 
 export function mapRideRow(
@@ -92,5 +96,9 @@ export function mapRideRow(
     startedAt: row.started_at ?? null,
     arrivedAt: row.arrived_at ?? null,
     arriveReason: (row.arrive_reason ?? null) as RideListingRow['arriveReason'],
+    // FR-RIDE-044 — cross-world.
+    linkedPostId: row.linked_post_id ?? null,
+    // FR-RIDE-045 AC2.
+    foodHandoverToOrg: row.food_handover_to_org ?? false,
   };
 }
