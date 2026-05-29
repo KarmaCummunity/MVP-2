@@ -268,11 +268,13 @@ A new Expo Router group `(admin)` accessible only to users with an active admin 
 
 ---
 
-## §12 Admin Portal — RBAC management (A2)
+## §12 Admin Portal — RBAC management (A2 → A2.1 V2 hierarchy)
 
-A2 makes `moderator` and `support` grants manageable from inside the portal so the team can expand without a Supabase shell session. `super_admin` escalation remains DB-only (per `CLAUDE.md` §7 and FR-ADMIN-006 AC2 amended).
+A2 originally made `moderator` and `support` grants manageable from inside the portal so the team could expand without a Supabase shell session. **A2.1 (this slice)** widens the surface to the full PRD V2 role hierarchy (`PRD_V2_NOT_FOR_MVP/02_Personas_Roles.md` §2.1): `admin` (platform sub-super_admin), `moderator`, `support`, `operator`, `operators_manager`, `org_admin`, `org_manager`, `org_employee`, `volunteer_manager`, `org_volunteer`. `super_admin` escalation remains DB-only (per `CLAUDE.md` §7).
 
-Migration: `0143_admin_rbac_management.sql`. Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum and the partial unique index were both established by A0 (D-40); A2 is a UI + RPC layer on top.
+Org-scoped roles (`org_admin`, `org_manager`, `org_employee`, `volunteer_manager`, `org_volunteer`) require a non-null `scope_org_id` referencing the organisation the grant applies to; platform roles (`admin`, `moderator`, `support`, `operator`, `operators_manager`) require `scope_org_id` to be null. Authority to grant is constrained by the hierarchy: a granter may grant only roles in their own scope and below.
+
+Migrations: `0143_admin_rbac_management.sql` (A2), `0170_admin_role_hierarchy_v2.sql` (A2.1 — adds `admin` role, `scope_org_id` column, authority helper `can_grant_role`, expanded `admin_grant_role` signature). Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum was established by A0 (D-40); A2.1 just widens it and adds scope.
 
 ---
 
@@ -290,19 +292,35 @@ Migration: `0143_admin_rbac_management.sql`. Mobile route: `(admin)/admins`. Dec
 
 ---
 
-## FR-ADMIN-016 — Grant / revoke role
+## FR-ADMIN-016 — Grant / revoke role (V2 hierarchy)
 
 **Description.**
-`super_admin` can grant `moderator` or `support` to any active user via display-name lookup, and can revoke any active grant. Revoking the last active `super_admin` is blocked at both the RPC and DB-index levels.
+Any admin role with sufficient authority can grant roles in its own scope and below to any active user via display-name lookup, and can revoke any active grant under that same authority. Revoking the last active `super_admin` is blocked at both the RPC and DB-index levels. `super_admin` itself cannot be granted via this RPC (DB-only escalation; see `CLAUDE.md` §7).
+
+**Authority matrix (`can_grant_role(granter, target_role, target_scope)`).**
+
+| Granter has                       | Can grant                                                                                                       | Scope                  |
+| --------------------------------- | --------------------------------------------------------------------------------------------------------------- | ---------------------- |
+| `super_admin`                     | any role **except** `super_admin`                                                                              | any (platform or any org) |
+| `admin`                           | `admin`, `moderator`, `support`, `operator`, `operators_manager`, `org_admin`                                  | platform / any org      |
+| `org_admin` *(scope = X)*         | `org_manager`, `operators_manager`, `volunteer_manager`, `org_employee`, `org_volunteer`, `operator`           | only org X             |
+| `org_manager` *(scope = X)*       | `org_manager`, `operators_manager`, `volunteer_manager`, `org_employee`, `org_volunteer`, `operator` *(recursive within X)* | only org X             |
+| `volunteer_manager` *(scope = X)* | `volunteer_manager`, `org_volunteer` *(recursive within X)*                                                    | only org X             |
+| `operators_manager` *(scope = X)* | `operator`                                                                                                     | only org X             |
+| any other                         | nothing                                                                                                         | —                      |
 
 **Acceptance Criteria.**
-- AC1. The grant modal performs a debounced lookup against `users` (`account_status='active'` + `display_name ILIKE '%q%'`, limit 8) and lists matches; selecting a match plus a role enables the submit button.
-- AC2. Submit calls `admin_grant_role(target_user_id, role)`; valid roles are `moderator` and `support`. Granting `super_admin` (or any PRD-V2-reserved role) is rejected server-side with `invalid_role` per `CLAUDE.md` §7 ("no UI to grant `super_admin`").
+- AC1. The grant modal performs a debounced lookup against `users` (`account_status='active'` + `display_name ILIKE '%q%'`, limit 8) and lists matches; selecting a match plus a role enables the submit button. For org-scoped roles the modal also surfaces an org picker; for platform roles the org picker is hidden.
+- AC2. Submit calls `admin_grant_role(target_user_id, role, scope_org_id)`. The RPC rejects:
+  - `invalid_role` — for `super_admin` or any role not in the V2 enum;
+  - `invalid_scope` — for platform roles called with non-null scope, or org roles called with null scope;
+  - `forbidden_grant` — when `can_grant_role(auth.uid(), role, scope_org_id) = false` (caller is not in the role's authority chain).
 - AC3. Revoking the last active `super_admin` raises `cannot_revoke_last_super_admin` (SQLSTATE `P0001`) — the partial unique index on `admin_role_grants` ensures the invariant even if a future code path skipped the guard.
-- AC4. Each grant and revoke emits an `audit_events` row (`action='admin_role_grant'` or `'admin_role_revoke'`, `target_type='user'`, `metadata={role, grant_id}`).
-- AC5. Errors mapped to user-visible Hebrew strings: `forbidden`, `target_not_found`, `target_not_active`, `role_already_active`, `invalid_role`, `cannot_revoke_last_super_admin`, `grant_not_found`, `grant_already_revoked`, `invalid_input`, plus a generic `unknown` fallback.
+- AC4. `admin_revoke_role` runs the same authority check (`can_grant_role(caller, grant.role, grant.scope_org_id) = true`); otherwise raises `forbidden_revoke`.
+- AC5. Each grant and revoke emits an `audit_events` row (`action='admin_role_grant'` or `'admin_role_revoke'`, `target_type='user'`, `metadata={role, grant_id, scope_org_id}`).
+- AC6. Errors mapped to user-visible Hebrew strings: `forbidden`, `forbidden_grant`, `forbidden_revoke`, `target_not_found`, `target_not_active`, `role_already_active`, `invalid_role`, `invalid_scope`, `cannot_revoke_last_super_admin`, `grant_not_found`, `grant_already_revoked`, `invalid_input`, plus a generic `unknown` fallback.
 
-**Related.** RPCs: `admin_grant_role(target_user_id uuid, role text) RETURNS uuid` and `admin_revoke_role(grant_id uuid) RETURNS void` (both `SECURITY DEFINER`, gated by `admin_assert_role(auth.uid(), ARRAY['super_admin'])`). Application: `GrantAdminRoleUseCase`, `RevokeAdminRoleUseCase`. Mobile: `useAdminRoleMutations`, `GrantRoleModal`.
+**Related.** RPCs: `admin_grant_role(p_target_user_id uuid, p_role text, p_scope_org_id uuid default null) RETURNS uuid` and `admin_revoke_role(p_grant_id uuid) RETURNS void` (both `SECURITY DEFINER`, gated by `can_grant_role(auth.uid(), …)`). Helper: `can_grant_role(granter_uid uuid, target_role text, target_scope uuid) RETURNS boolean` and `has_admin_role(uid uuid, role_name text, scope uuid) RETURNS boolean` (3-arg overload). Application: `GrantAdminRoleUseCase`, `RevokeAdminRoleUseCase` (signatures widened). Mobile: `useAdminRoleMutations`, `GrantRoleModal` (org picker added).
 
 ---
 
@@ -312,7 +330,7 @@ Migration: `0143_admin_rbac_management.sql`. Mobile route: `(admin)/admins`. Dec
 Originally `FR-ADMIN-006 AC2` read "only one row may carry `is_super_admin`". With A0's RBAC schema (`admin_role_grants` + partial unique index `role='super_admin' AND revoked_at IS NULL`), the invariant generalises to multiple roles cleanly. The amended wording is now in FR-ADMIN-006 AC2; this FR exists to record the change for traceability.
 
 **Acceptance Criteria.**
-- AC1. FR-ADMIN-006 AC2 reads: "at most one **active** `super_admin` grant; any number of active `moderator` and `support` grants."
+- AC1. FR-ADMIN-006 AC2 reads: "at most one **active** `super_admin` grant; any number of active grants for `admin` / `moderator` / `support` / `operator` / `operators_manager` (platform-scoped), and per-`scope_org_id` for `org_admin` / `org_manager` / `org_employee` / `volunteer_manager` / `org_volunteer`."
 - AC2. The partial unique index (`admin_role_grants_single_super_admin_uniq`, established in migration `0112` for FR-ADMIN-010 AC5) enforces AC1 at the DB level.
 - AC3. `admin_revoke_role` adds an explicit "cannot revoke last super_admin" guard (FR-ADMIN-016 AC3) as defence in depth above the DB index — the index would otherwise let the row be revoked because revocation is an UPDATE that does not violate the partial unique index (the row leaves the partial-uniqueness set).
 
