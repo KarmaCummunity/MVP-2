@@ -16,6 +16,8 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
 import { FinanceEntryCard } from '../../../src/components/admin/money/FinanceEntryCard';
 import { FinanceEntryFormModal } from '../../../src/components/admin/money/FinanceEntryFormModal';
+import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
 import he from '../../../src/i18n/locales/he';
 
@@ -112,15 +114,12 @@ export default function MoneyScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {(['all', 'in', 'out'] as readonly DirFilter[]).map((d) => (
-          <Pressable
+          <AdminFilterChip
             key={d}
+            label={d === 'all' ? t.filters.all : d === 'in' ? t.filters.income : t.filters.expense}
+            active={dirFilter === d}
             onPress={() => setDirFilter(d)}
-            style={[styles.chip, dirFilter === d && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, dirFilter === d && styles.chipTextActive]}>
-              {d === 'all' ? t.filters.all : d === 'in' ? t.filters.income : t.filters.expense}
-            </Text>
-          </Pressable>
+          />
         ))}
       </ScrollView>
       <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
@@ -149,12 +148,7 @@ export default function MoneyScreen() {
           <RefreshControl refreshing={list.isRefetching} onRefresh={() => { void list.refetch(); void summary.refetch(); }} />
         }
         ListEmptyComponent={
-          !list.isLoading ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{t.emptyTitle}</Text>
-              <Text style={styles.emptyHint}>{t.emptyHint}</Text>
-            </View>
-          ) : null
+          !list.isLoading ? <AdminListEmpty title={t.emptyTitle} hint={t.emptyHint} /> : null
         }
       />
 
@@ -198,16 +192,5 @@ const useStyles = makeUseStyles(({ colors }) => ({
   netNegative:    { color: colors.error },
 
   chips:          { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: colors.secondaryLight,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-  },
-  chipActive:     { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText:       { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  chipTextActive: { color: colors.textInverse },
   totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
-  empty:          { padding: 32, alignItems: 'center', gap: 8 },
-  emptyTitle:     { fontSize: 16, fontWeight: '600' },
-  emptyHint:      { fontSize: 13, opacity: 0.6, textAlign: 'center' },
 }));
