@@ -1,8 +1,12 @@
 // app/apps/mobile/src/components/admin/reports/CaseReporterList.tsx
 // FR-ADMIN-013 — list of reporters attached to a case (name, status, reason, note, time).
-import { Text, View } from 'react-native';
+// V2-ADMIN-REPORTS-4 — each row is now tappable; routes the admin straight to
+// the reporter's profile so they can vet the reporter's history before acting.
+import { router } from 'expo-router';
+import { Pressable, Text, View } from 'react-native';
 import type { ReportCaseReporter } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
+import he from '../../../i18n/locales/he';
 
 export interface CaseReporterListProps {
   readonly reporters: readonly ReportCaseReporter[];
@@ -19,17 +23,27 @@ export function CaseReporterList({ reporters }: CaseReporterListProps) {
   }
   return (
     <View style={styles.list}>
-      {reporters.map((r) => (
-        <View key={r.reportId} style={styles.item}>
-          <View style={styles.head}>
-            <Text style={styles.name}>{r.reporterName ?? r.reporterId.slice(0, 8)}</Text>
-            <Text style={styles.status}>{r.status}</Text>
-          </View>
-          <Text style={styles.reason}>{r.reason}</Text>
-          {r.note ? <Text style={styles.note}>{r.note}</Text> : null}
-          <Text style={styles.time}>{new Date(r.createdAt).toLocaleString('he-IL')}</Text>
-        </View>
-      ))}
+      {reporters.map((r) => {
+        const fallback = r.reporterId.slice(0, 8);
+        const label = r.reporterName ?? fallback;
+        return (
+          <Pressable
+            key={r.reportId}
+            accessibilityRole="button"
+            accessibilityLabel={he.admin.caseDetail.openReporter(label)}
+            onPress={() => router.push(`/user/${r.reporterId}` as never)}
+            style={styles.item}
+          >
+            <View style={styles.head}>
+              <Text style={styles.name}>{label}</Text>
+              <Text style={styles.status}>{r.status}</Text>
+            </View>
+            <Text style={styles.reason}>{r.reason}</Text>
+            {r.note ? <Text style={styles.note}>{r.note}</Text> : null}
+            <Text style={styles.time}>{new Date(r.createdAt).toLocaleString('he-IL')}</Text>
+          </Pressable>
+        );
+      })}
     </View>
   );
 }

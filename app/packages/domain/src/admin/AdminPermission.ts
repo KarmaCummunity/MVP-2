@@ -22,6 +22,9 @@ export const ADMIN_PERMISSIONS = [
   'audit.view_any',
   'time.report',
   'time.approve',
+  'money.manage',
+  'crm.manage',
+  'org.review_applications',
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
@@ -48,6 +51,9 @@ export const PERMISSION_MATRIX: Readonly<Record<AdminPermission, readonly AdminR
   'audit.view_any':             ['super_admin'],
   'time.report':                ['super_admin', 'moderator', 'support'],
   'time.approve':               ['super_admin', 'moderator'],
+  'money.manage':               ['super_admin', 'moderator'],
+  'crm.manage':                 ['super_admin', 'moderator'],
+  'org.review_applications':    ['super_admin', 'moderator'],
 };
 
 export function hasPermission(

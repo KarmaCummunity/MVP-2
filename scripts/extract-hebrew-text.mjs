@@ -20,6 +20,7 @@
  * - `supabase/migrations/**`, `supabase/seed.sql` — excluded until SQL adopts D-24 indirection.
  * - `supabase/functions/**` — Edge bundles (including `i18n.json`).
  * - `__tests__/**`, `*.test.ts(x)`, `*.test.mjs`, `*.test.js` — fixtures.
+ * - `tests/e2e/**` — Playwright E2E suite (Hebrew selectors against rendered UI; D-55).
  * - `app/apps/mobile/ios/**` + `.plist` suffix — native permission copy (to be aligned with D-24 / InfoPlist.strings).
  * - Repo-root `CLAUDE.md` — agent-facing Hebrew examples.
  * - `SKIP_HEBREW_SCAN_EXACT_RELS` — narrow ASCII-path exceptions until moved to locale-backed data.
@@ -142,6 +143,7 @@ function isSkippedHebrewScanRel(relPosix) {
     return true;
   }
   if (relPosix === "supabase/functions" || relPosix.startsWith("supabase/functions/")) return true;
+  if (relPosix === "tests/e2e" || relPosix.startsWith("tests/e2e/")) return true;
   if (relPosix.startsWith("app/apps/mobile/ios/") && relPosix.endsWith(".plist")) return true;
   return false;
 }

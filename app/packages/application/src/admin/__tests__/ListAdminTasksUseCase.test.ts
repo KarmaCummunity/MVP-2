@@ -6,7 +6,8 @@ import { fakeAdminTaskRepo } from './fakeAdminTaskRepo';
 function task(overrides: Partial<AdminTask> = {}): AdminTask {
   return {
     taskId: 't1', title: 'x', description: null,
-    status: 'open', priority: 'medium', assigneeId: null,
+    status: 'open', priority: 'medium', category: 'other',
+    assigneeId: null,
     assigneeDisplayName: null, createdBy: 'u1', createdByDisplayName: null,
     dueAt: null, labels: [], createdAt: new Date(), updatedAt: new Date(),
     commentCount: 0, ...overrides,
