@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import {
   Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView,
-  StyleSheet, Text, View,
+  Text, View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -16,17 +16,19 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
 import { TimesheetEntryCard } from '../../../src/components/admin/time/TimesheetEntryCard';
 import { TimesheetFormModal } from '../../../src/components/admin/time/TimesheetFormModal';
+import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
+import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
 import he from '../../../src/i18n/locales/he';
 
 type Tab = 'mine' | 'pending' | 'all';
 
-async function confirmAction(message: string): Promise<boolean> {
-  if (Platform.OS === 'web') return typeof window !== 'undefined' && window.confirm(message);
-  return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.time.confirm.deleteTitle, message, [
-      { text: he.admin.time.confirm.deleteCancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.time.confirm.deleteOk, onPress: () => resolve(true) },
-    ]);
+function confirmDelete(message: string): Promise<boolean> {
+  const t = he.admin.time.confirm;
+  return platformConfirm(t.deleteTitle, message, {
+    confirmLabel: t.deleteOk,
+    cancelLabel:  t.deleteCancel,
+    destructive:  true,
   });
 }
 
@@ -81,15 +83,12 @@ export default function TimeScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         {(['mine', 'pending', 'all'] as readonly Tab[]).map((value) => (
-          <Pressable
+          <AdminFilterChip
             key={value}
+            label={value === 'mine' ? t.myEntriesTab : value === 'pending' ? t.pendingTab : t.allTab}
+            active={tab === value}
             onPress={() => setTab(value)}
-            style={[styles.chip, tab === value && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, tab === value && styles.chipTextActive]}>
-              {value === 'mine' ? t.myEntriesTab : value === 'pending' ? t.pendingTab : t.allTab}
-            </Text>
-          </Pressable>
+          />
         ))}
       </ScrollView>
       <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
@@ -107,7 +106,7 @@ export default function TimeScreen() {
               onEdit={() => setEditing(item)}
               onSubmit={() => { void submit.mutateAsync(item.entryId).catch(() => {/* swallowed */}); }}
               onDelete={async () => {
-                const ok = await confirmAction(t.confirm.delete);
+                const ok = await confirmDelete(t.confirm.delete);
                 if (!ok) return;
                 try { await remove.mutateAsync(item.entryId); }
                 catch (err) {
@@ -126,12 +125,7 @@ export default function TimeScreen() {
           <RefreshControl refreshing={list.isRefetching} onRefresh={() => { void list.refetch(); }} />
         }
         ListEmptyComponent={
-          !list.isLoading ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{t.emptyTitle}</Text>
-              <Text style={styles.emptyHint}>{t.emptyHint}</Text>
-            </View>
-          ) : null
+          !list.isLoading ? <AdminListEmpty title={t.emptyTitle} hint={t.emptyHint} /> : null
         }
       />
 
@@ -160,16 +154,5 @@ const useStyles = makeUseStyles(({ colors }) => ({
   newBtn:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
   newBtnText:  { color: colors.textInverse, fontSize: 13, fontWeight: '700' },
   chips:       { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: colors.secondaryLight,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-  },
-  chipActive:     { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText:       { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  chipTextActive: { color: colors.textInverse },
-  totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
-  empty:          { padding: 32, alignItems: 'center', gap: 8 },
-  emptyTitle:     { fontSize: 16, fontWeight: '600' },
-  emptyHint:      { fontSize: 13, opacity: 0.6, textAlign: 'center' },
+  totalLabel:  { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
 }));
