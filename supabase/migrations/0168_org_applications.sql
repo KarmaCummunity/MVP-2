@@ -1,4 +1,4 @@
--- 0164_org_applications — V2-ADMIN-ORG-7 — foundation for V2 §13.12 Org Approvals.
+-- 0168_org_applications — V2-ADMIN-ORG-7 — foundation for V2 §13.12 Org Approvals.
 --
 -- New table that tracks NGO / organization applications submitted by users.
 -- Admins can list pending applications and approve / reject each one. The
