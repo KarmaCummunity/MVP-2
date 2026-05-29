@@ -36,6 +36,7 @@ export const adminHe = {
     usersKpi: 'משתמשים',
     postsKpi: 'פוסטים',
     auditKpi: 'יומן פעולות',
+    auditOpenLabel: 'פתח',
     noCount: '—',
   },
   comingSoon: {
@@ -193,6 +194,7 @@ export const adminHe = {
       apply:       'החל',
       clear:       'נקה',
     },
+
     filters: {
       all:      'הכל',
       overdue:  'באיחור',

@@ -31,6 +31,8 @@ export interface FollowStateRaw {
 export interface IUserRepository {
   findById(userId: string): Promise<User | null>;
   findByHandle(handle: string): Promise<User | null>;
+  /** FR-CHAT-014 AC7 — counterpart `contact_phone` for an active chat participant only. */
+  getChatCounterpartyContact(chatId: string): Promise<string | null>;
   create(user: Omit<User, 'createdAt' | 'updatedAt'>): Promise<User>;
   update(userId: string, patch: Partial<User>): Promise<User>;
   /**

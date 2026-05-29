@@ -25,6 +25,7 @@ type GateState =
   | { kind: 'idle' }
   | { kind: 'loading' }
   | { kind: 'clear' }
+  | { kind: 'error'; retry: () => void }
   | {
       kind: 'pending';
       result: CheckPendingLegalAcksResult;
@@ -33,6 +34,8 @@ type GateState =
     };
 
 export function LegalConsentGate({ children }: LegalConsentGateProps) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
   const session = useAuthStore((s) => s.session);
   const userId = session?.userId ?? null;
   const pathname = usePathname();
@@ -61,13 +64,12 @@ export function LegalConsentGate({ children }: LegalConsentGateProps) {
         userOptedToAcceptNow: false,
       });
     } catch (err) {
-      // Fall open: log and let the user through (spec §7.5).
       // eslint-disable-next-line no-console
-      console.warn('[legal] consent_check_skipped_offline', {
+      console.warn('[legal] consent_check_failed', {
         reason: (err as Error).message,
         timestamp: new Date().toISOString(),
       });
-      setState({ kind: 'clear' });
+      setState({ kind: 'error', retry: runCheck });
     }
   }, [userId]);
 
@@ -91,6 +93,28 @@ export function LegalConsentGate({ children }: LegalConsentGateProps) {
 
   // Defer rendering when modal is open or user is on /legal/*
   const shouldDefer = !modalStackEmpty || onReadingDoc;
+
+  if (state.kind === 'error') {
+    return (
+      <View style={{ flex: 1, justifyContent: 'center', padding: spacing.lg }}>
+        <Text style={{ ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart }}>
+          {t('legal.consentCheckFailed', { defaultValue: t('legal.loadFailed') })}
+        </Text>
+        <Pressable
+          onPress={() => state.retry()}
+          style={{
+            marginTop: spacing.md,
+            padding: spacing.md,
+            borderRadius: 8,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ ...typography.button, color: colors.textInverse }}>{t('general.retry')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
 
   if (state.kind !== 'pending' || shouldDefer) {
     return <>{children}</>;

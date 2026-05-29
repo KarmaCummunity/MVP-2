@@ -25,7 +25,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: '  נווה  ',
       cityId: '4000',
@@ -48,7 +48,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -63,7 +63,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -78,7 +78,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'נווה',
         cityId: '4000',
@@ -92,7 +92,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({ userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
     ).rejects.toThrowError(/display_name/);
   });
 
@@ -100,7 +100,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'a'.repeat(51),
         cityId: '4000',
@@ -113,11 +113,11 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({ userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
     ).rejects.toThrowError(/city/);
 
     await expect(
-      useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: '   ' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '4000', cityName: '   ' }),
     ).rejects.toThrowError(/city/);
   });
 
@@ -125,7 +125,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -148,7 +148,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'נווה',
         cityId: '4000',
@@ -163,7 +163,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -179,7 +179,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'נווה',
         cityId: '4000',
@@ -202,7 +202,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(repo);
 
     await expect(
-      useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' }),
     ).rejects.toMatchObject({
       name: 'OnboardingError',
       code: 'illegal_transition',
@@ -220,7 +220,7 @@ describe('CompleteBasicInfoUseCase', () => {
     });
     const useCase = makeUc(repo);
 
-    await useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' });
+    await useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' });
 
     expect(repo.rows.get(userId)?.onboardingState).toBe('pending_avatar');
   });

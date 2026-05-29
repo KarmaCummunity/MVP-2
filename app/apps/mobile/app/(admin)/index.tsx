@@ -2,6 +2,7 @@
 import type { ReactElement } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import type { AdminRole } from '@kc/domain';
 import { hasPermission } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
@@ -9,6 +10,7 @@ import { useAdminRoles } from '../../src/hooks/useAdminRoles';
 import { useAdminsList } from '../../src/hooks/useAdminsList';
 import { useAdminTasksList } from '../../src/hooks/useAdminTasks';
 import { useReportsInbox } from '../../src/hooks/useReportsInbox';
+import { getCommunityStatsSnapshotUseCase } from '../../src/services/postsComposition';
 import he from '../../src/i18n/locales/he';
 
 const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
@@ -46,6 +48,27 @@ export default function AdminDashboard(): ReactElement {
     : adminsQuery.isLoading
       ? t.noCount
       : String(adminsQuery.grants.length);
+
+  // Community-wide counts for the users + posts KPIs (FR-STATS-004 / community_stats view).
+  // Only fetched when at least one of the counts is going to render — avoids
+  // unnecessary network for moderators without users.search / posts.search.
+  const showCommunityCounts = canSearchUsers || canSearchPosts;
+  const communityStatsQuery = useQuery({
+    queryKey: ['admin.dashboard.community_stats'],
+    queryFn: () => getCommunityStatsSnapshotUseCase().execute(),
+    enabled: showCommunityCounts,
+    staleTime: 1000 * 60,
+  });
+  const usersLabel = !canSearchUsers
+    ? t.noCount
+    : communityStatsQuery.data
+      ? String(communityStatsQuery.data.registeredUsers)
+      : t.noCount;
+  const postsLabel = !canSearchPosts
+    ? t.noCount
+    : communityStatsQuery.data
+      ? String(communityStatsQuery.data.activePublicPosts)
+      : t.noCount;
 
   const goTo = (path: string): void => {
     router.push(path as never);
@@ -111,7 +134,7 @@ export default function AdminDashboard(): ReactElement {
               accessibilityLabel={NAV_LABELS.users}
             >
               <Text style={styles.kpiLabel}>{t.usersKpi}</Text>
-              <Text style={styles.kpiValue}>{NAV_LABELS.users}</Text>
+              <Text style={styles.kpiValue}>{usersLabel}</Text>
             </Pressable>
           )}
 
@@ -123,7 +146,7 @@ export default function AdminDashboard(): ReactElement {
               accessibilityLabel={NAV_LABELS.posts}
             >
               <Text style={styles.kpiLabel}>{t.postsKpi}</Text>
-              <Text style={styles.kpiValue}>{NAV_LABELS.posts}</Text>
+              <Text style={styles.kpiValue}>{postsLabel}</Text>
             </Pressable>
           )}
 
@@ -135,7 +158,7 @@ export default function AdminDashboard(): ReactElement {
               accessibilityLabel={NAV_LABELS.audit}
             >
               <Text style={styles.kpiLabel}>{t.auditKpi}</Text>
-              <Text style={styles.kpiValue}>{NAV_LABELS.audit}</Text>
+              <Text style={styles.kpiValue}>{t.auditOpenLabel}</Text>
             </Pressable>
           )}
         </View>

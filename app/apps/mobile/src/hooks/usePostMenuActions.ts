@@ -60,7 +60,13 @@ export function usePostMenuActions({ post, onAfterRemoval, onSettle }: Args): Po
 
   const handleOwnerDelete = useCallback(
     () =>
-      run(() => container.deletePost.execute({ postId: post.postId }), {
+      run(
+        () =>
+          container.deletePost.execute({
+            postId: post.postId,
+            ownerId: post.ownerId,
+          }),
+        {
         errorCopy: t('post.deleteError'),
         successToast: t('post.deleteSuccess'),
       }),
