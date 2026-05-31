@@ -1,6 +1,9 @@
 # SonarCloud — fail PRs when Quality Gate fails on new code.
 # Requires repo/org secret SONAR_TOKEN (SonarCloud user token).
 # See docs/dev/SONAR.md for setup, waivers, and branch protection.
+#
+# `SonarCloud quality gate` is a REQUIRED status check on dev/main (branch
+# protection) — keep the job name stable.
 
 name: CI — SonarCloud
 
