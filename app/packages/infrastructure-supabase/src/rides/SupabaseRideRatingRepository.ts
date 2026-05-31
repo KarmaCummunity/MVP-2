@@ -33,7 +33,7 @@ export class SupabaseRideRatingRepository implements IRideRatingRepository {
       p_ride_id: input.rideId,
       p_ratee_id: input.rateeId,
       p_stars: input.stars,
-      p_comment: input.comment,
+      p_comment: input.comment ?? undefined,
       p_is_penalty: input.isPenalty ?? false,
     });
     if (error) {

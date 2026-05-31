@@ -30,9 +30,9 @@ export class SupabaseRideEmergencyRepository implements IRideEmergencyRepository
   async trigger(input: TriggerRideEmergencyInput): Promise<RideEmergencyEvent> {
     const { data, error } = await this.client.rpc('rpc_ride_emergency_trigger', {
       p_ride_id: input.rideId,
-      p_lat: input.lat,
-      p_lng: input.lng,
-      p_note: input.note,
+      p_lat: input.lat ?? undefined,
+      p_lng: input.lng ?? undefined,
+      p_note: input.note ?? undefined,
     });
     if (error) {
       const code = (error.message ?? '').trim();
