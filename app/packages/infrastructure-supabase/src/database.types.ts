@@ -466,6 +466,7 @@ export type Database = {
       cities: {
         Row: {
           city_id: string
+          country_code: string
           lat: number | null
           lon: number | null
           name_en: string
@@ -473,6 +474,7 @@ export type Database = {
         }
         Insert: {
           city_id: string
+          country_code?: string
           lat?: number | null
           lon?: number | null
           name_en: string
@@ -480,6 +482,7 @@ export type Database = {
         }
         Update: {
           city_id?: string
+          country_code?: string
           lat?: number | null
           lon?: number | null
           name_en?: string
@@ -701,6 +704,45 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "donation_categories"
             referencedColumns: ["slug"]
+          },
+        ]
+      }
+      driver_declarations: {
+        Row: {
+          declared_at: string
+          insurance_declared: boolean
+          license_declared: boolean
+          no_profit_acknowledged: boolean
+          user_id: string
+        }
+        Insert: {
+          declared_at?: string
+          insurance_declared: boolean
+          license_declared: boolean
+          no_profit_acknowledged: boolean
+          user_id: string
+        }
+        Update: {
+          declared_at?: string
+          insurance_declared?: boolean
+          license_declared?: boolean
+          no_profit_acknowledged?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_declarations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "driver_declarations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1646,21 +1688,111 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_emergency_events: {
+        Row: {
+          event_id: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          ride_id: string
+          triggered_at: string
+          triggered_by: string
+        }
+        Insert: {
+          event_id?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id: string
+          triggered_at?: string
+          triggered_by: string
+        }
+        Update: {
+          event_id?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id?: string
+          triggered_at?: string
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_emergency_events_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       ride_listings: {
         Row: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -1668,19 +1800,37 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          arrive_reason?: string | null
+          arrived_at?: string | null
+          cargo_allowed_types?: string[] | null
+          cargo_enabled?: boolean
+          cargo_max_volume_l?: number | null
+          cargo_max_weight_kg?: number | null
           created_at?: string
           departs_at: string
           description?: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number?: string | null
+          food_chilled?: boolean | null
+          food_handover_to_org?: boolean
+          food_max_kg?: number | null
+          food_shipping_enabled?: boolean
+          linked_post_id?: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number?: string | null
           owner_id: string
+          payment_amount_ils?: number | null
+          payment_model?: string
+          req_gender?: string
+          req_pets_allowed?: boolean
+          req_smoking_allowed?: boolean
+          req_verified_only?: boolean
           ride_id?: string
           seats_available?: number | null
+          started_at?: string | null
           status?: string
           template_id?: string | null
           title: string
@@ -1688,19 +1838,37 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          arrive_reason?: string | null
+          arrived_at?: string | null
+          cargo_allowed_types?: string[] | null
+          cargo_enabled?: boolean
+          cargo_max_volume_l?: number | null
+          cargo_max_weight_kg?: number | null
           created_at?: string
           departs_at?: string
           description?: string | null
           dest_city_id?: string
           dest_street?: string
           dest_street_number?: string | null
+          food_chilled?: boolean | null
+          food_handover_to_org?: boolean
+          food_max_kg?: number | null
+          food_shipping_enabled?: boolean
+          linked_post_id?: string | null
           mode?: string
           origin_city_id?: string
           origin_street?: string
           origin_street_number?: string | null
           owner_id?: string
+          payment_amount_ils?: number | null
+          payment_model?: string
+          req_gender?: string
+          req_pets_allowed?: boolean
+          req_smoking_allowed?: boolean
+          req_verified_only?: boolean
           ride_id?: string
           seats_available?: number | null
+          started_at?: string | null
           status?: string
           template_id?: string | null
           title?: string
@@ -1714,6 +1882,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cities"
             referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_linked_post_id_fkey"
+            columns: ["linked_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
           },
           {
             foreignKeyName: "ride_listings_origin_city_id_fkey"
@@ -1749,6 +1924,7 @@ export type Database = {
         Row: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -1759,6 +1935,7 @@ export type Database = {
         Insert: {
           decided_at?: string | null
           decided_by?: string | null
+          joined_active_at?: string | null
           note?: string | null
           participant_id?: string
           requested_at?: string
@@ -1769,6 +1946,7 @@ export type Database = {
         Update: {
           decided_at?: string | null
           decided_by?: string | null
+          joined_active_at?: string | null
           note?: string | null
           participant_id?: string
           requested_at?: string
@@ -1811,6 +1989,120 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users_public"
             referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ride_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          is_penalty: boolean
+          ratee_id: string
+          rater_id: string
+          rating_id: string
+          ride_id: string
+          stars: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          is_penalty?: boolean
+          ratee_id: string
+          rater_id: string
+          rating_id?: string
+          ride_id: string
+          stars: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          is_penalty?: boolean
+          ratee_id?: string
+          rater_id?: string
+          rating_id?: string
+          ride_id?: string
+          stars?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["ratee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["ratee_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+        ]
+      }
+      ride_stops: {
+        Row: {
+          city_id: string
+          created_at: string
+          notes: string | null
+          ride_id: string
+          sort_order: number
+          stop_id: string
+          street: string | null
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          notes?: string | null
+          ride_id: string
+          sort_order: number
+          stop_id?: string
+          street?: string | null
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          notes?: string | null
+          ride_id?: string
+          sort_order?: number
+          stop_id?: string
+          street?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_stops_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_stops_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
           },
         ]
       }
@@ -2555,6 +2847,30 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "legal_document_versions"
             referencedColumns: ["doc_type", "version"]
+          },
+        ]
+      }
+      user_ride_rating_summary: {
+        Row: {
+          avg_stars: number | null
+          last_rated_at: string | null
+          ratings_count: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -3367,23 +3683,43 @@ export type Database = {
         }
         Returns: Json
       }
+      ride_complete_pending_rating_cleanup: { Args: never; Returns: undefined }
+      ride_food_overdue_alert: { Args: never; Returns: undefined }
       ride_listings_expire_check: { Args: never; Returns: number }
       ride_listings_find_matches: {
         Args: { p_limit?: number; p_ride_id: string; p_window_hours?: number }
         Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -3409,19 +3745,37 @@ export type Database = {
           p_query?: string
         }
         Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -3524,11 +3878,84 @@ export type Database = {
         Returns: undefined
       }
       rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
+      rpc_ride_arrive: {
+        Args: { p_reason?: string; p_ride_id: string }
+        Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
+          ride_id: string
+          seats_available: number | null
+          started_at: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_emergency_trigger: {
+        Args: {
+          p_lat?: number
+          p_lng?: number
+          p_note?: string
+          p_ride_id: string
+        }
+        Returns: {
+          event_id: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          ride_id: string
+          triggered_at: string
+          triggered_by: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_emergency_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rpc_ride_participants_cancel: {
         Args: { p_participant_id: string }
         Returns: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -3548,6 +3975,7 @@ export type Database = {
         Returns: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -3567,6 +3995,7 @@ export type Database = {
         Returns: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -3581,22 +4010,112 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      rpc_ride_update_visibility: {
-        Args: { p_ride_id: string; p_visibility: string }
+      rpc_ride_rate: {
+        Args: {
+          p_comment?: string
+          p_is_penalty?: boolean
+          p_ratee_id: string
+          p_ride_id: string
+          p_stars: number
+        }
         Returns: {
+          comment: string | null
+          created_at: string
+          is_penalty: boolean
+          ratee_id: string
+          rater_id: string
+          rating_id: string
+          ride_id: string
+          stars: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_ratings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_start: {
+        Args: { p_ride_id: string }
+        Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_update_visibility: {
+        Args: { p_ride_id: string; p_visibility: string }
+        Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
+          ride_id: string
+          seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string

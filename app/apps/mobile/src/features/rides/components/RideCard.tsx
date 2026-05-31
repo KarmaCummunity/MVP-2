@@ -13,6 +13,7 @@ import { getUserRepo } from '../../../services/userComposition';
 import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 import { rowDirectionStart } from '../../../lib/rtlLayout';
 import { formatRideAddress } from '../lib/formatRideAddress';
+import { RideAdvancedChips } from './RideAdvancedChips';
 
 interface Props {
   readonly ride: RideListingRow;
@@ -65,6 +66,7 @@ export function RideCard({ ride }: Props) {
         {isOffer && ride.seatsAvailable != null ? (
           <Text style={styles.seats}>{t('donations.rides.seats', { count: ride.seatsAvailable })}</Text>
         ) : null}
+        <RideAdvancedChips ride={ride} variant="compact" />
         <View style={styles.ownerRow}>
           <AvatarInitials name={ownerName} avatarUrl={ownerQuery.data?.avatarUrl ?? null} size={32} />
           <Text style={styles.ownerName} numberOfLines={1}>

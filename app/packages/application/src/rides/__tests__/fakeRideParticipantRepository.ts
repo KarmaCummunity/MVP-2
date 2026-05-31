@@ -58,6 +58,7 @@ export class FakeRideParticipantRepository implements IRideParticipantRepository
       requestedAt: now,
       decidedAt: null,
       decidedBy: null,
+      joinedActiveAt: null,
     };
     this.rows.push(row);
     return row;

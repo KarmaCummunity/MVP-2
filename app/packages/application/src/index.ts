@@ -203,6 +203,7 @@ export type {
   CreateRideListingRepoInput,
   SearchRideListingsInput,
   RideVisibility,
+  ListMyRidesInput,
 } from './ports/IRideListingRepository';
 export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
 export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';
@@ -215,6 +216,34 @@ export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
 export type { FindRideMatchesInput } from './ports/IRideListingRepository';
 export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
 export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+export { ListMyRidesUseCase } from './rides/ListMyRidesUseCase';
+export type {
+  IRideStopsRepository,
+  SetRideStopsInput,
+} from './ports/IRideStopsRepository';
+export { ListRideStopsUseCase } from './rides/ListRideStopsUseCase';
+export { SetRideStopsUseCase } from './rides/SetRideStopsUseCase';
+export type { SetRideStopsUseCaseInput } from './rides/SetRideStopsUseCase';
+export { StartRideUseCase } from './rides/StartRideUseCase';
+export { ArriveRideUseCase } from './rides/ArriveRideUseCase';
+export type { ArriveRideInput } from './rides/ArriveRideUseCase';
+export type {
+  IRideEmergencyRepository,
+  TriggerRideEmergencyInput,
+} from './ports/IRideEmergencyRepository';
+export { TriggerRideEmergencyUseCase } from './rides/TriggerRideEmergencyUseCase';
+export { ListRideEmergencyEventsUseCase } from './rides/ListRideEmergencyEventsUseCase';
+export type {
+  IRideRatingRepository,
+  SubmitRideRatingInput,
+} from './ports/IRideRatingRepository';
+export { SubmitRideRatingUseCase } from './rides/SubmitRideRatingUseCase';
+export { ListRideRatingsUseCase } from './rides/ListRideRatingsUseCase';
+export {
+  GetUserRideRatingSummaryUseCase,
+  RATING_DISPLAY_MIN_COUNT,
+} from './rides/GetUserRideRatingSummaryUseCase';
+export type { GetUserRideRatingSummaryResult } from './rides/GetUserRideRatingSummaryUseCase';
 
 // Ride templates (FR-RIDE-021 / FR-RIDE-022)
 export type {
@@ -244,6 +273,14 @@ export { ListRideParticipantsUseCase } from './rides/ListRideParticipantsUseCase
 export type { ListRideParticipantsInput } from './rides/ListRideParticipantsUseCase';
 export { ListUserRideRequestsUseCase } from './rides/ListUserRideRequestsUseCase';
 export type { ListUserRideRequestsInput } from './rides/ListUserRideRequestsUseCase';
+
+// Driver declaration gate (FR-RIDE-041)
+export type {
+  DriverDeclaration,
+  IDriverDeclarationRepository,
+} from './ports/IDriverDeclarationRepository';
+export { AcceptDriverDeclarationUseCase } from './rides/AcceptDriverDeclarationUseCase';
+export { GetDriverDeclarationUseCase } from './rides/GetDriverDeclarationUseCase';
 
 // Survey use cases (FR-SETTINGS-015..017)
 export type { ISurveyRepository } from './ports/ISurveyRepository';
