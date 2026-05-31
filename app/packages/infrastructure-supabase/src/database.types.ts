@@ -499,6 +499,89 @@ export type Database = {
         }
         Relationships: []
       }
+      crm_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          last_contacted_at: string | null
+          name: string
+          notes: string | null
+          organization: string | null
+          phone: string | null
+          role_title: string | null
+          status: string
+          tags: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name?: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       devices: {
         Row: {
           active: boolean
@@ -615,6 +698,92 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "donation_categories"
             referencedColumns: ["slug"]
+          },
+        ]
+      }
+      finance_ledger_entries: {
+        Row: {
+          amount_cents: number
+          category: string | null
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          description: string | null
+          direction: string
+          entry_id: string
+          kind: string
+          occurred_at: string
+          reference_url: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          direction: string
+          entry_id?: string
+          kind: string
+          occurred_at?: string
+          reference_url?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          direction?: string
+          entry_id?: string
+          kind?: string
+          occurred_at?: string
+          reference_url?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
           },
         ]
       }
@@ -1006,6 +1175,80 @@ export type Database = {
           {
             foreignKeyName: "notifications_outbox_user_id_fkey"
             columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      org_applications: {
+        Row: {
+          applicant_user_id: string
+          application_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          org_description: string | null
+          org_name: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          website_url: string | null
+        }
+        Insert: {
+          applicant_user_id: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Update: {
+          applicant_user_id?: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
             isOneToOne: false
             referencedRelation: "users_public"
             referencedColumns: ["user_id"]
@@ -1965,6 +2208,86 @@ export type Database = {
         }
         Relationships: []
       }
+      timesheet_entries: {
+        Row: {
+          approval_note: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          entry_id: string
+          hours_x100: number
+          project: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+          work_date: string
+        }
+        Insert: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          entry_id?: string
+          hours_x100: number
+          project?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id: string
+          work_date: string
+        }
+        Update: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          entry_id?: string
+          hours_x100?: number
+          project?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_feedback: {
         Row: {
           body: string
@@ -2426,6 +2749,38 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_org_application_approve: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_decide: {
+        Args: { p_application_id: string; p_approve: boolean; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_list: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: {
+          applicant_name: string
+          applicant_user_id: string
+          application_id: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          org_description: string
+          org_name: string
+          review_note: string
+          reviewed_at: string
+          reviewed_by: string
+          reviewer_name: string
+          status: string
+          total_count: number
+          website_url: string
+        }[]
+      }
+      admin_org_application_reject: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
+      }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
         Args: { p_target_id: string; p_target_type: string }
@@ -2619,6 +2974,49 @@ export type Database = {
       }
       closure_cleanup_expired: { Args: never; Returns: number }
       closure_cleanup_expired_with_metric: { Args: never; Returns: number }
+      crm_contact_delete: { Args: { p_contact_id: string }; Returns: undefined }
+      crm_contact_list: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+          p_tag?: string
+        }
+        Returns: {
+          contact_id: string
+          created_at: string
+          email: string
+          last_contacted_at: string
+          name: string
+          notes: string
+          organization: string
+          phone: string
+          role_title: string
+          status: string
+          tags: string[]
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      crm_contact_mark_contacted: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
+      crm_contact_upsert: {
+        Args: {
+          p_contact_id?: string
+          p_email?: string
+          p_name?: string
+          p_notes?: string
+          p_organization?: string
+          p_phone?: string
+          p_role_title?: string
+          p_status?: string
+          p_tags?: string[]
+        }
+        Returns: string
+      }
       delete_account_data: { Args: never; Returns: Json }
       enforce_rate_limit: {
         Args: { p_key: string; p_max: number; p_window_seconds: number }
@@ -2706,6 +3104,62 @@ export type Database = {
               post_id: string
             }[]
           }
+      finance_ledger_delete: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
+      finance_ledger_list: {
+        Args: {
+          p_direction?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+        }
+        Returns: {
+          amount_cents: number
+          category: string
+          counterparty: string
+          created_at: string
+          currency: string
+          description: string
+          direction: string
+          entry_id: string
+          kind: string
+          occurred_at: string
+          reference_url: string
+          status: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      finance_ledger_summary: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          currency: string
+          entry_count: number
+          expense_cents: number
+          income_cents: number
+          net_cents: number
+        }[]
+      }
+      finance_ledger_upsert: {
+        Args: {
+          p_amount_cents?: number
+          p_category?: string
+          p_counterparty?: string
+          p_currency?: string
+          p_description?: string
+          p_entry_id?: string
+          p_kind?: string
+          p_occurred_at?: string
+          p_reference_url?: string
+          p_status?: string
+        }
+        Returns: string
+      }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
       get_chat_counterparty_contact: {
         Args: { p_chat_id: string }
@@ -3194,6 +3648,58 @@ export type Database = {
         Returns: string
       }
       suspension_expiry_lift: { Args: never; Returns: number }
+      timesheet_approve: {
+        Args: { p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_decide: {
+        Args: { p_approve: boolean; p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_delete: { Args: { p_entry_id: string }; Returns: undefined }
+      timesheet_list: {
+        Args: {
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+          p_user_id?: string
+        }
+        Returns: {
+          approval_note: string
+          approved_at: string
+          approved_by: string
+          approver_name: string
+          created_at: string
+          description: string
+          entry_id: string
+          hours_x100: number
+          project: string
+          status: string
+          submitted_at: string
+          total_count: number
+          updated_at: string
+          user_id: string
+          user_name: string
+          work_date: string
+        }[]
+      }
+      timesheet_reject: {
+        Args: { p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_submit: { Args: { p_entry_id: string }; Returns: undefined }
+      timesheet_upsert: {
+        Args: {
+          p_description?: string
+          p_entry_id?: string
+          p_hours_x100?: number
+          p_project?: string
+          p_work_date?: string
+        }
+        Returns: string
+      }
       upsert_post_actor_identity: {
         Args: {
           p_hide_from_counterparty: boolean

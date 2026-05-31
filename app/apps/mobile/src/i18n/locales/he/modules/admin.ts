@@ -1,17 +1,25 @@
 // app/apps/mobile/src/i18n/locales/he/modules/admin.ts
 import { adminContentHe } from './adminContent';
+import { adminTimeHe } from './adminTime';
+import { adminMoneyHe } from './adminMoney';
+import { adminCrmHe } from './adminCrm';
+import { adminOrgApprovalsHe } from './adminOrgApprovals';
 
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
   settingsRow: 'פורטל ניהול',
   nav: {
-    dashboard: 'לוח בקרה',
-    reports: 'דיווחים',
-    tasks: 'משימות צוות',
-    admins: 'צוות ניהול',
-    users: 'משתמשים',
-    posts: 'פוסטים',
-    audit: 'יומן פעולות',
+    dashboard:     'לוח בקרה',
+    reports:       'דיווחים',
+    tasks:         'משימות צוות',
+    time:          'שעות',
+    admins:        'צוות ניהול',
+    users:         'משתמשים',
+    posts:         'פוסטים',
+    money:         'כספים',
+    crm:           'CRM',
+    orgApprovals:  'אישור ארגונים',
+    audit:         'יומן פעולות',
   },
   roles: {
     super_admin: 'מנהל-על',
@@ -284,4 +292,8 @@ export const adminHe = {
     },
   },
   content: adminContentHe,
+  time: adminTimeHe,
+  money: adminMoneyHe,
+  crm: adminCrmHe,
+  orgApprovals: adminOrgApprovalsHe,
 } as const;
