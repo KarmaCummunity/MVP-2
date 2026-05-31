@@ -22,10 +22,6 @@ export default defineConfig({
         'src/donations.ts',
         'src/searchTypes.ts',
         'src/personalActivity.ts',
-        // FR-POST-021 projection — non-trivial; tracked as a follow-up
-        // test debt slice. Excluded from coverage to keep this PR scoped
-        // to CI/tooling. See TECH_DEBT.md TD-139.
-        'src/postActorIdentity.ts',
       ],
       thresholds: {
         lines: 60,
