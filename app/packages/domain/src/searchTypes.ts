@@ -60,7 +60,6 @@ export interface UserSearchResult {
 export interface DonationLinkSearchResult {
   readonly id: string;
   readonly categorySlug: DonationCategorySlug;
-  readonly categoryLabelHe: string;
   readonly url: string;
   readonly displayName: string;
   readonly description: string | null;
