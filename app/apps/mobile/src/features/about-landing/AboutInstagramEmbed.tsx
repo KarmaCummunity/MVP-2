@@ -49,6 +49,8 @@ export function AboutInstagramEmbed({
               source={{ uri: ABOUT_INSTAGRAM_EMBED_URL }}
               style={styles.web}
               scrollEnabled
+              originWhitelist={['https://*']}
+              onShouldStartLoadWithRequest={(req) => req.url.startsWith('https://')}
               onError={() => setEmbedFailed(true)}
               onHttpError={() => setEmbedFailed(true)}
               accessibilityLabel={title}

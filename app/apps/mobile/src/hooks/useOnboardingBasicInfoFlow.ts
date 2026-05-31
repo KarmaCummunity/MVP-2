@@ -59,6 +59,7 @@ export function useOnboardingBasicInfoFlow() {
     setLoading(true);
     try {
       await getCompleteBasicInfoUseCase().execute({
+        sessionUserId: session.userId,
         userId: session.userId,
         displayName,
         cityId: city.id,

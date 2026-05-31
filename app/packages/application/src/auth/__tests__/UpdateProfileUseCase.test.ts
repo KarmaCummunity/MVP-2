@@ -23,7 +23,7 @@ describe('UpdateProfileUseCase', () => {
   it('updates display_name + city + biography + avatar in one go', async () => {
     const repo = seed();
     const uc = makeUc(repo);
-    await uc.execute({
+    await uc.execute({ sessionUserId: 'u-1',
       userId: 'u-1',
       displayName: 'נוה ע',
       city: 'haifa',
@@ -41,7 +41,7 @@ describe('UpdateProfileUseCase', () => {
   it('syncs display_name and avatar_url to auth metadata after DB write', async () => {
     const auth = new FakeAuthService();
     const uc = makeUc(seed(), auth);
-    await uc.execute({
+    await uc.execute({ sessionUserId: 'u-1',
       userId: 'u-1',
       displayName: 'נוה ע',
       avatarUrl: 'https://example.com/a.jpg',
@@ -53,38 +53,38 @@ describe('UpdateProfileUseCase', () => {
 
   it('rejects display_name that is whitespace-only or longer than 50 chars', async () => {
     const uc = makeUc(seed());
-    await expect(uc.execute({ userId: 'u-1', displayName: '   ' })).rejects.toThrow('invalid_display_name');
+    await expect(uc.execute({ sessionUserId: 'u-1', userId: 'u-1', displayName: '   ' })).rejects.toThrow('invalid_display_name');
     await expect(
-      uc.execute({ userId: 'u-1', displayName: 'a'.repeat(51) }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', displayName: 'a'.repeat(51) }),
     ).rejects.toThrow('invalid_display_name');
   });
 
   it('rejects biography longer than 200 chars', async () => {
     const uc = makeUc(seed());
     await expect(
-      uc.execute({ userId: 'u-1', biography: 'x'.repeat(201) }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', biography: 'x'.repeat(201) }),
     ).rejects.toThrow('biography_too_long');
   });
 
   it('rejects biography that contains a URL (FR-PROFILE-007 AC3)', async () => {
     const uc = makeUc(seed());
     await expect(
-      uc.execute({ userId: 'u-1', biography: 'follow me at https://x.com/me' }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', biography: 'follow me at https://x.com/me' }),
     ).rejects.toThrow('biography_url_forbidden');
     await expect(
-      uc.execute({ userId: 'u-1', biography: 'visit www.spam.co' }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', biography: 'visit www.spam.co' }),
     ).rejects.toThrow('biography_url_forbidden');
   });
 
   it('rejects city without cityName (and vice versa) — pair must be supplied together', async () => {
     const uc = makeUc(seed());
-    await expect(uc.execute({ userId: 'u-1', city: 'haifa' })).rejects.toThrow('city_pair_required');
-    await expect(uc.execute({ userId: 'u-1', cityName: 'חיפה' })).rejects.toThrow('city_pair_required');
+    await expect(uc.execute({ sessionUserId: 'u-1', userId: 'u-1', city: 'haifa' })).rejects.toThrow('city_pair_required');
+    await expect(uc.execute({ sessionUserId: 'u-1', userId: 'u-1', cityName: 'חיפה' })).rejects.toThrow('city_pair_required');
   });
 
   it('rejects empty patch', async () => {
     const uc = makeUc(seed());
-    await expect(uc.execute({ userId: 'u-1' })).rejects.toThrow('empty_patch');
+    await expect(uc.execute({ sessionUserId: 'u-1', userId: 'u-1' })).rejects.toThrow('empty_patch');
   });
 
   it('clears biography when given null (kept the user can blank it out)', async () => {
@@ -94,14 +94,14 @@ describe('UpdateProfileUseCase', () => {
       biography: 'old bio',
     });
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', biography: null });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', biography: null });
     expect(repo.rows.get('u-1')?.biography).toBeNull();
   });
 
   it('updates only avatar when given just avatarUrl', async () => {
     const repo = seed();
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', avatarUrl: 'https://example.com/new.jpg' });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', avatarUrl: 'https://example.com/new.jpg' });
     expect(repo.rows.get('u-1')?.avatarUrl).toBe('https://example.com/new.jpg');
     expect(repo.rows.get('u-1')?.displayName).toBe('נוה'); // unchanged
   });
@@ -109,7 +109,7 @@ describe('UpdateProfileUseCase', () => {
   it('updates only profile address lines when given just profileAddress', async () => {
     const repo = seed();
     const uc = makeUc(repo);
-    await uc.execute({
+    await uc.execute({ sessionUserId: 'u-1',
       userId: 'u-1',
       profileAddress: { street: 'רוטשילד', streetNumber: '22' },
     });
@@ -126,7 +126,7 @@ describe('UpdateProfileUseCase', () => {
       profileStreetNumber: '1',
     });
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', profileAddress: { street: null, streetNumber: null } });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', profileAddress: { street: null, streetNumber: null } });
     expect(repo.rows.get('u-1')?.profileStreet).toBeNull();
     expect(repo.rows.get('u-1')?.profileStreetNumber).toBeNull();
   });
@@ -134,28 +134,28 @@ describe('UpdateProfileUseCase', () => {
   it('rejects incomplete profile address (one field empty)', async () => {
     const uc = makeUc(seed());
     await expect(
-      uc.execute({ userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: null } }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: null } }),
     ).rejects.toThrow('incomplete_profile_address');
   });
 
   it('rejects invalid profile street number', async () => {
     const uc = makeUc(seed());
     await expect(
-      uc.execute({ userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: 'abc' } }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', profileAddress: { street: 'רחוב', streetNumber: 'abc' } }),
     ).rejects.toThrow('invalid_profile_street_number');
   });
 
   it('accepts profile street number with Hebrew suffix (audit §3.1 follow-up)', async () => {
     const repo = seed();
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', profileAddress: { street: 'הרצל', streetNumber: '12א' } });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', profileAddress: { street: 'הרצל', streetNumber: '12א' } });
     expect(repo.rows.get('u-1')?.profileStreetNumber).toBe('12א');
   });
 
   it('persists trimmed contact phone (FR-PROFILE-007 AC1)', async () => {
     const repo = seed();
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', contactPhone: '  050-1234567 ' });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', contactPhone: '  050-1234567 ' });
     expect(repo.rows.get('u-1')?.contactPhone).toBe('050-1234567');
   });
 
@@ -163,7 +163,7 @@ describe('UpdateProfileUseCase', () => {
     const repo = seed();
     repo.rows.set('u-1', { ...repo.rows.get('u-1')!, contactPhone: '050-1234567' });
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', contactPhone: '' });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', contactPhone: '' });
     expect(repo.rows.get('u-1')?.contactPhone).toBeNull();
   });
 
@@ -171,20 +171,20 @@ describe('UpdateProfileUseCase', () => {
     const repo = seed();
     repo.rows.set('u-1', { ...repo.rows.get('u-1')!, contactPhone: '050-1234567' });
     const uc = makeUc(repo);
-    await uc.execute({ userId: 'u-1', contactPhone: null });
+    await uc.execute({ sessionUserId: 'u-1', userId: 'u-1', contactPhone: null });
     expect(repo.rows.get('u-1')?.contactPhone).toBeNull();
   });
 
   it('rejects contact phone longer than 20 chars after trim', async () => {
     const uc = makeUc(seed());
     await expect(
-      uc.execute({ userId: 'u-1', contactPhone: '1234567890123456789012' }),
+      uc.execute({ sessionUserId: 'u-1', userId: 'u-1', contactPhone: '1234567890123456789012' }),
     ).rejects.toThrow('invalid_contact_phone');
   });
 
   it('throws ProfileError (typed) instead of raw Error for invalid display_name (audit §3.6)', async () => {
     const uc = makeUc(seed());
-    await expect(uc.execute({ userId: 'u-1', displayName: '   ' })).rejects.toMatchObject({
+    await expect(uc.execute({ sessionUserId: 'u-1', userId: 'u-1', displayName: '   ' })).rejects.toMatchObject({
       name: 'ProfileError',
       code: 'invalid_display_name',
     } satisfies Partial<ProfileError>);
@@ -199,7 +199,7 @@ describe('UpdateProfileUseCase', () => {
     const setAddrSpy = vi.spyOn(repo, 'setProfileAddressLines');
 
     const uc = makeUc(repo);
-    await uc.execute({
+    await uc.execute({ sessionUserId: 'u-1',
       userId: 'u-1',
       displayName: 'נוה ע',
       city: 'haifa',

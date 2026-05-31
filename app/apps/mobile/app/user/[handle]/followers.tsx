@@ -63,7 +63,11 @@ export default function FollowersListScreen() {
     if (!me || !isMe || !pendingRemove) return;
     setBusyRemove(true);
     try {
-      await getRemoveFollowerUseCase().execute({ ownerId: me, followerId: pendingRemove.userId });
+      await getRemoveFollowerUseCase().execute({
+        sessionUserId: me,
+        ownerId: me,
+        followerId: pendingRemove.userId,
+      });
       qc.invalidateQueries({ queryKey: ['followers', me] });
       qc.invalidateQueries({ queryKey: ['user-profile', me] });
       setPendingRemove(null);

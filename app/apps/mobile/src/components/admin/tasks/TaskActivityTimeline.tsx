@@ -1,9 +1,18 @@
 // app/apps/mobile/src/components/admin/tasks/TaskActivityTimeline.tsx
 // FR-ADMIN-018 — activity timeline (comments + status/assignment/priority/due changes).
 import { StyleSheet, Text, View } from 'react-native';
-import type { AdminTaskActivity, AdminTaskActivityKind } from '@kc/domain';
+import {
+  type AdminTaskActivity, type AdminTaskActivityKind, type AdminTaskCategory,
+  parseAdminTaskCategory,
+} from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import he from '../../../i18n/locales/he';
+
+function categoryLabel(value: unknown): string {
+  if (typeof value !== 'string') return '';
+  const parsed = parseAdminTaskCategory(value);
+  return parsed ? he.admin.tasks.category[parsed as AdminTaskCategory] : value;
+}
 
 export interface TaskActivityTimelineProps {
   readonly activities: readonly AdminTaskActivity[];
@@ -45,6 +54,10 @@ function describe(activity: AdminTaskActivity): string {
       return he.admin.tasks.timeline.descriptionChanged;
     case 'labels_change':
       return he.admin.tasks.timeline.labelsChanged;
+    case 'category_change':
+      return he.admin.tasks.timeline.categoryChange(
+        categoryLabel(p['from']), categoryLabel(p['to']),
+      );
   }
 }
 

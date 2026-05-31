@@ -65,6 +65,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
     setSaving(true);
     try {
       await getCompleteBasicInfoUseCase().execute({
+        sessionUserId: session.userId,
         userId: session.userId,
         displayName,
         cityId: city.id,

@@ -3,7 +3,10 @@
 // Mapped to SRS: FR-AUTH-007 AC2, FR-AUTH-013 (cold-start), FR-AUTH-014 (guest),
 // FR-AUTH-010 AC3 (Skip preserves location).
 // FR-CHAT-001: inbox subscription started on sign-in, torn down on sign-out.
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Pressable, Text } from 'react-native';
+import { spacing, typography } from '@kc/ui';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, View } from 'react-native';
 import { useRouter, useSegments, usePathname, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
@@ -41,6 +44,8 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
   const setSession = useAuthStore((s) => s.setSession);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
   const setBasicInfoSkipped = useAuthStore((s) => s.setBasicInfoSkipped);
+  const [onboardingBootstrapError, setOnboardingBootstrapError] = useState(false);
+  const { t } = useTranslation();
 
   // FR-MOD-010 AC4 — sign-in + mid-session enforcement of bans / suspensions.
   useEnforceAccountGate(session?.userId ?? null);
@@ -98,19 +103,20 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       return;
     }
     let cancelled = false;
+    setOnboardingBootstrapError(false);
     (async () => {
       try {
         const boot = await getOnboardingBootstrap(session.userId);
         if (!cancelled) {
           setOnboardingState(boot.state);
           setBasicInfoSkipped(boot.basicInfoSkipped);
+          setOnboardingBootstrapError(false);
         }
       } catch {
-        // Network/permission failure: assume completed to avoid trapping a real
-        // user in an onboarding loop. Re-queried next session start.
         if (!cancelled) {
-          setOnboardingState('completed');
-          setBasicInfoSkipped(false);
+          setOnboardingBootstrapError(true);
+          setOnboardingState(null);
+          setBasicInfoSkipped(null);
         }
       }
     })();
@@ -245,5 +251,44 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       </View>
     );
   }
+
+  if (isAuthenticated && onboardingBootstrapError) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          justifyContent: 'center',
+          padding: spacing.lg,
+        }}
+      >
+        <Text style={{ ...typography.body, color: colors.textPrimary, textAlign: 'center' }}>
+          {t('general.error')}
+        </Text>
+        <Pressable
+          onPress={() => {
+            if (!session) return;
+            setOnboardingBootstrapError(false);
+            void getOnboardingBootstrap(session.userId)
+              .then((boot) => {
+                setOnboardingState(boot.state);
+                setBasicInfoSkipped(boot.basicInfoSkipped);
+              })
+              .catch(() => setOnboardingBootstrapError(true));
+          }}
+          style={{
+            marginTop: spacing.md,
+            padding: spacing.md,
+            borderRadius: 8,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ ...typography.button, color: colors.textInverse }}>{t('general.retry')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return <>{children}</>;
 }

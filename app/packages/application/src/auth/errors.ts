@@ -14,6 +14,7 @@ export type AuthErrorCode =
   | 'rate_limited'
   | 'cooldown_active'
   | 'network'
+  | 'forbidden'
   | 'unknown';
 
 export class AuthError extends Error {
