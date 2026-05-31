@@ -1,6 +1,5 @@
 import type { DonationCategorySlug, DonationLinkSearchResult, UserSearchResult } from '@kc/domain';
 import type { Database } from '../database.types';
-import { SLUG_TO_LABEL_HE } from './searchConstants';
 export type LinkRow = Database['public']['Tables']['donation_links']['Row'] & { tags?: string | null };
 export interface SearchUserRow {
   user_id: string; display_name: string | null; share_handle: string;
@@ -14,6 +13,5 @@ export function mapUserSearchResult(row: SearchUserRow): UserSearchResult {
 }
 export function mapLinkSearchResult(row: LinkRow): DonationLinkSearchResult {
   return { id: row.id, categorySlug: row.category_slug as DonationCategorySlug,
-    categoryLabelHe: SLUG_TO_LABEL_HE[row.category_slug] ?? row.category_slug,
     url: row.url, displayName: row.display_name, description: row.description, tags: row.tags ?? null };
 }
