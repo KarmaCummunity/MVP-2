@@ -274,7 +274,7 @@ A2 originally made `moderator` and `support` grants manageable from inside the p
 
 Org-scoped roles (`org_admin`, `org_manager`, `org_employee`, `volunteer_manager`, `org_volunteer`) require a non-null `scope_org_id` referencing the organisation the grant applies to; platform roles (`admin`, `moderator`, `support`, `operator`, `operators_manager`) require `scope_org_id` to be null. Authority to grant is constrained by the hierarchy: a granter may grant only roles in their own scope and below.
 
-Migrations: `0143_admin_rbac_management.sql` (A2), `0170_admin_role_hierarchy_v2.sql` (A2.1 — adds `admin` role, `scope_org_id` column, authority helper `can_grant_role`, expanded `admin_grant_role` signature). Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum was established by A0 (D-40); A2.1 just widens it and adds scope.
+Migrations: `0143_admin_rbac_management.sql` (A2), `0173_admin_role_hierarchy_v2.sql` (A2.1 — adds `admin` role, `scope_org_id` column, authority helper `can_grant_role`, expanded `admin_grant_role` signature). Mobile route: `(admin)/admins`. Decision: no new D-* required — the role enum was established by A0 (D-40); A2.1 just widens it and adds scope.
 
 ---
 

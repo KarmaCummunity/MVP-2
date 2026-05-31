@@ -1,4 +1,4 @@
--- 0170_admin_role_hierarchy_v2 — A2.1: widen admin_grant_role to the full
+-- 0173_admin_role_hierarchy_v2 — A2.1: widen admin_grant_role to the full
 -- PRD V2 role hierarchy (PRD_V2_NOT_FOR_MVP/02_Personas_Roles.md §2.1).
 --
 -- Adds:
