@@ -56,6 +56,7 @@ export type Database = {
           revoked_at: string | null
           revoked_by: string | null
           role: string
+          scope_org_id: string | null
           user_id: string
         }
         Insert: {
@@ -65,6 +66,7 @@ export type Database = {
           revoked_at?: string | null
           revoked_by?: string | null
           role: string
+          scope_org_id?: string | null
           user_id: string
         }
         Update: {
@@ -74,6 +76,7 @@ export type Database = {
           revoked_at?: string | null
           revoked_by?: string | null
           role?: string
+          scope_org_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -2730,7 +2733,11 @@ export type Database = {
         Returns: undefined
       }
       admin_grant_role: {
-        Args: { p_role: string; p_target_user_id: string }
+        Args: {
+          p_role: string
+          p_scope_org_id?: string
+          p_target_user_id: string
+        }
         Returns: string
       }
       admin_list_admins: {
@@ -2746,6 +2753,7 @@ export type Database = {
           revoked_at: string
           revoked_by: string
           role: string
+          scope_org_id: string
           user_id: string
         }[]
       }
@@ -2936,6 +2944,10 @@ export type Database = {
           reason: string
           until_at: string
         }[]
+      }
+      can_grant_role: {
+        Args: { granter_uid: string; target_role: string; target_scope: string }
+        Returns: boolean
       }
       check_survey_prompt_eligibility: {
         Args: { p_session_count: number; p_slug: string }
@@ -3168,10 +3180,12 @@ export type Database = {
       get_my_admin_roles: { Args: never; Returns: string[] }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
-      has_admin_role: {
-        Args: { role_name: string; uid: string }
-        Returns: boolean
-      }
+      has_admin_role:
+        | { Args: { role_name: string; uid: string }; Returns: boolean }
+        | {
+            Args: { role_name: string; scope: string; uid: string }
+            Returns: boolean
+          }
       has_blocked: {
         Args: { blocked: string; blocker: string }
         Returns: boolean
