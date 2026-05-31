@@ -1,3 +1,9 @@
+import type {
+  RideCargoTypeSlug,
+  RideGenderRequirement,
+  RidePaymentModel,
+} from '@kc/domain';
+
 export interface RideListingRow {
   rideId: string;
   ownerId: string;
@@ -14,10 +20,43 @@ export interface RideListingRow {
   seatsAvailable: number | null;
   description: string | null;
   title: string;
-  status: 'open' | 'closed' | 'cancelled' | 'expired';
+  status:
+    | 'open'
+    | 'in_transit'
+    | 'completed_pending_rating'
+    | 'closed'
+    | 'cancelled'
+    | 'expired';
   visibility: 'Public' | 'FollowersOnly' | 'OnlyMe';
   createdAt: string;
   updatedAt: string;
+  /** FR-RIDE-031 — set when the owner taps "Start"; NULL until then. */
+  startedAt: string | null;
+  /** FR-RIDE-031 — set when the owner taps "Arrive"; NULL until then. */
+  arrivedAt: string | null;
+  /** FR-RIDE-045 AC4 — reason recorded with arrival ('arrived' | 'breakdown'). */
+  arriveReason: 'arrived' | 'breakdown' | null;
+  /** FR-RIDE-044 — cross-world link to an items post (request rides only). */
+  linkedPostId: string | null;
+  /** FR-RIDE-045 AC2 — driver flagged food shipment as handed off to a regional org. */
+  foodHandoverToOrg: boolean;
+  // FR-RIDE-026 — cargo.
+  cargoEnabled: boolean;
+  cargoMaxVolumeL: number | null;
+  cargoMaxWeightKg: number | null;
+  cargoAllowedTypes: ReadonlyArray<RideCargoTypeSlug> | null;
+  // FR-RIDE-027 — food shipping.
+  foodShippingEnabled: boolean;
+  foodMaxKg: number | null;
+  foodChilled: boolean | null;
+  // FR-RIDE-028 — payment.
+  paymentModel: RidePaymentModel;
+  paymentAmountIls: number | null;
+  // FR-RIDE-029 — requirements.
+  reqGender: RideGenderRequirement;
+  reqSmokingAllowed: boolean;
+  reqPetsAllowed: boolean;
+  reqVerifiedOnly: boolean;
 }
 
 export type RideVisibility = 'Public' | 'FollowersOnly' | 'OnlyMe';
@@ -36,6 +75,22 @@ export interface CreateRideListingRepoInput {
   description: string | null;
   title: string;
   visibility: RideVisibility;
+  // FR-RIDE-026..029 — optional advanced fields (defaults applied at adapter).
+  cargoEnabled?: boolean;
+  cargoMaxVolumeL?: number | null;
+  cargoMaxWeightKg?: number | null;
+  cargoAllowedTypes?: ReadonlyArray<RideCargoTypeSlug> | null;
+  foodShippingEnabled?: boolean;
+  foodMaxKg?: number | null;
+  foodChilled?: boolean | null;
+  paymentModel?: RidePaymentModel;
+  paymentAmountIls?: number | null;
+  reqGender?: RideGenderRequirement;
+  reqSmokingAllowed?: boolean;
+  reqPetsAllowed?: boolean;
+  reqVerifiedOnly?: boolean;
+  /** FR-RIDE-044 — link to an items post; only valid for mode='request'. */
+  linkedPostId?: string | null;
 }
 
 export interface SearchRideListingsInput {
@@ -58,6 +113,26 @@ export interface FindRideMatchesInput {
   limit?: number | null;
 }
 
+export interface ListMyRidesInput {
+  ownerId: string;
+  /** Default: all of open/in_transit/completed_pending_rating/closed/cancelled/expired. */
+  statuses?: ReadonlyArray<
+    | 'open'
+    | 'in_transit'
+    | 'completed_pending_rating'
+    | 'closed'
+    | 'cancelled'
+    | 'expired'
+  >;
+  /**
+   * Lower bound on `departs_at` so we don't fetch the entire history. Default
+   * = now() − 30 days; pass `null` to disable.
+   */
+  since?: string | null;
+  /** Result cap (server clamps to ≤ 200). */
+  limit?: number;
+}
+
 export interface IRideListingRepository {
   create(input: CreateRideListingRepoInput): Promise<RideListingRow>;
   getById(rideId: string, viewerId: string): Promise<RideListingRow | null>;
@@ -75,4 +150,17 @@ export interface IRideListingRepository {
    * ownership and that the ride is still 'open'. Idempotent on no-op.
    */
   updateVisibility(input: { rideId: string; visibility: RideVisibility }): Promise<RideListingRow>;
+
+  /**
+   * Rides authored by the caller, ordered `departs_at DESC`. RLS already
+   * allows owners to see all of their rides regardless of status/visibility,
+   * so the adapter is a plain SELECT.
+   */
+  listMyRides(input: ListMyRidesInput): Promise<RideListingRow[]>;
+
+  /** FR-RIDE-031 — owner check-in. Idempotent on already-in_transit. */
+  start(rideId: string): Promise<RideListingRow>;
+
+  /** FR-RIDE-031 — owner marks arrival. Idempotent on already-completed_pending_rating. */
+  arrive(rideId: string, reason: 'arrived' | 'breakdown'): Promise<RideListingRow>;
 }
