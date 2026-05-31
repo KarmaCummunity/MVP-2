@@ -63,6 +63,50 @@ const KIND_ROUTES: Record<NotificationKind, KindHandler> = {
       ? { pathname: '/(admin)/tasks/[taskId]', params: { taskId: id } }
       : { pathname: '/(admin)/tasks', params: {} as Record<string, string> };
   },
+  // FR-RIDE-013, FR-RIDE-019 — ride participant lifecycle notifications all
+  // deep-link to the ride detail screen. The participant_id is also carried
+  // in data.params but the detail screen is the right landing for both owner
+  // (sees pending requests) and rider (sees their status).
+  ride_request: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_approved: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_rejected: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_participant_cancelled: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_participant_cancelled_by_owner: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_started: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_arrived: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_breakdown: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_emergency: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]', params: { id } } : null;
+  },
+  ride_rate_prompt: (d) => {
+    const id = requireUuid(d.params?.id);
+    return id ? { pathname: '/(tabs)/donations/rides/[id]/rate', params: { id } } : null;
+  },
 };
 
 export function resolvePushRoute(data: Partial<PushData>): ResolvedRoute | null {

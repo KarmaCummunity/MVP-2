@@ -25,6 +25,7 @@ import { useAuthStore } from '../../../store/authStore';
 import { getCreateRideListingUseCase } from '../composition/ridesComposition';
 import { useRideDefaults } from '../hooks/useRideDefaults';
 import { setRideLastMode } from '../lib/rideLastModeStorage';
+import { DriverDeclarationSheet } from './DriverDeclarationSheet';
 
 interface Props {
   readonly visible: boolean;
@@ -52,6 +53,7 @@ export function RideCreateSheet({ visible, onClose }: Props) {
   const [description, setDescription] = useState('');
   const [submitting, setSubmitting] = useState(false);
   const [errorKey, setErrorKey] = useState<string | null>(null);
+  const [declarationOpen, setDeclarationOpen] = useState(false);
 
   useEffect(() => {
     if (!visible) {
@@ -95,6 +97,11 @@ export function RideCreateSheet({ visible, onClose }: Props) {
       onClose();
     } catch (err) {
       if (err instanceof RideError) {
+        // FR-RIDE-041 — auto-open the declaration sheet so the user can
+        // accept inline and retry without losing the form state.
+        if (err.code === 'declaration_required') {
+          setDeclarationOpen(true);
+        }
         setErrorKey(`donations.rides.errors.${err.code}`);
       } else {
         setErrorKey('donations.rides.errors.unknown');
@@ -270,6 +277,15 @@ export function RideCreateSheet({ visible, onClose }: Props) {
           </ScrollView>
         </View>
       </View>
+      <DriverDeclarationSheet
+        visible={declarationOpen}
+        onClose={() => setDeclarationOpen(false)}
+        onAccepted={() => {
+          setErrorKey(null);
+          // Caller can retry by tapping Publish again; we don't auto-submit
+          // because the form values may still need a beat to settle.
+        }}
+      />
     </Modal>
   );
 }

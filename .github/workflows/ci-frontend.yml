@@ -2,6 +2,11 @@ name: CI — frontend
 
 # Runs on PRs and pushes to `main` / `dev` whose changes touch the app code
 # or its build inputs. Mirrors the quality + web build + Hebrew scan gates.
+#
+# `typecheck · test · lint` and `Hebrew source scan (no inline UI copy)` are
+# REQUIRED status checks on dev/main (branch protection) — keep the job names
+# stable, or branch protection will block every PR waiting on a context that
+# can no longer report.
 
 on:
   pull_request:

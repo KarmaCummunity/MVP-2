@@ -11,7 +11,21 @@ export type NotificationKind =
   | 'follow_request'
   | 'follow_started'
   | 'follow_approved'
-  | 'task_assigned';
+  | 'task_assigned'
+  // FR-RIDE-013, FR-RIDE-019 — ride participant lifecycle + cascade variant.
+  | 'ride_request'
+  | 'ride_approved'
+  | 'ride_rejected'
+  | 'ride_participant_cancelled'
+  | 'ride_participant_cancelled_by_owner'
+  // FR-RIDE-031..033 + FR-RIDE-045 AC4 — active ride transitions.
+  | 'ride_started'
+  | 'ride_arrived'
+  | 'ride_breakdown'
+  // FR-RIDE-035 — emergency button.
+  | 'ride_emergency'
+  // FR-RIDE-037 — ratings prompt.
+  | 'ride_rate_prompt';
 
 /** Payload attached to every Expo push under `data`. The client reads this on tap. */
 export interface PushData {

@@ -43,4 +43,120 @@ describe('validateRideDraft', () => {
       validateRideDraft({ ...base, mode: 'request', seatsAvailable: 2 }),
     ).toThrow(RideError);
   });
+
+  // FR-RIDE-026..029 — advanced fields.
+  describe('advanced fields', () => {
+    it('rejects cargo enabled without bounds', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          cargo: { enabled: true, maxVolumeL: null, maxWeightKg: 10, allowedTypes: ['furniture'] },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('rejects cargo volume out of bounds', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          cargo: { enabled: true, maxVolumeL: 9999, maxWeightKg: 10, allowedTypes: ['furniture'] },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('rejects unknown cargo type slug', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          cargo: {
+            enabled: true,
+            maxVolumeL: 100,
+            maxWeightKg: 30,
+            // @ts-expect-error — intentionally malformed
+            allowedTypes: ['unicorn'],
+          },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('rejects when both cargo and food are enabled', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          cargo: { enabled: true, maxVolumeL: 100, maxWeightKg: 30, allowedTypes: ['furniture'] },
+          food: { enabled: true, maxKg: 5, chilled: true },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('rejects food enabled without bounds', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          food: { enabled: true, maxKg: null, chilled: true },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('rejects payment cap exceeded (intercity)', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          payment: { model: 'expense_share', amountIls: 71 },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('rejects payment cap exceeded (intracity)', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          originCityId: '5000',
+          destCityId: '5000',
+          originStreet: 'A',
+          destStreet: 'B',
+          payment: { model: 'expense_share', amountIls: 21 },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('accepts payment at the intercity cap', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          payment: { model: 'expense_share', amountIls: 70 },
+        }),
+      ).not.toThrow();
+    });
+
+    it('rejects free with amount set', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          payment: { model: 'free', amountIls: 10 },
+        }),
+      ).toThrow(RideError);
+    });
+
+    it('accepts a valid full advanced payload', () => {
+      expect(() =>
+        validateRideDraft({
+          ...base,
+          cargo: {
+            enabled: true,
+            maxVolumeL: 150,
+            maxWeightKg: 40,
+            allowedTypes: ['furniture', 'small_packages'],
+          },
+          payment: { model: 'expense_share', amountIls: 35 },
+          requirements: {
+            gender: 'women_only',
+            smokingAllowed: false,
+            petsAllowed: true,
+            verifiedOnly: true,
+          },
+        }),
+      ).not.toThrow();
+    });
+  });
 });

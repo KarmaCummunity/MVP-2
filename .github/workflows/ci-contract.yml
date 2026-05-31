@@ -2,6 +2,9 @@ name: CI — contract
 
 # Static guards on the contract between app code, infra adapters, and the DB.
 # Cheap to run, catches drift before backend or frontend CI burns time.
+#
+# `rpc · table contract` is a REQUIRED status check on dev/main (branch
+# protection) — keep the job name stable.
 
 on:
   pull_request:
