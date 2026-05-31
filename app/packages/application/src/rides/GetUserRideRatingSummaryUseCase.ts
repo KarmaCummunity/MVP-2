@@ -7,7 +7,7 @@ export const RATING_DISPLAY_MIN_COUNT = 3;
 
 export interface GetUserRideRatingSummaryResult {
   readonly summary: UserRideRatingSummary | null;
-  /** Use this to gate rendering — false = "עדיין מעט דירוגים". */
+  /** Use this to gate rendering — false means too few ratings to show a summary. */
   readonly shouldDisplay: boolean;
 }
 
