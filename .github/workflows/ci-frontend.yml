@@ -160,3 +160,6 @@ jobs:
 
       - name: Scan for Hebrew outside allowed paths
         run: node scripts/extract-hebrew-text.mjs --check
+
+      - name: Run Hebrew scanner guard unit tests
+        run: node --test scripts/extract-hebrew-text.test.mjs
