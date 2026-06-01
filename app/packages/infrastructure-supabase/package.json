@@ -16,7 +16,7 @@
     "@supabase/supabase-js": "^2.69.0"
   },
   "devDependencies": {
-    "@types/node": "^22.0.0",
+    "@types/node": "^25.9.1",
     "typescript": "^5.5.0",
     "vitest": "^2.1.0"
   }
