@@ -31,7 +31,7 @@
 ## File Structure
 
 **Create:**
-- `app/packages/domain/src/karma.ts` — `KarmaEventType`, `KARMA_POINTS`, `KARMA_VALUE_BONUS_DIVISOR`, `KARMA_VALUE_BONUS_CAP_VALUE`, `computeValueBonus()`.
+- `app/packages/domain/src/karma.ts` — `KarmaEventType`, `KARMA_VALUE_BONUS_DIVISOR`, `KARMA_VALUE_BONUS_CAP_VALUE`, `computeValueBonus()` (award amounts live in SQL only).
 - `app/packages/domain/src/__tests__/karma.test.ts`
 - `supabase/migrations/0097_post_estimated_value.sql`
 - `supabase/migrations/0098_karma_schema.sql`
@@ -58,14 +58,15 @@
 - `app/packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts:114` — insert `estimated_value`.
 - `app/packages/infrastructure-supabase/src/database.types.ts` — `posts.estimated_value`, `users.karma_points`.
 - `app/apps/mobile/src/hooks/useCreatePostFormState.ts` — `estimatedValue` state + setter + draft apply.
-- `app/apps/mobile/src/store/postDraftStore.ts` (+ `POST_DRAFT_DEFAULTS`) — persist `estimatedValue`.
+- `app/apps/mobile/src/lib/postDraftFormState.ts` — `PostDraftFormState`, `POST_DRAFT_DEFAULTS`, `isFormStateAtDefaults`, `buildDraftPayload` all gain `estimatedValue`.
+- `app/apps/mobile/src/store/postDraftStore.ts` — `PostDraftPayload` gains `estimatedValue`.
 - `app/apps/mobile/src/hooks/usePostDraftAutosave.ts` — include `estimatedValue`.
 - `app/apps/mobile/src/hooks/useCreatePostPublish.ts` — thread `estimatedValue` into `create()`.
 - `app/apps/mobile/app/(tabs)/create.tsx` — pass `estimatedValue` to the form/publish hooks + scroll content.
 - `app/apps/mobile/src/components/CreatePostForm/CreatePostFormScrollContent.tsx` — mount slider in the `isGive` block.
-- `app/apps/mobile/app/(tabs)/profile/index.tsx` — mount `KarmaBadge` (self view only).
+- `MyProfileChrome.tsx` (the self-profile chrome that reads `['user-profile', userId]`) — mount `KarmaBadge` (self view only); NOT `profile/index.tsx`.
 - `app/apps/mobile/app/stats.tsx` — karma card + `useMeRealtime`.
-- `app/apps/mobile/app/_layout.tsx` — mount `useMeRealtime` once at the authed root.
+- `app/apps/mobile/app/_layout.tsx` — render `<MeRealtimeMount/>` inside the `QueryClientProvider`.
 - `app/apps/mobile/src/i18n/locales/he/index.ts` — wire `karmaHe`.
 - `docs/SSOT/BACKLOG.md`, `docs/SSOT/DECISIONS.md`, `docs/SSOT/TECH_DEBT.md`, `docs/SSOT/spec/10_statistics.md`.
 
@@ -85,20 +86,13 @@
 // app/packages/domain/src/__tests__/karma.test.ts
 import { describe, it, expect } from 'vitest';
 import {
-  KARMA_POINTS,
   KARMA_VALUE_BONUS_DIVISOR,
   KARMA_VALUE_BONUS_CAP_VALUE,
   computeValueBonus,
 } from '../karma';
 
-describe('karma schedule constants (mirror SQL source of truth — keep in sync with 0099)', () => {
-  it('matches the approved economy', () => {
-    expect(KARMA_POINTS.registration).toBe(1);
-    expect(KARMA_POINTS.post_created).toBe(5);
-    expect(KARMA_POINTS.outreach).toBe(1);
-    expect(KARMA_POINTS.follower_gained).toBe(1);
-    expect(KARMA_POINTS.closure_giver_base).toBe(20);
-    expect(KARMA_POINTS.closure_receiver).toBe(15);
+describe('karma value-bonus constants (mirror the SQL source of truth — keep in sync with 0099)', () => {
+  it('matches the approved divisor + cap', () => {
     expect(KARMA_VALUE_BONUS_DIVISOR).toBe(50);
     expect(KARMA_VALUE_BONUS_CAP_VALUE).toBe(1000);
   });
@@ -134,9 +128,10 @@ Expected: FAIL — `Cannot find module '../karma'`.
 
 ```ts
 // app/packages/domain/src/karma.ts
-// Karma economy — single client-side source of truth for the points schedule.
-// The DB (migration 0099) is the authoritative awarder; these constants exist
-// for the create-post slider preview + the "how to earn" explainer, and are
+// Karma value-bonus helper for the create-post slider preview. The DB (migration
+// 0099) is the authoritative awarder of ALL points; the client never needs the
+// per-event award amounts (the badge renders only the total; the explainer is
+// qualitative i18n copy). Only the value-bonus divisor/cap are mirrored here,
 // asserted against the spec in __tests__/karma.test.ts. Keep in sync with 0099.
 
 export type KarmaEventType =
@@ -147,19 +142,9 @@ export type KarmaEventType =
   | 'follower_gained'
   | 'follower_gained_reverse'
   | 'closure_giver'
-  | 'closure_giver_reverse'
   | 'closure_receiver'
-  | 'closure_receiver_reverse'
+  | 'closure_reverse'
   | 'backfill';
-
-export const KARMA_POINTS = {
-  registration: 1,
-  post_created: 5,
-  outreach: 1,
-  follower_gained: 1,
-  closure_giver_base: 20,
-  closure_receiver: 15,
-} as const;
 
 export const KARMA_VALUE_BONUS_DIVISOR = 50;
 export const KARMA_VALUE_BONUS_CAP_VALUE = 1000;
@@ -307,6 +292,11 @@ alter table public.users
   add column if not exists karma_points integer not null default 0
     check (karma_points >= 0);
 
+-- Realtime (FR-KARMA-009): a filtered `postgres_changes` UPDATE subscription +
+-- RLS re-check on broadcast need the FULL row image, not just the PK. An UPDATE
+-- that touches only karma_points is the fragile case without this.
+alter table public.users replica identity full;
+
 -- ── 2. Append-only ledger ────────────────────────────────────────────────────
 create table if not exists public.karma_ledger (
   ledger_id    bigserial primary key,
@@ -319,6 +309,9 @@ create table if not exists public.karma_ledger (
 );
 
 create index if not exists karma_ledger_user_idx on public.karma_ledger (user_id);
+
+-- Covering index for the nightly recompute's per-user GROUP BY sum.
+create index if not exists karma_ledger_user_delta_idx on public.karma_ledger (user_id, points_delta);
 
 -- Idempotency guard for never-reversed events only.
 create unique index if not exists karma_ledger_once_idx
@@ -362,12 +355,14 @@ as $$
 declare v_inserted integer;
 begin
   if p_user is null then return; end if;
+  -- ON CONFLICT against the partial unique index is race-safe: a concurrent
+  -- duplicate becomes a no-op (row_count = 0) instead of a unique_violation that
+  -- would abort the host transaction (e.g. the messages INSERT for outreach).
   insert into public.karma_ledger (user_id, event_type, points_delta, ref_type, ref_id)
-  select p_user, p_event, p_delta, p_ref_type, p_ref_id
-  where not exists (
-    select 1 from public.karma_ledger
-     where user_id = p_user and event_type = p_event and ref_id = p_ref_id
-  );
+  values (p_user, p_event, p_delta, p_ref_type, p_ref_id)
+  on conflict (user_id, event_type, ref_id)
+    where event_type in ('registration', 'post_created', 'outreach', 'backfill')
+    do nothing;
   get diagnostics v_inserted = row_count;
   if v_inserted > 0 then
     update public.users set karma_points = greatest(0, karma_points + p_delta)
@@ -462,18 +457,75 @@ create trigger karma_users_after_insert
   after insert on public.users
   for each row execute function public.karma_on_user_insert();
 
--- ── 2. post_created (+5) / post_removed (-5) — posts INSERT + status UPDATE ──
+-- ── 2. post_created (+5) / removed (-5) / closure (both roles) — posts ───────
+-- Anchored to the AUTHORITATIVE delivery signal: the posts.status transition,
+-- NOT recipients-row existence (a recipient row can precede the status flip — see
+-- close_post_with_recipient in 0015 — or be deleted in a different order on
+-- un-mark, see 0075). This mirrors how items_given is anchored in 0006 and yields
+-- the product-required end-states: closure karma exists iff the post is currently
+-- closed_delivered with a marked recipient. Reversal zeroes the post's closure
+-- ledger balance per user (robust to recipient-row deletion order). Give:
+-- owner=giver, recipient=receiver, bonus to giver. Request: recipient=giver,
+-- owner=receiver, no bonus.
 create or replace function public.karma_on_post_change()
 returns trigger language plpgsql security definer set search_path = public as $$
+declare
+  v_rid   text;
+  v_rec   uuid;
+  v_giver uuid;
+  v_recv  uuid;
+  v_bonus integer;
 begin
   if tg_op = 'INSERT' then
     perform public.karma_grant_once(new.owner_id, 'post_created', 'post', new.post_id::text, 5);
     return null;
   end if;
-  -- UPDATE OF status: reverse the creation award when a post is admin-removed.
+
+  v_rid := new.post_id::text;
+
+  -- admin removal reverses the creation award
   if new.status = 'removed_admin' and old.status is distinct from 'removed_admin' then
-    perform public.karma_apply(new.owner_id, 'post_removed', 'post', new.post_id::text, -5);
+    perform public.karma_apply(new.owner_id, 'post_removed', 'post', v_rid, -5);
   end if;
+
+  -- entering closed_delivered → award both economic roles
+  if new.status = 'closed_delivered' and old.status is distinct from 'closed_delivered' then
+    select r.recipient_user_id into v_rec
+      from public.recipients r where r.post_id = new.post_id
+      order by r.marked_at desc limit 1;
+    if v_rec is not null then
+      if new.type = 'Give' then
+        v_giver := new.owner_id; v_recv := v_rec; v_bonus := public.karma_value_bonus(new.estimated_value);
+      else
+        v_giver := v_rec; v_recv := new.owner_id; v_bonus := 0;
+      end if;
+      perform public.karma_apply(v_giver, 'closure_giver', 'post', v_rid, 20 + v_bonus);
+      perform public.karma_apply(v_recv,  'closure_receiver', 'post', v_rid, 15);
+    end if;
+  end if;
+
+  -- leaving closed_delivered (reopen / un-mark) → zero the post's closure balance.
+  -- `bal` snapshots each user's pre-reversal closure balance (CTE sees the table as
+  -- of statement start); `ins` posts the negation; the UPDATE applies it.
+  if old.status = 'closed_delivered' and new.status is distinct from 'closed_delivered' then
+    with bal as (
+      select l.user_id, sum(l.points_delta) as b
+        from public.karma_ledger l
+       where l.ref_id = v_rid and l.event_type like 'closure%'
+       group by l.user_id
+      having sum(l.points_delta) <> 0
+    ),
+    ins as (
+      insert into public.karma_ledger (user_id, event_type, points_delta, ref_type, ref_id)
+      select user_id, 'closure_reverse', -b, 'post', v_rid from bal
+      returning user_id, points_delta
+    )
+    update public.users u
+       set karma_points = greatest(0, u.karma_points + i.points_delta)
+      from ins i
+     where u.user_id = i.user_id;
+  end if;
+
   return null;
 end;
 $$;
@@ -483,59 +535,6 @@ create trigger karma_posts_after_insert
 create trigger karma_posts_after_status_update
   after update of status on public.posts
   for each row execute function public.karma_on_post_change();
-
--- ── 3. closure (both economic roles) — recipients INSERT/DELETE ─────────────
--- recipients row = a real two-party delivery. Give: owner=giver, recipient=receiver.
--- Request: recipient=giver, owner=receiver. Value bonus only when the post is Give.
-create or replace function public.karma_on_recipient_change()
-returns trigger language plpgsql security definer set search_path = public as $$
-declare
-  v_type   text;
-  v_owner  uuid;
-  v_value  integer;
-  v_giver  uuid;
-  v_recv   uuid;
-  v_rid    text;
-  v_bonus  integer;
-begin
-  if tg_op = 'INSERT' then
-    select p.type, p.owner_id, p.estimated_value into v_type, v_owner, v_value
-      from public.posts p where p.post_id = new.post_id;
-    if v_owner is null then return null; end if;
-    v_rid := new.post_id::text;
-    if v_type = 'Give' then
-      v_giver := v_owner; v_recv := new.recipient_user_id;
-      v_bonus := public.karma_value_bonus(v_value);
-    else
-      v_giver := new.recipient_user_id; v_recv := v_owner; v_bonus := 0;
-    end if;
-    perform public.karma_apply(v_giver, 'closure_giver', 'post', v_rid, 20 + v_bonus);
-    perform public.karma_apply(v_recv,  'closure_receiver', 'post', v_rid, 15);
-    return null;
-  end if;
-  -- DELETE (reopen / un-mark). Post still exists in those flows; guard the
-  -- cascade-delete case (post already gone → nightly recompute reconciles).
-  select p.type, p.owner_id, p.estimated_value into v_type, v_owner, v_value
-    from public.posts p where p.post_id = old.post_id;
-  if v_owner is null then return null; end if;
-  v_rid := old.post_id::text;
-  if v_type = 'Give' then
-    v_giver := v_owner; v_recv := old.recipient_user_id;
-    v_bonus := public.karma_value_bonus(v_value);
-  else
-    v_giver := old.recipient_user_id; v_recv := v_owner; v_bonus := 0;
-  end if;
-  perform public.karma_apply(v_giver, 'closure_giver_reverse', 'post', v_rid, -(20 + v_bonus));
-  perform public.karma_apply(v_recv,  'closure_receiver_reverse', 'post', v_rid, -15);
-  return null;
-end;
-$$;
-create trigger karma_recipients_after_insert
-  after insert on public.recipients
-  for each row execute function public.karma_on_recipient_change();
-create trigger karma_recipients_after_delete
-  after delete on public.recipients
-  for each row execute function public.karma_on_recipient_change();
 
 -- ── 4. follower (+1 / -1) — follow_edges INSERT/DELETE ──────────────────────
 create or replace function public.karma_on_follow_change()
@@ -559,18 +558,24 @@ create trigger karma_follow_after_delete
   after delete on public.follow_edges
   for each row execute function public.karma_on_follow_change();
 
--- ── 5. outreach (+1, once per sender+anchor-post) — messages INSERT ─────────
--- First message a non-owner sends in a post-anchored chat. Dedupe via the
--- once-index (no per-message farming). System messages (sender null) ignored.
+-- ── 5. outreach (+1, once per sender+anchor-post, soft daily cap) — messages ─
+-- First message a non-owner sends in a post-anchored chat. Per-post dedupe via the
+-- once-index; a soft daily cap (FR-KARMA-006) blocks mass-DM farming + the real
+-- inbox-spam harm. System messages (sender null) ignored. The cheap short-circuits
+-- run first, so the ~99% of messages that aren't first-contact skip the count query.
 create or replace function public.karma_on_message_insert()
 returns trigger language plpgsql security definer set search_path = public as $$
-declare v_anchor uuid; v_owner uuid;
+declare v_anchor uuid; v_owner uuid; v_today integer;
 begin
   if new.sender_id is null then return null; end if;
   select c.anchor_post_id into v_anchor from public.chats c where c.chat_id = new.chat_id;
   if v_anchor is null then return null; end if;
   select p.owner_id into v_owner from public.posts p where p.post_id = v_anchor;
   if v_owner is null or v_owner = new.sender_id then return null; end if;
+  select count(*) into v_today from public.karma_ledger
+   where user_id = new.sender_id and event_type = 'outreach'
+     and created_at >= date_trunc('day', now());
+  if v_today >= 10 then return null; end if;  -- KARMA_OUTREACH_DAILY_CAP
   perform public.karma_grant_once(new.sender_id, 'outreach', 'post', v_anchor::text, 1);
   return null;
 end;
@@ -603,10 +608,11 @@ begin
   values (pid, g, 'Give', 'open', 'Public', 'kclose', 'Furniture',
           (select city from public.users where city is not null limit 1), 'city', 500);
   insert into public.recipients (post_id, recipient_user_id) values (pid, r);
+  update public.posts set status = 'closed_delivered' where post_id = pid;   -- delivery → award
   select karma_points into k_g1 from public.users where user_id = g;  -- +5 post +30 giver closure (20+10)
   select karma_points into k_r1 from public.users where user_id = r;  -- +15 receiver closure
 
-  delete from public.recipients where post_id = pid;                  -- reopen / un-mark → reverse closure
+  update public.posts set status = 'open' where post_id = pid;               -- reopen → reverse closure
   select karma_points into k_g2 from public.users where user_id = g;  -- giver back to +5 (post only)
   select karma_points into k_r2 from public.users where user_id = r;  -- receiver back to baseline
 
@@ -614,6 +620,7 @@ begin
     k_g1 - k_g0, k_g2 - k_g0, k_r1 - k_r0, k_r2 - k_r0;
 
   -- cleanup
+  delete from public.recipients where post_id = pid;
   delete from public.posts where post_id = pid;
   delete from public.karma_ledger where ref_id = pid::text;
   update public.users set karma_points = k_g0 where user_id = g;
@@ -622,6 +629,8 @@ end $$;
 ```
 
 Expected NOTICE: `giver: closure=+35 after_reverse=+5 | receiver: closure=+15 after_reverse=+0`.
+
+> If a status-FSM guard trigger rejects the direct `update posts set status`, drive the transitions via the real RPCs instead — `close_post_with_recipient(pid, r)` to deliver and the reopen RPC to revert; the karma trigger fires identically on the resulting status change.
 
 - [ ] **Step 3: Commit**
 
@@ -683,27 +692,34 @@ begin
   insert into public.karma_recompute_runs (users_processed, drift_events) values (0, 0)
   returning run_id into v_run_id;
 
-  with truth as (
-    select u.user_id,
-           u.karma_points as old_value,
-           greatest(0, coalesce(
-             (select sum(l.points_delta) from public.karma_ledger l where l.user_id = u.user_id), 0
-           ))::integer as new_value
-      from public.users u
+  -- Single GROUP BY pass over the ledger (uses karma_ledger_user_delta_idx),
+  -- left-joined to users — not a per-user correlated subquery (was 3× full scans).
+  with sums as (
+    select user_id, greatest(0, sum(points_delta))::integer as v
+      from public.karma_ledger group by user_id
   ),
-  drift_rows as (
+  ins as (
     insert into public.karma_drift_events (run_id, user_id, old_value, new_value)
-    select v_run_id, t.user_id, t.old_value, t.new_value
-      from truth t where t.old_value is distinct from t.new_value
+    select v_run_id, u.user_id, u.karma_points, coalesce(s.v, 0)
+      from public.users u left join sums s on s.user_id = u.user_id
+     where u.karma_points is distinct from coalesce(s.v, 0)
     returning drift_id
   )
-  select count(*)::integer into v_drift from drift_rows;
+  select count(*)::integer into v_drift from ins;
 
+  with sums as (
+    select user_id, greatest(0, sum(points_delta))::integer as v
+      from public.karma_ledger group by user_id
+  )
   update public.users u
-     set karma_points = greatest(0, coalesce(
-           (select sum(l.points_delta) from public.karma_ledger l where l.user_id = u.user_id), 0))
-   where u.karma_points is distinct from greatest(0, coalesce(
-           (select sum(l.points_delta) from public.karma_ledger l where l.user_id = u.user_id), 0));
+     set karma_points = coalesce(s.v, 0)
+    from sums s
+   where u.user_id = s.user_id and u.karma_points is distinct from coalesce(s.v, 0);
+
+  -- Defensive: users with an empty ledger but nonzero karma (should not happen).
+  update public.users u set karma_points = 0
+   where u.karma_points <> 0
+     and not exists (select 1 from public.karma_ledger l where l.user_id = u.user_id);
 
   select count(*)::integer into v_processed from public.users;
   if v_drift > 0 then
@@ -839,25 +855,33 @@ git commit -m "chore(infra): regenerate db types for estimated_value + karma_poi
 ```ts
 // app/packages/application/src/ports/IUserRealtime.ts
 import type { User } from '@kc/domain';
-
-export type Unsubscribe = () => void;
+// Reuse the existing Unsubscribe type — do NOT redeclare it. IChatRealtime
+// already exports `Unsubscribe`; a second declaration re-exported through the
+// barrel is a TS2308 "already exported a member named 'Unsubscribe'" error.
+import type { Unsubscribe } from './IChatRealtime';
 
 /**
  * Subscribe to the signed-in user's own `users` row (FR-KARMA-009).
  * RLS guarantees a client only ever receives its own row. Used to push
  * karma_points + all per-user counters live (closes FR-STATS-001 AC2 / TD-98).
+ * `onError` fires on a dropped/timed-out channel so the consumer can resubscribe
+ * (a silent dead socket would otherwise freeze counters with no recovery signal).
  */
 export interface IUserRealtime {
-  subscribeToSelf(userId: string, onChange: (user: User) => void): Unsubscribe;
+  subscribeToSelf(
+    userId: string,
+    onChange: (user: User) => void,
+    onError?: (err: Error) => void,
+  ): Unsubscribe;
 }
 ```
 
 - [ ] **Step 2: Export from the application barrel**
 
-Open `app/packages/application/src/index.ts`. Find the block where other ports are re-exported (e.g. `export * from './ports/IChatRealtime';`) and add:
+Open `app/packages/application/src/index.ts`. Find the block where other ports are re-exported (e.g. `export * from './ports/IChatRealtime';`) and add a **named** export (not `export *` — that would re-export `Unsubscribe` a second time → TS2308):
 
 ```ts
-export * from './ports/IUserRealtime';
+export type { IUserRealtime } from './ports/IUserRealtime';
 ```
 
 - [ ] **Step 3: Typecheck**
@@ -876,9 +900,12 @@ git commit -m "feat(application): add IUserRealtime port for self-row subscripti
 
 ### Task 10: `SupabaseUserRealtime` adapter
 
+> **Order:** complete **Task 11** (`mapUserRow` → `karma_points`) FIRST. This adapter and its test map `karma_points`; without Task 11 they will not typecheck or pass.
+
 **Files:**
 - Create: `app/packages/infrastructure-supabase/src/users/SupabaseUserRealtime.ts`
 - Test: `app/packages/infrastructure-supabase/src/users/__tests__/SupabaseUserRealtime.test.ts`
+- Modify: `app/packages/infrastructure-supabase/src/index.ts` — add `export * from './users/SupabaseUserRealtime';` (REQUIRED — the mobile composition imports it from `@kc/infrastructure-supabase`).
 
 - [ ] **Step 1: Write the failing test** (mirrors `chat/__tests__/SupabaseChatRealtime.chat.test.ts` — a fake channel captures the `postgres_changes` handler and the test invokes it)
 
@@ -959,7 +986,11 @@ import { mapUserRow, type UserRow } from './mapUserRow';
 export class SupabaseUserRealtime implements IUserRealtime {
   constructor(private readonly client: SupabaseClient<Database>) {}
 
-  subscribeToSelf(userId: string, onChange: (user: User) => void): Unsubscribe {
+  subscribeToSelf(
+    userId: string,
+    onChange: (user: User) => void,
+    onError?: (err: Error) => void,
+  ): Unsubscribe {
     const topic = `me:${userId}:${Math.random().toString(36).slice(2, 10)}`;
     const channel = this.client
       .channel(topic)
@@ -968,7 +999,11 @@ export class SupabaseUserRealtime implements IUserRealtime {
         { event: 'UPDATE', schema: 'public', table: 'users', filter: `user_id=eq.${userId}` },
         (payload) => onChange(mapUserRow(payload.new as UserRow)),
       )
-      .subscribe();
+      .subscribe((status) => {
+        if (status === 'CHANNEL_ERROR' || status === 'TIMED_OUT') {
+          onError?.(new Error(`user channel ${status.toLowerCase()}`));
+        }
+      });
     return () => {
       void this.client.removeChannel(channel);
     };
@@ -984,7 +1019,7 @@ Expected: PASS.
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/packages/infrastructure-supabase/src/users/SupabaseUserRealtime.ts app/packages/infrastructure-supabase/src/users/__tests__/SupabaseUserRealtime.test.ts
+git add app/packages/infrastructure-supabase/src/users/SupabaseUserRealtime.ts app/packages/infrastructure-supabase/src/users/__tests__/SupabaseUserRealtime.test.ts app/packages/infrastructure-supabase/src/index.ts
 git commit -m "feat(infra): add SupabaseUserRealtime self-row adapter (FR-KARMA-009)"
 ```
 
@@ -1063,32 +1098,28 @@ git commit -m "feat(infra): map users.karma_points → User.karmaPoints (FR-KARM
 - Modify: `app/packages/infrastructure-supabase/src/posts/SupabasePostRepository.ts:126`
 - Test: `app/packages/infrastructure-supabase/src/posts/__tests__/mapPostRow.test.ts` (create or extend)
 
-- [ ] **Step 1: Write the failing test**
+- [ ] **Step 1: Write the failing test — reuse the REAL row fixture**
+
+`mapPostRow` does **not** take a flat literal — it consumes a generated `posts` row joined with owner/city/media (`PostJoinedRow`) and builds a nested `address` via `mapAddress` (see `mapPostRow.ts`). Do NOT hand-roll a `as never` object — that defeats the type-checker and makes the test a false positive. Instead, open the existing sibling test(s) in `app/packages/infrastructure-supabase/src/posts/__tests__/` (e.g. `mapPostRow.*.test.ts`), copy their real fixture factory, and add an `estimated_value` case. Add (in a new `estimated_value` describe, or extend the existing file):
 
 ```ts
-// app/packages/infrastructure-supabase/src/posts/__tests__/mapPostRow.test.ts
 import { describe, it, expect } from 'vitest';
 import { mapPostRow } from '../mapPostRow';
+// `makePostRow` = the existing real fixture builder used by the sibling tests
+// (typed against the generated posts Row + joins). Reuse it — do not invent one.
+import { makePostRow } from './fixtures'; // adjust to the actual helper/location
 
-// Minimal row — extend the shape mapPostRow already expects in this file's
-// sibling tests; only estimated_value is asserted here.
-const row = {
-  post_id: 'p1', owner_id: 'o1', type: 'Give', status: 'open', visibility: 'Public',
-  title: 't', description: null, category: 'Furniture', city: 'c', city_name: 'City',
-  street: null, street_number: null, location_display_level: 'city',
-  item_condition: 'Good', urgency: null, reopen_count: 0, delete_after: null,
-  estimated_value: 250, created_at: 't', updated_at: 't',
-} as never;
-
-describe('mapPostRow estimated_value', () => {
+describe('mapPostRow estimated_value (FR-KARMA-004)', () => {
   it('maps estimated_value → estimatedValue', () => {
-    expect(mapPostRow(row).estimatedValue).toBe(250);
+    expect(mapPostRow(makePostRow({ estimated_value: 250 })).estimatedValue).toBe(250);
   });
-  it('defaults null', () => {
-    expect(mapPostRow({ ...(row as object), estimated_value: null } as never).estimatedValue).toBeNull();
+  it('defaults to null when unset', () => {
+    expect(mapPostRow(makePostRow({ estimated_value: null })).estimatedValue).toBeNull();
   });
 });
 ```
+
+If no shared fixture builder exists, construct the row from `Database['public']['Tables']['posts']['Row']` (plus the joins `mapPostRow` reads) — fully typed, no `as never`.
 
 - [ ] **Step 2: Run to verify it fails**
 
@@ -1104,19 +1135,19 @@ Expected: FAIL — `estimatedValue` undefined.
     estimatedValue: (row as { estimated_value?: number | null }).estimated_value ?? null,
 ```
 
-(b) `IPostRepository.ts` `CreatePostInput` — after `urgency: string | null;` (line 103):
+(b) `IPostRepository.ts` `CreatePostInput` — after `urgency: string | null;` (line 103). Make it **optional** (`?`) so existing `create()` callers/tests don't all break at once — minimal-footprint per CLAUDE.md §5:
 
 ```ts
   urgency: string | null;
-  /** FR-KARMA-004 — estimated item value 0..1000 (Give only). null = unset. */
-  estimatedValue: number | null;
+  /** FR-KARMA-004 — estimated item value 0..1000 (Give only). Optional; null/absent = unset. */
+  estimatedValue?: number | null;
 ```
 
 (c) `SupabasePostRepository.ts` insert object — after `urgency: input.urgency,` (line 126):
 
 ```ts
         urgency: input.urgency,
-        estimated_value: input.estimatedValue,
+        estimated_value: input.estimatedValue ?? null,
 ```
 
 - [ ] **Step 4: Run to verify it passes + typecheck**
@@ -1196,10 +1227,12 @@ git commit -m "feat(mobile): add karma i18n strings (FR-KARMA-004/007)"
 **Files:**
 - Create: `app/apps/mobile/src/components/CreatePostForm/EstimatedValueSlider.tsx`
 
-- [ ] **Step 1: Confirm the slider dependency**
+- [ ] **Step 1: Install the slider dependency (confirmed missing)**
 
-Run: `cd app && node -e "console.log(require('./apps/mobile/package.json').dependencies['@react-native-community/slider'] || 'MISSING')"`
-- If `MISSING`: `cd app && pnpm --filter @kc/mobile add @react-native-community/slider` (Expo-supported). Otherwise continue.
+`@react-native-community/slider` is NOT in `app/apps/mobile/package.json` nor the lockfile (FE review confirmed). It IS web-compatible (ships `Slider.web.js` → `<input type="range">`) and Expo SDK 54 supported. Install it and stage the lockfile in this task's commit BEFORE any wiring (CI runs `pnpm install --frozen-lockfile`, which fails on an out-of-date lock):
+
+Run: `cd app && pnpm --filter @kc/mobile add @react-native-community/slider`
+Confirm `app/apps/mobile/package.json` and `app/pnpm-lock.yaml` both changed.
 
 - [ ] **Step 2: Write the component**
 
@@ -1263,7 +1296,7 @@ const styles = StyleSheet.create({
 });
 ```
 
-> Note: confirm `colors.primary` / `colors.surface` / `colors.border` exist in `@kc/ui` tokens (they are used across the create form). If a token name differs, use the nearest existing token referenced in `CreatePostFormScrollContent.tsx`.
+> All `@kc/ui` tokens used here exist (FE review verified `colors.primary/surface/border`, `radius.lg`, `typography.h3/h4/caption`).
 
 - [ ] **Step 3: Typecheck**
 
@@ -1273,8 +1306,8 @@ Expected: PASS.
 - [ ] **Step 4: Commit**
 
 ```bash
-git add app/apps/mobile/src/components/CreatePostForm/EstimatedValueSlider.tsx
-git commit -m "feat(mobile): add EstimatedValueSlider (Give-only) (FR-KARMA-004)"
+git add app/apps/mobile/src/components/CreatePostForm/EstimatedValueSlider.tsx app/apps/mobile/package.json app/pnpm-lock.yaml
+git commit -m "feat(mobile): add EstimatedValueSlider (Give-only) + slider dep (FR-KARMA-004)"
 ```
 
 ---
@@ -1289,11 +1322,14 @@ git commit -m "feat(mobile): add EstimatedValueSlider (Give-only) (FR-KARMA-004)
   - In `applyDraft` (near line 41, after `setUrgency(draft.urgency);`): `setEstimatedValue(draft.estimatedValue ?? 0);`
   - In the returned object (after `urgency, setUrgency,`): `estimatedValue, setEstimatedValue,`
 
-- [ ] **Step 2: Draft defaults + persistence** — in `store/postDraftStore.ts`:
-  - Add `estimatedValue: number` to the draft type/`POST_DRAFT_DEFAULTS` with default `0`.
-  - Ensure it is included wherever the draft object is assembled/persisted (same list as `urgency`).
+- [ ] **Step 2: Draft state + defaults + persistence** — `POST_DRAFT_DEFAULTS` lives in `src/lib/postDraftFormState.ts` (NOT `store/postDraftStore.ts`). Add `estimatedValue` to ALL FOUR structures there, or autosave/dirty-detection silently drops it:
+  - `PostDraftFormState` type → add `estimatedValue: number`.
+  - `POST_DRAFT_DEFAULTS` → add `estimatedValue: 0`.
+  - `isFormStateAtDefaults(...)` (the dirty/equality check) → compare `estimatedValue`.
+  - `buildDraftPayload(...)` → include `estimatedValue`.
+  - Then in `src/store/postDraftStore.ts`, add `estimatedValue: number` to the `PostDraftPayload` type.
 
-- [ ] **Step 3: Autosave** — in `usePostDraftAutosave.ts`: add `estimatedValue` to the hook's input type and to the persisted payload (mirror `urgency`). Then in `create.tsx` `usePostDraftAutosave({ ... })` (line 54-68) add `estimatedValue: form.estimatedValue,`.
+- [ ] **Step 3: Autosave** — in `usePostDraftAutosave.ts`: add `estimatedValue` to the input type (`PostDraftAutosaveInput`), to the persisted payload, AND to the effect's **dependency array** (the hook lists every field in deps; without it the debounced save won't re-fire when the slider moves). Then in `create.tsx`'s `usePostDraftAutosave({ ... })` (lines 54-68) add `estimatedValue: form.estimatedValue,`.
 
 - [ ] **Step 4: Publish** — in `useCreatePostPublish.ts`:
   - Add `estimatedValue: number;` to the hook args type (near line 38 where `urgency: string;` is).
@@ -1337,17 +1373,19 @@ git commit -m "feat(mobile): wire estimated-value slider through create-post flo
 ```ts
 // app/apps/mobile/src/services/userRealtimeComposition.ts
 import type { IUserRealtime } from '@kc/application';
-import { SupabaseUserRealtime } from '@kc/infrastructure-supabase';
-import { supabase } from './supabaseClient'; // use the same client import other compositions use
+import { SupabaseUserRealtime, getSupabaseClient } from '@kc/infrastructure-supabase';
+import { pickStorage } from './storage'; // same helper userComposition.ts uses
 
 let instance: IUserRealtime | null = null;
 export function getUserRealtime(): IUserRealtime {
-  if (!instance) instance = new SupabaseUserRealtime(supabase);
+  if (!instance) {
+    instance = new SupabaseUserRealtime(getSupabaseClient({ storage: pickStorage() }));
+  }
   return instance;
 }
 ```
 
-> Verify the exact client import path used by `userComposition.ts` (e.g. `./supabaseClient` or `../lib/supabase`) and `SupabaseUserRealtime` is exported from the infra barrel `@kc/infrastructure-supabase` (add `export * from './users/SupabaseUserRealtime';` to its `src/index.ts` if missing).
+> Match `getSupabaseClient` + `pickStorage` to exactly what `src/services/userComposition.ts` imports — it constructs `getSupabaseClient({ storage: pickStorage() })` (there is **no** `./supabaseClient` module; do not invent one). `SupabaseUserRealtime` is exported from the infra barrel in Task 10.
 
 - [ ] **Step 2: The hook** — subscribes once for the signed-in user and writes the live row into the existing `['user-profile', userId]` react-query cache, so the karma badge + every counter (profile, stats) update live:
 
@@ -1365,15 +1403,23 @@ export function useMeRealtime(): void {
   const queryClient = useQueryClient();
   useEffect(() => {
     if (!userId) return;
-    const unsub = getUserRealtime().subscribeToSelf(userId, (user) => {
-      queryClient.setQueryData(['user-profile', userId], user);
-    });
+    const unsub = getUserRealtime().subscribeToSelf(
+      userId,
+      (user) => queryClient.setQueryData(['user-profile', userId], user),
+      (err) => { if (__DEV__) console.warn('[karma] self-realtime channel error:', err.message); },
+    );
     return unsub;
   }, [userId, queryClient]);
 }
 ```
 
-- [ ] **Step 3: Mount once at the authed root** — in `app/apps/mobile/app/_layout.tsx`, call `useMeRealtime()` inside the root component body (alongside other top-level hooks). Add `import { useMeRealtime } from '../src/hooks/useMeRealtime';` and `useMeRealtime();`.
+- [ ] **Step 3: Mount once INSIDE the providers** — `useMeRealtime` calls `useQueryClient()`, so it must run **inside** the `QueryClientProvider` subtree. The provider is in `_layout.tsx`'s returned JSX (~line 202); a hook in `RootLayout`'s own body is ABOVE the provider and would throw "No QueryClient set". Add a tiny mount component and render it inside the provider tree:
+
+```tsx
+function MeRealtimeMount() { useMeRealtime(); return null; }
+```
+
+Render `<MeRealtimeMount />` just inside `<QueryClientProvider>` (a sibling above `<Stack />`). Add `import { useMeRealtime } from '../src/hooks/useMeRealtime';` at the top.
 
 - [ ] **Step 4: Typecheck + test**
 
@@ -1393,7 +1439,7 @@ git commit -m "feat(mobile): subscribe to self-row realtime → live counters + 
 
 **Files:**
 - Create: `app/apps/mobile/src/components/profile/KarmaBadge.tsx`
-- Modify: `app/apps/mobile/app/(tabs)/profile/index.tsx`
+- Modify: the self-profile chrome that reads `['user-profile', userId]` (`MyProfileChrome.tsx`) — **NOT** `profile/index.tsx` (that file has no `user` variable; it only queries `['my-posts']`).
 
 - [ ] **Step 1: Write the badge** (number + a "how to earn" modal sheet)
 
@@ -1454,15 +1500,15 @@ const styles = StyleSheet.create({
 });
 ```
 
-> Verify token names (`colors.primarySurface`, `colors.primaryLight`, `radius.full`, `typography.button`) against `@kc/ui`; they appear in `stats.tsx`/other components. Swap to the nearest existing token if any is absent.
+> All these `@kc/ui` tokens exist (FE review verified `colors.primarySurface/primaryLight/textPrimary/textSecondary`, `radius.full/lg`, `typography.button/h3/h4/caption/body`).
 
-- [ ] **Step 2: Mount on My Profile only** — in `app/apps/mobile/app/(tabs)/profile/index.tsx`, where the signed-in user's profile data is available (the screen already reads the user via `['user-profile', userId]` / `getUserRepo().findById`), render near the header counters:
+- [ ] **Step 2: Mount inside `MyProfileChrome` (self only)** — `profile/index.tsx` has no `user` variable (it queries `['my-posts']`). The signed-in `User` (with `karmaPoints`) is read in `MyProfileChrome.tsx` (`getUserRepo().findById` via `['user-profile', userId]`, ~line 47). Mount the badge there, near `ProfileStatsRow` (~line 101):
 
 ```tsx
 {user ? <KarmaBadge points={user.karmaPoints} /> : null}
 ```
 
-Add `import { KarmaBadge } from '../../../src/components/profile/KarmaBadge';` (adjust relative depth to match the file). This file is the **self** profile tab; the "other user" profile screen (`app/user/[id].tsx` or similar) must NOT render `KarmaBadge` (FR-KARMA-008). Do not touch that screen.
+Add the import with the correct relative path to `KarmaBadge` (if `MyProfileChrome.tsx` is in the same `components/profile/` folder, it's `./KarmaBadge`). `MyProfileChrome` renders ONLY for the signed-in user; the other-user screen (`app/user/[handle]/index.tsx`, query key `['profile-other', handle]`) must NOT render the badge (FR-KARMA-008) — do not touch it.
 
 - [ ] **Step 3: Typecheck + lint**
 
@@ -1476,7 +1522,9 @@ Load the Profile tab → karma badge shows the number; tap it → "how to earn" 
 - [ ] **Step 5: Commit**
 
 ```bash
-git add app/apps/mobile/src/components/profile/KarmaBadge.tsx app/apps/mobile/app/\(tabs\)/profile/index.tsx
+# add KarmaBadge.tsx + the MyProfileChrome.tsx you edited (use its real path)
+git add app/apps/mobile/src/components/profile/KarmaBadge.tsx
+git add "$(git ls-files '**/MyProfileChrome.tsx')"
 git commit -m "feat(mobile): show self-only karma badge on My Profile (FR-KARMA-007/008)"
 ```
 
@@ -1534,7 +1582,14 @@ git commit -m "feat(mobile): karma card + realtime on stats screen (FR-KARMA-007
 **Files:**
 - Create: `docs/SSOT/spec/14_karma.md`
 
-- [ ] **Step 1: Author the FR spec** with the status header (✅ on merge), `FR-KARMA-001..009`, ACs lifted from the design doc's "Goals" + "Points schedule" sections, and a **mechanism note** stating the corrected model (single-anchor triggers + append-and-sum; partial-unique only for once-events; reversible events net to zero across two ledger rows — this supersedes the design doc's "global UNIQUE" phrasing). Cross-link `docs/superpowers/specs/2026-05-29-karma-points-design.md`. Keep English; FR-IDs and code paths English.
+- [ ] **Step 1: Author the FR spec** with the status header (✅ on merge), `FR-KARMA-001..009`, ACs lifted from the design doc's "Goals" + "Points schedule" sections, plus a **Mechanism notes** section recording the council corrections that supersede the design doc:
+  - Closure karma is anchored to the **`posts.status` transition** into/out of `closed_delivered` (not recipients-row existence); reversal zeroes the post's closure-ledger balance per user.
+  - Awards are single-anchor + append-and-sum; a **partial unique index** dedupes only the never-reversed once-events; reversible events net to zero — supersedes the design doc's "global UNIQUE" phrasing.
+  - Realtime filters the own `users` row by **`user_id`** (the PK), not `id` (the design doc's `id=eq` is wrong), with `replica identity full`.
+  - Outreach has a soft daily cap (**shipped**, not deferred).
+  - Client live-update patches the `['user-profile', userId]` react-query cache (refines the design doc's `meStore`).
+
+  Cross-link `docs/superpowers/specs/2026-05-29-karma-points-design.md`. English only; FR-IDs + code paths English.
 
 - [ ] **Step 2: Commit**
 
@@ -1552,9 +1607,9 @@ git commit -m "docs(ssot): add FR-KARMA spec domain 14_karma (FR-KARMA-001..009)
 
 - [ ] **Step 1: BACKLOG** — add a P2 row (e.g. `P2.24 | Karma points (FR-KARMA) | agent-fullstack | ✅ Done | spec/14_karma.md`). If executing incrementally, set `🟡 In progress` at start and flip to `✅ Done` here.
 
-- [ ] **Step 2: DECISIONS** — add `D-155` with the rationale: self-only-for-now visibility (public-ready model), the points economy + retunable single-source, +1 registration floor, server-authoritative single-anchor awards, and realtime via own-row `postgres_changes`. (Confirm `D-155` is still the next free id; bump if another decision landed.)
+- [ ] **Step 2: DECISIONS** — add `D-155` (karma): self-only-for-now visibility (public-ready model), the points economy + retunable single-source, +1 registration floor, server-authoritative single-anchor awards, status-anchored closure, realtime via own-row `postgres_changes`. Add `D-156` (anti-collusion gate): collusive fake-delivery farming (+35/+15 per pair, permanent) is tolerated at MVP because karma is self-only — no incentive to inflate a private number — but reciprocity/velocity caps are a **hard precondition of the public flip (FR-KARMA-008)**, plus an in-app heads-up before a months-old private number first becomes visible. (Confirm `D-155`/`D-156` are the next free ids; bump if others landed.)
 
-- [ ] **Step 3: TECH_DEBT** — close `TD-98` (per-user counters are now realtime, not focus-only). Add a watch item: "Karma outreach soft daily-cap deferred (per-post dedupe ships; daily cap is YAGNI for MVP) — revisit if mass-DM farming appears." Add a watch item: "Karma realtime uses `postgres_changes` per own-row; upgrade path is Broadcast-from-DB if subscriber fan-out grows." Use FE/BE id lanes per CLAUDE.md §9.
+- [ ] **Step 3: TECH_DEBT** — close `TD-98` (per-user counters are now realtime, not focus-only). Add watch items: (a) "Anti-collusion (reciprocity/velocity caps) required before the FR-KARMA-008 public flip — see D-156"; (b) "Karma realtime uses `postgres_changes` per own-row; upgrade path is Broadcast-from-DB if subscriber fan-out grows." Use FE/BE id lanes per CLAUDE.md §9. (The outreach soft daily-cap is **shipped** in `0099`, not deferred.)
 
 - [ ] **Step 4: statistics AC note** — in `docs/SSOT/spec/10_statistics.md`, update the FR-STATS-001 AC2 status note (and the header ⚠️ line) to record that counters now update via own-row Realtime (FR-KARMA-009), closing the focus-only gap.
 
@@ -1572,13 +1627,14 @@ git commit -m "docs(ssot): backlog/decisions/tech-debt + stats realtime note for
 - [ ] From `app/`: `pnpm typecheck && pnpm test && pnpm lint` — all green.
 - [ ] `pnpm lint:arch` — file-size (≤300) + dependency-direction caps pass (split any file that grew over the cap).
 - [ ] Dev DB: all four migrations applied; `select * from public.karma_recompute_nightly();` returns `drift_events = 0`.
-- [ ] Manual: create a Give post with a value → mark a recipient → both karma numbers move; reopen → both revert; follow/unfollow nets zero; new outreach +1 once.
+- [ ] Manual: create a Give post with a value → close it as **delivered** (mark recipient) → both karma numbers move; reopen → both revert; follow/unfollow nets zero; new outreach +1 once (and stops at the daily cap).
 - [ ] Open PR to `dev` with the §6 body template incl. the `Mapped to spec: FR-KARMA-001..009` line; `gh pr merge --auto --squash --delete-branch`; watch checks.
 
 ---
 
 ## Self-review checklist (author runs before handing off)
 
-- **Spec coverage:** FR-KARMA-001 (Tasks 4,6,7,11), 002 (1,5), 003 (1,5), 004 (3,12,13,14,15), 005 (5), 006 (5), 007 (13,17,18), 008 (17), 009 (9,10,16,18). All covered.
+- **Spec coverage:** FR-KARMA-001 (Tasks 4,6,7,11), 002 (1,5), 003 (1,5), 004 (3,12,13,14,15), 005 (5), 006 (5), 007 (13,17,18), 008 (17), 009 (4,9,10,16,18). All covered.
+- **Council corrections applied:** closure re-anchored to `posts.status` (Task 5); `karma_grant_once` race-safe `on conflict` (Task 4); `replica identity full` + `user_id` filter (Tasks 4/10); recompute pre-aggregated (Task 6); `Unsubscribe` collision + realtime `onError` (Tasks 9/10/16); dead `KARMA_POINTS` removed (Task 1); `mapPostRow` fixture real (Task 12); slider dep install + lockfile (Task 14); draft defaults in `lib/postDraftFormState.ts` (Task 15); composition uses `getSupabaseClient` (Task 16); badge mounts in `MyProfileChrome` (Task 17); outreach daily cap shipped + D-156 (Tasks 5/20).
 - **Type consistency:** `estimatedValue`/`estimated_value`, `karmaPoints`/`karma_points`, `computeValueBonus`, `subscribeToSelf`, `getUserRealtime`, `useMeRealtime` used identically across tasks.
 - **No placeholders:** every code step has complete code; SQL verify steps have concrete expected output.

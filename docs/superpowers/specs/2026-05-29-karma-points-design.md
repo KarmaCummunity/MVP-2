@@ -4,6 +4,7 @@
 > **Status of source spec:** new feature (not in any existing spec) → spec authored as part of this work.
 > **Decision:** `DECISIONS.md` D-155 — karma self-only for MVP (public-ready data model), the points economy, a +1 registration floor, and realtime counter/karma propagation via own-row Supabase Realtime.
 > **Layer scope:** full stack — `packages/{domain,application,infrastructure-supabase}` + `apps/mobile` + new `supabase/migrations`.
+> **Refined by the implementation plan** (`docs/superpowers/plans/2026-05-29-karma-points.md`, after a 4-domain review council): closure karma anchors to the `posts.status` transition (not recipients-row existence); the ledger uses single-anchor append-and-sum with a partial-unique on once-events only (not a global UNIQUE); realtime filters `user_id` (not `id`) + needs `replica identity full`; the outreach soft daily-cap ships in MVP; anti-collusion caps gate the future public flip (D-156).
 
 ## Problem / Motivation
 
@@ -79,7 +80,7 @@ packages/application/src
 packages/infrastructure-supabase/src
 ├── mappers                         ← mapUserRow → karmaPoints; map post → estimatedValue
 ├── posts adapter                   ← write estimated_value on create (Give only)
-└── realtime/SupabaseUserRealtime.ts ← postgres_changes UPDATE on public.users, filtered id=me (mirrors chat/feed realtime)
+└── users/SupabaseUserRealtime.ts ← postgres_changes UPDATE on public.users, filtered user_id=me (mirrors chat/feed realtime)
 
 apps/mobile
 ├── src/store/meStore.ts            ← subscribes IUserRealtime; karma + ALL counters read here (single client source)
@@ -105,7 +106,7 @@ apps/mobile
 
 Karma and all per-user counters are server-maintained columns on `public.users`, which is **already** in the `supabase_realtime` publication with RLS-gated delivery (migration `0007` — a client only ever receives its own row). The gap is purely client-side: the app doesn't yet subscribe to its own user row, so stats are focus-refetch today (the known FR-STATS-001 AC2 / TD-98 gap).
 
-Approach (CTO decision): subscribe to `postgres_changes` (UPDATE on `public.users`, filtered `id=eq.<me>`) via a new `SupabaseUserRealtime` adapter that mirrors the existing `SupabaseChatRealtime` / `SupabaseFeedRealtime` house pattern, behind an `IUserRealtime` application port. A single `meStore` consumes it; the karma badge and every counter read from that store, so a trigger-driven column change lands on-screen within one WebSocket round-trip — no polling, no refetch. One subscription, one row, RLS-enforced.
+Approach (CTO decision): subscribe to `postgres_changes` (UPDATE on `public.users`, filtered `user_id=eq.<me>` — `user_id` is the PK) via a new `SupabaseUserRealtime` adapter that mirrors the existing `SupabaseChatRealtime` / `SupabaseFeedRealtime` house pattern, behind an `IUserRealtime` application port. The live row is written into the existing `['user-profile', userId]` react-query cache (the implementation plan refines this away from a separate `meStore`); the karma badge and every counter that reads that query update on-screen within one WebSocket round-trip — no polling, no refetch. One subscription, one row, RLS-enforced. (Requires `replica identity full` on `users` for reliable filtered-UPDATE delivery.)
 
 This is right-sized and consistent with the app's existing realtime usage. If per-user subscriber fan-out later becomes a scaling concern, the documented upgrade path is Supabase **Broadcast from Database** (`realtime.broadcast_changes` inside the award trigger → a per-user topic), which decouples delivery from per-subscriber RLS checks. Not needed at MVP scale — recorded as a `TECH_DEBT` watch item, not built now (YAGNI).
 
