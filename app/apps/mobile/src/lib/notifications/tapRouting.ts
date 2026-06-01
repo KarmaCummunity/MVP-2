@@ -31,9 +31,20 @@ export function isReadyToRoute(auth: TapAuthState): boolean {
   return auth.isAuthenticated && !auth.isLoading && auth.onboardingState === 'completed';
 }
 
-/** Expand a route template (`/chat/[id]` + `{ id }`) into a concrete path (`/chat/<id>`). */
+/**
+ * Expand a route template (`/chat/[id]` + `{ id }`) into a concrete path
+ * (`/chat/<id>`). Done segment-by-segment rather than with a regex to keep the
+ * function free of any backtracking-sensitive pattern.
+ */
 export function toConcretePath(route: ResolvedRoute): string {
-  return route.pathname.replace(/\[([^\]]+)\]/g, (_match, key: string) => route.params[key] ?? '');
+  return route.pathname
+    .split('/')
+    .map((segment) =>
+      segment.startsWith('[') && segment.endsWith(']')
+        ? route.params[segment.slice(1, -1)] ?? ''
+        : segment,
+    )
+    .join('/');
 }
 
 /**
