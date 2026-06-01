@@ -1,8 +1,8 @@
 # Karma Points (FR-KARMA) — Design
 
-> **Mapped to spec:** NEW domain `docs/SSOT/spec/14_karma.md` (FR-KARMA-001..008), created with the implementation.
+> **Mapped to spec:** NEW domain `docs/SSOT/spec/14_karma.md` (FR-KARMA-001..009), created with the implementation.
 > **Status of source spec:** new feature (not in any existing spec) → spec authored as part of this work.
-> **Decision:** `DECISIONS.md` D-155 — karma is self-only for MVP (public-ready data model) + the points economy.
+> **Decision:** `DECISIONS.md` D-155 — karma self-only for MVP (public-ready data model), the points economy, a +1 registration floor, and realtime counter/karma propagation via own-row Supabase Realtime.
 > **Layer scope:** full stack — `packages/{domain,application,infrastructure-supabase}` + `apps/mobile` + new `supabase/migrations`.
 
 ## Problem / Motivation
@@ -25,6 +25,7 @@ No karma/points concept exists in the codebase today. The app already maintains 
 - **FR-KARMA-006 — Anti-gaming.** Outreach scores once per (user, post) with a soft daily cap; follow→unfollow churn nets zero; the value bonus is realized only on real delivery.
 - **FR-KARMA-007 — Display.** The number appears as a "נקודות קארמה" badge on **My Profile (self view only)** and as a card on the existing `/stats` screen, with a "how do I earn karma?" info affordance.
 - **FR-KARMA-008 — Visibility (MVP self-only, public-ready).** Other users do **not** see the number yet. The stored value carries no privacy coupling — exposing it later is a display-gate change only, no schema/recompute change.
+- **FR-KARMA-009 — Real-time propagation.** The karma number **and every per-user counter** (items given/received, active posts, followers/following) update on-screen in real time — no manual refresh, no focus-refetch — the moment the underlying value changes server-side. Closes the existing focus-only gap (FR-STATS-001 AC2 / TD-98).
 
 ## Points schedule (FR-KARMA-002 / 003)
 
@@ -32,6 +33,7 @@ Awards are assigned by **economic role**, not by ownership. In a `Give` post the
 
 | Event | Recipient of points | Points |
 |---|---|---|
+| Registered an account | the new user | **+1** (once, on signup — floor for every user) |
 | Post published (`Give` or `Request`) | publisher | **+5** |
 | First outreach to a post's owner | the sender | **+1** (once per post; soft daily cap) |
 | Gained a follower | the followed user | **+1** |
@@ -71,17 +73,22 @@ packages/domain/src
 ├── posts.ts                        ← Post.estimatedValue: number | null
 └── __tests__/karma.test.ts
 
+packages/application/src
+└── ports/IUserRealtime.ts          ← subscribe to own-user row changes (port)
+
 packages/infrastructure-supabase/src
 ├── mappers                         ← mapUserRow → karmaPoints; map post → estimatedValue
-└── posts adapter                   ← write estimated_value on create (Give only)
+├── posts adapter                   ← write estimated_value on create (Give only)
+└── realtime/SupabaseUserRealtime.ts ← postgres_changes UPDATE on public.users, filtered id=me (mirrors chat/feed realtime)
 
 apps/mobile
+├── src/store/meStore.ts            ← subscribes IUserRealtime; karma + ALL counters read here (single client source)
 ├── src/components/CreatePostForm/EstimatedValueSlider.tsx   ← Give-only; live "this earns ~+X" preview
 ├── src/components/CreatePostForm/CreatePostFormScrollContent.tsx ← mount slider for Give
 ├── app/(tabs)/create.tsx           ← thread estimatedValue into publish
 ├── src/components/profile/KarmaBadge.tsx                    ← self-only number + "how to earn" info sheet
-├── (My Profile screen)             ← mount KarmaBadge (self view only)
-├── (/stats screen)                 ← karma card
+├── (My Profile screen)             ← mount KarmaBadge (self view only); counters read meStore
+├── (/stats screen)                 ← karma card; counters read meStore
 └── i18n/locales/he/*.ts            ← karma.* strings (badge label, slider title, explainer copy)
 ```
 
@@ -91,14 +98,22 @@ apps/mobile
 
 1. **Create `Give` post** → `estimated_value` stored on the post row.
 2. **Scored event fires** (post insert, follow edge insert/delete, recipient insert/delete, first message to owner, post status → `closed_delivered` / `removed_admin`) → `karma_award()` / `karma_reverse()` inserts an idempotent `karma_ledger` row and adjusts `users.karma_points`, floored at 0.
-3. **Read** → profile/stats reads `users.karma_points` directly; mobile renders it on the self profile only.
+3. **Push** → the `users`-row UPDATE is broadcast over Supabase Realtime (RLS-gated to the owner); the mobile `meStore` updates and the karma badge + every counter re-render instantly. Cold load still reads `users.karma_points` directly; the self profile is the only surface that renders the number.
 4. **Nightly** → recompute `karma_points = SUM(karma_ledger.points_delta)` per active user; mismatch emits a drift event and reconciles.
 
-## Backfill (FR-KARMA-001)
+## Real-time updates (FR-KARMA-009)
 
-One-time, at migration: per user insert a single `backfill` ledger row and set `karma_points` to
-`items_given_count*20 + items_received_count*15 + followers_count*1`.
-This seeds from cheaply-available counters; historical value bonuses, post-creation, and outreach are not reconstructed (accepted approximation). The seed is part of the ledger, so the nightly recompute stays consistent. PM may veto backfill in spec review (fallback: launch at 0).
+Karma and all per-user counters are server-maintained columns on `public.users`, which is **already** in the `supabase_realtime` publication with RLS-gated delivery (migration `0007` — a client only ever receives its own row). The gap is purely client-side: the app doesn't yet subscribe to its own user row, so stats are focus-refetch today (the known FR-STATS-001 AC2 / TD-98 gap).
+
+Approach (CTO decision): subscribe to `postgres_changes` (UPDATE on `public.users`, filtered `id=eq.<me>`) via a new `SupabaseUserRealtime` adapter that mirrors the existing `SupabaseChatRealtime` / `SupabaseFeedRealtime` house pattern, behind an `IUserRealtime` application port. A single `meStore` consumes it; the karma badge and every counter read from that store, so a trigger-driven column change lands on-screen within one WebSocket round-trip — no polling, no refetch. One subscription, one row, RLS-enforced.
+
+This is right-sized and consistent with the app's existing realtime usage. If per-user subscriber fan-out later becomes a scaling concern, the documented upgrade path is Supabase **Broadcast from Database** (`realtime.broadcast_changes` inside the award trigger → a per-user topic), which decouples delivery from per-subscriber RLS checks. Not needed at MVP scale — recorded as a `TECH_DEBT` watch item, not built now (YAGNI).
+
+## Backfill (FR-KARMA-001) — confirmed, ships with launch
+
+One-time, at migration: per existing user insert a single `backfill` ledger row and set `karma_points` to
+`1 (registration) + items_given_count*20 + items_received_count*15 + followers_count*1`.
+This seeds from cheaply-available counters; historical value bonuses, post-creation, and outreach are not reconstructed (accepted approximation). The seed is part of the ledger, so the nightly recompute stays consistent. Confirmed by PM — no all-zeros launch; every existing and future user is worth at least 1.
 
 ## Error handling
 
@@ -114,7 +129,8 @@ This seeds from cheaply-available counters; historical value bonuses, post-creat
 
 ## SSOT updates (shipped in the implementation PR)
 
-- Create `docs/SSOT/spec/14_karma.md` (FR-KARMA-001..008).
+- Create `docs/SSOT/spec/14_karma.md` (FR-KARMA-001..009).
+- `spec/10_statistics.md`: FR-STATS-001 AC2 now genuinely realtime (was focus-only) — update status note; close **TD-98**.
 - `BACKLOG.md`: add row, flip to ✅ on merge.
-- `DECISIONS.md`: D-155 (self-only-for-now visibility + points economy + server-authoritative awards).
-- `TECH_DEBT.md`: track the SQL-constant ↔ TS-divisor mirror as a watch item if it proves fragile.
+- `DECISIONS.md`: D-155 (self-only-for-now visibility + points economy + registration floor + server-authoritative awards + realtime via own-row `postgres_changes`).
+- `TECH_DEBT.md`: close TD-98 (counters realtime); add a watch item for the Broadcast-from-DB scale path and the SQL-constant ↔ TS-divisor mirror.
