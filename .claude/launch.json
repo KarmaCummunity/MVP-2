@@ -4,8 +4,8 @@
     {
       "name": "mobile-web",
       "runtimeExecutable": "pnpm",
-      "runtimeArgs": ["--filter", "@kc/mobile", "exec", "expo", "start", "--web", "--port", "8083"],
-      "port": 8083,
+      "runtimeArgs": ["--filter", "@kc/mobile", "exec", "expo", "start", "--web", "--port", "8085"],
+      "port": 8085,
       "autoPort": false
     }
   ]

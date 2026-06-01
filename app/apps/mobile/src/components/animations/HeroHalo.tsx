@@ -1,6 +1,6 @@
 import React from 'react';
-import { View, StyleSheet } from 'react-native';
-import { colors } from '@kc/ui';
+import { View } from 'react-native';
+import { makeUseStyles } from '@kc/ui';
 
 export interface HeroHaloProps {
   readonly size: number;
@@ -10,6 +10,7 @@ export interface HeroHaloProps {
 const INNER_RATIO = 0.84;
 
 export function HeroHalo({ size, children }: HeroHaloProps) {
+  const styles = useHeroHaloStyles();
   const inner = Math.round(size * INNER_RATIO);
   return (
     <View
@@ -30,7 +31,7 @@ export function HeroHalo({ size, children }: HeroHaloProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useHeroHaloStyles = makeUseStyles(({ colors }) => ({
   outer: {
     backgroundColor: colors.primarySurface,
     alignItems: 'center',
@@ -41,4 +42,4 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

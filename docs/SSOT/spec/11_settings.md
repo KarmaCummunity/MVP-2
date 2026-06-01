@@ -1,6 +1,6 @@
 # 2.11 Settings
 
-> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name; About `support@karma.community` mailto is un-owned (use `karmacommunity2.0@gmail.com`). TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`.
+> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name; About `support@karma.community` mailto is un-owned (use `karmacommunity2.0@gmail.com`). TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`. 🟡 **FR-SETTINGS-015..017** (Surveys & feedback hub, server-driven survey runner, free feedback form) — code complete, post-merge QA pending (BACKLOG P2.34); individual FR statuses remain ⏳ Planned until manual QA on dev confirms ACs.
 
 
 
@@ -180,16 +180,22 @@ A non-actionable line offering an out-of-app contact for emergencies.
 
 ## FR-SETTINGS-010 — Legal section
 
+**Status.** ✅ Implemented (P2.18, migration `0108_legal_documents_and_consent.sql`).
+
 **Description.**
-Links to Terms of Service and Privacy Policy.
+Two settings rows ("תנאי שימוש", "מדיניות פרטיות") open dedicated screens that render server-driven Markdown content natively (no WebView). Document content is editable from Supabase Studio via the `publish_legal_document` RPC; no app deploy required. Material changes trigger a re-acknowledgement flow per `docs/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md`.
 
 **Source.**
 - PRD: `03_Core_Features.md` §3.5.
+- Design: `docs/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md`.
 
 **Acceptance Criteria.**
-- AC1. Two rows that open in-app web views with the canonical URLs.
-- AC2. Both URLs are configurable via remote config.
-- AC3. Older user must re-acknowledge if the legal documents have a newer effective date than the user's last acceptance (`FR-AUTH-002`).
+- AC1. Two settings rows ("תנאי שימוש", "מדיניות פרטיות") open dedicated screens rendering server-driven Markdown content natively (no WebView). RTL-correct on iOS, Android, and web.
+- AC2. Document content is editable via the `publish_legal_document` RPC. No remote-config URL configuration is involved.
+- AC3. Re-acknowledgement is required when a published version has `severity ∈ ('standard','critical')`. `critical` blocks on next foreground; `standard` shows a 7-day soft banner that escalates to blocking on day 7. The banner→modal promotion is computed server-side (`needs_legal_reacknowledgement` SQL function) from the database clock, not the client.
+- AC4. Post-OAuth consent screen presents both documents as cards; the user must check both before proceeding. Skipping is only possible via sign-out (with confirmation).
+- AC5. Documents support `effective_date` in the future; until the date arrives, the document is visible in Settings with a "ייכנס לתוקף ב-DATE" banner but does not trigger the gate.
+- AC6. Network failure during the gate check falls open (allows the user through) and logs the bypass via `console.warn`. Next online foreground re-checks. (A future server-side `legal_events` log will replace `console.warn`.)
 
 ---
 
@@ -231,6 +237,29 @@ The user permanently deletes their own account.
 
 ---
 
+## FR-SETTINGS-014 — Appearance (light / dark / system)
+
+**Status.** ✅ Complete (2026-05-22). Infrastructure, toggle screen, and full mobile screen/container migration shipped.
+
+**Description.**
+A user-facing toggle, in Settings → Appearance, that switches the app between three theme modes: `System` (follows the OS), `Light`, and `Dark`. Dark mode uses a warm-tinted palette (deep warm browns instead of pure black) so the community/karma identity carries through.
+
+**Source.**
+- New (2026-05-19) — added on user request; no PRD precedent.
+
+**Acceptance Criteria.**
+- AC1. Settings list shows an `Appearance` row above `Notifications`. Tapping opens the Appearance sub-screen.
+- AC2. The sub-screen exposes three options: `Automatic` (system), `Light`, `Dark`. Exactly one is selected at a time; the selected option is visually distinct (filled icon bubble + filled radio + tinted row background).
+- AC3. The choice is persisted per device in AsyncStorage (`kc-theme-mode`) and survives sign-out.
+- AC4. `Automatic` resolves at runtime against `useColorScheme()` and re-resolves when the OS scheme changes.
+- AC5. The sub-screen renders a live side-by-side preview card showing the Light and Dark palettes (background / surface / text / brand chips) so the user can compare before choosing.
+- AC6. The native StatusBar style flips with the scheme (`light-content` on dark, `dark-content` on light); on web, the html/body background flips so iOS rubber-band overscroll does not flash the opposite color.
+- AC7. Dark palette preserves brand identity: orange primary stays dominant (slightly lifted for AA contrast on dark surfaces); neutral surfaces are warm-tinted (`#15110D` background, `#1F1A14` surface) rather than pure slate/black.
+
+**Related.** Domain: none. Files: `packages/ui/src/theme/colors.ts`, `packages/ui/src/theme/ThemeContext.tsx`, `apps/mobile/src/store/themeStore.ts`, `apps/mobile/src/components/AppThemeProvider.tsx`, `apps/mobile/app/settings/appearance.tsx`.
+
+---
+
 ## FR-SETTINGS-013 — Read-only contact change
 
 **Description.**
@@ -245,6 +274,48 @@ The MVP does not allow self-service phone/email changes; the Settings screen exp
 
 ---
 
+## FR-SETTINGS-015 — Surveys & feedback hub
+
+**Status.** ⏳ Planned
+
+**Description.** Settings section "סקרים וחוות דעת" listing active server-driven surveys and a free-feedback entry.
+
+**Acceptance Criteria.**
+- AC1. Section appears between My Stats and Support (adjust FR-SETTINGS-001 order note).
+- AC2. Each active survey row shows title, status chip (not started / in progress / completed for current version), navigates to FR-SETTINGS-016.
+- AC3. Row "חוות דעת חופשית" navigates to FR-SETTINGS-017 (not FR-MOD-002).
+- AC4. List data comes from server (`list_active_surveys`); empty state copy when no surveys active.
+
+---
+
+## FR-SETTINGS-016 — Server-driven survey runner
+
+**Status.** ⏳ Planned
+
+**Acceptance Criteria.**
+- AC1. One question visible; compact top map: number + short label (≤2 words) + completion dot; non-linear jump.
+- AC2. Each question: required rating 1–7 + optional text (max 500 chars); per-question anchor labels (low/high) loaded from server; Hebrew RTL placeholders.
+- AC3. Floating prev/next controls above tab bar; never hidden behind shell chrome.
+- AC4. Answers upserted per `(user_id, survey_id, version, question_id)`; user may edit while current version unchanged.
+- AC5. New published version resets completion for that survey; banner may reappear per FR-SETTINGS-016 AC6.
+- AC6. Prompt banner when milestones met and survey incomplete: CTA + "אחר כך" snoozes 7 days (AsyncStorage key `kc-survey-snooze-{slug}`).
+- AC7. Question copy editable in Supabase without app deploy (`publish_survey_version` RPC).
+
+---
+
+## FR-SETTINGS-017 — Free feedback form
+
+**Status.** ⏳ Planned
+
+**Acceptance Criteria.**
+- AC1. Optional 1–7 rating + required text (min 10 chars, max 500).
+- AC2. Submits to `user_feedback` table; success toast; no chat thread.
+- AC3. Does not replace FR-SETTINGS-008.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.5 and Decisions D-5, D-12, D-14. |
+| 0.2 | 2026-05-19 | Added FR-SETTINGS-014 (Appearance — light / dark / system) per PM request. |
+| 0.3 | 2026-05-26 | Added FR-SETTINGS-015..017 (Surveys & feedback hub, server-driven survey runner, free feedback form). Updated status header with ⏳ note. |

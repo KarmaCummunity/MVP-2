@@ -3,19 +3,25 @@
 // Mapped to: FR-PROFILE-001 AC4, FR-PROFILE-002 AC3.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, useTheme } from '@kc/ui';
+import { PROFILE_GRID_COLUMNS } from '../../hooks/useShellContentWidth';
 import type { Post } from '@kc/domain';
-import { PostCardProfile } from '../PostCardProfile';
+import { chunkArray } from '../../lib/chunkArray';
+import { postWithOwnerFromPost, type ProfilePostOwnerContext } from '../../lib/postWithOwnerFromPost';
+import { PostCardGrid } from '../PostCardGrid';
 import { EmptyState } from '../EmptyState';
 
 export type EmptyVariant =
   | 'self_open'
   | 'self_closed'
-  | 'self_saved'
+  | 'self_saved_open'
+  | 'self_saved_closed'
   | 'self_hidden_open'
+  | 'self_removed_open'
+  | 'self_removed_closed'
   | 'other_open'
   | 'other_closed';
 
@@ -23,9 +29,13 @@ export interface ProfilePostsGridProps {
   posts: Post[];
   isLoading: boolean;
   empty: EmptyVariant;
+  /** Profile owner context for PostMenuButton / post detail (not shown on grid cards). */
+  postOwner?: ProfilePostOwnerContext;
 }
 
-export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridProps) {
+export function ProfilePostsGrid({ posts, isLoading, empty, postOwner }: ProfilePostsGridProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const EMPTY_COPY: Record<EmptyVariant, { title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }> = {
     self_open: {
@@ -38,15 +48,30 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
       subtitle: t('profile.emptySelfClosedSubtitleLegacy'),
       icon: 'archive-outline',
     },
-    self_saved: {
-      title: t('profile.emptySavedTitle'),
-      subtitle: t('profile.emptySavedSubtitle'),
+    self_saved_open: {
+      title: t('profile.emptySavedOpenTitle'),
+      subtitle: t('profile.emptySavedOpenSubtitle'),
+      icon: 'bookmark-outline',
+    },
+    self_saved_closed: {
+      title: t('profile.emptySavedClosedTitle'),
+      subtitle: t('profile.emptySavedClosedSubtitle'),
       icon: 'bookmark-outline',
     },
     self_hidden_open: {
       title: t('profile.emptyHiddenOpenTitle'),
       subtitle: t('profile.emptyHiddenOpenSubtitle'),
       icon: 'eye-off-outline',
+    },
+    self_removed_open: {
+      title: t('profile.emptyRemovedOpenTitle'),
+      subtitle: t('profile.emptyRemovedOpenSubtitle'),
+      icon: 'shield-outline',
+    },
+    self_removed_closed: {
+      title: t('profile.emptyRemovedClosedTitle'),
+      subtitle: t('profile.emptyRemovedClosedSubtitle'),
+      icon: 'shield-outline',
     },
     other_open: {
       title: t('profile.emptyOpenTitle'),
@@ -72,12 +97,34 @@ export function ProfilePostsGrid({ posts, isLoading, empty }: ProfilePostsGridPr
   }
   return (
     <View style={styles.grid}>
-      {posts.map((p) => <PostCardProfile key={p.postId} post={p} />)}
+      {chunkArray(posts, PROFILE_GRID_COLUMNS).map((row, rowIndex) => (
+        <View key={rowIndex} style={styles.row}>
+          {row.map((p) => (
+            <PostCardGrid
+              key={p.postId}
+              post={postWithOwnerFromPost(p, postOwner)}
+              columns={PROFILE_GRID_COLUMNS}
+              gap={spacing.xs}
+            />
+          ))}
+        </View>
+      ))}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   loading: { padding: spacing.xl, alignItems: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
-});
+  grid: {
+    width: '100%',
+    alignSelf: 'stretch' as const,
+    paddingHorizontal: spacing.base,
+    gap: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row' as const,
+    gap: spacing.xs,
+    width: '100%',
+    alignSelf: 'stretch' as const,
+  },
+}));

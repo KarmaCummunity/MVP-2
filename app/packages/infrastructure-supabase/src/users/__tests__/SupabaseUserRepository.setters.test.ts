@@ -32,12 +32,10 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; cal
           return { data: opts.updateData ?? null, error: opts.updateError ?? null };
         };
         return {
-          eq: () => ({
-            // setPrivacyMode chains .select('*').single() after eq
-            select: () => ({ single: result }),
-            // Other setters await directly after eq
-            then: (onF: any, onR: any) => result().then(onF, onR),
-          }),
+          eq: () =>
+            Object.assign(result(), {
+              select: () => ({ single: result }),
+            }),
         };
       },
     }),

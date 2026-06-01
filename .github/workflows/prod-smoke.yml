@@ -1,0 +1,69 @@
+name: Prod smoke
+
+# Post-merge HTTP check after Railway redeploys the web app from `main`, or after
+# DB / Edge Function changes that can break the live site.
+# Set repository variable PROD_WEB_URL (Settings → Actions → Variables).
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - 'app/**'
+      - 'Dockerfile'
+      - 'supabase/migrations/**'
+      - 'supabase/functions/**'
+      - '.github/workflows/prod-smoke.yml'
+      - '.github/workflows/db-deploy.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: prod-smoke-main
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  smoke:
+    name: prod URL health check
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Require PROD_WEB_URL variable
+        env:
+          PROD_WEB_URL: ${{ vars.PROD_WEB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${PROD_WEB_URL}" ]; then
+            echo "::error::Repository variable PROD_WEB_URL is not set."
+            echo "GitHub → Settings → Secrets and variables → Actions → Variables"
+            echo "Add PROD_WEB_URL = https://<your-prod-service>.up.railway.app"
+            exit 1
+          fi
+          echo "Target: ${PROD_WEB_URL}"
+
+      - name: Wait for deploy window
+        run: sleep 90
+
+      - name: Poll prod URL (HTTP 200)
+        env:
+          PROD_WEB_URL: ${{ vars.PROD_WEB_URL }}
+        run: |
+          set -euo pipefail
+          url="${PROD_WEB_URL%/}/"
+          for attempt in $(seq 1 20); do
+            code=$(curl -fsSL -o /tmp/prod-smoke-body.html -w "%{http_code}" "$url" || echo "000")
+            if [ "$code" = "200" ]; then
+              if grep -q '<html' /tmp/prod-smoke-body.html; then
+                echo "OK — HTTP 200 with HTML body (attempt ${attempt})"
+                exit 0
+              fi
+              echo "HTTP 200 but unexpected body (attempt ${attempt})"
+            else
+              echo "Attempt ${attempt}/20: HTTP ${code}"
+            fi
+            sleep 30
+          done
+          echo "::error::Prod URL did not return HTTP 200 within ~11 minutes."
+          exit 1

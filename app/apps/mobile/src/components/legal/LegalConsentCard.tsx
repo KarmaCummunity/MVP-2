@@ -1,0 +1,142 @@
+import { useEffect, useState } from 'react';
+import { View, Text, Pressable } from 'react-native';
+import { useTranslation } from 'react-i18next';
+import type { LegalDocumentContent, LegalPendingItem } from '@kc/domain';
+import { typography, spacing, useTheme } from '@kc/ui';
+import { getLoadLegalDocumentUseCase } from '../../services/legalComposition';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+
+interface LegalConsentCardProps {
+  readonly item: LegalPendingItem;
+  readonly checked: boolean;
+  readonly onToggle: (v: boolean) => void;
+  readonly onOpenReader: () => void;
+}
+
+export function LegalConsentCard({ item, checked, onToggle, onOpenReader }: LegalConsentCardProps) {
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const title = item.docType === 'terms' ? t('legal.termsTitle') : t('legal.privacyTitle');
+  const checkboxLabel =
+    item.docType === 'terms' ? t('legal.checkboxTerms') : t('legal.checkboxPrivacy');
+  const [content, setContent] = useState<LegalDocumentContent | null>(null);
+
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const c = await getLoadLegalDocumentUseCase().execute({ docType: item.docType });
+        if (!cancelled) setContent(c);
+      } catch {
+        // Cache fallback handles offline; nothing else to do on hard failure.
+      }
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [item.docType]);
+
+  const bullets = content?.changeSummary
+    ? content.changeSummary
+        .split('\n')
+        .map((l) => l.trim())
+        .filter((l) => l.startsWith('-'))
+        .map((l) => l.replace(/^-\s*/, ''))
+        .slice(0, 3)
+    : [];
+
+  return (
+    <View
+      style={{
+        backgroundColor: colors.surfaceRaised,
+        borderRadius: 12,
+        padding: spacing.md,
+        marginBottom: spacing.md,
+      }}
+    >
+      <Text
+        style={{
+          ...typography.h4,
+          color: colors.textPrimary,
+          textAlign: rtlTextAlignStart,
+          writingDirection: 'rtl',
+        }}
+      >
+        {title}
+      </Text>
+
+      {bullets.length > 0 ? (
+        <View style={{ marginTop: spacing.sm }}>
+          {bullets.map((b) => (
+            <Text
+              key={b}
+              style={{
+                ...typography.body,
+                color: colors.textPrimary,
+                textAlign: rtlTextAlignStart,
+                writingDirection: 'rtl',
+                marginBottom: spacing.xs,
+                lineHeight: 22,
+              }}
+            >
+              {`• ${b}`}
+            </Text>
+          ))}
+        </View>
+      ) : null}
+
+      <Pressable onPress={onOpenReader} style={{ marginTop: spacing.sm }}>
+        <Text
+          style={{
+            ...typography.body,
+            color: colors.primary,
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
+          }}
+        >
+          {t('legal.cardOpenFull')}
+        </Text>
+      </Pressable>
+
+      <Pressable
+        accessibilityRole="checkbox"
+        accessibilityState={{ checked }}
+        onPress={() => onToggle(!checked)}
+        style={{
+          // `rowDirectionStart` (= 'row' on native, 'row-reverse' on web)
+          // gives the same visual on both: checkbox on the right (inline-start
+          // in RTL), label running right-to-left next to it. Writing
+          // 'row-reverse' directly on native is a double-flip under
+          // I18nManager.forceRTL → checkbox would jump to the LEFT.
+          flexDirection: rowDirectionStart,
+          alignItems: 'center',
+          marginTop: spacing.md,
+          gap: spacing.sm,
+        }}
+      >
+        <View
+          style={{
+            width: 22,
+            height: 22,
+            borderRadius: 4,
+            borderWidth: 2,
+            borderColor: colors.primary,
+            backgroundColor: checked ? colors.primary : 'transparent',
+          }}
+        />
+        <Text
+          style={{
+            ...typography.body,
+            color: colors.textPrimary,
+            flex: 1,
+            textAlign: rtlTextAlignStart,
+            writingDirection: 'rtl',
+          }}
+        >
+          {checkboxLabel}
+        </Text>
+      </Pressable>
+    </View>
+  );
+}

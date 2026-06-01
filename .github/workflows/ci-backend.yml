@@ -1,0 +1,168 @@
+name: CI — backend
+
+# Backend correctness gate. Boots a fresh Supabase local stack and runs all DB
+# tests (incl. rls-lint.sql), the database.types.ts drift check, and the
+# SECURITY DEFINER SQL probe integration tests.
+#
+# `apply migrations · rls · types · sql probes` is a REQUIRED status check on
+# `dev` / `main`, so it MUST report on every non-draft PR — including PRs that
+# don't touch the backend. Path-filtering the workflow at the `on:` level left
+# that required check permanently "Expected" on FE/docs/domain-only PRs and
+# blocked their merge. Instead the workflow now runs unconditionally and a cheap
+# `changes` job gates the heavy steps: non-backend PRs get a fast pass; backend
+# PRs boot the full local stack. Keep the `changes` filter list in sync with the
+# heavy job's real inputs.
+
+on:
+  pull_request:
+    branches: [main, dev]
+  push:
+    branches: [main, dev]
+    paths:
+      - 'supabase/**'
+      - 'scripts/check-migration-chain.mjs'
+      - 'app/packages/infrastructure-supabase/src/database.types.ts'
+      - 'app/packages/infrastructure-supabase/src/rpc/__tests__/sqlProbes.integration.test.ts'
+      - '.github/workflows/ci-backend.yml'
+
+concurrency:
+  group: ci-backend-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  changes:
+    name: detect backend changes
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      backend: ${{ steps.filter.outputs.backend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Detect backend-relevant changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            backend:
+              - 'supabase/**'
+              - 'scripts/check-migration-chain.mjs'
+              - 'app/packages/infrastructure-supabase/src/database.types.ts'
+              - 'app/packages/infrastructure-supabase/src/rpc/__tests__/sqlProbes.integration.test.ts'
+              - '.github/workflows/ci-backend.yml'
+
+  migration-chain:
+    name: migration chain lint
+    needs: changes
+    if: >-
+      needs.changes.outputs.backend == 'true' &&
+      (github.event_name != 'pull_request' || github.event.pull_request.draft == false)
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    steps:
+      - uses: actions/checkout@v6
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+      - name: Verify Alembic-style single-head migration chain
+        run: node scripts/check-migration-chain.mjs
+
+  db-validate:
+    # REQUIRED status check — always runs so the context reports on every PR.
+    # Heavy steps are gated on `needs.changes.outputs.backend == 'true'`; a
+    # non-backend PR runs only the skip-notice step and concludes success.
+    name: apply migrations · rls · types · sql probes
+    needs: changes
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+
+    steps:
+      - name: No backend changes — DB validation not required
+        if: needs.changes.outputs.backend != 'true'
+        run: echo "No supabase/** or backend-input changes in this PR — skipping DB validation."
+
+      - name: Checkout
+        if: needs.changes.outputs.backend == 'true'
+        uses: actions/checkout@v6
+
+      - name: Install Supabase CLI
+        if: needs.changes.outputs.backend == 'true'
+        uses: supabase/setup-cli@v1
+        with:
+          # Keep in sync with db-deploy.yml — bump both in the same PR.
+          version: 2.99.0
+
+      - name: Print Supabase CLI version
+        if: needs.changes.outputs.backend == 'true'
+        run: supabase --version
+
+      - name: Install psql client
+        if: needs.changes.outputs.backend == 'true'
+        run: sudo apt-get update && sudo apt-get install -y postgresql-client
+
+      - name: Start Supabase (applies all migrations + seed.sql)
+        if: needs.changes.outputs.backend == 'true'
+        run: supabase start -x studio,inbucket,imgproxy,edge-runtime,realtime,storage-api
+
+      - name: Run all DB tests (supabase/tests/*.sql)
+        if: needs.changes.outputs.backend == 'true'
+        env:
+          PGPASSWORD: postgres
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          for f in supabase/tests/*.sql; do
+            echo "── Running $f ──"
+            psql -h 127.0.0.1 -p 54322 -U postgres -d postgres \
+              -v ON_ERROR_STOP=1 \
+              -f "$f"
+          done
+
+      - name: Check database.types.ts drift
+        if: needs.changes.outputs.backend == 'true'
+        run: |
+          set -euo pipefail
+          supabase gen types typescript --local > /tmp/database.types.ts
+          if ! diff -u app/packages/infrastructure-supabase/src/database.types.ts /tmp/database.types.ts; then
+            echo "::error::database.types.ts is out of date. Run: supabase gen types typescript --local > app/packages/infrastructure-supabase/src/database.types.ts"
+            exit 1
+          fi
+
+      - name: Setup pnpm
+        if: needs.changes.outputs.backend == 'true'
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+          run_install: false
+
+      - name: Setup Node.js
+        if: needs.changes.outputs.backend == 'true'
+        uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install dependencies
+        if: needs.changes.outputs.backend == 'true'
+        working-directory: app
+        run: pnpm install --frozen-lockfile
+
+      - name: SQL probe integration tests (against local stack)
+        if: needs.changes.outputs.backend == 'true'
+        working-directory: app
+        env:
+          CI_LOCAL_SUPABASE: 'true'
+        run: pnpm --filter @kc/infrastructure-supabase test sqlProbes
+
+      - name: Stop Supabase
+        if: always() && needs.changes.outputs.backend == 'true'
+        run: supabase stop || true

@@ -18,6 +18,7 @@ import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
 import { CORS_HEADERS, jsonResponse } from './cors.ts';
 import { getAuthedUser } from './auth.ts';
+import { type Handler, withTiming } from '../_shared/withTiming.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -29,7 +30,7 @@ interface RpcResult {
   counts: { posts: number; chats_anonymized: number; chats_dropped: number };
 }
 
-serve(async (req) => {
+const handler: Handler = async (req) => {
   if (req.method === 'OPTIONS') return new Response('ok', { headers: CORS_HEADERS });
   if (req.method !== 'POST') return jsonResponse({ ok: false, error: 'invalid_method' }, 405);
 
@@ -77,4 +78,6 @@ serve(async (req) => {
   }
 
   return jsonResponse({ ok: true, counts: rpc.counts }, 200);
-});
+};
+
+serve(withTiming('delete-account', handler));

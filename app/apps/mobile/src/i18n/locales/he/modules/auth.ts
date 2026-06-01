@@ -39,6 +39,7 @@ export const authHe = {
   welcomeValueProp2: 'מצא מה שאתה מחפש',
   welcomeValueProp3: 'תאם מסירה ישירות',
   guestPreviewCta: 'הצץ בפיד (ללא כניסה)',
+  welcomeAboutLearnMore: 'קראו עוד עלינו',
   legalConsentShort: 'בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות.',
   googleSignInFailedTitle: 'כניסה עם Google נכשלה',
   backCta: '← חזרה',

@@ -8,7 +8,7 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { EditProfileAddressBlock } from '../src/components/EditProfileAddressBlock';
 import { EditProfileAvatar } from '../src/components/EditProfileAvatar';
 import { NotifyModal } from '../src/components/NotifyModal';
@@ -17,7 +17,7 @@ import { getEditableProfile, getUpdateProfileUseCase } from '../src/services/use
 import { removeUploadedAvatar } from '../src/services/avatarUpload';
 import { mapEditProfileSaveError } from '../src/lib/editProfileSaveErrors';
 import { useUnsavedChangesGuard } from '../src/hooks/useUnsavedChangesGuard';
-import { editProfileStyles as styles } from './edit-profile.styles';
+import { useEditProfileStyles } from './edit-profile.styles';
 
 interface InitialState {
   // Nullable after migration 0084 (user still in `pending_basic_info`). The form
@@ -34,6 +34,8 @@ interface InitialState {
 
 export default function EditProfileScreen() {
   const { t } = useTranslation();
+  const styles = useEditProfileStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const session = useAuthStore((s) => s.session);
@@ -164,6 +166,7 @@ export default function EditProfileScreen() {
       // TD-108: drop the Storage object before persisting null on remove.
       if (avatarChanged && avatarUrl === null && initial.avatarUrl) await removeUploadedAvatar(session.userId);
       await getUpdateProfileUseCase().execute({
+        sessionUserId: session.userId,
         userId: session.userId,
         ...(includeBasicInfo
           ? { displayName: trimmedName, city: city.id, cityName: city.name }

@@ -14,6 +14,16 @@ import {
   SupabaseModerationAdminRepository,
   SupabaseAccountGateRepository,
   SupabaseDeviceRepository,
+  SupabaseAdminRoleRepository,
+  SupabaseAdminTaskRepository,
+  SupabaseOrgApplicationsRepository,
+  SupabaseAdminContentRepository,
+  SupabaseTimesheetsRepository,
+  SupabaseFinanceLedgerRepository,
+  SupabaseCrmContactsRepository,
+  SupabaseReportsRepository,
+  SupabaseSurveyRepository,
+  SupabasePublicResearchRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -43,6 +53,46 @@ import {
   LookupAuditUseCase,
   ReportUserUseCase,
   UpdateNotificationPreferencesUseCase,
+  GetMyAdminRolesUseCase,
+  GrantAdminRoleUseCase,
+  RevokeAdminRoleUseCase,
+  ListAdminsUseCase,
+  ListAdminTasksUseCase,
+  GetAdminTaskDetailUseCase,
+  CreateAdminTaskUseCase,
+  UpdateAdminTaskUseCase,
+  SetAdminTaskStatusUseCase,
+  AssignAdminTaskUseCase,
+  AddAdminTaskCommentUseCase,
+  DeleteAdminTaskUseCase,
+  ListOrgApplicationsUseCase,
+  DecideOrgApplicationUseCase,
+  AdminSearchUsersUseCase,
+  AdminSearchPostsUseCase,
+  AdminSearchAuditUseCase,
+  ListTimesheetsUseCase,
+  UpsertTimesheetUseCase,
+  SubmitTimesheetUseCase,
+  ApproveTimesheetUseCase,
+  RejectTimesheetUseCase,
+  DeleteTimesheetUseCase,
+  ListFinanceLedgerUseCase,
+  GetFinanceSummaryUseCase,
+  UpsertFinanceEntryUseCase,
+  DeleteFinanceEntryUseCase,
+  ListCrmContactsUseCase,
+  UpsertCrmContactUseCase,
+  DeleteCrmContactUseCase,
+  MarkCrmContactContactedUseCase,
+  ListOpenReportsUseCase,
+  GetReportCaseDetailUseCase,
+  ListActiveSurveysUseCase,
+  LoadSurveyBundleUseCase,
+  SaveSurveyAnswersUseCase,
+  CheckSurveyPromptUseCase,
+  SubmitFreeFeedbackUseCase,
+  LoadPublicResearchBundleUseCase,
+  SubmitPublicResearchResponseUseCase,
 } from '@kc/application';
 
 /**
@@ -71,8 +121,21 @@ const postRepo = new SupabasePostRepository(supabase);
 const moderationAdminRepo = new SupabaseModerationAdminRepository(supabase);
 const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
+const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
+const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
+const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
+const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
+const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
+const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
+const reportsRepo = new SupabaseReportsRepository(supabase);
+const surveyRepo = new SupabaseSurveyRepository(supabase);
+const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
+const getMyAdminRoles = new GetMyAdminRolesUseCase(adminRoleRepo);
+const listOpenReports = new ListOpenReportsUseCase(reportsRepo);
+const getReportCaseDetail = new GetReportCaseDetailUseCase(reportsRepo);
 
 export const container = {
   // Repos / realtime — exposed for chatStore subscription wiring.
@@ -81,6 +144,47 @@ export const container = {
   chatRealtime,
   moderationAdminRepo, // exposed for hooks that need adminRepo.isUserAdmin pre-checks
   deviceRepo,
+  adminRoleRepo,
+  reportsRepo,
+
+  // Admin portal (FR-ADMIN-011..018)
+  getMyAdminRoles,
+  listOpenReports,
+  getReportCaseDetail,
+  listAdmins: new ListAdminsUseCase(adminRoleRepo),
+  grantAdminRole: new GrantAdminRoleUseCase(adminRoleRepo),
+  revokeAdminRole: new RevokeAdminRoleUseCase(adminRoleRepo),
+  listAdminTasks: new ListAdminTasksUseCase(adminTaskRepo),
+  getAdminTaskDetail: new GetAdminTaskDetailUseCase(adminTaskRepo),
+  createAdminTask: new CreateAdminTaskUseCase(adminTaskRepo),
+  updateAdminTask: new UpdateAdminTaskUseCase(adminTaskRepo),
+  setAdminTaskStatus: new SetAdminTaskStatusUseCase(adminTaskRepo),
+  assignAdminTask: new AssignAdminTaskUseCase(adminTaskRepo),
+  addAdminTaskComment: new AddAdminTaskCommentUseCase(adminTaskRepo),
+  deleteAdminTask: new DeleteAdminTaskUseCase(adminTaskRepo),
+  adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
+  adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
+  adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
+  // V2-ADMIN-TIME-10
+  listTimesheets:   new ListTimesheetsUseCase(timesheetsRepo),
+  upsertTimesheet:  new UpsertTimesheetUseCase(timesheetsRepo),
+  submitTimesheet:  new SubmitTimesheetUseCase(timesheetsRepo),
+  approveTimesheet: new ApproveTimesheetUseCase(timesheetsRepo),
+  rejectTimesheet:  new RejectTimesheetUseCase(timesheetsRepo),
+  deleteTimesheet:  new DeleteTimesheetUseCase(timesheetsRepo),
+  // V2-ADMIN-MONEY-9
+  listFinanceLedger:   new ListFinanceLedgerUseCase(financeLedgerRepo),
+  getFinanceSummary:   new GetFinanceSummaryUseCase(financeLedgerRepo),
+  upsertFinanceEntry:  new UpsertFinanceEntryUseCase(financeLedgerRepo),
+  deleteFinanceEntry:  new DeleteFinanceEntryUseCase(financeLedgerRepo),
+  // V2-ADMIN-CRM-8
+  listCrmContacts: new ListCrmContactsUseCase(crmContactsRepo),
+  upsertCrmContact: new UpsertCrmContactUseCase(crmContactsRepo),
+  deleteCrmContact: new DeleteCrmContactUseCase(crmContactsRepo),
+  markCrmContactContacted: new MarkCrmContactContactedUseCase(crmContactsRepo),
+  // V2-ADMIN-ORG-7
+  listOrgApplications: new ListOrgApplicationsUseCase(orgApplicationsRepo),
+  decideOrgApplication: new DecideOrgApplicationUseCase(orgApplicationsRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),
@@ -121,4 +225,17 @@ export const container = {
   updateDonationLink: new UpdateDonationLinkUseCase(donationLinksRepo),
   removeDonationLink: new RemoveDonationLinkUseCase(donationLinksRepo),
   reportDonationLink: new ReportDonationLinkUseCase(donationLinksRepo),
+
+  // Surveys + free feedback (FR-SETTINGS-015..017)
+  surveyRepo,
+  listActiveSurveys: new ListActiveSurveysUseCase(surveyRepo),
+  loadSurveyBundle: new LoadSurveyBundleUseCase(surveyRepo),
+  saveSurveyAnswers: new SaveSurveyAnswersUseCase(surveyRepo),
+  checkSurveyPrompt: new CheckSurveyPromptUseCase(surveyRepo),
+  submitFreeFeedback: new SubmitFreeFeedbackUseCase(surveyRepo),
+
+  // Public research — Survey B (FR-RESEARCH-001..003)
+  publicResearchRepo,
+  loadPublicResearchBundle: new LoadPublicResearchBundleUseCase(publicResearchRepo),
+  submitPublicResearchResponse: new SubmitPublicResearchResponseUseCase(publicResearchRepo),
 } as const;

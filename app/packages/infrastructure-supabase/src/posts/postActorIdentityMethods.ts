@@ -13,7 +13,7 @@ export async function listPostActorIdentitiesForPost(
   client: SupabaseClient<Database>,
   postId: string,
 ): Promise<PostActorIdentityRow[]> {
-  const { data, error } = await client.from('post_actor_identity').select('*').eq('post_id', postId);
+  const { data, error } = await client.from('post_actor_identity').select('post_id, user_id, identity_visibility, hide_from_counterparty, surface_visibility, updated_at').eq('post_id', postId);
   if (error) {
     if (isPostgrestRelationMissing(error)) return [];
     throw new Error(`listPostActorIdentities: ${error.message}`);
@@ -32,17 +32,14 @@ export async function upsertPostActorIdentityRow(
   client: SupabaseClient<Database>,
   input: UpsertPostActorIdentityInput,
 ): Promise<void> {
-  const { error } = await client.from('post_actor_identity').upsert(
-    {
-      post_id: input.postId,
-      user_id: input.userId,
-      surface_visibility: input.surfaceVisibility,
-      identity_visibility: 'Public',
-      hide_from_counterparty: input.hideFromCounterparty,
-      updated_at: new Date().toISOString(),
-    },
-    { onConflict: 'post_id,user_id' },
-  );
+  // PostgREST `.upsert()` breaks after migration 0159 (TD-85): ON CONFLICT DO
+  // UPDATE tries to assign PK columns the role cannot UPDATE. Use the 0160 RPC
+  // so only user-editable columns change; `updated_at` stays trigger-stamped.
+  const { error } = await client.rpc('upsert_post_actor_identity', {
+    p_post_id: input.postId,
+    p_surface_visibility: input.surfaceVisibility,
+    p_hide_from_counterparty: input.hideFromCounterparty,
+  });
   if (error) {
     if (isPostgrestRelationMissing(error)) return;
     throw new Error(`upsertPostActorIdentity: ${error.message}`);

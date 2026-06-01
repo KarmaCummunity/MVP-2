@@ -4,11 +4,12 @@
 // implementation across iOS / Android / Web.
 // Mapped to: SRS §6.1 — 5 tabs (RTL: Profile | Search | Plus | Donations | Home), per D-16.
 import React from 'react';
-import { Platform, Pressable, StyleSheet, View, type ViewStyle } from 'react-native';
+import { Platform, Pressable, View, type ViewStyle } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
+import { TABS, type IoniconName, type TabKey } from './shell/tabs.config';
 
 // Glassmorphism on web — RN-Web forwards unknown style keys to CSS. RN's
 // ViewStyle type doesn't include backdrop-filter, so cast through unknown.
@@ -20,10 +21,7 @@ const webGlass: ViewStyle =
       } as unknown as ViewStyle)
     : ({} as ViewStyle);
 
-type TabKey = 'home' | 'create' | 'profile' | 'search' | 'donations';
-type IoniconName = keyof typeof Ionicons.glyphMap;
-
-export const TAB_BAR_HEIGHT = 64;
+export const TAB_BAR_HEIGHT = 50;
 
 function activeTab(segments: string[]): TabKey | null {
   if (segments[0] === '(tabs)') {
@@ -45,6 +43,8 @@ interface IconBtnProps {
 }
 
 function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnProps) {
+  const styles = useTabBarStyles();
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -57,7 +57,6 @@ function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnPr
         size={26}
         color={active ? colors.primary : colors.tabInactive}
       />
-      <View style={[styles.activeDot, active && styles.activeDotShown]} />
     </Pressable>
   );
 }
@@ -69,6 +68,8 @@ interface PlusBtnProps {
 }
 
 function PlusBtn({ active, onPress, label }: PlusBtnProps) {
+  const styles = useTabBarStyles();
+  const { colors } = useTheme();
   return (
     <Pressable
       onPress={onPress}
@@ -88,96 +89,77 @@ export function TabBar() {
   const { t } = useTranslation();
   const segments = useSegments() as string[];
   const active = activeTab(segments);
+  const styles = useTabBarStyles();
 
   return (
     <View style={styles.tabBar}>
       {/* RTL reading order: Profile (right) | Search | Plus (center) | Donations | Home (left).
           With dir=rtl on web and I18nManager.isRTL on native, default `row` lays them out
-          right-to-left. `row-reverse` would double-flip on web → LTR visual. */}
-      <IconBtn
-        active={active === 'profile'}
-        onPress={() => router.push('/(tabs)/profile')}
-        label={t('tabs.profile')}
-        iconActive="person"
-        iconInactive="person-outline"
-      />
-      <IconBtn
-        active={active === 'search'}
-        onPress={() => router.push('/(tabs)/search')}
-        label={t('search.tabLabel')}
-        iconActive="search"
-        iconInactive="search-outline"
-      />
-      <PlusBtn
-        active={active === 'create'}
-        onPress={() => router.push('/(tabs)/create')}
-        label={t('tabs.newPost')}
-      />
-      <IconBtn
-        active={active === 'donations'}
-        onPress={() => router.push('/(tabs)/donations')}
-        label={t('donations.tabLabel')}
-        iconActive="heart"
-        iconInactive="heart-outline"
-      />
-      <IconBtn
-        active={active === 'home'}
-        onPress={() => router.push('/(tabs)')}
-        label={t('tabs.home')}
-        iconActive="home"
-        iconInactive="home-outline"
-      />
+          right-to-left. `row-reverse` would double-flip on web → LTR visual.
+          Tab definitions live in ./shell/tabs.config.ts so NavigationRail (Task 9) can reuse them. */}
+      {TABS.map((tab) => {
+        const isActive = active === tab.key;
+        const label = t(tab.labelI18nKey);
+        const onPress = () => router.push(tab.route as never);
+        if (tab.isComposer) {
+          return <PlusBtn key={tab.key} active={isActive} onPress={onPress} label={label} />;
+        }
+        return (
+          <IconBtn
+            key={tab.key}
+            active={isActive}
+            onPress={onPress}
+            label={label}
+            iconActive={tab.iconActive}
+            iconInactive={tab.iconInactive}
+          />
+        );
+      })}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
+const useTabBarStyles = makeUseStyles(({ colors, isDark }) => ({
   tabBar: {
-    flexDirection: 'row',
+    flexDirection: 'row' as const,
     height: TAB_BAR_HEIGHT,
     borderRadius: TAB_BAR_HEIGHT / 2,
-    backgroundColor: 'rgba(255, 255, 255, 0.72)',
-    alignItems: 'center',
-    width: '100%',
+    backgroundColor: colors.tabBarGlass,
+    alignItems: 'center' as const,
+    width: '100%' as const,
     maxWidth: 480,
-    alignSelf: 'center',
-    overflow: 'hidden',
+    alignSelf: 'center' as const,
+    overflow: 'hidden' as const,
     shadowColor: '#000',
     shadowOffset: { width: 0, height: 8 },
-    shadowOpacity: 0.10,
+    shadowOpacity: isDark ? 0.45 : 0.1,
     shadowRadius: 24,
     elevation: 12,
+    // Subtle hairline so the pill reads as a distinct surface in dark mode
+    // where the underlying background and the glass tint are both dark.
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     ...webGlass,
   },
   tabBtn: {
     flex: 1,
     height: TAB_BAR_HEIGHT,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
   },
   tabBtnPressed: { opacity: 0.6 },
-  // Dot is absolute so the icon stays perfectly centered regardless of state.
-  activeDot: {
-    position: 'absolute',
-    bottom: 10,
-    width: 4,
-    height: 4,
-    borderRadius: 2,
-    backgroundColor: 'transparent',
-  },
-  activeDotShown: { backgroundColor: colors.primary },
   plusCircle: {
     width: 40,
     height: 40,
     borderRadius: 20,
     backgroundColor: colors.primary,
-    alignItems: 'center',
-    justifyContent: 'center',
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.30,
+    shadowOpacity: 0.3,
     shadowRadius: 8,
     elevation: 4,
   },
   plusCircleActive: { backgroundColor: colors.primaryDark },
-});
+}));

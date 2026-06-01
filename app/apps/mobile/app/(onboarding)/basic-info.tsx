@@ -1,21 +1,24 @@
 // Onboarding step 2 — FR-AUTH-010
 import React from 'react';
 import {
-  View, Text, TextInput,
-  StyleSheet, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
+  View, Text, TextInput, ActivityIndicator, KeyboardAvoidingView, Platform, ScrollView,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
-import { EditProfileAddressBlock } from '../../src/components/EditProfileAddressBlock';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { CityPicker } from '../../src/components/CityPicker';
+import { StreetPicker } from '../../src/components/StreetPicker';
 import { OnboardingStepHeader } from '../../src/components/OnboardingStepHeader';
 import { useOnboardingBasicInfoFlow } from '../../src/hooks/useOnboardingBasicInfoFlow';
 import { AnimatedEntry } from '../../src/components/animations/AnimatedEntry';
 import { PressableScale } from '../../src/components/animations/PressableScale';
 import { staggerDelay } from '../../src/lib/animations/motion';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 
 export default function OnboardingBasicInfoScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const {
     displayName, setDisplayName, city, setCity, street, setStreet, streetNumber, setStreetNumber,
@@ -68,23 +71,45 @@ export default function OnboardingBasicInfoScreen() {
                   placeholder={t('onboarding.fullNamePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!loading}
                 />
               </View>
             </AnimatedEntry>
 
             <AnimatedEntry delay={staggerDelay(4)}>
-              <EditProfileAddressBlock
-                city={city}
-                onCityChange={setCity}
-                street={street}
-                streetNumber={streetNumber}
-                onStreetChange={setStreet}
-                onStreetNumberChange={setStreetNumber}
-                disabled={loading}
-              />
+              <View style={styles.field}>
+                <Text style={styles.label}>{t('profile.addressLabel')}</Text>
+                <CityPicker value={city} onChange={setCity} disabled={loading} />
+              </View>
             </AnimatedEntry>
+
+            {city ? (
+              <AnimatedEntry delay={0}>
+                <View style={styles.field}>
+                  <View style={styles.streetRow}>
+                    <View style={styles.streetCol}>
+                      <StreetPicker
+                        cityId={city.id}
+                        value={street ? { id: '', name: street } : null}
+                        onChange={(sel) => setStreet(sel.name)}
+                        disabled={loading}
+                      />
+                    </View>
+                    <TextInput
+                      style={[styles.input, styles.streetInputHouse]}
+                      value={streetNumber}
+                      onChangeText={setStreetNumber}
+                      placeholder={t('profile.streetNumberShort')}
+                      placeholderTextColor={colors.textDisabled}
+                      textAlign={rtlTextAlignStart}
+                      editable={!loading}
+                      maxLength={10}
+                    />
+                  </View>
+                </View>
+              </AnimatedEntry>
+            ) : null}
 
             <AnimatedEntry delay={staggerDelay(5)}>
               <View style={styles.field}>
@@ -97,7 +122,7 @@ export default function OnboardingBasicInfoScreen() {
                   placeholderTextColor={colors.textDisabled}
                   maxLength={20}
                   keyboardType="phone-pad"
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!loading}
                 />
               </View>
@@ -132,7 +157,7 @@ export default function OnboardingBasicInfoScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.surface },
   content: {
     flex: 1,
@@ -169,7 +194,15 @@ const styles = StyleSheet.create({
     alignSelf: 'center',
     gap: spacing.xs,
   },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
+  streetRow: {
+    flexDirection: 'row',
+    gap: spacing.sm,
+    alignItems: 'flex-start',
+    width: '100%',
+  },
+  streetCol: { flex: 2, minWidth: 0 },
+  streetInputHouse: { flex: 1, minWidth: 0, maxWidth: 120, height: 50 },
   input: {
     height: 54,
     backgroundColor: colors.background,
@@ -191,4 +224,4 @@ const styles = StyleSheet.create({
     gap: spacing.sm,
   },
   ctaText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
-});
+}));

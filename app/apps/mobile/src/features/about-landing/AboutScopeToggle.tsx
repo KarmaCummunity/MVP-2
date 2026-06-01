@@ -1,9 +1,9 @@
 import React from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
 import { useTranslation } from 'react-i18next';
 import { useAboutContentScope } from './AboutContentScopeContext';
-import { aboutWebTextRtl } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 export interface AboutScopeToggleProps {
   /** Shown in accessibilityLabel alongside the option name. */
@@ -12,6 +12,7 @@ export interface AboutScopeToggleProps {
 
 export function AboutScopeToggle({ sectionA11yName }: AboutScopeToggleProps) {
   const { t } = useTranslation();
+  const styles = useAboutScopeToggleStyles();
   const { scope, setScope } = useAboutContentScope();
 
   return (
@@ -45,10 +46,10 @@ export function AboutScopeToggle({ sectionA11yName }: AboutScopeToggleProps) {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutScopeToggleStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.sm, marginBottom: spacing.md },
   track: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     gap: spacing.xs,
     padding: spacing.xs,
     borderRadius: radius.lg,
@@ -84,15 +85,13 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.textSecondary,
     fontWeight: '700',
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
   },
   pillTextOn: { color: colors.textInverse },
   hint: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
     lineHeight: 20,
   },
-});
+}));

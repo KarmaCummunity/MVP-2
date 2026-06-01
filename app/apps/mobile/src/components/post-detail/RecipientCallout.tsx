@@ -2,29 +2,29 @@
 // post. Label depends on post.type:
 //   • Give    → "delivered to X" (owner gave; marked user is the receiver)
 //   • Request → "given by X"     (owner asked for help; marked user is the giver)
-// Tapping the row opens the marked user's profile when profileNavigable is true.
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { AvatarInitials } from '../AvatarInitials';
+import { textAlignStart } from '../../lib/rtlLayout';
 
 interface Props {
-  postType: PostType;
-  recipient: {
-    userId: string;
-    /** Null while the recipient is still in `pending_basic_info` (migration 0084). */
-    displayName: string | null;
-    shareHandle: string;
-    avatarUrl: string | null;
+  readonly postType: PostType;
+  readonly recipient: {
+    readonly userId: string;
+    readonly displayName: string | null;
+    readonly shareHandle: string;
+    readonly avatarUrl: string | null;
   };
-  /** FR-POST-021 — when false, do not navigate to profile from this row. */
-  profileNavigable?: boolean;
+  readonly profileNavigable?: boolean;
 }
 
 export function RecipientCallout({ postType, recipient, profileNavigable = true }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const router = useRouter();
   const labelLeft = postType === 'Give' ? t('closure.calloutGiveLabel') : t('closure.calloutRequestLabel');
@@ -34,23 +34,31 @@ export function RecipientCallout({ postType, recipient, profileNavigable = true 
     : (recipient.displayName || t('post.detail.anonymousUser'));
 
   const inner = (
-    <>
-      <Ionicons name="checkmark-circle" size={22} color={colors.success} />
-      <View style={styles.text}>
+    <View style={styles.card}>
+      <View style={styles.iconRing}>
+        <Ionicons name="checkmark-circle" size={26} color={colors.success} />
+      </View>
+      <View style={styles.textCol}>
         <Text style={styles.sublabel}>{sublabel}</Text>
-        <Text style={styles.label} numberOfLines={1}>
+        <Text style={styles.label} numberOfLines={2}>
           {labelLeft}{' '}
           <Text style={styles.name}>{displayName}</Text>
         </Text>
       </View>
-      <AvatarInitials name={displayName} avatarUrl={profileNavigable ? recipient.avatarUrl : null} size={36} />
-      {profileNavigable ? <Ionicons name="chevron-back" size={18} color={colors.textSecondary} /> : null}
-    </>
+      <AvatarInitials
+        name={displayName}
+        avatarUrl={profileNavigable ? recipient.avatarUrl : null}
+        size={48}
+      />
+      {profileNavigable ? (
+        <Ionicons name="chevron-back" size={20} color={colors.textSecondary} />
+      ) : null}
+    </View>
   );
 
   if (!profileNavigable) {
     return (
-      <View style={styles.row} accessibilityLabel={`${labelLeft} ${displayName}`}>
+      <View accessibilityLabel={`${labelLeft} ${displayName}`}>
         {inner}
       </View>
     );
@@ -58,27 +66,46 @@ export function RecipientCallout({ postType, recipient, profileNavigable = true 
 
   return (
     <Pressable
-      style={styles.row}
       onPress={() => router.push(`/user/${recipient.shareHandle}`)}
       accessibilityLabel={`${labelLeft} ${displayName}`}
+      accessibilityRole="button"
     >
       {inner}
     </Pressable>
   );
 }
 
-const styles = StyleSheet.create({
-  row: {
-    flexDirection: 'row-reverse',
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
+  card: {
+    flexDirection: 'row',
     alignItems: 'center',
-    gap: spacing.sm,
+    gap: spacing.md,
     padding: spacing.base,
     backgroundColor: colors.successLight,
-    borderRadius: radius.md,
-    marginTop: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: isDark ? `${colors.success}55` : `${colors.success}44`,
   },
-  text: { flex: 1 },
-  sublabel: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
-  label: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  name: { fontWeight: '700' },
-});
+  iconRing: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    backgroundColor: isDark ? `${colors.success}22` : '#FFFFFF',
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  textCol: { flex: 1, gap: 2 },
+  sublabel: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: textAlignStart(),
+    fontWeight: '600',
+  },
+  label: {
+    ...typography.body,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    lineHeight: 22,
+  },
+  name: { fontWeight: '700', color: colors.success },
+}));

@@ -3,32 +3,38 @@
 // Closes TD-130.
 import React, { useEffect, useState } from 'react';
 import {
-  ActivityIndicator, ScrollView,
-  Text, TextInput, TouchableOpacity, View,
+  ActivityIndicator,
+  Text, TouchableOpacity, View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
-import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
+import { useTheme } from '@kc/ui';
 import type { Category, ItemCondition, LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { isPostError } from '@kc/application';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import { useAuthStore } from '../../src/store/authStore';
 import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
-import { getPostByIdUseCase, getUpdatePostUseCase } from '../../src/services/postsComposition';
+import {
+  getListPostActorIdentityUseCase,
+  getPostByIdUseCase,
+  getRepublishPostUseCase,
+  getUpdatePostUseCase,
+} from '../../src/services/postsComposition';
+import { ExpiredRepublishView } from '../../src/components/post/ExpiredRepublishView';
 import {
   newUploadBatchId, pickPostImages, resizeAndUploadImage, type UploadedAsset,
 } from '../../src/services/imageUpload';
-import { CityPicker } from '../../src/components/CityPicker';
-import { LocationDisplayLevelChooser } from '../../src/components/CreatePostForm/LocationDisplayLevelChooser';
-import { PhotoPicker } from '../../src/components/CreatePostForm/PhotoPicker';
+import { useAddressStateWithCityReset } from '../../src/hooks/useAddressStateWithCityReset';
 import { EmptyState } from '../../src/components/EmptyState';
+import { EditPostFormScrollContent } from '../../src/components/post/EditPostFormScrollContent';
 import { mapPostErrorToHebrew } from '../../src/services/postMessages';
 import { NotifyModal } from '../../src/components/NotifyModal';
-import { styles } from './editPostScreen.styles';
+import { syncOwnerPostActorIdentity } from '../../src/lib/syncOwnerPostActorIdentity';
+import { getUserRepo } from '../../src/services/userComposition';
+import { useEditPostScreenStyles } from './editPostScreen.styles';
 
 const POST_IMAGES_BUCKET = 'post-images';
 function assetUrl(path: string): string {
@@ -39,6 +45,8 @@ export default function EditPostScreen() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useEditPostScreenStyles();
+  const { colors } = useTheme();
   const queryClient = useQueryClient();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const isSuperAdmin = useIsSuperAdmin();
@@ -47,6 +55,7 @@ export default function EditPostScreen() {
     queryKey: ['post', id, viewerId],
     queryFn: () => getPostByIdUseCase().execute({ postId: id ?? '', viewerId }),
     enabled: Boolean(id),
+    staleTime: 60_000, // PERF-3: post detail — edit submission invalidates explicitly
   });
 
   // Form state — seeded once the post loads.
@@ -56,18 +65,33 @@ export default function EditPostScreen() {
   const [category, setCategory] = useState<Category>('Other');
   const [condition, setCondition] = useState<ItemCondition>('Good');
   const [urgency, setUrgency] = useState('');
-  const [city, setCity] = useState<{ id: string; name: string } | null>(null);
-  const [street, setStreet] = useState('');
-  const [streetNumber, setStreetNumber] = useState('');
+  const {
+    city, street, streetNumber, setCity, setStreet, setStreetNumber,
+  } = useAddressStateWithCityReset({});
   const [locationDisplayLevel, setLocationDisplayLevel] =
     useState<LocationDisplayLevel>('CityAndStreet');
   const [visibility, setVisibility] = useState<PostVisibility>('Public');
+  const [hideFromCounterparty, setHideFromCounterparty] = useState(false);
   const [uploads, setUploads] = useState<UploadedAsset[]>([]);
   const [uploadingCount, setUploadingCount] = useState(0);
   const [batchId] = useState(() => newUploadBatchId());
   const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   const post = query.data?.post;
+
+  const profileQuery = useQuery({
+    queryKey: ['user-profile', viewerId],
+    queryFn: () => getUserRepo().findById(viewerId!),
+    enabled: Boolean(viewerId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
+  });
+
+  const identityQuery = useQuery({
+    queryKey: ['post-actor-identity', id],
+    queryFn: () => getListPostActorIdentityUseCase().execute({ postId: id ?? '' }),
+    enabled: Boolean(id) && Boolean(viewerId),
+    staleTime: 5 * 60_000, // PERF-3: post actor identity (self) — upsert actions invalidate explicitly
+  });
 
   useEffect(() => {
     setSeeded(false);
@@ -95,6 +119,12 @@ export default function EditPostScreen() {
     );
     setSeeded(true);
   }, [post, seeded]);
+
+  useEffect(() => {
+    if (!viewerId || identityQuery.data == null) return;
+    const myIdentity = identityQuery.data.find((r) => r.userId === viewerId);
+    setHideFromCounterparty(myIdentity?.hideFromCounterparty ?? false);
+  }, [identityQuery.data, viewerId]);
 
   const handlePickImages = async () => {
     if (!viewerId) {
@@ -125,7 +155,7 @@ export default function EditPostScreen() {
     mutationFn: async () => {
       if (!viewerId || !id) throw new Error('not_authenticated');
       if (!city) throw new Error('city_required');
-      return getUpdatePostUseCase().execute({
+      const updated = await getUpdatePostUseCase().execute({
         postId: id,
         viewerId,
         patch: {
@@ -144,12 +174,24 @@ export default function EditPostScreen() {
           })),
         },
       });
+      if (post?.ownerId === viewerId) {
+        await syncOwnerPostActorIdentity({
+          postId: id,
+          ownerId: viewerId,
+          visibility,
+          hideFromCounterparty,
+        });
+      }
+      return updated;
     },
     onSuccess: async () => {
       await queryClient.invalidateQueries({ queryKey: ['post', id, viewerId] });
+      await queryClient.invalidateQueries({ queryKey: ['post-actor-identity', id] });
       await queryClient.invalidateQueries({ queryKey: ['my-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
       await queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-tab-open-count'] });
+      await queryClient.invalidateQueries({ queryKey: ['profile-tab-closed-count'] });
       await queryClient.invalidateQueries({ queryKey: ['feed'] });
       if (router.canGoBack()) router.back();
       else router.replace('/(tabs)');
@@ -201,6 +243,22 @@ export default function EditPostScreen() {
   }
 
   if (post.status !== 'open') {
+    if (post.status === 'expired' && viewerId && post.ownerId === viewerId) {
+      return (
+        <SafeAreaView style={styles.container}>
+          <ExpiredRepublishView
+            postId={post.postId}
+            viewerId={viewerId}
+            onRepublished={(newId) => {
+              queryClient.invalidateQueries({ queryKey: ['post'] });
+              queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+              queryClient.invalidateQueries({ queryKey: ['my-posts'] });
+              router.replace(`/post/${newId}`);
+            }}
+          />
+        </SafeAreaView>
+      );
+    }
     return (
       <SafeAreaView style={styles.container}>
         <EmptyState
@@ -222,16 +280,7 @@ export default function EditPostScreen() {
     streetNumber.trim().length > 0 &&
     (!isGive || uploads.length > 0);
 
-  // FR-POST-009 / D-32: visibility may change freely (except Followers-only requires private profile — server + create flow).
-  function handleVisibilityChange(next: PostVisibility) {
-    setVisibility(next);
-  }
-
-  const VISIBILITY_ROWS: Array<{ v: PostVisibility; label: string; openSub: string }> = [
-    { v: 'Public', label: t('post.editPost.visibilityPublicLabel'), openSub: t('post.editPost.visibilityPublicSub') },
-    { v: 'FollowersOnly', label: t('post.editPost.visibilityFollowersLabel'), openSub: t('post.editPost.visibilityFollowersSub') },
-    { v: 'OnlyMe', label: t('post.editPost.visibilityOnlyMeLabel'), openSub: t('post.editPost.visibilityOnlyMeSub') },
-  ];
+  const profilePrivacy = profileQuery.data?.privacyMode ?? 'Public';
 
   return (
     <SafeAreaView style={styles.container} edges={['top']}>
@@ -254,149 +303,37 @@ export default function EditPostScreen() {
         </TouchableOpacity>
       </View>
 
-      <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
-        {/* Read-only type badge */}
-        <View style={[styles.typeBadge, isGive ? styles.typeBadgeGive : styles.typeBadgeRequest]}>
-          <Text style={styles.typeBadgeText}>{isGive ? t('post.editPost.typeBadgeGive') : t('post.editPost.typeBadgeRequest')}</Text>
-          <Text style={styles.typeBadgeSub}>{t('post.editPost.typeBadgeSub')}</Text>
-        </View>
-
-        <PhotoPicker
-          uploads={uploads}
-          isUploading={uploadingCount > 0}
-          uploadingCount={uploadingCount}
-          required={isGive}
-          onAdd={handlePickImages}
-          onRemove={handleRemoveImage}
-        />
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionTitle')} <Text style={styles.required}>*</Text></Text>
-          <TextInput
-            style={styles.input}
-            value={title}
-            onChangeText={setTitle}
-            placeholder={t('post.editPost.titlePlaceholder')}
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            maxLength={80}
-          />
-          <Text style={styles.charCount}>{title.length}/80</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionAddress')} <Text style={styles.required}>*</Text></Text>
-          <CityPicker value={city} onChange={setCity} disabled={isSaving} />
-          <View style={styles.streetRow}>
-            <TextInput
-              style={[styles.input, styles.streetInputStreet]}
-              value={street}
-              onChangeText={setStreet}
-              placeholder={t('post.editPost.streetPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-            />
-            <TextInput
-              style={[styles.input, styles.streetInputHouse]}
-              value={streetNumber}
-              onChangeText={setStreetNumber}
-              placeholder={t('post.editPost.streetNumberPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-            />
-          </View>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionDescription')}</Text>
-          <TextInput
-            style={[styles.input, styles.textarea]}
-            value={description}
-            onChangeText={setDescription}
-            placeholder={t('post.editPost.descriptionPlaceholder')}
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-            multiline
-            maxLength={500}
-          />
-          <Text style={styles.charCount}>{description.length}/500</Text>
-        </View>
-
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionCategory')}</Text>
-          <ScrollView horizontal showsHorizontalScrollIndicator={false} style={styles.chips}>
-            {ALL_CATEGORIES.map((cat) => (
-              <TouchableOpacity
-                key={cat}
-                style={[styles.chip, category === cat && styles.chipActive]}
-                onPress={() => setCategory(cat)}
-              >
-                <Text style={[styles.chipText, category === cat && styles.chipTextActive]}>
-                  {t(`post.category.${cat}`)}
-                </Text>
-              </TouchableOpacity>
-            ))}
-          </ScrollView>
-        </View>
-
-        {isGive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('post.editPost.sectionCondition')}</Text>
-            <View style={styles.conditionRow}>
-              {ITEM_CONDITIONS.map((c) => (
-                <TouchableOpacity
-                  key={c}
-                  style={[styles.conditionBtn, condition === c && styles.conditionBtnActive]}
-                  onPress={() => setCondition(c)}
-                >
-                  <Text style={[styles.conditionText, condition === c && styles.conditionTextActive]}>
-                    {t(`post.condition.${c}`)}
-                  </Text>
-                </TouchableOpacity>
-              ))}
-            </View>
-          </View>
-        )}
-
-        <LocationDisplayLevelChooser
-          value={locationDisplayLevel}
-          onChange={setLocationDisplayLevel}
-          disabled={isSaving}
-        />
-
-        {!isGive && (
-          <View style={styles.section}>
-            <Text style={styles.sectionLabel}>{t('post.editPost.sectionUrgency')}</Text>
-            <TextInput
-              style={styles.input}
-              value={urgency}
-              onChangeText={setUrgency}
-              placeholder={t('post.editPost.urgencyPlaceholder')}
-              placeholderTextColor={colors.textDisabled}
-              textAlign="right"
-              maxLength={100}
-            />
-          </View>
-        )}
-
-        {/* Visibility — FR-POST-009 / D-32 */}
-        <View style={styles.section}>
-          <Text style={styles.sectionLabel}>{t('post.editPost.sectionVisibility')}</Text>
-          {VISIBILITY_ROWS.map(({ v, label, openSub }) => (
-              <TouchableOpacity
-                key={v}
-                style={[styles.visRow, visibility === v && styles.visRowActive]}
-                onPress={() => handleVisibilityChange(v)}
-              >
-                <View style={[styles.radio, visibility === v && styles.radioActive]} />
-                <View style={{ flex: 1 }}>
-                  <Text style={styles.visLabel}>{label}</Text>
-                  <Text style={styles.visSub}>{openSub}</Text>
-                </View>
-              </TouchableOpacity>
-          ))}
-        </View>
-      </ScrollView>
+      <EditPostFormScrollContent
+        isGive={isGive}
+        isSaving={isSaving}
+        uploads={uploads}
+        uploadingCount={uploadingCount}
+        onAddPhotos={handlePickImages}
+        onRemovePhoto={handleRemoveImage}
+        title={title}
+        onTitleChange={setTitle}
+        city={city}
+        onCityChange={setCity}
+        street={street}
+        onStreetChange={setStreet}
+        streetNumber={streetNumber}
+        onStreetNumberChange={setStreetNumber}
+        description={description}
+        onDescriptionChange={setDescription}
+        category={category}
+        onCategoryChange={setCategory}
+        condition={condition}
+        onConditionChange={setCondition}
+        locationDisplayLevel={locationDisplayLevel}
+        onLocationDisplayLevelChange={setLocationDisplayLevel}
+        urgency={urgency}
+        onUrgencyChange={setUrgency}
+        visibility={visibility}
+        onVisibilityChange={setVisibility}
+        profilePrivacy={profilePrivacy}
+        hideFromCounterparty={hideFromCounterparty}
+        onHideFromCounterpartyChange={setHideFromCounterparty}
+      />
       <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
     </SafeAreaView>
   );

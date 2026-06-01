@@ -4,9 +4,9 @@
 //   md (52)  — category chips inside a card.
 //   lg (64)  — donations / search "explore" hub tiles.
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 
 type Size = 'sm' | 'md' | 'lg';
 
@@ -22,9 +22,15 @@ const DIMS: Record<Size, { box: number; icon: number; radius: number }> = {
   lg: { box: 64, icon: 30, radius: 16 },
 };
 
+const useIconTileStyles = makeUseStyles(() => ({
+  box: { alignItems: 'center' as const, justifyContent: 'center' as const },
+}));
+
 export function IconTile({ icon, size = 'sm', tone = 'orange' }: IconTileProps) {
+  const { colors } = useTheme();
+  const styles = useIconTileStyles();
   const dim = DIMS[size];
-  const bg = tone === 'orange' ? colors.primarySurface : '#F3F4F6';
+  const bg = tone === 'orange' ? colors.primarySurface : colors.skeleton;
   const fg = tone === 'orange' ? colors.primary : colors.textSecondary;
   return (
     <View
@@ -37,7 +43,3 @@ export function IconTile({ icon, size = 'sm', tone = 'orange' }: IconTileProps) 
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  box: { alignItems: 'center', justifyContent: 'center' },
-});

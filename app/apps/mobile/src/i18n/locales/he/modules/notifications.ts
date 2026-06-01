@@ -33,6 +33,10 @@ export const notificationsHe = {
   unmarkRecipientBody: 'הסיר את הסימון מ-{{postTitle}}',
   autoRemovedTitle: 'הפוסט שלך הוסר',
   autoRemovedBody: 'הסיבה: דווח על-ידי מספר משתמשים. למידע נוסף — לחץ.',
+  accountSuspendedTitle: 'החשבון שלך הושעה',
+  accountSuspendedBody: 'הסיבה: דווח על-ידי מספר משתמשים. פתח את האפליקציה למידע נוסף.',
+  chatAutoRemovedTitle: 'שיחה הוסרה',
+  chatAutoRemovedBody: 'שיחה שלך הוסרה מהמערכת לאחר דיווחים. השיחה לא תופיע יותר בתיבת הדואר.',
   followRequestTitle: '{{requesterName}}',
   followRequestBody: 'מבקש לעקוב אחריך',
   followStartedTitle: '{{followerName}}',
@@ -40,4 +44,31 @@ export const notificationsHe = {
   followStartedCoalesced: '{{count}} עוקבים חדשים',
   followApprovedTitle: '{{targetName}}',
   followApprovedBody: 'אישר את בקשת המעקב שלך',
+  // FR-RIDE-013 — ride participant lifecycle.
+  rideRequestTitle: '{{riderName}}',
+  rideRequestBody: 'מבקש להצטרף לטרמפ: {{rideTitle}}',
+  rideApprovedTitle: '{{ownerName}}',
+  rideApprovedBody: 'אישר את הצטרפותך לטרמפ: {{rideTitle}}',
+  rideRejectedTitle: '{{ownerName}}',
+  rideRejectedBody: 'דחה את הבקשה שלך לטרמפ: {{rideTitle}}',
+  rideParticipantCancelledTitle: '{{riderName}}',
+  rideParticipantCancelledBody: 'ביטל את הצטרפותו לטרמפ: {{rideTitle}}',
+  // FR-RIDE-019 AC3 — owner-driven cascade (ride closed/cancelled/expired)
+  // sends the participant a distinct variant so the message reads correctly.
+  rideCancelledByOwnerTitle: '{{ownerName}}',
+  rideCancelledByOwnerBody: 'הנסיעה בוטלה: {{rideTitle}}',
+  // FR-RIDE-031..033 — active ride transitions broadcast to snapshot.
+  rideStartedTitle: 'הנסיעה החלה',
+  rideStartedBody: '{{rideTitle}}',
+  rideArrivedTitle: 'הנסיעה הסתיימה',
+  rideArrivedBody: '{{rideTitle}} — נא לדרג בקרוב',
+  // FR-RIDE-045 AC4 — breakdown early-arrive variant.
+  rideBreakdownTitle: 'תקלה ברכב',
+  rideBreakdownBody: 'הנסיעה הסתיימה בעקבות תקלה: {{rideTitle}}',
+  // FR-RIDE-035 — emergency button.
+  rideEmergencyTitle: '🚨 קריאת חירום בנסיעה',
+  rideEmergencyBody: '{{rideTitle}} — נדרשת בדיקה',
+  // FR-RIDE-037 — ratings prompt.
+  rideRatePromptTitle: 'איך הייתה הנסיעה?',
+  rideRatePromptBody: '{{rideTitle}} — נא לדרג בקרוב',
 } as const;

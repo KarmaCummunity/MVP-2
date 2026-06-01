@@ -12,7 +12,7 @@ supabase gen types typescript --project-id <ref> \
   > app/packages/infrastructure-supabase/src/database.types.ts
 ```
 
-**GitHub Actions — DB deploy:** Workflow [`.github/workflows/db-deploy.yml`](../../.github/workflows/db-deploy.yml) is manual (`workflow_dispatch`). Pick **target** `supabase-prod` or `supabase-dev` (each GitHub Environment must define the same three secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`). `SUPABASE_ACCESS_TOKEN` must be an **account** access token from [Account → Access tokens](https://supabase.com/dashboard/account/tokens) (format `sbp_…`), not the project anon/publishable key. Run once with **apply** unchecked (dry-run), then with **apply** checked. The workflow passes `--yes` to the CLI so non-interactive runs do not fail on prompts.
+**GitHub Actions — DB deploy:** Workflow [`.github/workflows/db-deploy.yml`](../../.github/workflows/db-deploy.yml) applies migrations automatically on **push** to `dev` or `main` when migration-related paths change (see `ENVIRONMENTS.md` § DB deploy automation). It also supports **manual** `workflow_dispatch`: pick **target** `supabase-prod` or `supabase-dev` (each GitHub Environment must define the same three secrets: `SUPABASE_ACCESS_TOKEN`, `SUPABASE_DB_PASSWORD`, `SUPABASE_PROJECT_REF`). `SUPABASE_ACCESS_TOKEN` must be an **account** access token from [Account → Access tokens](https://supabase.com/dashboard/account/tokens) (format `sbp_…`), not the project anon/publishable key. For manual runs, use **apply** unchecked first (dry-run), then checked. The workflow passes `--yes` to the CLI so non-interactive runs do not fail on prompts.
 
 ---
 
@@ -263,14 +263,31 @@ Regenerate `database.types.ts` after applying (or merge the manually added table
 ## Edge Functions — CI deploy + prod smoke (2026-05-12)
 
 **Workflow:** `.github/workflows/supabase-functions-deploy.yml`  
-**Triggers:** `push` to `main` when `supabase/functions/**` or the workflow file changes; manual **Run workflow** (`workflow_dispatch`).
+**Triggers:** `push` to `dev` or `main` when `supabase/functions/**` or the workflow file changes (`dev` → `supabase-dev`, `main` → `supabase-prod`); manual **Run workflow** (`workflow_dispatch`) with target choice.
 
-**GitHub:** Repository → Settings → Environments → `supabase-prod` must expose the same secrets as DB deploy:
+**GitHub:** Repository → Settings → Environments → `supabase-prod` / `supabase-dev` must expose the same secrets as DB deploy:
 
 | Secret | Purpose |
 | ------ | ------- |
-| `SUPABASE_ACCESS_TOKEN` | Supabase account access token (dashboard → Account → Access tokens). |
+| `SUPABASE_ACCESS_TOKEN` | Supabase account access token (dashboard → Account → access tokens). |
 | `SUPABASE_PROJECT_REF` | Project ref from the dashboard URL (not `project_id` from local `config.toml`). |
+
+| Variable (optional, recommended) | Purpose |
+| -------------------------------- | ------- |
+| `PUBLIC_RESEARCH_ALLOWED_ORIGINS` | Comma-separated `Origin` allowlist for `public-research-submit`. Synced on each deploy when set. |
+
+**Survey B CORS values (2026-05-29 catch-up):**
+
+| Environment | `PUBLIC_RESEARCH_ALLOWED_ORIGINS` |
+| ------------- | --------------------------------- |
+| `supabase-dev` | `https://mvp-2-dev.up.railway.app,https://dev3.karma-community-kc.com,http://localhost:8081,http://localhost:19006` |
+| `supabase-prod` | `https://karma-community-kc.com` |
+
+CLI one-liner (from repo root, account token in env):
+
+```bash
+supabase secrets set PUBLIC_RESEARCH_ALLOWED_ORIGINS="<origins>" --project-ref <ref>
+```
 
 `SUPABASE_DB_PASSWORD` is **not** required for function deploy.
 
@@ -294,3 +311,136 @@ supabase functions deploy
 If historical bad data exists (same contributor intent, two live rows), identification is **manual** and needs product/operator judgment — do **not** bulk-delete blindly.
 
 Heuristic: same `submitted_by`, same `category_slug`, same `url`, two rows with different `created_at` (often the “edit” created an unintended INSERT). Keep the row you want to show (typically the older canonical row or the one referenced by UI); remove or soft-hide the duplicate per your data policy. Migration `0050_donation_links_purge_soft_deleted.sql` only addresses `hidden_at` / soft-delete hygiene, not this class of duplicate.
+
+---
+
+## Backfill image thumbnails (PERF-4, 2026-05-28)
+
+After PR-1a (`perf(images): upload-time thumbs ...`) ships, **new** post / avatar uploads always write a sibling `-thumb.jpg` object. **Existing** objects need a one-time backfill pass to get the same wins.
+
+The `backfill-image-thumbs` Edge Function scans `post-images` and `avatars` buckets, downloads each non-thumb object, resizes via ImageMagick WASM (400px for posts, 96px for avatars), and uploads the thumb with `cache-control: public, max-age=31536000, immutable`. Idempotent: existing thumbs are skipped, so it's safe to re-run.
+
+### Run against dev
+
+From a machine with the Supabase CLI logged in (or a service-role JWT in `$SR`):
+
+```bash
+SUPABASE_REF=roeefqpdbftlndzsvhfj
+SR="$(cat ~/.kc-dev-secrets.env | grep SUPABASE_SERVICE_ROLE_KEY | cut -d= -f2-)"
+
+# Dry-run first to see what would be processed:
+curl -sS -X POST "https://${SUPABASE_REF}.supabase.co/functions/v1/backfill-image-thumbs" \
+  -H "Authorization: Bearer ${SR}" \
+  -H "Content-Type: application/json" \
+  -d '{"dryRun":true,"pageLimit":500}'
+
+# Real run — invoke repeatedly until `results[*].more === false`:
+curl -sS -X POST "https://${SUPABASE_REF}.supabase.co/functions/v1/backfill-image-thumbs" \
+  -H "Authorization: Bearer ${SR}" \
+  -H "Content-Type: application/json" \
+  -d '{"pageLimit":100}'
+```
+
+Per-invocation budget is bounded by Edge Function timeout (25s on free tier). `pageLimit: 100` is a safe default that fits inside that envelope. Bump or lower based on dashboard latency.
+
+### Body options
+
+| Field | Type | Default | Notes |
+| --- | --- | --- | --- |
+| `bucket` | `"post-images" \| "avatars" \| "both"` | `"both"` | Narrow the scope. |
+| `pageLimit` | `number` (1-500) | `100` | Max objects processed per invocation. |
+| `lookbackHours` | `number` | _all_ | Only objects newer than `now - hours`. |
+| `dryRun` | `boolean` | `false` | Count + log without writing. |
+
+### Response
+
+```json
+{
+  "ok": true,
+  "dryRun": false,
+  "results": [
+    { "bucket": "post-images", "scanned": 100, "generated": 87, "skipped_existing": 13, "errors": 0, "more": true },
+    { "bucket": "avatars",     "scanned":  42, "generated": 39, "skipped_existing":  3, "errors": 0, "more": false }
+  ]
+}
+```
+
+Re-invoke until every entry's `more` is `false`.
+
+### Run against prod
+
+Same flow, swap `SUPABASE_REF` and use the prod service-role bearer. The function is deployed automatically by `.github/workflows/supabase-functions-deploy.yml` when `supabase/functions/**` changes land on `main`.
+
+---
+
+## Publishing legal documents (FR-SETTINGS-010)
+
+Editable from Supabase Studio without a frontend deploy. Each publish is an immutable `legal_document_versions` row plus an update to the current-pointer row in `legal_documents`. The trigger computes `content_hash` (SHA-256) automatically.
+
+**Severity semantics:**
+- `minor` — typo / cosmetic. No re-acknowledgement. `change_summary` may be null.
+- `standard` — material change. Users see a 7-day soft-grace banner, then the server promotes the gate to a blocking modal at day 7. `change_summary` is required (Markdown bullets shown on the consent card).
+- `critical` — urgent change. Blocks immediately on the next foreground. `effective_date` must be within 1 hour of `now()`; the RPC rejects scheduled criticals.
+
+### Snippet 1 — Publish Terms (minor): typo / cosmetic, no re-ack
+
+```sql
+select public.publish_legal_document(
+  p_doc_type       => 'terms',
+  p_body_md        => $$
+# תנאי שימוש
+<full Markdown body here>
+$$,
+  p_severity       => 'minor',
+  p_change_summary => null,
+  p_effective_date => now()
+);
+```
+
+### Snippet 2 — Publish Terms (material): re-ack required, 7-day soft grace
+
+```sql
+select public.publish_legal_document(
+  p_doc_type       => 'terms',
+  p_body_md        => $$
+# תנאי שימוש
+<full Markdown body here>
+$$,
+  p_severity       => 'standard',
+  p_change_summary => $$- בולט 1
+- בולט 2
+- בולט 3$$,
+  p_effective_date => now()
+);
+```
+
+### Snippet 3 — Publish Privacy (minor)
+
+Same as Snippet 1 with `p_doc_type => 'privacy'`.
+
+### Snippet 4 — Publish Privacy (material)
+
+Same as Snippet 2 with `p_doc_type => 'privacy'`.
+
+### Snippet 5 — Publish CRITICAL (blocks all users immediately)
+
+Use sparingly. Effective date must be within 1 hour of `now()` or the RPC rejects.
+
+```sql
+select public.publish_legal_document(
+  p_doc_type       => 'privacy',
+  p_body_md        => $$<full Markdown>$$,
+  p_severity       => 'critical',
+  p_change_summary => $$- שינוי דחוף שדורש אישור מיידי$$,
+  p_effective_date => now()
+);
+```
+
+### Verification after publish
+
+```sql
+select doc_type, current_version, last_material_version, last_material_severity
+  from public.legal_documents;
+```
+
+The published row should show the new `current_version`. For `standard` / `critical`, `last_material_version` advances; for `minor`, it stays.

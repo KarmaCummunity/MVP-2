@@ -3,39 +3,49 @@
 // Mapped to SRS: FR-AUTH-007 AC2, FR-AUTH-013 (cold-start), FR-AUTH-014 (guest),
 // FR-AUTH-010 AC3 (Skip preserves location).
 // FR-CHAT-001: inbox subscription started on sign-in, torn down on sign-out.
-import React, { useEffect } from 'react';
+import React, { useEffect, useState } from 'react';
+import { Pressable, Text } from 'react-native';
+import { spacing, typography } from '@kc/ui';
+import { useTranslation } from 'react-i18next';
 import { ActivityIndicator, Image, View } from 'react-native';
-import { useRouter, useSegments } from 'expo-router';
+import { useRouter, useSegments, usePathname, type Href } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import {
   getRestoreSessionUseCase,
   subscribeToSession,
 } from '../services/authComposition';
 import { tryDevAutoSignIn } from '../services/devAutoSignIn';
-import { getDevGhostSession, isDevGhostSessionEnabled } from '../services/devGhostSession';
-import { getOnboardingBootstrap } from '../services/userComposition';
+import { getDevGhostSession } from '../services/devGhostSession';
+import { getOnboardingBootstrap, getReconcileAuthProfileMetadataUseCase } from '../services/userComposition';
+import { isDevGhostSessionEnabled } from '../services/devGhostSession';
 import { useAuthStore } from '../store/authStore';
 import { useChatStore } from '../store/chatStore';
 import { usePostDraftStore } from '../store/postDraftStore';
+import { useRedirectIntentStore } from '../store/redirectIntentStore';
 import { container } from '../lib/container';
 import { useEnforceAccountGate } from '../hooks/useEnforceAccountGate';
+import { isPublicResearchPath } from '../navigation/publicResearchPaths';
 
 export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) {
+  const { colors } = useTheme();
   const router = useRouter();
   const segments = useSegments();
   const queryClient = useQueryClient();
-  const {
-    session,
-    isAuthenticated,
-    isLoading,
-    onboardingState,
-    basicInfoSkipped,
-    setSession,
-    setOnboardingState,
-    setBasicInfoSkipped,
-  } = useAuthStore();
+  const pathname = usePathname();
+  const capturePendingPath = useRedirectIntentStore((s) => s.capturePath);
+  const consumePendingPath = useRedirectIntentStore((s) => s.consumePath);
+  const session = useAuthStore((s) => s.session);
+  const isAuthenticated = useAuthStore((s) => s.isAuthenticated);
+  const isLoading = useAuthStore((s) => s.isLoading);
+  const onboardingState = useAuthStore((s) => s.onboardingState);
+  const basicInfoSkipped = useAuthStore((s) => s.basicInfoSkipped);
+  const setSession = useAuthStore((s) => s.setSession);
+  const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
+  const setBasicInfoSkipped = useAuthStore((s) => s.setBasicInfoSkipped);
+  const [onboardingBootstrapError, setOnboardingBootstrapError] = useState(false);
+  const { t } = useTranslation();
 
   // FR-MOD-010 AC4 — sign-in + mid-session enforcement of bans / suspensions.
   useEnforceAccountGate(session?.userId ?? null);
@@ -93,19 +103,20 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       return;
     }
     let cancelled = false;
+    setOnboardingBootstrapError(false);
     (async () => {
       try {
         const boot = await getOnboardingBootstrap(session.userId);
         if (!cancelled) {
           setOnboardingState(boot.state);
           setBasicInfoSkipped(boot.basicInfoSkipped);
+          setOnboardingBootstrapError(false);
         }
       } catch {
-        // Network/permission failure: assume completed to avoid trapping a real
-        // user in an onboarding loop. Re-queried next session start.
         if (!cancelled) {
-          setOnboardingState('completed');
-          setBasicInfoSkipped(false);
+          setOnboardingBootstrapError(true);
+          setOnboardingState(null);
+          setBasicInfoSkipped(null);
         }
       }
     })();
@@ -137,6 +148,24 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     }
   }, [session, queryClient]);
 
+  // FR-AUTH-003 AC5 / FR-PROFILE-001: heal JWT user_metadata drift after cold start
+  // so My Profile does not flash stale OAuth names before the profile query returns.
+  useEffect(() => {
+    if (!session?.userId || isDevGhostSessionEnabled()) return;
+    let cancelled = false;
+    (async () => {
+      try {
+        await getReconcileAuthProfileMetadataUseCase().execute({ userId: session.userId });
+      } catch {
+        // Non-fatal — profile screen still reads from DB; user can retry via edit-profile save.
+      }
+      if (cancelled) return;
+    })();
+    return () => {
+      cancelled = true;
+    };
+  }, [session?.userId]);
+
   // Redirect rules:
   //   - Unauth + outside (auth)/(guest)/auth/callback/auth/verify → (auth).
   //   - Auth + just landed in (auth) or (guest) → onboarding step matching
@@ -157,9 +186,28 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     // FR-MOD-010 AC4 — account-blocked is a terminal screen reachable while
     // signed out; do not bounce the user back to (auth).
     const isAccountBlocked = (segments[0] as string | undefined) === 'account-blocked';
+    const isAboutSurface =
+      (segments[0] as string | undefined) === 'about' ||
+      (segments[0] as string | undefined) === 'about-site';
+    // FR-RESEARCH-001 AC2 / FR-RESEARCH-004 AC7 — public survey is web-only and
+    // must stay reachable from shared links without sign-in.
+    const isResearchSurface =
+      (segments[0] as string | undefined) === 'research' ||
+      (typeof pathname === 'string' && isPublicResearchPath(pathname));
 
     if (!isAuthenticated) {
-      if (!inAuthGroup && !inGuestGroup && !isOAuthCallback && !isEmailVerify && !isAccountBlocked) {
+      if (
+        !inAuthGroup &&
+        !inGuestGroup &&
+        !isOAuthCallback &&
+        !isEmailVerify &&
+        !isAccountBlocked &&
+        !isAboutSurface &&
+        !isResearchSurface
+      ) {
+        // FR-POST-023 AC6 — remember the deep-link target so we can restore
+        // it after the user completes sign-in / onboarding.
+        if (typeof pathname === 'string') capturePendingPath(pathname);
         router.replace('/(auth)');
       }
       return;
@@ -169,15 +217,19 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
     if (onboardingState === null) return;
 
     if (onboardingState === 'pending_basic_info' && basicInfoSkipped === true) {
-      router.replace('/(tabs)');
+      // FR-POST-023 AC6 — restore a captured deep-link if the user signed in
+      // straight through the basic-info skip path.
+      const pending = consumePendingPath();
+      router.replace((pending ?? '/(tabs)') as Href);
     } else if (onboardingState === 'pending_basic_info') {
       router.replace('/(onboarding)/about-intro');
     } else if (onboardingState === 'pending_avatar') {
       router.replace('/(onboarding)/photo');
     } else {
-      router.replace('/(tabs)');
+      const pending = consumePendingPath();
+      router.replace((pending ?? '/(tabs)') as Href);
     }
-  }, [isLoading, isAuthenticated, onboardingState, basicInfoSkipped, segments, router]);
+  }, [isLoading, isAuthenticated, onboardingState, basicInfoSkipped, segments, pathname, router, capturePendingPath, consumePendingPath]);
 
   if (isLoading) {
     return (
@@ -199,5 +251,44 @@ export function AuthGate({ children }: Readonly<{ children: React.ReactNode }>) 
       </View>
     );
   }
+
+  if (isAuthenticated && onboardingBootstrapError) {
+    return (
+      <View
+        style={{
+          flex: 1,
+          backgroundColor: colors.background,
+          justifyContent: 'center',
+          padding: spacing.lg,
+        }}
+      >
+        <Text style={{ ...typography.body, color: colors.textPrimary, textAlign: 'center' }}>
+          {t('general.error')}
+        </Text>
+        <Pressable
+          onPress={() => {
+            if (!session) return;
+            setOnboardingBootstrapError(false);
+            void getOnboardingBootstrap(session.userId)
+              .then((boot) => {
+                setOnboardingState(boot.state);
+                setBasicInfoSkipped(boot.basicInfoSkipped);
+              })
+              .catch(() => setOnboardingBootstrapError(true));
+          }}
+          style={{
+            marginTop: spacing.md,
+            padding: spacing.md,
+            borderRadius: 8,
+            backgroundColor: colors.primary,
+            alignItems: 'center',
+          }}
+        >
+          <Text style={{ ...typography.button, color: colors.textInverse }}>{t('general.retry')}</Text>
+        </Pressable>
+      </View>
+    );
+  }
+
   return <>{children}</>;
 }

@@ -11,6 +11,7 @@
       "persistent": true
     },
     "lint": {
+      "dependsOn": ["typecheck"],
       "outputs": []
     },
     "typecheck": {
@@ -18,7 +19,23 @@
     },
     "test": {
       "outputs": ["coverage/**"],
-      "cache": false
+      "cache": false,
+      "passThroughEnv": [
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "NODE_OPTIONS"
+      ]
+    },
+    "test:coverage": {
+      "outputs": ["coverage/**"],
+      "cache": false,
+      "passThroughEnv": [
+        "SUPABASE_URL",
+        "SUPABASE_ANON_KEY",
+        "SUPABASE_SERVICE_ROLE_KEY",
+        "NODE_OPTIONS"
+      ]
     }
   }
 }

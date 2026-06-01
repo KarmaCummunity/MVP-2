@@ -77,7 +77,6 @@ describe('mapLinkSearchResult', () => {
     expect(out).toEqual({
       id: 'l_1',
       categorySlug: 'food',
-      categoryLabelHe: 'אוכל',
       url: 'https://example.org/donate',
       displayName: 'Food bank',
       description: 'Supports families in need.',
@@ -85,27 +84,20 @@ describe('mapLinkSearchResult', () => {
     });
   });
 
-  describe('categoryLabelHe lookup', () => {
-    it.each([
-      ['time', 'זמן'],
-      ['money', 'כסף'],
-      ['food', 'אוכל'],
-      ['housing', 'דיור'],
-      ['transport', 'תחבורה'],
-      ['knowledge', 'ידע'],
-      ['animals', 'חיות'],
-      ['medical', 'רפואה'],
-    ])('resolves the Hebrew label for slug %s → %s', (slug, expected) => {
-      const out = mapLinkSearchResult(makeLinkRow({ category_slug: slug }));
-      expect(out.categoryLabelHe).toBe(expected);
-    });
+  describe('categorySlug passthrough', () => {
+    // The mapper exposes only the locale-agnostic slug (TD-155); the FE
+    // resolves the display label via `t('search.donationCategories.<slug>')`.
+    it.each(['time', 'money', 'food', 'housing', 'transport', 'knowledge', 'animals', 'medical'])(
+      'passes the %s slug through verbatim',
+      (slug) => {
+        const out = mapLinkSearchResult(makeLinkRow({ category_slug: slug }));
+        expect(out.categorySlug).toBe(slug);
+      },
+    );
 
-    it('falls back to the raw slug when the slug is not in the lookup table', () => {
-      // Future / unknown slugs (e.g., a new DB-level slug added before the
-      // client ships an updated label map) render the slug verbatim instead
-      // of crashing the search row.
+    it('passes a future / unknown DB slug through verbatim instead of crashing', () => {
       const out = mapLinkSearchResult(makeLinkRow({ category_slug: 'brand-new-slug' }));
-      expect(out.categoryLabelHe).toBe('brand-new-slug');
+      expect(out.categorySlug).toBe('brand-new-slug');
     });
   });
 

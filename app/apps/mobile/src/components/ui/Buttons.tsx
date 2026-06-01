@@ -10,12 +10,23 @@
 //   - optional leading icon (rendered on the trailing edge so RTL puts it on the
 //     left like the welcome buttons do).
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Platform, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
 import Animated, { useAnimatedStyle, useSharedValue, withSpring, withTiming } from 'react-native-reanimated';
 import * as Haptics from 'expo-haptics';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
+import { isLayoutRtl } from '../../lib/rtlLayout';
+
+/**
+ * Trailing-edge inset for the absolutely-positioned icon.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function iconSlotCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: spacing.lg };
+  return isLayoutRtl() ? { left: spacing.lg } : { right: spacing.lg };
+}
 
 type Variant = 'primary' | 'secondary' | 'ghost';
 
@@ -59,6 +70,8 @@ function Button({
 }: ButtonProps & { variant: Variant }) {
   const reduced = useReducedMotion();
   const press = useButtonPress(reduced);
+  const styles = useButtonStyles();
+  const { colors } = useTheme();
 
   const handle = () => {
     if (haptic) Haptics.impactAsync(Haptics.ImpactFeedbackStyle.Light).catch(() => {});
@@ -130,7 +143,7 @@ export function GhostButton(p: ButtonProps) {
   return <Button {...p} variant="ghost" />;
 }
 
-const styles = StyleSheet.create({
+const useButtonStyles = makeUseStyles(({ colors, isDark }) => ({
   base: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -143,14 +156,14 @@ const styles = StyleSheet.create({
   fullWidth: { width: '100%' },
   primary: { backgroundColor: colors.primary },
   secondary: {
-    backgroundColor: '#FFFFFF',
+    backgroundColor: colors.surface,
     borderWidth: 1.5,
     borderColor: colors.border,
-    shadowColor: '#000',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: isDark ? 0 : 0.06,
     shadowRadius: 6,
-    elevation: 2,
+    elevation: isDark ? 0 : 2,
   },
   ghost: { backgroundColor: 'transparent' },
   disabled: { opacity: 0.6 },
@@ -160,10 +173,10 @@ const styles = StyleSheet.create({
   textOnGhost: { color: colors.primary },
   iconSlot: {
     position: 'absolute',
-    right: spacing.lg,
+    ...iconSlotCornerEnd(),
     width: 24,
     height: 24,
     alignItems: 'center',
     justifyContent: 'center',
   },
-});
+}));

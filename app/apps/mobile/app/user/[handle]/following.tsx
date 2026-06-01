@@ -4,18 +4,22 @@
 // FR-PROFILE-010.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { getUserRepo } from '../../../src/services/userComposition';
 import { getListFollowingUseCase } from '../../../src/services/followComposition';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 export default function FollowingListScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
@@ -25,6 +29,7 @@ export default function FollowingListScreen() {
     queryKey: ['profile-other', handle],
     queryFn: () => getUserRepo().findByHandle(handle!),
     enabled: Boolean(handle),
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
   const owner = userQuery.data;
 
@@ -32,6 +37,7 @@ export default function FollowingListScreen() {
     queryKey: ['following', owner?.userId],
     queryFn: () => getListFollowingUseCase().execute({ userId: owner!.userId, limit: 50 }),
     enabled: Boolean(owner?.userId),
+    staleTime: 60_000, // PERF-3: profile (others) — follow action invalidates explicitly
   });
 
   if (!owner) {
@@ -78,21 +84,21 @@ export default function FollowingListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   searchRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.xs,
+    flexDirection: rowDirectionStart, alignItems: 'center', gap: spacing.xs,
     backgroundColor: colors.surface, margin: spacing.base, padding: spacing.sm,
     borderRadius: radius.md, borderWidth: 1, borderColor: colors.border,
   },
-  searchInput: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  searchInput: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   row: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm,
+    flexDirection: rowDirectionStart, alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   rowText: { flex: 1 },
-  name: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  city: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  name: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  city: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   empty: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.lg },
-});
+}));

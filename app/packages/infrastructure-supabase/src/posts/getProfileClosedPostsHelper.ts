@@ -2,11 +2,12 @@
 // file to respect the 200-LOC cap on the repository. Mirrors the existing
 // reopenPostHelper / getClosureCandidatesHelper pattern.
 //
-// Mapped to FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised).
+// Mapped to FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised), FR-POST-021.
 
 import type { SupabaseClient } from '@supabase/supabase-js';
 import type { Post, ProfileClosedPostsItem, ProfileClosedPostsListMode } from '@kc/domain';
-import { POST_SELECT_BARE, mapPostRow, type PostJoinedRow } from './mapPostRow';
+import { applyPostActorIdentityProjectionBatch } from './applyPostActorIdentityProjection';
+import { POST_SELECT_OWNER, mapPostWithOwnerRow, type PostWithOwnerJoinedRow } from './mapPostRow';
 
 const HARD_MAX_LIMIT = 100;
 
@@ -20,10 +21,9 @@ export async function getProfileClosedPostsHelper(
 ): Promise<ProfileClosedPostsItem[]> {
   const safeLimit = Math.max(1, Math.min(limit, HARD_MAX_LIMIT));
 
-  // Step 1: RPC returns (post_id, identity_role, closed_at) ordered desc.
   const { data: rows, error: rpcError } = await client.rpc('profile_closed_posts', {
     p_profile_user_id: profileUserId,
-    p_viewer_user_id: viewerUserId, // RPC accepts NULL for anon viewers.
+    p_viewer_user_id: viewerUserId,
     p_limit: safeLimit,
     p_cursor: cursor ?? null,
     p_list_mode: listMode,
@@ -36,25 +36,25 @@ export async function getProfileClosedPostsHelper(
   }>;
   if (rpcRows.length === 0) return [];
 
-  // Step 2: hydrate via the standard joined SELECT. RLS applies — and since
-  // migration 0059 aligned `is_post_visible_to` with the RPC's filter, the
-  // verdicts match. (One exception: `deleted_no_recipient` posts on the
-  // publisher's own profile are visible only to the owner per the tomb-state
-  // branch in `is_post_visible_to` — which matches our intent.)
   const ids = rpcRows.map((r) => r.post_id);
   const { data: postsData, error: postsError } = await client
     .from('posts')
-    .select(POST_SELECT_BARE)
+    .select(POST_SELECT_OWNER)
     .in('post_id', ids);
   if (postsError) throw new Error(`getProfileClosedPosts hydrate: ${postsError.message}`);
 
+  const hydrated = (postsData ?? []).map((row) =>
+    mapPostWithOwnerRow(row as unknown as PostWithOwnerJoinedRow),
+  );
+  const projected = await applyPostActorIdentityProjectionBatch(client, hydrated, viewerUserId, {
+    identityListingHostUserId: profileUserId,
+  });
+
   const byId = new Map<string, Post>();
-  for (const row of (postsData ?? []) as unknown as PostJoinedRow[]) {
-    const post = mapPostRow(row);
-    byId.set(post.postId, post);
+  for (const p of projected) {
+    byId.set(p.postId, p);
   }
 
-  // Step 3: re-assemble in RPC's order, dropping rows lost to RLS edge cases.
   const items: ProfileClosedPostsItem[] = [];
   for (const r of rpcRows) {
     const post = byId.get(r.post_id);

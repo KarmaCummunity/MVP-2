@@ -18,6 +18,9 @@ export const chatHe = {
 
   // InboxChatRow
   hideChatA11y: 'הסר שיחה מהאינבוקס',
+  // Inbox preview prefixes — TD-110 bug 2.
+  inboxSystemPrefix: '(הודעת מערכת)',
+  inboxNewConversation: '(שיחה חדשה)',
 
   // AnchoredPostCard (FR-CHAT-014/015)
   anchoredOpenA11y: 'פתח את הפוסט',
@@ -39,6 +42,7 @@ export const chatHe = {
   // dedupes against the rendered string in the last 50 messages.
   autoMessage: {
     initial: 'היי! ראיתי את הפוסט שלך על {{title}}. אשמח שנדבר.',
+    rideInitial: 'היי, פניתי בנוגע ל: {{title}}',
   },
 
   // Chat conversation screen (chat/[id].tsx) — PR5b i18n sweep.

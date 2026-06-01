@@ -8,6 +8,8 @@ export function invalidateMyProfilePostQueries(
   void queryClient.invalidateQueries({ queryKey: ['my-posts'] });
   void queryClient.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
   void queryClient.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+  void queryClient.invalidateQueries({ queryKey: ['profile-tab-open-count'] });
+  void queryClient.invalidateQueries({ queryKey: ['profile-tab-closed-count'] });
   if (userId) {
     void queryClient.invalidateQueries({ queryKey: ['user-profile', userId] });
   }

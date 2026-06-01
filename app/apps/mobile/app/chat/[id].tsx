@@ -10,7 +10,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { useChatStore, type OptimisticMessage } from '../../src/store/chatStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
@@ -20,10 +20,11 @@ import { ChatDaySeparator } from '../../src/components/chat/ChatDaySeparator';
 import { buildChatThreadRowsNewestFirst } from '../../src/lib/chatThreadListRows';
 import { computeHandledIds } from '../../src/components/chat/system/handledIds';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
+import { AnchoredRideCard } from '../../src/components/chat/AnchoredRideCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
 import { useChatSend } from '../../src/hooks/useChatSend';
-import { chatConversationStyles as styles } from './chatScreenStyles';
+import { useChatConversationStyles } from './chatScreenStyles';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
 import { ChatNotFoundView } from '../../src/components/chat/ChatNotFoundView';
@@ -42,6 +43,8 @@ export default function ChatScreen() {
   const chatId = id!;
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useChatConversationStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
@@ -128,7 +131,9 @@ export default function ChatScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={88}
       >
-        {chat ? (
+        {chat?.anchorRideId ? (
+          <AnchoredRideCard anchorRideId={chat.anchorRideId} />
+        ) : chat ? (
           <AnchoredPostCard
             chatId={chatId}
             anchorPostId={chat.anchorPostId}

@@ -1,5 +1,5 @@
 import React, { useEffect } from 'react';
-import { View, Text, StyleSheet, useWindowDimensions, I18nManager } from 'react-native';
+import { View, Text, useWindowDimensions, I18nManager } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
@@ -9,7 +9,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { MOTION } from '../../lib/animations/motion';
 import { EASINGS } from '../../lib/animations/motion-easings';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -36,6 +36,8 @@ const ICON_SIZE = 56;
 export function TourSlidePager({ slides, index, onIndexChange }: TourSlidePagerProps) {
   const { width } = useWindowDimensions();
   const reduced = useReducedMotion();
+  const styles = useTourSlidePagerStyles();
+  const { colors } = useTheme();
   const tx = useSharedValue(0);
   const iconScale = useSharedValue(1);
   const direction = I18nManager.isRTL ? -1 : 1;
@@ -102,6 +104,8 @@ export function TourSlidePager({ slides, index, onIndexChange }: TourSlidePagerP
 
 function Dot({ active }: { active: boolean }) {
   const reduced = useReducedMotion();
+  const styles = useTourSlidePagerStyles();
+  const { colors } = useTheme();
   const w = useSharedValue(active ? 24 : 8);
 
   useEffect(() => {
@@ -117,7 +121,7 @@ function Dot({ active }: { active: boolean }) {
   return <Animated.View style={[styles.dot, dotStyle]} />;
 }
 
-const styles = StyleSheet.create({
+const useTourSlidePagerStyles = makeUseStyles(({ colors }) => ({
   wrap: { flex: 1, alignItems: 'center' },
   content: {
     flex: 1,
@@ -147,4 +151,4 @@ const styles = StyleSheet.create({
     height: 8,
     borderRadius: 4,
   },
-});
+}));

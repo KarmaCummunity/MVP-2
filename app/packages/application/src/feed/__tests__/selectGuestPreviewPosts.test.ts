@@ -10,6 +10,7 @@ const base = (id: string, createdAt: string, visibility: 'Public' | 'FollowersOn
   ownerPrivacyMode: 'Public',
   type: 'Give',
   status: 'open',
+  statusBeforeAdminRemoval: null,
   visibility,
   title: `t${id}`,
   description: null,

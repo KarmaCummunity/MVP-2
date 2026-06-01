@@ -1,13 +1,15 @@
 // FR-MOD-001 — Report modal opened from post-detail ⋮ menu. Mirror of ReportChatModal.
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { NotifyModal } from '../NotifyModal';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
   { value: 'Spam', key: 'post.reportReasonSpam' },
@@ -25,6 +27,8 @@ interface Props {
 
 export function ReportPostModal({ postId, visible, onClose }: Props) {
   const { t } = useTranslation();
+  const styles = useReportPostModalStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
@@ -59,6 +63,12 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
         onClose();
         setNotify({ title: t('post.reportDuplicateTitle'), message: t('post.reportDuplicateBody') });
+      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
+        onClose();
+        setNotify({
+          title: t('post.reportAlreadyModeratedTitle'),
+          message: t('post.reportAlreadyModeratedBody'),
+        });
       } else {
         setNotify({ title: t('general.error'), message: t('post.reportErrorBody') });
       }
@@ -119,28 +129,29 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
+const useReportPostModalStyles = makeUseStyles(({ colors }) => ({
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface, padding: 16, gap: 8,
     borderTopLeftRadius: 16, borderTopRightRadius: 16,
   },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: 4 },
+  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: 4 },
   reasonRow: {
     paddingVertical: 12, paddingHorizontal: 14,
     borderRadius: 10, borderWidth: 1, borderColor: colors.border,
   },
   reasonRowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-  reasonText: { fontSize: 15, color: colors.textPrimary, textAlign: 'right' },
+  reasonText: { fontSize: 15, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   note: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 10,
     padding: 12, minHeight: 80, fontSize: 15, color: colors.textPrimary,
+    backgroundColor: colors.background,
   },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnGhostText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

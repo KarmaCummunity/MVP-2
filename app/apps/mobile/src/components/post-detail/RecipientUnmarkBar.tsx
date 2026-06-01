@@ -3,10 +3,10 @@
 // Spec AC2: confirmation modal explains consequences.
 // Spec AC3: calls rpc_recipient_unmark_self, post→deleted_no_recipient.
 import { useState } from 'react';
-import { Pressable, StyleSheet, Text } from 'react-native';
+import { Pressable, Text } from 'react-native';
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { ConfirmActionModal } from '../post/ConfirmActionModal';
 import { NotifyModal } from '../NotifyModal';
 import { getUnmarkRecipientSelfUseCase } from '../../services/postsComposition';
@@ -17,6 +17,8 @@ interface Props {
 }
 
 export function RecipientUnmarkBar({ postId, userId }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const qc = useQueryClient();
   const [confirmOpen, setConfirmOpen] = useState(false);
@@ -29,6 +31,8 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
       setConfirmOpen(false);
       await qc.invalidateQueries({ queryKey: ['post', postId] });
       await qc.invalidateQueries({ queryKey: ['profile-closed-posts'] });
+      await qc.invalidateQueries({ queryKey: ['profile-tab-open-count'] });
+      await qc.invalidateQueries({ queryKey: ['profile-tab-closed-count'] });
       await qc.invalidateQueries({ queryKey: ['my-hidden-open-posts'] });
     },
     onError: () => {
@@ -69,15 +73,16 @@ export function RecipientUnmarkBar({ postId, userId }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors }) => ({
   btn: {
-    marginTop: spacing.xs,
-    alignSelf: 'flex-end',
-    paddingVertical: spacing.xs,
+    alignSelf: 'stretch',
+    paddingVertical: spacing.sm,
     paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
+    borderRadius: radius.lg,
     borderWidth: 1,
     borderColor: colors.error,
+    backgroundColor: colors.errorLight,
+    alignItems: 'center',
   },
-  btnText: { ...typography.bodySmall, color: colors.error },
-});
+  btnText: { ...typography.bodySmall, color: colors.error, fontWeight: '600' },
+}));

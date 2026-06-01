@@ -13,6 +13,7 @@
 
 import { serve } from 'https://deno.land/std@0.224.0/http/server.ts';
 import { createClient } from 'https://esm.sh/@supabase/supabase-js@2.45.4';
+import { type Handler, withTiming } from '../_shared/withTiming.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL')!;
 const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY')!;
@@ -188,7 +189,7 @@ async function checkReachable(initial: URL): Promise<boolean> {
   return false;
 }
 
-serve(async (req) => {
+const handler: Handler = async (req) => {
   if (req.method === 'OPTIONS') {
     return new Response('ok', { headers: CORS_HEADERS });
   }
@@ -327,4 +328,6 @@ serve(async (req) => {
   }
 
   return jsonResponse({ ok: true, link: inserted }, 200);
-});
+};
+
+serve(withTiming('validate-donation-link', handler));

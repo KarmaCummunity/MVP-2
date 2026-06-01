@@ -7,8 +7,8 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { router } from 'expo-router';
-import { colors } from '@kc/ui';
-import { chatConversationHeaderStyles as styles } from './chatConversationHeader.styles';
+import { useTheme } from '@kc/ui';
+import { useChatConversationHeaderStyles } from './chatConversationHeader.styles';
 
 interface Props {
   readonly title: string;
@@ -20,6 +20,8 @@ interface Props {
 export function ChatConversationHeader({ title, canOpenProfile, shareHandle, onOpenMenu }: Props) {
   const insets = useSafeAreaInsets();
   const { t } = useTranslation();
+  const styles = useChatConversationHeaderStyles();
+  const { colors } = useTheme();
   const rtl = I18nManager.isRTL;
   // Symmetric hitSlop steals touches from the centered title on native (esp. RTL); extend only toward screen edges.
   const backHitSlop = rtl

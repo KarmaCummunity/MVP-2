@@ -4,14 +4,28 @@ import {
   View,
   Text,
   Pressable,
+  Platform,
   StyleSheet,
   TouchableOpacity,
   ScrollView,
+  type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
+import { isLayoutRtl } from '../../lib/rtlLayout';
 import type { AboutSectionId } from './aboutSectionModel';
 import { ABOUT_NAV_ITEMS } from './aboutSectionModel';
+
+/**
+ * Anchor the drawer to the reading-end edge.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function drawerEdgeAnchor(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 0 };
+  return isLayoutRtl() ? { left: 0 } : { right: 0 };
+}
 
 export interface AboutNavDrawerProps {
   readonly visible: boolean;
@@ -30,6 +44,8 @@ export function AboutNavDrawer({
   onSelect,
   labelFor,
 }: AboutNavDrawerProps) {
+  const styles = useAboutNavDrawerStyles();
+  const { colors } = useTheme();
   return (
     <Modal transparent animationType="fade" visible={visible} onRequestClose={onClose}>
       <View style={styles.root}>
@@ -64,14 +80,14 @@ export function AboutNavDrawer({
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutNavDrawerStyles = makeUseStyles(({ colors }) => ({
   root: { flex: 1 },
   backdrop: { ...StyleSheet.absoluteFillObject, backgroundColor: colors.overlay },
   sheet: {
     position: 'absolute',
     top: 0,
     bottom: 0,
-    right: 0,
+    ...drawerEdgeAnchor(),
     width: '82%',
     maxWidth: 340,
     backgroundColor: colors.surface,
@@ -80,23 +96,23 @@ const styles = StyleSheet.create({
     borderBottomLeftRadius: radius.xl,
   },
   sheetHeader: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     justifyContent: 'space-between',
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.sm,
   },
-  sheetTitle: { ...typography.h3, color: colors.textPrimary },
+  sheetTitle: { ...typography.h3, color: colors.textPrimary, ...aboutRtlText },
   hint: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     paddingHorizontal: spacing.lg,
     marginBottom: spacing.md,
   },
   list: { paddingBottom: spacing['2xl'] },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.md,
     paddingVertical: spacing.md,
@@ -104,5 +120,5 @@ const styles = StyleSheet.create({
     borderBottomWidth: StyleSheet.hairlineWidth,
     borderBottomColor: colors.border,
   },
-  rowLabel: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-});
+  rowLabel: { flex: 1, ...typography.body, color: colors.textPrimary, ...aboutRtlText },
+}));

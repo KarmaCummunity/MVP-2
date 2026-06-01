@@ -1,4 +1,4 @@
-import type { IAuthService, AuthSession } from '../../ports/IAuthService';
+import type { AuthProfileMetadataPatch, IAuthService, AuthSession } from '../../ports/IAuthService';
 import { AuthError } from '../errors';
 
 export class FakeAuthService implements IAuthService {
@@ -21,6 +21,18 @@ export class FakeAuthService implements IAuthService {
   public verifyEmailResult: AuthSession | null = null;
   public verifyEmailCalls: string[] = [];
   public lastSignUpRedirect: string | undefined;
+  public syncProfileCalls: AuthProfileMetadataPatch[] = [];
+
+  async syncProfileMetadata(patch: AuthProfileMetadataPatch): Promise<void> {
+    this.syncProfileCalls.push(patch);
+    if (this.currentSession) {
+      this.currentSession = {
+        ...this.currentSession,
+        ...(patch.displayName !== undefined ? { displayName: patch.displayName } : {}),
+        ...(patch.avatarUrl !== undefined ? { avatarUrl: patch.avatarUrl } : {}),
+      };
+    }
+  }
 
   async signUpWithEmail(
     _email: string,

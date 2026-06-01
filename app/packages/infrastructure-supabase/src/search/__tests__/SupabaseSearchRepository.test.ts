@@ -6,17 +6,20 @@ import type { SearchFilters } from '@kc/domain';
 
 // Mock the underlying helpers so we can assert which path the orchestrator
 // chose without standing up real Supabase queries. Each mock returns a
-// stable, distinguishable list so the totalCount + result-array contents
+// stable, distinguishable buckets so section totals + preview lengths
 // double as call-witness assertions.
 vi.mock('../searchExploreHelpers', () => ({
-  explorePosts: vi.fn(async () => [{ kind: 'explore-post' }]),
-  exploreUsers: vi.fn(async () => [{ kind: 'explore-user' }, { kind: 'explore-user' }]),
-  exploreLinks: vi.fn(async () => []),
+  explorePosts: vi.fn(async () => ({ items: [{ kind: 'explore-post' }], total: 10 })),
+  exploreUsers: vi.fn(async () => ({ items: [{ kind: 'explore-user' }, { kind: 'explore-user' }], total: 20 })),
+  exploreLinks: vi.fn(async () => ({ items: [], total: 0 })),
 }));
 vi.mock('../searchQueryHelpers', () => ({
-  searchPosts: vi.fn(async () => [{ kind: 'search-post' }, { kind: 'search-post' }]),
-  searchUsers: vi.fn(async () => [{ kind: 'search-user' }]),
-  searchLinks: vi.fn(async () => [{ kind: 'search-link' }, { kind: 'search-link' }, { kind: 'search-link' }]),
+  searchPosts: vi.fn(async () => ({ items: [{ kind: 'search-post' }, { kind: 'search-post' }], total: 100 })),
+  searchUsers: vi.fn(async () => ({ items: [{ kind: 'search-user' }], total: 15 })),
+  searchLinks: vi.fn(async () => ({
+    items: [{ kind: 'search-link' }, { kind: 'search-link' }, { kind: 'search-link' }],
+    total: 30,
+  })),
 }));
 
 import { SupabaseSearchRepository } from '../SupabaseSearchRepository';
@@ -64,24 +67,24 @@ describe('SupabaseSearchRepository — explore vs search path', () => {
     expect(explorePosts).not.toHaveBeenCalled();
   });
 
-  it('forwards (client, query, filters, limit) to each search helper', async () => {
+  it('forwards (client, query, filters, limit, viewerId) to each search helper', async () => {
     const repo = new SupabaseSearchRepository(FAKE_CLIENT);
     const filters: SearchFilters = { category: 'Electronics' };
 
     await repo.search('car', filters, 'u_viewer', { posts: 5, users: 7, links: 9 });
 
-    expect(searchPosts).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 5);
+    expect(searchPosts).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 5, 'u_viewer');
     expect(searchUsers).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 'u_viewer', 7);
     expect(searchLinks).toHaveBeenCalledWith(FAKE_CLIENT, 'car', filters, 9);
   });
 
-  it('forwards (client, filters, limit) to each explore helper (no query arg)', async () => {
+  it('forwards (client, filters, limit, viewerId) to each explore helper (no query arg)', async () => {
     const repo = new SupabaseSearchRepository(FAKE_CLIENT);
     const filters: SearchFilters = { city: 'tel-aviv' };
 
     await repo.search('', filters, 'u_viewer', { posts: 5, users: 7, links: 9 });
 
-    expect(explorePosts).toHaveBeenCalledWith(FAKE_CLIENT, filters, 5);
+    expect(explorePosts).toHaveBeenCalledWith(FAKE_CLIENT, filters, 5, 'u_viewer');
     expect(exploreUsers).toHaveBeenCalledWith(FAKE_CLIENT, filters, 'u_viewer', 7);
     expect(exploreLinks).toHaveBeenCalledWith(FAKE_CLIENT, filters, 9);
   });
@@ -145,25 +148,28 @@ describe('SupabaseSearchRepository — resultType gating', () => {
   });
 });
 
-describe('SupabaseSearchRepository — totalCount + result fan-out', () => {
-  it('computes totalCount as posts.length + users.length + links.length', async () => {
+describe('SupabaseSearchRepository — section totals', () => {
+  it('exposes bucket totals separately from preview item lengths', async () => {
     const repo = new SupabaseSearchRepository(FAKE_CLIENT);
 
-    // Mocks return 2 search-posts + 1 search-user + 3 search-links = 6.
     const out = await repo.search('car', {}, null, LIMITS);
 
-    expect(out.totalCount).toBe(6);
+    expect(out.postsTotal).toBe(100);
+    expect(out.usersTotal).toBe(15);
+    expect(out.linksTotal).toBe(30);
     expect(out.posts).toHaveLength(2);
     expect(out.users).toHaveLength(1);
     expect(out.links).toHaveLength(3);
   });
 
-  it('counts only the enabled bucket when resultType narrows the search', async () => {
+  it('zeros disabled buckets when resultType narrows the search', async () => {
     const repo = new SupabaseSearchRepository(FAKE_CLIENT);
 
     const out = await repo.search('car', { resultType: 'user' }, null, LIMITS);
 
-    // Only the searchUsers mock fires (1 result). Other buckets are [] → 0.
-    expect(out.totalCount).toBe(1);
+    expect(out.usersTotal).toBe(15);
+    expect(out.postsTotal).toBe(0);
+    expect(out.linksTotal).toBe(0);
+    expect(out.users).toHaveLength(1);
   });
 });

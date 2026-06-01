@@ -1,11 +1,11 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet } from 'react-native';
+import { View } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, radius } from '@kc/ui';
+import { makeUseStyles, radius } from '@kc/ui';
 import { MOTION } from '../../lib/animations/motion';
 import { EASINGS } from '../../lib/animations/motion-easings';
 import { useReducedMotion } from '../../hooks/useReducedMotion';
@@ -17,6 +17,7 @@ export interface OnboardingProgressBarProps {
 
 export function OnboardingProgressBar({ step, total = 4 }: OnboardingProgressBarProps) {
   const reduced = useReducedMotion();
+  const styles = useOnboardingProgressBarStyles();
   const progress = useSharedValue(step / total);
 
   useEffect(() => {
@@ -39,7 +40,7 @@ export function OnboardingProgressBar({ step, total = 4 }: OnboardingProgressBar
   );
 }
 
-const styles = StyleSheet.create({
+const useOnboardingProgressBarStyles = makeUseStyles(({ colors }) => ({
   track: {
     height: 4,
     backgroundColor: colors.border,
@@ -51,4 +52,4 @@ const styles = StyleSheet.create({
     backgroundColor: colors.primary,
     borderRadius: radius.full,
   },
-});
+}));

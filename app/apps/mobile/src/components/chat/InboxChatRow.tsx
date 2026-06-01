@@ -4,9 +4,11 @@ import { View, Text, TouchableOpacity, StyleSheet, Pressable } from 'react-nativ
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import type { ChatWithPreview } from '@kc/application';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../AvatarInitials';
 import { formatRelativeChatTime } from '../../lib/formatRelativeChatTime';
+import { formatInboxPreview } from '../../lib/formatInboxPreview';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   readonly item: ChatWithPreview;
@@ -16,6 +18,8 @@ interface Props {
 
 export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
   const { t } = useTranslation();
+  const styles = useInboxChatRowStyles();
+  const { colors } = useTheme();
   return (
     <View style={styles.chatRow}>
       <TouchableOpacity style={styles.chatRowMain} onPress={onOpen}>
@@ -32,7 +36,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
             <Text style={styles.chatName}>{item.otherParticipant.displayName ?? t('common.deletedUser')}</Text>
           </View>
           <Text style={styles.chatPreview} numberOfLines={1}>
-            {item.lastMessage?.body ?? ''}
+            {formatInboxPreview(item.lastMessage, t)}
           </Text>
         </View>
       </TouchableOpacity>
@@ -59,13 +63,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
   );
 }
 
-export const inboxChatRowSeparatorStyle = {
-  height: 1,
-  backgroundColor: colors.border,
-  marginRight: spacing.base,
-};
-
-const styles = StyleSheet.create({
+const useInboxChatRowStyles = makeUseStyles(({ colors }) => ({
   chatRow: {
     flexDirection: 'row',
     alignItems: 'center',
@@ -85,10 +83,10 @@ const styles = StyleSheet.create({
     ...typography.body,
     fontWeight: '600' as const,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
   },
   chatTime: { ...typography.caption, color: colors.textSecondary },
-  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  chatPreview: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   badge: {
     width: 22,
     height: 22,
@@ -98,12 +96,13 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   badgeText: { ...typography.caption, color: colors.textInverse, fontSize: 11, fontWeight: '600' as const },
-});
+}));
 
 export function InboxChatRowSeparator() {
-  return <View style={sepStyles.line} />;
+  const styles = useInboxChatRowSeparatorStyles();
+  return <View style={styles.line} />;
 }
 
-const sepStyles = StyleSheet.create({
+const useInboxChatRowSeparatorStyles = makeUseStyles(({ colors }) => ({
   line: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border, marginRight: spacing.base },
-});
+}));

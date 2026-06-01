@@ -1,32 +1,39 @@
 import React, { useCallback, useRef, useState } from 'react';
-import {
-  View,
-  Text,
-  StyleSheet,
-  ScrollView,
-  TouchableOpacity,
-  Platform,
-} from 'react-native';
+import { View, Text, Platform, ScrollView, TouchableOpacity, type ViewStyle } from 'react-native';
 import { SafeAreaView, useSafeAreaInsets } from 'react-native-safe-area-context';
-import { useRouter, useLocalSearchParams, usePathname } from 'expo-router';
+import { useLocalSearchParams, usePathname } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing } from '@kc/ui';
+import { makeUseStyles, typography, spacing, useTheme } from '@kc/ui';
+import { isLayoutRtl } from '../../lib/rtlLayout';
+
+/**
+ * Anchor the menu FAB to the reading-end edge (same edge the drawer slides
+ * from). Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function fabEndInset(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: spacing.base };
+  return isLayoutRtl() ? { left: spacing.base } : { right: spacing.base };
+}
+import { BackButton } from '../../components/BackButton';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { AboutNavDrawer } from './AboutNavDrawer';
 import { AboutSectionBlocksTop } from './AboutSectionBlocksTop';
 import { AboutSectionBlocksBottom } from './AboutSectionBlocksBottom';
 import { AboutContentScopeProvider } from './AboutContentScopeContext';
 import { AboutHero } from './AboutHero';
+import { DonationSupportCard } from '../../components/DonationSupportCard';
 import { ABOUT_NAV_LABEL_KEYS, type AboutSectionId } from './aboutSectionModel';
 import { parseTruthyQueryParam } from '../../lib/query/parseTruthyQueryParam';
 import { isAboutMarketingPath } from '../../navigation/aboutMarketingPaths';
 import { useShellTabBarVisibility, shellTabBarHeightPx } from '../../navigation/useShellTabBarVisibility';
-import { aboutWebTextRtl, aboutWebViewRtl } from './aboutWebRtlStyle';
+import { aboutRtlText, aboutWebViewRtl } from './aboutWebRtlStyle';
 
 export function AboutLandingScreen() {
-  const router = useRouter();
   const { t } = useTranslation();
+  const styles = useAboutLandingScreenStyles();
+  const { colors } = useTheme();
   const insets = useSafeAreaInsets();
   const params = useLocalSearchParams<{ hideTopBar?: string | string[]; hideBottomBar?: string | string[] }>();
   const pathname = usePathname() ?? '';
@@ -61,9 +68,7 @@ export function AboutLandingScreen() {
     <SafeAreaView style={styles.safe} edges={hideTop ? [] : ['top']}>
       {!hideTop ? (
         <View style={styles.header}>
-          <TouchableOpacity onPress={() => router.back()} style={styles.back} accessibilityRole="button">
-            <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
-          </TouchableOpacity>
+          <BackButton tintColor={colors.primary} />
           <Text style={styles.title}>{t('aboutContent.title')}</Text>
           <View style={{ width: 40 }} />
         </View>
@@ -85,6 +90,9 @@ export function AboutLandingScreen() {
         <AboutContentScopeProvider>
           <AnimatedEntry delay={0}>
             <AboutHero />
+          </AnimatedEntry>
+          <AnimatedEntry delay={240}>
+            <DonationSupportCard />
           </AnimatedEntry>
           <AboutSectionBlocksTop onSectionY={onSectionY} />
           <AboutSectionBlocksBottom onSectionY={onSectionY} delayStart={360} />
@@ -116,7 +124,7 @@ export function AboutLandingScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutLandingScreenStyles = makeUseStyles(({ colors }) => ({
   safe: { flex: 1, backgroundColor: colors.background },
   header: {
     flexDirection: 'row',
@@ -127,14 +135,12 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
+    ...aboutWebViewRtl,
   },
-  back: { padding: spacing.xs },
   title: {
     ...typography.h3,
     color: colors.textPrimary,
-    flex: 1,
-    ...aboutWebTextRtl,
-    ...(Platform.OS === 'web' ? { textAlign: 'right' as const } : {}),
+    ...aboutRtlText,
   },
   scroll: { flexGrow: 1 },
   footer: { alignItems: 'stretch', marginTop: spacing.xl, ...aboutWebViewRtl },
@@ -142,18 +148,16 @@ const styles = StyleSheet.create({
     ...typography.label,
     color: colors.textSecondary,
     marginBottom: spacing.xs,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
   },
   footerR: {
     ...typography.caption,
     color: colors.textDisabled,
-    textAlign: 'right',
-    ...aboutWebTextRtl,
+    ...aboutRtlText,
   },
   fab: {
     position: 'absolute',
-    left: spacing.base,
+    ...fabEndInset(),
     width: 56,
     height: 56,
     borderRadius: 28,
@@ -168,4 +172,4 @@ const styles = StyleSheet.create({
       elevation: 6,
     },
   },
-});
+}));

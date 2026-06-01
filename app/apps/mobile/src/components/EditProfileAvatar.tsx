@@ -3,9 +3,9 @@
 // focused on form orchestration. The parent receives the new URL (or null)
 // via `onChange` and is responsible for persisting on Save.
 import React, { useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { AvatarInitials } from './AvatarInitials';
 import { NotifyModal } from './NotifyModal';
 import { PhotoSourceSheet } from './PhotoSourceSheet';
@@ -20,6 +20,8 @@ interface Props {
 }
 
 export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, onChange }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const [sheetVisible, setSheetVisible] = useState(false);
   const [uploading, setUploading] = useState(false);
@@ -78,11 +80,11 @@ export function EditProfileAvatar({ userId, displayName, avatarUrl, disabled, on
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   wrap: { alignItems: 'center', marginVertical: spacing.base, gap: spacing.sm },
   spinner: {
     position: 'absolute', width: 104, height: 104, borderRadius: 52,
     backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', alignItems: 'center',
   },
   hint: { ...typography.caption, color: colors.primary },
-});
+}));

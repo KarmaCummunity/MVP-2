@@ -16,7 +16,8 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { DeleteAccountError } from '@kc/application';
-import { styles } from './DeleteAccountConfirmModal.styles';
+import { useTheme } from '@kc/ui';
+import { useDeleteAccountConfirmModalStyles } from './DeleteAccountConfirmModal.styles';
 
 export type AccountStatusForDelete =
   | 'pending_verification'
@@ -42,6 +43,8 @@ type LocalState =
 
 export function DeleteAccountConfirmModal(props: DeleteAccountConfirmModalProps) {
   const { t } = useTranslation();
+  const styles = useDeleteAccountConfirmModalStyles();
+  const { colors } = useTheme();
   const { visible, accountStatus, onCancel, onConfirm } = props;
   const [typed, setTyped] = useState('');
   const [state, setState] = useState<LocalState>({ kind: 'idle' });
@@ -169,7 +172,7 @@ export function DeleteAccountConfirmModal(props: DeleteAccountConfirmModalProps)
                   onPress={handleConfirm}
                 >
                   {state.kind === 'submitting' ? (
-                    <ActivityIndicator color="#ffffff" />
+                    <ActivityIndicator color={colors.textInverse} />
                   ) : (
                     <Text style={styles.buttonDeleteText}>
                       {state.kind === 'error' && state.error === 'critical'

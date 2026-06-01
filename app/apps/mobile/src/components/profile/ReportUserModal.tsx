@@ -1,13 +1,15 @@
 // FR-MOD-007 — Report modal opened from a user profile's overflow menu.
 // Mirrors ReportPostModal but submits to container.reportUser (target_type='user').
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, StyleSheet, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import he from '../../i18n/locales/he';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 const t = he.moderation;
 
@@ -26,6 +28,8 @@ interface Props {
 }
 
 export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
@@ -55,6 +59,9 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
     } catch (err) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
         Alert.alert(t.report.user.duplicateError);
+        onClose();
+      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
+        Alert.alert(t.report.user.alreadyModeratedError);
         onClose();
       } else {
         Alert.alert(t.actions.errors.networkError);
@@ -116,29 +123,29 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface, padding: 16, gap: 8,
     borderTopLeftRadius: 16, borderTopRightRadius: 16,
   },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: 4 },
-  label: { fontSize: 13, color: colors.textSecondary, textAlign: 'right' },
+  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: 4 },
+  label: { fontSize: 13, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   reasonRow: {
     paddingVertical: 12, paddingHorizontal: 14,
     borderRadius: 10, borderWidth: 1, borderColor: colors.border,
   },
   reasonRowActive: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-  reasonText: { fontSize: 15, color: colors.textPrimary, textAlign: 'right' },
+  reasonText: { fontSize: 15, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   note: {
     borderWidth: 1, borderColor: colors.border, borderRadius: 10,
     padding: 12, minHeight: 80, fontSize: 15, color: colors.textPrimary,
   },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnGhostText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

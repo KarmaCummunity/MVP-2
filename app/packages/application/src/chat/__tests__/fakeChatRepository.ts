@@ -56,10 +56,12 @@ export class FakeChatRepository implements IChatRepository {
   async findOrCreateChat(
     userId: string,
     otherUserId: string,
-    anchorPostId?: string,
+    anchor?: { postId?: string; rideId?: string },
     options?: { preferNewThread?: boolean },
   ): Promise<Chat> {
-    const ids = [userId, otherUserId].sort() as [string, string];
+    const ids = [userId, otherUserId].sort((a, b) => a.localeCompare(b)) as [string, string];
+    const anchorPostId = anchor?.postId;
+    const anchorRideId = anchor?.rideId;
 
     if (!options?.preferNewThread) {
       const candidates = this.chats.filter(
@@ -76,9 +78,15 @@ export class FakeChatRepository implements IChatRepository {
       });
       const existing = candidates[0];
       if (existing) {
-        if (anchorPostId !== undefined && existing.anchorPostId !== anchorPostId) {
+        const postChanged = anchorPostId !== undefined && existing.anchorPostId !== anchorPostId;
+        const rideChanged = anchorRideId !== undefined && existing.anchorRideId !== anchorRideId;
+        if (postChanged || rideChanged) {
           const idx = this.chats.indexOf(existing);
-          const updated: Chat = { ...existing, anchorPostId };
+          const updated: Chat = {
+            ...existing,
+            anchorPostId: anchorPostId ?? (rideChanged ? null : existing.anchorPostId),
+            anchorRideId: anchorRideId ?? (postChanged ? null : existing.anchorRideId),
+          };
           this.chats[idx] = updated;
           return updated;
         }
@@ -90,6 +98,7 @@ export class FakeChatRepository implements IChatRepository {
       chatId: `chat-${this.chats.length + 1}`,
       participantIds: ids,
       anchorPostId: anchorPostId ?? null,
+      anchorRideId: anchorRideId ?? null,
       isSupportThread: false,
       lastMessageAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),
@@ -160,7 +169,7 @@ export class FakeChatRepository implements IChatRepository {
 
   async getOrCreateSupportThread(userId: string): Promise<Chat> {
     const admin = 'super-admin';
-    const ids = [userId, admin].sort() as [string, string];
+    const ids = [userId, admin].sort((a, b) => a.localeCompare(b)) as [string, string];
     const existing = this.chats.find(
       (c) =>
         c.isSupportThread &&
@@ -172,6 +181,7 @@ export class FakeChatRepository implements IChatRepository {
       chatId: `support-${this.chats.length + 1}`,
       participantIds: ids,
       anchorPostId: null,
+      anchorRideId: null,
       isSupportThread: true,
       lastMessageAt: new Date().toISOString(),
       createdAt: new Date().toISOString(),

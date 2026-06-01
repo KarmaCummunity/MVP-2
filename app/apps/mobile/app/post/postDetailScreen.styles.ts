@@ -1,17 +1,46 @@
 // Styles extracted from app/post/[id].tsx to keep the screen under the
 // 300-LOC cap (TD-29).
-import { StyleSheet } from 'react-native';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { Platform, type ViewStyle } from 'react-native';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { heroCornerEnd, heroCornerStart } from '../../src/components/post-detail/postDetailCorner';
+import { rowDirectionStart, textAlignStart } from '../../src/lib/rtlLayout';
 
-export const styles = StyleSheet.create({
+const IMAGE_OVERLAY_BG = 'rgba(0, 0, 0, 0.68)';
+const IMAGE_OVERLAY_BORDER = 'rgba(255, 255, 255, 0.22)';
+
+const overlayShadow = {
+  shadowColor: '#000',
+  shadowOffset: { width: 0, height: 2 },
+  shadowOpacity: 0.28,
+  shadowRadius: 4,
+  elevation: 3,
+};
+
+export const usePostDetailStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
-  center: { flex: 1, justifyContent: 'center', alignItems: 'center', gap: spacing.base, backgroundColor: colors.background },
-  errorTitle: { ...typography.h3, color: '#1C1917', textAlign: 'center' },
-  retryBtn: { paddingHorizontal: spacing.xl, paddingVertical: spacing.sm, backgroundColor: colors.primary, borderRadius: radius.full },
+  headerActions: {
+    flexDirection: rowDirectionStart,
+    alignItems: 'center',
+    // headerRight slot is wide; pack icons to the screen edge (visual left in RTL).
+    justifyContent: 'flex-end',
+    gap: spacing.xs,
+  },
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: spacing.base,
+    backgroundColor: colors.background,
+  },
+  errorTitle: { ...typography.h3, color: colors.textPrimary, textAlign: 'center' },
+  retryBtn: {
+    paddingHorizontal: spacing.xl,
+    paddingVertical: spacing.sm,
+    backgroundColor: colors.primary,
+    borderRadius: radius.full,
+  },
   retryText: { ...typography.button, color: colors.textInverse },
 
-  // Image carousel "floats" on the cream backdrop with rounded corners + a
-  // soft shadow so it reads as the post's hero — no longer a flush rectangle.
   imageWrap: {
     position: 'relative',
     marginHorizontal: spacing.base,
@@ -19,87 +48,217 @@ export const styles = StyleSheet.create({
     borderRadius: radius.xl,
     overflow: 'hidden',
     backgroundColor: colors.surface,
-    shadowColor: '#000',
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.06,
+    shadowOpacity: isDark ? 0 : 0.06,
     shadowRadius: 8,
-    elevation: 2,
+    elevation: isDark ? 0 : 2,
+  },
+  imageWrapClosed: {
+    borderColor: isDark ? colors.success : `${colors.success}55`,
+    borderWidth: 1,
+  },
+  closedImageTint: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    height: '38%',
+    backgroundColor: isDark ? 'rgba(74, 222, 128, 0.12)' : 'rgba(34, 197, 94, 0.14)',
+  },
+  statusBadgePos: {
+    position: 'absolute',
+    top: spacing.base,
+    zIndex: 2,
+    ...(heroCornerStart(spacing.base) as ViewStyle),
   },
   typeTagOverlay: {
-    position: 'absolute', bottom: spacing.base, right: spacing.base,
-    paddingHorizontal: spacing.md, paddingVertical: spacing.xs + 2, borderRadius: radius.full,
-    shadowColor: '#000', shadowOffset: { width: 0, height: 2 }, shadowOpacity: 0.12, shadowRadius: 4, elevation: 2,
+    position: 'absolute',
+    bottom: spacing.base,
+    zIndex: 2,
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.xs + 2,
+    borderRadius: radius.full,
+    backgroundColor: IMAGE_OVERLAY_BG,
+    borderWidth: 1,
+    borderColor: IMAGE_OVERLAY_BORDER,
+    ...overlayShadow,
+    ...(heroCornerEnd(spacing.base) as ViewStyle),
   },
-  giveTag: { backgroundColor: colors.giveTagBg },
-  requestTag: { backgroundColor: colors.requestTagBg },
-  typeTagText: { ...typography.label, color: colors.textPrimary, fontWeight: '700' },
+  giveTagText: { ...typography.label, color: colors.giveTag, fontWeight: '700' },
+  requestTagText: { ...typography.label, color: '#FFFFFF', fontWeight: '700' },
 
-  // Content card — white surface lifted off the cream with a soft shadow,
-  // rounded corners, generous padding. Matches the welcome-screen Card idiom.
   content: {
     marginHorizontal: spacing.base,
     marginTop: spacing.base,
     padding: spacing.lg,
-    gap: spacing.sm,
+    gap: spacing.md,
     backgroundColor: colors.surface,
     borderRadius: radius.xl,
-    shadowColor: '#000',
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
+    shadowColor: colors.shadow,
     shadowOffset: { width: 0, height: 1 },
-    shadowOpacity: 0.05,
+    shadowOpacity: isDark ? 0 : 0.05,
     shadowRadius: 6,
-    elevation: 1,
+    elevation: isDark ? 0 : 1,
   },
-  // Title: bigger, near-black slate, slight letter-spacing reduction.
-  title: { ...typography.h2, fontSize: 26, color: '#1C1917', textAlign: 'right', letterSpacing: -0.3, lineHeight: 32 },
-  category: {
+  contentClosed: {
+    borderColor: isDark ? `${colors.success}44` : `${colors.success}33`,
+    borderWidth: 1,
+  },
+  headerRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+  },
+  titleBlock: { flex: 1, gap: spacing.xs, minWidth: 0 },
+  title: {
+    ...typography.h2,
+    fontSize: 26,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    letterSpacing: -0.3,
+    lineHeight: 32,
+  },
+  categoryChip: {
+    alignSelf: 'flex-start',
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 4,
+    borderRadius: radius.full,
+    backgroundColor: isDark ? `${colors.primary}22` : colors.primarySurface,
+    borderWidth: 1,
+    borderColor: isDark ? `${colors.primary}44` : colors.primaryLight,
+  },
+  categoryChipText: {
     ...typography.label,
-    color: colors.primary,
-    textAlign: 'right',
+    fontSize: 11,
+    color: isDark ? colors.giveTag : colors.primaryDark,
     fontWeight: '700',
-    textTransform: 'none' as const,
   },
-  conditionRow: { flexDirection: 'row', alignItems: 'center', gap: 4 },
-  conditionLabel: { ...typography.body, color: colors.textSecondary },
-  conditionValue: { ...typography.body, color: '#1C1917', fontWeight: '600' },
-  description: { ...typography.body, color: '#1C1917', lineHeight: 24, textAlign: 'right', paddingTop: spacing.sm },
-  // Location row: 28×28 soft-tint icon tile + text, so it matches the
-  // welcome-screen value-prop row pattern.
-  locationRow: { flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm, paddingTop: spacing.sm },
+  metaChipsRow: {
+    flexDirection: 'row',
+    flexWrap: 'wrap',
+    gap: spacing.xs,
+    alignSelf: 'flex-start',
+  },
+  metaChip: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: spacing.sm,
+    paddingVertical: 5,
+    borderRadius: radius.full,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  metaChipText: {
+    ...typography.caption,
+    color: colors.textPrimary,
+    fontWeight: '600',
+  },
+  description: {
+    ...typography.body,
+    color: colors.textPrimary,
+    lineHeight: 24,
+    textAlign: textAlignStart(),
+  },
+  metaSection: {
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
+  },
+  locationRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.sm,
+  },
   locationIcon: {
-    width: 28, height: 28, borderRadius: 8,
+    width: 32,
+    height: 32,
+    borderRadius: radius.md,
     backgroundColor: colors.primarySurface,
-    alignItems: 'center', justifyContent: 'center',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
-  locationText: { ...typography.body, color: colors.textSecondary, flex: 1, textAlign: 'right' },
-  timeText: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
-  divider: { height: 1, backgroundColor: colors.border, marginVertical: spacing.sm },
-  authorRow: { flexDirection: 'row', alignItems: 'center', gap: spacing.md, paddingVertical: spacing.sm },
+  locationText: {
+    ...typography.body,
+    color: colors.textSecondary,
+    flex: 1,
+    textAlign: textAlignStart(),
+  },
+  timeText: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    textAlign: textAlignStart(),
+    paddingStart: 32 + spacing.sm,
+  },
+  authorCard: {
+    marginTop: spacing.xs,
+    padding: spacing.md,
+    borderRadius: radius.lg,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.background,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  authorRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: spacing.md,
+  },
   authorInfo: { flex: 1, gap: 2 },
-  authorName: { ...typography.body, fontWeight: '600', color: '#1C1917', textAlign: 'right' },
-  authorCity: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  authorName: {
+    ...typography.body,
+    fontWeight: '600',
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+  },
+  authorCity: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    textAlign: textAlignStart(),
+  },
+  authorLabel: {
+    ...typography.caption,
+    color: colors.textDisabled,
+    textAlign: textAlignStart(),
+    marginBottom: spacing.xs,
+    fontWeight: '600',
+  },
 
-  // Floating CTA bar — cream backdrop continues through, primary button is now
-  // 56h / radius.xl with a glow shadow so it matches the welcome submit button.
   cta: {
     flexDirection: 'row',
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
+    paddingTop: spacing.md,
     paddingBottom: spacing.base,
     gap: spacing.sm,
-    backgroundColor: colors.background,
+    backgroundColor: colors.surface,
+    borderTopWidth: 1,
+    borderTopColor: colors.border,
+    ...Platform.select({
+      default: {},
+      web: {},
+    }),
   },
   messageBtn: {
     flex: 1,
     height: 56,
+    flexDirection: 'row',
+    gap: spacing.sm,
     backgroundColor: colors.primary,
     borderRadius: radius.xl,
     justifyContent: 'center',
     alignItems: 'center',
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: isDark ? 0.15 : 0.25,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: isDark ? 2 : 4,
   },
   messageBtnText: { ...typography.button, fontSize: 16, color: colors.textInverse },
-});
+}));

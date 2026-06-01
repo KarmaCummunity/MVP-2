@@ -3,12 +3,15 @@
 // Mapped to: FR-PROFILE-001 AC4 (revised), FR-PROFILE-002 AC2 (revised).
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TouchableOpacity, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, useTheme } from '@kc/ui';
+import { PROFILE_GRID_COLUMNS } from '../../hooks/useShellContentWidth';
 import type { ProfileClosedPostsItem } from '@kc/domain';
-import { PostCardProfile } from '../PostCardProfile';
+import { chunkArray } from '../../lib/chunkArray';
+import { postWithOwnerFromPost, type ProfilePostOwnerContext } from '../../lib/postWithOwnerFromPost';
+import { PostCardGrid } from '../PostCardGrid';
 import { EmptyState } from '../EmptyState';
 
 export type ClosedEmptyVariant = 'self_closed' | 'self_hidden_closed' | 'other_closed';
@@ -22,6 +25,8 @@ export interface ProfileClosedPostsGridProps {
   onLoadMore?: () => void;
   /** Profile whose closed-posts tab is shown — forwarded to post detail for D-31 identity projection. */
   profileUserId: string;
+  /** Profile owner context for PostMenuButton / post detail (not shown on grid cards). */
+  postOwner?: ProfilePostOwnerContext;
 }
 
 export function ProfileClosedPostsGrid({
@@ -32,7 +37,10 @@ export function ProfileClosedPostsGrid({
   isLoadingMore = false,
   onLoadMore,
   profileUserId,
+  postOwner,
 }: ProfileClosedPostsGridProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const EMPTY_COPY: Record<ClosedEmptyVariant, {
     title: string;
@@ -69,13 +77,19 @@ export function ProfileClosedPostsGrid({
   return (
     <>
       <View style={styles.grid}>
-        {items.map(({ post, identityRole }) => (
-          <PostCardProfile
-            key={post.postId}
-            post={post}
-            identityRole={identityRole}
-            closedPostsProfileUserId={profileUserId}
-          />
+        {chunkArray(items, PROFILE_GRID_COLUMNS).map((row, rowIndex) => (
+          <View key={rowIndex} style={styles.row}>
+            {row.map(({ post, identityRole }) => (
+              <PostCardGrid
+                key={post.postId}
+                post={postWithOwnerFromPost(post, postOwner)}
+                columns={PROFILE_GRID_COLUMNS}
+                gap={spacing.xs}
+                identityRole={identityRole}
+                closedPostsProfileUserId={profileUserId}
+              />
+            ))}
+          </View>
         ))}
       </View>
       {hasMore && onLoadMore ? (
@@ -98,9 +112,20 @@ export function ProfileClosedPostsGrid({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   loading: { padding: spacing.xl, alignItems: 'center' },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', paddingHorizontal: spacing.base, gap: spacing.xs },
+  grid: {
+    width: '100%',
+    alignSelf: 'stretch' as const,
+    paddingHorizontal: spacing.base,
+    gap: spacing.xs,
+  },
+  row: {
+    flexDirection: 'row' as const,
+    gap: spacing.xs,
+    width: '100%',
+    alignSelf: 'stretch' as const,
+  },
   loadMoreRow: { paddingVertical: spacing.lg, alignItems: 'center' },
   loadMoreBtn: {
     paddingHorizontal: spacing.xl,
@@ -113,4 +138,4 @@ const styles = StyleSheet.create({
   },
   loadMoreBtnBusy: { opacity: 0.6 },
   loadMoreText: { color: colors.primary, fontSize: 15, fontWeight: '600' },
-});
+}));

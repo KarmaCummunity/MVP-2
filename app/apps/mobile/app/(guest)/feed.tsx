@@ -15,16 +15,18 @@ import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { selectGuestPreviewPosts } from '@kc/application';
-import { colors, spacing } from '@kc/ui';
+import { spacing, useTheme } from '@kc/ui';
 import { PostCard } from '../../src/components/PostCard';
 import { GuestJoinModal } from '../../src/components/GuestJoinModal';
 import { FeedCommunityCounter } from '../../src/components/FeedCommunityCounter';
 import { useAuthStore } from '../../src/store/authStore';
 import { getFeedUseCase } from '../../src/services/postsComposition';
 import { useActivePostsCount } from '../../src/hooks/useActivePostsCount';
-import { guestFeedStyles as styles } from './feed.styles';
+import { useGuestFeedStyles } from './feed.styles';
 
 export default function GuestPreviewFeedScreen() {
+  const styles = useGuestFeedStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const insets = useSafeAreaInsets();
@@ -41,6 +43,7 @@ export default function GuestPreviewFeedScreen() {
   const query = useQuery({
     queryKey: ['guest-feed'],
     queryFn: () => getFeedUseCase().execute({ viewerId: null, filter: {}, limit: 6 }),
+    staleTime: 60_000, // PERF-3: feed — realtime fills gaps; tight stale ensures focus-back refresh
   });
   const posts = useMemo(
     () => selectGuestPreviewPosts(query.data?.posts ?? []),

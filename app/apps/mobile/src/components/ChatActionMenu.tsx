@@ -5,7 +5,7 @@
 import React from 'react';
 import { Modal, View, Text, TouchableOpacity, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 
 interface Props {
   readonly visible: boolean;
@@ -22,6 +22,8 @@ export function ChatActionMenu({
   deleteLabel,
   onDeleteFromInbox,
 }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
@@ -55,7 +57,7 @@ export function ChatActionMenu({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'flex-end' },
   sheet: {
     backgroundColor: colors.surface,
@@ -68,4 +70,4 @@ const styles = StyleSheet.create({
   itemDestructive: { color: colors.error },
   itemCancel: { ...typography.semiBold, color: colors.textSecondary },
   divider: { height: StyleSheet.hairlineWidth, backgroundColor: colors.border },
-});
+}));

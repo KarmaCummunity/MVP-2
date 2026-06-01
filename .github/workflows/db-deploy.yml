@@ -1,8 +1,11 @@
 name: DB deploy
 
-# Manually triggered (Actions → DB deploy → Run workflow). Replaces the local
-# `supabase db push --include-all` dance. Defaults to dry-run; flip the
-# `apply` input to true to actually push.
+# Trigger modes:
+#   1. Manual (workflow_dispatch): targets either supabase-prod or supabase-dev,
+#      defaults to dry-run (use for ad-hoc inspection or emergency applies).
+#   2. Auto on push to `dev` or `main` when migration-related paths change:
+#      `dev` → supabase-dev; `main` → supabase-prod. Both targets dry-run, then apply.
+#      DB validate (fresh local stack) must stay green on PRs before merge.
 #
 # Required secrets on the selected GitHub Environment (supabase-prod / supabase-dev):
 #   - SUPABASE_ACCESS_TOKEN    **Account** access token only: https://supabase.com/dashboard/account/tokens
@@ -27,9 +30,16 @@ on:
         description: 'Apply pending migrations to remote (uncheck = dry-run / list only).'
         type: boolean
         default: false
+  push:
+    branches: [dev, main]
+    paths:
+      - 'supabase/migrations/**'
+      - 'supabase/seed.sql'
+      - 'supabase/config.toml'
+      - '.github/workflows/db-deploy.yml'
 
 concurrency:
-  group: db-deploy-${{ inputs.target }}
+  group: db-deploy-${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
   cancel-in-progress: false
 
 permissions:
@@ -37,32 +47,35 @@ permissions:
 
 jobs:
   deploy:
-    name: ${{ inputs.apply && format('apply · {0}', inputs.target) || format('dry-run · {0}', inputs.target) }}
+    name: ${{ github.event_name == 'push' && format('apply · {0} (push)', github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') || (inputs.apply && format('apply · {0}', inputs.target) || format('dry-run · {0}', inputs.target)) }}
     runs-on: ubuntu-latest
     timeout-minutes: 45
     environment:
-      name: ${{ inputs.target }}
+      name: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
 
     env:
+      DEPLOY_ENV: ${{ github.event_name == 'workflow_dispatch' && inputs.target || (github.ref_name == 'main' && 'supabase-prod' || 'supabase-dev') }}
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_DB_PASSWORD: ${{ secrets.SUPABASE_DB_PASSWORD }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1
         with:
-          version: latest
+          # Pinned for deterministic CI. Bump intentionally with a separate PR
+          # that re-runs DB validate/deploy against the new version.
+          version: 2.99.0
 
       - name: Preflight (config + non-empty secrets)
         run: |
           set -euo pipefail
           test -f supabase/config.toml
           if [ -z "${SUPABASE_ACCESS_TOKEN:-}" ]; then
-            echo "::error::SUPABASE_ACCESS_TOKEN is empty. Add it to GitHub → Settings → Environments → ${{ inputs.target }} (not only repository secrets)."
+            echo "::error::SUPABASE_ACCESS_TOKEN is empty. Add it to GitHub → Settings → Environments → ${{ env.DEPLOY_ENV }} (not only repository secrets)."
             exit 1
           fi
           case "$SUPABASE_ACCESS_TOKEN" in
@@ -92,6 +105,12 @@ jobs:
       - name: List pending migrations
         run: supabase migration list --linked --yes
 
+      - name: Dry-run push (before apply)
+        if: >-
+          github.event_name == 'push' ||
+          (github.event_name == 'workflow_dispatch' && inputs.apply)
+        run: supabase db push --dry-run --include-all --linked --yes
+
       - name: Push migrations to remote
-        if: ${{ inputs.apply }}
+        if: ${{ github.event_name == 'push' || (github.event_name == 'workflow_dispatch' && inputs.apply) }}
         run: supabase db push --include-all --linked --yes

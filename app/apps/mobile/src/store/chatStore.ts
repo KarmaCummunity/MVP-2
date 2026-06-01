@@ -4,6 +4,7 @@ import type { Message } from '@kc/domain';
 import type { ChatState, OptimisticMessage } from './chatStoreTypes';
 import { runRefreshInbox, runStartInboxSub } from './chatStoreInboxLifecycle';
 import { reduceBumpInboxForIncomingInsert } from './chatStoreInboxBump';
+import { useActiveScreenStore } from '../lib/notifications/useActiveScreenStore';
 
 export type { OptimisticMessage } from './chatStoreTypes';
 
@@ -56,7 +57,12 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   bumpInboxForIncomingInsert: (viewerId, msg) =>
     set((s) => {
-      const p = reduceBumpInboxForIncomingInsert(s, viewerId, msg);
+      // TD-110 bug 1: suppress unread bump when the viewer is actively in this
+      // chat's screen — the markChatLocallyRead path races the Realtime tick
+      // and produces a brief flicker on the badge otherwise.
+      const activeRoute = useActiveScreenStore.getState().route;
+      const isActiveChat = activeRoute === `/chat/${msg.chatId}`;
+      const p = reduceBumpInboxForIncomingInsert(s, viewerId, msg, isActiveChat);
       return p ? { ...s, ...p } : s;
     }),
 

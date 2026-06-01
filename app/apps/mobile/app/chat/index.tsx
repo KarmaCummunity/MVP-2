@@ -1,12 +1,12 @@
 // Chat list (Inbox) — FR-CHAT-001, FR-CHAT-016.
 import React, { useCallback, useMemo, useState } from 'react';
-import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput, StyleSheet } from 'react-native';
+import { View, Text, FlatList, RefreshControl, TouchableOpacity, TextInput } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { ChatError } from '@kc/application';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { useChatStore } from '../../src/store/chatStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
@@ -21,6 +21,8 @@ const PAGE = 30;
 export default function ChatListScreen() {
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useChatListStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
   const inbox = useChatStore((s) => s.inbox);
   const [q, setQ] = useState('');
@@ -53,7 +55,7 @@ export default function ChatListScreen() {
   }, [inbox, q, visible]);
 
   return (
-    <SafeAreaView style={styles.container} edges={['top']}>
+    <SafeAreaView style={styles.container} edges={['top']} testID="chat-inbox-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()}>
           <Ionicons name="arrow-back" size={24} color={colors.textPrimary} />
@@ -134,7 +136,7 @@ export default function ChatListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useChatListStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.surface },
   header: {
     flexDirection: 'row',
@@ -157,4 +159,4 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
   },
-});
+}));

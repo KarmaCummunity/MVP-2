@@ -18,6 +18,7 @@ export class RestoreSessionUseCase {
 
     const nowSec = Math.floor(Date.now() / 1000);
     if (session.expiresAt <= nowSec) {
+      await this.auth.signOut();
       return { session: null };
     }
 

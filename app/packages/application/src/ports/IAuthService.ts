@@ -26,6 +26,12 @@ export interface AuthSession {
   readonly avatarUrl: string | null;
 }
 
+/** Patch for `IAuthService.syncProfileMetadata` — mirrors `public.users` display fields. */
+export interface AuthProfileMetadataPatch {
+  readonly displayName?: string;
+  readonly avatarUrl?: string | null;
+}
+
 export interface IAuthService {
   /**
    * Create a new credentialed user. Returns the active session, or null if
@@ -65,4 +71,10 @@ export interface IAuthService {
    * link) for an authenticated session.
    */
   verifyEmail(tokenHash: string): Promise<AuthSession>;
+
+  /**
+   * FR-PROFILE-007 / FR-AUTH-003 AC5: keep Supabase Auth `user_metadata` aligned with
+   * `public.users` so cold-start `AuthSession` matches the profile the UI reads from DB.
+   */
+  syncProfileMetadata(patch: AuthProfileMetadataPatch): Promise<void>;
 }

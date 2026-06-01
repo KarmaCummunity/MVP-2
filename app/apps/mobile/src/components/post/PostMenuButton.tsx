@@ -1,27 +1,48 @@
 import { useState } from 'react';
-import { Pressable, StyleSheet } from 'react-native';
+import { Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
 import type { PostWithOwner } from '@kc/application';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
+import { hasPermission, type AdminRole } from '@kc/domain';
 import { useAuthStore } from '../../store/authStore';
-import { useIsSuperAdmin } from '../../hooks/useIsSuperAdmin';
+import { useAdminRoles } from '../../hooks/useAdminRoles';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { PostMenuSheet } from './PostMenuSheet';
 import { usePostSavedActions } from '../../hooks/usePostSavedActions';
 
 interface Props {
   post: PostWithOwner;
+  /** Override icon color (e.g. white on image overlays). */
+  iconColor?: string;
+  /**
+   * `overlay` fills the parent touch target (grid card menu chip).
+   * `header` uses a compact bar-button footprint (post detail nav).
+   */
+  placement?: 'overlay' | 'header';
+  /** When false, omits the share row (post detail already has a header share button). */
+  showShareInMenu?: boolean;
+  /** Smaller ⋮ icon for dense profile 3-column grids. */
+  overlaySize?: 'default' | 'compact';
 }
 
-export function PostMenuButton({ post }: Props) {
+export function PostMenuButton({
+  post,
+  iconColor,
+  placement = 'overlay',
+  overlaySize = 'default',
+  showShareInMenu = true,
+}: Props) {
   const { t } = useTranslation();
   const router = useRouter();
   const queryClient = useQueryClient();
+  const styles = usePostMenuButtonStyles();
+  const { colors } = useTheme();
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
-  const isSuperAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canManuallyRemovePost = hasPermission(roles as readonly AdminRole[], 'reports.manual_remove_post');
   const [open, setOpen] = useState(false);
   const { isSaved, busy: saveBusy, toggleSave } = usePostSavedActions(post.postId);
 
@@ -33,21 +54,32 @@ export function PostMenuButton({ post }: Props) {
   return (
     <>
       <Pressable
-        style={styles.btn}
+        style={placement === 'header' ? styles.btnHeader : styles.btnOverlay}
         onPress={() => setOpen(true)}
         accessibilityLabel={t('post.menuA11y')}
         accessibilityRole="button"
         hitSlop={8}
       >
-        <Ionicons name="ellipsis-vertical" size={22} color={colors.textPrimary} />
+        <Ionicons
+          name="ellipsis-vertical"
+          size={
+            placement === 'header'
+              ? 22
+              : overlaySize === 'compact'
+                ? 14
+                : 20
+          }
+          color={iconColor ?? colors.textPrimary}
+        />
       </Pressable>
 
       <PostMenuSheet
         visible={open}
         onClose={() => setOpen(false)}
         post={post}
+        showShareInMenu={showShareInMenu}
         viewerId={viewerId}
-        isSuperAdmin={isSuperAdmin}
+        isSuperAdmin={canManuallyRemovePost}
         isSaved={isSaved}
         saveBusy={saveBusy}
         onToggleSave={toggleSave}
@@ -67,6 +99,18 @@ export function PostMenuButton({ post }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
-  btn: { padding: 4, marginEnd: 4 },
-});
+const usePostMenuButtonStyles = makeUseStyles(() => ({
+  btnOverlay: {
+    width: '100%',
+    height: '100%',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  btnHeader: {
+    paddingStart: 0,
+    paddingEnd: 4,
+    paddingVertical: 4,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+}));

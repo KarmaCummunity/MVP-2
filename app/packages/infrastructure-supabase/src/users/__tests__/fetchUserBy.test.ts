@@ -15,6 +15,7 @@ function makeFakeClient(opts: {
   data?: unknown;
   error?: { message: string } | null;
   viewerId?: string | null;
+  privateSlice?: typeof FAKE_PRIVATE_SLICE | null;
 }): { client: SupabaseClient<any>; calls: QueryCall[] } {
   const calls: QueryCall[] = [];
   const client = {
@@ -28,6 +29,12 @@ function makeFakeClient(opts: {
         }),
       }),
     }),
+    rpc: async (fn: string) => {
+      if (fn === 'users_get_self_private_fields') {
+        return { data: opts.privateSlice ?? FAKE_PRIVATE_SLICE, error: null };
+      }
+      return { data: null, error: null };
+    },
     auth: {
       getSession: async () => ({
         data: {
@@ -42,6 +49,15 @@ function makeFakeClient(opts: {
   return { client, calls };
 }
 
+const FAKE_PRIVATE_SLICE = {
+  contact_phone: '050-9999999',
+  profile_street: 'Herzl',
+  profile_street_number: '1',
+  notification_preferences: { critical: false, social: true },
+  is_super_admin: true,
+  active_posts_count_internal: 7,
+};
+
 const FAKE_USER_ROW = {
   user_id: 'u_target',
   auth_provider: 'google',
@@ -49,8 +65,6 @@ const FAKE_USER_ROW = {
   display_name: 'Target',
   city: 'IL-001',
   city_name: 'Tel Aviv',
-  profile_street: null,
-  profile_street_number: null,
   biography: null,
   avatar_url: null,
   privacy_mode: 'Public',
@@ -72,18 +86,19 @@ const FAKE_USER_ROW = {
 
 describe('fetchUserBy', () => {
   describe('query shape', () => {
-    it('queries users table selecting * with eq(user_id, value).maybeSingle', async () => {
+    it('queries users table with an explicit column list and eq(user_id, value).maybeSingle', async () => {
       const { client, calls } = makeFakeClient({ data: null });
 
       await fetchUserBy(client, 'user_id', 'u_target');
 
       expect(calls).toHaveLength(1);
-      expect(calls[0]).toEqual({
-        table: 'users',
-        selected: '*',
-        eqCol: 'user_id',
-        eqVal: 'u_target',
-      });
+      expect(calls[0]?.table).toBe('users');
+      expect(calls[0]?.selected).toContain('user_id');
+      expect(calls[0]?.selected).toContain('share_handle');
+      expect(calls[0]?.selected).not.toBe('*');
+      expect(calls[0]?.selected).not.toContain('contact_phone');
+      expect(calls[0]?.eqCol).toBe('user_id');
+      expect(calls[0]?.eqVal).toBe('u_target');
     });
 
     it('queries by share_handle when that column variant is requested', async () => {
@@ -118,6 +133,23 @@ describe('fetchUserBy', () => {
       expect(out!.activePostsCountInternal).toBe(7);
       expect(out!.itemsGivenCount).toBe(3);
       expect(out!.itemsReceivedCount).toBe(2);
+      expect(out!.contactPhone).toBe('050-9999999');
+    });
+  });
+
+  describe('TD-163 — PII scrub for non-owner viewers', () => {
+    it('strips contact_phone and address for a different signed-in viewer', async () => {
+      const { client } = makeFakeClient({
+        data: FAKE_USER_ROW,
+        viewerId: 'u_someone_else',
+      });
+
+      const out = await fetchUserBy(client, 'user_id', 'u_target');
+
+      expect(out!.contactPhone).toBeNull();
+      expect(out!.profileStreet).toBeNull();
+      expect(out!.profileStreetNumber).toBeNull();
+      expect(out!.isSuperAdmin).toBe(false);
     });
   });
 

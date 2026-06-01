@@ -1,0 +1,73 @@
+# SonarCloud — fail PRs when Quality Gate fails on new code.
+# Requires repo/org secret SONAR_TOKEN (SonarCloud user token).
+# See docs/dev/SONAR.md for setup, waivers, and branch protection.
+#
+# `SonarCloud quality gate` is a REQUIRED status check on dev/main (branch
+# protection) — keep the job name stable. Because it is required, the
+# pull_request trigger runs on every non-draft PR (no path filter): the gate
+# context is posted by the SonarCloud scan, so the scan must run for the context
+# to report. Path-filtering it left the required context permanently "Expected"
+# on backend-only / docs-only PRs and blocked their merge (same fix as
+# ci-backend.yml / ci-contract.yml / ci-frontend.yml). A PR with no new code
+# passes the gate trivially.
+
+name: CI — SonarCloud
+
+on:
+  pull_request:
+    branches: [main, dev]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-sonar-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: write
+
+jobs:
+  sonarcloud:
+    name: SonarCloud quality gate
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - name: Require SONAR_TOKEN
+        run: |
+          if [ -z "${{ secrets.SONAR_TOKEN }}" ]; then
+            echo "::error::Missing SONAR_TOKEN repository/org secret. See docs/dev/SONAR.md"
+            exit 1
+          fi
+
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          version: 9.0.0
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: 20
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install dependencies
+        working-directory: app
+        run: pnpm install --frozen-lockfile
+
+      - name: Generate coverage (vitest lcov per package)
+        working-directory: app
+        run: pnpm test:coverage
+
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarqube-scan-action@v8.1.0
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}

@@ -1,0 +1,223 @@
+// Generic searchable modal picker. Used by CityPicker + StreetPicker so the
+// two surfaces are guaranteed visually + behaviorally identical (PM
+// requirement 2026-05-18). All non-trivial logic lives in
+// `searchablePickerLogic.ts` (unit tested); the component is the JSX shell.
+
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import {
+  ActivityIndicator,
+  FlatList,
+  Modal,
+  Pressable,
+  Text,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
+import { useTranslation } from 'react-i18next';
+import { useTheme } from '@kc/ui';
+import {
+  filterItems,
+  freeTextSelection,
+  shouldShowFreeTextRow,
+  type SearchablePickerItemDescriptor,
+} from './searchablePickerLogic';
+import { useSearchablePickerStyles } from './searchablePickerStyles';
+
+export interface SearchablePickerProps<T> {
+  readonly title: string;
+  readonly placeholder: string;
+  readonly value: SearchablePickerItemDescriptor | null;
+  readonly items: readonly T[] | null;
+  readonly isLoading: boolean;
+  readonly error: unknown;
+  readonly disabled?: boolean;
+  readonly disabledHelperText?: string;
+  readonly onDisabledPress?: () => void;
+  readonly onSelect: (selection: SearchablePickerItemDescriptor) => void;
+  readonly matchItem: (item: T, query: string) => boolean;
+  readonly renderRow: (item: T) => SearchablePickerItemDescriptor;
+  readonly allowFreeText?: boolean;
+  readonly emptyText?: string;
+  readonly errorText?: string;
+  /** When set, error state shows a retry control (e.g. refetch streets). */
+  readonly onErrorRetry?: () => void;
+}
+
+export function SearchablePicker<T>(props: SearchablePickerProps<T>) {
+  const {
+    title,
+    placeholder,
+    value,
+    items,
+    isLoading,
+    error,
+    disabled,
+    disabledHelperText,
+    onDisabledPress,
+    onSelect,
+    matchItem,
+    renderRow,
+    allowFreeText,
+    emptyText,
+    errorText,
+    onErrorRetry,
+  } = props;
+  const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useSearchablePickerStyles();
+  const [open, setOpen] = useState(false);
+  const [query, setQuery] = useState('');
+  const searchInputRef = useRef<TextInput>(null);
+
+  useEffect(() => {
+    if (!open) return;
+    const timer = setTimeout(() => searchInputRef.current?.focus(), 100);
+    return () => clearTimeout(timer);
+  }, [open]);
+
+  const filtered = useMemo<readonly T[]>(
+    () => filterItems(items, query, matchItem),
+    [items, query, matchItem],
+  );
+
+  const showFreeTextRow = useMemo(
+    () => shouldShowFreeTextRow({ allowFreeText, query, items, renderRow }),
+    [allowFreeText, query, items, renderRow],
+  );
+
+  const handleFieldPress = useCallback(() => {
+    if (disabled) {
+      onDisabledPress?.();
+      return;
+    }
+    setOpen(true);
+  }, [disabled, onDisabledPress]);
+
+  const closeModal = useCallback(() => {
+    setOpen(false);
+    setQuery('');
+  }, []);
+
+  const handleRowPress = useCallback(
+    (selection: SearchablePickerItemDescriptor) => {
+      onSelect(selection);
+      closeModal();
+    },
+    [onSelect, closeModal],
+  );
+
+  const handleFreeTextPress = useCallback(() => {
+    handleRowPress(freeTextSelection(query));
+  }, [handleRowPress, query]);
+
+  const resolvedEmptyText = emptyText ?? t('profile.cityPickerEmpty');
+  const resolvedErrorText = errorText ?? t('profile.cityPickerError');
+  const trimmedQuery = query.trim();
+
+  return (
+    <>
+      <TouchableOpacity
+        style={[styles.field, disabled ? styles.fieldDisabled : null]}
+        onPress={handleFieldPress}
+        accessibilityRole="button"
+        accessibilityLabel={title}
+        accessibilityState={{ disabled: !!disabled }}
+      >
+        <Text style={[styles.value, !value ? styles.valuePlaceholder : null]}>
+          {value ? value.name : title}
+        </Text>
+      </TouchableOpacity>
+      {disabled && disabledHelperText ? (
+        <Text style={styles.disabledHelper}>{disabledHelperText}</Text>
+      ) : null}
+
+      <Modal
+        visible={open}
+        transparent
+        animationType="slide"
+        onRequestClose={closeModal}
+      >
+        <View style={styles.modalRoot}>
+          <Pressable
+            style={styles.backdropPressable}
+            onPress={closeModal}
+            accessibilityRole="button"
+            accessibilityLabel={t('profile.cityPickerCloseA11y')}
+          />
+          <View style={styles.sheetOuter} pointerEvents="box-none">
+            <View style={styles.sheet}>
+              <Text style={styles.sheetTitle}>{title}</Text>
+              <TextInput
+                ref={searchInputRef}
+                style={styles.search}
+                placeholder={placeholder}
+                placeholderTextColor={colors.textDisabled}
+                value={query}
+                onChangeText={setQuery}
+                textAlign="right"
+                autoCorrect={false}
+                autoCapitalize="none"
+              />
+              {isLoading ? (
+                <View style={styles.statusRow}>
+                  <ActivityIndicator color={colors.primary} />
+                </View>
+              ) : error != null ? (
+                <View style={styles.errorBlock}>
+                  <Text style={styles.errorText}>{resolvedErrorText}</Text>
+                  {onErrorRetry ? (
+                    <TouchableOpacity
+                      style={styles.retryButton}
+                      onPress={onErrorRetry}
+                      accessibilityRole="button"
+                      accessibilityLabel={t('general.retry')}
+                    >
+                      <Text style={styles.retryLabel}>{t('general.retry')}</Text>
+                    </TouchableOpacity>
+                  ) : null}
+                </View>
+              ) : (
+                <FlatList
+                  data={filtered as T[]}
+                  keyExtractor={(item, idx) => `${renderRow(item).id}-${idx}`}
+                  keyboardShouldPersistTaps="handled"
+                  ListHeaderComponent={
+                    showFreeTextRow ? (
+                      <TouchableOpacity
+                        style={[styles.row, styles.freeTextRow]}
+                        onPress={handleFreeTextPress}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.freeTextLabel}>
+                          {t('profile.streetPickerUseMyText', { value: trimmedQuery })}
+                        </Text>
+                      </TouchableOpacity>
+                    ) : null
+                  }
+                  ListEmptyComponent={
+                    !showFreeTextRow ? (
+                      <Text style={styles.emptyText}>{resolvedEmptyText}</Text>
+                    ) : null
+                  }
+                  renderItem={({ item }) => {
+                    const row = renderRow(item);
+                    return (
+                      <TouchableOpacity
+                        style={styles.row}
+                        onPress={() => handleRowPress(row)}
+                        accessibilityRole="button"
+                      >
+                        <Text style={styles.rowText}>{row.name}</Text>
+                      </TouchableOpacity>
+                    );
+                  }}
+                />
+              )}
+            </View>
+          </View>
+        </View>
+      </Modal>
+    </>
+  );
+}
