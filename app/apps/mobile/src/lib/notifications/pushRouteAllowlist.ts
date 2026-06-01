@@ -12,7 +12,7 @@
 
 import type { PushData, NotificationKind } from '@kc/domain';
 
-type ResolvedRoute = { pathname: string; params: Record<string, string> };
+export type ResolvedRoute = { pathname: string; params: Record<string, string> };
 
 // RFC 4122 UUID shape, version-agnostic. Sole gatekeeper on id params.
 const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
