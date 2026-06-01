@@ -24,6 +24,9 @@ export default tseslint.config(
   },
   js.configs.recommended,
   ...tseslint.configs.recommended,
+  // eslint 10 promoted `no-useless-assignment` into js.recommended; keep it at
+  // `warn` to match this repo's smell-as-warning policy (tighten incrementally).
+  { rules: { 'no-useless-assignment': 'warn' } },
   // Node-environment TS packages: domain / application / infrastructure.
   {
     files: [
@@ -58,7 +61,11 @@ export default tseslint.config(
     },
     rules: {
       ...reactPlugin.configs.recommended.rules,
-      ...reactHooksPlugin.configs.recommended.rules,
+      // eslint-plugin-react-hooks v7's `recommended` enables the opinionated
+      // React-Compiler rule set (set-state-in-effect, refs, use-memo) at error.
+      // Keep the classic two rules; adopt the rest deliberately later (repo policy).
+      'react-hooks/rules-of-hooks': 'error',
+      'react-hooks/exhaustive-deps': 'warn',
       'react/react-in-jsx-scope': 'off',
       'react/prop-types': 'off',
       'react/display-name': 'off',
