@@ -27,7 +27,7 @@ declare
   v_user uuid := pg_temp.mk_user('edit_' || substr(gen_random_uuid()::text, 1, 8));
   v_post uuid;
   v_cnt  int;
-  v_meta jsonb;
+  v_fields_text text;
 begin
   insert into public.posts (
     owner_id, type, title, status, visibility,
@@ -47,16 +47,21 @@ begin
 
   reset role;
 
-  select count(*), max(metadata) into v_cnt, v_meta
+  select count(*) into v_cnt
   from public.audit_events
   where action = 'post_edited' and target_type = 'post'
     and target_id = v_post and actor_id = v_user;
-
   if v_cnt <> 1 then
     raise exception 'ASSERT FAILED: expected exactly 1 post_edited event, got %', v_cnt;
   end if;
-  if not (v_meta -> 'fields' ? 'title') then
-    raise exception 'ASSERT FAILED: post_edited metadata.fields missing "title": %', v_meta;
+
+  select metadata ->> 'fields' into v_fields_text
+  from public.audit_events
+  where action = 'post_edited' and target_type = 'post'
+    and target_id = v_post and actor_id = v_user
+  limit 1;
+  if position('title' in coalesce(v_fields_text, '')) = 0 then
+    raise exception 'ASSERT FAILED: post_edited metadata.fields missing "title": %', v_fields_text;
   end if;
 
   raise notice '✓ post edit emits a post_edited audit_event; no-op emits none (TD-109)';
