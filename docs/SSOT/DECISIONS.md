@@ -1050,10 +1050,25 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-57 — Reports require an active account (2026-06-01)
+
+**Date.** 2026-06-01
+
+**Decision.** `reports_insert_self` (RLS `WITH CHECK`) now also requires `is_active_member(auth.uid())`, so a `suspended_admin` / `suspended_for_false_reports` / `banned` user can no longer create a `Report` via the direct PostgREST path. This resolves the TD-88 fork in favour of gating (rather than documenting a deliberate exception). Migration `0183`.
+
+**Rationale.** Consistent with the `0072` INSERT-active stance already enforced on posts / chats / messages, and with the moderation model itself — `suspended_for_false_reports` exists precisely to stop report abuse, so letting such a user keep filing reports is self-contradictory. `FR-MOD-001` has no AC requiring a non-active user to report. The mobile client already routes suspended/banned users to `/account-blocked` (`useEnforceAccountGate`), so this is server-side defense-in-depth, not an in-app flow change.
+
+**Alternatives rejected.** Document a deliberate exception that lets banned users keep reporting (the other TD-88 fork) — no product or legal requirement for it, and it leaves a retaliatory-report vector open. Gate in the application layer only — the RLS `WITH CHECK` is the authoritative boundary against direct-API abuse.
+
+**Affected docs.** `supabase/migrations/0183_reports_insert_requires_active_member.sql`, `supabase/tests/0183_reports_insert_active_member.sql`, `docs/SSOT/TECH_DEBT.md` (TD-88 closed).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |
 | 3.8 | 2026-05-29 | Added `D-56` (rides UI restored + V3.0 scope: FR-RIDE-019 + FR-RIDE-023..045 — advanced publish, dashboard, active-ride + emergency, ratings, business rules, cross-world). Supersedes `D-51`. |
 | 3.7 | 2026-05-28 | Added `D-55` (Playwright P0 E2E on `DEV_WEB_URL` gates `dev` → `main`; email/password CI auth; `TESTING.md`). |
 | 3.6 | 2026-05-28 | Added `D-54` (selective dev CI hardening: `ci-dev-guard`, dev+prod DB dry-run, dev branch-protection doc; not 1:1 main copy). |
