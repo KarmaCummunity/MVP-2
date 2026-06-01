@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { escapeIlike, findMatchingCategorySlug } from '../searchUtils';
+import { escapeIlike, quoteOrValue, findMatchingCategorySlug } from '../searchUtils';
 
 describe('escapeIlike', () => {
   it('returns an empty string unchanged', () => {
@@ -45,6 +45,42 @@ describe('escapeIlike', () => {
     // (only %, _, and \\ are). The mapper deliberately leaves them alone.
     expect(escapeIlike('[*]')).toBe('[*]');
     expect(escapeIlike("O'Reilly")).toBe("O'Reilly");
+  });
+});
+
+describe('quoteOrValue', () => {
+  it('wraps a plain value as a double-quoted ilike pattern', () => {
+    expect(quoteOrValue('sofa')).toBe('"%sofa%"');
+  });
+
+  it('wraps an empty query', () => {
+    expect(quoteOrValue('')).toBe('"%%"');
+  });
+
+  it('keeps a comma inside the quotes so it cannot open a new predicate', () => {
+    expect(quoteOrValue('a,b')).toBe('"%a,b%"');
+  });
+
+  it('keeps period, parentheses and colon literal inside the quotes', () => {
+    expect(quoteOrValue('a.b(c):d')).toBe('"%a.b(c):d%"');
+  });
+
+  it('escapes an embedded double quote so the value cannot break out of the wrapper', () => {
+    expect(quoteOrValue('a"b')).toBe('"%a\\"b%"');
+  });
+
+  it('escapes a backslash for both the ilike and the postgrest-quote layers', () => {
+    // one backslash -> ilike-escaped to two -> quote-escaped to four
+    expect(quoteOrValue(String.raw`a\b`)).toBe(String.raw`"%a\\\\b%"`);
+  });
+
+  it('still escapes ilike wildcards so % and _ match literally', () => {
+    expect(quoteOrValue('50%')).toBe(String.raw`"%50\\%%"`);
+    expect(quoteOrValue('user_name')).toBe(String.raw`"%user\\_name%"`);
+  });
+
+  it('neutralizes a predicate-injection attempt by quoting the whole value', () => {
+    expect(quoteOrValue('x,title.eq.secret')).toBe('"%x,title.eq.secret%"');
   });
 });
 
