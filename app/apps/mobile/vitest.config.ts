@@ -55,7 +55,9 @@ export default defineConfig({
         // Misc one-liners
         'src/utils/openExternalUrl.ts',
         'src/lib/container.ts',
-        'src/lib/tapHandler.ts',
+        // Notification tap hook: IO wiring (expo-router/expo-notifications) — the
+        // pure routing logic lives in tapRouting.ts and IS unit-tested.
+        'src/lib/notifications/tapHandler.ts',
         'src/lib/permissionGate.ts',
       ],
       thresholds: {
