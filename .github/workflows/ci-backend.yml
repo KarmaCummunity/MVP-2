@@ -43,7 +43,7 @@ jobs:
       backend: ${{ steps.filter.outputs.backend }}
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
       - name: Detect backend-relevant changes
@@ -67,7 +67,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
           node-version: 22
@@ -91,7 +91,7 @@ jobs:
 
       - name: Checkout
         if: needs.changes.outputs.backend == 'true'
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Supabase CLI
         if: needs.changes.outputs.backend == 'true'

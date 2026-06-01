@@ -2,6 +2,7 @@ version: 2
 updates:
   - package-ecosystem: "npm"
     directory: "/app"
+    target-branch: "dev"
     schedule:
       interval: "weekly"
       day: "monday"
@@ -21,6 +22,7 @@ updates:
 
   - package-ecosystem: "github-actions"
     directory: "/"
+    target-branch: "dev"
     schedule:
       interval: "monthly"
     open-pull-requests-limit: 5
