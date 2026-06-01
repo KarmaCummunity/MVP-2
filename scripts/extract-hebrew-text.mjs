@@ -32,6 +32,7 @@
 
 import fs from "node:fs";
 import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const REPO_ROOT = path.resolve(import.meta.dirname, "..");
 const DEFAULT_OUT = path.join(REPO_ROOT, "scripts", "hebrew-text-report.md");
@@ -128,7 +129,7 @@ function isSkippedContentTreeRel(relPosix) {
 }
 
 /** Per-path skips: tests, edge functions, native plist copy, agent doc, explicit path exceptions. */
-function isSkippedHebrewScanRel(relPosix) {
+export function isSkippedHebrewScanRel(relPosix) {
   if (isSkippedContentTreeRel(relPosix)) return true;
   if (SKIP_HEBREW_SCAN_EXACT_RELS.has(relPosix)) return true;
   if (relPosix === "CLAUDE.md") return true;
@@ -156,7 +157,7 @@ function isProbablyTextFile(filePath) {
   return false;
 }
 
-function* walk(dir, skipScanAbs) {
+function* walk(dir, skipScanAbs, repoRoot) {
   let entries;
   try {
     entries = fs.readdirSync(dir, { withFileTypes: true });
@@ -165,11 +166,11 @@ function* walk(dir, skipScanAbs) {
   }
   for (const ent of entries) {
     const full = path.join(dir, ent.name);
-    const relPosix = path.relative(REPO_ROOT, full).replace(/\\/g, "/");
+    const relPosix = path.relative(repoRoot, full).replace(/\\/g, "/");
     if (isSkippedHebrewScanRel(relPosix)) continue;
     if (ent.isDirectory()) {
       if (shouldSkipDir(ent.name)) continue;
-      yield* walk(full, skipScanAbs);
+      yield* walk(full, skipScanAbs, repoRoot);
     } else if (ent.isFile()) {
       if (SKIP_FILE_NAMES.has(ent.name)) continue;
       const resolved = path.resolve(full);
@@ -180,14 +181,14 @@ function* walk(dir, skipScanAbs) {
   }
 }
 
-function extractFromFile(absPath) {
+function extractFromFile(absPath, repoRoot) {
   let content;
   try {
     content = fs.readFileSync(absPath, "utf8");
   } catch {
     return null;
   }
-  const rel = path.relative(REPO_ROOT, absPath);
+  const rel = path.relative(repoRoot, absPath);
   const hits = [];
   const lines = content.split(/\r?\n/);
   lines.forEach((line, idx) => {
@@ -197,16 +198,26 @@ function extractFromFile(absPath) {
   return hits.length ? { rel, hits } : null;
 }
 
-function main() {
-  const { check, outArg } = parseArgs(process.argv);
-  const outPath = path.resolve(outArg || DEFAULT_OUT);
+/**
+ * Pure scan entry point (testable): walk `repoRoot` and return the sorted list of
+ * `{ rel, hits }` for every non-skipped text file that contains Hebrew codepoints.
+ * `skipScanAbs` is an absolute path to omit from the walk (the report output file).
+ */
+export function collectHebrewViolations(repoRoot = REPO_ROOT, skipScanAbs = null) {
   const byFile = [];
-  const skipScanAbs = path.normalize(outPath);
-  for (const abs of walk(REPO_ROOT, skipScanAbs)) {
-    const row = extractFromFile(abs);
+  for (const abs of walk(repoRoot, skipScanAbs, repoRoot)) {
+    const row = extractFromFile(abs, repoRoot);
     if (row) byFile.push(row);
   }
   byFile.sort((a, b) => a.rel.localeCompare(b.rel));
+  return byFile;
+}
+
+function main() {
+  const { check, outArg } = parseArgs(process.argv);
+  const outPath = path.resolve(outArg || DEFAULT_OUT);
+  const skipScanAbs = path.normalize(outPath);
+  const byFile = collectHebrewViolations(REPO_ROOT, skipScanAbs);
 
   const iso = new Date().toISOString();
   let md = `# Hebrew text scan\nGenerated: ${iso}\nFiles: **${byFile.length}**\n`;
@@ -236,4 +247,6 @@ function main() {
   }
 }
 
-main();
+if (process.argv[1] === fileURLToPath(import.meta.url)) {
+  main();
+}
