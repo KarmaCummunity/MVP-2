@@ -10,17 +10,12 @@ import { supabase } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
 
 async function fetchIsSuperAdmin(userId: string): Promise<boolean> {
-  const { data, error } = await supabase
-    .from('users')
-    .select('is_super_admin')
-    .eq('user_id', userId)
-    .maybeSingle();
-
-  if (error) {
-    // RLS lets a user read their own row; if this fails, treat as non-admin.
-    return false;
-  }
-  return data?.is_super_admin === true;
+  // TD-163: the `is_super_admin` column is no longer client-readable (migration
+  // 0163 revoked the SELECT grant). Resolve admin status via the SECURITY
+  // DEFINER is_admin(uid) RPC. On any failure, fail closed → treat as non-admin.
+  const { data, error } = await supabase.rpc('is_admin', { uid: userId });
+  if (error) return false;
+  return data === true;
 }
 
 export function useIsSuperAdmin(): boolean {

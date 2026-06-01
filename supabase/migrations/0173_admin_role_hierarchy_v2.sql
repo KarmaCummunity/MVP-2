@@ -23,7 +23,7 @@
 
 -- ── 1. Widen role allow-list with 'admin' ──────────────────────────────────
 alter table public.admin_role_grants
-  drop constraint admin_role_grants_role_check;
+  drop constraint if exists admin_role_grants_role_check;
 
 alter table public.admin_role_grants
   add constraint admin_role_grants_role_check check (role in (
@@ -37,10 +37,13 @@ alter table public.admin_role_grants
 
 -- ── 2. scope_org_id column + scope-shape constraint ────────────────────────
 alter table public.admin_role_grants
-  add column scope_org_id uuid;
+  add column if not exists scope_org_id uuid;
 
 comment on column public.admin_role_grants.scope_org_id is
   'Org-scope for org_admin / org_manager / org_employee / volunteer_manager / org_volunteer. NULL for platform-wide roles. No FK in this slice — organizations table lands in a follow-up.';
+
+alter table public.admin_role_grants
+  drop constraint if exists admin_role_grants_scope_shape;
 
 alter table public.admin_role_grants
   add constraint admin_role_grants_scope_shape check (
@@ -57,16 +60,16 @@ alter table public.admin_role_grants
   );
 
 -- ── 3. Swap unique-active-grant index to include scope ─────────────────────
-drop index admin_role_grants_active_user_role_uniq;
+drop index if exists admin_role_grants_active_user_role_uniq;
 
-create unique index admin_role_grants_active_user_role_scope_uniq
+create unique index if not exists admin_role_grants_active_user_role_scope_uniq
   on public.admin_role_grants (
     user_id, role,
     coalesce(scope_org_id, '00000000-0000-0000-0000-000000000000'::uuid)
   )
   where revoked_at is null;
 
-create index admin_role_grants_scope_role_active_idx
+create index if not exists admin_role_grants_scope_role_active_idx
   on public.admin_role_grants (scope_org_id, role)
   where revoked_at is null and scope_org_id is not null;
 
