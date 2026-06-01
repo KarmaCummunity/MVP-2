@@ -51,15 +51,17 @@ begin
     return new;
   end if;
 
-  if new.title                  is distinct from old.title                  then v_fields := v_fields || 'title'; end if;
-  if new.description            is distinct from old.description            then v_fields := v_fields || 'description'; end if;
-  if new.category               is distinct from old.category               then v_fields := v_fields || 'category'; end if;
-  if new.item_condition         is distinct from old.item_condition         then v_fields := v_fields || 'item_condition'; end if;
-  if new.urgency                is distinct from old.urgency                then v_fields := v_fields || 'urgency'; end if;
-  if new.location_display_level is distinct from old.location_display_level then v_fields := v_fields || 'location_display_level'; end if;
-  if new.city                   is distinct from old.city                   then v_fields := v_fields || 'city'; end if;
-  if new.street                 is distinct from old.street                 then v_fields := v_fields || 'street'; end if;
-  if new.street_number          is distinct from old.street_number          then v_fields := v_fields || 'street_number'; end if;
+  -- array_append (not `|| 'literal'`) so an unknown-type literal can't resolve
+  -- to `anyarray || anyarray` and raise "malformed array literal".
+  if new.title                  is distinct from old.title                  then v_fields := array_append(v_fields, 'title'); end if;
+  if new.description            is distinct from old.description            then v_fields := array_append(v_fields, 'description'); end if;
+  if new.category               is distinct from old.category               then v_fields := array_append(v_fields, 'category'); end if;
+  if new.item_condition         is distinct from old.item_condition         then v_fields := array_append(v_fields, 'item_condition'); end if;
+  if new.urgency                is distinct from old.urgency                then v_fields := array_append(v_fields, 'urgency'); end if;
+  if new.location_display_level is distinct from old.location_display_level then v_fields := array_append(v_fields, 'location_display_level'); end if;
+  if new.city                   is distinct from old.city                   then v_fields := array_append(v_fields, 'city'); end if;
+  if new.street                 is distinct from old.street                 then v_fields := array_append(v_fields, 'street'); end if;
+  if new.street_number          is distinct from old.street_number          then v_fields := array_append(v_fields, 'street_number'); end if;
 
   -- No FR-POST-008 content column changed (status / visibility-only update).
   if array_length(v_fields, 1) is null then
