@@ -104,8 +104,11 @@ export function MessageBubble({
 
 const useMessageBubbleStyles = makeUseStyles(({ colors }) => ({
   bubble: { maxWidth: '80%', padding: spacing.md, borderRadius: radius.lg, gap: 4 },
-  bubbleMine: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderBottomLeftRadius: 4 },
-  bubbleOther: { alignSelf: 'flex-end', backgroundColor: colors.surface, borderBottomRightRadius: 4, borderWidth: 1, borderColor: colors.border },
+  // Tail-notch corner uses logical start/end radii so web (RN-Web maps these to
+  // CSS border-*-*-radius) and native (RN ≥ 0.71) mirror identically under RTL —
+  // physical Left/Right diverged between the two platforms (TD-159).
+  bubbleMine: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderBottomStartRadius: 4 },
+  bubbleOther: { alignSelf: 'flex-end', backgroundColor: colors.surface, borderBottomEndRadius: 4, borderWidth: 1, borderColor: colors.border },
   bubbleText: { ...typography.body },
   bubbleTextMine: { color: colors.textInverse },
   bubbleTextOther: { color: colors.textPrimary, textAlign: rtlTextAlignStart },
