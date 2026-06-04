@@ -29,9 +29,11 @@ FROM node:20-alpine AS runner
 WORKDIR /srv
 
 # Server package brings hono + @hono/node-server only. Tiny dep surface.
-COPY --from=builder /repo/app/apps/mobile/web-server/package.json ./
-COPY --from=builder /repo/app/apps/mobile/web-server/package-lock.json ./
-RUN npm ci --omit=dev
+# Use `npm install` (not `npm ci`): the 2-dep server doesn't need a committed
+# lockfile, and `npm ci` hard-fails the build if the lockfile isn't in the build
+# context (the Railway crash on 2026-06-04). Matches the proven `main` Dockerfile.
+COPY --from=builder /repo/app/apps/mobile/web-server/package.json ./package.json
+RUN npm install --omit=dev
 
 COPY --from=builder /repo/app/apps/mobile/web-server/server.mjs ./server.mjs
 COPY --from=builder /repo/app/apps/mobile/web-server/i18n ./i18n
