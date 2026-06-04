@@ -10,6 +10,7 @@ export { SupabasePostRepository } from './posts/SupabasePostRepository';
 export { SupabaseSavedPostsRepository } from './posts/SupabaseSavedPostsRepository';
 export { SupabaseChatRepository } from './chat/SupabaseChatRepository';
 export { SupabaseChatRealtime } from './chat/SupabaseChatRealtime';
+export { SupabaseUserRealtime } from './users/SupabaseUserRealtime';
 export { SupabaseFeedRealtime } from './feed/SupabaseFeedRealtime';
 export { SupabaseStatsRepository } from './stats/SupabaseStatsRepository';
 export { SupabaseAboutRepository } from './about/SupabaseAboutRepository';

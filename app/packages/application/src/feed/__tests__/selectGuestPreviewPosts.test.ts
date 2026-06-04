@@ -19,6 +19,7 @@ const base = (id: string, createdAt: string, visibility: 'Public' | 'FollowersOn
   locationDisplayLevel: 'CityOnly',
   itemCondition: 'Good',
   urgency: null,
+  estimatedValue: null,
   mediaAssets: [],
   recipient: null,
   recipientUser: null,

@@ -935,6 +935,121 @@ export type Database = {
           },
         ]
       }
+      karma_drift_events: {
+        Row: {
+          detected_at: string
+          drift_id: number
+          new_value: number
+          old_value: number
+          run_id: number
+          user_id: string
+        }
+        Insert: {
+          detected_at?: string
+          drift_id?: number
+          new_value: number
+          old_value: number
+          run_id: number
+          user_id: string
+        }
+        Update: {
+          detected_at?: string
+          drift_id?: number
+          new_value?: number
+          old_value?: number
+          run_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "karma_drift_events_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "karma_recompute_runs"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "karma_drift_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "karma_drift_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      karma_ledger: {
+        Row: {
+          created_at: string
+          event_type: string
+          ledger_id: number
+          points_delta: number
+          ref_id: string
+          ref_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          ledger_id?: number
+          points_delta: number
+          ref_id: string
+          ref_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          ledger_id?: number
+          points_delta?: number
+          ref_id?: string
+          ref_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "karma_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "karma_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      karma_recompute_runs: {
+        Row: {
+          drift_events: number
+          run_at: string
+          run_id: number
+          users_processed: number
+        }
+        Insert: {
+          drift_events: number
+          run_at?: string
+          run_id?: number
+          users_processed: number
+        }
+        Update: {
+          drift_events?: number
+          run_at?: string
+          run_id?: number
+          users_processed?: number
+        }
+        Relationships: []
+      }
       legal_document_versions: {
         Row: {
           body_md: string
@@ -1356,6 +1471,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
@@ -1378,6 +1494,7 @@ export type Database = {
           created_at?: string
           delete_after?: string | null
           description?: string | null
+          estimated_value?: number | null
           item_condition?: string | null
           location_display_level?: string
           owner_id: string
@@ -1400,6 +1517,7 @@ export type Database = {
           created_at?: string
           delete_after?: string | null
           description?: string | null
+          estimated_value?: number | null
           item_condition?: string | null
           location_display_level?: string
           owner_id?: string
@@ -2718,6 +2836,7 @@ export type Database = {
           is_super_admin: boolean
           items_given_count: number
           items_received_count: number
+          karma_points: number
           notification_preferences: Json
           onboarding_state: string
           posts_created_total: number
@@ -2754,6 +2873,7 @@ export type Database = {
           is_super_admin?: boolean
           items_given_count?: number
           items_received_count?: number
+          karma_points?: number
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
@@ -2790,6 +2910,7 @@ export type Database = {
           is_super_admin?: boolean
           items_given_count?: number
           items_received_count?: number
+          karma_points?: number
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
@@ -3277,6 +3398,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
@@ -3535,6 +3657,34 @@ export type Database = {
         }
         Returns: boolean
       }
+      karma_apply: {
+        Args: {
+          p_delta: number
+          p_event: string
+          p_ref_id: string
+          p_ref_type: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      karma_grant_once: {
+        Args: {
+          p_delta: number
+          p_event: string
+          p_ref_id: string
+          p_ref_type: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      karma_recompute_nightly: {
+        Args: never
+        Returns: {
+          drift_events: number
+          users_processed: number
+        }[]
+      }
+      karma_value_bonus: { Args: { p_value: number }; Returns: number }
       list_active_surveys: { Args: never; Returns: Json }
       needs_legal_reacknowledgement: {
         Args: never
@@ -3645,6 +3795,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
