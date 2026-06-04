@@ -38,6 +38,7 @@ export interface UserRow {
   active_posts_count_internal: number;
   followers_count: number;
   following_count: number;
+  karma_points: number;
   created_at: string;
   updated_at: string;
 }
@@ -68,6 +69,7 @@ export function mapUserRow(row: UserRow): User {
     activePostsCountInternal: row.active_posts_count_internal,
     followersCount: row.followers_count,
     followingCount: row.following_count,
+    karmaPoints: row.karma_points,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
   };
