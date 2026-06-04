@@ -12,6 +12,7 @@ export * from './invariants';
 export * from './searchTypes';
 export * from './geo';
 export * from './personalActivity';
+export * from './karma';
 export * from './notifications';
 export * from './postActorIdentity';
 export * from './aboutTeam';
