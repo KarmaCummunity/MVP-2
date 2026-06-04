@@ -55,6 +55,9 @@ export default defineConfig({
         // Misc one-liners
         'src/utils/openExternalUrl.ts',
         'src/lib/container.ts',
+        // Query-cache persistence wiring (singleton QueryClient + AsyncStorage
+        // persister) — composition root, exercised end-to-end like container.ts
+        'src/lib/queryPersist.ts',
         // Notification tap hook: IO wiring (expo-router/expo-notifications) — the
         // pure routing logic lives in tapRouting.ts and IS unit-tested.
         'src/lib/notifications/tapHandler.ts',
