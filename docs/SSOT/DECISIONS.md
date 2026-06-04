@@ -1064,10 +1064,27 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-58 — Native Sign in with Apple via Supabase id-token exchange (2026-06-04)
+
+**Date.** 2026-06-04
+
+**Decision.** iOS Sign in with Apple (`FR-AUTH-004`) uses the **native** `expo-apple-authentication` sheet and exchanges the returned identity token for a Supabase session via `supabase.auth.signInWithIdToken({ provider: 'apple' })` with a raw nonce (Apple receives `SHA-256(nonce)`; Supabase verifies the raw value). This mirrors the native/web split chosen for Google in `D-33` — Apple does **not** go through the OAuth web / `exchangeCodeForSession` flow. Apple's "hide my email" relay is the canonical email (AC2, handled by Supabase); the first-authorization name is captured and persisted to `user_metadata.full_name` for onboarding prefill (AC3) via the existing `syncProfileMetadata`, never depended on afterward.
+
+**Rationale.** App Store Guideline 4.8 mandates a genuine Sign in with Apple wherever a third-party SSO (Google) is offered; the prior iOS "Apple" button was a shell that routed to email sign-in (`TD-24`) and would have been rejected. The native sheet is the Apple-required UX and keeps the exchange in-process (no browser round-trip), reusing the existing `IAuthService` port + `toSession` mapping.
+
+**Alternatives rejected.** OAuth web flow via `signInWithOAuth({ provider: 'apple' })` — extra browser round-trip and not the Apple-preferred native iOS UX. A bespoke table for the Apple name — unnecessary; `user_metadata` already feeds `AuthSession.displayName`.
+
+**Operational dependency.** Going live requires the Apple provider configured in Supabase Auth (Service ID + key) and a native rebuild — the capability + config plugin are native, so an OTA update cannot add them. The `TD-24` Apple portion is closed in code; Phone OTP remains deferred.
+
+**Affected docs.** `app/packages/application/src/auth/SignInWithApple.ts`, `app/packages/application/src/ports/IAuthService.ts`, `app/packages/infrastructure-supabase/src/auth/SupabaseAuthService.ts`, `app/apps/mobile/src/services/authComposition.ts`, `app/apps/mobile/app/(auth)/index.tsx`, `app/apps/mobile/app.json`, `docs/SSOT/spec/01_auth_and_onboarding.md` (FR-AUTH-004), `docs/SSOT/TECH_DEBT.md` (TD-24).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.0 | 2026-06-04 | Added `D-58` (native Sign in with Apple via `signInWithIdToken` + raw nonce; `FR-AUTH-004` implemented; mirrors `D-33`; Apple portion of `TD-24` closed in code; live flow pends Supabase Apple provider config). |
 | 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |
 | 3.8 | 2026-05-29 | Added `D-56` (rides UI restored + V3.0 scope: FR-RIDE-019 + FR-RIDE-023..045 — advanced publish, dashboard, active-ride + emergency, ratings, business rules, cross-world). Supersedes `D-51`. |
 | 3.7 | 2026-05-28 | Added `D-55` (Playwright P0 E2E on `DEV_WEB_URL` gates `dev` → `main`; email/password CI auth; `TESTING.md`). |
