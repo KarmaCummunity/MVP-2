@@ -66,7 +66,7 @@
 
 | ID | Sev | Item | Closing slice |
 | -- | -- | ---- | ------- |
-| TD-24 | 🔴 | Apple SSO + Phone OTP buttons placeholder — required for iOS App Store + Israeli SMS path. **2026-05-12:** misleading full-width Phone / Email CTAs removed from welcome (`(auth)/index.tsx`); full picker restoration folded into **`TD-151`**. | P3.2 / P3.3 |
+| TD-24 | 🟠 | **Apple SSO implemented in code (`D-58`, 2026-06-04)** — native Sign in with Apple shipped (`SignInWithAppleUseCase` + `signInWithIdToken`); the iOS button now performs real Apple auth instead of routing to email. **Go-live pends Supabase Apple provider config (Service ID + key) + a native rebuild** (the entitlement/plugin are native; OTA cannot add them). Remaining debt: Phone OTP button still a placeholder (Israeli SMS path) — folded into **`TD-151`**. **2026-05-12:** misleading full-width Phone / Email CTAs removed from welcome (`(auth)/index.tsx`). | P3.3 |
 | TD-29 | 🟠 | **`pnpm lint:arch` file-size allowlist.** `FILE_SIZE_ALLOWLIST` in `app/scripts/check-architecture.mjs` still tracks files over the 300-LOC cap (e.g. `(tabs)/search.tsx`, `edit-post/[id].tsx`). Goal is to split implementations until each entry can be deleted. | Opportunistic |
 | TD-62 | 🟢 | **FR-NOTIF-004 (message_undeliverable) — deferred from P1.5 PR-1.** Requires sender-side detection of recipient account state change. Surface via a daily cron that scans outgoing messages where the recipient's `account_status` flipped to suspended/deleted within 24h. | Post-MVP |
 | TD-63 | 🟢 | **Notification icon placeholder.** `app/apps/mobile/assets/notification-icon.png` is a 96×96 placeholder. Replace with a designed icon (white shape on transparent, Android adaptive guidelines). | Pre-launch |

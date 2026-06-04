@@ -25,6 +25,7 @@ export { ResendVerificationEmailUseCase, type ResendVerificationEmailInput } fro
 export { VerifyEmailUseCase, type VerifyEmailInput, type VerifyEmailOutput } from './auth/VerifyEmail';
 export * from './auth/SignInWithEmail';
 export * from './auth/SignInWithGoogle';
+export * from './auth/SignInWithApple';
 export * from './auth/SignOut';
 export * from './auth/RestoreSession';
 export * from './auth/CompleteBasicInfoUseCase';
@@ -62,7 +63,6 @@ export { ListPostActorIdentityUseCase, type ListPostActorIdentityInput } from '.
 export { UpsertPostActorIdentityUseCase } from './posts/UpsertPostActorIdentityUseCase';
 export * from './posts/AdminRemovePostUseCase';
 export * from './posts/SearchUsersForClosureUseCase';
-
 export * from './auth/DismissClosureExplainerUseCase';
 
 // Chat use cases
