@@ -30,7 +30,8 @@
     "@supabase/supabase-js": "^2.69.0",
     "@tanstack/react-query": "^5.62.0",
     "date-fns": "^4.1.0",
-    "expo": "~54.0.34",
+    "expo": "~54.0.35",
+    "expo-apple-authentication": "~8.0.8",
     "expo-auth-session": "~7.0.11",
     "expo-constants": "~18.0.13",
     "expo-crypto": "~15.0.9",
@@ -73,6 +74,7 @@
     "@types/react": "~19.1.17",
     "jsdom": "^25.0.1",
     "typescript": "^5.9.3",
-    "vitest": "^2.1.0"
+    "vite": "^6.0.0",
+    "vitest": "^4.1.7"
   }
 }

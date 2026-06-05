@@ -1,17 +1,18 @@
 name: CI — frontend
 
-# Runs on PRs and pushes to `main` / `dev` whose changes touch the app code
-# or its build inputs. Mirrors the quality + web build + Hebrew scan gates.
+# `typecheck · test · lint` and `Hebrew source scan (no inline UI copy)` are
+# REQUIRED status checks on dev/main (branch protection) — keep the job names
+# stable. Because they are required, the pull_request trigger MUST run on every
+# non-draft PR (no path filter): path-filtering left those required contexts
+# permanently "Expected" on backend-only / docs-only PRs and blocked their merge
+# (same root cause and fix as ci-backend.yml / ci-contract.yml). A cheap
+# `changes` job gates the heavy `quality` + `web export` steps so a non-frontend
+# PR gets a fast pass while still reporting the required contexts. `push` stays
+# path-filtered. Keep the `changes` filter list in sync with the real inputs.
 
 on:
   pull_request:
     branches: [main, dev]
-    paths:
-      - 'app/**'
-      - 'Dockerfile'
-      - 'scripts/extract-hebrew-text.mjs'
-      - 'scripts/smoke-web-bundle.mjs'
-      - '.github/workflows/ci-frontend.yml'
   push:
     branches: [main, dev]
     paths:
@@ -30,8 +31,36 @@ permissions:
   pull-requests: read
 
 jobs:
+  changes:
+    name: detect frontend changes
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+      - name: Detect frontend-relevant changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'app/**'
+              - 'Dockerfile'
+              - 'scripts/extract-hebrew-text.mjs'
+              - 'scripts/smoke-web-bundle.mjs'
+              - '.github/workflows/ci-frontend.yml'
+
   quality:
+    # REQUIRED status check — always runs so the context reports on every PR.
+    # Heavy steps are gated on `needs.changes.outputs.frontend == 'true'`; a
+    # non-frontend PR runs only the skip-notice step and concludes success.
     name: typecheck · test · lint
+    needs: changes
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 15
@@ -41,15 +70,21 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
+
+      - name: No frontend changes — typecheck/test/lint not required
+        if: needs.changes.outputs.frontend != 'true'
+        run: echo "No app/** or build-input changes in this PR — skipping typecheck/test/lint."
 
       - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
         uses: pnpm/action-setup@v4
         with:
           version: 9.0.0
           run_install: false
 
       - name: Setup Node.js
+        if: needs.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version: 20
@@ -57,16 +92,19 @@ jobs:
           cache-dependency-path: app/pnpm-lock.yaml
 
       - name: Install dependencies
+        if: needs.changes.outputs.frontend == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Typecheck
+        if: needs.changes.outputs.frontend == 'true'
         run: pnpm typecheck
 
       - name: Test
+        if: needs.changes.outputs.frontend == 'true'
         run: pnpm test:coverage
 
       - name: Upload coverage artifacts
-        if: always()
+        if: always() && needs.changes.outputs.frontend == 'true'
         uses: actions/upload-artifact@v4
         with:
           name: coverage-${{ github.run_id }}
@@ -79,15 +117,21 @@ jobs:
           retention-days: 14
 
       - name: Lint
+        if: needs.changes.outputs.frontend == 'true'
         run: pnpm lint
+
+      - name: Dependency audit
+        if: needs.changes.outputs.frontend == 'true'
+        run: pnpm audit --audit-level=high
 
   web-build:
     name: web export (production bundle)
-    # Runs on every non-draft PR/push to main or dev. Builds the production
-    # web bundle and then headless-smokes it — catches the class of bug that
-    # crashes /research and similar routes at runtime (route enumeration,
-    # missing modules, top-level exceptions) that typecheck/test/lint miss.
-    if: github.event.pull_request.draft != true
+    # Not a required check. Builds the production web bundle and headless-smokes
+    # it — catches runtime route-enumeration / missing-module crashes that
+    # typecheck/test/lint miss. Gated on frontend changes so backend/docs-only
+    # PRs skip the ~2-min build.
+    needs: changes
+    if: github.event.pull_request.draft != true && needs.changes.outputs.frontend == 'true'
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -96,12 +140,12 @@ jobs:
 
     env:
       EXPO_PUBLIC_ENVIRONMENT: production
-      EXPO_PUBLIC_SUPABASE_URL: https://slxijdfvinbjmrsfgbzx.supabase.co
+      EXPO_PUBLIC_SUPABASE_URL: https://roeefqpdbftlndzsvhfj.supabase.co
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-web-build-placeholder-not-for-runtime
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
@@ -137,13 +181,15 @@ jobs:
         run: node scripts/smoke-web-bundle.mjs --dist app/apps/mobile/dist
 
   hebrew-source-scan:
+    # REQUIRED status check. Cheap (scans the whole repo regardless of which
+    # files changed), so it runs unconditionally on every non-draft PR.
     name: Hebrew source scan (no inline UI copy)
     if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
@@ -152,3 +198,6 @@ jobs:
 
       - name: Scan for Hebrew outside allowed paths
         run: node scripts/extract-hebrew-text.mjs --check
+
+      - name: Run Hebrew scanner guard unit tests
+        run: node --test scripts/extract-hebrew-text.test.mjs

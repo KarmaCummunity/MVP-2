@@ -1,10 +1,12 @@
 // app/apps/mobile/app/(admin)/index.tsx
 // FR-ADMIN-011 — admin dashboard. Welcome hero with role badges plus a
 // responsive grid of stat / quick-link cards, RBAC-filtered per session.
+// Users/posts KPIs show community-wide counts (FR-STATS-004 / community_stats).
 import type { ComponentProps, ReactElement } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import type { AdminRole } from '@kc/domain';
 import { hasPermission } from '@kc/domain';
 import { makeUseStyles, shadow, useTheme } from '@kc/ui';
@@ -13,6 +15,7 @@ import { useAdminRoles } from '../../src/hooks/useAdminRoles';
 import { useAdminsList } from '../../src/hooks/useAdminsList';
 import { useAdminTasksList } from '../../src/hooks/useAdminTasks';
 import { useReportsInbox } from '../../src/hooks/useReportsInbox';
+import { getCommunityStatsSnapshotUseCase } from '../../src/services/postsComposition';
 import he from '../../src/i18n/locales/he';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
@@ -21,7 +24,7 @@ const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
 interface Card {
   key: string;
   label: string;
-  value?: string;
+  value: string;
   icon: IconName;
   accent: string;
   accentBg: string;
@@ -29,7 +32,7 @@ interface Card {
 }
 
 export default function AdminDashboard(): ReactElement {
-  const { roles } = useAdminRoles();
+  const { roles, isLoading: rolesLoading } = useAdminRoles();
   const t = he.admin.dashboard;
   const router = useRouter();
   const styles = useStyles();
@@ -55,19 +58,36 @@ export default function AdminDashboard(): ReactElement {
   const canSearchPosts = hasPermission(roles, 'posts.search');
   const canViewAudit = hasPermission(roles, 'audit.view_own');
 
-  const adminsQuery = useAdminsList(false);
+  const adminsQuery = useAdminsList(false, !rolesLoading && canViewAdmins);
   const adminsLabel = !canViewAdmins || adminsQuery.isLoading
     ? t.noCount
     : String(adminsQuery.grants.length);
+
+  // Community-wide counts for the users + posts KPIs (FR-STATS-004). Only
+  // fetched when at least one count renders — avoids network for moderators
+  // without users.search / posts.search.
+  const showCommunityCounts = canSearchUsers || canSearchPosts;
+  const communityStatsQuery = useQuery({
+    queryKey: ['admin.dashboard.community_stats'],
+    queryFn: () => getCommunityStatsSnapshotUseCase().execute(),
+    enabled: showCommunityCounts,
+    staleTime: 1000 * 60,
+  });
+  const usersLabel = communityStatsQuery.data
+    ? String(communityStatsQuery.data.registeredUsers)
+    : t.noCount;
+  const postsLabel = communityStatsQuery.data
+    ? String(communityStatsQuery.data.activePublicPosts)
+    : t.noCount;
 
   const cards: Card[] = [
     { key: 'reports', label: t.openReportsKpi, value: reportsLabel, icon: 'flag-outline', accent: colors.error, accentBg: colors.errorLight, href: '/(admin)/reports' },
     { key: 'tasks', label: t.openTasksKpi, value: openTasksLabel, icon: 'checkbox-outline', accent: colors.info, accentBg: colors.infoLight, href: '/(admin)/tasks' },
   ];
   if (canViewAdmins) cards.push({ key: 'admins', label: t.adminsKpi, value: adminsLabel, icon: 'shield-checkmark-outline', accent: colors.secondary, accentBg: colors.secondaryLight, href: '/(admin)/admins' });
-  if (canSearchUsers) cards.push({ key: 'users', label: t.usersKpi, icon: 'people-outline', accent: colors.success, accentBg: colors.successLight, href: '/(admin)/users' });
-  if (canSearchPosts) cards.push({ key: 'posts', label: t.postsKpi, icon: 'document-text-outline', accent: colors.primary, accentBg: colors.primaryLight, href: '/(admin)/posts' });
-  if (canViewAudit) cards.push({ key: 'audit', label: t.auditKpi, icon: 'time-outline', accent: colors.warning, accentBg: colors.warningLight, href: '/(admin)/audit' });
+  if (canSearchUsers) cards.push({ key: 'users', label: t.usersKpi, value: usersLabel, icon: 'people-outline', accent: colors.success, accentBg: colors.successLight, href: '/(admin)/users' });
+  if (canSearchPosts) cards.push({ key: 'posts', label: t.postsKpi, value: postsLabel, icon: 'document-text-outline', accent: colors.primary, accentBg: colors.primaryLight, href: '/(admin)/posts' });
+  if (canViewAudit) cards.push({ key: 'audit', label: t.auditKpi, value: t.auditOpenLabel, icon: 'time-outline', accent: colors.warning, accentBg: colors.warningLight, href: '/(admin)/audit' });
 
   const goTo = (path: string): void => router.push(path as never);
 
@@ -99,11 +119,7 @@ export default function AdminDashboard(): ReactElement {
               <View style={[styles.iconWrap, { backgroundColor: c.accentBg }]}>
                 <Ionicons name={c.icon} size={20} color={c.accent} />
               </View>
-              {c.value !== undefined ? (
-                <Text style={styles.cardValue}>{c.value}</Text>
-              ) : (
-                <Ionicons name="chevron-back" size={20} color={colors.textDisabled} />
-              )}
+              <Text style={styles.cardValue}>{c.value}</Text>
             </View>
             <Text style={styles.cardLabel}>{c.label}</Text>
           </Pressable>

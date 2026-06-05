@@ -3,7 +3,8 @@
 // Imported only from the integration suite — kept out of the main bundle by
 // the `*.helpers.ts` naming + tsconfig include scope.
 
-import { createClient, type SupabaseClient } from '@supabase/supabase-js';
+import type { SupabaseClient } from '@supabase/supabase-js';
+import { createIntegrationClient } from '../../__tests__/integrationSupabaseClient';
 
 export interface TestHarness {
   readonly admin: SupabaseClient;
@@ -34,7 +35,7 @@ export async function signInAs(h: TestHarness, uid: string): Promise<SupabaseCli
   // creation, the password is enough.
   const { data: { user }, error: fetchErr } = await h.admin.auth.admin.getUserById(uid);
   if (fetchErr || !user?.email) throw fetchErr ?? new Error('user missing email');
-  const c = createClient(h.url, h.anon, { auth: { persistSession: false } });
+  const c = createIntegrationClient(h.url, h.anon);
   const { error } = await c.auth.signInWithPassword({
     email: user.email, password: 'p4ssword!!',
   });

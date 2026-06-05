@@ -1,4 +1,5 @@
 import type { SupabaseClient } from '@supabase/supabase-js';
+import { fetchUsersSelfPrivateFields } from './usersSelfPrivateFields';
 
 export type EditableProfileDTO = {
   displayName: string | null;
@@ -17,7 +18,7 @@ export async function supabaseGetEditableProfile(
 ): Promise<EditableProfileDTO> {
   const { data, error } = await client
     .from('users')
-    .select('display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url')
+    .select('display_name, city, city_name, biography, avatar_url')
     .eq('user_id', userId)
     .single();
   if (error) throw new Error(`getEditableProfile: ${error.message}`);
@@ -26,19 +27,17 @@ export async function supabaseGetEditableProfile(
     display_name: string | null;
     city: string | null;
     city_name: string | null;
-    profile_street: string | null;
-    profile_street_number: string | null;
-    contact_phone: string | null;
     biography: string | null;
     avatar_url: string | null;
   };
+  const slice = await fetchUsersSelfPrivateFields(client);
   return {
     displayName: row.display_name,
     city: row.city,
     cityName: row.city_name,
-    profileStreet: row.profile_street,
-    profileStreetNumber: row.profile_street_number,
-    contactPhone: row.contact_phone,
+    profileStreet: slice?.profile_street ?? null,
+    profileStreetNumber: slice?.profile_street_number ?? null,
+    contactPhone: slice?.contact_phone ?? null,
     biography: row.biography,
     avatarUrl: row.avatar_url,
   };

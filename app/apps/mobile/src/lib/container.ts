@@ -16,7 +16,11 @@ import {
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
+  SupabaseOrgApplicationsRepository,
   SupabaseAdminContentRepository,
+  SupabaseTimesheetsRepository,
+  SupabaseFinanceLedgerRepository,
+  SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -61,9 +65,25 @@ import {
   AssignAdminTaskUseCase,
   AddAdminTaskCommentUseCase,
   DeleteAdminTaskUseCase,
+  ListOrgApplicationsUseCase,
+  DecideOrgApplicationUseCase,
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
+  ListTimesheetsUseCase,
+  UpsertTimesheetUseCase,
+  SubmitTimesheetUseCase,
+  ApproveTimesheetUseCase,
+  RejectTimesheetUseCase,
+  DeleteTimesheetUseCase,
+  ListFinanceLedgerUseCase,
+  GetFinanceSummaryUseCase,
+  UpsertFinanceEntryUseCase,
+  DeleteFinanceEntryUseCase,
+  ListCrmContactsUseCase,
+  UpsertCrmContactUseCase,
+  DeleteCrmContactUseCase,
+  MarkCrmContactContactedUseCase,
   ListOpenReportsUseCase,
   GetReportCaseDetailUseCase,
   ListActiveSurveysUseCase,
@@ -104,6 +124,10 @@ const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
+const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
+const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
+const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
+const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -141,6 +165,26 @@ export const container = {
   adminSearchUsers: new AdminSearchUsersUseCase(adminContentRepo),
   adminSearchPosts: new AdminSearchPostsUseCase(adminContentRepo),
   adminSearchAudit: new AdminSearchAuditUseCase(adminContentRepo),
+  // V2-ADMIN-TIME-10
+  listTimesheets:   new ListTimesheetsUseCase(timesheetsRepo),
+  upsertTimesheet:  new UpsertTimesheetUseCase(timesheetsRepo),
+  submitTimesheet:  new SubmitTimesheetUseCase(timesheetsRepo),
+  approveTimesheet: new ApproveTimesheetUseCase(timesheetsRepo),
+  rejectTimesheet:  new RejectTimesheetUseCase(timesheetsRepo),
+  deleteTimesheet:  new DeleteTimesheetUseCase(timesheetsRepo),
+  // V2-ADMIN-MONEY-9
+  listFinanceLedger:   new ListFinanceLedgerUseCase(financeLedgerRepo),
+  getFinanceSummary:   new GetFinanceSummaryUseCase(financeLedgerRepo),
+  upsertFinanceEntry:  new UpsertFinanceEntryUseCase(financeLedgerRepo),
+  deleteFinanceEntry:  new DeleteFinanceEntryUseCase(financeLedgerRepo),
+  // V2-ADMIN-CRM-8
+  listCrmContacts: new ListCrmContactsUseCase(crmContactsRepo),
+  upsertCrmContact: new UpsertCrmContactUseCase(crmContactsRepo),
+  deleteCrmContact: new DeleteCrmContactUseCase(crmContactsRepo),
+  markCrmContactContacted: new MarkCrmContactContactedUseCase(crmContactsRepo),
+  // V2-ADMIN-ORG-7
+  listOrgApplications: new ListOrgApplicationsUseCase(orgApplicationsRepo),
+  decideOrgApplication: new DecideOrgApplicationUseCase(orgApplicationsRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

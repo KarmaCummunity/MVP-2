@@ -57,6 +57,7 @@ export function CreatePostExposureSection({
       </TouchableOpacity>
       {open ? (
         <View style={styles.exposureAccordionBody}>
+          <Text style={styles.exposureIntro}>{t('post.exposureSettingsIntro')}</Text>
           <LocationDisplayLevelChooser
             value={locationDisplayLevel}
             onChange={onLocationDisplayLevelChange}

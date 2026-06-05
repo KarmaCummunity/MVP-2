@@ -1,9 +1,13 @@
 import { describe, expect, it } from 'vitest';
 import {
+  ADMIN_TASK_CATEGORIES,
+  ADMIN_TASK_CATEGORY_DEFAULT,
   ADMIN_TASK_PRIORITIES,
   ADMIN_TASK_STATUSES,
+  coerceAdminTaskCategory,
   isOverdue,
   isStatusTransitionAllowed,
+  parseAdminTaskCategory,
   parseAdminTaskPriority,
   parseAdminTaskStatus,
   type AdminTask,
@@ -16,6 +20,7 @@ function makeTask(overrides: Partial<AdminTask> = {}): AdminTask {
     description: null,
     status: 'open',
     priority: 'medium',
+    category: 'other',
     assigneeId: null,
     assigneeDisplayName: null,
     createdBy: 'admin-1',
@@ -64,5 +69,26 @@ describe('AdminTask', () => {
     expect(
       isOverdue(makeTask({ dueAt: new Date('2026-05-27T12:00:00Z') }), now),
     ).toBe(true);
+  });
+
+  it('ADMIN_TASK_CATEGORIES includes the curated set', () => {
+    expect(ADMIN_TASK_CATEGORIES).toContain('moderation');
+    expect(ADMIN_TASK_CATEGORIES).toContain('engineering');
+    expect(ADMIN_TASK_CATEGORIES).toContain('other');
+    expect(ADMIN_TASK_CATEGORY_DEFAULT).toBe('other');
+  });
+
+  it('parseAdminTaskCategory accepts known values and rejects unknown', () => {
+    expect(parseAdminTaskCategory('moderation')).toBe('moderation');
+    expect(parseAdminTaskCategory('nonsense')).toBeNull();
+    expect(parseAdminTaskCategory(null)).toBeNull();
+    expect(parseAdminTaskCategory(undefined)).toBeNull();
+  });
+
+  it('coerceAdminTaskCategory falls back to the default on unknown / nullish', () => {
+    expect(coerceAdminTaskCategory('finance')).toBe('finance');
+    expect(coerceAdminTaskCategory('nonsense')).toBe('other');
+    expect(coerceAdminTaskCategory(null)).toBe('other');
+    expect(coerceAdminTaskCategory(undefined)).toBe('other');
   });
 });

@@ -1,16 +1,21 @@
 # SonarCloud — fail PRs when Quality Gate fails on new code.
 # Requires repo/org secret SONAR_TOKEN (SonarCloud user token).
 # See docs/dev/SONAR.md for setup, waivers, and branch protection.
+#
+# `SonarCloud quality gate` is a REQUIRED status check on dev/main (branch
+# protection) — keep the job name stable. Because it is required, the
+# pull_request trigger runs on every non-draft PR (no path filter): the gate
+# context is posted by the SonarCloud scan, so the scan must run for the context
+# to report. Path-filtering it left the required context permanently "Expected"
+# on backend-only / docs-only PRs and blocked their merge (same fix as
+# ci-backend.yml / ci-contract.yml / ci-frontend.yml). A PR with no new code
+# passes the gate trivially.
 
 name: CI — SonarCloud
 
 on:
   pull_request:
     branches: [main, dev]
-    paths:
-      - 'app/**'
-      - 'sonar-project.properties'
-      - '.github/workflows/ci-sonar.yml'
   workflow_dispatch:
 
 concurrency:
@@ -36,7 +41,7 @@ jobs:
           fi
 
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
         with:
           fetch-depth: 0
 

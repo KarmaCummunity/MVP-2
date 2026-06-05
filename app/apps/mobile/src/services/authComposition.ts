@@ -10,6 +10,8 @@ import { Platform } from 'react-native';
 import { createAuthSecureStorage } from './authSecureStorage';
 import * as WebBrowser from 'expo-web-browser';
 import * as AuthSession from 'expo-auth-session';
+import * as AppleAuthentication from 'expo-apple-authentication';
+import * as Crypto from 'expo-crypto';
 import {
   getSupabaseClient,
   SupabaseAccountGateRepository,
@@ -20,6 +22,7 @@ import {
   RestoreSessionUseCase,
   SignInWithEmailUseCase,
   SignInWithGoogleUseCase,
+  SignInWithAppleUseCase,
   SignOutUseCase,
   SignUpWithEmailUseCase,
   ResendVerificationEmailUseCase,
@@ -27,12 +30,14 @@ import {
   type AuthSession as KcAuthSession,
   type IAuthService,
   type OpenAuthSession,
+  type PerformAppleSignIn,
 } from '@kc/application';
 
 let _authService: IAuthService | null = null;
 let _signUp: SignUpWithEmailUseCase | null = null;
 let _signIn: SignInWithEmailUseCase | null = null;
 let _signInGoogle: SignInWithGoogleUseCase | null = null;
+let _signInApple: SignInWithAppleUseCase | null = null;
 let _signOut: SignOutUseCase | null = null;
 let _restore: RestoreSessionUseCase | null = null;
 let _resend: ResendVerificationEmailUseCase | null = null;
@@ -76,6 +81,53 @@ const openAuthSession: OpenAuthSession = async (url, redirectTo) => {
   const result = await WebBrowser.openAuthSessionAsync(url, redirectTo);
   if (result.type === 'success') return result.url;
   return null;
+};
+
+/** Random hex nonce. Apple receives SHA-256(nonce); Supabase verifies the raw value. */
+function generateRawNonce(): string {
+  const bytes = Crypto.getRandomBytes(16);
+  return Array.from(bytes, (b) => b.toString(16).padStart(2, '0')).join('');
+}
+
+function isAppleCancellation(err: unknown): boolean {
+  return (
+    typeof err === 'object' &&
+    err !== null &&
+    'code' in err &&
+    (err as { code?: string }).code === 'ERR_REQUEST_CANCELED'
+  );
+}
+
+/**
+ * FR-AUTH-004 (iOS). Drives the native Sign in with Apple sheet and returns the
+ * identity token + raw nonce for Supabase, plus the first-authorization name
+ * (Apple delivers it once). Resolves null when the user cancels the sheet.
+ */
+const performAppleSignIn: PerformAppleSignIn = async () => {
+  const rawNonce = generateRawNonce();
+  const hashedNonce = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, rawNonce);
+  try {
+    const credential = await AppleAuthentication.signInAsync({
+      requestedScopes: [
+        AppleAuthentication.AppleAuthenticationScope.FULL_NAME,
+        AppleAuthentication.AppleAuthenticationScope.EMAIL,
+      ],
+      nonce: hashedNonce,
+    });
+    if (!credential.identityToken) return null;
+    const fullName = [credential.fullName?.givenName, credential.fullName?.familyName]
+      .filter(Boolean)
+      .join(' ')
+      .trim();
+    return {
+      identityToken: credential.identityToken,
+      rawNonce,
+      fullName: fullName.length > 0 ? fullName : null,
+    };
+  } catch (err) {
+    if (isAppleCancellation(err)) return null;
+    throw err;
+  }
 };
 
 /** Deep link the OAuth provider redirects back to. Resolves per-platform via AuthSession. */
@@ -123,6 +175,14 @@ export function getSignInWithGoogleUseCase(): SignInWithGoogleUseCase {
     _signInGoogle = new SignInWithGoogleUseCase(getAuthService(), openAuthSession);
   }
   return _signInGoogle;
+}
+
+/** FR-AUTH-004 (iOS only). Native Sign in with Apple → Supabase id-token exchange. */
+export function getSignInWithAppleUseCase(): SignInWithAppleUseCase {
+  if (!_signInApple) {
+    _signInApple = new SignInWithAppleUseCase(getAuthService(), performAppleSignIn);
+  }
+  return _signInApple;
 }
 
 export function getSignOutUseCase(): SignOutUseCase {

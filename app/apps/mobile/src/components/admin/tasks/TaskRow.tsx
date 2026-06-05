@@ -6,6 +6,7 @@ import { type AdminTask, isOverdue } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { TaskStatusChip } from './TaskStatusChip';
 import { TaskPriorityChip } from './TaskPriorityChip';
+import { TaskCategoryChip } from './TaskCategoryChip';
 import he from '../../../i18n/locales/he';
 
 export interface TaskRowProps {
@@ -29,6 +30,7 @@ export function TaskRow({ task }: TaskRowProps) {
       <View style={styles.header}>
         <TaskStatusChip status={task.status} />
         <TaskPriorityChip priority={task.priority} />
+        <TaskCategoryChip category={task.category} />
         {overdue && (
           <View style={styles.overdueChip}>
             <Text style={styles.overdueText}>{he.admin.tasks.overdueBadge}</Text>

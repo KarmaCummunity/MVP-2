@@ -124,7 +124,8 @@ export default function CreatePostScreen() {
   const handleRemove = (path: string) =>
     form.setUploads((prev) => prev.filter((u) => u.path !== path));
 
-  const { tryPublish, runPublishAfterGate, isPublishing } = useCreatePostPublish({
+  const { tryPublish, runPublishAfterGate, isPublishing, addressInlineMessage } =
+    useCreatePostPublish({
     ownerId,
     type: form.type,
     title: form.title,
@@ -157,7 +158,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <Screen blobs="off">
+    <Screen blobs="off" testID="create-post-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
@@ -188,6 +189,7 @@ export default function CreatePostScreen() {
         onStreetChange={setStreet}
         streetNumber={streetNumber}
         onStreetNumberChange={setStreetNumber}
+        addressInlineError={addressInlineMessage}
         category={form.category}
         onCategoryChange={form.setCategory}
         isGive={isGive}

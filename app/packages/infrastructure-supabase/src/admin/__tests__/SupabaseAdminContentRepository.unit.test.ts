@@ -126,6 +126,21 @@ describe('SupabaseAdminContentRepository — searchAudit', () => {
       p_action: 'dismiss_report',
       p_limit: 10,
       p_offset: 0,
+      p_from: null,
+      p_to: null,
     });
+  });
+
+  it('serialises fromDate / toDate as ISO strings', async () => {
+    const spy = vi.fn(() => ({ data: [], error: null }));
+    const repo = new SupabaseAdminContentRepository(mockClient(spy as never));
+    await repo.searchAudit({
+      fromDate: new Date('2026-05-01T00:00:00.000Z'),
+      toDate:   new Date('2026-05-08T23:59:59.999Z'),
+    });
+    const calls = (spy as unknown as { mock: { calls: unknown[][] } }).mock.calls;
+    const args = (calls[0]?.[1] ?? {}) as Record<string, unknown>;
+    expect(args['p_from']).toBe('2026-05-01T00:00:00.000Z');
+    expect(args['p_to']).toBe('2026-05-08T23:59:59.999Z');
   });
 });
