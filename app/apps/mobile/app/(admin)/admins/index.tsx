@@ -17,6 +17,8 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminsList } from '../../../src/hooks/useAdminsList';
 import { useRevokeAdminRole } from '../../../src/hooks/useAdminRoleMutations';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { AdminRow } from '../../../src/components/admin/admins/AdminRow';
 import { GrantRoleModal } from '../../../src/components/admin/admins/GrantRoleModal';
 import he from '../../../src/i18n/locales/he';
@@ -77,23 +79,21 @@ export default function AdminsScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{he.admin.admins.title}</Text>
-        <View style={styles.headerControls}>
-          <View style={styles.toggleRow}>
-            <Text style={styles.toggleLabel}>{he.admin.admins.includeRevokedLabel}</Text>
-            <Switch value={includeRevoked} onValueChange={setIncludeRevoked} />
-          </View>
-          {canGrant && (
-            <Pressable
-              accessibilityRole="button"
-              onPress={() => setGrantOpen(true)}
-              style={styles.grantBtn}
-            >
-              <Text style={styles.grantBtnText}>{he.admin.admins.grantBtn}</Text>
-            </Pressable>
-          )}
+      <AdminScreenHeader title={he.admin.admins.title} />
+      <View style={styles.headerControls}>
+        <View style={styles.toggleRow}>
+          <Text style={styles.toggleLabel}>{he.admin.admins.includeRevokedLabel}</Text>
+          <Switch value={includeRevoked} onValueChange={setIncludeRevoked} />
         </View>
+        {canGrant && (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => setGrantOpen(true)}
+            style={styles.grantBtn}
+          >
+            <Text style={styles.grantBtnText}>{he.admin.admins.grantBtn}</Text>
+          </Pressable>
+        )}
       </View>
 
       {revokeErr !== null && (
@@ -146,10 +146,8 @@ const useStyles = makeUseStyles(({ colors }) => ({
   center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24, gap: 8 },
   deniedTitle:     { fontSize: 18, fontWeight: '700' },
   deniedHint:      { fontSize: 13, opacity: 0.6, textAlign: 'center' },
-  header:          { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, gap: 12 },
-  title:           { fontSize: 22, fontWeight: '700' },
-  headerControls:  { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
-  toggleRow:       { flexDirection: 'row', alignItems: 'center', gap: 8 },
+  headerControls:  { flexDirection: rowDirectionStart, alignItems: 'center', justifyContent: 'space-between', paddingHorizontal: 16, paddingVertical: 12, gap: 12 },
+  toggleRow:       { flexDirection: rowDirectionStart, alignItems: 'center', gap: 8 },
   toggleLabel:     { fontSize: 13, opacity: 0.75 },
   grantBtn: {
     paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8,
