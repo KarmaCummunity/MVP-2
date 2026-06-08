@@ -46,6 +46,11 @@ describe('mapPostRow (TD-50)', () => {
     expect(out.recipient).toBeNull();
   });
 
+  it('maps estimated_value → estimatedValue, defaulting null (FR-KARMA-004)', () => {
+    expect(mapPostRow(makeRow({ estimated_value: 250 })).estimatedValue).toBe(250);
+    expect(mapPostRow(makeRow()).estimatedValue).toBeNull();
+  });
+
   it('uses city_ref.name_he when present', () => {
     const out = mapPostRow(makeRow({ city_ref: { name_he: 'תל אביב' } }));
     expect(out.address.cityName).toBe('תל אביב');

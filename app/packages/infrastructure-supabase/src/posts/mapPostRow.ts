@@ -71,6 +71,7 @@ export function mapPostRow(row: PostJoinedRow): Post {
     locationDisplayLevel: row.location_display_level as LocationDisplayLevel,
     itemCondition: (row.item_condition as ItemCondition | null) ?? null,
     urgency: row.urgency,
+    estimatedValue: (row as { estimated_value?: number | null }).estimated_value ?? null,
     mediaAssets: media.map(mapMediaAsset),
     recipient: row.recipient
       ? {

@@ -42,6 +42,7 @@ export function useCreatePostPublish(args: {
   condition: ItemCondition;
   isGive: boolean;
   urgency: string;
+  estimatedValue: number;
   uploads: UploadedAsset[];
   hideFromCounterparty: boolean;
   visibilityRef: { current: PostVisibility };
@@ -114,6 +115,7 @@ export function useCreatePostPublish(args: {
         locationDisplayLevel: args.locationDisplayLevel,
         itemCondition: args.isGive ? args.condition : null,
         urgency: !args.isGive && args.urgency.trim() ? args.urgency : null,
+        estimatedValue: args.isGive ? args.estimatedValue : null,
         mediaAssets: args.uploads.map((u) => ({
           path: u.path,
           mimeType: u.mimeType,

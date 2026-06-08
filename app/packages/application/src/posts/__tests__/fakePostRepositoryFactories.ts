@@ -19,6 +19,7 @@ export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostW
     locationDisplayLevel: 'CityAndStreet',
     itemCondition: 'Good',
     urgency: null,
+    estimatedValue: null,
     mediaAssets: [],
     recipient: null,
     recipientUser: null,

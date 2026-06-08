@@ -18,6 +18,7 @@ export interface PostDraftFormState {
   readonly category: Category;
   readonly condition: ItemCondition;
   readonly urgency: string;
+  readonly estimatedValue: number;
   readonly locationDisplayLevel: LocationDisplayLevel;
   readonly visibility: PostVisibility;
   readonly hideFromCounterparty: boolean;
@@ -37,6 +38,7 @@ export const POST_DRAFT_DEFAULTS: PostDraftFormState = {
   category: 'Other',
   condition: 'Good',
   urgency: '',
+  estimatedValue: 0,
   locationDisplayLevel: 'CityAndStreet',
   visibility: 'Public',
   hideFromCounterparty: false,
@@ -55,6 +57,7 @@ export function isFormStateAtDefaults(s: PostDraftFormState): boolean {
     s.category === POST_DRAFT_DEFAULTS.category &&
     s.condition === POST_DRAFT_DEFAULTS.condition &&
     s.urgency.length === 0 &&
+    s.estimatedValue === POST_DRAFT_DEFAULTS.estimatedValue &&
     s.locationDisplayLevel === POST_DRAFT_DEFAULTS.locationDisplayLevel &&
     s.visibility === POST_DRAFT_DEFAULTS.visibility &&
     s.hideFromCounterparty === POST_DRAFT_DEFAULTS.hideFromCounterparty &&
@@ -89,6 +92,7 @@ export function buildDraftPayload(
     category: state.category,
     condition: state.condition,
     urgency: state.urgency,
+    estimatedValue: state.estimatedValue,
     locationDisplayLevel: state.locationDisplayLevel,
     visibility: state.visibility,
     hideFromCounterparty: state.hideFromCounterparty,

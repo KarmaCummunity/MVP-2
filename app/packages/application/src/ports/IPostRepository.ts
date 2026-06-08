@@ -102,6 +102,8 @@ export interface CreatePostInput {
   locationDisplayLevel: LocationDisplayLevel;
   itemCondition: ItemCondition | null;
   urgency: string | null;
+  /** FR-KARMA-004 — estimated item value 0..1000 (Give only). Optional; null/absent = unset. */
+  estimatedValue?: number | null;
   mediaAssets: MediaAssetInput[];
   /**
    * FR-POST-021 + D-31 — when true, persists `hide_from_counterparty` at publish time so
