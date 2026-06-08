@@ -52,6 +52,7 @@ export function usePostDraftAutosave(input: PostDraftAutosaveInput): void {
     input.category,
     input.condition,
     input.urgency,
+    input.estimatedValue,
     input.locationDisplayLevel,
     input.visibility,
     input.hideFromCounterparty,

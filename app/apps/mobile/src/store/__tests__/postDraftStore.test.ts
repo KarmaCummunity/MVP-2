@@ -26,6 +26,7 @@ const sample: PostDraftPayload = {
   category: 'Furniture',
   condition: 'Good',
   urgency: '',
+  estimatedValue: 0,
   locationDisplayLevel: 'CityAndStreet',
   visibility: 'Public',
   hideFromCounterparty: false,
