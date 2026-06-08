@@ -15,6 +15,7 @@ import type { AdminTaskListFilters } from '@kc/application';
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminTasksList } from '../../../src/hooks/useAdminTasks';
+import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { TaskRow } from '../../../src/components/admin/tasks/TaskRow';
 import {
   TaskAssigneeFilter,
@@ -81,9 +82,9 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{he.admin.tasks.title}</Text>
-        {can('tasks.create') && (
+      <AdminScreenHeader
+        title={he.admin.tasks.title}
+        right={can('tasks.create') ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/(admin)/tasks/new' as never)}
@@ -91,8 +92,8 @@ export default function TasksScreen() {
           >
             <Text style={styles.newBtnText}>{he.admin.tasks.newBtn}</Text>
           </Pressable>
-        )}
-      </View>
+        ) : undefined}
+      />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <FilterChip
@@ -187,8 +188,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   root:            { flex: 1, backgroundColor: colors.background },
   center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle:     { fontSize: 18, fontWeight: '700' },
-  header:          { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title:           { fontSize: 22, fontWeight: '700' },
   newBtn:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
   newBtnText:      { color: colors.textInverse, fontWeight: '700', fontSize: 13 },
   chips:           { paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
