@@ -11,6 +11,7 @@ import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisib
 import { CityPicker } from '../CityPicker';
 import { StreetPicker } from '../StreetPicker';
 import { CreatePostExposureSection } from './CreatePostExposureSection';
+import { EstimatedValueSlider } from './EstimatedValueSlider';
 import { PhotoPicker } from './PhotoPicker';
 import type { UploadedAsset } from '../../services/imageUpload';
 import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
@@ -44,6 +45,8 @@ export interface CreatePostFormScrollContentProps {
   readonly isPublishing: boolean;
   readonly urgency: string;
   readonly onUrgencyChange: (next: string) => void;
+  readonly estimatedValue: number;
+  readonly onEstimatedValueChange: (next: number) => void;
   readonly visibility: PostVisibility;
   readonly onVisibilityChange: (next: PostVisibility) => void;
   readonly profilePrivacy: 'Public' | 'Private';
@@ -82,6 +85,8 @@ export function CreatePostFormScrollContent({
   isPublishing,
   urgency,
   onUrgencyChange,
+  estimatedValue,
+  onEstimatedValueChange,
   visibility,
   onVisibilityChange,
   profilePrivacy,
@@ -226,6 +231,7 @@ export function CreatePostFormScrollContent({
               </TouchableOpacity>
             ))}
           </View>
+          <EstimatedValueSlider value={estimatedValue} onChange={onEstimatedValueChange} />
         </View>
       )}
 

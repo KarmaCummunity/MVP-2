@@ -24,6 +24,7 @@ export interface PostDraftPayload {
   readonly category: Category;
   readonly condition: ItemCondition;
   readonly urgency: string;
+  readonly estimatedValue: number;
   readonly locationDisplayLevel: LocationDisplayLevel;
   readonly visibility: PostVisibility;
   readonly hideFromCounterparty: boolean;

@@ -17,6 +17,8 @@ import {
   getListMyActivityTimelineUseCase,
 } from '../src/services/postsComposition';
 import { PersonalStatsStrip } from '../src/components/stats/PersonalStatsStrip';
+import { KarmaBadge } from '../src/components/profile/KarmaBadge';
+import { useMeRealtime } from '../src/hooks/useMeRealtime';
 import { CommunityStatsPanel } from '../src/components/stats/CommunityStatsPanel';
 import { ActivityTimelineList } from '../src/components/stats/ActivityTimelineList';
 import { rowDirectionStart } from '../src/lib/rtlLayout';
@@ -31,6 +33,7 @@ export default function StatsScreen() {
   const router = useRouter();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
+  useMeRealtime();
 
   const userQuery = useQuery({
     queryKey: ['user-profile', userId],
@@ -106,6 +109,12 @@ export default function StatsScreen() {
           onRetry={() => void communityQuery.refetch()}
         />
 
+        {u ? (
+          <View style={styles.karmaCard}>
+            <KarmaBadge points={u.karmaPoints} />
+          </View>
+        ) : null}
+
         <View style={styles.hero}>
           <PersonalStatsStrip
             given={u?.itemsGivenCount ?? 0}
@@ -165,4 +174,5 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     borderColor: colors.primaryLight,
   },
   sectionTitle: { ...typography.h4, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  karmaCard: { alignItems: 'flex-end' as const },
 }));

@@ -20,6 +20,7 @@ export function useCreatePostFormState() {
   const [category, setCategory] = useState<Category>(POST_DRAFT_DEFAULTS.category);
   const [condition, setCondition] = useState<ItemCondition>(POST_DRAFT_DEFAULTS.condition);
   const [urgency, setUrgency] = useState(POST_DRAFT_DEFAULTS.urgency);
+  const [estimatedValue, setEstimatedValue] = useState<number>(POST_DRAFT_DEFAULTS.estimatedValue);
   const [locationDisplayLevel, setLocationDisplayLevel] = useState<LocationDisplayLevel>(
     POST_DRAFT_DEFAULTS.locationDisplayLevel,
   );
@@ -39,6 +40,7 @@ export function useCreatePostFormState() {
     setCategory(draft.category);
     setCondition(draft.condition);
     setUrgency(draft.urgency);
+    setEstimatedValue(draft.estimatedValue ?? 0);
     setLocationDisplayLevel(draft.locationDisplayLevel);
     setVisibility(draft.visibility);
     setHideFromCounterparty(draft.hideFromCounterparty);
@@ -67,6 +69,8 @@ export function useCreatePostFormState() {
     setCondition,
     urgency,
     setUrgency,
+    estimatedValue,
+    setEstimatedValue,
     locationDisplayLevel,
     setLocationDisplayLevel,
     visibility,

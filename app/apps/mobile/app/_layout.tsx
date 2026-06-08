@@ -116,6 +116,9 @@ import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreen
 import { DevBanner } from '../src/components/DevBanner';
 import { LegalConsentGate } from '../src/components/legal/LegalConsentGate';
 import { ModalStackProvider } from '../src/components/legal/useActiveModalStack';
+import { useMeRealtime } from '../src/hooks/useMeRealtime';
+
+function MeRealtimeMount() { useMeRealtime(); return null; }
 
 SplashScreen.preventAutoHideAsync();
 
@@ -249,6 +252,7 @@ export default function RootLayout() {
       <SafeAreaProvider>
         <ErrorBoundary>
           <QueryClientProvider client={queryClient}>
+            <MeRealtimeMount />
             <AppThemeProvider>
               <ThemedRootShell />
             </AppThemeProvider>
