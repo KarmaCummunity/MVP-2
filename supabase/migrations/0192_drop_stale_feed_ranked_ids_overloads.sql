@@ -1,4 +1,4 @@
--- 0187_drop_stale_feed_ranked_ids_overloads | DB hygiene — remove duplicate
+-- 0192_drop_stale_feed_ranked_ids_overloads | DB hygiene — remove duplicate
 -- function overloads that cause PostgREST PGRST203 ("could not choose the best
 -- candidate function") on ambiguous RPC calls.
 --
