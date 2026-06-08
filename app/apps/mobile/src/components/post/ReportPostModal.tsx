@@ -1,15 +1,15 @@
 // FR-MOD-001 — Report modal opened from post-detail ⋮ menu. Mirror of ReportChatModal.
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import type { ReportReason } from '@kc/domain';
-import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { NotifyModal } from '../NotifyModal';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { useReportForm, postNamespaceReportMessages } from '../report/useReportForm';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
   { value: 'Spam', key: 'post.reportReasonSpam' },
@@ -30,51 +30,16 @@ export function ReportPostModal({ postId, visible, onClose }: Props) {
   const styles = useReportPostModalStyles();
   const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
-  const [reason, setReason] = useState<ReportReason>('Spam');
-  const [note, setNote] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
-  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
+  const { reason, setReason, note, setNote, submitting, notify, setNotify, runSubmit } =
+    useReportForm(visible);
 
-  // Reset to defaults when the modal closes so the next open starts fresh
-  // (otherwise reason/note persist across openings on the same mounted
-  // instance — see CodeRabbit on PR #51).
-  useEffect(() => {
-    if (!visible) {
-      setReason('Spam');
-      setNote('');
-      setSubmitting(false);
-    }
-  }, [visible]);
-
-  const submit = async () => {
+  const submit = () => {
     if (!userId) return;
-    setSubmitting(true);
-    try {
-      await container.reportPost.execute({
-        reporterId: userId,
-        postId,
-        reason,
-        note: note.trim() || undefined,
-      });
-      onClose();
-      setNotify({ title: t('post.reportSuccessTitle'), message: t('post.reportSuccessBody') });
-    } catch (err) {
-      if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        onClose();
-        setNotify({ title: t('post.reportDuplicateTitle'), message: t('post.reportDuplicateBody') });
-      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
-        onClose();
-        setNotify({
-          title: t('post.reportAlreadyModeratedTitle'),
-          message: t('post.reportAlreadyModeratedBody'),
-        });
-      } else {
-        setNotify({ title: t('general.error'), message: t('post.reportErrorBody') });
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    void runSubmit(
+      (r, n) => container.reportPost.execute({ reporterId: userId, postId, reason: r, note: n || undefined }),
+      onClose,
+      postNamespaceReportMessages(t),
+    );
   };
 
   return (

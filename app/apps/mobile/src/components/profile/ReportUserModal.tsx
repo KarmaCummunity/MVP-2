@@ -1,9 +1,8 @@
 // FR-MOD-007 — Report modal opened from a user profile's overflow menu.
 // Mirrors ReportPostModal but submits to container.reportUser (target_type='user').
-import React, { useEffect, useState } from 'react';
+import React from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import type { ReportReason } from '@kc/domain';
-import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { makeUseStyles, useTheme } from '@kc/ui';
@@ -11,6 +10,7 @@ import he from '../../i18n/locales/he';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 import { NotifyModal } from '../NotifyModal';
+import { useReportForm } from '../report/useReportForm';
 
 const t = he.moderation;
 
@@ -32,46 +32,21 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   const styles = useStyles();
   const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
-  const [reason, setReason] = useState<ReportReason>('Spam');
-  const [note, setNote] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
-  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
+  const { reason, setReason, note, setNote, submitting, notify, setNotify, runSubmit } =
+    useReportForm(visible);
 
-  // Reset state when the modal closes so the next open starts fresh.
-  useEffect(() => {
-    if (!visible) {
-      setReason('Spam');
-      setNote('');
-      setSubmitting(false);
-    }
-  }, [visible]);
-
-  const submit = async () => {
+  const submit = () => {
     if (!userId) return;
-    setSubmitting(true);
-    try {
-      await container.reportUser.execute({
-        reporterId: userId,
-        targetUserId,
-        reason,
-        note: note.trim() || undefined,
-      });
-      onClose();
-      setNotify({ title: t.report.user.successTitle, message: t.report.user.successToast });
-    } catch (err) {
-      if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        onClose();
-        setNotify({ title: t.report.user.duplicateTitle, message: t.report.user.duplicateError });
-      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
-        onClose();
-        setNotify({ title: t.report.user.alreadyModeratedTitle, message: t.report.user.alreadyModeratedError });
-      } else {
-        setNotify({ title: t.report.user.errorTitle, message: t.actions.errors.networkError });
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    void runSubmit(
+      (r, n) => container.reportUser.execute({ reporterId: userId, targetUserId, reason: r, note: n || undefined }),
+      onClose,
+      {
+        success: { title: t.report.user.successTitle, message: t.report.user.successToast },
+        duplicate: { title: t.report.user.duplicateTitle, message: t.report.user.duplicateError },
+        alreadyModerated: { title: t.report.user.alreadyModeratedTitle, message: t.report.user.alreadyModeratedError },
+        error: { title: t.report.user.errorTitle, message: t.actions.errors.networkError },
+      },
+    );
   };
 
   return (
