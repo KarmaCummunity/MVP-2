@@ -5,7 +5,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { ChatError } from '@kc/application';
+import type { ListRenderItem } from 'react-native';
+import { ChatError, type ChatWithPreview } from '@kc/application';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { useChatStore } from '../../src/store/chatStore';
 import { useAuthStore } from '../../src/store/authStore';
@@ -54,6 +55,24 @@ export default function ChatListScreen() {
     return list.slice(0, visible);
   }, [inbox, q, visible]);
 
+  // Stable callbacks + renderItem so memoized rows skip re-render on every
+  // search keystroke / refresh (only changed rows re-render).
+  const handleOpen = useCallback(
+    (chatId: string) => router.push(`/chat/${chatId}`),
+    [router],
+  );
+  const handleRequestHide = useCallback(
+    (chatId: string, otherUserId: string | null) => setHideTarget({ chatId, otherUserId }),
+    [],
+  );
+  const renderItem = useCallback<ListRenderItem<ChatWithPreview>>(
+    ({ item }) => (
+      <InboxChatRow item={item} onOpen={handleOpen} onRequestHide={handleRequestHide} />
+    ),
+    [handleOpen, handleRequestHide],
+  );
+  const handleEndReached = useCallback(() => setVisible((v) => v + PAGE), []);
+
   return (
     <SafeAreaView style={styles.container} edges={['top']} testID="chat-inbox-screen">
       <View style={styles.header}>
@@ -78,8 +97,12 @@ export default function ChatListScreen() {
       <FlatList
         data={filtered}
         keyExtractor={(c) => c.chatId}
-        onEndReached={() => setVisible((v) => v + PAGE)}
+        onEndReached={handleEndReached}
         onEndReachedThreshold={0.6}
+        initialNumToRender={12}
+        maxToRenderPerBatch={12}
+        windowSize={9}
+        removeClippedSubviews
         refreshControl={
           <RefreshControl
             refreshing={refreshing}
@@ -88,15 +111,7 @@ export default function ChatListScreen() {
             colors={[colors.primary]}
           />
         }
-        renderItem={({ item }) => (
-          <InboxChatRow
-            item={item}
-            onOpen={() => router.push(`/chat/${item.chatId}`)}
-            onRequestHide={() =>
-              setHideTarget({ chatId: item.chatId, otherUserId: item.otherParticipant.userId })
-            }
-          />
-        )}
+        renderItem={renderItem}
         ItemSeparatorComponent={InboxChatRowSeparator}
         ListEmptyComponent={
           <EmptyState

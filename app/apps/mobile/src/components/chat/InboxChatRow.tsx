@@ -12,17 +12,20 @@ import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   readonly item: ChatWithPreview;
-  readonly onOpen: () => void;
-  readonly onRequestHide: () => void;
+  readonly onOpen: (chatId: string) => void;
+  readonly onRequestHide: (chatId: string, otherUserId: string | null) => void;
 }
 
-export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
+// Memoized: the inbox FlatList re-renders on every search keystroke and
+// refresh, but each row only depends on its own `item` and stable parent
+// callbacks — without memo every row re-rendered on each keystroke.
+function InboxChatRowInner({ item, onOpen, onRequestHide }: Props) {
   const { t } = useTranslation();
   const styles = useInboxChatRowStyles();
   const { colors } = useTheme();
   return (
     <View style={styles.chatRow}>
-      <TouchableOpacity style={styles.chatRowMain} onPress={onOpen}>
+      <TouchableOpacity style={styles.chatRowMain} onPress={() => onOpen(item.chatId)}>
         <AvatarInitials
           name={item.otherParticipant.displayName ?? t('common.deletedUser')}
           avatarUrl={item.otherParticipant.avatarUrl}
@@ -50,7 +53,7 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
         <View style={{ width: 22 }} />
       )}
       <Pressable
-        onPress={onRequestHide}
+        onPress={() => onRequestHide(item.chatId, item.otherParticipant.userId)}
         hitSlop={{ top: 12, bottom: 12, left: 12, right: 12 }}
         accessibilityRole="button"
         accessibilityLabel={t('chat.hideChatA11y')}
@@ -62,6 +65,8 @@ export function InboxChatRow({ item, onOpen, onRequestHide }: Props) {
     </View>
   );
 }
+
+export const InboxChatRow = React.memo(InboxChatRowInner);
 
 const useInboxChatRowStyles = makeUseStyles(({ colors }) => ({
   chatRow: {
