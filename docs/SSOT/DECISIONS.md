@@ -1080,6 +1080,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-59 — Single operated contact mailbox; drop the un-owned `support@karma.community` channel (2026-06-09)
+
+**Date.** 2026-06-09
+
+**Decision.** The only contact mailbox the project actually operates is `karmacommunity2.0@gmail.com`. The `support@karma.community` address referenced an un-owned/unconfigured domain — mail sent to it would silently bounce. The duplicate "מייל — ארגון" row in About → Contact (`AboutContactLinks.tsx`) is removed, leaving a single email row (relabeled "מייל"); `ABOUT_EMAIL_ORG` and the `contactEmailOrgLabel` i18n key are deleted. `FR-SETTINGS-009` AC1 is amended to point its fallback `mailto:` at the gmail address.
+
+**Rationale.** A contact channel that silently fails is worse than no channel — the user believes they reached support. Two rows resolving to one mailbox (once the dead one is repointed) is also confusing. Removing the dead duplicate is the simplest user-coherent outcome and aligns with the standing "no automated outbound email; use `karmacommunity2.0@gmail.com` for contact-us" project policy. Closes the `support@karma.community` portion of `TD-99` / audit SET-6.
+
+**Alternatives rejected.** Repointing `ABOUT_EMAIL_ORG` to the gmail — produces two identical email rows. Registering/operating the `karma.community` domain mailbox — out of scope for MVP and a PM/ops action, not a code change.
+
+**Affected docs.** `app/apps/mobile/src/features/about-landing/aboutExternalLinks.ts`, `AboutContactLinks.tsx`, `app/apps/mobile/src/i18n/locales/he/modules/aboutContentUxRefreshPartB.ts`, `docs/SSOT/spec/11_settings.md` (FR-SETTINGS-009 AC1), `docs/SSOT/TECH_DEBT.md` (TD-99).
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08
@@ -1129,6 +1143,7 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 | 2.8 | 2026-05-22 | Added `D-RESP-001` (desktop adaptation strategy: adapted side rail + 280px aside panel, inbox chat, split-screen auth, 4-tier breakpoints, `SHELL_V2_ENABLED` flag, five-PR delivery `FR-RESP-001..005`). |
 | 2.7 | 2026-05-22 | Added `D-37` (auto `db-deploy` to `supabase-prod` on `main` push when migration paths change; manual dispatch retained). |
 | 2.6 | 2026-05-18 | Added `D-36` (canonical streets from data.gov.il package 321; zero filtering, free-text fallback, city-dependent picker with onboarding progressive disclosure). |
+| 2.6 | 2026-06-09 | Added `D-59` (single operated contact mailbox; drop un-owned `support@karma.community`; closes TD-99 SET-6 portion). |
 | 2.5 | 2026-05-17 | Added `D-35` (`posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status). |
 | 2.4 | 2026-05-17 | Added `D-34` (closed-post Hide fans out to `posts.visibility` + owner's `surface_visibility`; FR-POST-009 + FR-PROFILE-001 AC4 clarified). |
 | 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native via Google Sign-In SDK). |

@@ -3,7 +3,6 @@
  * User-facing copy for mail `subject` / WhatsApp `text` lives in i18n (`aboutContent.*`).
  */
 export const ABOUT_EMAIL_NAVE = 'karmacommunity2.0@gmail.com';
-export const ABOUT_EMAIL_ORG = 'support@karma.community';
 
 /** Community WhatsApp — replace with a stable `chat.whatsapp.com` invite when issued. */
 export const ABOUT_WHATSAPP_GROUP_URL =
