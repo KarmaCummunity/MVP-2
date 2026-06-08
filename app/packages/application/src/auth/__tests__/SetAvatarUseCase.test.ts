@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SetAvatarUseCase } from '../SetAvatarUseCase';
+import { ProfileError } from '../errors';
 import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
@@ -58,7 +59,10 @@ describe('SetAvatarUseCase', () => {
 
     await expect(
       useCase.execute({ sessionUserId: userId, userId, avatarUrl: 'file:///tmp/bad.jpg' }),
-    ).rejects.toThrow('invalid_avatar_url');
+    ).rejects.toMatchObject({
+      name: 'ProfileError',
+      code: 'invalid_avatar_url',
+    } satisfies Partial<ProfileError>);
   });
 
   it('rejects empty/whitespace URL string (use null to clear)', async () => {

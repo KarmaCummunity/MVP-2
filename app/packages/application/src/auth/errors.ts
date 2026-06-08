@@ -98,6 +98,7 @@ export function isOnboardingError(value: unknown): value is OnboardingError {
 export type ProfileErrorCode =
   | 'invalid_user_id'
   | 'invalid_display_name'
+  | 'invalid_avatar_url'
   | 'biography_too_long'
   | 'biography_url_forbidden'
   | 'city_pair_required'
