@@ -15,6 +15,7 @@ import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { EmptyState } from '../../src/components/EmptyState';
 import { HideChatConfirmModal } from '../../src/components/HideChatConfirmModal';
 import { InboxChatRow, InboxChatRowSeparator } from '../../src/components/chat/InboxChatRow';
+import { InboxListSkeleton } from '../../src/components/skeletons/InboxListSkeleton';
 import { NotifyModal } from '../../src/components/NotifyModal';
 
 const PAGE = 30;
@@ -114,11 +115,15 @@ export default function ChatListScreen() {
         renderItem={renderItem}
         ItemSeparatorComponent={InboxChatRowSeparator}
         ListEmptyComponent={
-          <EmptyState
-            icon="chatbubbles-outline"
-            title={t('chat.noChats')}
-            subtitle={t('chat.noChatsDesc')}
-          />
+          inbox === null ? (
+            <InboxListSkeleton />
+          ) : (
+            <EmptyState
+              icon="chatbubbles-outline"
+              title={t('chat.noChats')}
+              subtitle={t('chat.noChatsDesc')}
+            />
+          )
         }
       />
 
