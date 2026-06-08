@@ -4,6 +4,7 @@ import { View, Text, TouchableOpacity, Modal, Pressable } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { rowDirectionStart, selfAlignStart } from '../../lib/rtlLayout';
 
 export function KarmaBadge({ points }: { readonly points: number }) {
   const { t } = useTranslation();
@@ -38,10 +39,14 @@ export function KarmaBadge({ points }: { readonly points: number }) {
 
 const useKarmaBadgeStyles = makeUseStyles(({ colors }) => ({
   badge: {
-    flexDirection: 'row-reverse' as const,
+    // Lay the row from the reading-start edge so the number reads before the
+    // label in both Hebrew (RTL) and English (LTR). rowDirectionStart avoids the
+    // native forceRTL double-flip a raw 'row-reverse' triggers (see lib/rtlLayout.ts).
+    flexDirection: rowDirectionStart,
     alignItems: 'center' as const,
     gap: spacing.xs,
-    alignSelf: 'flex-end' as const,
+    // Hug the reading-start edge: right in Hebrew (RTL), left in English (LTR).
+    alignSelf: selfAlignStart,
     paddingHorizontal: spacing.sm,
     paddingVertical: spacing.xs,
     backgroundColor: colors.primarySurface,
