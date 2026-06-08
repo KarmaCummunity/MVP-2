@@ -33,12 +33,8 @@ export function useFeedRealtime(opts: UseFeedRealtimeOptions): void {
   // Mirror query-cache data into lastSeenAtRef so we always know the newest
   // post's timestamp without storing the full data in state.
   useEffect(() => {
-    // The Home Feed is an infinite query, so the cache holds
-    // `InfiniteData<FeedPage>` ({ pages, pageParams }), not a bare FeedPage.
-    // Guard every hop: a restored (PERF-6) or empty cache can have undefined
-    // pages/posts, and `cached.posts[0]` on the wrong shape throws.
     const cached = queryClient.getQueryData<InfiniteData<FeedPage>>(queryKey);
-    const first = cached?.pages?.[0]?.posts?.[0]?.createdAt ?? null;
+    const first = cached?.pages[0]?.posts[0]?.createdAt ?? null;
     if (first && (!lastSeenAtRef.current || first > lastSeenAtRef.current)) {
       lastSeenAtRef.current = first;
     }
@@ -125,16 +121,18 @@ async function performGapFill(params: GapFillParams): Promise<void> {
   if (newPosts.length === 0) return;
 
   queryClient.setQueryData<InfiniteData<FeedPage>>(queryKey, (prev) => {
-    if (!prev || prev.pages.length === 0) return prev;
+    if (!prev) return prev;
 
-    // Dedupe across all pages, then prepend the incoming batch to the first page
-    // (the infinite query renders from `pages[].posts`, not a flat `posts`).
+    const firstPage = prev.pages[0];
+    if (!firstPage) return prev;
+
+    // Dedupe: remove from existing list any id already in the incoming batch.
     const incomingIds = new Set(newPosts.map((p) => p.postId));
-    const pages = prev.pages.map((page, idx) => {
-      const kept = page.posts.filter((p) => !incomingIds.has(p.postId));
-      return idx === 0 ? { ...page, posts: [...newPosts, ...kept] } : { ...page, posts: kept };
-    });
+    const deduped = firstPage.posts.filter((p) => !incomingIds.has(p.postId));
 
-    return { ...prev, pages };
+    return {
+      ...prev,
+      pages: [{ ...firstPage, posts: [...newPosts, ...deduped] }, ...prev.pages.slice(1)],
+    };
   });
 }
