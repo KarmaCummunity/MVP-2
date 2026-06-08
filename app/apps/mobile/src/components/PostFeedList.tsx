@@ -125,6 +125,13 @@ export function PostFeedList({
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
       showsVerticalScrollIndicator={false}
+      // Windowing: the default windowSize (21) keeps ~10 screens of
+      // image-bearing post cards mounted each direction on the app's
+      // highest-traffic screen. Cap it so memory and scroll work stay bounded;
+      // counts are per-row (numColumns groups items into rows).
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={7}
     />
   );
 }
