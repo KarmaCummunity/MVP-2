@@ -30,7 +30,10 @@ export default function RidesLayout() {
         animationDuration: 220,
       }}
     >
-      <Stack.Screen name="index" />
+      <Stack.Screen
+        name="index"
+        options={{ ...detailHeader, headerTitle: t('donations.categories.transport.title') }}
+      />
       <Stack.Screen
         name="[id]"
         options={{ ...detailHeader, headerTitle: t('donations.rides.detailTitle') }}
