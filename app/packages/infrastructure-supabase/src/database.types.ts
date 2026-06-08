@@ -3365,73 +3365,29 @@ export type Database = {
         Returns: string
       }
       escape_ilike: { Args: { p: string }; Returns: string }
-      feed_ranked_ids:
-        | {
-            Args: {
-              p_cursor_created_at?: string
-              p_cursor_distance?: number
-              p_cursor_post_id?: string
-              p_filter_categories?: string[]
-              p_filter_center_city?: string
-              p_filter_item_conditions?: string[]
-              p_filter_radius_km?: number
-              p_filter_status?: string
-              p_filter_type?: string
-              p_page_limit?: number
-              p_proximity_sort_city?: string
-              p_sort_order?: string
-              p_viewer_id: string
-            }
-            Returns: {
-              distance_km: number
-              post_id: string
-            }[]
-          }
-        | {
-            Args: {
-              p_cursor_created_at?: string
-              p_cursor_distance?: number
-              p_cursor_post_id?: string
-              p_filter_categories?: string[]
-              p_filter_center_city?: string
-              p_filter_item_conditions?: string[]
-              p_filter_radius_km?: number
-              p_filter_search_query?: string
-              p_filter_status?: string
-              p_filter_type?: string
-              p_followers_only?: boolean
-              p_page_limit?: number
-              p_proximity_sort_city?: string
-              p_sort_order?: string
-              p_viewer_id: string
-            }
-            Returns: {
-              distance_km: number
-              post_id: string
-            }[]
-          }
-        | {
-            Args: {
-              p_cursor_created_at?: string
-              p_cursor_distance?: number
-              p_cursor_post_id?: string
-              p_filter_categories?: string[]
-              p_filter_center_city?: string
-              p_filter_item_conditions?: string[]
-              p_filter_radius_km?: number
-              p_filter_status?: string
-              p_filter_type?: string
-              p_followers_only?: boolean
-              p_page_limit?: number
-              p_proximity_sort_city?: string
-              p_sort_order?: string
-              p_viewer_id: string
-            }
-            Returns: {
-              distance_km: number
-              post_id: string
-            }[]
-          }
+      feed_ranked_ids: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_distance?: number
+          p_cursor_post_id?: string
+          p_filter_categories?: string[]
+          p_filter_center_city?: string
+          p_filter_item_conditions?: string[]
+          p_filter_radius_km?: number
+          p_filter_search_query?: string
+          p_filter_status?: string
+          p_filter_type?: string
+          p_followers_only?: boolean
+          p_page_limit?: number
+          p_proximity_sort_city?: string
+          p_sort_order?: string
+          p_viewer_id: string
+        }
+        Returns: {
+          distance_km: number
+          post_id: string
+        }[]
+      }
       finance_ledger_delete: {
         Args: { p_entry_id: string }
         Returns: undefined
