@@ -174,10 +174,6 @@ export async function applyPostActorIdentityProjectionBatch(
   opts?: ApplyPostActorIdentityProjectionOptions,
 ): Promise<PostWithOwner[]> {
   if (posts.length === 0) return posts;
-  const identityByPost = await fetchPostActorIdentitiesByPostIds(
-    client,
-    posts.map((p) => p.postId),
-  );
 
   const targets: string[] = [];
   for (const p of posts) {
@@ -185,7 +181,19 @@ export async function applyPostActorIdentityProjectionBatch(
     const rid = p.recipientUser?.userId ?? p.recipient?.recipientUserId;
     if (rid) targets.push(rid);
   }
-  const followed = viewerId ? await fetchFollowedTargets(client, viewerId, targets) : new Set<string>();
+
+  // These two reads are independent — `targets` is derived from `posts` in
+  // memory, not from the identity rows — so run them in parallel to avoid a
+  // request waterfall on every feed page / post / search load.
+  const [identityByPost, followed] = await Promise.all([
+    fetchPostActorIdentitiesByPostIds(
+      client,
+      posts.map((p) => p.postId),
+    ),
+    viewerId
+      ? fetchFollowedTargets(client, viewerId, targets)
+      : Promise.resolve(new Set<string>()),
+  ]);
 
   const listingHost = opts?.identityListingHostUserId ?? null;
 
