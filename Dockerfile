@@ -1,6 +1,11 @@
-# syntax=docker/dockerfile:1.7
 # Two-stage build: Expo web bundle → Node 20 Hono server.
 # Designed for Railway, builds anywhere Docker runs.
+#
+# No `# syntax=` frontend directive: it forced BuildKit to pull
+# docker/dockerfile:1.7 from Docker Hub every build, which failed with a
+# Docker Hub auth/rate-limit error (2026-06-04). This Dockerfile uses only
+# standard syntax (multi-stage, ARG/ENV, COPY --from) supported by the
+# built-in frontend, so the external pull is unnecessary.
 
 # ─── Stage 1: install + build the web bundle ──────────────────────────
 FROM node:20-bookworm-slim AS builder
