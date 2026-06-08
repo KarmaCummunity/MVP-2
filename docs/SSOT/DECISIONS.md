@@ -1080,10 +1080,39 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
+
+**Date.** 2026-06-08
+
+**Decision.** Karma points are self-only at MVP (`FR-KARMA-008`). The number is visible only to the signed-in user on their own profile and stats screen; no public ranking, no counterparty visibility. The economy uses server-authoritative single-anchor awards (one trigger per event, no double-counting) backed by an append-only `karma_ledger`. Closure karma is anchored to the `posts.status` transition into/out of `closed_delivered`, not recipients-row existence (mirrors `items_given_count` in `0006`). The `estimated_value` slider feeds a `karma_value_bonus` at closure for givers only. Realtime updates patch the `['user-profile', userId]` React Query cache via own-row `postgres_changes` subscription.
+
+**Rationale.** Self-only removes the incentive to farm karma (inflating a private number is pointless), allowing MVP launch without anti-collusion guards. Closure anchor on `posts.status` is causally correct (the status flip is the authoritative delivery signal) and robust to recipient-row deletion order. Single-anchor + append-and-sum is simpler and race-safer than a global unique key (which would abort the host transaction on a duplicate).
+
+**Alternatives rejected.** Public karma from day 1 — requires anti-collusion first (see D-156). Global unique key on `karma_ledger` — aborts the parent transaction on race; partial unique index + on-conflict-do-nothing is safe. Anchoring closure to recipients-row — wrong causal signal; the row can precede or outlive the status change.
+
+**Affected docs.** `supabase/migrations/0097–0100`, `packages/domain/src/karma.ts`, `apps/mobile/src/components/profile/KarmaBadge.tsx`, `docs/SSOT/spec/14_karma.md`.
+
+---
+
+## D-156 — Anti-collusion gate as hard precondition for karma public flip
+
+**Date.** 2026-06-08
+
+**Decision.** The karma public-flip (`FR-KARMA-008`) requires reciprocity/velocity anti-collusion caps before it can be enabled. Specifically: (a) a mutual-delivery cap (e.g., two users cannot be each other's closure giver and receiver more than N times in a rolling window), and (b) a velocity cap (max karma from any single counterparty per period). Without these, a colluding pair can farm +35/+15 per fake delivery cycle indefinitely, and public visibility would create a direct incentive to do so.
+
+**Rationale.** At MVP, karma is self-only so there is no external incentive to inflate a private number. But once the number becomes publicly visible it becomes a trust signal, and fake-delivery farming would corrupt it rapidly. The caps must land before — or atomically with — the public flip. An in-app heads-up banner must also appear before a user's months-old private karma is first made publicly visible.
+
+**Alternatives rejected.** Launch public karma without caps — creates an immediately exploitable attack surface once any user discovers the ₪1000 fake-give loop (+35 giver, +15 receiver, repeat). Trust-only model — MVP community is small and trust is feasible today, but does not scale to hundreds of users.
+
+**Affected docs.** `docs/SSOT/spec/14_karma.md` FR-KARMA-008; `docs/SSOT/TECH_DEBT.md` (TD-166 anti-collusion watch item).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.1 | 2026-06-08 | Added `D-155` (karma economy: self-only at MVP, single-anchor awards, status-anchored closure, own-row Realtime). Added `D-156` (anti-collusion caps as hard precondition for karma public flip; `FR-KARMA-008`). |
 | 4.0 | 2026-06-04 | Added `D-58` (native Sign in with Apple via `signInWithIdToken` + raw nonce; `FR-AUTH-004` implemented; mirrors `D-33`; Apple portion of `TD-24` closed in code; live flow pends Supabase Apple provider config). |
 | 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |
 | 3.8 | 2026-05-29 | Added `D-56` (rides UI restored + V3.0 scope: FR-RIDE-019 + FR-RIDE-023..045 — advanced publish, dashboard, active-ride + emergency, ratings, business rules, cross-world). Supersedes `D-51`. |
