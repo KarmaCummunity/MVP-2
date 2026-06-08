@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CompleteBasicInfoUseCase } from '../CompleteBasicInfoUseCase';
-import { OnboardingError } from '../errors';
+import { OnboardingError, ProfileError } from '../errors';
 import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
@@ -86,6 +86,31 @@ describe('CompleteBasicInfoUseCase', () => {
         contactPhone: '1234567890123456789012',
       }),
     ).rejects.toThrow('invalid_contact_phone');
+  });
+
+  it('throws typed ProfileError (not raw Error) for field validation failures (§5 invariant)', async () => {
+    const useCase = makeUc(seed());
+
+    await expect(
+      useCase.execute({ sessionUserId: userId, userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
+    ).rejects.toMatchObject({
+      name: 'ProfileError',
+      code: 'invalid_display_name',
+    } satisfies Partial<ProfileError>);
+
+    await expect(
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
+    ).rejects.toBeInstanceOf(ProfileError);
+
+    await expect(
+      useCase.execute({ sessionUserId: userId,
+        userId,
+        displayName: 'נווה',
+        cityId: '4000',
+        cityName: 'חיפה',
+        contactPhone: '1234567890123456789012',
+      }),
+    ).rejects.toMatchObject({ name: 'ProfileError', code: 'invalid_contact_phone' });
   });
 
   it('rejects whitespace-only display_name (FR-AUTH-010 AC1)', async () => {
