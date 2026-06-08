@@ -28,7 +28,7 @@
     "@react-native-community/datetimepicker": "8.4.4",
     "@sentry/react-native": "^8.12.0",
     "@supabase/supabase-js": "^2.69.0",
-    "@tanstack/react-query": "^5.62.0",
+    "@tanstack/react-query": "^5.101.0",
     "date-fns": "^4.1.0",
     "expo": "~54.0.34",
     "expo-auth-session": "~7.0.11",
