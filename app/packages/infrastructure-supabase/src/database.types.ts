@@ -3764,6 +3764,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string

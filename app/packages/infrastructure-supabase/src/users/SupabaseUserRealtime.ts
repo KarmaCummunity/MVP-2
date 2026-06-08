@@ -16,7 +16,7 @@ export class SupabaseUserRealtime implements IUserRealtime {
     onChange: (user: User) => void,
     onError?: (err: Error) => void,
   ): Unsubscribe {
-    const topic = `me:${userId}:${Math.random().toString(36).slice(2, 10)}`;
+    const topic = `me:${userId}:${Date.now()}`;
     const channel = this.client
       .channel(topic)
       .on(
