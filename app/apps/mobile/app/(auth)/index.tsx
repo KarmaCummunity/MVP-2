@@ -23,6 +23,7 @@ import { useAuthStore } from '../../src/store/authStore';
 import {
   getOAuthRedirectUri,
   getSignInWithGoogleUseCase,
+  getSignInWithAppleUseCase,
   redirectToGoogleSignInWeb,
 } from '../../src/services/authComposition';
 import { mapAuthErrorToHebrew } from '../../src/services/authMessages';
@@ -46,6 +47,8 @@ export default function WelcomeScreen() {
   const setSession = useAuthStore((s) => s.setSession);
   const [googleLoading, setGoogleLoading] = useState(false);
   const [googleError, setGoogleError] = useState<string | null>(null);
+  const [appleLoading, setAppleLoading] = useState(false);
+  const [appleError, setAppleError] = useState<string | null>(null);
   const isExecutingRef = React.useRef(false);
 
   // ── Animation values ──────────────────────────────────────────────────
@@ -137,6 +140,28 @@ export default function WelcomeScreen() {
     }
   };
 
+  // FR-AUTH-004 (iOS only): native Sign in with Apple. A deliberate cancel
+  // (`apple_dismissed`) is silent; real failures surface in the modal.
+  const handleApple = async () => {
+    if (isExecutingRef.current) return;
+    isExecutingRef.current = true;
+    setAppleLoading(true);
+    try {
+      const { session } = await getSignInWithAppleUseCase().execute();
+      setSession(session);
+      router.replace('/(tabs)');
+    } catch (err) {
+      const dismissed = isAuthError(err) && err.message === 'apple_dismissed';
+      if (!dismissed && !useAuthStore.getState().isAuthenticated) {
+        const message = isAuthError(err) ? mapAuthErrorToHebrew(err.code) : t('auth.networkError');
+        setAppleError(`${message} (${isAuthError(err) ? err.message : String(err)})`);
+      }
+    } finally {
+      setAppleLoading(false);
+      isExecutingRef.current = false;
+    }
+  };
+
   return (
     <SafeAreaView style={styles.container}>
       <AuthBackground />
@@ -172,7 +197,8 @@ export default function WelcomeScreen() {
               label={t('auth.continueWithApple')}
               btnStyle={styles.appleBtn}
               textStyle={styles.appleBtnText}
-              onPress={() => router.push('/(auth)/sign-in')}
+              onPress={handleApple}
+              loading={appleLoading}
               icon={<Ionicons name="logo-apple" size={20} color="#FFFFFF" />}
             />
           )}
@@ -203,6 +229,12 @@ export default function WelcomeScreen() {
         title={t('auth.googleSignInFailedTitle')}
         message={googleError ?? ''}
         onDismiss={() => setGoogleError(null)}
+      />
+      <NotifyModal
+        visible={appleError !== null}
+        title={t('auth.appleSignInFailedTitle')}
+        message={appleError ?? ''}
+        onDismiss={() => setAppleError(null)}
       />
     </SafeAreaView>
   );

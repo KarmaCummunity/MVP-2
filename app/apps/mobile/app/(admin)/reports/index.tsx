@@ -5,6 +5,7 @@ import { useState } from 'react';
 import { FlatList, RefreshControl, StyleSheet, Text, View } from 'react-native';
 import type { ListOpenReportsFilters } from '@kc/application';
 import { useReportsInbox } from '../../../src/hooks/useReportsInbox';
+import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { ReportFilters } from '../../../src/components/admin/reports/ReportFilters';
 import { ReportRow } from '../../../src/components/admin/reports/ReportRow';
 import he from '../../../src/i18n/locales/he';
@@ -16,7 +17,7 @@ export default function ReportsInbox() {
 
   return (
     <View style={styles.root}>
-      <Text style={styles.title}>{he.admin.reports.inboxTitle}</Text>
+      <AdminScreenHeader title={he.admin.reports.inboxTitle} />
       <ReportFilters value={filters} onChange={setFilters} />
       <FlatList
         data={rows}
@@ -49,7 +50,6 @@ export default function ReportsInbox() {
 
 const styles = StyleSheet.create({
   root:       { flex: 1 },
-  title:      { fontSize: 20, fontWeight: '700', padding: 16 },
   empty:      { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle: { fontSize: 16, fontWeight: '600' },
   emptyHint:  { fontSize: 13, opacity: 0.6, textAlign: 'center' },

@@ -94,7 +94,8 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
 }
 import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { queryClient, persistOptions } from '../src/lib/queryPersist';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
 import { useTheme } from '@kc/ui';
@@ -118,18 +119,6 @@ import { LegalConsentGate } from '../src/components/legal/LegalConsentGate';
 import { ModalStackProvider } from '../src/components/legal/useActiveModalStack';
 
 SplashScreen.preventAutoHideAsync();
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: {
-      staleTime: 10 * 60_000,       // 10 min default — most data is fine for 10 min
-      gcTime: 30 * 60_000,          // 30 min — keep in memory longer
-      refetchOnWindowFocus: false,  // explicit; Realtime + per-query overrides handle live data
-      refetchOnMount: true,         // default — respects staleTime
-      retry: 2,
-    },
-  },
-});
 
 function NotificationsBridge(): null {
   const userId = useAuthStore((s) => s.session?.userId ?? null);
@@ -248,11 +237,11 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, width: '100%', alignSelf: 'stretch' }}>
       <SafeAreaProvider>
         <ErrorBoundary>
-          <QueryClientProvider client={queryClient}>
+          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
             <AppThemeProvider>
               <ThemedRootShell />
             </AppThemeProvider>
-          </QueryClientProvider>
+          </PersistQueryClientProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>

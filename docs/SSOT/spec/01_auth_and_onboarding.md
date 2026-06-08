@@ -1,6 +1,6 @@
 # 2.1 Authentication & Onboarding
 
-> **Status:** 🟡 Partial — Google + guest preview shipped; email/password via secondary link on welcome. Full `FR-AUTH-002` picker (Phone OTP, tabbed email, real Apple) deferred — `TD-151` / `TD-24`. Onboarding + sessions + delete: ✅. **Audit 2026-05-29:** `performFullSignOut` + restore expiry sign-out shipped (TD-164). ⚠️ Audit 2026-05-16: ~~🔴 **FR-AUTH-017 AC3** sign-out leaves Expo push token active~~ addressed by TD-164; welcome screen has no email entry per FR-AUTH-001 AC2 (TD-104); Forgot Password button dead (FR-AUTH-008 unimplemented); FR-AUTH-015 soft-gate wired only to post-create (not follow + chat); FR-AUTH-016 30-day re-registration cooldown unimplemented; FR-AUTH-011 AC2 avatar resize 512 vs spec'd 1024; SignInWithEmail short-circuits `invalid_email` distinct from `authentication_failed` (D-22 spirit). See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
+> **Status:** 🟡 Partial — Google + guest preview shipped; email/password via secondary link on welcome. Full `FR-AUTH-002` picker (Phone OTP, tabbed email) deferred — `TD-151`; Apple SSO (`FR-AUTH-004`) implemented natively (`D-58`, 2026-06-04), live flow pends Supabase Apple provider config. Onboarding + sessions + delete: ✅. **Audit 2026-05-29:** `performFullSignOut` + restore expiry sign-out shipped (TD-164). ⚠️ Audit 2026-05-16: ~~🔴 **FR-AUTH-017 AC3** sign-out leaves Expo push token active~~ addressed by TD-164; welcome screen has no email entry per FR-AUTH-001 AC2 (TD-104); Forgot Password button dead (FR-AUTH-008 unimplemented); FR-AUTH-015 soft-gate wired only to post-create (not follow + chat); FR-AUTH-016 30-day re-registration cooldown unimplemented; FR-AUTH-011 AC2 avatar resize 512 vs spec'd 1024; SignInWithEmail short-circuits `invalid_email` distinct from `authentication_failed` (D-22 spirit). See `docs/SSOT/audit/2026-05-16/02_auth_profile.md`.
 
 
 
@@ -117,6 +117,8 @@ On iOS, a user may sign up with "Sign in with Apple". The flow is otherwise iden
 
 **Edge Cases.**
 - The user revokes Apple authorization later (Settings > Apple ID): existing app session remains valid until token expiry; subsequent re-auth attempts route to `FR-AUTH-002`.
+
+**Implementation (2026-06-04).** Native Sign in with Apple via `expo-apple-authentication` → `supabase.auth.signInWithIdToken({ provider: 'apple' })` with a raw nonce (`SignInWithAppleUseCase`; composition `getSignInWithAppleUseCase`). AC1 button is iOS-gated in `(auth)/index.tsx`; AC2 relay email is set by Supabase on first sign-in; AC3 name is captured on first authorization and persisted to `user_metadata.full_name` for onboarding prefill. See `D-58`. **Go-live dependency:** the Apple provider must be configured in Supabase Auth (Service ID + key) and a native rebuild is required — an OTA update cannot add the native capability. `TD-24` Apple portion closed; Phone OTP still deferred.
 
 **Related.** Screens: 1.2 · Domain: `User`, `Session`, `AuthMethod`.
 
