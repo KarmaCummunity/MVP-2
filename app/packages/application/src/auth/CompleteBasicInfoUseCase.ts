@@ -5,7 +5,7 @@ import { STREET_NUMBER_PATTERN } from '@kc/domain';
 import type { IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
 import { assertSessionUser } from './assertSessionUser';
-import { OnboardingError } from './errors';
+import { OnboardingError, ProfileError } from './errors';
 
 export interface CompleteBasicInfoInput {
   readonly sessionUserId: string;
@@ -30,26 +30,26 @@ export class CompleteBasicInfoUseCase {
     assertSessionUser(input.sessionUserId, input.userId);
     const trimmedName = input.displayName.trim();
     if (trimmedName.length === 0 || trimmedName.length > 50) {
-      throw new Error('invalid_display_name');
+      throw new ProfileError('invalid_display_name');
     }
     const trimmedCityId = input.cityId.trim();
     const trimmedCityName = input.cityName.trim();
     if (trimmedCityId.length === 0 || trimmedCityName.length === 0) {
-      throw new Error('invalid_city');
+      throw new ProfileError('invalid_city');
     }
 
     const st = (input.profileStreet ?? '').trim();
     const num = (input.profileStreetNumber ?? '').trim();
     if (st.length > 0 !== num.length > 0) {
-      throw new Error('incomplete_profile_address');
+      throw new ProfileError('incomplete_profile_address');
     }
     if (st.length > 0) {
-      if (st.length < 1 || st.length > 80) throw new Error('invalid_profile_street');
-      if (!STREET_NUMBER_PATTERN.test(num)) throw new Error('invalid_profile_street_number');
+      if (st.length < 1 || st.length > 80) throw new ProfileError('invalid_profile_street');
+      if (!STREET_NUMBER_PATTERN.test(num)) throw new ProfileError('invalid_profile_street_number');
     }
 
     const phone = (input.contactPhone ?? '').trim();
-    if (phone.length > 20) throw new Error('invalid_contact_phone');
+    if (phone.length > 20) throw new ProfileError('invalid_contact_phone');
 
     // Audit §17.3 — reject illegal onboarding state transitions. Allowed
     // source states: pending_basic_info (normal flow) and pending_avatar
