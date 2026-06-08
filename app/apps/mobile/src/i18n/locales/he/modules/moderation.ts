@@ -6,9 +6,13 @@ export const moderationHe = {
       reasonLabel: 'סיבת הדיווח',
       noteLabel: 'הערה (אופציונלי, עד 500 תווים)',
       submit: 'שלח דיווח',
+      successTitle: 'הדיווח נשלח',
       successToast: '✅ הדיווח התקבל. הצוות שלנו יבדוק.',
+      duplicateTitle: 'כבר דיווחת',
       duplicateError: 'כבר דיווחת על משתמש זה ב-24 השעות האחרונות.',
+      alreadyModeratedTitle: 'הטיפול כבר נעשה',
       alreadyModeratedError: 'המשתמש כבר טופל על ידי המנהלים. תודה על העזרה.',
+      errorTitle: 'שגיאה',
     },
   },
   reasons: {

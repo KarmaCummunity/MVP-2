@@ -1,7 +1,7 @@
 // FR-MOD-007 — Report modal opened from a user profile's overflow menu.
 // Mirrors ReportPostModal but submits to container.reportUser (target_type='user').
 import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
+import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
@@ -10,6 +10,7 @@ import { makeUseStyles, useTheme } from '@kc/ui';
 import he from '../../i18n/locales/he';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { NotifyModal } from '../NotifyModal';
 
 const t = he.moderation;
 
@@ -34,6 +35,8 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   const [reason, setReason] = useState<ReportReason>('Spam');
   const [note, setNote] = useState('');
   const [submitting, setSubmitting] = useState(false);
+  // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
+  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
 
   // Reset state when the modal closes so the next open starts fresh.
   useEffect(() => {
@@ -55,16 +58,16 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
         note: note.trim() || undefined,
       });
       onClose();
-      Alert.alert(t.report.user.successToast);
+      setNotify({ title: t.report.user.successTitle, message: t.report.user.successToast });
     } catch (err) {
       if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        Alert.alert(t.report.user.duplicateError);
         onClose();
+        setNotify({ title: t.report.user.duplicateTitle, message: t.report.user.duplicateError });
       } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
-        Alert.alert(t.report.user.alreadyModeratedError);
         onClose();
+        setNotify({ title: t.report.user.alreadyModeratedTitle, message: t.report.user.alreadyModeratedError });
       } else {
-        Alert.alert(t.actions.errors.networkError);
+        setNotify({ title: t.report.user.errorTitle, message: t.actions.errors.networkError });
       }
     } finally {
       setSubmitting(false);
@@ -72,6 +75,7 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   };
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
@@ -120,6 +124,8 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
         </View>
       </View>
     </Modal>
+    <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
+    </>
   );
 }
 

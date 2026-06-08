@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next';
 // FR-CHAT-010 — Report modal opened from chat ⋮ menu.
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import type { ReportReason } from '@kc/domain';
 import { ReportError } from '@kc/application';
@@ -34,6 +34,16 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
   const [submitting, setSubmitting] = useState(false);
   // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
   const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
+
+  // Reset to defaults when the modal closes so the next open starts fresh
+  // (otherwise reason/note persist across openings on the same mounted instance).
+  useEffect(() => {
+    if (!visible) {
+      setReason('Spam');
+      setNote('');
+      setSubmitting(false);
+    }
+  }, [visible]);
 
   const submit = async () => {
     if (!userId) return;
