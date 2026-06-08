@@ -7,7 +7,6 @@ import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, spacing, typography } from '@kc/ui';
-import { TopBar } from '../../../components/TopBar';
 import { Screen } from '../../../components/ui/Screen';
 import { IconTile } from '../../../components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../components/ui/MotionEntry';
@@ -16,7 +15,7 @@ import { useShellTabBarScrollInset } from '../../../navigation/useShellTabBarVis
 import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 
 const useStyles = makeUseStyles(({ colors }) => ({
-  scrollOuter: { flex: 1 },
+  scrollView: { flex: 1 },
   scroll: {
     paddingHorizontal: spacing.lg,
     paddingTop: spacing.lg,
@@ -25,20 +24,8 @@ const useStyles = makeUseStyles(({ colors }) => ({
     alignSelf: 'center' as const,
     gap: spacing.lg,
   },
-  hero: { alignItems: 'center' as const, gap: spacing.sm },
+  hero: { alignItems: 'center' as const, gap: spacing.md },
   heroIcon: { marginBottom: spacing.xs },
-  heroTitle: {
-    ...typography.h1,
-    fontSize: 28,
-    color: colors.textPrimary,
-    textAlign: 'center' as const,
-    letterSpacing: -0.4,
-  },
-  heroSubtitle: {
-    ...typography.body,
-    color: colors.textSecondary,
-    textAlign: 'center' as const,
-  },
   body: {
     ...typography.bodyLarge,
     color: colors.textPrimary,
@@ -53,30 +40,19 @@ export function RidesHubScreen() {
   const styles = useStyles();
   const tabBarPad = useShellTabBarScrollInset();
 
-  const title = t('donations.categories.transport.title');
-  const subtitle = t('donations.categories.transport.subtitle');
-  const body = t('donations.categories.transport.body');
-
   return (
     <Screen blobs="content">
-      <TopBar />
       <ScrollView
-        style={styles.scrollOuter}
+        style={styles.scrollView}
         contentContainerStyle={[styles.scroll, { paddingBottom: tabBarPad }]}
-        keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator={false}
       >
         <MotionEntry variant="hero" delay={ENTRY_DELAY.hero} style={styles.hero}>
           <View style={styles.heroIcon}><IconTile icon="car-outline" size="lg" /></View>
-          <Text style={styles.heroTitle}>{title}</Text>
-          <Text style={styles.heroSubtitle}>{subtitle}</Text>
+          <Text style={styles.body}>{t('donations.categories.transport.body')}</Text>
         </MotionEntry>
 
         <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
-          <Text style={styles.body}>{body}</Text>
-        </MotionEntry>
-
-        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 80}>
           <DonationLinksList categorySlug="transport" />
         </MotionEntry>
       </ScrollView>
