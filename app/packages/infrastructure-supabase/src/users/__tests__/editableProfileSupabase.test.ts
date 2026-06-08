@@ -22,6 +22,7 @@ const PRIVATE_SLICE: UsersSelfPrivateSlice = {
   notification_preferences: { critical: true, social: true },
   is_super_admin: false,
   active_posts_count_internal: 0,
+  karma_points: 0,
 };
 
 function makeFakeClient(opts: {
