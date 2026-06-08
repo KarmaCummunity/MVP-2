@@ -7,7 +7,7 @@
 
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import type { QueryClient } from '@tanstack/react-query';
+import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import type { PostFeedFilter, FeedPage } from '@kc/application';
 import { getFeedRealtime, getFeedUseCase } from '../services/postsComposition';
 import { useFeedSessionStore } from '../store/feedSessionStore';
@@ -33,8 +33,12 @@ export function useFeedRealtime(opts: UseFeedRealtimeOptions): void {
   // Mirror query-cache data into lastSeenAtRef so we always know the newest
   // post's timestamp without storing the full data in state.
   useEffect(() => {
-    const cached = queryClient.getQueryData<FeedPage>(queryKey);
-    const first = cached?.posts[0]?.createdAt ?? null;
+    // The Home Feed is an infinite query, so the cache holds
+    // `InfiniteData<FeedPage>` ({ pages, pageParams }), not a bare FeedPage.
+    // Guard every hop: a restored (PERF-6) or empty cache can have undefined
+    // pages/posts, and `cached.posts[0]` on the wrong shape throws.
+    const cached = queryClient.getQueryData<InfiniteData<FeedPage>>(queryKey);
+    const first = cached?.pages?.[0]?.posts?.[0]?.createdAt ?? null;
     if (first && (!lastSeenAtRef.current || first > lastSeenAtRef.current)) {
       lastSeenAtRef.current = first;
     }
@@ -120,13 +124,17 @@ async function performGapFill(params: GapFillParams): Promise<void> {
   const newPosts = page.posts.filter((p) => p.createdAt > lastSeenAt);
   if (newPosts.length === 0) return;
 
-  queryClient.setQueryData<FeedPage>(queryKey, (prev) => {
-    if (!prev) return prev;
+  queryClient.setQueryData<InfiniteData<FeedPage>>(queryKey, (prev) => {
+    if (!prev || prev.pages.length === 0) return prev;
 
-    // Dedupe: remove from existing list any id already in the incoming batch.
+    // Dedupe across all pages, then prepend the incoming batch to the first page
+    // (the infinite query renders from `pages[].posts`, not a flat `posts`).
     const incomingIds = new Set(newPosts.map((p) => p.postId));
-    const deduped = prev.posts.filter((p) => !incomingIds.has(p.postId));
+    const pages = prev.pages.map((page, idx) => {
+      const kept = page.posts.filter((p) => !incomingIds.has(p.postId));
+      return idx === 0 ? { ...page, posts: [...newPosts, ...kept] } : { ...page, posts: kept };
+    });
 
-    return { ...prev, posts: [...newPosts, ...deduped] };
+    return { ...prev, pages };
   });
 }
