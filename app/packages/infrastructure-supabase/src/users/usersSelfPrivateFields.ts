@@ -8,6 +8,8 @@ export interface UsersSelfPrivateSlice {
   notification_preferences: unknown;
   is_super_admin: boolean;
   active_posts_count_internal: number;
+  /** FR-KARMA-007 — self-only; added to RPC in migration 0191. */
+  karma_points: number;
 }
 
 /** Owner-only fields from users_get_self_private_fields() (migration 0163). */
@@ -29,5 +31,6 @@ export function mergeSelfPrivateFields(user: User, slice: UsersSelfPrivateSlice)
     notificationPreferences: slice.notification_preferences as User['notificationPreferences'],
     isSuperAdmin: slice.is_super_admin,
     activePostsCountInternal: slice.active_posts_count_internal,
+    karmaPoints: slice.karma_points ?? 0,
   };
 }
