@@ -19,6 +19,7 @@ export type PostErrorCode =
   | 'invalid_visibility'
   | 'invalid_category'
   | 'invalid_location_display_level'
+  | 'not_found'
   | 'forbidden'
   | 'closure_not_owner'
   | 'closure_wrong_status'

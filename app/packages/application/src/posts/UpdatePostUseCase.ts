@@ -19,7 +19,7 @@ export class UpdatePostUseCase {
 
   async execute(input: UpdatePostUseCaseInput): Promise<UpdatePostOutput> {
     const current = await this.repo.findById(input.postId, input.viewerId);
-    if (!current) throw new Error(`UpdatePostUseCase: post ${input.postId} not found`);
+    if (!current) throw new PostError('not_found', `post ${input.postId} not found`);
     if (input.viewerId && current.ownerId !== input.viewerId) {
       throw new PostError('forbidden', 'forbidden');
     }

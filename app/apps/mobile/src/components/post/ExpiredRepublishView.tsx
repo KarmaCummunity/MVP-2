@@ -41,6 +41,7 @@ const ERROR_KEY: Record<PostErrorCode, string | undefined> = {
   invalid_visibility: undefined,
   invalid_category: undefined,
   invalid_location_display_level: undefined,
+  not_found: undefined,
   forbidden: undefined,
   closure_not_owner: undefined,
   closure_wrong_status: undefined,

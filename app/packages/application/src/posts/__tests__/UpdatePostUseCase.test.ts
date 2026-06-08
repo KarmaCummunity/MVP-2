@@ -98,13 +98,13 @@ describe('UpdatePostUseCase', () => {
     ).rejects.toMatchObject({ code: 'title_too_long' });
   });
 
-  it('errors when the post is not found', async () => {
+  it('throws a typed PostError(not_found) when the post is missing (so the UI maps it instead of showing a network error)', async () => {
     const repo = new FakePostRepository();
     repo.findByIdResult = null;
     const uc = new UpdatePostUseCase(repo);
     await expect(
       uc.execute({ postId: 'missing', viewerId: 'u_1', patch: { title: 'x' } }),
-    ).rejects.toThrow(/not found/);
+    ).rejects.toMatchObject({ name: 'PostError', code: 'not_found' });
   });
 
   it('rejects editing a non-open post (expired)', async () => {
