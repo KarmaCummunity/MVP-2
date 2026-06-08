@@ -28,6 +28,7 @@ import { surveyDemoHe } from './modules/surveyDemo';
 import { surveyHe } from './modules/survey';
 import { researchHe } from './modules/research';
 import { adminHe } from './modules/admin';
+import { karmaHe } from './modules/karma';
 
 const he = {
   // App
@@ -41,6 +42,9 @@ const he = {
 
   // Feed — see modules/feed.ts
   feed: feedHe,
+
+  // Karma points (FR-KARMA-004/007) — see modules/karma.ts
+  karma: karmaHe,
 
   // Post — see modules/post.ts
   post: postHe,
