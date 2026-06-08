@@ -1,4 +1,9 @@
-import type { AuthProfileMetadataPatch, IAuthService, AuthSession } from '../../ports/IAuthService';
+import type {
+  AppleIdentityCredential,
+  AuthProfileMetadataPatch,
+  IAuthService,
+  AuthSession,
+} from '../../ports/IAuthService';
 import { AuthError } from '../errors';
 
 export class FakeAuthService implements IAuthService {
@@ -69,6 +74,17 @@ export class FakeAuthService implements IAuthService {
     if (this.exchangeError) throw this.exchangeError;
     if (!this.exchangeResult) throw new Error('no exchangeResult configured');
     return this.exchangeResult;
+  };
+
+  appleSignInResult: AuthSession | null = null;
+  appleSignInError: Error | null = null;
+  lastAppleCredential: AppleIdentityCredential | null = null;
+
+  signInWithApple = async (credential: AppleIdentityCredential): Promise<AuthSession> => {
+    this.lastAppleCredential = credential;
+    if (this.appleSignInError) throw this.appleSignInError;
+    if (!this.appleSignInResult) throw new Error('no appleSignInResult configured');
+    return this.appleSignInResult;
   };
 
   async resendVerificationEmail(

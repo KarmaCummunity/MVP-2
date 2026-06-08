@@ -7,7 +7,7 @@ import { POST_SELECT_OWNER, mapPostWithOwnerRow, type PostWithOwnerJoinedRow } f
 import { applyPostActorIdentityProjectionBatch } from '../posts/applyPostActorIdentityProjection';
 import { type LinkRow, type SearchUserRow, mapUserSearchResult, mapLinkSearchResult } from './searchMappers';
 import { toSearchBucket, type SearchBucket } from './searchBucket';
-import { escapeIlike, findMatchingCategorySlug } from './searchUtils';
+import { quoteOrValue, findMatchingCategorySlug } from './searchUtils';
 
 type C = SupabaseClient<Database>;
 const U = 'user_id, display_name, share_handle, avatar_url, biography, city, city_name, followers_count, items_given_count';
@@ -20,12 +20,12 @@ export async function searchPosts(
   limit: number,
   viewerId?: string | null,
 ): Promise<SearchBucket<PostWithOwner>> {
-  const esc = escapeIlike(query);
+  const v = quoteOrValue(query);
   let q = c
     .from('posts')
     .select(POST_SELECT_OWNER, COUNT_EXACT)
     .eq('status', 'open')
-    .or(`title.ilike.%${esc}%,description.ilike.%${esc}%,category.ilike.%${esc}%`);
+    .or(`title.ilike.${v},description.ilike.${v},category.ilike.${v}`);
   if (f.postType) q = q.eq('type', f.postType);
   if (f.category) q = q.eq('category', f.category);
   if (f.city) q = q.eq('city', f.city);
@@ -43,11 +43,11 @@ export async function searchUsers(
   _v: string | null,
   limit: number,
 ): Promise<SearchBucket<UserSearchResult>> {
-  const esc = escapeIlike(query);
+  const v = quoteOrValue(query);
   let q = c
     .from('users')
     .select(U, COUNT_EXACT)
-    .or(`display_name.ilike.%${esc}%,biography.ilike.%${esc}%,share_handle.ilike.%${esc}%`);
+    .or(`display_name.ilike.${v},biography.ilike.${v},share_handle.ilike.${v}`);
   if (f.city) q = q.eq('city', f.city);
   if (f.minFollowers && f.minFollowers > 0) q = q.gte('followers_count', f.minFollowers);
   const order = f.sortBy === 'newest' ? 'created_at' : 'followers_count';
@@ -63,13 +63,13 @@ export async function searchLinks(
   f: SearchFilters,
   limit: number,
 ): Promise<SearchBucket<DonationLinkSearchResult>> {
-  const esc = escapeIlike(query);
+  const v = quoteOrValue(query);
   const slug = findMatchingCategorySlug(query.toLowerCase());
   let q = c.from('donation_links').select('id, category_slug, url, display_name, description, tags', COUNT_EXACT).is('hidden_at', null);
   if (slug && !f.donationCategory) {
-    q = q.or(`display_name.ilike.%${esc}%,description.ilike.%${esc}%,url.ilike.%${esc}%,category_slug.eq.${slug}`);
+    q = q.or(`display_name.ilike.${v},description.ilike.${v},url.ilike.${v},category_slug.eq.${slug}`);
   } else {
-    q = q.or(`display_name.ilike.%${esc}%,description.ilike.%${esc}%,url.ilike.%${esc}%`);
+    q = q.or(`display_name.ilike.${v},description.ilike.${v},url.ilike.${v}`);
   }
   if (f.donationCategory) q = q.eq('category_slug', f.donationCategory);
   const { data, count, error } = await q.order('created_at', { ascending: false }).limit(limit);

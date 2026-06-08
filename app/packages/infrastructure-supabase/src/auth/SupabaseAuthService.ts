@@ -6,7 +6,13 @@
 // ─────────────────────────────────────────────
 
 import type { SupabaseClient, Session as SbSession } from '@supabase/supabase-js';
-import { AuthError, type AuthProfileMetadataPatch, type AuthSession, type IAuthService } from '@kc/application';
+import {
+  AuthError,
+  type AppleIdentityCredential,
+  type AuthProfileMetadataPatch,
+  type AuthSession,
+  type IAuthService,
+} from '@kc/application';
 import { mapAuthError } from './mapAuthError';
 
 export class SupabaseAuthService implements IAuthService {
@@ -106,6 +112,17 @@ export class SupabaseAuthService implements IAuthService {
     });
     
     return this.activeExchangePromise;
+  }
+
+  async signInWithApple(credential: AppleIdentityCredential): Promise<AuthSession> {
+    const { data, error } = await this.client.auth.signInWithIdToken({
+      provider: 'apple',
+      token: credential.identityToken,
+      nonce: credential.rawNonce,
+    });
+    if (error) throw mapAuthError(error);
+    if (!data.session) throw new AuthError('unknown', 'apple_no_session');
+    return toSession(data.session);
   }
 
   async resendVerificationEmail(

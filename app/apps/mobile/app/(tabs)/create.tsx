@@ -63,6 +63,7 @@ export default function CreatePostScreen() {
     category: form.category,
     condition: form.condition,
     urgency: form.urgency,
+    estimatedValue: form.estimatedValue,
     locationDisplayLevel: form.locationDisplayLevel,
     visibility: form.visibility,
     hideFromCounterparty: form.hideFromCounterparty,
@@ -138,6 +139,7 @@ export default function CreatePostScreen() {
     condition: form.condition,
     isGive,
     urgency: form.urgency,
+    estimatedValue: form.estimatedValue,
     uploads: form.uploads,
     hideFromCounterparty: form.hideFromCounterparty,
     visibilityRef: form.visibilityRef,
@@ -158,7 +160,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <Screen blobs="off">
+    <Screen blobs="off" testID="create-post-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
@@ -204,6 +206,8 @@ export default function CreatePostScreen() {
         isPublishing={isPublishing}
         urgency={form.urgency}
         onUrgencyChange={form.setUrgency}
+        estimatedValue={form.estimatedValue}
+        onEstimatedValueChange={form.setEstimatedValue}
         visibility={form.visibility}
         onVisibilityChange={form.setVisibility}
         profilePrivacy={profilePrivacy}

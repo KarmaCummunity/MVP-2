@@ -125,3 +125,29 @@ Draft PRs skip every job except none (PR hygiene waits for `ready_for_review`). 
 **CI gates on `main` PRs:** `CI — frontend / web export (production bundle)` mirrors the Dockerfile builder (`EXPO_PUBLIC_*` + `pnpm build:web`).
 
 **Post-merge smoke:** `.github/workflows/prod-smoke.yml` polls repository variable **`PROD_WEB_URL`** after app/Dockerfile changes on `main`. Set it under GitHub → Settings → Secrets and variables → Actions → Variables.
+
+## E2E automation (Web, `D-55`)
+
+Playwright P0 journeys run against the live dev deployment before every `dev` → `main` release PR. Policy: [`TESTING.md`](./TESTING.md).
+
+| GitHub | Name | Value / purpose |
+| --- | --- | --- |
+| Variable | `DEV_WEB_URL` | `https://mvp-2-dev.up.railway.app` |
+| Secret | `E2E_TEST_EMAIL` | Dev-only test user (active, verified) |
+| Secret | `E2E_TEST_PASSWORD` | Matching password |
+| Secret | `E2E_SUPABASE_ANON_KEY` | Dev project publishable anon key (for `scripts/ensure-e2e-user.mjs` preflight) |
+
+Workflow: `.github/workflows/ci-e2e-dev.yml` — required status check on `main`: **CI — E2E dev / user journeys (P0)**.
+
+Create user (once, if needed): `E2E_TEST_EMAIL=… E2E_TEST_PASSWORD=… node scripts/create-e2e-user.mjs` (requires dev `SUPABASE_SERVICE_ROLE_KEY`).
+
+Local run (after deploy on dev):
+
+```bash
+export DEV_WEB_URL=https://mvp-2-dev.up.railway.app
+export E2E_TEST_EMAIL=…
+export E2E_TEST_PASSWORD=…
+export E2E_SUPABASE_ANON_KEY=…
+node scripts/ensure-e2e-user.mjs
+cd tests/e2e && npm install && npm run install:browsers && npm test
+```

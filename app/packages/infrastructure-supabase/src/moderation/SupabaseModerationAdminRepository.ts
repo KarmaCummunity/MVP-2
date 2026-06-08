@@ -43,13 +43,12 @@ export class SupabaseModerationAdminRepository implements IModerationAdminReposi
   }
 
   async isUserAdmin(userId: string): Promise<boolean> {
-    const { data, error } = await this.client
-      .from('users')
-      .select('is_super_admin')
-      .eq('user_id', userId)
-      .maybeSingle();
+    // TD-163: the `is_super_admin` column is no longer client-readable
+    // (migration 0163 revoked the SELECT grant). Resolve admin status via the
+    // SECURITY DEFINER `is_admin(uid)` RPC, which bypasses the column grant.
+    const { data, error } = await this.client.rpc('is_admin', { uid: userId });
     if (error) this.mapError(error, error);
-    return data?.is_super_admin === true;
+    return data === true;
   }
 
   async restoreTarget(targetType: ModerationTargetType, targetId: string): Promise<void> {

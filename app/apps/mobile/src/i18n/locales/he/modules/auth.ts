@@ -42,6 +42,7 @@ export const authHe = {
   welcomeAboutLearnMore: 'קראו עוד עלינו',
   legalConsentShort: 'בהרשמה אתה מסכים לתנאי השימוש ומדיניות הפרטיות.',
   googleSignInFailedTitle: 'כניסה עם Google נכשלה',
+  appleSignInFailedTitle: 'כניסה עם Apple נכשלה',
   backCta: '← חזרה',
   signInScreenTitle: 'כניסה לחשבון',
   emailPlaceholder: 'הכנס דוא"ל',

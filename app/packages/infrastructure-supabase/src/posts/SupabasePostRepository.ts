@@ -131,6 +131,7 @@ export class SupabasePostRepository implements IPostRepository {
         location_display_level: input.locationDisplayLevel,
         item_condition: input.itemCondition,
         urgency: input.urgency,
+        estimated_value: input.estimatedValue ?? null,
       })
       .select('post_id')
       .single();

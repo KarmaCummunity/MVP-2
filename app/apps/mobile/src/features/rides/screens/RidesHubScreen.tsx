@@ -1,8 +1,10 @@
 // FR-RIDE-002 — rides hub.
-// The new in-app rides mechanism (search, feed, filters, FAB, create flow) is
-// hidden at the UI level until it is production-ready. While it is hidden we
-// fall back to the standard category-style links view that the other donation
-// categories use, so users still reach the curated NGO transport links.
+// The in-app rides mechanism (V3.0 feed, filters, FAB, create flow, dashboard,
+// active-ride lifecycle, etc.) is hidden at the UI level until it is
+// production-ready.  While hidden we fall back to the standard category-style
+// links view that the other donation categories use, so users still reach the
+// curated NGO transport links.  All rides domain / application / infra logic is
+// preserved untouched — see features/rides/{hooks,sheets,screens,store,components}.
 import React from 'react';
 import { ScrollView, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';

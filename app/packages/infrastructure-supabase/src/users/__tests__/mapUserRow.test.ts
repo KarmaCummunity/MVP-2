@@ -26,6 +26,7 @@ function makeRow(overrides: Partial<UserRow> = {}): UserRow {
     active_posts_count_internal: 2,
     followers_count: 7,
     following_count: 4,
+    karma_points: 5,
     created_at: '2026-01-01T00:00:00.000Z',
     updated_at: '2026-05-16T00:00:00.000Z',
     ...overrides,
@@ -61,9 +62,14 @@ describe('mapUserRow', () => {
       activePostsCountInternal: 2,
       followersCount: 7,
       followingCount: 4,
+      karmaPoints: 5,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-05-16T00:00:00.000Z',
     });
+  });
+
+  it('maps karma_points → karmaPoints (FR-KARMA-001)', () => {
+    expect(mapUserRow(makeRow({ karma_points: 42 })).karmaPoints).toBe(42);
   });
 
   describe('optional profile address columns', () => {
