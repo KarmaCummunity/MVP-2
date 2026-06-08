@@ -129,17 +129,28 @@ describe('searchUsers — query shape', () => {
     await searchUsers(client, 'ali', { excludeUserId: 'u_me', limit: 10 });
 
     const usersCall = calls.find((c) => c.table === 'users') as UsersCall;
-    expect(usersCall.orClause).toBe('display_name.ilike.%ali%,share_handle.ilike.%ali%');
+    expect(usersCall.orClause).toBe('display_name.ilike."%ali%",share_handle.ilike."%ali%"');
   });
 
-  it('escapes ILIKE wildcards %, _, \\ in the query before interpolation', async () => {
+  it('escapes ILIKE wildcards %, _, \\ then quote-wraps before interpolation', async () => {
     const { client, calls } = makeFakeClient({ usersData: [], blocksData: [] });
 
     await searchUsers(client, '50%_off\\', { excludeUserId: 'u_me', limit: 10 });
 
     const usersCall = calls.find((c) => c.table === 'users') as UsersCall;
     expect(usersCall.orClause).toBe(
-      'display_name.ilike.%50\\%\\_off\\\\%,share_handle.ilike.%50\\%\\_off\\\\%',
+      String.raw`display_name.ilike."%50\\%\\_off\\\\%",share_handle.ilike."%50\\%\\_off\\\\%"`,
+    );
+  });
+
+  it('quotes an injected comma/predicate so it stays inside the value (CWE-943)', async () => {
+    const { client, calls } = makeFakeClient({ usersData: [], blocksData: [] });
+
+    await searchUsers(client, 'x,city.eq.IL', { excludeUserId: 'u_me', limit: 10 });
+
+    const usersCall = calls.find((c) => c.table === 'users') as UsersCall;
+    expect(usersCall.orClause).toBe(
+      'display_name.ilike."%x,city.eq.IL%",share_handle.ilike."%x,city.eq.IL%"',
     );
   });
 
