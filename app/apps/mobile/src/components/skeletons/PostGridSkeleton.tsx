@@ -6,7 +6,7 @@ import { View } from 'react-native';
 import { makeUseStyles, radius, spacing, Skeleton } from '@kc/ui';
 import { chunkArray } from '../../lib/chunkArray';
 
-function PostCardSkeleton({ dense }: { dense: boolean }) {
+const PostCardSkeleton = React.memo(function PostCardSkeleton({ dense }: { dense: boolean }) {
   const styles = useStyles();
   return (
     <View testID="post-card-skeleton" style={[styles.card, dense && styles.cardDense]}>
@@ -27,7 +27,7 @@ function PostCardSkeleton({ dense }: { dense: boolean }) {
       </View>
     </View>
   );
-}
+});
 
 export function PostGridSkeleton({
   columns,
@@ -46,9 +46,9 @@ export function PostGridSkeleton({
   return (
     <View style={styles.grid} accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {rows.map((row, rowIndex) => (
-        <View key={rowIndex} style={styles.row}>
+        <View key={`row-${rowIndex}`} style={styles.row}>
           {row.map((cell) => (
-            <View key={cell} style={styles.cell}>
+            <View key={`card-${cell}`} style={styles.cell}>
               <PostCardSkeleton dense={dense} />
             </View>
           ))}

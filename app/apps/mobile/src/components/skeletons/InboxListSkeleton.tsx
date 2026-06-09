@@ -5,7 +5,7 @@ import React from 'react';
 import { View } from 'react-native';
 import { makeUseStyles, spacing, Skeleton } from '@kc/ui';
 
-function InboxRowSkeleton() {
+const InboxRowSkeleton = React.memo(function InboxRowSkeleton() {
   const styles = useStyles();
   return (
     <View testID="inbox-row-skeleton" style={styles.row}>
@@ -16,14 +16,14 @@ function InboxRowSkeleton() {
       </View>
     </View>
   );
-}
+});
 
 export function InboxListSkeleton({ count = 8 }: { count?: number }) {
   const styles = useStyles();
   return (
     <View accessibilityElementsHidden importantForAccessibility="no-hide-descendants">
       {Array.from({ length: count }, (_, i) => (
-        <View key={i}>
+        <View key={`inbox-${i}`}>
           <InboxRowSkeleton />
           {i < count - 1 ? <View style={styles.sep} /> : null}
         </View>

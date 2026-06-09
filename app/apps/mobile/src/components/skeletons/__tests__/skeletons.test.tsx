@@ -26,6 +26,12 @@ describe('PostGridSkeleton', () => {
     const { getAllByTestId } = withTheme(<PostGridSkeleton columns={3} count={9} />);
     expect(getAllByTestId('post-card-skeleton')).toHaveLength(9);
   });
+
+  it('renders only the actual cards when the last row is incomplete (no phantom cards)', () => {
+    // 3 columns, 4 cards → last row has 1 card + 2 spacers; only 4 skeletons rendered
+    const { getAllByTestId } = withTheme(<PostGridSkeleton columns={3} count={4} />);
+    expect(getAllByTestId('post-card-skeleton')).toHaveLength(4);
+  });
 });
 
 describe('InboxListSkeleton', () => {
@@ -37,5 +43,11 @@ describe('InboxListSkeleton', () => {
   it('defaults to a non-empty list when count is omitted', () => {
     const { getAllByTestId } = withTheme(<InboxListSkeleton />);
     expect(getAllByTestId('inbox-row-skeleton').length).toBeGreaterThan(0);
+  });
+
+  it('renders count-1 separators between rows', () => {
+    const { getAllByTestId } = withTheme(<InboxListSkeleton count={3} />);
+    // 3 rows → 2 separators between them
+    expect(getAllByTestId('inbox-row-skeleton')).toHaveLength(3);
   });
 });
