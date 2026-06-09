@@ -2,7 +2,7 @@ name: Deploy Web → Cloudflare Pages
 
 on:
   push:
-    branches: [main]
+    branches: [main, dev]
     paths:
       - 'app/**'
       - '.github/workflows/deploy-web.yml'
@@ -10,8 +10,9 @@ on:
 
 jobs:
   deploy:
-    name: Build & Deploy
+    name: Build & Deploy (${{ github.ref_name }})
     runs-on: ubuntu-latest
+    environment: ${{ github.ref_name == 'main' && 'cloudflare-prod' || 'cloudflare-dev' }}
     permissions:
       contents: read
       deployments: write
@@ -38,6 +39,7 @@ jobs:
         env:
           EXPO_PUBLIC_SUPABASE_URL: ${{ secrets.EXPO_PUBLIC_SUPABASE_URL }}
           EXPO_PUBLIC_SUPABASE_ANON_KEY: ${{ secrets.EXPO_PUBLIC_SUPABASE_ANON_KEY }}
+          EXPO_PUBLIC_ENVIRONMENT: ${{ secrets.EXPO_PUBLIC_ENVIRONMENT }}
         run: pnpm build:web
 
       - name: Deploy to Cloudflare Pages
@@ -45,4 +47,7 @@ jobs:
         with:
           apiToken: ${{ secrets.CLOUDFLARE_API_TOKEN }}
           accountId: ${{ secrets.CLOUDFLARE_ACCOUNT_ID }}
-          command: pages deploy app/apps/mobile/dist --project-name=karma-community --branch=main
+          command: >
+            pages deploy app/apps/mobile/dist
+            --project-name=karma-community
+            --branch=${{ github.ref_name }}
