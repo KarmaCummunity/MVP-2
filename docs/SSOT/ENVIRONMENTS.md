@@ -1,7 +1,7 @@
 # Environments
 
-> **Canonical source for branch ↔ Supabase ↔ Railway ↔ env-var mapping.**
-> If another doc disagrees, this one wins. Last reviewed: 2026-05-22.
+> **Canonical source for branch ↔ Supabase ↔ Cloudflare Pages ↔ env-var mapping.**
+> If another doc disagrees, this one wins. Last reviewed: 2026-06-09.
 
 ## TL;DR
 
@@ -9,7 +9,8 @@
 |---|---|---|
 | Git branch | `main` | `dev` |
 | Supabase project | `slxijdfvinbjmrsfgbzx` — https://slxijdfvinbjmrsfgbzx.supabase.co | `roeefqpdbftlndzsvhfj` — https://roeefqpdbftlndzsvhfj.supabase.co |
-| Railway service env | `prod` (set `PROD_WEB_URL` in GitHub Actions variables — see [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md)) | `dev` (`mvp-2-dev.up.railway.app`) |
+| Hosting | Cloudflare Pages — `karma-community-kc.com` | Cloudflare Pages — `dev.karma-community.pages.dev` |
+| GitHub Actions env | `cloudflare-prod` | `cloudflare-dev` |
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | `development` |
 | In-app dev banner | hidden | visible at top of every screen when the client bundle is dev (see below) |
 
@@ -132,7 +133,7 @@ Playwright P0 journeys run against the live dev deployment before every `dev` �
 
 | GitHub | Name | Value / purpose |
 | --- | --- | --- |
-| Variable | `DEV_WEB_URL` | `https://mvp-2-dev.up.railway.app` |
+| Variable | `DEV_WEB_URL` | `https://dev.karma-community.pages.dev` |
 | Secret | `E2E_TEST_EMAIL` | Dev-only test user (active, verified) |
 | Secret | `E2E_TEST_PASSWORD` | Matching password |
 | Secret | `E2E_SUPABASE_ANON_KEY` | Dev project publishable anon key (for `scripts/ensure-e2e-user.mjs` preflight) |
