@@ -14,6 +14,7 @@ import { HOME_FEED_GRID_COLUMNS } from '../hooks/useShellContentWidth';
 import { useShellTabBarScrollInset } from '../navigation/useShellTabBarVisibility';
 import { PostCardGrid } from './PostCardGrid';
 import { EmptyState } from './EmptyState';
+import { PostGridSkeleton } from './skeletons/PostGridSkeleton';
 import { finishMark } from '../lib/observability/perfMarks';
 
 interface Props {
@@ -72,11 +73,7 @@ export function PostFeedList({
   }, [data]);
 
   if (isLoading && !data) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
+    return <PostGridSkeleton columns={HOME_FEED_GRID_COLUMNS} count={HOME_FEED_GRID_COLUMNS * 3} />;
   }
   if (isError && !data) {
     return (

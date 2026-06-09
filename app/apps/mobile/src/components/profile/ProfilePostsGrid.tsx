@@ -3,16 +3,17 @@
 // Mapped to: FR-PROFILE-001 AC4, FR-PROFILE-002 AC3.
 
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
+import { View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { makeUseStyles, spacing, useTheme } from '@kc/ui';
+import { makeUseStyles, spacing } from '@kc/ui';
 import { PROFILE_GRID_COLUMNS } from '../../hooks/useShellContentWidth';
 import type { Post } from '@kc/domain';
 import { chunkArray } from '../../lib/chunkArray';
 import { postWithOwnerFromPost, type ProfilePostOwnerContext } from '../../lib/postWithOwnerFromPost';
 import { PostCardGrid } from '../PostCardGrid';
 import { EmptyState } from '../EmptyState';
+import { PostGridSkeleton } from '../skeletons/PostGridSkeleton';
 
 export type EmptyVariant =
   | 'self_open'
@@ -35,7 +36,6 @@ export interface ProfilePostsGridProps {
 
 export function ProfilePostsGrid({ posts, isLoading, empty, postOwner }: ProfilePostsGridProps) {
   const styles = useStyles();
-  const { colors } = useTheme();
   const { t } = useTranslation();
   const EMPTY_COPY: Record<EmptyVariant, { title: string; subtitle: string; icon: keyof typeof Ionicons.glyphMap }> = {
     self_open: {
@@ -85,11 +85,7 @@ export function ProfilePostsGrid({ posts, isLoading, empty, postOwner }: Profile
     },
   };
   if (isLoading) {
-    return (
-      <View style={styles.loading}>
-        <ActivityIndicator color={colors.primary} />
-      </View>
-    );
+    return <PostGridSkeleton columns={PROFILE_GRID_COLUMNS} count={PROFILE_GRID_COLUMNS * 3} />;
   }
   if (posts.length === 0) {
     const e = EMPTY_COPY[empty];
@@ -113,8 +109,7 @@ export function ProfilePostsGrid({ posts, isLoading, empty, postOwner }: Profile
   );
 }
 
-const useStyles = makeUseStyles(({ colors, isDark }) => ({
-  loading: { padding: spacing.xl, alignItems: 'center' },
+const useStyles = makeUseStyles(() => ({
   grid: {
     width: '100%',
     alignSelf: 'stretch' as const,
