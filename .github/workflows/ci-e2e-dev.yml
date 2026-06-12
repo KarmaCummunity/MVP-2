@@ -6,6 +6,7 @@ name: CI — E2E dev
 on:
   pull_request:
     branches: [main]
+    types: [opened, synchronize, reopened, ready_for_review]
     paths:
       - 'app/**'
       - 'tests/e2e/**'
