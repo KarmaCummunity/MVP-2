@@ -122,7 +122,7 @@ Operator checklist: [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md).
 - `.github/workflows/ci-pr.yml` — `pull_request` only, non-draft. Job: `PR hygiene` (Conventional Commits title + required `Mapped to spec` line).
 - `.github/workflows/ci-actionlint.yml` — `.github/workflows/**` only; runs `actionlint` (pinned) + shellcheck over every workflow's `run:` blocks. Meta-guard: agents edit CI unsupervised, so workflow files need their own linter. **Not** a required check (path-filtered — would hang "Expected" on non-workflow PRs).
 
-Tooling pins: Node version comes from the repo-root `.nvmrc` (all `setup-node` steps use `node-version-file`); pnpm version comes from the `packageManager` field in `app/package.json` (all `pnpm/action-setup` steps use `package_json_file`). Bump either in one place only.
+Tooling pins: Node version comes from the repo-root `.nvmrc` (all `setup-node` steps use `node-version-file`); pnpm version comes from the `packageManager` field in `app/package.json` (all `pnpm/action-setup` steps use `package_json_file`). Bump either in one place only. **One deliberate exception:** the `ci-backend.yml` db-validate job pins Node 22 — `@supabase/realtime-js` needs the native WebSocket global (Node ≥ 22) for the sqlProbes integration tests; do not align it back to `.nvmrc`.
 
 Draft PRs skip every job except none (PR hygiene waits for `ready_for_review`). Branch protection on `dev` uses the table above; `main` release PRs use [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md#merge-gates-automated--must-be-green).
 

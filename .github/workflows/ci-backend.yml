@@ -148,7 +148,11 @@ jobs:
         if: needs.changes.outputs.backend == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version-file: .nvmrc
+          # Deliberate exception to the repo-wide .nvmrc (20): the sqlProbes
+          # integration tests construct a real SupabaseClient, and
+          # @supabase/realtime-js requires the native WebSocket global that
+          # only exists on Node >= 22. Do not "align" this back to .nvmrc.
+          node-version: 22
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
 
