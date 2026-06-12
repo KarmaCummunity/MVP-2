@@ -29,8 +29,12 @@ jobs:
     steps:
       - name: Enforce dev → main
         if: github.head_ref != 'dev'
+        env:
+          # Branch names are attacker-controlled on fork PRs — never inline
+          # ${{ github.head_ref }} into a script (actionlint `expression`).
+          HEAD_REF: ${{ github.head_ref }}
         run: |
-          echo "::error::Production releases must open a PR from branch \`dev\` into \`main\` (head: \`${{ github.head_ref }}\`)."
+          echo "::error::Production releases must open a PR from branch \`dev\` into \`main\` (head: \`${HEAD_REF}\`)."
           exit 1
       - name: OK
         run: echo "Release source branch is dev."

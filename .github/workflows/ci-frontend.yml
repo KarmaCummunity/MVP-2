@@ -80,14 +80,14 @@ jobs:
         if: needs.changes.outputs.frontend == 'true'
         uses: pnpm/action-setup@v4
         with:
-          version: 9.0.0
+          package_json_file: app/package.json
           run_install: false
 
       - name: Setup Node.js
         if: needs.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
 
@@ -142,6 +142,9 @@ jobs:
       EXPO_PUBLIC_ENVIRONMENT: production
       EXPO_PUBLIC_SUPABASE_URL: https://roeefqpdbftlndzsvhfj.supabase.co
       EXPO_PUBLIC_SUPABASE_ANON_KEY: ci-web-build-placeholder-not-for-runtime
+      # Pinned so the smoke step is deterministic; browser binaries are cached
+      # under this key. Bump deliberately (cache key rolls with it).
+      PLAYWRIGHT_VERSION: 1.60.0
 
     steps:
       - name: Checkout
@@ -150,13 +153,13 @@ jobs:
       - name: Setup pnpm
         uses: pnpm/action-setup@v4
         with:
-          version: 9.0.0
+          package_json_file: app/package.json
           run_install: false
 
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
 
@@ -169,12 +172,24 @@ jobs:
       - name: Verify dist output
         run: test -f apps/mobile/dist/index.html
 
+      - name: Cache Playwright browsers
+        id: playwright-cache
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-chromium-${{ env.PLAYWRIGHT_VERSION }}
+
       - name: Install Playwright (Chromium only)
         working-directory: ${{ github.workspace }}
         run: |
           npm init -y --silent
-          npm install --no-save --silent playwright
-          npx playwright install --with-deps chromium
+          npm install --no-save --silent "playwright@${PLAYWRIGHT_VERSION}"
+          if [ "${{ steps.playwright-cache.outputs.cache-hit }}" = "true" ]; then
+            # Browser binaries restored from cache — only OS deps needed.
+            npx playwright install-deps chromium
+          else
+            npx playwright install --with-deps chromium
+          fi
 
       - name: Smoke-load web bundle (headless Chromium)
         working-directory: ${{ github.workspace }}
@@ -194,7 +209,7 @@ jobs:
       - name: Setup Node.js
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
 
       - name: Scan for Hebrew outside allowed paths
         run: node scripts/extract-hebrew-text.mjs --check
