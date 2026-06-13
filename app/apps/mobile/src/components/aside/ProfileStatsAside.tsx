@@ -1,6 +1,6 @@
 // Own-profile aside — personal stats summary (FR-RESP-003).
 // Reuses the FR-STATS-001 self queries (shared keys with the stats screen).
-import { Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
@@ -9,8 +9,8 @@ import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
-import { rowDirectionStart } from '../../lib/rtlLayout';
 import { AsideCard } from './AsideCard';
+import { AsideStatList, type AsideStatRow } from './AsideStatList';
 
 export function ProfileStatsAside() {
   const styles = useStyles();
@@ -30,7 +30,7 @@ export function ProfileStatsAside() {
   });
 
   const u = userQuery.data;
-  const rows = [
+  const rows: AsideStatRow[] = [
     { key: 'karma', label: t('aside.profileKarma'), value: u?.karmaPoints },
     { key: 'given', label: t('stats.given'), value: u?.itemsGivenCount },
     { key: 'received', label: t('stats.received'), value: u?.itemsReceivedCount },
@@ -40,14 +40,7 @@ export function ProfileStatsAside() {
 
   return (
     <AsideCard title={t('aside.profileStatsTitle')}>
-      {rows.map((row) => (
-        <View key={row.key} style={styles.row} testID={`aside-profile-${row.key}`}>
-          <Text style={styles.value}>{row.value ?? '—'}</Text>
-          <Text style={styles.label} numberOfLines={1}>
-            {row.label}
-          </Text>
-        </View>
-      ))}
+      <AsideStatList rows={rows} testIDPrefix="aside-profile" />
       <TouchableOpacity
         accessibilityRole="button"
         testID="aside-profile-all-stats"
@@ -60,24 +53,6 @@ export function ProfileStatsAside() {
 }
 
 const useStyles = makeUseStyles(({ colors }) => ({
-  row: {
-    flexDirection: rowDirectionStart,
-    alignItems: 'baseline' as const,
-    paddingVertical: spacing.xs,
-    gap: spacing.sm,
-  },
-  value: {
-    ...typography.h4,
-    color: colors.primary,
-    minWidth: 36,
-    textAlign: rtlTextAlignStart,
-  },
-  label: {
-    ...typography.bodySmall,
-    color: colors.textSecondary,
-    flex: 1,
-    textAlign: rtlTextAlignStart,
-  },
   allLink: {
     ...typography.bodySmall,
     color: colors.primary,
