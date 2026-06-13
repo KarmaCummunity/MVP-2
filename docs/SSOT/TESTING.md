@@ -33,7 +33,7 @@
 
 Re-create if deleted: `source ~/.kc-dev-secrets.env && node scripts/create-e2e-user.mjs` (uses service role from management API).
 
-GitHub Actions secrets (repo settings): `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD` (same values as local file), `E2E_SUPABASE_ANON_KEY` (dev publishable anon).
+GitHub Actions secrets (repo settings): `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD` (same values as local file), `E2E_SUPABASE_ANON_KEY_DEV` (dev publishable anon — dev-scoped secret name, wired to the `E2E_SUPABASE_ANON_KEY` env var in CI).
 
 The human `/sign-in` UI may be broken — E2E uses API session injection, not that form.
 

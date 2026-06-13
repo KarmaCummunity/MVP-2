@@ -141,7 +141,7 @@ Playwright P0 journeys run against the live dev deployment before every `dev` �
 | Variable | `DEV_WEB_URL` | `https://dev.karma-community.pages.dev` |
 | Secret | `E2E_TEST_EMAIL` | Dev-only test user (active, verified) |
 | Secret | `E2E_TEST_PASSWORD` | Matching password |
-| Secret | `E2E_SUPABASE_ANON_KEY` | Dev project publishable anon key (for `scripts/ensure-e2e-user.mjs` preflight) |
+| Secret | `E2E_SUPABASE_ANON_KEY_DEV` | Dev project publishable anon key (for `scripts/ensure-e2e-user.mjs` preflight). Dev-scoped name keeps it distinct from prod. Wired to the `E2E_SUPABASE_ANON_KEY` env var the test code reads. |
 
 Workflow: `.github/workflows/ci-e2e-dev.yml` — required status check on `main`: **CI — E2E dev / user journeys (P0)**.
 

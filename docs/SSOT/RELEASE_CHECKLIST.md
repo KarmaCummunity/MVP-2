@@ -93,7 +93,7 @@ Feature PRs merge into `dev` first. One-time setup: Settings → Branches → `d
 | Branch protection on `main` | Settings → Branches → `main` | Block direct pushes; require status checks (table above) — **no required human reviewers** (`D-53`) |
 | Required status checks | Same (`main`) | Include **CI — main release guard** and **CI — E2E dev / user journeys (P0)** on `dev` → `main` PRs |
 | Dev web URL for E2E | Settings → Secrets and variables → Actions → **Variables** | `DEV_WEB_URL` = `https://mvp-2-dev.up.railway.app` |
-| E2E credentials | Settings → Secrets and variables → Actions → **Secrets** | `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_ANON_KEY` (dev publishable anon) |
+| E2E credentials | Settings → Secrets and variables → Actions → **Secrets** | `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_ANON_KEY_DEV` (dev publishable anon) |
 | `supabase-prod` environment | Settings → Environments → `supabase-prod` | Secrets only (`SUPABASE_*`); **do not** enable required reviewers |
 | Prod web URL for smoke | Settings → Secrets and variables → Actions → **Variables** | `PROD_WEB_URL` = `https://<your-prod>.up.railway.app` |
 
