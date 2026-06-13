@@ -1,6 +1,6 @@
 # 2.11 Settings
 
-> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name; About `support@karma.community` mailto is un-owned (use `karmacommunity2.0@gmail.com`). TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`. 🟡 **FR-SETTINGS-015..017** (Surveys & feedback hub, server-driven survey runner, free feedback form) — code complete, post-merge QA pending (BACKLOG P2.34); individual FR statuses remain ⏳ Planned until manual QA on dev confirms ACs.
+> **Status:** ✅ Core Complete — Settings layout, privacy, legal, about, logout shipped. FR-SETTINGS-006 (Notifications toggles) shipped in P1.5 PR-1. ⚠️ Audit 2026-05-16: 🔴 **FR-SETTINGS-010** Terms/Privacy are static inline strings, not in-app web views with remote-config URLs + AC3 re-acknowledge (TD-80, BACKLOG P2.18 — EU/IL privacy gap). 🟠 FR-SETTINGS-002 Account section unbuilt; FR-SETTINGS-011 AC1 logout has no confirmation modal; FR-SETTINGS-012 AC1 delete-account modal uses keyword instead of display_name. (✅ 2026-06-09: the un-owned About `support@karma.community` mailto was removed — single operated mailbox `karmacommunity2.0@gmail.com`, `D-59`.) TD-99. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`. 🟡 **FR-SETTINGS-015..017** (Surveys & feedback hub, server-driven survey runner, free feedback form) — code complete, post-merge QA pending (BACKLOG P2.34); individual FR statuses remain ⏳ Planned until manual QA on dev confirms ACs.
 
 
 
@@ -173,7 +173,7 @@ A non-actionable line offering an out-of-app contact for emergencies.
 - PRD: `03_Core_Features.md` §3.5.
 
 **Acceptance Criteria.**
-- AC1. Displays a `mailto:support@karma.community` link as a fallback.
+- AC1. Displays a `mailto:karmacommunity2.0@gmail.com` link as a fallback (the `support@karma.community` domain is not owned/operated — see `DECISIONS.md` D-59).
 - AC2. The link opens the user's default mail composer with no subject.
 
 ---

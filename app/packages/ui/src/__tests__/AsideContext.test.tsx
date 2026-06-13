@@ -4,8 +4,8 @@ import { render, screen, cleanup } from '@testing-library/react';
 import { Text } from 'react-native';
 import { AsideProvider, useAside, useAsideContent } from '../components/AsideContext';
 
-function Publisher() {
-  useAside(() => <Text testID="aside-content">hello aside</Text>, []);
+function Publisher({ enabled }: { enabled?: boolean }) {
+  useAside(() => <Text testID="aside-content">hello aside</Text>, [], enabled);
   return null;
 }
 
@@ -32,6 +32,33 @@ describe('AsideContext', () => {
   it('exposes undefined when no publisher is mounted', () => {
     render(
       <AsideProvider>
+        <Consumer />
+      </AsideProvider>
+    );
+    expect(screen.queryByTestId('aside-content')).toBeNull();
+  });
+
+  it('does not publish when enabled is false', () => {
+    render(
+      <AsideProvider>
+        <Publisher enabled={false} />
+        <Consumer />
+      </AsideProvider>
+    );
+    expect(screen.queryByTestId('aside-content')).toBeNull();
+  });
+
+  it('withdraws content when a publisher flips from enabled to disabled', () => {
+    const { rerender } = render(
+      <AsideProvider>
+        <Publisher enabled />
+        <Consumer />
+      </AsideProvider>
+    );
+    expect(screen.getByTestId('aside-content')).toBeTruthy();
+    rerender(
+      <AsideProvider>
+        <Publisher enabled={false} />
         <Consumer />
       </AsideProvider>
     );

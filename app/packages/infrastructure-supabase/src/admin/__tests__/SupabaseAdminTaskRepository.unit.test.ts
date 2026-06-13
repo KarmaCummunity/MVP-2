@@ -58,6 +58,28 @@ describe('SupabaseAdminTaskRepository — list', () => {
     );
     expect(await repo.list({})).toEqual([]);
   });
+
+  it('forwards dueFrom / dueTo / unassignedOnly into RPC args', async () => {
+    const captured: { name?: string; args?: Record<string, unknown> } = {};
+    const repo = new SupabaseAdminTaskRepository(
+      mockClient((name, args) => {
+        captured.name = name;
+        captured.args = args as Record<string, unknown>;
+        return { data: [], error: null };
+      }),
+    );
+    await repo.list({
+      dueFrom: new Date('2026-01-01T00:00:00.000Z'),
+      dueTo:   new Date('2026-01-31T23:59:59.999Z'),
+      unassignedOnly: true,
+    });
+    expect(captured.name).toBe('admin_task_list');
+    expect(captured.args).toMatchObject({
+      p_due_from:        '2026-01-01T00:00:00.000Z',
+      p_due_to:          '2026-01-31T23:59:59.999Z',
+      p_unassigned_only: true,
+    });
+  });
 });
 
 describe('SupabaseAdminTaskRepository — getDetail', () => {

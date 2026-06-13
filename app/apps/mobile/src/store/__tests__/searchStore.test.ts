@@ -58,6 +58,29 @@ describe('useSearchStore — recentSearches', () => {
   });
 });
 
+describe('useSearchStore — requestedQuery handshake (FR-RESP-003)', () => {
+  beforeEach(() => {
+    useSearchStore.setState({ requestedQuery: null });
+  });
+
+  it('requestSearch trims and stores the query', () => {
+    useSearchStore.getState().requestSearch('  sofa  ');
+    expect(useSearchStore.getState().requestedQuery).toBe('sofa');
+  });
+
+  it('requestSearch ignores empty / whitespace-only input', () => {
+    useSearchStore.getState().requestSearch('   ');
+    expect(useSearchStore.getState().requestedQuery).toBeNull();
+  });
+
+  it('consumeRequestedQuery returns the query once and clears it', () => {
+    useSearchStore.getState().requestSearch('sofa');
+    expect(useSearchStore.getState().consumeRequestedQuery()).toBe('sofa');
+    expect(useSearchStore.getState().requestedQuery).toBeNull();
+    expect(useSearchStore.getState().consumeRequestedQuery()).toBeNull();
+  });
+});
+
 describe('useSearchStore — filter setters + clearFilters', () => {
   it('setResultType / setPostType / setCategory / setDonationCategory each update only their field', () => {
     const s = useSearchStore.getState();

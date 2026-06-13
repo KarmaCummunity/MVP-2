@@ -113,8 +113,7 @@ export const aboutContentUxRefreshPartB = {
   contactChannelsTitle: 'ערוצי קשר',
   contactWhatsappGroupLabel: 'ווטסאפ — קהילה',
   contactWhatsappPersonalLabel: 'ווטסאפ — נוה (אישי)',
-  contactEmailNaveLabel: 'מייל — נוה',
-  contactEmailOrgLabel: 'מייל — ארגון',
+  contactEmailNaveLabel: 'מייל',
   /** Default `subject=` for About → Contact mailto links (URL-encoded at runtime). */
   contactMailSubjectDefault: 'פנייה מקהילת קארמה',
   /** Prefilled `text=` for personal WhatsApp deep link (URL-encoded at runtime). */

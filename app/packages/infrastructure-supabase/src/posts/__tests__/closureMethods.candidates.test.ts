@@ -35,7 +35,17 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
       if (table === 'chats') {
         const chatsPromise = () =>
           Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
-        return { select: () => ({ or: () => ({ eq: () => ({ is: () => chatsPromise() }) }) }) };
+        return {
+          select: () => ({
+            eq: () => ({
+              or: () => ({
+                eq: () => ({
+                  is: () => chatsPromise(),
+                }),
+              }),
+            }),
+          }),
+        };
       }
       if (table === 'users') return { select: () => ({ in: async () => ({ data: opts.users ?? [], error: opts.usersError ?? null }) }) };
       throw new Error(`fake: unexpected table ${table}`);

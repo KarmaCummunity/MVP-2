@@ -1,14 +1,14 @@
 import { useTranslation } from 'react-i18next';
 // FR-CHAT-010 — Report modal opened from chat ⋮ menu.
-import React, { useState } from 'react';
+import React from 'react';
 import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import type { ReportReason } from '@kc/domain';
-import { ReportError } from '@kc/application';
 import { container } from '../lib/container';
 import { useAuthStore } from '../store/authStore';
 import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 import { NotifyModal } from './NotifyModal';
+import { useReportForm, postNamespaceReportMessages } from './report/useReportForm';
 
 const REASON_KEYS: Array<{ value: ReportReason; key: string }> = [
   { value: 'Spam', key: 'post.reportReasonSpam' },
@@ -29,40 +29,19 @@ export function ReportChatModal({ chatId, visible, onClose }: Props) {
   const { colors } = useTheme();
   const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
-  const [reason, setReason] = useState<ReportReason>('Spam');
-  const [note, setNote] = useState('');
-  const [submitting, setSubmitting] = useState(false);
-  // TD-138: Alert.alert is a no-op on react-native-web — surface result via NotifyModal.
-  const [notify, setNotify] = useState<{ title: string; message: string } | null>(null);
+  const { reason, setReason, note, setNote, submitting, notify, setNotify, runSubmit } =
+    useReportForm(visible);
 
-  const submit = async () => {
+  const submit = () => {
     if (!userId) return;
-    setSubmitting(true);
-    try {
-      await container.reportChat.execute({
-        reporterId: userId,
-        chatId,
-        reason,
-        note: note.trim() || undefined,
-      });
-      onClose();
-      setNotify({ title: t('post.reportSuccessTitle'), message: t('post.reportSuccessBody') });
-    } catch (err) {
-      if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        onClose();
-        setNotify({ title: t('post.reportDuplicateTitle'), message: t('chat.reportChatDuplicateBody') });
-      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
-        onClose();
-        setNotify({
-          title: t('post.reportAlreadyModeratedTitle'),
-          message: t('post.reportAlreadyModeratedBody'),
-        });
-      } else {
-        setNotify({ title: t('general.error'), message: t('post.reportErrorBody') });
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    void runSubmit(
+      (r, n) => container.reportChat.execute({ reporterId: userId, chatId, reason: r, note: n || undefined }),
+      onClose,
+      {
+        ...postNamespaceReportMessages(t),
+        duplicate: { title: t('post.reportDuplicateTitle'), message: t('chat.reportChatDuplicateBody') },
+      },
+    );
   };
 
   return (

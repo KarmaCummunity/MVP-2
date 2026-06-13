@@ -10,4 +10,6 @@ export interface RideParticipant {
   readonly requestedAt: string;
   readonly decidedAt: string | null;
   readonly decidedBy: string | null;
+  /** FR-RIDE-032 — set when the ride starts; participants with non-NULL value are the active snapshot. */
+  readonly joinedActiveAt: string | null;
 }

@@ -23,12 +23,13 @@ const KNOWN_MOD_KINDS = [
   'support_issue',
 ] as const;
 
-export function MessageBubble({
+function MessageBubbleInner({
   m, mine, onRetry, handledByLaterAction,
 }: {
   m: OptimisticMessage;
   mine: boolean;
-  onRetry: () => void;
+  /** Receives the message identity so the parent can pass a stable callback. */
+  onRetry: (clientId: string, body: string) => void;
   handledByLaterAction?: boolean;
 }) {
   const [showTime, setShowTime] = useState(false);
@@ -88,7 +89,7 @@ export function MessageBubble({
         <Text style={[styles.bubbleText, mine ? styles.bubbleTextMine : styles.bubbleTextOther]}>{m.body}</Text>
         <View style={styles.bubbleMeta}>
           {m.failed && (
-            <TouchableOpacity onPress={onRetry}><Ionicons name="refresh" size={14} color={colors.textInverse} /></TouchableOpacity>
+            <TouchableOpacity onPress={() => onRetry(m.clientId, m.body)}><Ionicons name="refresh" size={14} color={colors.textInverse} /></TouchableOpacity>
           )}
           {mine && !m.failed && <Text style={[styles.readReceipt, mineMetaColor]}>{m.status === 'read' ? '✓✓' : '✓'}</Text>}
           {showTime && (
@@ -102,10 +103,18 @@ export function MessageBubble({
   );
 }
 
+// Memoized: the thread re-renders on every composer keystroke; without memo
+// every bubble re-rendered on each keystroke. Props are the message ref
+// (stable unless the message changes), two booleans, and a stable onRetry.
+export const MessageBubble = React.memo(MessageBubbleInner);
+
 const useMessageBubbleStyles = makeUseStyles(({ colors }) => ({
   bubble: { maxWidth: '80%', padding: spacing.md, borderRadius: radius.lg, gap: 4 },
-  bubbleMine: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderBottomLeftRadius: 4 },
-  bubbleOther: { alignSelf: 'flex-end', backgroundColor: colors.surface, borderBottomRightRadius: 4, borderWidth: 1, borderColor: colors.border },
+  // Tail-notch corner uses logical start/end radii so web (RN-Web maps these to
+  // CSS border-*-*-radius) and native (RN ≥ 0.71) mirror identically under RTL —
+  // physical Left/Right diverged between the two platforms (TD-159).
+  bubbleMine: { alignSelf: 'flex-start', backgroundColor: colors.primary, borderBottomStartRadius: 4 },
+  bubbleOther: { alignSelf: 'flex-end', backgroundColor: colors.surface, borderBottomEndRadius: 4, borderWidth: 1, borderColor: colors.border },
   bubbleText: { ...typography.body },
   bubbleTextMine: { color: colors.textInverse },
   bubbleTextOther: { color: colors.textPrimary, textAlign: rtlTextAlignStart },

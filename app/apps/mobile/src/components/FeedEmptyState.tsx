@@ -24,7 +24,7 @@ export function FeedEmptyState({
   const { colors } = useTheme();
   const { t } = useTranslation();
   return (
-    <View style={styles.wrap}>
+    <View style={styles.wrap} testID="feed-empty-state">
       <Ionicons name="archive-outline" size={56} color={colors.textDisabled} />
       <Text style={styles.title}>
         {hasActiveFilters ? t('feed.emptyFiltered') : t('feed.empty')}

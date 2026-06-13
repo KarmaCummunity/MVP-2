@@ -9,12 +9,17 @@ import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBa
 import { useAuthStore } from '../../../src/store/authStore';
 import { useProfileClosedPosts } from '../../../src/hooks/useProfileClosedPosts';
 import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
+import { useScreenAside } from '../../../src/components/aside/useScreenAside';
+import { ProfileStatsAside } from '../../../src/components/aside/ProfileStatsAside';
 
 export default function MyProfileClosedScreen() {
   const tabBarPad = useShellTabBarScrollInset();
   const userId = useAuthStore((s) => s.session?.userId);
   const postOwner = useMyProfilePostOwner();
   const closed = useProfileClosedPosts({ profileUserId: userId, viewerUserId: userId ?? null });
+
+  // Desktop (>=1024) aside — personal stats summary (FR-RESP-003).
+  useScreenAside(() => <ProfileStatsAside />, []);
 
   return (
     <Screen blobs="content">

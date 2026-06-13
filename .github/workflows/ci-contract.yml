@@ -2,24 +2,19 @@ name: CI — contract
 
 # Static guards on the contract between app code, infra adapters, and the DB.
 # Cheap to run, catches drift before backend or frontend CI burns time.
+#
+# `rpc · table contract` is a REQUIRED status check on dev/main (branch
+# protection) — keep the job name stable. Because it is required, the
+# pull_request trigger MUST run on every non-draft PR (no path filter):
+# path-filtering it left the required context permanently "Expected" on
+# docs/tooling-only PRs and blocked their merge (same root cause and fix as
+# ci-backend.yml). All four guards are cheap static node scripts, so they run
+# unconditionally rather than behind a changes filter. Keep `push` path-filtered.
 
 on:
   pull_request:
     branches: [main, dev]
-    paths:
-      - 'app/packages/infrastructure-supabase/**'
-      - 'app/packages/application/**'
-      - 'app/packages/domain/**'
-      - 'app/apps/mobile/app/**'
-      - 'app/scripts/check-architecture.mjs'
-      - 'supabase/migrations/**'
-      - 'supabase/functions/**'
-      - 'scripts/check-rpc-contract.mjs'
-      - 'scripts/check-rpc-contract.allowlist.json'
-      - 'scripts/check-web-manifest.mjs'
-      - 'scripts/check-expo-router-platform-extensions.mjs'
-      - 'app/apps/mobile/src/i18n/locales/he/**'
-      - '.github/workflows/ci-contract.yml'
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main, dev]
     paths:
@@ -51,10 +46,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
       - name: Run static rpc/table contract guard
         run: node scripts/check-rpc-contract.mjs
 
@@ -64,10 +59,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 5
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
       - name: Run architecture guard (file-size + layer + domain typed errors)
         run: node app/scripts/check-architecture.mjs
 
@@ -77,10 +72,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
       - name: Verify he locale appName is present and non-empty
         run: node scripts/check-web-manifest.mjs
 
@@ -90,10 +85,10 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 3
     steps:
-      - uses: actions/checkout@v4
+      - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version-file: .nvmrc
       - name: Verify every *.web.tsx (etc.) route has a non-platform sibling
         run: node scripts/check-expo-router-platform-extensions.mjs
       - name: Run guard's own unit tests

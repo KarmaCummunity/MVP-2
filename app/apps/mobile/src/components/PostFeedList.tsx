@@ -14,6 +14,7 @@ import { HOME_FEED_GRID_COLUMNS } from '../hooks/useShellContentWidth';
 import { useShellTabBarScrollInset } from '../navigation/useShellTabBarVisibility';
 import { PostCardGrid } from './PostCardGrid';
 import { EmptyState } from './EmptyState';
+import { PostGridSkeleton } from './skeletons/PostGridSkeleton';
 import { finishMark } from '../lib/observability/perfMarks';
 
 interface Props {
@@ -72,11 +73,7 @@ export function PostFeedList({
   }, [data]);
 
   if (isLoading && !data) {
-    return (
-      <View style={styles.center}>
-        <ActivityIndicator color={colors.primary} size="large" />
-      </View>
-    );
+    return <PostGridSkeleton columns={HOME_FEED_GRID_COLUMNS} count={HOME_FEED_GRID_COLUMNS * 3} />;
   }
   if (isError && !data) {
     return (
@@ -125,6 +122,13 @@ export function PostFeedList({
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
       showsVerticalScrollIndicator={false}
+      // Windowing: the default windowSize (21) keeps ~10 screens of
+      // image-bearing post cards mounted each direction on the app's
+      // highest-traffic screen. Cap it so memory and scroll work stay bounded;
+      // counts are per-row (numColumns groups items into rows).
+      initialNumToRender={6}
+      maxToRenderPerBatch={6}
+      windowSize={7}
     />
   );
 }

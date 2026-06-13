@@ -1,5 +1,5 @@
 // Search tab — FR-FEED-017+ universal discovery + smart search.
-import React, { useCallback, useEffect, useRef, useState } from 'react';
+import React, { useCallback, useState } from 'react';
 import {
   ActivityIndicator,
   Pressable,
@@ -28,6 +28,8 @@ import { SearchFilterSheet } from '../../src/components/SearchFilterSheet';
 import { TopBar } from '../../src/components/TopBar';
 import { Screen } from '../../src/components/ui/Screen';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
+import { useSearchScreenAside } from '../../src/components/aside/useSearchScreenAside';
+import { useDebouncedSearchInput } from '../../src/hooks/useDebouncedSearchInput';
 import { useSearchScreenStyles } from './search.styles';
 
 // ── Constants ─────────────────────────────────
@@ -42,22 +44,8 @@ export default function SearchScreen() {
   const viewerId = session?.userId ?? null;
 
   // ── Search input with debounce ──────────────
-  const [inputText, setInputText] = useState('');
-  const [debouncedQuery, setDebouncedQuery] = useState('');
-  const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
-  const handleTextChange = useCallback((text: string) => {
-    setInputText(text);
-    if (debounceRef.current) clearTimeout(debounceRef.current);
-    debounceRef.current = setTimeout(() => setDebouncedQuery(text.trim()), DEBOUNCE_MS);
-  }, []);
-
-  // Cleanup debounce timer on unmount
-  useEffect(() => {
-    return () => {
-      if (debounceRef.current) clearTimeout(debounceRef.current);
-    };
-  }, []);
+  const { inputText, setInputText, debouncedQuery, setDebouncedQuery, handleTextChange } =
+    useDebouncedSearchInput(DEBOUNCE_MS);
 
   // ── Store (filters, recent searches) ────────
   const store = useSearchStore(
@@ -121,10 +109,16 @@ export default function SearchScreen() {
   // ── Handlers ────────────────────────────────
 
   /** Tapping a recent search fills the input and fires the search. */
-  const handleRecentTap = (q: string) => {
-    setInputText(q);
-    setDebouncedQuery(q);
-  };
+  const handleRecentTap = useCallback(
+    (q: string) => {
+      setInputText(q);
+      setDebouncedQuery(q);
+    },
+    [setInputText, setDebouncedQuery],
+  );
+
+  // Desktop (>=1024) aside — recent searches (FR-RESP-003).
+  useSearchScreenAside(handleRecentTap);
 
   /** Submitting search saves to recent searches. */
   const handleSubmit = () => {

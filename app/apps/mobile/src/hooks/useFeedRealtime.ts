@@ -7,7 +7,7 @@
 
 import { useEffect, useRef } from 'react';
 import { AppState } from 'react-native';
-import type { QueryClient } from '@tanstack/react-query';
+import type { InfiniteData, QueryClient } from '@tanstack/react-query';
 import type { PostFeedFilter, FeedPage } from '@kc/application';
 import { getFeedRealtime, getFeedUseCase } from '../services/postsComposition';
 import { useFeedSessionStore } from '../store/feedSessionStore';
@@ -33,8 +33,8 @@ export function useFeedRealtime(opts: UseFeedRealtimeOptions): void {
   // Mirror query-cache data into lastSeenAtRef so we always know the newest
   // post's timestamp without storing the full data in state.
   useEffect(() => {
-    const cached = queryClient.getQueryData<FeedPage>(queryKey);
-    const first = cached?.posts[0]?.createdAt ?? null;
+    const cached = queryClient.getQueryData<InfiniteData<FeedPage>>(queryKey);
+    const first = cached?.pages[0]?.posts[0]?.createdAt ?? null;
     if (first && (!lastSeenAtRef.current || first > lastSeenAtRef.current)) {
       lastSeenAtRef.current = first;
     }
@@ -120,13 +120,19 @@ async function performGapFill(params: GapFillParams): Promise<void> {
   const newPosts = page.posts.filter((p) => p.createdAt > lastSeenAt);
   if (newPosts.length === 0) return;
 
-  queryClient.setQueryData<FeedPage>(queryKey, (prev) => {
+  queryClient.setQueryData<InfiniteData<FeedPage>>(queryKey, (prev) => {
     if (!prev) return prev;
+
+    const firstPage = prev.pages[0];
+    if (!firstPage) return prev;
 
     // Dedupe: remove from existing list any id already in the incoming batch.
     const incomingIds = new Set(newPosts.map((p) => p.postId));
-    const deduped = prev.posts.filter((p) => !incomingIds.has(p.postId));
+    const deduped = firstPage.posts.filter((p) => !incomingIds.has(p.postId));
 
-    return { ...prev, posts: [...newPosts, ...deduped] };
+    return {
+      ...prev,
+      pages: [{ ...firstPage, posts: [...newPosts, ...deduped] }, ...prev.pages.slice(1)],
+    };
   });
 }

@@ -22,6 +22,7 @@ import { useFilterStore } from './filterStore';
 import { useSearchStore } from './searchStore';
 import { useLastAddressStore } from './lastAddressStore';
 import { usePostDraftStore } from './postDraftStore';
+import { clearPersistedQueryCache } from '../lib/queryPersist';
 
 export async function clearAllPersistedStores(): Promise<void> {
   await Promise.all([
@@ -29,6 +30,9 @@ export async function clearAllPersistedStores(): Promise<void> {
     useSearchStore.persist.clearStorage(),
     useLastAddressStore.persist.clearStorage(),
     usePostDraftStore.persist.clearStorage(),
+    // PERF-6: the persisted React Query snapshot holds the previous user's
+    // feed / profile / inbox — wipe it too so the next user never sees it.
+    clearPersistedQueryCache(),
   ]);
   // In-memory reset so the next render doesn't show stale state until
   // the store rehydrates with defaults.

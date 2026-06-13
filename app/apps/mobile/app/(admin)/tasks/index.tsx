@@ -6,28 +6,65 @@ import {
   FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
 } from 'react-native';
 import {
-  ADMIN_TASK_STATUSES, type AdminPermission, type AdminRole, type AdminTaskStatus,
+  ADMIN_TASK_CATEGORIES,
+  ADMIN_TASK_STATUSES, type AdminPermission, type AdminRole,
+  type AdminTaskCategory, type AdminTaskStatus,
   hasPermission,
 } from '@kc/domain';
 import type { AdminTaskListFilters } from '@kc/application';
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminTasksList } from '../../../src/hooks/useAdminTasks';
+import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { TaskRow } from '../../../src/components/admin/tasks/TaskRow';
+import {
+  TaskAssigneeFilter,
+  UNASSIGNED_TOKEN,
+  type AssigneeFilterValue,
+} from '../../../src/components/admin/tasks/TaskAssigneeFilter';
+import {
+  TaskDueRangeFilter,
+  isValidIsoDate,
+} from '../../../src/components/admin/tasks/TaskDueRangeFilter';
 import he from '../../../src/i18n/locales/he';
+
+function parseDueFrom(value: string): Date | undefined {
+  if (!isValidIsoDate(value) || value.length === 0) return undefined;
+  return new Date(`${value}T00:00:00.000Z`);
+}
+
+function parseDueTo(value: string): Date | undefined {
+  if (!isValidIsoDate(value) || value.length === 0) return undefined;
+  // End-of-day so a "to" of 2026-06-01 includes anything dated that day.
+  return new Date(`${value}T23:59:59.999Z`);
+}
 
 export default function TasksScreen() {
   const styles = useStyles();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [statusFilter, setStatusFilter] = useState<AdminTaskStatus | null>(null);
+  const [categoryFilter, setCategoryFilter] = useState<AdminTaskCategory | null>(null);
+  const [assigneeFilter, setAssigneeFilter] = useState<AssigneeFilterValue>(null);
+  const [dueFromText, setDueFromText] = useState('');
+  const [dueToText, setDueToText] = useState('');
   const [onlyMine, setOnlyMine] = useState(false);
   const [overdueOnly, setOverdueOnly] = useState(false);
 
-  const filters = useMemo<AdminTaskListFilters>(() => ({
-    status:    statusFilter ?? undefined,
-    onlyMine,
-    overdue:   overdueOnly,
-  }), [statusFilter, onlyMine, overdueOnly]);
+  const filters = useMemo<AdminTaskListFilters>(() => {
+    const baseAssignee = assigneeFilter && assigneeFilter !== UNASSIGNED_TOKEN
+      ? assigneeFilter
+      : undefined;
+    return {
+      status:         statusFilter   ?? undefined,
+      category:       categoryFilter ?? undefined,
+      assigneeId:     baseAssignee,
+      unassignedOnly: assigneeFilter === UNASSIGNED_TOKEN ? true : undefined,
+      dueFrom:        parseDueFrom(dueFromText),
+      dueTo:          parseDueTo(dueToText),
+      onlyMine,
+      overdue:        overdueOnly,
+    };
+  }, [statusFilter, categoryFilter, assigneeFilter, dueFromText, dueToText, onlyMine, overdueOnly]);
 
   const q = useAdminTasksList(filters);
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
@@ -45,9 +82,9 @@ export default function TasksScreen() {
 
   return (
     <View style={styles.root}>
-      <View style={styles.header}>
-        <Text style={styles.title}>{he.admin.tasks.title}</Text>
-        {can('tasks.create') && (
+      <AdminScreenHeader
+        title={he.admin.tasks.title}
+        right={can('tasks.create') ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/(admin)/tasks/new' as never)}
@@ -55,8 +92,8 @@ export default function TasksScreen() {
           >
             <Text style={styles.newBtnText}>{he.admin.tasks.newBtn}</Text>
           </Pressable>
-        )}
-      </View>
+        ) : undefined}
+      />
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <FilterChip
@@ -83,6 +120,34 @@ export default function TasksScreen() {
           onPress={() => setOnlyMine((v) => !v)}
         />
       </ScrollView>
+
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+        <FilterChip
+          label={he.admin.tasks.categoryFilters.all}
+          active={categoryFilter === null}
+          onPress={() => setCategoryFilter(null)}
+        />
+        {ADMIN_TASK_CATEGORIES.map((c) => (
+          <FilterChip
+            key={c}
+            label={he.admin.tasks.category[c]}
+            active={categoryFilter === c}
+            onPress={() => setCategoryFilter(categoryFilter === c ? null : c)}
+          />
+        ))}
+      </ScrollView>
+
+      {can('admins.view') && (
+        <TaskAssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
+      )}
+
+      <TaskDueRangeFilter
+        fromValue={dueFromText}
+        toValue={dueToText}
+        onChange={({ from, to }) => { setDueFromText(from); setDueToText(to); }}
+        onClear={() => { setDueFromText(''); setDueToText(''); }}
+      />
+
 
       <FlatList
         data={[...q.tasks]}
@@ -123,8 +188,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   root:            { flex: 1, backgroundColor: colors.background },
   center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle:     { fontSize: 18, fontWeight: '700' },
-  header:          { paddingHorizontal: 16, paddingTop: 16, paddingBottom: 8, flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title:           { fontSize: 22, fontWeight: '700' },
   newBtn:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
   newBtnText:      { color: colors.textInverse, fontWeight: '700', fontSize: 13 },
   chips:           { paddingHorizontal: 16, paddingBottom: 12, gap: 8 },

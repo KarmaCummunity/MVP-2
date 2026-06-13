@@ -4,9 +4,11 @@
 import { BIOGRAPHY_MAX_LENGTH, STREET_NUMBER_PATTERN, containsBiographyUrl } from '@kc/domain';
 import type { AuthProfileMetadataPatch, IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
+import { assertSessionUser } from './assertSessionUser';
 import { ProfileError } from './errors';
 
 export interface UpdateProfileInput {
+  readonly sessionUserId: string;
   readonly userId: string;
   readonly displayName?: string;
   readonly city?: string;
@@ -26,6 +28,7 @@ export class UpdateProfileUseCase {
   ) {}
 
   async execute(input: UpdateProfileInput): Promise<void> {
+    assertSessionUser(input.sessionUserId, input.userId);
     if (!input.userId.trim()) throw new ProfileError('invalid_user_id');
 
     if (input.displayName !== undefined) {

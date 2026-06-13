@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { CompleteBasicInfoUseCase } from '../CompleteBasicInfoUseCase';
-import { OnboardingError } from '../errors';
+import { OnboardingError, ProfileError } from '../errors';
 import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
@@ -25,7 +25,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: '  נווה  ',
       cityId: '4000',
@@ -48,7 +48,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -63,7 +63,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -78,7 +78,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'נווה',
         cityId: '4000',
@@ -88,11 +88,36 @@ describe('CompleteBasicInfoUseCase', () => {
     ).rejects.toThrow('invalid_contact_phone');
   });
 
+  it('throws typed ProfileError (not raw Error) for field validation failures (§5 invariant)', async () => {
+    const useCase = makeUc(seed());
+
+    await expect(
+      useCase.execute({ sessionUserId: userId, userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
+    ).rejects.toMatchObject({
+      name: 'ProfileError',
+      code: 'invalid_display_name',
+    } satisfies Partial<ProfileError>);
+
+    await expect(
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
+    ).rejects.toBeInstanceOf(ProfileError);
+
+    await expect(
+      useCase.execute({ sessionUserId: userId,
+        userId,
+        displayName: 'נווה',
+        cityId: '4000',
+        cityName: 'חיפה',
+        contactPhone: '1234567890123456789012',
+      }),
+    ).rejects.toMatchObject({ name: 'ProfileError', code: 'invalid_contact_phone' });
+  });
+
   it('rejects whitespace-only display_name (FR-AUTH-010 AC1)', async () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({ userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: '   ', cityId: '4000', cityName: 'חיפה' }),
     ).rejects.toThrowError(/display_name/);
   });
 
@@ -100,7 +125,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'a'.repeat(51),
         cityId: '4000',
@@ -113,11 +138,11 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({ userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '', cityName: 'חיפה' }),
     ).rejects.toThrowError(/city/);
 
     await expect(
-      useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: '   ' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '4000', cityName: '   ' }),
     ).rejects.toThrowError(/city/);
   });
 
@@ -125,7 +150,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -148,7 +173,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'נווה',
         cityId: '4000',
@@ -163,7 +188,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const repo = seed();
     const useCase = makeUc(repo);
 
-    await useCase.execute({
+    await useCase.execute({ sessionUserId: userId,
       userId,
       displayName: 'נווה',
       cityId: '4000',
@@ -179,7 +204,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(seed());
 
     await expect(
-      useCase.execute({
+      useCase.execute({ sessionUserId: userId,
         userId,
         displayName: 'נווה',
         cityId: '4000',
@@ -202,7 +227,7 @@ describe('CompleteBasicInfoUseCase', () => {
     const useCase = makeUc(repo);
 
     await expect(
-      useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' }),
+      useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' }),
     ).rejects.toMatchObject({
       name: 'OnboardingError',
       code: 'illegal_transition',
@@ -220,7 +245,7 @@ describe('CompleteBasicInfoUseCase', () => {
     });
     const useCase = makeUc(repo);
 
-    await useCase.execute({ userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' });
+    await useCase.execute({ sessionUserId: userId, userId, displayName: 'נווה', cityId: '4000', cityName: 'חיפה' });
 
     expect(repo.rows.get(userId)?.onboardingState).toBe('pending_avatar');
   });

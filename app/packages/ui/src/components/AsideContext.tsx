@@ -35,15 +35,23 @@ function useAsideContextOrThrow(): AsideContextValue {
  * Publish a render function for the active screen's aside panel.
  * On mobile, the consumer (AppShell) ignores this — but the hook
  * itself is safe to call from any screen at any breakpoint.
+ *
+ * `enabled` lets screens that stay mounted while unfocused (tab scenes)
+ * withdraw their content so the focused screen's aside wins.
  */
-export function useAside(render: AsideRender, deps: ReadonlyArray<unknown>): void {
+export function useAside(
+  render: AsideRender,
+  deps: ReadonlyArray<unknown>,
+  enabled = true,
+): void {
   const { setRender } = useAsideContextOrThrow();
   // eslint-disable-next-line react-hooks/exhaustive-deps
   const memoized = useCallback(render, deps);
   useEffect(() => {
+    if (!enabled) return undefined;
     setRender(() => memoized);
     return () => setRender(undefined);
-  }, [memoized, setRender]);
+  }, [memoized, setRender, enabled]);
 }
 
 export function useAsideContent(): AsideRender | undefined {

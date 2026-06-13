@@ -1,24 +1,42 @@
 // app/apps/mobile/app/(admin)/index.tsx
-import type { ReactElement } from 'react';
+// FR-ADMIN-011 — admin dashboard. Welcome hero with role badges plus a
+// responsive grid of stat / quick-link cards, RBAC-filtered per session.
+// Users/posts KPIs show community-wide counts (FR-STATS-004 / community_stats).
+import type { ComponentProps, ReactElement } from 'react';
 import { Pressable, ScrollView, Text, View } from 'react-native';
+import { Ionicons } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
+import { useQuery } from '@tanstack/react-query';
 import type { AdminRole } from '@kc/domain';
 import { hasPermission } from '@kc/domain';
-import { makeUseStyles } from '@kc/ui';
+import { makeUseStyles, shadow, useTheme } from '@kc/ui';
+import { rowDirectionStart, textAlignStart } from '../../src/lib/rtlLayout';
 import { useAdminRoles } from '../../src/hooks/useAdminRoles';
 import { useAdminsList } from '../../src/hooks/useAdminsList';
 import { useAdminTasksList } from '../../src/hooks/useAdminTasks';
 import { useReportsInbox } from '../../src/hooks/useReportsInbox';
+import { getCommunityStatsSnapshotUseCase } from '../../src/services/postsComposition';
 import he from '../../src/i18n/locales/he';
 
+type IconName = ComponentProps<typeof Ionicons>['name'];
 const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
-const NAV_LABELS = he.admin.nav;
+
+interface Card {
+  key: string;
+  label: string;
+  value: string;
+  icon: IconName;
+  accent: string;
+  accentBg: string;
+  href: string;
+}
 
 export default function AdminDashboard(): ReactElement {
-  const { roles } = useAdminRoles();
+  const { roles, isLoading: rolesLoading } = useAdminRoles();
   const t = he.admin.dashboard;
   const router = useRouter();
   const styles = useStyles();
+  const { colors } = useTheme();
 
   const inbox = useReportsInbox({});
   const firstPage = inbox.data?.pages[0];
@@ -40,120 +58,119 @@ export default function AdminDashboard(): ReactElement {
   const canSearchPosts = hasPermission(roles, 'posts.search');
   const canViewAudit = hasPermission(roles, 'audit.view_own');
 
-  const adminsQuery = useAdminsList(false);
-  const adminsLabel = !canViewAdmins
+  const adminsQuery = useAdminsList(false, !rolesLoading && canViewAdmins);
+  const adminsLabel = !canViewAdmins || adminsQuery.isLoading
     ? t.noCount
-    : adminsQuery.isLoading
-      ? t.noCount
-      : String(adminsQuery.grants.length);
+    : String(adminsQuery.grants.length);
 
-  const goTo = (path: string): void => {
-    router.push(path as never);
-  };
+  // Community-wide counts for the users + posts KPIs (FR-STATS-004). Only
+  // fetched when at least one count renders — avoids network for moderators
+  // without users.search / posts.search.
+  const showCommunityCounts = canSearchUsers || canSearchPosts;
+  const communityStatsQuery = useQuery({
+    queryKey: ['admin.dashboard.community_stats'],
+    queryFn: () => getCommunityStatsSnapshotUseCase().execute(),
+    enabled: showCommunityCounts,
+    staleTime: 1000 * 60,
+  });
+  const usersLabel = communityStatsQuery.data
+    ? String(communityStatsQuery.data.registeredUsers)
+    : t.noCount;
+  const postsLabel = communityStatsQuery.data
+    ? String(communityStatsQuery.data.activePublicPosts)
+    : t.noCount;
+
+  const cards: Card[] = [
+    { key: 'reports', label: t.openReportsKpi, value: reportsLabel, icon: 'flag-outline', accent: colors.error, accentBg: colors.errorLight, href: '/(admin)/reports' },
+    { key: 'tasks', label: t.openTasksKpi, value: openTasksLabel, icon: 'checkbox-outline', accent: colors.info, accentBg: colors.infoLight, href: '/(admin)/tasks' },
+  ];
+  if (canViewAdmins) cards.push({ key: 'admins', label: t.adminsKpi, value: adminsLabel, icon: 'shield-checkmark-outline', accent: colors.secondary, accentBg: colors.secondaryLight, href: '/(admin)/admins' });
+  if (canSearchUsers) cards.push({ key: 'users', label: t.usersKpi, value: usersLabel, icon: 'people-outline', accent: colors.success, accentBg: colors.successLight, href: '/(admin)/users' });
+  if (canSearchPosts) cards.push({ key: 'posts', label: t.postsKpi, value: postsLabel, icon: 'document-text-outline', accent: colors.primary, accentBg: colors.primaryLight, href: '/(admin)/posts' });
+  if (canViewAudit) cards.push({ key: 'audit', label: t.auditKpi, value: t.auditOpenLabel, icon: 'time-outline', accent: colors.warning, accentBg: colors.warningLight, href: '/(admin)/audit' });
+
+  const goTo = (path: string): void => router.push(path as never);
 
   return (
-    <ScrollView contentContainerStyle={styles.root}>
-      <Text style={styles.title}>{t.welcome}</Text>
-
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t.rolesLabel}</Text>
+    <ScrollView style={styles.screen} contentContainerStyle={styles.root}>
+      <View style={styles.hero}>
+        <Text style={styles.heroEyebrow}>{he.admin.portalTitle}</Text>
+        <Text style={styles.heroTitle}>{t.welcome}</Text>
         <View style={styles.badges}>
           {roles.map((role) => (
             <View key={role} style={styles.badge}>
-              <Text style={styles.badgeText}>
-                {ROLE_LABELS[role] ?? role}
-              </Text>
+              <Text style={styles.badgeText}>{ROLE_LABELS[role] ?? role}</Text>
             </View>
           ))}
         </View>
       </View>
 
-      <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{t.quickLinksTitle}</Text>
-        <View style={styles.kpis}>
+      <Text style={styles.sectionTitle}>{t.quickLinksTitle}</Text>
+      <View style={styles.grid}>
+        {cards.map((c) => (
           <Pressable
-            style={styles.kpi}
-            onPress={() => goTo('/(admin)/reports')}
+            key={c.key}
+            style={({ pressed }) => [styles.card, pressed && styles.cardPressed]}
+            onPress={() => goTo(c.href)}
             accessibilityRole="button"
-            accessibilityLabel={NAV_LABELS.reports}
+            accessibilityLabel={c.label}
           >
-            <Text style={styles.kpiLabel}>{t.openReportsKpi}</Text>
-            <Text style={styles.kpiValue}>{reportsLabel}</Text>
+            <View style={styles.cardTop}>
+              <View style={[styles.iconWrap, { backgroundColor: c.accentBg }]}>
+                <Ionicons name={c.icon} size={20} color={c.accent} />
+              </View>
+              <Text style={styles.cardValue}>{c.value}</Text>
+            </View>
+            <Text style={styles.cardLabel}>{c.label}</Text>
           </Pressable>
-
-          <Pressable
-            style={styles.kpi}
-            onPress={() => goTo('/(admin)/tasks')}
-            accessibilityRole="button"
-            accessibilityLabel={NAV_LABELS.tasks}
-          >
-            <Text style={styles.kpiLabel}>{t.openTasksKpi}</Text>
-            <Text style={styles.kpiValue}>{openTasksLabel}</Text>
-          </Pressable>
-
-          {canViewAdmins && (
-            <Pressable
-              style={styles.kpi}
-              onPress={() => goTo('/(admin)/admins')}
-              accessibilityRole="button"
-              accessibilityLabel={NAV_LABELS.admins}
-            >
-              <Text style={styles.kpiLabel}>{t.adminsKpi}</Text>
-              <Text style={styles.kpiValue}>{adminsLabel}</Text>
-            </Pressable>
-          )}
-
-          {canSearchUsers && (
-            <Pressable
-              style={styles.kpi}
-              onPress={() => goTo('/(admin)/users')}
-              accessibilityRole="button"
-              accessibilityLabel={NAV_LABELS.users}
-            >
-              <Text style={styles.kpiLabel}>{t.usersKpi}</Text>
-              <Text style={styles.kpiValue}>{NAV_LABELS.users}</Text>
-            </Pressable>
-          )}
-
-          {canSearchPosts && (
-            <Pressable
-              style={styles.kpi}
-              onPress={() => goTo('/(admin)/posts')}
-              accessibilityRole="button"
-              accessibilityLabel={NAV_LABELS.posts}
-            >
-              <Text style={styles.kpiLabel}>{t.postsKpi}</Text>
-              <Text style={styles.kpiValue}>{NAV_LABELS.posts}</Text>
-            </Pressable>
-          )}
-
-          {canViewAudit && (
-            <Pressable
-              style={styles.kpi}
-              onPress={() => goTo('/(admin)/audit')}
-              accessibilityRole="button"
-              accessibilityLabel={NAV_LABELS.audit}
-            >
-              <Text style={styles.kpiLabel}>{t.auditKpi}</Text>
-              <Text style={styles.kpiValue}>{NAV_LABELS.audit}</Text>
-            </Pressable>
-          )}
-        </View>
+        ))}
       </View>
     </ScrollView>
   );
 }
 
 const useStyles = makeUseStyles(({ colors }) => ({
-  root:         { padding: 20, gap: 20 },
-  title:        { fontSize: 20, fontWeight: '700' },
-  section:      { gap: 8 },
-  sectionTitle: { fontSize: 14, opacity: 0.7 },
-  badges:       { flexDirection: 'row', flexWrap: 'wrap', gap: 6 },
-  badge:        { backgroundColor: colors.secondaryLight, paddingHorizontal: 10, paddingVertical: 4, borderRadius: 999 },
-  badgeText:    { fontSize: 12, fontWeight: '600' },
-  kpis:         { flexDirection: 'row', flexWrap: 'wrap', gap: 12 },
-  kpi:          { flexBasis: 160, padding: 16, backgroundColor: colors.skeleton, borderRadius: 12, gap: 6 },
-  kpiLabel:     { fontSize: 12, opacity: 0.7 },
-  kpiValue:     { fontSize: 18, fontWeight: '600' },
+  screen: { flex: 1, backgroundColor: colors.background },
+  root: { padding: 16, gap: 16, paddingBottom: 96, width: '100%', maxWidth: 900, alignSelf: 'center' },
+
+  hero: {
+    backgroundColor: colors.primarySurface,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    borderRadius: 20,
+    padding: 20,
+    gap: 12,
+  },
+  heroEyebrow: { fontSize: 12, fontWeight: '700', color: colors.primary, letterSpacing: 0.5, textAlign: textAlignStart() },
+  heroTitle: { fontSize: 22, fontWeight: '800', color: colors.textPrimary, textAlign: textAlignStart() },
+  badges: { flexDirection: rowDirectionStart, flexWrap: 'wrap', gap: 6 },
+  badge: {
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.primaryLight,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 999,
+  },
+  badgeText: { fontSize: 12, fontWeight: '700', color: colors.primaryDark },
+
+  sectionTitle: { fontSize: 14, fontWeight: '700', color: colors.textSecondary, textAlign: textAlignStart(), marginTop: 4 },
+  grid: { flexDirection: rowDirectionStart, flexWrap: 'wrap', gap: 12 },
+  card: {
+    flexGrow: 1,
+    flexBasis: 150,
+    minWidth: 150,
+    backgroundColor: colors.surface,
+    borderWidth: 1,
+    borderColor: colors.border,
+    borderRadius: 16,
+    padding: 16,
+    gap: 12,
+    ...shadow.card,
+  },
+  cardPressed: { opacity: 0.7 },
+  cardTop: { flexDirection: rowDirectionStart, alignItems: 'center', justifyContent: 'space-between' },
+  iconWrap: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
+  cardValue: { fontSize: 24, fontWeight: '800', color: colors.textPrimary },
+  cardLabel: { fontSize: 13, fontWeight: '600', color: colors.textSecondary, textAlign: textAlignStart() },
 }));

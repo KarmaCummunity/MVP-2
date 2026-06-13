@@ -5,8 +5,11 @@
  *  Reused by FR-PROFILE-007 Edit Profile flow when it ships. */
 import type { IAuthService } from '../ports/IAuthService';
 import type { IUserRepository } from '../ports/IUserRepository';
+import { assertSessionUser } from './assertSessionUser';
+import { ProfileError } from './errors';
 
 export interface SetAvatarInput {
+  readonly sessionUserId: string;
   readonly userId: string;
   readonly avatarUrl: string | null;
 }
@@ -18,16 +21,17 @@ export class SetAvatarUseCase {
   ) {}
 
   async execute(input: SetAvatarInput): Promise<void> {
+    assertSessionUser(input.sessionUserId, input.userId);
     if (!input.userId.trim()) {
-      throw new Error('invalid_user_id');
+      throw new ProfileError('invalid_user_id');
     }
     if (input.avatarUrl !== null) {
       const url = input.avatarUrl.trim();
       if (url.length === 0) {
-        throw new Error('invalid_avatar_url');
+        throw new ProfileError('invalid_avatar_url');
       }
       if (!/^https?:\/\//i.test(url)) {
-        throw new Error('invalid_avatar_url');
+        throw new ProfileError('invalid_avatar_url');
       }
       await this.users.setAvatar(input.userId, url);
       await this.auth.syncProfileMetadata({ avatarUrl: url });

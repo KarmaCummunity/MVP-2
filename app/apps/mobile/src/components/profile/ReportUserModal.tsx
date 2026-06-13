@@ -1,15 +1,16 @@
 // FR-MOD-007 — Report modal opened from a user profile's overflow menu.
 // Mirrors ReportPostModal but submits to container.reportUser (target_type='user').
-import React, { useEffect, useState } from 'react';
-import { Modal, View, Text, TouchableOpacity, TextInput, Alert } from 'react-native';
+import React from 'react';
+import { Modal, View, Text, TouchableOpacity, TextInput } from 'react-native';
 import type { ReportReason } from '@kc/domain';
-import { ReportError } from '@kc/application';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { makeUseStyles, useTheme } from '@kc/ui';
 import he from '../../i18n/locales/he';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { NotifyModal } from '../NotifyModal';
+import { useReportForm } from '../report/useReportForm';
 
 const t = he.moderation;
 
@@ -31,47 +32,25 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   const styles = useStyles();
   const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId);
-  const [reason, setReason] = useState<ReportReason>('Spam');
-  const [note, setNote] = useState('');
-  const [submitting, setSubmitting] = useState(false);
+  const { reason, setReason, note, setNote, submitting, notify, setNotify, runSubmit } =
+    useReportForm(visible);
 
-  // Reset state when the modal closes so the next open starts fresh.
-  useEffect(() => {
-    if (!visible) {
-      setReason('Spam');
-      setNote('');
-      setSubmitting(false);
-    }
-  }, [visible]);
-
-  const submit = async () => {
+  const submit = () => {
     if (!userId) return;
-    setSubmitting(true);
-    try {
-      await container.reportUser.execute({
-        reporterId: userId,
-        targetUserId,
-        reason,
-        note: note.trim() || undefined,
-      });
-      onClose();
-      Alert.alert(t.report.user.successToast);
-    } catch (err) {
-      if (err instanceof ReportError && err.code === 'duplicate_within_24h') {
-        Alert.alert(t.report.user.duplicateError);
-        onClose();
-      } else if (err instanceof ReportError && err.code === 'target_already_moderated') {
-        Alert.alert(t.report.user.alreadyModeratedError);
-        onClose();
-      } else {
-        Alert.alert(t.actions.errors.networkError);
-      }
-    } finally {
-      setSubmitting(false);
-    }
+    void runSubmit(
+      (r, n) => container.reportUser.execute({ reporterId: userId, targetUserId, reason: r, note: n || undefined }),
+      onClose,
+      {
+        success: { title: t.report.user.successTitle, message: t.report.user.successToast },
+        duplicate: { title: t.report.user.duplicateTitle, message: t.report.user.duplicateError },
+        alreadyModerated: { title: t.report.user.alreadyModeratedTitle, message: t.report.user.alreadyModeratedError },
+        error: { title: t.report.user.errorTitle, message: t.actions.errors.networkError },
+      },
+    );
   };
 
   return (
+    <>
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
@@ -120,6 +99,8 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
         </View>
       </View>
     </Modal>
+    <NotifyModal visible={notify !== null} title={notify?.title ?? ''} message={notify?.message ?? ''} onDismiss={() => setNotify(null)} />
+    </>
   );
 }
 

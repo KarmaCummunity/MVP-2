@@ -10,11 +10,16 @@ import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBa
 import { useAuthStore } from '../../../src/store/authStore';
 import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { useMyProfilePostOwner } from '../../../src/hooks/useProfilePostOwner';
+import { useScreenAside } from '../../../src/components/aside/useScreenAside';
+import { ProfileStatsAside } from '../../../src/components/aside/ProfileStatsAside';
 
 export default function MyProfileOpenScreen() {
   const tabBarPad = useShellTabBarScrollInset();
   const userId = useAuthStore((s) => s.session?.userId);
   const postOwner = useMyProfilePostOwner();
+
+  // Desktop (>=1024) aside — personal stats summary (FR-RESP-003).
+  useScreenAside(() => <ProfileStatsAside />, []);
 
   const myPostsQuery = useQuery({
     queryKey: ['my-posts', userId],

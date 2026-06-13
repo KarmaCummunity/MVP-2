@@ -9,6 +9,7 @@ import {
 } from '../services/postsComposition';
 import { getUserRepo } from '../services/userComposition';
 import { useFeedSessionStore } from '../store/feedSessionStore';
+import { userProfileKeys } from '../lib/queryKeys';
 
 interface UseFirstPostNudgeResult {
   show: boolean;
@@ -21,7 +22,7 @@ export function useFirstPostNudge(viewerId: string | null): UseFirstPostNudgeRes
   const dismissForSession = useFeedSessionStore((s) => s.dismissNudgeForSession);
 
   const userQuery = useQuery({
-    queryKey: ['user', viewerId, 'nudge'],
+    queryKey: [...userProfileKeys.byId(viewerId ?? ''), 'nudge'],
     queryFn: () => (viewerId ? getUserRepo().findById(viewerId) : null),
     enabled: viewerId !== null,
     staleTime: 5 * 60_000, // PERF-3: profile (self) — dismissForever refetches explicitly

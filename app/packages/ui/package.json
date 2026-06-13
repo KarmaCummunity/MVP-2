@@ -23,6 +23,7 @@
     "react-native": "0.81.5",
     "react-native-web": "~0.21.2",
     "typescript": "^5.5.0",
-    "vitest": "^2.1.9"
+    "vite": "^6.0.0",
+    "vitest": "^4.1.8"
   }
 }

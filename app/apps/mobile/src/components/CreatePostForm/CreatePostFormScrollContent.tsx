@@ -11,6 +11,7 @@ import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisib
 import { CityPicker } from '../CityPicker';
 import { StreetPicker } from '../StreetPicker';
 import { CreatePostExposureSection } from './CreatePostExposureSection';
+import { EstimatedValueSlider } from './EstimatedValueSlider';
 import { PhotoPicker } from './PhotoPicker';
 import type { UploadedAsset } from '../../services/imageUpload';
 import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
@@ -28,6 +29,8 @@ export interface CreatePostFormScrollContentProps {
   readonly onStreetChange: (next: string) => void;
   readonly streetNumber: string;
   readonly onStreetNumberChange: (next: string) => void;
+  /** Shown after Publish is tapped while address fields are incomplete (FR-POST-002 AC4). */
+  readonly addressInlineError: string | null;
   readonly category: Category;
   readonly onCategoryChange: (next: Category) => void;
   readonly isGive: boolean;
@@ -42,6 +45,8 @@ export interface CreatePostFormScrollContentProps {
   readonly isPublishing: boolean;
   readonly urgency: string;
   readonly onUrgencyChange: (next: string) => void;
+  readonly estimatedValue: number;
+  readonly onEstimatedValueChange: (next: number) => void;
   readonly visibility: PostVisibility;
   readonly onVisibilityChange: (next: PostVisibility) => void;
   readonly profilePrivacy: 'Public' | 'Private';
@@ -65,6 +70,7 @@ export function CreatePostFormScrollContent({
   onStreetChange,
   streetNumber,
   onStreetNumberChange,
+  addressInlineError,
   category,
   onCategoryChange,
   isGive,
@@ -79,6 +85,8 @@ export function CreatePostFormScrollContent({
   isPublishing,
   urgency,
   onUrgencyChange,
+  estimatedValue,
+  onEstimatedValueChange,
   visibility,
   onVisibilityChange,
   profilePrivacy,
@@ -147,6 +155,7 @@ export function CreatePostFormScrollContent({
           {t('post.title')} <Text style={styles.required}>*</Text>
         </Text>
         <TextInput
+          testID="create-post-title"
           style={styles.input}
           value={title}
           onChangeText={onTitleChange}
@@ -182,6 +191,11 @@ export function CreatePostFormScrollContent({
             editable={!isPublishing && !!city}
           />
         </View>
+        {addressInlineError ? (
+          <Text style={styles.sectionHint} accessibilityRole="alert">
+            {addressInlineError}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.section}>
@@ -217,6 +231,7 @@ export function CreatePostFormScrollContent({
               </TouchableOpacity>
             ))}
           </View>
+          <EstimatedValueSlider value={estimatedValue} onChange={onEstimatedValueChange} />
         </View>
       )}
 

@@ -57,6 +57,8 @@ export interface User {
   activePostsCountInternal: number;
   followersCount: number;
   followingCount: number;
+  /** Engagement score (FR-KARMA-001). Server-maintained, floored at 0. */
+  karmaPoints: number;
   readonly createdAt: string;
   updatedAt: string;
 }

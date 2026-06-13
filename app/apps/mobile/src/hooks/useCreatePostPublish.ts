@@ -1,7 +1,7 @@
 import { useMutation, useQueryClient } from '@tanstack/react-query';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { useRef } from 'react';
+import { useMemo, useRef, useState } from 'react';
 import type {
   Category,
   ItemCondition,
@@ -14,7 +14,13 @@ import { getCreatePostUseCase, getPostRepo } from '../services/postsComposition'
 import { useFeedSessionStore } from '../store/feedSessionStore';
 import { useLastAddressStore } from '../store/lastAddressStore';
 import { usePostDraftStore } from '../store/postDraftStore';
-import { buildCreatePostMissingFieldsToastMessage } from '../lib/createPostMissingFieldsToast';
+import {
+  buildAddressInlineErrorMessage,
+  buildCreatePostNonAddressToastMessage,
+  getAddressValidationIssue,
+  hasAddressRequiredFieldGaps,
+  hasNonAddressRequiredFieldGaps,
+} from '../lib/createPostFieldValidation';
 import { mapPostErrorToHebrew } from '../services/postMessages';
 import { invalidatePersonalStatsCaches } from '../lib/invalidatePersonalStatsCaches';
 import { invalidateMyProfilePostQueries } from '../lib/invalidateMyProfilePostQueries';
@@ -36,6 +42,7 @@ export function useCreatePostPublish(args: {
   condition: ItemCondition;
   isGive: boolean;
   urgency: string;
+  estimatedValue: number;
   uploads: UploadedAsset[];
   hideFromCounterparty: boolean;
   visibilityRef: { current: PostVisibility };
@@ -49,6 +56,36 @@ export function useCreatePostPublish(args: {
   const queryClient = useQueryClient();
   const checkedFirstPostRef = useRef(false);
   const prePublishOpenCountRef = useRef<number | null>(null);
+  const [addressValidationTouched, setAddressValidationTouched] = useState(false);
+
+  const fieldSnapshot = useMemo(
+    () => ({
+      isGive: args.isGive,
+      title: args.title,
+      city: args.city,
+      street: args.street,
+      streetNumber: args.streetNumber,
+      uploadsLength: args.uploads.length,
+    }),
+    [
+      args.isGive,
+      args.title,
+      args.city,
+      args.street,
+      args.streetNumber,
+      args.uploads.length,
+    ],
+  );
+
+  const addressIssue = getAddressValidationIssue(
+    args.city,
+    args.street,
+    args.streetNumber,
+  );
+  const addressInlineMessage =
+    addressValidationTouched && addressIssue !== 'none'
+      ? buildAddressInlineErrorMessage(addressIssue)
+      : null;
 
   const publish = useMutation({
     mutationFn: async () => {
@@ -78,6 +115,7 @@ export function useCreatePostPublish(args: {
         locationDisplayLevel: args.locationDisplayLevel,
         itemCondition: args.isGive ? args.condition : null,
         urgency: !args.isGive && args.urgency.trim() ? args.urgency : null,
+        estimatedValue: args.isGive ? args.estimatedValue : null,
         mediaAssets: args.uploads.map((u) => ({
           path: u.path,
           mimeType: u.mimeType,
@@ -125,16 +163,18 @@ export function useCreatePostPublish(args: {
 
   const tryPublish = () => {
     if (isPublishing) return;
-    const missingMsg = buildCreatePostMissingFieldsToastMessage({
-      isGive: args.isGive,
-      title: args.title,
-      city: args.city,
-      street: args.street,
-      streetNumber: args.streetNumber,
-      uploadsLength: args.uploads.length,
-    });
-    if (missingMsg.length > 0) {
-      useFeedSessionStore.getState().showEphemeralToast(missingMsg, 'error', 2500);
+    setAddressValidationTouched(true);
+
+    const addressGap = hasAddressRequiredFieldGaps(
+      args.city,
+      args.street,
+      args.streetNumber,
+    );
+    const nonAddressToast = buildCreatePostNonAddressToastMessage(fieldSnapshot);
+    if (addressGap || hasNonAddressRequiredFieldGaps(fieldSnapshot)) {
+      if (nonAddressToast.length > 0) {
+        useFeedSessionStore.getState().showEphemeralToast(nonAddressToast, 'error', 2500);
+      }
       return;
     }
     if (args.visibilityRef.current === 'FollowersOnly') {
@@ -144,5 +184,11 @@ export function useCreatePostPublish(args: {
     runPublishAfterGate();
   };
 
-  return { publish, tryPublish, runPublishAfterGate, isPublishing };
+  return {
+    publish,
+    tryPublish,
+    runPublishAfterGate,
+    isPublishing,
+    addressInlineMessage,
+  };
 }

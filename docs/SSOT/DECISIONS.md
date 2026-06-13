@@ -1024,12 +1024,113 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 **Affected docs.** `.github/workflows/ci-dev-guard.yml`, `db-deploy.yml`, `app/package.json`; `docs/SSOT/ENVIRONMENTS.md`, `RELEASE_CHECKLIST.md`, `SETUP_GIT_AGENT.md`; plan `docs/superpowers/plans/2026-05-28-dev-branch-ci-hardening.md`.
 
+## D-56 — Rides UI restored + V3.0 scope expansion (supersedes D-51) (2026-05-29)
+
+**Date.** 2026-05-29
+
+**Decision.** Reverse `D-51`'s UI-only hide: `RidesHubScreen` now renders the live in-app rides experience (feed + `RideCreateSheet` FAB + `RideFilterSheet`) as the primary view, with the NGO `DonationLinksList categorySlug="transport"` collapsed into a secondary section (FR-RIDE-023). Concurrently expand the spec to V3.0 by adding FR-RIDE-019 + FR-RIDE-023..045 covering: advanced publish (cargo / food / payment / requirements / intermediate stops), driver dashboard + passenger requests, active-ride lifecycle (`open → in_transit → completed_pending_rating → closed`), emergency button (`R-Rides-8`), ratings system (1..5 stars, ≤300 char comments), late-cancel penalty path (`R-Rides-5`/`R-Rides-6`), payment cap enforcement (`R-Rides-1`/`R-Rides-2`), driver license + insurance declarations (`R-Rides-3`/`R-Rides-4`), minor consent (`R-Rides-9`), edge-case catalog (`R-Rides-10` food spoilage + international ban + breakdown + no-show), and first cross-world hook (items post ↔ ride request, FR-RIDE-044).
+
+**Rationale.** The backend hardened cycle (#414..#447) closed every gap that motivated the hide: cron-driven expiry, RPC-only writes with seat enforcement (`D-52`), realtime publication, visibility tiers honored end-to-end, templates schema + materializer, lifecycle chat messages, and notifications. Continuing to hide the UI now leaves the donation-world headline modality with no native flow while we have a fully-tested backend underneath. The V3.0 expansion is the natural product cadence — the PRD (`PRD_V2_NOT_FOR_MVP/donation_worlds/06_Rides.md`) was always the target; we shipped V2.0 as a minimum-viable foundation, hardened it, and now ascend to V3.0 with the full carpooling-for-good feature set: safety overlay, ratings, business rules, cross-world.
+
+**Alternatives rejected.** Keep hidden + ship V3.0 entirely backend-only (defeats the purpose; users still see only NGO links). Ship UI without spec expansion (un-scoped scope creep; FR-IDs and ACs must lead implementation). Split V3.0 into 12 separate PRs (overhead vs reviewability tradeoff lands on one focused PR per logical chunk; spec lands first as the contract).
+
+**Affected docs.** `docs/SSOT/spec/15_rides.md` (status flipped 🟡 V3.0 + new FRs); `apps/mobile/src/features/rides/screens/RidesHubScreen.tsx` (un-hide); `docs/SSOT/BACKLOG.md` V2.X line + new V3.X umbrella; migrations `0174`..`0182` (new); PRD `PRD_V2_NOT_FOR_MVP/donation_worlds/06_Rides.md` (existing — drives ACs).
+
+---
+
+### D-55 — E2E release gate on dev deployment (Web Playwright)
+
+**Decision.** Production releases (`dev` → `main`) require green **CI — E2E dev / user journeys (P0)** against repository variable `DEV_WEB_URL` (`https://mvp-2-dev.up.railway.app`). Auth in CI uses a dedicated dev test user (`E2E_TEST_EMAIL` / `E2E_TEST_PASSWORD`): REST `grant_type=password`, then **session injection** into browser `localStorage` — not the `/sign-in` UI and not Google SSO. Feature PRs to `dev` do not require E2E (advisory `workflow_dispatch` / future push hook optional).
+
+**Rationale.** Manual dev smoke in `RELEASE_CHECKLIST.md` does not scale for an AI-only dev workflow (`D-53`). Playwright is already used for bundle smoke; live-dev E2E catches RLS, env wiring, and deploy regressions that unit tests miss. Human operators may use Google only; API injection still validates authenticated journeys. Humans remain the final prod sanity check (~5 min), not the gate on every change.
+
+**Alternatives rejected.** Gate every PR to `dev` on E2E — too slow/flaky early. Cypress — no advantage over existing Playwright. Google SSO in CI — brittle. Dev ghost-session / auto-sign-in in E2E bundle — not a human path. Playwright UI `/sign-in` — rejected when the form is unreliable for operators; product login UX remains a separate fix (`TD-104`).
+
+**Affected docs.** `docs/SSOT/TESTING.md`, `RELEASE_CHECKLIST.md`, `ENVIRONMENTS.md`, `.github/workflows/ci-e2e-dev.yml`; plan `docs/superpowers/plans/2026-05-28-comprehensive-quality-automation.md`.
+
+---
+
+## D-57 — Reports require an active account (2026-06-01)
+
+**Date.** 2026-06-01
+
+**Decision.** `reports_insert_self` (RLS `WITH CHECK`) now also requires `is_active_member(auth.uid())`, so a `suspended_admin` / `suspended_for_false_reports` / `banned` user can no longer create a `Report` via the direct PostgREST path. This resolves the TD-88 fork in favour of gating (rather than documenting a deliberate exception). Migration `0183`.
+
+**Rationale.** Consistent with the `0072` INSERT-active stance already enforced on posts / chats / messages, and with the moderation model itself — `suspended_for_false_reports` exists precisely to stop report abuse, so letting such a user keep filing reports is self-contradictory. `FR-MOD-001` has no AC requiring a non-active user to report. The mobile client already routes suspended/banned users to `/account-blocked` (`useEnforceAccountGate`), so this is server-side defense-in-depth, not an in-app flow change.
+
+**Alternatives rejected.** Document a deliberate exception that lets banned users keep reporting (the other TD-88 fork) — no product or legal requirement for it, and it leaves a retaliatory-report vector open. Gate in the application layer only — the RLS `WITH CHECK` is the authoritative boundary against direct-API abuse.
+
+**Affected docs.** `supabase/migrations/0183_reports_insert_requires_active_member.sql`, `supabase/tests/0183_reports_insert_active_member.sql`, `docs/SSOT/TECH_DEBT.md` (TD-88 closed).
+
+---
+
+## D-58 — Native Sign in with Apple via Supabase id-token exchange (2026-06-04)
+
+**Date.** 2026-06-04
+
+**Decision.** iOS Sign in with Apple (`FR-AUTH-004`) uses the **native** `expo-apple-authentication` sheet and exchanges the returned identity token for a Supabase session via `supabase.auth.signInWithIdToken({ provider: 'apple' })` with a raw nonce (Apple receives `SHA-256(nonce)`; Supabase verifies the raw value). This mirrors the native/web split chosen for Google in `D-33` — Apple does **not** go through the OAuth web / `exchangeCodeForSession` flow. Apple's "hide my email" relay is the canonical email (AC2, handled by Supabase); the first-authorization name is captured and persisted to `user_metadata.full_name` for onboarding prefill (AC3) via the existing `syncProfileMetadata`, never depended on afterward.
+
+**Rationale.** App Store Guideline 4.8 mandates a genuine Sign in with Apple wherever a third-party SSO (Google) is offered; the prior iOS "Apple" button was a shell that routed to email sign-in (`TD-24`) and would have been rejected. The native sheet is the Apple-required UX and keeps the exchange in-process (no browser round-trip), reusing the existing `IAuthService` port + `toSession` mapping.
+
+**Alternatives rejected.** OAuth web flow via `signInWithOAuth({ provider: 'apple' })` — extra browser round-trip and not the Apple-preferred native iOS UX. A bespoke table for the Apple name — unnecessary; `user_metadata` already feeds `AuthSession.displayName`.
+
+**Operational dependency.** Going live requires the Apple provider configured in Supabase Auth (Service ID + key) and a native rebuild — the capability + config plugin are native, so an OTA update cannot add them. The `TD-24` Apple portion is closed in code; Phone OTP remains deferred.
+
+**Affected docs.** `app/packages/application/src/auth/SignInWithApple.ts`, `app/packages/application/src/ports/IAuthService.ts`, `app/packages/infrastructure-supabase/src/auth/SupabaseAuthService.ts`, `app/apps/mobile/src/services/authComposition.ts`, `app/apps/mobile/app/(auth)/index.tsx`, `app/apps/mobile/app.json`, `docs/SSOT/spec/01_auth_and_onboarding.md` (FR-AUTH-004), `docs/SSOT/TECH_DEBT.md` (TD-24).
+
+---
+
+## D-59 — Single operated contact mailbox; drop the un-owned `support@karma.community` channel (2026-06-09)
+
+**Date.** 2026-06-09
+
+**Decision.** The only contact mailbox the project actually operates is `karmacommunity2.0@gmail.com`. The `support@karma.community` address referenced an un-owned/unconfigured domain — mail sent to it would silently bounce. The duplicate "מייל — ארגון" row in About → Contact (`AboutContactLinks.tsx`) is removed, leaving a single email row (relabeled "מייל"); `ABOUT_EMAIL_ORG` and the `contactEmailOrgLabel` i18n key are deleted. `FR-SETTINGS-009` AC1 is amended to point its fallback `mailto:` at the gmail address.
+
+**Rationale.** A contact channel that silently fails is worse than no channel — the user believes they reached support. Two rows resolving to one mailbox (once the dead one is repointed) is also confusing. Removing the dead duplicate is the simplest user-coherent outcome and aligns with the standing "no automated outbound email; use `karmacommunity2.0@gmail.com` for contact-us" project policy. Closes the `support@karma.community` portion of `TD-99` / audit SET-6.
+
+**Alternatives rejected.** Repointing `ABOUT_EMAIL_ORG` to the gmail — produces two identical email rows. Registering/operating the `karma.community` domain mailbox — out of scope for MVP and a PM/ops action, not a code change.
+
+**Affected docs.** `app/apps/mobile/src/features/about-landing/aboutExternalLinks.ts`, `AboutContactLinks.tsx`, `app/apps/mobile/src/i18n/locales/he/modules/aboutContentUxRefreshPartB.ts`, `docs/SSOT/spec/11_settings.md` (FR-SETTINGS-009 AC1), `docs/SSOT/TECH_DEBT.md` (TD-99).
+
+---
+
+## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
+
+**Date.** 2026-06-08
+
+**Decision.** Karma points are self-only at MVP (`FR-KARMA-008`). The number is visible only to the signed-in user on their own profile and stats screen; no public ranking, no counterparty visibility. The economy uses server-authoritative single-anchor awards (one trigger per event, no double-counting) backed by an append-only `karma_ledger`. Closure karma is anchored to the `posts.status` transition into/out of `closed_delivered`, not recipients-row existence (mirrors `items_given_count` in `0006`). The `estimated_value` slider feeds a `karma_value_bonus` at closure for givers only. Realtime updates patch the `['user-profile', userId]` React Query cache via own-row `postgres_changes` subscription.
+
+**Rationale.** Self-only removes the incentive to farm karma (inflating a private number is pointless), allowing MVP launch without anti-collusion guards. Closure anchor on `posts.status` is causally correct (the status flip is the authoritative delivery signal) and robust to recipient-row deletion order. Single-anchor + append-and-sum is simpler and race-safer than a global unique key (which would abort the host transaction on a duplicate).
+
+**Alternatives rejected.** Public karma from day 1 — requires anti-collusion first (see D-156). Global unique key on `karma_ledger` — aborts the parent transaction on race; partial unique index + on-conflict-do-nothing is safe. Anchoring closure to recipients-row — wrong causal signal; the row can precede or outlive the status change.
+
+**Affected docs.** `supabase/migrations/0097–0100`, `packages/domain/src/karma.ts`, `apps/mobile/src/components/profile/KarmaBadge.tsx`, `docs/SSOT/spec/14_karma.md`.
+
+---
+
+## D-156 — Anti-collusion gate as hard precondition for karma public flip
+
+**Date.** 2026-06-08
+
+**Decision.** The karma public-flip (`FR-KARMA-008`) requires reciprocity/velocity anti-collusion caps before it can be enabled. Specifically: (a) a mutual-delivery cap (e.g., two users cannot be each other's closure giver and receiver more than N times in a rolling window), and (b) a velocity cap (max karma from any single counterparty per period). Without these, a colluding pair can farm +35/+15 per fake delivery cycle indefinitely, and public visibility would create a direct incentive to do so.
+
+**Rationale.** At MVP, karma is self-only so there is no external incentive to inflate a private number. But once the number becomes publicly visible it becomes a trust signal, and fake-delivery farming would corrupt it rapidly. The caps must land before — or atomically with — the public flip. An in-app heads-up banner must also appear before a user's months-old private karma is first made publicly visible.
+
+**Alternatives rejected.** Launch public karma without caps — creates an immediately exploitable attack surface once any user discovers the ₪1000 fake-give loop (+35 giver, +15 receiver, repeat). Trust-only model — MVP community is small and trust is feasible today, but does not scale to hundreds of users.
+
+**Affected docs.** `docs/SSOT/spec/14_karma.md` FR-KARMA-008; `docs/SSOT/TECH_DEBT.md` (TD-166 anti-collusion watch item).
+
 ---
 
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.1 | 2026-06-08 | Added `D-155` (karma economy: self-only at MVP, single-anchor awards, status-anchored closure, own-row Realtime). Added `D-156` (anti-collusion caps as hard precondition for karma public flip; `FR-KARMA-008`). |
+| 4.0 | 2026-06-04 | Added `D-58` (native Sign in with Apple via `signInWithIdToken` + raw nonce; `FR-AUTH-004` implemented; mirrors `D-33`; Apple portion of `TD-24` closed in code; live flow pends Supabase Apple provider config). |
+| 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |
+| 3.8 | 2026-05-29 | Added `D-56` (rides UI restored + V3.0 scope: FR-RIDE-019 + FR-RIDE-023..045 — advanced publish, dashboard, active-ride + emergency, ratings, business rules, cross-world). Supersedes `D-51`. |
+| 3.7 | 2026-05-28 | Added `D-55` (Playwright P0 E2E on `DEV_WEB_URL` gates `dev` → `main`; email/password CI auth; `TESTING.md`). |
 | 3.6 | 2026-05-28 | Added `D-54` (selective dev CI hardening: `ci-dev-guard`, dev+prod DB dry-run, dev branch-protection doc; not 1:1 main copy). |
 | 3.5 | 2026-05-28 | Added `D-53` (automated `main` prod gates: dev→main PR enforcement, migration safety scan, prod DB dry-run before apply, expanded prod smoke; no human deploy approvers). |
 | 3.4 | 2026-05-28 | Added `D-51` (rides UI temporarily hidden, backend kept live and hardening). Added `D-52` (rides participants: RPC-only writes, seat enforcement at approve time under `FOR UPDATE`; FR-RIDE-011; migration `0139`). |
@@ -1042,6 +1143,7 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 | 2.8 | 2026-05-22 | Added `D-RESP-001` (desktop adaptation strategy: adapted side rail + 280px aside panel, inbox chat, split-screen auth, 4-tier breakpoints, `SHELL_V2_ENABLED` flag, five-PR delivery `FR-RESP-001..005`). |
 | 2.7 | 2026-05-22 | Added `D-37` (auto `db-deploy` to `supabase-prod` on `main` push when migration paths change; manual dispatch retained). |
 | 2.6 | 2026-05-18 | Added `D-36` (canonical streets from data.gov.il package 321; zero filtering, free-text fallback, city-dependent picker with onboarding progressive disclosure). |
+| 2.6 | 2026-06-09 | Added `D-59` (single operated contact mailbox; drop un-owned `support@karma.community`; closes TD-99 SET-6 portion). |
 | 2.5 | 2026-05-17 | Added `D-35` (`posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status). |
 | 2.4 | 2026-05-17 | Added `D-34` (closed-post Hide fans out to `posts.visibility` + owner's `surface_visibility`; FR-POST-009 + FR-PROFILE-001 AC4 clarified). |
 | 2.3 | 2026-05-17 | Added `D-33` (web Google sign-in via same-tab redirect; bottom-sheet UX deferred to native via Google Sign-In SDK). |

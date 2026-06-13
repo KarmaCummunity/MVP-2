@@ -9,7 +9,7 @@
 import React, { useCallback, useMemo, useRef, useState } from 'react';
 import { FlatList, View } from 'react-native';
 import { useRouter } from 'expo-router';
-import { useQuery, useQueryClient } from '@tanstack/react-query';
+import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import type { PostWithOwner } from '@kc/application';
 import { PostFeedList } from '../../src/components/PostFeedList';
@@ -29,6 +29,8 @@ import { useFeedRealtime } from '../../src/hooks/useFeedRealtime';
 import { useFirstPostNudge } from '../../src/hooks/useFirstPostNudge';
 import { getFeedUseCase } from '../../src/services/postsComposition';
 import { startMark } from '../../src/lib/observability/perfMarks';
+import { useScreenAside } from '../../src/components/aside/useScreenAside';
+import { GivingWorldsAside } from '../../src/components/aside/GivingWorldsAside';
 
 // Module-scope guard: fires once per JS context (cold home-tab mount).
 let feedFirstRenderStarted = false;
@@ -101,12 +103,24 @@ export default function HomeFeedScreen() {
     ],
   );
 
-  const feedQuery = useQuery({
+  const feedQuery = useInfiniteQuery({
     queryKey: ['feed', viewerId, feedFilter],
-    queryFn: () =>
-      getFeedUseCase().execute({ viewerId, filter: feedFilter, limit: 20 }),
-    staleTime: 60_000, // PERF-3: feed — realtime fills gaps; tight stale ensures focus-back refresh
+    queryFn: ({ pageParam }) =>
+      getFeedUseCase().execute({
+        viewerId,
+        filter: feedFilter,
+        limit: 20,
+        cursor: pageParam as string | undefined,
+      }),
+    initialPageParam: undefined as string | undefined,
+    getNextPageParam: (last) => last.nextCursor ?? undefined,
+    staleTime: 60_000,
   });
+
+  const feedPosts = useMemo(
+    () => feedQuery.data?.pages.flatMap((p) => p.posts) ?? [],
+    [feedQuery.data?.pages],
+  );
 
   const refetchAndReset = useCallback(() => {
     resetNewPosts();
@@ -120,6 +134,9 @@ export default function HomeFeedScreen() {
     viewerId,
     feedFilter,
   });
+
+  // Desktop (>=1024) aside — giving-worlds shortcuts (FR-RESP-003).
+  useScreenAside(() => <GivingWorldsAside />, []);
 
   const nudge = useFirstPostNudge(viewerId);
   const surveyBanner = useSurveyBanner();
@@ -171,20 +188,25 @@ export default function HomeFeedScreen() {
   );
 
   return (
-    <Screen blobs="content">
+    <Screen blobs="content" testID="feed-screen">
       <TopBar
         extraIcon={<FeedFilterIcon activeCount={activeCount} onPress={() => setSheetOpen(true)} />}
       />
 
       <PostFeedList
         listRef={listRef}
-        data={feedQuery.data?.posts}
+        data={feedPosts}
         isLoading={feedQuery.isLoading}
         isRefetching={feedQuery.isRefetching}
         isError={feedQuery.isError}
         onRefresh={refetchAndReset}
         onRetry={() => feedQuery.refetch()}
-        hasMore={Boolean(feedQuery.data?.nextCursor)}
+        hasMore={feedQuery.hasNextPage}
+        onEndReached={() => {
+          if (feedQuery.hasNextPage && !feedQuery.isFetchingNextPage) {
+            void feedQuery.fetchNextPage();
+          }
+        }}
         ListHeaderComponent={header}
         emptyComponent={
           <FeedEmptyState

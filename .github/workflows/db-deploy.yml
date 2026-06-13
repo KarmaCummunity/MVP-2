@@ -30,6 +30,13 @@ on:
         description: 'Apply pending migrations to remote (uncheck = dry-run / list only).'
         type: boolean
         default: false
+  # NB: `main` branch protection requires a successful `supabase-dev`
+  # deployment on the release head before a dev → main merge. That deployment
+  # is produced by this workflow's push run on `dev`. If a release's final dev
+  # commits touch none of the paths below, no fresh dev deployment is recorded
+  # and the release PR blocks with "Missing successful active supabase-dev
+  # deployment" — re-run this workflow (workflow_dispatch, target supabase-dev)
+  # or land a migration-path change on dev to refresh it.
   push:
     branches: [dev, main]
     paths:
@@ -61,7 +68,7 @@ jobs:
 
     steps:
       - name: Checkout
-        uses: actions/checkout@v4
+        uses: actions/checkout@v6
 
       - name: Install Supabase CLI
         uses: supabase/setup-cli@v1

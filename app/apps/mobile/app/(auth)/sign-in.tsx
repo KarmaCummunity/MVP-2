@@ -104,6 +104,7 @@ export default function SignInScreen() {
 
               <View style={[styles.form, pendingEmail ? styles.hidden : null]}>
                 <AnimatedAuthInput
+                  testID="auth-email"
                   label={t('auth.email')}
                   value={email}
                   onChangeText={setEmail}
@@ -113,6 +114,7 @@ export default function SignInScreen() {
                   editable={!loading}
                 />
                 <AnimatedAuthInput
+                  testID="auth-password"
                   label={t('auth.password')}
                   value={password}
                   onChangeText={setPassword}
@@ -157,6 +159,7 @@ function SubmitButton({ label, loading, onPress }: { label: string; loading: boo
   return (
     <Animated.View style={[pressStyle, { marginTop: spacing.sm }]}>
       <TouchableOpacity
+        testID="auth-submit"
         style={[styles.submitBtn, loading && styles.submitBtnDisabled]}
         onPress={onPress}
         onPressIn={() => { scale.value = withTiming(0.97, { duration: 100 }); }}

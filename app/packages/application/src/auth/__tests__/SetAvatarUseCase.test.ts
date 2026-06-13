@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest';
 import { SetAvatarUseCase } from '../SetAvatarUseCase';
+import { ProfileError } from '../errors';
 import { FakeAuthService } from './fakeAuthService';
 import { makeFakeUserRepo } from './onboardingFakeUserRepository';
 
@@ -18,6 +19,7 @@ describe('SetAvatarUseCase', () => {
     const useCase = new SetAvatarUseCase(repo, auth);
 
     await useCase.execute({
+      sessionUserId: userId,
       userId,
       avatarUrl: 'https://kc.supabase.co/storage/v1/object/public/avatars/user-1/avatar.jpg',
     });
@@ -35,7 +37,7 @@ describe('SetAvatarUseCase', () => {
     const auth = new FakeAuthService();
     const useCase = new SetAvatarUseCase(repo, auth);
 
-    await useCase.execute({ userId, avatarUrl: null });
+    await useCase.execute({ sessionUserId: userId, userId, avatarUrl: null });
 
     expect(repo.rows.get(userId)?.avatarUrl).toBeNull();
   });
@@ -45,7 +47,9 @@ describe('SetAvatarUseCase', () => {
     const auth = new FakeAuthService();
     const useCase = new SetAvatarUseCase(repo, auth);
 
-    await expect(useCase.execute({ userId: '   ', avatarUrl: null })).rejects.toThrow('invalid_user_id');
+    await expect(
+      useCase.execute({ sessionUserId: '   ', userId: '   ', avatarUrl: null }),
+    ).rejects.toThrow('invalid_user_id');
   });
 
   it('rejects non-http URLs', async () => {
@@ -54,8 +58,11 @@ describe('SetAvatarUseCase', () => {
     const useCase = new SetAvatarUseCase(repo, auth);
 
     await expect(
-      useCase.execute({ userId, avatarUrl: 'file:///tmp/bad.jpg' }),
-    ).rejects.toThrow('invalid_avatar_url');
+      useCase.execute({ sessionUserId: userId, userId, avatarUrl: 'file:///tmp/bad.jpg' }),
+    ).rejects.toMatchObject({
+      name: 'ProfileError',
+      code: 'invalid_avatar_url',
+    } satisfies Partial<ProfileError>);
   });
 
   it('rejects empty/whitespace URL string (use null to clear)', async () => {
@@ -63,6 +70,8 @@ describe('SetAvatarUseCase', () => {
     const auth = new FakeAuthService();
     const useCase = new SetAvatarUseCase(repo, auth);
 
-    await expect(useCase.execute({ userId, avatarUrl: '   ' })).rejects.toThrow('invalid_avatar_url');
+    await expect(
+      useCase.execute({ sessionUserId: userId, userId, avatarUrl: '   ' }),
+    ).rejects.toThrow('invalid_avatar_url');
   });
 });

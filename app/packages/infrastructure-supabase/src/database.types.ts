@@ -39,6 +39,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "about_team_members_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       admin_role_grants: {
@@ -49,6 +56,7 @@ export type Database = {
           revoked_at: string | null
           revoked_by: string | null
           role: string
+          scope_org_id: string | null
           user_id: string
         }
         Insert: {
@@ -58,6 +66,7 @@ export type Database = {
           revoked_at?: string | null
           revoked_by?: string | null
           role: string
+          scope_org_id?: string | null
           user_id: string
         }
         Update: {
@@ -67,6 +76,7 @@ export type Database = {
           revoked_at?: string | null
           revoked_by?: string | null
           role?: string
+          scope_org_id?: string | null
           user_id?: string
         }
         Relationships: [
@@ -78,8 +88,29 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "admin_role_grants_granted_by_fkey"
+            columns: ["granted_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "admin_role_grants_revoked_by_fkey"
             columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_revoked_by_fkey"
+            columns: ["revoked_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_user_id_fkey"
+            columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
@@ -88,7 +119,7 @@ export type Database = {
             foreignKeyName: "admin_role_grants_user_id_fkey"
             columns: ["user_id"]
             isOneToOne: false
-            referencedRelation: "users"
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -127,6 +158,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "admin_task_activities_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "admin_task_activities_task_id_fkey"
             columns: ["task_id"]
             isOneToOne: false
@@ -138,6 +176,7 @@ export type Database = {
       admin_tasks: {
         Row: {
           assignee_id: string | null
+          category: string
           created_at: string
           created_by: string
           description: string | null
@@ -151,6 +190,7 @@ export type Database = {
         }
         Insert: {
           assignee_id?: string | null
+          category?: string
           created_at?: string
           created_by: string
           description?: string | null
@@ -164,6 +204,7 @@ export type Database = {
         }
         Update: {
           assignee_id?: string | null
+          category?: string
           created_at?: string
           created_by?: string
           description?: string | null
@@ -184,10 +225,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "admin_tasks_assignee_id_fkey"
+            columns: ["assignee_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "admin_tasks_created_by_fkey"
             columns: ["created_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_tasks_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -228,6 +283,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "audit_events_actor_id_fkey"
+            columns: ["actor_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       auth_identities: {
@@ -260,6 +322,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "auth_identities_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       blocks: {
@@ -287,10 +356,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "blocks_blocked_id_fkey"
+            columns: ["blocked_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "blocks_blocker_id_fkey"
             columns: ["blocker_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "blocks_blocker_id_fkey"
+            columns: ["blocker_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -358,10 +441,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "chats_participant_a_fkey"
+            columns: ["participant_a"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "chats_participant_b_fkey"
             columns: ["participant_b"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "chats_participant_b_fkey"
+            columns: ["participant_b"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -369,6 +466,7 @@ export type Database = {
       cities: {
         Row: {
           city_id: string
+          country_code: string
           lat: number | null
           lon: number | null
           name_en: string
@@ -376,6 +474,7 @@ export type Database = {
         }
         Insert: {
           city_id: string
+          country_code?: string
           lat?: number | null
           lon?: number | null
           name_en: string
@@ -383,6 +482,7 @@ export type Database = {
         }
         Update: {
           city_id?: string
+          country_code?: string
           lat?: number | null
           lon?: number | null
           name_en?: string
@@ -404,6 +504,89 @@ export type Database = {
           run_at?: string
         }
         Relationships: []
+      }
+      crm_contacts: {
+        Row: {
+          contact_id: string
+          created_at: string
+          created_by: string | null
+          deleted_at: string | null
+          email: string | null
+          last_contacted_at: string | null
+          name: string
+          notes: string | null
+          organization: string | null
+          phone: string | null
+          role_title: string | null
+          status: string
+          tags: string[]
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          contact_id?: string
+          created_at?: string
+          created_by?: string | null
+          deleted_at?: string | null
+          email?: string | null
+          last_contacted_at?: string | null
+          name?: string
+          notes?: string | null
+          organization?: string | null
+          phone?: string | null
+          role_title?: string | null
+          status?: string
+          tags?: string[]
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "crm_contacts_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
       }
       devices: {
         Row: {
@@ -436,6 +619,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "devices_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -517,6 +707,131 @@ export type Database = {
           },
         ]
       }
+      driver_declarations: {
+        Row: {
+          declared_at: string
+          insurance_declared: boolean
+          license_declared: boolean
+          no_profit_acknowledged: boolean
+          user_id: string
+        }
+        Insert: {
+          declared_at?: string
+          insurance_declared: boolean
+          license_declared: boolean
+          no_profit_acknowledged: boolean
+          user_id: string
+        }
+        Update: {
+          declared_at?: string
+          insurance_declared?: boolean
+          license_declared?: boolean
+          no_profit_acknowledged?: boolean
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "driver_declarations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "driver_declarations_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: true
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      finance_ledger_entries: {
+        Row: {
+          amount_cents: number
+          category: string | null
+          counterparty: string | null
+          created_at: string
+          created_by: string | null
+          currency: string
+          deleted_at: string | null
+          description: string | null
+          direction: string
+          entry_id: string
+          kind: string
+          occurred_at: string
+          reference_url: string | null
+          status: string
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          amount_cents: number
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          direction: string
+          entry_id?: string
+          kind: string
+          occurred_at?: string
+          reference_url?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          amount_cents?: number
+          category?: string | null
+          counterparty?: string | null
+          created_at?: string
+          created_by?: string | null
+          currency?: string
+          deleted_at?: string | null
+          description?: string | null
+          direction?: string
+          entry_id?: string
+          kind?: string
+          occurred_at?: string
+          reference_url?: string | null
+          status?: string
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "finance_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_created_by_fkey"
+            columns: ["created_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "finance_ledger_entries_updated_by_fkey"
+            columns: ["updated_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       follow_edges: {
         Row: {
           created_at: string
@@ -542,10 +857,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "follow_edges_followed_id_fkey"
+            columns: ["followed_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "follow_edges_follower_id_fkey"
             columns: ["follower_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "follow_edges_follower_id_fkey"
+            columns: ["follower_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -584,13 +913,142 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "follow_requests_requester_id_fkey"
+            columns: ["requester_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "follow_requests_target_id_fkey"
             columns: ["target_id"]
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "follow_requests_target_id_fkey"
+            columns: ["target_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
+      }
+      karma_drift_events: {
+        Row: {
+          detected_at: string
+          drift_id: number
+          new_value: number
+          old_value: number
+          run_id: number
+          user_id: string
+        }
+        Insert: {
+          detected_at?: string
+          drift_id?: number
+          new_value: number
+          old_value: number
+          run_id: number
+          user_id: string
+        }
+        Update: {
+          detected_at?: string
+          drift_id?: number
+          new_value?: number
+          old_value?: number
+          run_id?: number
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "karma_drift_events_run_id_fkey"
+            columns: ["run_id"]
+            isOneToOne: false
+            referencedRelation: "karma_recompute_runs"
+            referencedColumns: ["run_id"]
+          },
+          {
+            foreignKeyName: "karma_drift_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "karma_drift_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      karma_ledger: {
+        Row: {
+          created_at: string
+          event_type: string
+          ledger_id: number
+          points_delta: number
+          ref_id: string
+          ref_type: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          event_type: string
+          ledger_id?: number
+          points_delta: number
+          ref_id: string
+          ref_type: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          event_type?: string
+          ledger_id?: number
+          points_delta?: number
+          ref_id?: string
+          ref_type?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "karma_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "karma_ledger_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      karma_recompute_runs: {
+        Row: {
+          drift_events: number
+          run_at: string
+          run_id: number
+          users_processed: number
+        }
+        Insert: {
+          drift_events: number
+          run_at?: string
+          run_id?: number
+          users_processed: number
+        }
+        Update: {
+          drift_events?: number
+          run_at?: string
+          run_id?: number
+          users_processed?: number
+        }
+        Relationships: []
       }
       legal_document_versions: {
         Row: {
@@ -757,6 +1215,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "messages_sender_id_fkey"
+            columns: ["sender_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       moderation_queue_entries: {
@@ -796,6 +1261,13 @@ export type Database = {
             columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "moderation_queue_entries_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -860,6 +1332,87 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "notifications_outbox_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      org_applications: {
+        Row: {
+          applicant_user_id: string
+          application_id: string
+          contact_email: string | null
+          contact_phone: string | null
+          created_at: string
+          org_description: string | null
+          org_name: string
+          review_note: string | null
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          website_url: string | null
+        }
+        Insert: {
+          applicant_user_id: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Update: {
+          applicant_user_id?: string
+          application_id?: string
+          contact_email?: string | null
+          contact_phone?: string | null
+          created_at?: string
+          org_description?: string | null
+          org_name?: string
+          review_note?: string | null
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          website_url?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_applicant_user_id_fkey"
+            columns: ["applicant_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "org_applications_reviewed_by_fkey"
+            columns: ["reviewed_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       post_actor_identity: {
@@ -902,6 +1455,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "post_actor_identity_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       posts: {
@@ -911,6 +1471,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
@@ -933,6 +1494,7 @@ export type Database = {
           created_at?: string
           delete_after?: string | null
           description?: string | null
+          estimated_value?: number | null
           item_condition?: string | null
           location_display_level?: string
           owner_id: string
@@ -955,6 +1517,7 @@ export type Database = {
           created_at?: string
           delete_after?: string | null
           description?: string | null
+          estimated_value?: number | null
           item_condition?: string | null
           location_display_level?: string
           owner_id?: string
@@ -984,6 +1547,13 @@ export type Database = {
             columns: ["owner_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "posts_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1053,6 +1623,24 @@ export type Database = {
         }
         Relationships: []
       }
+      rate_limit_buckets: {
+        Row: {
+          count: number
+          key: string
+          window_start: string
+        }
+        Insert: {
+          count?: number
+          key: string
+          window_start: string
+        }
+        Update: {
+          count?: number
+          key?: string
+          window_start?: string
+        }
+        Relationships: []
+      }
       recipients: {
         Row: {
           marked_at: string
@@ -1084,6 +1672,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "recipients_recipient_user_id_fkey"
+            columns: ["recipient_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       reporter_hides: {
@@ -1111,6 +1706,13 @@ export type Database = {
             columns: ["reporter_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "reporter_hides_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1164,10 +1766,24 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "reports_reporter_id_fkey"
+            columns: ["reporter_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "reports_resolved_by_fkey"
             columns: ["resolved_by"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "reports_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1190,21 +1806,111 @@ export type Database = {
         }
         Relationships: []
       }
+      ride_emergency_events: {
+        Row: {
+          event_id: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          ride_id: string
+          triggered_at: string
+          triggered_by: string
+        }
+        Insert: {
+          event_id?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id: string
+          triggered_at?: string
+          triggered_by: string
+        }
+        Update: {
+          event_id?: string
+          lat?: number | null
+          lng?: number | null
+          note?: string | null
+          resolved_at?: string | null
+          resolved_by?: string | null
+          ride_id?: string
+          triggered_at?: string
+          triggered_by?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_emergency_events_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_resolved_by_fkey"
+            columns: ["resolved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_emergency_events_triggered_by_fkey"
+            columns: ["triggered_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       ride_listings: {
         Row: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -1212,19 +1918,37 @@ export type Database = {
           visibility: string
         }
         Insert: {
+          arrive_reason?: string | null
+          arrived_at?: string | null
+          cargo_allowed_types?: string[] | null
+          cargo_enabled?: boolean
+          cargo_max_volume_l?: number | null
+          cargo_max_weight_kg?: number | null
           created_at?: string
           departs_at: string
           description?: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number?: string | null
+          food_chilled?: boolean | null
+          food_handover_to_org?: boolean
+          food_max_kg?: number | null
+          food_shipping_enabled?: boolean
+          linked_post_id?: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number?: string | null
           owner_id: string
+          payment_amount_ils?: number | null
+          payment_model?: string
+          req_gender?: string
+          req_pets_allowed?: boolean
+          req_smoking_allowed?: boolean
+          req_verified_only?: boolean
           ride_id?: string
           seats_available?: number | null
+          started_at?: string | null
           status?: string
           template_id?: string | null
           title: string
@@ -1232,19 +1956,37 @@ export type Database = {
           visibility?: string
         }
         Update: {
+          arrive_reason?: string | null
+          arrived_at?: string | null
+          cargo_allowed_types?: string[] | null
+          cargo_enabled?: boolean
+          cargo_max_volume_l?: number | null
+          cargo_max_weight_kg?: number | null
           created_at?: string
           departs_at?: string
           description?: string | null
           dest_city_id?: string
           dest_street?: string
           dest_street_number?: string | null
+          food_chilled?: boolean | null
+          food_handover_to_org?: boolean
+          food_max_kg?: number | null
+          food_shipping_enabled?: boolean
+          linked_post_id?: string | null
           mode?: string
           origin_city_id?: string
           origin_street?: string
           origin_street_number?: string | null
           owner_id?: string
+          payment_amount_ils?: number | null
+          payment_model?: string
+          req_gender?: string
+          req_pets_allowed?: boolean
+          req_smoking_allowed?: boolean
+          req_verified_only?: boolean
           ride_id?: string
           seats_available?: number | null
+          started_at?: string | null
           status?: string
           template_id?: string | null
           title?: string
@@ -1258,6 +2000,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "cities"
             referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_listings_linked_post_id_fkey"
+            columns: ["linked_post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["post_id"]
           },
           {
             foreignKeyName: "ride_listings_origin_city_id_fkey"
@@ -1274,6 +2023,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "ride_listings_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "ride_listings_template_id_fkey"
             columns: ["template_id"]
             isOneToOne: false
@@ -1286,6 +2042,7 @@ export type Database = {
         Row: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -1296,6 +2053,7 @@ export type Database = {
         Insert: {
           decided_at?: string | null
           decided_by?: string | null
+          joined_active_at?: string | null
           note?: string | null
           participant_id?: string
           requested_at?: string
@@ -1306,6 +2064,7 @@ export type Database = {
         Update: {
           decided_at?: string | null
           decided_by?: string | null
+          joined_active_at?: string | null
           note?: string | null
           participant_id?: string
           requested_at?: string
@@ -1322,6 +2081,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "ride_participants_decided_by_fkey"
+            columns: ["decided_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
             foreignKeyName: "ride_participants_ride_id_fkey"
             columns: ["ride_id"]
             isOneToOne: false
@@ -1334,6 +2100,127 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_participants_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      ride_ratings: {
+        Row: {
+          comment: string | null
+          created_at: string
+          is_penalty: boolean
+          ratee_id: string
+          rater_id: string
+          rating_id: string
+          ride_id: string
+          stars: number
+        }
+        Insert: {
+          comment?: string | null
+          created_at?: string
+          is_penalty?: boolean
+          ratee_id: string
+          rater_id: string
+          rating_id?: string
+          ride_id: string
+          stars: number
+        }
+        Update: {
+          comment?: string | null
+          created_at?: string
+          is_penalty?: boolean
+          ratee_id?: string
+          rater_id?: string
+          rating_id?: string
+          ride_id?: string
+          stars?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["ratee_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["ratee_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_rater_id_fkey"
+            columns: ["rater_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
+          },
+        ]
+      }
+      ride_stops: {
+        Row: {
+          city_id: string
+          created_at: string
+          notes: string | null
+          ride_id: string
+          sort_order: number
+          stop_id: string
+          street: string | null
+        }
+        Insert: {
+          city_id: string
+          created_at?: string
+          notes?: string | null
+          ride_id: string
+          sort_order: number
+          stop_id?: string
+          street?: string | null
+        }
+        Update: {
+          city_id?: string
+          created_at?: string
+          notes?: string | null
+          ride_id?: string
+          sort_order?: number
+          stop_id?: string
+          street?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_stops_city_id_fkey"
+            columns: ["city_id"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
+          },
+          {
+            foreignKeyName: "ride_stops_ride_id_fkey"
+            columns: ["ride_id"]
+            isOneToOne: false
+            referencedRelation: "ride_listings"
+            referencedColumns: ["ride_id"]
           },
         ]
       }
@@ -1420,6 +2307,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "ride_templates_owner_id_fkey"
+            columns: ["owner_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       saved_posts: {
@@ -1451,6 +2345,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "saved_posts_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1496,6 +2397,13 @@ export type Database = {
             columns: ["user_id"]
             isOneToOne: false
             referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "stats_drift_events_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
             referencedColumns: ["user_id"]
           },
         ]
@@ -1713,6 +2621,86 @@ export type Database = {
         }
         Relationships: []
       }
+      timesheet_entries: {
+        Row: {
+          approval_note: string | null
+          approved_at: string | null
+          approved_by: string | null
+          created_at: string
+          deleted_at: string | null
+          description: string | null
+          entry_id: string
+          hours_x100: number
+          project: string | null
+          status: string
+          submitted_at: string | null
+          updated_at: string
+          user_id: string
+          work_date: string
+        }
+        Insert: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          entry_id?: string
+          hours_x100: number
+          project?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id: string
+          work_date: string
+        }
+        Update: {
+          approval_note?: string | null
+          approved_at?: string | null
+          approved_by?: string | null
+          created_at?: string
+          deleted_at?: string | null
+          description?: string | null
+          entry_id?: string
+          hours_x100?: number
+          project?: string | null
+          status?: string
+          submitted_at?: string | null
+          updated_at?: string
+          user_id?: string
+          work_date?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_approved_by_fkey"
+            columns: ["approved_by"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "timesheet_entries_user_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
       user_feedback: {
         Row: {
           body: string
@@ -1814,6 +2802,13 @@ export type Database = {
             referencedRelation: "users"
             referencedColumns: ["user_id"]
           },
+          {
+            foreignKeyName: "user_personal_activity_log_subject_user_id_fkey"
+            columns: ["subject_user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
         ]
       }
       users: {
@@ -1841,6 +2836,7 @@ export type Database = {
           is_super_admin: boolean
           items_given_count: number
           items_received_count: number
+          karma_points: number
           notification_preferences: Json
           onboarding_state: string
           posts_created_total: number
@@ -1877,6 +2873,7 @@ export type Database = {
           is_super_admin?: boolean
           items_given_count?: number
           items_received_count?: number
+          karma_points?: number
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
@@ -1913,6 +2910,7 @@ export type Database = {
           is_super_admin?: boolean
           items_given_count?: number
           items_received_count?: number
+          karma_points?: number
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
@@ -1970,6 +2968,110 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "legal_document_versions"
             referencedColumns: ["doc_type", "version"]
+          },
+        ]
+      }
+      user_ride_rating_summary: {
+        Row: {
+          avg_stars: number | null
+          last_rated_at: string | null
+          ratings_count: number | null
+          user_id: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users"
+            referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "ride_ratings_ratee_id_fkey"
+            columns: ["user_id"]
+            isOneToOne: false
+            referencedRelation: "users_public"
+            referencedColumns: ["user_id"]
+          },
+        ]
+      }
+      users_public: {
+        Row: {
+          account_status: string | null
+          auth_provider: string | null
+          avatar_url: string | null
+          basic_info_skipped: boolean | null
+          biography: string | null
+          city: string | null
+          city_name: string | null
+          closure_explainer_dismissed: boolean | null
+          created_at: string | null
+          display_name: string | null
+          first_post_nudge_dismissed: boolean | null
+          followers_count: number | null
+          following_count: number | null
+          items_given_count: number | null
+          items_received_count: number | null
+          onboarding_state: string | null
+          privacy_changed_at: string | null
+          privacy_mode: string | null
+          share_handle: string | null
+          updated_at: string | null
+          user_id: string | null
+        }
+        Insert: {
+          account_status?: string | null
+          auth_provider?: string | null
+          avatar_url?: string | null
+          basic_info_skipped?: boolean | null
+          biography?: string | null
+          city?: string | null
+          city_name?: string | null
+          closure_explainer_dismissed?: boolean | null
+          created_at?: string | null
+          display_name?: string | null
+          first_post_nudge_dismissed?: boolean | null
+          followers_count?: number | null
+          following_count?: number | null
+          items_given_count?: number | null
+          items_received_count?: number | null
+          onboarding_state?: string | null
+          privacy_changed_at?: string | null
+          privacy_mode?: string | null
+          share_handle?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          account_status?: string | null
+          auth_provider?: string | null
+          avatar_url?: string | null
+          basic_info_skipped?: boolean | null
+          biography?: string | null
+          city?: string | null
+          city_name?: string | null
+          closure_explainer_dismissed?: boolean | null
+          created_at?: string | null
+          display_name?: string | null
+          first_post_nudge_dismissed?: boolean | null
+          followers_count?: number | null
+          following_count?: number | null
+          items_given_count?: number | null
+          items_received_count?: number | null
+          onboarding_state?: string | null
+          privacy_changed_at?: string | null
+          privacy_mode?: string | null
+          share_handle?: string | null
+          updated_at?: string | null
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "users_city_fkey"
+            columns: ["city"]
+            isOneToOne: false
+            referencedRelation: "cities"
+            referencedColumns: ["city_id"]
           },
         ]
       }
@@ -2032,9 +3134,11 @@ export type Database = {
         Args: {
           p_action?: string
           p_actor_id?: string
+          p_from?: string
           p_limit?: number
           p_offset?: number
           p_target_user_id?: string
+          p_to?: string
         }
         Returns: {
           action: string
@@ -2066,7 +3170,11 @@ export type Database = {
         Returns: undefined
       }
       admin_grant_role: {
-        Args: { p_role: string; p_target_user_id: string }
+        Args: {
+          p_role: string
+          p_scope_org_id?: string
+          p_target_user_id: string
+        }
         Returns: string
       }
       admin_list_admins: {
@@ -2082,8 +3190,41 @@ export type Database = {
           revoked_at: string
           revoked_by: string
           role: string
+          scope_org_id: string
           user_id: string
         }[]
+      }
+      admin_org_application_approve: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_decide: {
+        Args: { p_application_id: string; p_approve: boolean; p_note?: string }
+        Returns: undefined
+      }
+      admin_org_application_list: {
+        Args: { p_limit?: number; p_offset?: number; p_status?: string }
+        Returns: {
+          applicant_name: string
+          applicant_user_id: string
+          application_id: string
+          contact_email: string
+          contact_phone: string
+          created_at: string
+          org_description: string
+          org_name: string
+          review_note: string
+          reviewed_at: string
+          reviewed_by: string
+          reviewer_name: string
+          status: string
+          total_count: number
+          website_url: string
+        }[]
+      }
+      admin_org_application_reject: {
+        Args: { p_application_id: string; p_note?: string }
+        Returns: undefined
       }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
@@ -2140,6 +3281,7 @@ export type Database = {
       admin_task_create: {
         Args: {
           p_assignee_id?: string
+          p_category?: string
           p_description?: string
           p_due_at?: string
           p_labels?: string[]
@@ -2155,6 +3297,7 @@ export type Database = {
           activities: Json
           assignee_display_name: string
           assignee_id: string
+          category: string
           created_at: string
           created_by: string
           created_by_display_name: string
@@ -2184,6 +3327,9 @@ export type Database = {
       admin_task_list: {
         Args: {
           p_assignee?: string
+          p_category?: string
+          p_due_from?: string
+          p_due_to?: string
           p_label?: string
           p_limit?: number
           p_offset?: number
@@ -2191,10 +3337,12 @@ export type Database = {
           p_overdue?: boolean
           p_priority?: string
           p_status?: string
+          p_unassigned_only?: boolean
         }
         Returns: {
           assignee_display_name: string
           assignee_id: string
+          category: string
           comment_count: number
           created_at: string
           created_by: string
@@ -2215,6 +3363,7 @@ export type Database = {
       }
       admin_task_update: {
         Args: {
+          p_category?: string
           p_clear_due?: boolean
           p_description?: string
           p_due_at?: string
@@ -2233,6 +3382,10 @@ export type Database = {
           until_at: string
         }[]
       }
+      can_grant_role: {
+        Args: { granter_uid: string; target_role: string; target_scope: string }
+        Returns: boolean
+      }
       check_survey_prompt_eligibility: {
         Args: { p_session_count: number; p_slug: string }
         Returns: Json
@@ -2245,6 +3398,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
@@ -2270,7 +3424,54 @@ export type Database = {
       }
       closure_cleanup_expired: { Args: never; Returns: number }
       closure_cleanup_expired_with_metric: { Args: never; Returns: number }
+      crm_contact_delete: { Args: { p_contact_id: string }; Returns: undefined }
+      crm_contact_list: {
+        Args: {
+          p_limit?: number
+          p_offset?: number
+          p_query?: string
+          p_status?: string
+          p_tag?: string
+        }
+        Returns: {
+          contact_id: string
+          created_at: string
+          email: string
+          last_contacted_at: string
+          name: string
+          notes: string
+          organization: string
+          phone: string
+          role_title: string
+          status: string
+          tags: string[]
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      crm_contact_mark_contacted: {
+        Args: { p_contact_id: string }
+        Returns: undefined
+      }
+      crm_contact_upsert: {
+        Args: {
+          p_contact_id?: string
+          p_email?: string
+          p_name?: string
+          p_notes?: string
+          p_organization?: string
+          p_phone?: string
+          p_role_title?: string
+          p_status?: string
+          p_tags?: string[]
+        }
+        Returns: string
+      }
       delete_account_data: { Args: never; Returns: Json }
+      enforce_rate_limit: {
+        Args: { p_key: string; p_max: number; p_window_seconds: number }
+        Returns: undefined
+      }
       enqueue_notification: {
         Args: {
           p_body_args?: Json
@@ -2286,81 +3487,99 @@ export type Database = {
         Returns: string
       }
       escape_ilike: { Args: { p: string }; Returns: string }
-      feed_ranked_ids:
-        | {
-            Args: {
-              p_cursor_created_at?: string
-              p_cursor_distance?: number
-              p_cursor_post_id?: string
-              p_filter_categories?: string[]
-              p_filter_center_city?: string
-              p_filter_item_conditions?: string[]
-              p_filter_radius_km?: number
-              p_filter_status?: string
-              p_filter_type?: string
-              p_page_limit?: number
-              p_proximity_sort_city?: string
-              p_sort_order?: string
-              p_viewer_id: string
-            }
-            Returns: {
-              distance_km: number
-              post_id: string
-            }[]
-          }
-        | {
-            Args: {
-              p_cursor_created_at?: string
-              p_cursor_distance?: number
-              p_cursor_post_id?: string
-              p_filter_categories?: string[]
-              p_filter_center_city?: string
-              p_filter_item_conditions?: string[]
-              p_filter_radius_km?: number
-              p_filter_search_query?: string
-              p_filter_status?: string
-              p_filter_type?: string
-              p_followers_only?: boolean
-              p_page_limit?: number
-              p_proximity_sort_city?: string
-              p_sort_order?: string
-              p_viewer_id: string
-            }
-            Returns: {
-              distance_km: number
-              post_id: string
-            }[]
-          }
-        | {
-            Args: {
-              p_cursor_created_at?: string
-              p_cursor_distance?: number
-              p_cursor_post_id?: string
-              p_filter_categories?: string[]
-              p_filter_center_city?: string
-              p_filter_item_conditions?: string[]
-              p_filter_radius_km?: number
-              p_filter_status?: string
-              p_filter_type?: string
-              p_followers_only?: boolean
-              p_page_limit?: number
-              p_proximity_sort_city?: string
-              p_sort_order?: string
-              p_viewer_id: string
-            }
-            Returns: {
-              distance_km: number
-              post_id: string
-            }[]
-          }
+      feed_ranked_ids: {
+        Args: {
+          p_cursor_created_at?: string
+          p_cursor_distance?: number
+          p_cursor_post_id?: string
+          p_filter_categories?: string[]
+          p_filter_center_city?: string
+          p_filter_item_conditions?: string[]
+          p_filter_radius_km?: number
+          p_filter_search_query?: string
+          p_filter_status?: string
+          p_filter_type?: string
+          p_followers_only?: boolean
+          p_page_limit?: number
+          p_proximity_sort_city?: string
+          p_sort_order?: string
+          p_viewer_id: string
+        }
+        Returns: {
+          distance_km: number
+          post_id: string
+        }[]
+      }
+      finance_ledger_delete: {
+        Args: { p_entry_id: string }
+        Returns: undefined
+      }
+      finance_ledger_list: {
+        Args: {
+          p_direction?: string
+          p_from?: string
+          p_kind?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+        }
+        Returns: {
+          amount_cents: number
+          category: string
+          counterparty: string
+          created_at: string
+          currency: string
+          description: string
+          direction: string
+          entry_id: string
+          kind: string
+          occurred_at: string
+          reference_url: string
+          status: string
+          total_count: number
+          updated_at: string
+        }[]
+      }
+      finance_ledger_summary: {
+        Args: { p_from?: string; p_to?: string }
+        Returns: {
+          currency: string
+          entry_count: number
+          expense_cents: number
+          income_cents: number
+          net_cents: number
+        }[]
+      }
+      finance_ledger_upsert: {
+        Args: {
+          p_amount_cents?: number
+          p_category?: string
+          p_counterparty?: string
+          p_currency?: string
+          p_description?: string
+          p_entry_id?: string
+          p_kind?: string
+          p_occurred_at?: string
+          p_reference_url?: string
+          p_status?: string
+        }
+        Returns: string
+      }
       find_or_create_support_chat: { Args: { p_user: string }; Returns: string }
+      get_chat_counterparty_contact: {
+        Args: { p_chat_id: string }
+        Returns: string
+      }
       get_my_admin_roles: { Args: never; Returns: string[] }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
-      has_admin_role: {
-        Args: { role_name: string; uid: string }
-        Returns: boolean
-      }
+      has_admin_role:
+        | { Args: { role_name: string; uid: string }; Returns: boolean }
+        | {
+            Args: { role_name: string; scope: string; uid: string }
+            Returns: boolean
+          }
       has_blocked: {
         Args: { blocked: string; blocker: string }
         Returns: boolean
@@ -2394,6 +3613,34 @@ export type Database = {
         }
         Returns: boolean
       }
+      karma_apply: {
+        Args: {
+          p_delta: number
+          p_event: string
+          p_ref_id: string
+          p_ref_type: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      karma_grant_once: {
+        Args: {
+          p_delta: number
+          p_event: string
+          p_ref_id: string
+          p_ref_type: string
+          p_user: string
+        }
+        Returns: undefined
+      }
+      karma_recompute_nightly: {
+        Args: never
+        Returns: {
+          drift_events: number
+          users_processed: number
+        }[]
+      }
+      karma_value_bonus: { Args: { p_value: number }; Returns: number }
       list_active_surveys: { Args: never; Returns: Json }
       needs_legal_reacknowledgement: {
         Args: never
@@ -2473,6 +3720,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
@@ -2504,6 +3752,7 @@ export type Database = {
           created_at: string
           delete_after: string | null
           description: string | null
+          estimated_value: number | null
           item_condition: string | null
           location_display_level: string
           owner_id: string
@@ -2542,23 +3791,43 @@ export type Database = {
         }
         Returns: Json
       }
+      ride_complete_pending_rating_cleanup: { Args: never; Returns: undefined }
+      ride_food_overdue_alert: { Args: never; Returns: undefined }
       ride_listings_expire_check: { Args: never; Returns: number }
       ride_listings_find_matches: {
         Args: { p_limit?: number; p_ride_id: string; p_window_hours?: number }
         Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -2584,19 +3853,37 @@ export type Database = {
           p_query?: string
         }
         Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -2699,11 +3986,84 @@ export type Database = {
         Returns: undefined
       }
       rpc_republish_post: { Args: { p_post_id: string }; Returns: string }
+      rpc_ride_arrive: {
+        Args: { p_reason?: string; p_ride_id: string }
+        Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
+          ride_id: string
+          seats_available: number | null
+          started_at: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_emergency_trigger: {
+        Args: {
+          p_lat?: number
+          p_lng?: number
+          p_note?: string
+          p_ride_id: string
+        }
+        Returns: {
+          event_id: string
+          lat: number | null
+          lng: number | null
+          note: string | null
+          resolved_at: string | null
+          resolved_by: string | null
+          ride_id: string
+          triggered_at: string
+          triggered_by: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_emergency_events"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       rpc_ride_participants_cancel: {
         Args: { p_participant_id: string }
         Returns: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -2723,6 +4083,7 @@ export type Database = {
         Returns: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -2742,6 +4103,7 @@ export type Database = {
         Returns: {
           decided_at: string | null
           decided_by: string | null
+          joined_active_at: string | null
           note: string | null
           participant_id: string
           requested_at: string
@@ -2756,22 +4118,112 @@ export type Database = {
           isSetofReturn: false
         }
       }
-      rpc_ride_update_visibility: {
-        Args: { p_ride_id: string; p_visibility: string }
+      rpc_ride_rate: {
+        Args: {
+          p_comment?: string
+          p_is_penalty?: boolean
+          p_ratee_id: string
+          p_ride_id: string
+          p_stars: number
+        }
         Returns: {
+          comment: string | null
+          created_at: string
+          is_penalty: boolean
+          ratee_id: string
+          rater_id: string
+          rating_id: string
+          ride_id: string
+          stars: number
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_ratings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_start: {
+        Args: { p_ride_id: string }
+        Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
           created_at: string
           departs_at: string
           description: string | null
           dest_city_id: string
           dest_street: string
           dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
           mode: string
           origin_city_id: string
           origin_street: string
           origin_street_number: string | null
           owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
           ride_id: string
           seats_available: number | null
+          started_at: string | null
+          status: string
+          template_id: string | null
+          title: string
+          updated_at: string
+          visibility: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "ride_listings"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      rpc_ride_update_visibility: {
+        Args: { p_ride_id: string; p_visibility: string }
+        Returns: {
+          arrive_reason: string | null
+          arrived_at: string | null
+          cargo_allowed_types: string[] | null
+          cargo_enabled: boolean
+          cargo_max_volume_l: number | null
+          cargo_max_weight_kg: number | null
+          created_at: string
+          departs_at: string
+          description: string | null
+          dest_city_id: string
+          dest_street: string
+          dest_street_number: string | null
+          food_chilled: boolean | null
+          food_handover_to_org: boolean
+          food_max_kg: number | null
+          food_shipping_enabled: boolean
+          linked_post_id: string | null
+          mode: string
+          origin_city_id: string
+          origin_street: string
+          origin_street_number: string | null
+          owner_id: string
+          payment_amount_ils: number | null
+          payment_model: string
+          req_gender: string
+          req_pets_allowed: boolean
+          req_smoking_allowed: boolean
+          req_verified_only: boolean
+          ride_id: string
+          seats_available: number | null
+          started_at: string | null
           status: string
           template_id: string | null
           title: string
@@ -2837,10 +4289,71 @@ export type Database = {
         Returns: string
       }
       suspension_expiry_lift: { Args: never; Returns: number }
+      timesheet_approve: {
+        Args: { p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_decide: {
+        Args: { p_approve: boolean; p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_delete: { Args: { p_entry_id: string }; Returns: undefined }
+      timesheet_list: {
+        Args: {
+          p_from?: string
+          p_limit?: number
+          p_offset?: number
+          p_status?: string
+          p_to?: string
+          p_user_id?: string
+        }
+        Returns: {
+          approval_note: string
+          approved_at: string
+          approved_by: string
+          approver_name: string
+          created_at: string
+          description: string
+          entry_id: string
+          hours_x100: number
+          project: string
+          status: string
+          submitted_at: string
+          total_count: number
+          updated_at: string
+          user_id: string
+          user_name: string
+          work_date: string
+        }[]
+      }
+      timesheet_reject: {
+        Args: { p_entry_id: string; p_note?: string }
+        Returns: undefined
+      }
+      timesheet_submit: { Args: { p_entry_id: string }; Returns: undefined }
+      timesheet_upsert: {
+        Args: {
+          p_description?: string
+          p_entry_id?: string
+          p_hours_x100?: number
+          p_project?: string
+          p_work_date?: string
+        }
+        Returns: string
+      }
+      upsert_post_actor_identity: {
+        Args: {
+          p_hide_from_counterparty: boolean
+          p_post_id: string
+          p_surface_visibility: string
+        }
+        Returns: undefined
+      }
       upsert_survey_answers: {
         Args: { p_answers: Json; p_slug: string }
         Returns: undefined
       }
+      users_get_self_private_fields: { Args: never; Returns: Json }
       users_merge_notification_preferences: {
         Args: { p_merge: Json; p_user_id: string }
         Returns: Json

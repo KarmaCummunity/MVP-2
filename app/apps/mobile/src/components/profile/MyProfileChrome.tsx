@@ -30,6 +30,7 @@ import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
+import { KarmaBadge } from './KarmaBadge';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
@@ -126,6 +127,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
                     })
                   }
                 />
+                {user ? <KarmaBadge points={user.karmaPoints} /> : null}
               </>
             )}
             <View style={styles.actionRow}>

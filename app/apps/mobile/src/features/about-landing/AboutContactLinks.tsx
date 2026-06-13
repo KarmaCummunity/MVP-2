@@ -7,7 +7,6 @@ import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import {
   ABOUT_DONATION_PHONE_DISPLAY,
   ABOUT_EMAIL_NAVE,
-  ABOUT_EMAIL_ORG,
   ABOUT_INSTAGRAM_PROFILE_URL,
   ABOUT_WHATSAPP_GROUP_URL,
   ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE,
@@ -38,7 +37,6 @@ export function AboutContactLinks() {
   const rows: Row[] = useMemo(() => {
     const mailSubject = encodeURIComponent(t('aboutContent.contactMailSubjectDefault'));
     const mailtoNave = `mailto:${ABOUT_EMAIL_NAVE}?subject=${mailSubject}`;
-    const mailtoOrg = `mailto:${ABOUT_EMAIL_ORG}?subject=${mailSubject}`;
     const waPersonal = `${ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE}?text=${encodeURIComponent(
       t('aboutContent.contactWhatsappPersonalPrefill'),
     )}`;
@@ -56,7 +54,6 @@ export function AboutContactLinks() {
         icon: 'chatbubble-ellipses-outline',
       },
       { key: 'm1', label: t('aboutContent.contactEmailNaveLabel'), url: mailtoNave, icon: 'mail-outline' },
-      { key: 'm2', label: t('aboutContent.contactEmailOrgLabel'), url: mailtoOrg, icon: 'mail-open-outline' },
       { key: 'ig', label: t('aboutContent.instagramOpen'), url: ABOUT_INSTAGRAM_PROFILE_URL, icon: 'logo-instagram' },
     ];
   }, [t]);

@@ -130,6 +130,8 @@ export const postHe = {
 
   /** Collapsible block on create post — address display, visibility, partner-surface mask. */
   exposureSettingsSectionTitle: 'הגדרות חשיפה',
+  exposureSettingsIntro:
+    'כאן בוחרים מה ייראה בפיד. הכתובת המלאה נדרשת לפרסום, אבל לא חייבת להיות גלויה לכולם.',
   menuExposureClosedHint:
     'פוסט סגור: כאן מגדירים מי רואה את הכרטיס בפרופיל של המתאם (בנפרד מנראות בפיד).',
   menuExposureSaving: 'שומר…',
