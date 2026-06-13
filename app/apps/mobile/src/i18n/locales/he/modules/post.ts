@@ -184,7 +184,15 @@ export const postHe = {
     statusOpenHint: 'הפוסט פתוח ומחפש התאמה',
     statusClosed: 'הושלם',
     statusPendingDelete: 'נסגר זמנית',
+    statusExpired: 'פג תוקף',
+    statusRemovedAdmin: 'הוסר',
     publishedBy: 'פורסם על-ידי',
+    // Visibility + lifecycle notices shown to anyone who can still see the post.
+    removedAdminNotice: 'הפוסט הוסר על ידי מנהל ואינו מוצג בפיד.',
+    expiredNotice: 'הפוסט פג תוקף ואינו פעיל יותר.',
+    visibilityFollowersNotice: 'פוסט זה גלוי לעוקבים מאושרים בלבד.',
+    visibilityOnlyMeNotice: 'פוסט פרטי — גלוי רק לבעליו.',
+    estimatedValuePrefix: 'שווי משוער',
   },
 
 } as const;
