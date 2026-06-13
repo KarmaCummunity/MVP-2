@@ -94,6 +94,8 @@ All feature PRs target `dev`. Configure GitHub → Settings → Branches → `de
 - Block force-push and branch deletion.
 - Require status checks (path-filtered workflows may skip when unrelated paths change — that is OK):
 
+> The table below is machine-validated: `scripts/check-required-checks-drift.mjs` (workflow **CI — required-checks drift**) fails CI if any row references a workflow/job name that no longer exists. If you rename a job, update this table **and** the GitHub branch-protection required-checks list in the same change.
+
 | Check | Workflow | Job |
 | --- | --- | --- |
 | Quality | CI — frontend | `typecheck · test · lint` |
