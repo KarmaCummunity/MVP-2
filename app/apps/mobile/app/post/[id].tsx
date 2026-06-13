@@ -132,6 +132,8 @@ export default function PostDetailScreen() {
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe });
 
   const showViewerContactCta = !isOwner && post.status === 'open';
+  // Floating CTA overlaps content; reserve space so the last rows stay readable.
+  const scrollBottomInset = tabBarPad + (showViewerContactCta ? 84 : 0);
 
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
   const ownerLabel = postOwnerDisplayLabel(post, t);
@@ -159,7 +161,7 @@ export default function PostDetailScreen() {
         ownerLabel={ownerLabel}
         locationText={locationText}
         timeAgo={timeAgo}
-        scrollBottomInset={tabBarPad}
+        scrollBottomInset={scrollBottomInset}
       />
 
       {isOwner && viewerId ? (
@@ -173,9 +175,13 @@ export default function PostDetailScreen() {
         />
       ) : null}
       {showViewerContactCta ? (
-        <View style={[styles.cta, { paddingBottom: spacing.base + tabBarPad }]}>
+        <View
+          style={[styles.cta, { bottom: spacing.base + tabBarPad }]}
+          pointerEvents="box-none"
+        >
           <TouchableOpacity
             style={styles.messageBtn}
+            activeOpacity={0.85}
             onPress={() => void onOpenPosterChat()}
             disabled={contactPosterBusy}
             accessibilityRole="button"
@@ -188,7 +194,7 @@ export default function PostDetailScreen() {
               <ActivityIndicator size="small" color={colors.textInverse} />
             ) : (
               <>
-                <Ionicons name="chatbubble-outline" size={20} color={colors.textInverse} />
+                <Ionicons name="chatbubble-outline" size={18} color={colors.textInverse} />
                 <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
               </>
             )}

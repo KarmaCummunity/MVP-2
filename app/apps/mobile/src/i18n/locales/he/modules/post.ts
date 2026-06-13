@@ -112,6 +112,8 @@ export const postHe = {
   // sibling already covers the exact Hebrew string.
   detailTitle: 'פרטי פוסט',
   streetNumberShort: 'מס׳',
+  // FR-KARMA-004 — compact estimated-value hint shown on the feed post card (Give posts).
+  estimatedValueBadge: 'שווי משוער ₪{{value}}',
   categoryLabel: 'קטגוריה',
   conditionLabel: 'מצב החפץ',
   reauthRequired: 'יש להתחבר מחדש לפני פרסום פוסט.',

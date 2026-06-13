@@ -57,7 +57,7 @@ A public, anonymous web form at `/research/[slug]?src=...`, served from the Expo
 **Acceptance Criteria.**
 - AC1. On `/research/thanks` (web-only), a share button labeled "שתפו את הסקר עם חבר/ה" renders as a primary CTA, visible immediately on page load (not gated by the 5-second visit-CTA reveal timer), alongside the existing "Visit Karma site" CTA.
 - AC2. On `/research/[slug]` (web-only), a small share affordance — icon + label "שתפו" — renders in the screen header area, visible from page load, positioned so the question rows remain the visual focus.
-- AC3. A row "שתפו את מחקר השוק עם חברים" renders at the top of `/settings/surveys` (all platforms), above the active-surveys list and above the free-feedback entry.
+- AC3. The market-research survey card in `/settings/surveys` (all platforms) carries an inline share affordance (share icon, `in-app-share-settings` src). A separate top-of-page share row was removed (2026-06-13) to avoid duplicate share entry points on the same screen.
 - AC4. Share flow: native iOS/Android uses `Share.share` (placement 3 only); web with `navigator.share` uses the Web Share API; web without uses `navigator.clipboard.writeText`. The flow never throws — it returns one of `{ kind: 'shared' | 'copied' | 'dismissed' | 'failed' }`.
 - AC5. Shared URL is `${webBaseUrl}/research/alt-platforms-research?src=<placement-src>` where `<placement-src>` ∈ {`share-thanks`, `share-during-survey`, `in-app-share-settings`}. All three pass the CHECK regex `^[a-z0-9_-]{1,32}$`.
 - AC6. The URL appears in the share message body exactly once on every platform (mirrors the FR-POST-023 fix).

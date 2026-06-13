@@ -4,7 +4,7 @@ import { track } from './analytics';
 
 const WEB_BASE_URL =
   (process.env.EXPO_PUBLIC_WEB_BASE_URL as string | undefined) ??
-  'https://mvp-2-dev.up.railway.app';
+  'https://karma-community-kc.com';
 
 type ShareLabels = Readonly<{
   title: string;
