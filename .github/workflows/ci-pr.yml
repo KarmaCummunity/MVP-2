@@ -42,7 +42,12 @@ jobs:
             The PR title subject must start with a lowercase letter
             (Conventional Commits style).
 
+      # Bot-authored PRs (dependabot dependency bumps) have no spec mapping and
+      # never will — requiring it permanently wedges every dependency-update PR.
+      # Skip the body check for them; the Conventional Commits title rule above
+      # still applies (dependabot uses `chore(deps): …`).
       - name: Require "Mapped to spec" line in PR body
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
         uses: actions/github-script@v9
         with:
           script: |

@@ -192,7 +192,6 @@ export const postHe = {
     expiredNotice: 'הפוסט פג תוקף ואינו פעיל יותר.',
     visibilityFollowersNotice: 'פוסט זה גלוי לעוקבים מאושרים בלבד.',
     visibilityOnlyMeNotice: 'פוסט פרטי — גלוי רק לבעליו.',
-    estimatedValuePrefix: 'שווי משוער',
   },
 
 } as const;

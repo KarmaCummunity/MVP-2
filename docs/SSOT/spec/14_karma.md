@@ -36,6 +36,7 @@
 **AC2.** The Create Post form shows an `EstimatedValueSlider` (0..1000, step 50) only when post type = Give.
 **AC3.** The value is persisted to `posts.estimated_value` at publish and included in the draft autosave.
 **AC4.** Request posts always publish `estimated_value = null`.
+**AC5.** When a Give post has `estimated_value > 0`, the feed post card shows a compact "שווי משוער ₪{value}" hint below the description (display-only; never on Request cards).
 
 ---
 

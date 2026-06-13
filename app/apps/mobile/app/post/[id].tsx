@@ -48,6 +48,10 @@ function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string
   return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
 }
 
+// Floating CTA height (48) + bottom offset + visual buffer; reserved as scroll
+// inset so the last content rows are not hidden behind the pill.
+const FLOATING_CTA_RESERVED_HEIGHT = 84;
+
 export default function PostDetailScreen() {
   const styles = usePostDetailStyles();
   const { colors } = useTheme();
@@ -133,7 +137,7 @@ export default function PostDetailScreen() {
 
   const showViewerContactCta = !isOwner && post.status === 'open';
   // Floating CTA overlaps content; reserve space so the last rows stay readable.
-  const scrollBottomInset = tabBarPad + (showViewerContactCta ? 84 : 0);
+  const scrollBottomInset = tabBarPad + (showViewerContactCta ? FLOATING_CTA_RESERVED_HEIGHT : 0);
 
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
   const ownerLabel = postOwnerDisplayLabel(post, t);
