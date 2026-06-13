@@ -21,6 +21,8 @@ Use this checklist for every production release. CI automates gates; the agent (
 
 Required on the release PR (GitHub branch protection on `main`):
 
+> Machine-validated by `scripts/check-required-checks-drift.mjs` (**CI — required-checks drift**): the table below must reference real workflow/job names. Rename a job → update this table and the branch-protection list together.
+
 | Check | Workflow | Job |
 | --- | --- | --- |
 | Quality | CI — frontend | `typecheck · test · lint` |
