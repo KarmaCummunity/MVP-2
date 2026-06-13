@@ -2,7 +2,7 @@
   "name": "karma-community",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
@@ -12,12 +12,12 @@
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
     "test:coverage": "turbo run test:coverage",
-    "deps": "npx pnpm@9.0.0 install",
-    "mobile": "npx pnpm@9.0.0 --filter @kc/mobile start",
-    "mobile:go": "npx pnpm@9.0.0 --filter @kc/mobile run start:go",
-    "mobile:go:tunnel": "npx pnpm@9.0.0 --filter @kc/mobile run start:go:tunnel",
-    "ios": "npx pnpm@9.0.0 --filter @kc/mobile ios",
-    "android": "npx pnpm@9.0.0 --filter @kc/mobile android",
+    "deps": "npx pnpm@9.15.9 install",
+    "mobile": "npx pnpm@9.15.9 --filter @kc/mobile start",
+    "mobile:go": "npx pnpm@9.15.9 --filter @kc/mobile run start:go",
+    "mobile:go:tunnel": "npx pnpm@9.15.9 --filter @kc/mobile run start:go:tunnel",
+    "ios": "npx pnpm@9.15.9 --filter @kc/mobile ios",
+    "android": "npx pnpm@9.15.9 --filter @kc/mobile android",
     "build:web": "pnpm --filter @kc/mobile exec expo export -p web && node scripts/web-postbuild.mjs",
     "preview:web": "npx serve apps/mobile/dist --single",
     "check:migration-chain": "node ../scripts/check-migration-chain.mjs",
@@ -39,5 +39,15 @@
     "turbo": "^2.0.0",
     "typescript": "^5.5.0",
     "typescript-eslint": "^8.60.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "shell-quote": ">=1.8.4"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-gv7w-rqvm-qjhr"
+      ]
+    }
   }
 }

@@ -16,6 +16,7 @@ name: CI — backend
 on:
   pull_request:
     branches: [main, dev]
+    types: [opened, synchronize, reopened, ready_for_review]
   push:
     branches: [main, dev]
     paths:
@@ -70,7 +71,7 @@ jobs:
       - uses: actions/checkout@v6
       - uses: actions/setup-node@v4
         with:
-          node-version: 22
+          node-version-file: .nvmrc
       - name: Verify Alembic-style single-head migration chain
         run: node scripts/check-migration-chain.mjs
 
@@ -140,13 +141,17 @@ jobs:
         if: needs.changes.outputs.backend == 'true'
         uses: pnpm/action-setup@v4
         with:
-          version: 9.0.0
+          package_json_file: app/package.json
           run_install: false
 
       - name: Setup Node.js
         if: needs.changes.outputs.backend == 'true'
         uses: actions/setup-node@v4
         with:
+          # Deliberate exception to the repo-wide .nvmrc (20): the sqlProbes
+          # integration tests construct a real SupabaseClient, and
+          # @supabase/realtime-js requires the native WebSocket global that
+          # only exists on Node >= 22. Do not "align" this back to .nvmrc.
           node-version: 22
           cache: pnpm
           cache-dependency-path: app/pnpm-lock.yaml
