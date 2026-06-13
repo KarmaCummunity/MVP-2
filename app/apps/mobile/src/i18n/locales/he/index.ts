@@ -29,6 +29,7 @@ import { surveyHe } from './modules/survey';
 import { researchHe } from './modules/research';
 import { adminHe } from './modules/admin';
 import { karmaHe } from './modules/karma';
+import { asideHe } from './modules/aside';
 
 const he = {
   // App
@@ -77,6 +78,9 @@ const he = {
 
   // Stats (FR-STATS-001..004) — see stats.ts
   stats,
+
+  // Desktop aside panels (FR-RESP-003) — see modules/aside.ts
+  aside: asideHe,
 
   // Legal (FR-SETTINGS-010) — see modules/legal.ts; bodies are server-driven Markdown.
   legal: legalHe,

@@ -28,9 +28,13 @@ Wire `AppShell` into root `_layout.tsx`, replacing `ShellWithTabBar` with `Shell
 
 ## FR-RESP-003 — Aside panels for feed, donations, profile, search
 
-**Status:** ⏳ Planned (PR 3)
+**Status:** ✅ Done
 
-Each screen calls `useAside(...)` with its contextual content (trending donations, suggested follows, recent searches, stats summary).
+Each screen publishes contextual aside content via the focus-aware `useScreenAside(...)` wrapper (`useAside` gained an `enabled` arg so unfocused-but-mounted tab scenes withdraw their content):
+- Feed → `GivingWorldsAside` (curated giving-world shortcuts; no trending/suggested-follows backend exists at MVP, so the curated list stands in).
+- Search → `RecentSearchesAside` (store-backed; a tap runs the query in the screen via the `requestedQuery` handshake on `searchStore`).
+- Donations hub → `CommunityStatsAside` (live `community_stats` snapshot, shared query key with the stats screen).
+- Profile (own, open + closed tabs) → `ProfileStatsAside` (karma, given/received, open/closed counts, link to `/stats`).
 
 ## FR-RESP-004 — Chat inbox layout
 

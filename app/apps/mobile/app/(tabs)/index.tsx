@@ -29,6 +29,8 @@ import { useFeedRealtime } from '../../src/hooks/useFeedRealtime';
 import { useFirstPostNudge } from '../../src/hooks/useFirstPostNudge';
 import { getFeedUseCase } from '../../src/services/postsComposition';
 import { startMark } from '../../src/lib/observability/perfMarks';
+import { useScreenAside } from '../../src/components/aside/useScreenAside';
+import { GivingWorldsAside } from '../../src/components/aside/GivingWorldsAside';
 
 // Module-scope guard: fires once per JS context (cold home-tab mount).
 let feedFirstRenderStarted = false;
@@ -132,6 +134,9 @@ export default function HomeFeedScreen() {
     viewerId,
     feedFilter,
   });
+
+  // Desktop (>=1024) aside — giving-worlds shortcuts (FR-RESP-003).
+  useScreenAside(() => <GivingWorldsAside />, []);
 
   const nudge = useFirstPostNudge(viewerId);
   const surveyBanner = useSurveyBanner();
