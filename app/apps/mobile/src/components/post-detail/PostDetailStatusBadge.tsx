@@ -41,6 +41,24 @@ export function PostDetailStatusBadge({ status }: Props) {
     );
   }
 
+  if (status === 'expired') {
+    return (
+      <View style={[styles.pill, styles.pillPending]} accessibilityRole="text">
+        <Ionicons name="time-outline" size={15} color={colors.warning} />
+        <Text style={styles.pillTextPending}>{t('post.detail.statusExpired')}</Text>
+      </View>
+    );
+  }
+
+  if (status === 'removed_admin') {
+    return (
+      <View style={[styles.pill, styles.pillRemoved]} accessibilityRole="text">
+        <Ionicons name="shield-outline" size={15} color={colors.error} />
+        <Text style={styles.pillTextRemoved}>{t('post.detail.statusRemovedAdmin')}</Text>
+      </View>
+    );
+  }
+
   return null;
 }
 
@@ -66,6 +84,10 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.92)',
     borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(245,158,11,0.45)',
   },
+  pillRemoved: {
+    backgroundColor: isDark ? 'rgba(0,0,0,0.55)' : 'rgba(255,255,255,0.92)',
+    borderColor: isDark ? 'rgba(255,255,255,0.2)' : 'rgba(239,68,68,0.45)',
+  },
   openDot: {
     width: 8,
     height: 8,
@@ -86,5 +108,10 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     fontSize: 12,
     fontWeight: '700',
     color: colors.warning,
+  },
+  pillTextRemoved: {
+    fontSize: 12,
+    fontWeight: '700',
+    color: colors.error,
   },
 }));

@@ -80,6 +80,12 @@ export const usePostCardStyles = makeUseStyles(({ colors, isDark }) => ({
     marginBottom: spacing.sm,
     textAlign: alignStart,
   },
+  estimatedValue: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    textAlign: alignStart,
+  },
   footer: {
     flexDirection: 'row' as const,
     justifyContent: 'space-between' as const,

@@ -63,7 +63,7 @@ export const researchHe = {
 
   guestInvite: {
     kicker: 'בלי הרשמה — אפשר להמשיך',
-    title: 'מחקר שוק קארמה — פתוח לכולם',
+    title: 'מחקר שוק קהילת קארמה — פתוח לכולם',
     body:
       'אפשר למלא את הסקר גם בלי חשבון. אם תרצו לקבל התראות, לפרסם ולקבל — הצטרפו לאפליקציה כשמתאים לכם.',
     signUpCta: 'הצטרפו לקארמה',
@@ -93,7 +93,7 @@ export const researchHe = {
     duringSurveyAria: 'שתפו את הסקר עם חבר/ה',
 
     // Web-platform OS share-sheet title
-    shareTitle: 'מחקר שוק קארמה',
+    shareTitle: 'מחקר שוק קהילת קארמה',
 
     // Body of the share message — identical to in-app variant
     shareMessage:

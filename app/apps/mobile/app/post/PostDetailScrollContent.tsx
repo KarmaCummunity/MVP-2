@@ -8,6 +8,7 @@ import type { PostWithOwner } from '@kc/application';
 import { AvatarInitials } from '../../src/components/AvatarInitials';
 import { PostImageCarousel } from '../../src/components/PostImageCarousel';
 import { PostDetailStatusBadge } from '../../src/components/post-detail/PostDetailStatusBadge';
+import { PostDetailNotices } from '../../src/components/post-detail/PostDetailNotices';
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
@@ -74,6 +75,8 @@ export function PostDetailScrollContent({
             </View>
           </View>
 
+          <PostDetailNotices post={post} />
+
           <MetaChips post={post} isGive={isGive} />
 
           {isClosed ? <ClosedDeliveredExtras post={post} viewerId={viewerId} /> : null}
@@ -135,6 +138,16 @@ function MetaChips(props: Readonly<{ post: PostWithOwner; isGive: boolean }>) {
       <View key="urgency" style={styles.metaChip}>
         <Ionicons name="flash-outline" size={14} color={colors.warning} />
         <Text style={styles.metaChipText}>{post.urgency}</Text>
+      </View>,
+    );
+  }
+  if (isGive && post.estimatedValue != null && post.estimatedValue > 0) {
+    chips.push(
+      <View key="value" style={styles.metaChip}>
+        <Ionicons name="pricetag-outline" size={14} color={colors.textSecondary} />
+        <Text style={styles.metaChipText}>
+          {t('post.estimatedValueBadge', { value: post.estimatedValue })}
+        </Text>
       </View>,
     );
   }

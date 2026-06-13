@@ -76,6 +76,13 @@ function PostCardInner({ post, onMessagePress, onPressOverride }: PostCardProps)
         <Text style={styles.description} numberOfLines={2}>{post.description}</Text>
       ) : null}
 
+      {/* Estimated item value (Give posts only) — small hint per FR-KARMA-004 */}
+      {isGive && post.estimatedValue && post.estimatedValue > 0 ? (
+        <Text style={styles.estimatedValue}>
+          {t('post.estimatedValueBadge', { value: post.estimatedValue })}
+        </Text>
+      ) : null}
+
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.metaRow}>

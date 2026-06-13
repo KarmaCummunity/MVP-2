@@ -112,6 +112,8 @@ export const postHe = {
   // sibling already covers the exact Hebrew string.
   detailTitle: 'פרטי פוסט',
   streetNumberShort: 'מס׳',
+  // FR-KARMA-004 — compact estimated-value hint shown on the feed post card (Give posts).
+  estimatedValueBadge: 'שווי משוער ₪{{value}}',
   categoryLabel: 'קטגוריה',
   conditionLabel: 'מצב החפץ',
   reauthRequired: 'יש להתחבר מחדש לפני פרסום פוסט.',
@@ -182,7 +184,14 @@ export const postHe = {
     statusOpenHint: 'הפוסט פתוח ומחפש התאמה',
     statusClosed: 'הושלם',
     statusPendingDelete: 'נסגר זמנית',
+    statusExpired: 'פג תוקף',
+    statusRemovedAdmin: 'הוסר',
     publishedBy: 'פורסם על-ידי',
+    // Visibility + lifecycle notices shown to anyone who can still see the post.
+    removedAdminNotice: 'הפוסט הוסר על ידי מנהל ואינו מוצג בפיד.',
+    expiredNotice: 'הפוסט פג תוקף ואינו פעיל יותר.',
+    visibilityFollowersNotice: 'פוסט זה גלוי לעוקבים מאושרים בלבד.',
+    visibilityOnlyMeNotice: 'פוסט פרטי — גלוי רק לבעליו.',
   },
 
 } as const;

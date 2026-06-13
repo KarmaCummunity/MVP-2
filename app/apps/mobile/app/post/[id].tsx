@@ -48,6 +48,10 @@ function postLocationDisplayText(post: PostWithOwner, t: (key: string) => string
   return `${post.address.cityName}, ${post.address.street} ${post.address.streetNumber}`;
 }
 
+// Floating CTA height (48) + bottom offset + visual buffer; reserved as scroll
+// inset so the last content rows are not hidden behind the pill.
+const FLOATING_CTA_RESERVED_HEIGHT = 84;
+
 export default function PostDetailScreen() {
   const styles = usePostDetailStyles();
   const { colors } = useTheme();
@@ -132,6 +136,8 @@ export default function PostDetailScreen() {
   const timeAgo = formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe });
 
   const showViewerContactCta = !isOwner && post.status === 'open';
+  // Floating CTA overlaps content; reserve space so the last rows stay readable.
+  const scrollBottomInset = tabBarPad + (showViewerContactCta ? FLOATING_CTA_RESERVED_HEIGHT : 0);
 
   const ownerNavigable = post.ownerProfileNavigableFromPost !== false;
   const ownerLabel = postOwnerDisplayLabel(post, t);
@@ -159,7 +165,7 @@ export default function PostDetailScreen() {
         ownerLabel={ownerLabel}
         locationText={locationText}
         timeAgo={timeAgo}
-        scrollBottomInset={tabBarPad}
+        scrollBottomInset={scrollBottomInset}
       />
 
       {isOwner && viewerId ? (
@@ -173,9 +179,13 @@ export default function PostDetailScreen() {
         />
       ) : null}
       {showViewerContactCta ? (
-        <View style={[styles.cta, { paddingBottom: spacing.base + tabBarPad }]}>
+        <View
+          style={[styles.cta, { bottom: spacing.base + tabBarPad }]}
+          pointerEvents="box-none"
+        >
           <TouchableOpacity
             style={styles.messageBtn}
+            activeOpacity={0.85}
             onPress={() => void onOpenPosterChat()}
             disabled={contactPosterBusy}
             accessibilityRole="button"
@@ -188,7 +198,7 @@ export default function PostDetailScreen() {
               <ActivityIndicator size="small" color={colors.textInverse} />
             ) : (
               <>
-                <Ionicons name="chatbubble-outline" size={20} color={colors.textInverse} />
+                <Ionicons name="chatbubble-outline" size={18} color={colors.textInverse} />
                 <Text style={styles.messageBtnText}>{t('post.detail.contactCta')}</Text>
               </>
             )}
