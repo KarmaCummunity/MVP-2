@@ -23,17 +23,20 @@
 
 ## E2E test user (dev only)
 
-**Canonical dev CI user** (created 2026-05-29, Supabase dev `roeefqpdbftlndzsvhfj`):
+**Canonical dev CI user** (Supabase dev `roeefqpdbftlndzsvhfj`):
 
 | Field | Value |
 | --- | --- |
-| Email | `e2e-ci@karma-community.test` |
-| Password | In operator file `~/.kc-dev-secrets.env` as `E2E_TEST_PASSWORD` — **never commit** |
-| Auth user id | `284c9fb6-6c69-4b56-94b0-fee65cf330df` |
+| Email | `karmacommunity2.0@gmail.com` (wired to `E2E_TEST_EMAIL`) |
+| Password | GitHub secret `E2E_TEST_PASSWORD` — **never commit** |
+| Auth user id | `a46d79c2-8818-4fea-8c6a-4fc60b5097d0` |
+| Role | **super-admin** (`users.is_super_admin = true`) |
 
 Re-create if deleted: `source ~/.kc-dev-secrets.env && node scripts/create-e2e-user.mjs` (uses service role from management API).
 
-GitHub Actions secrets (repo settings): `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD` (same values as local file), `E2E_SUPABASE_ANON_KEY_DEV` (dev publishable anon — dev-scoped secret name, wired to the `E2E_SUPABASE_ANON_KEY` env var in CI).
+GitHub Actions secrets (repo settings): `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_ANON_KEY_DEV` (dev publishable anon — dev-scoped secret name, wired to the `E2E_SUPABASE_ANON_KEY` env var in CI).
+
+Because this account is a **super-admin**, it lands on the admin portal (`/(admin)`) rather than the public home feed on first paint. The P0 journeys (`auth.setup.ts`, `feed.spec.ts`) therefore switch to the Home tab (`getByRole('tab', { name: 'בית' })`) when `feed-screen` is not already the active surface — a no-op for a normal user.
 
 The human `/sign-in` UI may be broken — E2E uses API session injection, not that form.
 

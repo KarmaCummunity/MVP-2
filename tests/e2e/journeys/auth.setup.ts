@@ -45,6 +45,15 @@ setup('inject Supabase session (API, no sign-in UI)', async ({ page, baseURL }) 
     await legalConfirm.click();
   }
 
-  await expect(page.getByTestId('feed-screen')).toBeVisible({ timeout: 45_000 });
+  // Super-admin accounts land on the admin portal rather than the public home
+  // feed, so the feed surface is not the active screen on first paint. Switch to
+  // the Home tab when the feed is not already showing; harmless for normal users
+  // (already on Home). Keeps the E2E user able to be a super-admin (D-55).
+  const feed = page.getByTestId('feed-screen');
+  if (!(await feed.isVisible({ timeout: 5_000 }).catch(() => false))) {
+    await page.getByRole('tab', { name: 'בית' }).click().catch(() => {});
+  }
+
+  await expect(feed).toBeVisible({ timeout: 45_000 });
   await page.context().storageState({ path: '.auth/user.json' });
 });
