@@ -22,6 +22,15 @@ interface SearchState {
   addRecentSearch: (q: string) => void;
   clearRecentSearches: () => void;
 
+  /**
+   * One-shot query request from outside the search screen (desktop aside,
+   * FR-RESP-003). The screen consumes it into its own input state. Transient —
+   * never persisted.
+   */
+  requestedQuery: string | null;
+  requestSearch: (q: string) => void;
+  consumeRequestedQuery: () => string | null;
+
   // Active filters
   resultType: SearchResultType | null;
   postType: PostType | null;
@@ -73,6 +82,18 @@ export const useSearchStore = create<SearchState>()(
         });
       },
       clearRecentSearches: () => set({ recentSearches: [] }),
+
+      requestedQuery: null,
+      requestSearch: (q: string) => {
+        const trimmed = q.trim();
+        if (trimmed.length === 0) return;
+        set({ requestedQuery: trimmed });
+      },
+      consumeRequestedQuery: () => {
+        const q = get().requestedQuery;
+        if (q !== null) set({ requestedQuery: null });
+        return q;
+      },
 
       setResultType: (resultType) => set({ resultType }),
       setPostType: (postType) => set({ postType }),
