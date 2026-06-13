@@ -22,6 +22,8 @@ import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
+import { useScreenAside } from '../../../src/components/aside/useScreenAside';
+import { CommunityStatsAside } from '../../../src/components/aside/CommunityStatsAside';
 import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 interface CategoryTile {
@@ -177,6 +179,9 @@ export default function DonationsHubScreen() {
   const { colors } = useTheme();
   const styles = useStyles();
   const tabBarPad = useShellTabBarScrollInset();
+
+  // Desktop (>=1024) aside — live community snapshot (FR-RESP-003).
+  useScreenAside(() => <CommunityStatsAside />, []);
 
   // Pair grid tiles into rows of 2 — single row when count is odd.
   const rows: CategoryTile[][] = [];
