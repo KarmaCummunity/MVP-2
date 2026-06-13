@@ -146,7 +146,7 @@ function MetaChips(props: Readonly<{ post: PostWithOwner; isGive: boolean }>) {
       <View key="value" style={styles.metaChip}>
         <Ionicons name="pricetag-outline" size={14} color={colors.textSecondary} />
         <Text style={styles.metaChipText}>
-          {t('post.detail.estimatedValuePrefix')} ₪{post.estimatedValue}
+          {t('post.estimatedValueBadge', { value: post.estimatedValue })}
         </Text>
       </View>,
     );

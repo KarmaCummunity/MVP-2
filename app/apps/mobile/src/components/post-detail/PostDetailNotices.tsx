@@ -9,6 +9,9 @@ import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import { textAlignStart } from '../../lib/rtlLayout';
 
+// Hex alpha suffix (~33%) appended to the tone color for a subtle banner border.
+const NOTICE_BORDER_ALPHA = '55';
+
 type NoticeTone = 'danger' | 'warning' | 'info';
 
 type Notice = Readonly<{
@@ -51,7 +54,12 @@ export function PostDetailNotices({ post }: Readonly<{ post: PostWithOwner }>) {
   return (
     <View style={styles.wrap}>
       {notices.map((n) => (
-        <View key={n.key} style={[styles.banner, { borderColor: `${toneColor(n.tone)}55` }]}>
+        <View
+          key={n.key}
+          style={[styles.banner, { borderColor: `${toneColor(n.tone)}${NOTICE_BORDER_ALPHA}` }]}
+          accessibilityRole="alert"
+          accessibilityLabel={n.text}
+        >
           <Ionicons name={n.icon} size={16} color={toneColor(n.tone)} />
           <Text style={[styles.text, { color: toneColor(n.tone) }]}>{n.text}</Text>
         </View>
