@@ -9,10 +9,12 @@ import { container } from '../../src/lib/container';
 import { webTextRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import {
-  clearResearchDraft,
-  loadResearchDraft,
-  saveResearchDraft,
-} from '../../src/lib/researchDraft';
+  clearSurveyDraft,
+  loadSurveyDraft,
+  saveSurveyDraft,
+} from '../../src/lib/surveyDraftStorage';
+
+const RESEARCH_DRAFT_NS = 'research';
 import { ResearchRunner, errorKey, type AnswerEntry } from './ResearchRunner';
 
 const SOURCE_REGEX = /^[a-z0-9_-]{1,32}$/;
@@ -80,12 +82,12 @@ export default function PublicResearchScreen() {
   // mid-survey doesn't wipe the visitor's answers (FR-RESEARCH-001).
   useEffect(() => {
     if (!bundle || draftHydratedRef.current) return;
-    const draft = loadResearchDraft(slug, bundle.version);
+    const draft = loadSurveyDraft(RESEARCH_DRAFT_NS, slug, bundle.version);
     if (draft) {
       setAnswers(draft.answers);
       setActiveIndex(Math.max(0, Math.min(draft.activeIndex, bundle.questions.length - 1)));
-      setContactEmail(draft.contactEmail);
-      setContactWindowHe(draft.contactWindowHe);
+      setContactEmail(draft.contactEmail ?? '');
+      setContactWindowHe(draft.contactWindowHe ?? '');
     }
     draftHydratedRef.current = true;
   }, [bundle, slug]);
@@ -93,7 +95,7 @@ export default function PublicResearchScreen() {
   // Persist every post-hydration edit so progress survives a reload.
   useEffect(() => {
     if (!bundle || !draftHydratedRef.current) return;
-    saveResearchDraft(slug, {
+    saveSurveyDraft(RESEARCH_DRAFT_NS, slug, {
       version: bundle.version,
       activeIndex,
       answers,
@@ -153,7 +155,7 @@ export default function PublicResearchScreen() {
     }
     const ok = await submitAnswers();
     if (ok) {
-      clearResearchDraft(slug);
+      clearSurveyDraft(RESEARCH_DRAFT_NS, slug);
       router.replace('/research/thanks' as Href);
     }
   }
