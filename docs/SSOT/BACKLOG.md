@@ -140,7 +140,7 @@
 
 | ID | Task | Status | Spec |
 |----|------|--------|------|
-| P3.A-OS0 | **Spec catch-up.** Retro-spec already-shipped `/money`, `/crm`, `/time`, `/org-approvals` into `17_back_office.md` (close doc-drift TD); docs-only, no behavior change. | ⏳ Planned | `spec/17_back_office.md` FR-BO-001/010/020; `TECH_DEBT.md` |
+| P3.A-OS0 | **Spec catch-up.** Retro-specced already-shipped `/money`, `/crm`, `/time` into `17_back_office.md` with as-built ACs (FR-BO-001/010/020 ✅); closes doc-drift TD-171. Docs-only, no behavior change. | ✅ Done | `spec/17_back_office.md` FR-BO-001/010/020; `TECH_DEBT.md` TD-171 |
 | P3.A-OS1 | **Finance core.** Chart of accounts, fiscal periods + locking, P&L / cash-flow / donation-summary report RPCs + export. | ⏳ Planned | `spec/17_back_office.md` FR-BO-100..102 |
 | P3.A-OS2 | **Budgets.** `finance_budgets` + lines; budget-vs-actual report; dashboard cash-position/burn cards. | ⏳ Planned | `spec/17_back_office.md` FR-BO-110 |
 | P3.A-OS3 | **Donors & donations.** `donors`/`donations`/`recurring_donations`; CRM linkage; ledger posting. | ⏳ Planned | `spec/17_back_office.md` FR-BO-120/121 |

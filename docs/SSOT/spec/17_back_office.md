@@ -1,6 +1,6 @@
 # 17 — Back-Office (FR-BO-*)
 
-**Status:** ⏳ Planned (Track A of Nonprofit OS)
+**Status:** 🟡 In progress (Track A of Nonprofit OS) — A0 retro-spec done; A1+ planned.
 **Owner:** Autonomous loop
 **Design doc:** `docs/superpowers/specs/2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`
 **Decisions:** `D-62` (dual-track scope)
@@ -13,14 +13,27 @@ This domain turns the thin admin modules (`/admin/money`, `/admin/crm`, `/admin/
 
 ## A0 — Spec catch-up (retro-spec already-shipped modules)
 
+**Status:** ✅ Done — these three modules shipped end-to-end (migrations 0169–0171) ahead of the spec; the ACs below document the as-built behavior and close the doc-drift (`TD-171`). Permissions reference the `@kc/domain` `PERMISSION_MATRIX`.
+
 ### FR-BO-001 — Finance ledger (existing) ✅
-Ledger of `donation_in / grant_in / expense / refund_out / transfer` entries with `amount_cents`, `currency`, `occurred_at`, `counterparty`, `category`, `status` (pending/cleared/canceled), soft-delete; list + summary-by-currency RPCs. Admin/super_admin + moderator (`money.manage`) only.
+`/admin/money` — accounting ledger over `finance_ledger_entries`.
+- **AC1.** Entry kinds: `donation_in`, `grant_in`, `expense`, `refund_out`, `transfer`. Direction is derived (`donation_in`/`grant_in` → in; `expense`/`refund_out` → out; `transfer` → neither).
+- **AC2.** Amounts stored as `amount_cents` (bigint, minor units, ≥ 0); `currency` defaults `ILS`. Fields: `occurred_at`, `counterparty`, `category`, `description`, `reference_url`, `status` (`pending`/`cleared`/`canceled`).
+- **AC3.** `finance_ledger_list(direction, kind, status, from, to, limit, offset)` returns server-paginated rows + `total_count`.
+- **AC4.** `finance_ledger_summary(from, to)` aggregates income/expense/net/count grouped by currency.
+- **AC5.** `finance_ledger_upsert` / `finance_ledger_delete` (soft-delete via `deleted_at`). All writes via SECURITY DEFINER RPCs; gated by `money.manage` (super_admin + moderator).
 
 ### FR-BO-010 — CRM contacts (existing) ✅
-Donor/partner/journalist contacts with tags and lifecycle (cold→warm→active→inactive); list/upsert/delete/mark-contacted; soft-delete. `crm.manage`.
+`/admin/crm` — donor/partner/journalist contacts over `crm_contacts`.
+- **AC1.** Fields: `name`, `organization`, `email`, `phone`, `role_title`, `notes`, `tags[]`, `status` (`cold`/`warm`/`active`/`inactive`), `last_contacted_at`.
+- **AC2.** `crm_contact_list(status, query, tag, limit, offset)` (ILIKE on name/org) returns rows + `total_count`.
+- **AC3.** `crm_contact_upsert` / `crm_contact_delete` (soft-delete) / `crm_contact_mark_contacted` (stamps `last_contacted_at`). Gated by `crm.manage`.
 
 ### FR-BO-020 — Timesheets (existing) ✅
-Per-user time entries (`hours_x100`, project, description) with draft→submit→approve/reject; approvers see all. `time.report` / `time.approve`.
+`/admin/time` — per-user time tracking over `timesheet_entries`.
+- **AC1.** Fields: `work_date`, `hours_x100` (0..2400 = 0..24h), `project`, `description`, `status` (`draft`/`submitted`/`approved`/`rejected`).
+- **AC2.** Lifecycle: `draft → submitted → approved/rejected`; an author edits their own drafts; an approver (`time.approve`) approves/rejects others.
+- **AC3.** `timesheet_list` shows own entries (`time.report`) or all (`time.approve`); RPCs `timesheet_upsert`/`submit`/`approve`/`reject`/`delete` (soft-delete).
 
 ---
 
