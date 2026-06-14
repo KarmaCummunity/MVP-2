@@ -43,6 +43,85 @@ The human `/sign-in` UI may be broken — E2E uses API session injection, not th
 Preflight: `set -a && source ~/.kc-dev-secrets.env && set +a && node scripts/ensure-e2e-user.mjs`
 - **Auth in E2E (option 3):** Playwright injects the Supabase session into `localStorage` via API — no Google SSO, no `/sign-in` form, no `EXPO_PUBLIC_DEV_*` shortcuts.
 
+## Agent test users (dev only)
+
+Two canonical "looks-real" users for AI agent testing on Supabase dev `roeefqpdbftlndzsvhfj`.
+Unlike the CI E2E user above, these users have completed onboarding, realistic Hebrew profiles,
+and are used for multi-user interaction tests (chat, post closure, follow flows, etc.).
+
+### Agent Alpha — moderator admin
+
+| Field | Value |
+| --- | --- |
+| Email | `agent-alpha@karma-community.test` |
+| Password | local secret `AGENT_ALPHA_PASSWORD` (or `AGENT_TEST_PASSWORD`) — **never commit** |
+| Display name | דניאל לוי |
+| City | תל אביב יפו |
+| Admin role | **moderator** (`admin_role_grants`) — portal + reports + chat moderation + user/post search |
+| `onboarding_state` | `completed` |
+
+### Agent Beta — regular user
+
+| Field | Value |
+| --- | --- |
+| Email | `agent-beta@karma-community.test` |
+| Password | local secret `AGENT_BETA_PASSWORD` (or `AGENT_TEST_PASSWORD`) — **never commit** |
+| Display name | מיכל כהן |
+| City | ירושלים |
+| Admin role | none — plain community member |
+| `onboarding_state` | `completed` |
+
+### Why two users?
+
+- **Alpha alone:** auth flows, admin portal, moderation actions, admin-level RLS queries.
+- **Alpha + Beta:** inter-user flows — follow requests, direct chat, post closure with recipient,
+  "close from chat" lifecycle, report-submission (Beta reports Alpha's content), RLS persona suite (Wave 3).
+
+### Admin role comparison
+
+| Permission | super_admin (CI E2E user) | moderator (Alpha) | none (Beta) |
+| --- | --- | --- | --- |
+| Admin portal access | ✅ | ✅ | ❌ |
+| Reports + moderation | ✅ | ✅ | ❌ |
+| Grant/revoke admin roles | ✅ | ❌ | ❌ |
+| All audit logs | ✅ | ❌ (own only) | ❌ |
+| Regular community actions | ✅ | ✅ | ✅ |
+
+> **Why not super_admin for Alpha?** The DB enforces a single active `super_admin` at a time
+> (`admin_role_grants_single_super_admin_uniq` index). The existing CI E2E user holds that slot.
+> `moderator` covers all agent-testable admin flows.
+
+### Provisioning
+
+```bash
+# Add to ~/.kc-dev-secrets.env (never commit):
+# AGENT_ALPHA_PASSWORD='...'
+# AGENT_BETA_PASSWORD='...'
+
+source ~/.kc-dev-secrets.env
+node scripts/create-agent-test-users.mjs   # idempotent — safe to re-run
+node scripts/ensure-agent-test-users.mjs   # verify both can sign in
+```
+
+### Using in E2E / agent code
+
+Like the CI E2E user, agent tests should inject Supabase sessions via API rather than
+driving the sign-in UI form. Inject per-user:
+
+```typescript
+// auth helper (Playwright)
+const session = await signInWithPassword(
+  process.env.AGENT_ALPHA_EMAIL,
+  process.env.AGENT_ALPHA_PASSWORD,
+);
+await page.evaluate((s) => localStorage.setItem('supabase.auth.token', JSON.stringify(s)), session);
+```
+
+For multi-user tests, maintain two separate Playwright `BrowserContext` objects — one per user —
+so cookies and localStorage are isolated.
+
+---
+
 ## P0 release journeys (automated)
 
 Maps to `RELEASE_CHECKLIST.md` dev smoke:
