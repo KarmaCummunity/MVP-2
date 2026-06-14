@@ -300,6 +300,7 @@ The MVP does not allow self-service phone/email changes; the Settings screen exp
 - AC5. New published version resets completion for that survey; banner may reappear per FR-SETTINGS-016 AC6.
 - AC6. Prompt banner when milestones met and survey incomplete: CTA + "אחר כך" snoozes 7 days (AsyncStorage key `kc-survey-snooze-{slug}`).
 - AC7. Question copy editable in Supabase without app deploy (`publish_survey_version` RPC).
+- AC8. In-progress answers persist across reloads. Every answer change is mirrored to `localStorage` (key `kc-survey-draft-{slug}`, version-tagged) in addition to the debounced server upsert (AC4); on remount the local draft is overlaid over the server snapshot, so a refresh mid-survey never reverts to the last saved answers — including text typed before a rating is set, which the server schema (`rating NOT NULL`) cannot store. The draft is ignored on version change or after a 14-day TTL. Shared `surveyDraftStorage` helper with the public research form (FR-RESEARCH-001 AC7).
 
 ---
 

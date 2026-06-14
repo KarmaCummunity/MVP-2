@@ -3,6 +3,9 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import type { SurveyBundle, SurveyAnswerDraft } from '@kc/domain';
 import { container } from '../lib/container';
+import { loadSurveyDraft, saveSurveyDraft } from '../lib/surveyDraftStorage';
+
+const SURVEY_DRAFT_NS = 'survey';
 
 type AnswerMap = Record<string, { rating: number | null; answerText: string | null }>;
 
@@ -47,14 +50,38 @@ export function useSurveyRunnerState(
   const [saveErrorOpen, setSaveErrorOpen] = useState(false);
   const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const bundleRef = useRef<SurveyBundle | null>(bundle);
+  const hydratedRef = useRef(false);
 
-  // Re-hydrate when bundle first loads.
+  // Keep the bundle ref fresh for the debounced save closure.
   useEffect(() => {
-    if (bundle) {
-      bundleRef.current = bundle;
-      setAnswers(bundleToAnswerMap(bundle));
-    }
+    if (bundle) bundleRef.current = bundle;
   }, [bundle]);
+
+  // Hydrate once when the bundle first loads: server answers are the baseline,
+  // with any locally-saved in-progress draft overlaid on top so a refresh never
+  // reverts to the last server snapshot (FR-SETTINGS-016).
+  useEffect(() => {
+    if (!bundle || hydratedRef.current) return;
+    const server = bundleToAnswerMap(bundle);
+    const draft = loadSurveyDraft(SURVEY_DRAFT_NS, slug, bundle.version);
+    setAnswers(draft ? { ...server, ...draft.answers } : server);
+    if (draft) {
+      setActiveIndex(Math.max(0, Math.min(draft.activeIndex, bundle.questions.length - 1)));
+    }
+    hydratedRef.current = true;
+  }, [bundle, slug]);
+
+  // Mirror every post-hydration edit to localStorage so progress survives a
+  // reload even before the 300ms debounced server save fires — and for
+  // text-only answers the server schema (rating NOT NULL) cannot store.
+  useEffect(() => {
+    if (!bundle || !hydratedRef.current) return;
+    saveSurveyDraft(SURVEY_DRAFT_NS, slug, {
+      version: bundle.version,
+      activeIndex,
+      answers,
+    });
+  }, [bundle, slug, activeIndex, answers]);
 
   const onAnswerChange = useCallback(
     (qid: string, rating: number | null, text: string | null) => {

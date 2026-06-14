@@ -1,5 +1,5 @@
 // Web-only public research form — FR-RESEARCH-001, FR-RESEARCH-002, FR-RESEARCH-003.
-import React, { useCallback, useEffect, useState } from 'react';
+import React, { useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useLocalSearchParams, useRouter, type Href } from 'expo-router';
 import { useQuery } from '@tanstack/react-query';
@@ -8,8 +8,14 @@ import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import { container } from '../../src/lib/container';
 import { webTextRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import {
+  clearSurveyDraft,
+  loadSurveyDraft,
+  saveSurveyDraft,
+} from '../../src/lib/surveyDraftStorage';
+
+const RESEARCH_DRAFT_NS = 'research';
 import { ResearchRunner, errorKey, type AnswerEntry } from './ResearchRunner';
-import { SurveyIntroBlock } from './SurveyIntroBlock';
 
 const SOURCE_REGEX = /^[a-z0-9_-]{1,32}$/;
 
@@ -70,6 +76,33 @@ export default function PublicResearchScreen() {
   });
 
   const bundle = bundleQuery.data;
+  const draftHydratedRef = useRef(false);
+
+  // Restore an in-progress draft once the live bundle resolves, so refreshing
+  // mid-survey doesn't wipe the visitor's answers (FR-RESEARCH-001).
+  useEffect(() => {
+    if (!bundle || draftHydratedRef.current) return;
+    const draft = loadSurveyDraft(RESEARCH_DRAFT_NS, slug, bundle.version);
+    if (draft) {
+      setAnswers(draft.answers);
+      setActiveIndex(Math.max(0, Math.min(draft.activeIndex, bundle.questions.length - 1)));
+      setContactEmail(draft.contactEmail ?? '');
+      setContactWindowHe(draft.contactWindowHe ?? '');
+    }
+    draftHydratedRef.current = true;
+  }, [bundle, slug]);
+
+  // Persist every post-hydration edit so progress survives a reload.
+  useEffect(() => {
+    if (!bundle || !draftHydratedRef.current) return;
+    saveSurveyDraft(RESEARCH_DRAFT_NS, slug, {
+      version: bundle.version,
+      activeIndex,
+      answers,
+      contactEmail,
+      contactWindowHe,
+    });
+  }, [bundle, slug, activeIndex, answers, contactEmail, contactWindowHe]);
 
   const onAnswerChange = useCallback(
     (qid: string, rating: number | null, text: string | null) => {
@@ -122,6 +155,7 @@ export default function PublicResearchScreen() {
     }
     const ok = await submitAnswers();
     if (ok) {
+      clearSurveyDraft(RESEARCH_DRAFT_NS, slug);
       router.replace('/research/thanks' as Href);
     }
   }
@@ -184,7 +218,6 @@ export default function PublicResearchScreen() {
         </View>
       ) : null}
 
-      <SurveyIntroBlock />
       <View style={styles.runnerArea}>{renderBody()}</View>
     </View>
   );

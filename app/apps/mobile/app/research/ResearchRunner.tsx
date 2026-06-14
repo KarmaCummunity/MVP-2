@@ -20,6 +20,7 @@ import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { ResearchEndShareCard } from '../../src/components/research/ResearchEndShareCard';
 import { ResearchQuestionPanel } from './ResearchQuestionPanel';
+import { SurveyIntroBlock } from './SurveyIntroBlock';
 
 export type AnswerEntry = { rating: number | null; answerText: string | null };
 
@@ -103,34 +104,38 @@ export function ResearchRunner({
 
   return (
     <KeyboardAvoidingView style={styles.flex} behavior="padding">
-      <View style={[styles.progressRow, webViewRtl]}>
-        <Text style={styles.progressText}>
-          {t('research.progress', { current: activeIndex + 1, total })}
-        </Text>
-        <Text style={styles.progressHint}>{t('research.progressHint')}</Text>
-      </View>
-
-      <SurveyQuestionMap
-        questions={questions}
-        activeIndex={activeIndex}
-        answers={answers}
-        onSelect={setActiveIndex}
-        variant="chips"
-      />
-
-      {missingRatingsHint ? (
-        <Text style={styles.missingHint}>{t('research.submitRequiresAllRatings')}</Text>
-      ) : null}
-
       <ScrollView
         style={styles.flex}
         contentContainerStyle={[
           styles.scrollContent,
-          { paddingBottom: SURVEY_FLOAT_NAV_CLEARANCE + spacing.xl },
+          { paddingBottom: SURVEY_FLOAT_NAV_CLEARANCE + spacing['2xl'] },
         ]}
         keyboardShouldPersistTaps="handled"
         showsVerticalScrollIndicator
       >
+        <SurveyIntroBlock />
+
+        <View style={[styles.progressRow, webViewRtl]}>
+          <Text style={styles.progressText}>
+            {t('research.progress', { current: activeIndex + 1, total })}
+          </Text>
+          <Text style={styles.progressHint}>{t('research.progressHint')}</Text>
+        </View>
+
+        <View style={styles.chipsBleed}>
+          <SurveyQuestionMap
+            questions={questions}
+            activeIndex={activeIndex}
+            answers={answers}
+            onSelect={setActiveIndex}
+            variant="chips"
+          />
+        </View>
+
+        {missingRatingsHint ? (
+          <Text style={styles.missingHint}>{t('research.submitRequiresAllRatings')}</Text>
+        ) : null}
+
         <ResearchQuestionPanel
           question={question}
           index={activeIndex}
@@ -178,8 +183,9 @@ const useRunnerStyles = makeUseStyles(({ colors }) => ({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    paddingHorizontal: spacing.base,
-    paddingVertical: spacing.xs,
+  },
+  chipsBleed: {
+    marginHorizontal: -spacing.base,
   },
   progressText: {
     ...typography.bodySmall,
@@ -196,14 +202,12 @@ const useRunnerStyles = makeUseStyles(({ colors }) => ({
     ...typography.bodySmall,
     color: colors.error,
     textAlign: rtlTextAlignStart,
-    paddingHorizontal: spacing.base,
-    paddingBottom: spacing.xs,
     ...webTextRtl,
   },
   scrollContent: {
     paddingHorizontal: spacing.base,
-    paddingTop: spacing.sm,
-    gap: spacing.base,
+    paddingTop: spacing.base,
+    gap: spacing.lg,
   },
   errorBox: {
     gap: spacing.sm,
