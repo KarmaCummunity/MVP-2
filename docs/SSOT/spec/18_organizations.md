@@ -29,11 +29,13 @@ This domain makes every organization a tenant. Isolation is shared-database + RL
 
 ## B1 — Provisioning
 
-### FR-ORG-010 — Transactional org creation on approval ⏳
-`org_applications` approval (domain 12) becomes transactional: create `organizations` + founder `org_memberships` + `org_admin` grant + seed `org_settings`/`org_branding`. Replaces today's no-op approval.
+**Status:** 🟡 In progress — backend provisioning shipped (migration `0195`); org switcher UI pending.
+
+### FR-ORG-010 — Transactional org creation on approval 🟡
+`admin_org_application_decide` approve path provisions a tenant in one transaction: `organizations` + `org_settings` + `org_branding` + founder `org_memberships` (default only if the applicant has none) + founder `org_admin` grant (scoped to the new org; authorized by the approval via SECURITY DEFINER). The provisioned org id is stored on `org_applications.created_org_id` and included in the approve audit event. `generate_org_slug()` produces a safe unique slug. Replaces the prior no-op approval. *(Migration `0195`.)*
 
 ### FR-ORG-011 — Org switcher ⏳
-Portal control to switch active org for multi-org users; super-admins can target any org.
+Portal control to switch active org for multi-org users; super-admins can target any org. Reads from `get_my_organizations()` (B0); switching re-issues the JWT so `current_org_id()` follows.
 
 ---
 
