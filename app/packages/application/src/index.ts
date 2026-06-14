@@ -180,6 +180,9 @@ export * from './admin/ITimesheetsRepository';
 export * from './admin/TimesheetUseCases';
 export * from './admin/IFinanceLedgerRepository';
 export * from './admin/ListFinanceLedgerUseCase';
+export * from './admin/IFinanceAccountsRepository';
+export * from './admin/ListFinanceAccountsUseCase';
+export * from './admin/UpsertFinanceAccountUseCase';
 export * from './admin/GetFinanceSummaryUseCase';
 export * from './admin/UpsertFinanceEntryUseCase';
 export * from './admin/DeleteFinanceEntryUseCase';
@@ -191,10 +194,7 @@ export * from './admin/MarkCrmContactContactedUseCase';
 export * from './admin/IOrgApplicationsRepository';
 export * from './admin/ListOrgApplicationsUseCase';
 export * from './admin/DecideOrgApplicationUseCase';
-
-// Nonprofit OS — multi-tenancy root (FR-ORG-*)
-export * from './org/IOrganizationRepository';
-export * from './org/GetMyOrganizationsUseCase';
+export * from './org'; // Nonprofit OS — multi-tenancy root (FR-ORG-*)
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';

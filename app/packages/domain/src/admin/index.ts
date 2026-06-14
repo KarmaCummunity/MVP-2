@@ -8,5 +8,6 @@ export * from './AdminTaskError';
 export * from './AdminContentSearch';
 export * from './TimesheetEntry';
 export * from './FinanceLedger';
+export * from './FinanceAccount';
 export * from './CrmContact';
 export * from './OrgApplication';

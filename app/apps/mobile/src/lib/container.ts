@@ -21,6 +21,7 @@ import {
   SupabaseAdminContentRepository,
   SupabaseTimesheetsRepository,
   SupabaseFinanceLedgerRepository,
+  SupabaseFinanceAccountsRepository,
   SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
@@ -82,6 +83,8 @@ import {
   GetFinanceSummaryUseCase,
   UpsertFinanceEntryUseCase,
   DeleteFinanceEntryUseCase,
+  ListFinanceAccountsUseCase,
+  UpsertFinanceAccountUseCase,
   ListCrmContactsUseCase,
   UpsertCrmContactUseCase,
   DeleteCrmContactUseCase,
@@ -128,6 +131,7 @@ const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
 const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
 const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
+const financeAccountsRepo = new SupabaseFinanceAccountsRepository(supabase);
 const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
 const organizationRepo = new SupabaseOrganizationRepository(supabase);
@@ -180,6 +184,9 @@ export const container = {
   getFinanceSummary:   new GetFinanceSummaryUseCase(financeLedgerRepo),
   upsertFinanceEntry:  new UpsertFinanceEntryUseCase(financeLedgerRepo),
   deleteFinanceEntry:  new DeleteFinanceEntryUseCase(financeLedgerRepo),
+  // FR-BO-100 — chart of accounts
+  listFinanceAccounts:  new ListFinanceAccountsUseCase(financeAccountsRepo),
+  upsertFinanceAccount: new UpsertFinanceAccountUseCase(financeAccountsRepo),
   // V2-ADMIN-CRM-8
   listCrmContacts: new ListCrmContactsUseCase(crmContactsRepo),
   upsertCrmContact: new UpsertCrmContactUseCase(crmContactsRepo),

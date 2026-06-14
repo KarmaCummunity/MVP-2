@@ -27,6 +27,7 @@ export * from './admin/SupabaseAdminTaskRepository';
 export * from './admin/SupabaseAdminContentRepository';
 export * from './admin/SupabaseTimesheetsRepository';
 export * from './admin/SupabaseFinanceLedgerRepository';
+export * from './admin/SupabaseFinanceAccountsRepository';
 export * from './admin/SupabaseCrmContactsRepository';
 export * from './admin/SupabaseOrgApplicationsRepository';
 export * from './org/SupabaseOrganizationRepository';

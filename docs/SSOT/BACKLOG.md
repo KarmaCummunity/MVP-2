@@ -141,7 +141,7 @@
 | ID | Task | Status | Spec |
 |----|------|--------|------|
 | P3.A-OS0 | **Spec catch-up.** Retro-specced already-shipped `/money`, `/crm`, `/time` into `17_back_office.md` with as-built ACs (FR-BO-001/010/020 ✅); closes doc-drift TD-171. Docs-only, no behavior change. | ✅ Done | `spec/17_back_office.md` FR-BO-001/010/020; `TECH_DEBT.md` TD-171 |
-| P3.A-OS1 | **Finance core.** Chart of accounts, fiscal periods + locking, P&L / cash-flow / donation-summary report RPCs + export. | ⏳ Planned | `spec/17_back_office.md` FR-BO-100..102 |
+| P3.A-OS1 | **Finance core.** Chart of accounts shipped (migration `0196`: `finance_accounts` + `account_id` on ledger + seeded IL-NGO chart + list/upsert RPCs + full data layer + tests). **Remaining:** fiscal periods + locking (FR-BO-101), P&L / cash-flow / donation-summary report RPCs + export (FR-BO-102). | 🟡 In progress | `spec/17_back_office.md` FR-BO-100..102 |
 | P3.A-OS2 | **Budgets.** `finance_budgets` + lines; budget-vs-actual report; dashboard cash-position/burn cards. | ⏳ Planned | `spec/17_back_office.md` FR-BO-110 |
 | P3.A-OS3 | **Donors & donations.** `donors`/`donations`/`recurring_donations`; CRM linkage; ledger posting. | ⏳ Planned | `spec/17_back_office.md` FR-BO-120/121 |
 | P3.A-OS4 | **Tax receipts.** §46A gapless receipt numbering per org+year; PDF; void/reissue (legal validity = PM precondition). | ⏳ Planned | `spec/17_back_office.md` FR-BO-130 |
