@@ -1,9 +1,9 @@
--- 0195_org_provisioning — Nonprofit OS Track B1 — transactional org creation on approval.
+-- 0203_org_provisioning — Nonprofit OS Track B1 — transactional org creation on approval.
 -- Mapped to spec: docs/SSOT/spec/18_organizations.md FR-ORG-010.
 -- Decisions: D-60 (tenancy), D-62 (dual-track).
 --
 -- Until now `admin_org_application_decide` (0168) was a status flip + audit only —
--- approval had no side-effect because there was no organizations table. B0 (0194)
+-- approval had no side-effect because there was no organizations table. B0 (0202)
 -- added the tenant root; this slice makes approval actually PROVISION a tenant:
 --   organization + settings + branding + founder membership + founder org_admin grant.
 -- Reject path is unchanged.

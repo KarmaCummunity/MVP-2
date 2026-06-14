@@ -1,4 +1,4 @@
--- 0196_finance_chart_of_accounts — Nonprofit OS Track A1 — chart of accounts (FR-BO-100).
+-- 0204_finance_chart_of_accounts — Nonprofit OS Track A1 — chart of accounts (FR-BO-100).
 -- Mapped to spec: docs/SSOT/spec/17_back_office.md FR-BO-100.
 -- Decisions: D-62 (dual-track). Born with org_id per D-60 (isolation flips on in B2).
 --

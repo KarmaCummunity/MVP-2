@@ -1,4 +1,4 @@
--- 0194_organizations_root — Nonprofit OS Track B0 — multi-tenant root (additive).
+-- 0202_organizations_root — Nonprofit OS Track B0 — multi-tenant root (additive).
 -- Mapped to spec: docs/SSOT/spec/18_organizations.md FR-ORG-001..004.
 -- Decisions: D-60 (shared-DB + RLS tenancy via org_id JWT claim), D-62 (dual-track).
 --

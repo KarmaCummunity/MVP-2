@@ -39,10 +39,10 @@ This domain turns the thin admin modules (`/admin/money`, `/admin/crm`, `/admin/
 
 ## A1 — Finance core
 
-**Status:** 🟡 In progress — chart of accounts shipped (migration `0196`); fiscal periods + reports planned.
+**Status:** 🟡 In progress — chart of accounts shipped (migration `0204`); fiscal periods + reports planned.
 
 ### FR-BO-100 — Chart of accounts ✅
-`finance_accounts` per org (`income`/`expense`/`asset`/`liability`/`equity`; `code` unique per org; optional `parent_id` hierarchy; `is_active`). `finance_ledger_entries` gains a nullable `account_id` FK. Default Israeli-NGO chart seeded for the default org. RPCs `finance_account_list(type, active_only)` + `finance_account_upsert(...)`, gated by `money.manage`; born with `org_id` (isolation flips on in B2). Domain `FinanceAccount` + `IFinanceAccountsRepository` + list/upsert use cases + Supabase adapter + tests. *(Migration `0196`.)*
+`finance_accounts` per org (`income`/`expense`/`asset`/`liability`/`equity`; `code` unique per org; optional `parent_id` hierarchy; `is_active`). `finance_ledger_entries` gains a nullable `account_id` FK. Default Israeli-NGO chart seeded for the default org. RPCs `finance_account_list(type, active_only)` + `finance_account_upsert(...)`, gated by `money.manage`; born with `org_id` (isolation flips on in B2). Domain `FinanceAccount` + `IFinanceAccountsRepository` + list/upsert use cases + Supabase adapter + tests. *(Migration `0204`.)*
 
 ### FR-BO-101 — Fiscal periods & locking ⏳
 `finance_fiscal_periods`; closing a period locks its entries from edit (audit-logged override for super_admin/org_admin).

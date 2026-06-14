@@ -37,8 +37,8 @@ const FILE_SIZE_ALLOWLIST = new Map([
   // UniversalSearch test suite split into UniversalSearchUseCase.test.ts (152 LOC)
   // + UniversalSearchUseCase.limitsAndFilters.test.ts (178 LOC) in PR #207; both
   // under cap, allowlist entry removed.
-  // application index barrel grew by 1 line (301) after FR-KARMA port exports. TD-29.
-  ['packages/application/src/index.ts', { td: 'TD-29', max: 305 }],
+  // application/src/index.ts: TD-29 closed — admin exports collapsed into an
+  // admin/index.ts barrel (+ org/index.ts), back under the 300 cap.
 ]);
 
 const LAYER_RULES = [
