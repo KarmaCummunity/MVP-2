@@ -133,6 +133,7 @@
 | INFRA-CI-SPLIT-GUARDS | Split CI into `ci-frontend` / `ci-backend` / `ci-contract` / `ci-pr` workflows with path filters; add migration-chain guard, RLS lint, RPC contract, `database.types.ts` drift, manifest parity, local-stack sqlProbes | infra | ✅ Done | `docs/superpowers/plans/2026-05-22-ci-split-and-backend-guards.md` |
 | INFRA-DEV-CI-HARDENING | Dev branch CI parity: `ci-dev-guard` migration safety on `dev` PRs; `db-deploy` dry-run before apply on `supabase-dev` and `supabase-prod`; document dev branch-protection required checks | infra | ✅ Done | `docs/superpowers/plans/2026-05-28-dev-branch-ci-hardening.md`; `D-54` |
 | INFRA-QA-W0 | Testing policy (`TESTING.md`), `D-55`, E2E secrets/vars docs, `ensure-e2e-user.mjs` | infra | ✅ Done | `docs/SSOT/TESTING.md`, `D-55` |
+| INFRA-QA-W0.5 | Agent test users — two realistic dummy users (Alpha=moderator, Beta=regular) for multi-user and admin flow testing; `create-agent-test-users.mjs` + `ensure-agent-test-users.mjs`; `TESTING.md` agent-users section | infra | ✅ Done | `docs/SSOT/TESTING.md` §Agent test users |
 | INFRA-QA-W1 | Playwright P0 E2E gate on `dev` → `main` (`ci-e2e-dev.yml`, `tests/e2e/`) | infra | 🟡 In progress | `docs/superpowers/plans/2026-05-28-comprehensive-quality-automation.md` Wave 1 |
 | INFRA-QA-W2 | E2E domain expansion (posts, chat send, donations, research) | infra | ⏳ Planned | Wave 2 |
 | INFRA-QA-W3 | RLS persona integration suite | infra | ⏳ Planned | Wave 3 |
