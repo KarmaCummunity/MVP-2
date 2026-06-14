@@ -1122,10 +1122,57 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-60 — Multi-tenancy via shared database + RLS keyed on `org_id` (2026-06-14)
+
+**Date.** 2026-06-14
+
+**Decision.** The "Nonprofit OS" multi-tenant portal isolates organizations in a **single shared Postgres** (one Supabase project per environment) using Row-Level Security keyed on an `org_id` column present on every tenant table. The active tenant rides in the JWT as a custom claim (`app_metadata.org_id`) set by a Supabase Auth Hook from the user's `org_memberships`; RLS reads it via a stable `public.current_org_id()` helper. `org_id` is server-set (DEFAULT `current_org_id()` + RPC enforcement), never trusted from the client. Platform super-admins bypass tenant scoping only through an explicit `has_admin_role(auth.uid(),'super_admin')` clause inside each isolation policy. The `organizations` table becomes the root; `admin_role_grants.scope_org_id` gains its FK to it. Existing single-tenant data backfills to one default org (the operator's own NGO) in a two-step nullable→`NOT NULL` migration to stay backward-compatible with the `main` release guard (`D-53`).
+
+**Rationale.** Matches the existing Supabase architecture and the single-codebase autonomous loop (`§13`): one migration timeline, one deploy, RLS is Supabase's intended isolation primitive. Cheapest path to a sellable product. The org-scoped RBAC seeds (`scope_org_id`, `can_grant_role()` authority matrix) already assume this shape.
+
+**Alternatives rejected.** Project/DB per tenant — strongest isolation but multiplies migrations, ops, cost, and provisioning latency; reconsider only for a future enterprise tier (documented escape hatch). Schema per tenant — search-path/connection complexity and painful migrations at scale.
+
+**Accepted risk & mitigation.** An RLS bug could leak cross-tenant data — the highest-severity risk class. Mitigated by default-deny on every tenant table, writes via `SECURITY DEFINER` RPC only, a CI guard that fails any new tenant table shipped without `org_id NOT NULL` + isolation policy, and a per-module cross-tenant probe in the RLS CI job.
+
+**Affected docs.** `docs/superpowers/specs/2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`; `docs/SSOT/spec/18_organizations.md` (FR-ORG-*); `docs/SSOT/spec/12_super_admin.md` (RBAC scope FK).
+
+---
+
+## D-61 — Other NGOs onboard as paid SaaS subscribers (2026-06-14)
+
+**Date.** 2026-06-14
+
+**Decision.** The portal is offered to other organizations as a **paid SaaS subscription** (per-org plan), not a free white-label. Billing is modeled with `plans` / `subscriptions` / platform `invoices` tables (the latter distinct from `supplier_invoices`, which are what an org pays its own vendors). `subscriptions.status` (trialing/active/past_due/canceled) gates `organizations.status` and drives a soft "subscription expired" lock in `AdminGate`. Provider integration is an Edge Function + webhook. The payment provider (Stripe vs an Israeli PSP supporting ILS + VAT invoicing) is a **PM/ops decision** that gates the billing slice (B4); the data model and gating land first, provider-agnostic.
+
+**Rationale.** Sustainable funding for the platform; aligns build effort with revenue. Decoupling the provider keeps the billing data model shippable before the commercial/legal provider choice is finalized.
+
+**Alternatives rejected.** Free white-label — no funding path, and "free forever" infrastructure for arbitrary tenants is an open-ended cost. Charging later with no billing model — would require retrofitting subscription gating across an already-multi-tenant surface.
+
+**Open dependency (PM).** Choose payment provider (Stripe vs Israeli PSP); confirm VAT-invoice obligations for charging Israeli NGOs.
+
+**Affected docs.** `docs/superpowers/specs/2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`; `docs/SSOT/spec/18_organizations.md` (FR-ORG-* billing).
+
+---
+
+## D-62 — Nonprofit OS scope: two parallel tracks (back-office depth + multi-tenancy) (2026-06-14)
+
+**Date.** 2026-06-14
+
+**Decision.** The admin portal grows into a full "Nonprofit OS" along **two parallel tracks** that converge: **Track A (Back-Office Depth)** turns today's thin modules (`/money`, `/crm`, `/time`) into a real back-office — deeper Finance (chart of accounts, budgets, P&L/cash-flow reports, §46A tax receipts), Donors+Donations, Suppliers+Accounts-Payable, and Employees+Payroll (HR); **Track B (Multi-Tenancy Platform)** delivers the `organizations` root, provisioning, `org_id`+RLS isolation rollout, white-label branding, SaaS billing, and a super-admin platform console. v1 back-office scope is all four module families. Track A tables are **born with `org_id`** so Track B's isolation flips them on with no rewrite. BE lane leads Track B foundation (`supabase/**`, `infrastructure-supabase/**`); FE lane leads Track A surface (`apps/mobile/**`, `ui/**`); they sync on contract changes per `§9`.
+
+**Rationale.** Track A delivers immediate value to the operator's own NGO (single default org) while Track B makes the product sellable; running both in parallel reaches the full vision fastest without a costly second migration. PM chose parallel sequencing on 2026-06-14.
+
+**Alternatives rejected.** Depth-first then tenancy — delays revenue and risks rebuilding modules for isolation. Tenancy-first then depth — ships an empty multi-tenant shell with nothing to sell.
+
+**Affected docs.** `docs/superpowers/specs/2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`; `docs/SSOT/spec/17_back_office.md` (FR-BO-*); `docs/SSOT/spec/18_organizations.md` (FR-ORG-*); `docs/SSOT/BACKLOG.md` (P3 — Nonprofit OS); `docs/SSOT/TECH_DEBT.md` (back-office doc-drift).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.2 | 2026-06-14 | Added `D-60` (multi-tenancy via shared DB + RLS on `org_id`, JWT claim tenant context), `D-61` (other NGOs onboard as paid SaaS subscribers; billing data model provider-agnostic), `D-62` (Nonprofit OS = two parallel tracks: back-office depth + multi-tenancy). Design: `2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`. |
 | 4.1 | 2026-06-08 | Added `D-155` (karma economy: self-only at MVP, single-anchor awards, status-anchored closure, own-row Realtime). Added `D-156` (anti-collusion caps as hard precondition for karma public flip; `FR-KARMA-008`). |
 | 4.0 | 2026-06-04 | Added `D-58` (native Sign in with Apple via `signInWithIdToken` + raw nonce; `FR-AUTH-004` implemented; mirrors `D-33`; Apple portion of `TD-24` closed in code; live flow pends Supabase Apple provider config). |
 | 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |

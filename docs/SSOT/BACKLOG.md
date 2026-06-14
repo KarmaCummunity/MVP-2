@@ -121,6 +121,33 @@
 | P3.A4 | **Admin Portal A4 — Content & Users management.** `/admin/users` and `/admin/posts` server-paginated search via `admin_search_users` / `admin_search_posts` RPCs (closes TD-93 at UX layer); `/admin/audit` viewer with role-tiered visibility replaces FR-ADMIN-007 Settings sub-page. | ✅ Done | `spec/12_super_admin.md` FR-ADMIN-019/020; migration `0149_admin_content_search.sql` |
 | P3.A-Redesign | **Admin Portal — mobile-web responsive redesign.** Brings FR-ADMIN-011 AC1 into compliance: `(admin)/_layout` now picks the nav variant by viewport width (`useBreakpoint`) instead of `Platform.OS`, so narrow browsers (mobile-web) get a horizontal pill bar instead of the desktop rail squeezing content. `AdminNav` rebuilt with two variants (branded `sidebar` ≥ 768px / scrollable `topbar` pills), Ionicons per entry, RBAC-filtered items, and brand mark. Dashboard redesigned with a welcome hero (role badges) + responsive stat/quick-link card grid with iconography and semantic accent colours. New shared `AdminScreenHeader` unifies title typography across reports / tasks / admins / users / posts / audit. All styling via `@kc/ui` tokens (`makeUseStyles`, `shadow`, `rowDirectionStart`/`textAlignStart` RTL helpers). | ✅ Done | `spec/12_super_admin.md` FR-ADMIN-011 (AC1); `spec/14_responsive_desktop.md` |
 
+## P3 — Nonprofit OS (Back-Office Depth + Multi-Tenancy)
+
+> Vision: run the entire NGO from the portal (finance/donors/suppliers/HR) and sell it to other NGOs as a paid multi-tenant SaaS. Two parallel tracks (`D-62`). Design: `docs/superpowers/specs/2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`. Decisions: `D-60` (shared-DB + RLS tenancy), `D-61` (paid SaaS), `D-62` (dual-track).
+
+### Track B — Multi-Tenancy Platform (`spec/18_organizations.md`)
+
+| ID | Task | Status | Spec |
+|----|------|--------|------|
+| P3.B0 | **Tenant root (additive).** `organizations` + `org_memberships` + `org_settings` + `org_branding`; FK from `admin_role_grants.scope_org_id`; backfill single default org; `current_org_id()` helper + `custom_access_token_hook`. No isolation enforced yet. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-001..004 |
+| P3.B1 | **Provisioning.** `org_applications` approval becomes transactional org creation + founder grant + seeds; org switcher in portal. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-010/011 |
+| P3.B2 | **Isolation rollout.** `org_id` + tenant-isolation RLS across tenant tables (back-office first, then community in batched backfill); CI guard + cross-tenant probes. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-020/021 |
+| P3.B3 | **White-label.** `org_branding` ThemeProvider over `@kc/ui`; subdomain routing. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-030/031 |
+| P3.B4 | **SaaS billing.** `plans`/`subscriptions`/platform `invoices`; subscription gating in `AdminGate`; provider webhook Edge Function (provider = PM dependency). | ⏳ Planned | `spec/18_organizations.md` FR-ORG-040..042; `DECISIONS.md` D-61 |
+| P3.B5 | **Platform console.** Super-admin `(platform)/orgs` tenant management + audited impersonation. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-050/051 |
+
+### Track A — Back-Office Depth (`spec/17_back_office.md`)
+
+| ID | Task | Status | Spec |
+|----|------|--------|------|
+| P3.A-OS0 | **Spec catch-up.** Retro-spec already-shipped `/money`, `/crm`, `/time`, `/org-approvals` into `17_back_office.md` (close doc-drift TD); docs-only, no behavior change. | ⏳ Planned | `spec/17_back_office.md` FR-BO-001/010/020; `TECH_DEBT.md` |
+| P3.A-OS1 | **Finance core.** Chart of accounts, fiscal periods + locking, P&L / cash-flow / donation-summary report RPCs + export. | ⏳ Planned | `spec/17_back_office.md` FR-BO-100..102 |
+| P3.A-OS2 | **Budgets.** `finance_budgets` + lines; budget-vs-actual report; dashboard cash-position/burn cards. | ⏳ Planned | `spec/17_back_office.md` FR-BO-110 |
+| P3.A-OS3 | **Donors & donations.** `donors`/`donations`/`recurring_donations`; CRM linkage; ledger posting. | ⏳ Planned | `spec/17_back_office.md` FR-BO-120/121 |
+| P3.A-OS4 | **Tax receipts.** §46A gapless receipt numbering per org+year; PDF; void/reissue (legal validity = PM precondition). | ⏳ Planned | `spec/17_back_office.md` FR-BO-130 |
+| P3.A-OS5 | **Suppliers & AP.** `suppliers`/`purchase_orders`/`supplier_invoices`/`supplier_payments`; payment→ledger; AP-aging. | ⏳ Planned | `spec/17_back_office.md` FR-BO-140..142 |
+| P3.A-OS6 | **HR & payroll.** `employees`/contracts; `timesheet_entries.employee_id`; `payroll_runs`/`payslips` (statutory deduction compute = PM scope); leave management. | ⏳ Planned | `spec/17_back_office.md` FR-BO-150..152 |
+
 ## INFRA — Tooling & Environment
 
 | ID | Task | Owner | Status | Spec |
