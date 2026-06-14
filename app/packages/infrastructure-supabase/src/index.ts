@@ -29,6 +29,7 @@ export * from './admin/SupabaseTimesheetsRepository';
 export * from './admin/SupabaseFinanceLedgerRepository';
 export * from './admin/SupabaseCrmContactsRepository';
 export * from './admin/SupabaseOrgApplicationsRepository';
+export * from './org/SupabaseOrganizationRepository';
 export * from './reports/SupabaseReportsRepository';
 export { SupabaseRideListingRepository } from './rides/SupabaseRideListingRepository';
 export { SupabaseRideParticipantRepository } from './rides/SupabaseRideParticipantRepository';

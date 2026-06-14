@@ -192,6 +192,10 @@ export * from './admin/IOrgApplicationsRepository';
 export * from './admin/ListOrgApplicationsUseCase';
 export * from './admin/DecideOrgApplicationUseCase';
 
+// Nonprofit OS — multi-tenancy root (FR-ORG-*)
+export * from './org/IOrganizationRepository';
+export * from './org/GetMyOrganizationsUseCase';
+
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
 export * from './reports/ListOpenReportsUseCase';

@@ -129,7 +129,7 @@
 
 | ID | Task | Status | Spec |
 |----|------|--------|------|
-| P3.B0 | **Tenant root (additive).** `organizations` + `org_memberships` + `org_settings` + `org_branding`; FK from `admin_role_grants.scope_org_id`; backfill single default org; `current_org_id()` helper + `custom_access_token_hook`. No isolation enforced yet. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-001..004 |
+| P3.B0 | **Tenant root (additive).** `organizations` + `org_memberships` + `org_settings` + `org_branding`; FK from `admin_role_grants.scope_org_id`; backfill single default org; `current_org_id()` helper + `get_my_organizations()` RPC; domain `Organization` + `IOrganizationRepository` + `GetMyOrganizationsUseCase` + Supabase adapter + tests; wired into composition root. Migration `0194`. No isolation enforced yet. **Remaining:** enable `custom_access_token_hook` in Supabase Auth (ops). | 🟡 In progress | `spec/18_organizations.md` FR-ORG-001..004 |
 | P3.B1 | **Provisioning.** `org_applications` approval becomes transactional org creation + founder grant + seeds; org switcher in portal. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-010/011 |
 | P3.B2 | **Isolation rollout.** `org_id` + tenant-isolation RLS across tenant tables (back-office first, then community in batched backfill); CI guard + cross-tenant probes. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-020/021 |
 | P3.B3 | **White-label.** `org_branding` ThemeProvider over `@kc/ui`; subdomain routing. | ⏳ Planned | `spec/18_organizations.md` FR-ORG-030/031 |

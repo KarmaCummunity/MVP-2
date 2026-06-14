@@ -11,17 +11,19 @@ This domain makes every organization a tenant. Isolation is shared-database + RL
 
 ## B0 — Tenant root (additive, no isolation enforced yet)
 
-### FR-ORG-001 — Organizations table ⏳
-`organizations` (`id`, `slug` unique, `legal_name`, `display_name`, `registry_number`, `status` active/suspended/trial, `plan_id`). `admin_role_grants.scope_org_id` gains its FK to it. Backfill a single **default org** for existing data.
+**Status:** 🟡 In progress — migration `0194` + data layer shipped; Auth Hook config pending (ops).
 
-### FR-ORG-002 — Memberships & default org ⏳
-`org_memberships(user_id, org_id, is_default)` (a user may belong to >1 org). Drives the portal org switcher.
+### FR-ORG-001 — Organizations table 🟡
+`organizations` (`id`, `slug` unique, `legal_name`, `display_name`, `registry_number`, `status` active/suspended/trial, `plan_id`). `admin_role_grants.scope_org_id` gains its FK to it. Backfill a single **default org** for existing data. *(Migration `0194`.)*
 
-### FR-ORG-003 — Per-org settings & branding tables ⏳
-`org_settings` (currency, locale, fiscal-year start, feature flags) + `org_branding` (logo, colors, custom domain, email-from). Seeded with defaults.
+### FR-ORG-002 — Memberships & default org 🟡
+`org_memberships(user_id, org_id, is_default)` (a user may belong to >1 org); at-most-one-default-per-user partial unique index. Drives the portal org switcher (B1). Read model via `get_my_organizations()` RPC → `IOrganizationRepository.listMine()`. *(Migration `0194`.)*
 
-### FR-ORG-004 — Tenant context helper & Auth Hook ⏳
-`public.current_org_id()` reads `app_metadata.org_id` from the JWT; a `custom_access_token_hook` sets it from the user's default/active membership. Switching org re-issues the token.
+### FR-ORG-003 — Per-org settings & branding tables 🟡
+`org_settings` (currency `ILS`, locale `he`, fiscal-year start, feature flags) + `org_branding` (logo, colors, custom domain, email-from). Seeded with defaults for the default org. *(Migration `0194`.)*
+
+### FR-ORG-004 — Tenant context helper & Auth Hook 🟡
+`public.current_org_id()` reads `app_metadata.org_id` from the JWT (shipped, returns NULL until the hook is live). **Remaining:** enable a `custom_access_token_hook` in Supabase Auth that sets the claim from the user's default/active membership; switching org re-issues the token. No isolation policy depends on the claim until B2.
 
 ---
 

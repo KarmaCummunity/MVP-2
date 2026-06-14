@@ -17,6 +17,7 @@ import {
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
   SupabaseOrgApplicationsRepository,
+  SupabaseOrganizationRepository,
   SupabaseAdminContentRepository,
   SupabaseTimesheetsRepository,
   SupabaseFinanceLedgerRepository,
@@ -67,6 +68,7 @@ import {
   DeleteAdminTaskUseCase,
   ListOrgApplicationsUseCase,
   DecideOrgApplicationUseCase,
+  GetMyOrganizationsUseCase,
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
@@ -128,6 +130,7 @@ const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
 const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
 const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
+const organizationRepo = new SupabaseOrganizationRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -185,6 +188,8 @@ export const container = {
   // V2-ADMIN-ORG-7
   listOrgApplications: new ListOrgApplicationsUseCase(orgApplicationsRepo),
   decideOrgApplication: new DecideOrgApplicationUseCase(orgApplicationsRepo),
+  // Nonprofit OS — multi-tenancy root (FR-ORG-002/004)
+  getMyOrganizations: new GetMyOrganizationsUseCase(organizationRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

@@ -18,6 +18,7 @@ export * from './postActorIdentity';
 export * from './aboutTeam';
 export * from './legal';
 export * from './admin';
+export * from './org';
 export * from './reports';
 export * from './rides/RideMode';
 export * from './rides/RideStatus';

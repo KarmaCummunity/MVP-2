@@ -1150,6 +1150,8 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 **Open dependency (PM).** Choose payment provider (Stripe vs Israeli PSP); confirm VAT-invoice obligations for charging Israeli NGOs.
 
+**Resolution (2026-06-14).** Provider = **Stripe**, behind a modular `IPaymentProvider` port from day one so an Israeli PSP can be added later without touching billing domain/application code. Current target market is Israel; international expansion later. VAT-invoice handling for Israeli NGOs remains an ops/legal follow-up.
+
 **Affected docs.** `docs/superpowers/specs/2026-06-14-nonprofit-os-back-office-and-multitenancy-design.md`; `docs/SSOT/spec/18_organizations.md` (FR-ORG-* billing).
 
 ---
