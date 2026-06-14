@@ -20,7 +20,7 @@ Six parallel static sub-agents (SQL/RLS, auth/authz, injection, secrets/CI/edge,
 | 1 | MEDIUM | ✅ verified | authz / privacy | Anon can read the entire follow graph (`follow_edges`) | fixed (0194) |
 | 2 | MEDIUM | ✅ verified | data exposure | Public storage buckets anon-listable (`post-images`) | deferred → TD-11 |
 | M1 | MEDIUM | ✅ verified | integrity | Chat participant can forge/rewrite counterpart's messages | fixed (0196) |
-| M2 | MEDIUM | ✅ verified | integrity | Post owner bypasses closure state-machine / mints karma | deferred (needs trigger) |
+| M2 | MEDIUM | ✅ verified | integrity | Post owner bypasses closure state-machine / mints karma | fixed (0199, TD-172) |
 | M3 | MEDIUM | ✅ verified | IDOR | `rpc_unread_counts_for_chats` trusts caller `p_viewer_id` | fixed (0197) |
 | 3 | MEDIUM | static | injection | CSV formula injection in moderation audit export | fixed (code) |
 | 4 | LOW | ✅ verified | db hygiene | `cron.job_run_details` unbounded (48.5k rows / 66 MB) | fixed (0195) |
@@ -61,10 +61,11 @@ Supabase's **default privileges grant `ALL` on every table to `anon` and `authen
 - **Impact:** in any chat I'm in, I can rewrite the other party's message text, forge timestamps, swap `sender_id`, or inject a fake `system_payload`.
 - **Fix (migration 0196):** `revoke update on public.messages` and re-grant `update (status)` only (restores 0004's intent). Body/sender/timestamps now immutable from the client.
 
-## Finding M2 — [MEDIUM] Post owner bypasses closure state-machine / mints karma — DEFERRED
+## Finding M2 — [MEDIUM] Post owner bypasses closure state-machine / mints karma — FIXED (migration 0199)
 
 - **Live:** `posts_update_self` (own row) + `authenticated` column-UPDATE on `status`/`reopen_count`/`delete_after`; no status-transition trigger. An owner can directly set `status='closed_delivered'` (the `karma_on_post_change` AFTER trigger then awards `closure_giver +20` / `closure_receiver +15`), or set `removed_admin`/`expired`, or rewrite `reopen_count`/`delete_after`.
-- **Why deferred:** the legitimate closure flow also writes `posts.status`/`delete_after` directly from the client (`closureMethods.ts:71`), so a blanket column revoke would break closure. Correct fix is a `BEFORE UPDATE` trigger enforcing the legal status-transition graph for client-originated updates (or moving all status writes behind SECURITY DEFINER RPCs). Tracked as new tech debt.
+- **Why it couldn't be a grant revoke:** the legitimate closure flow also writes `posts.status`/`delete_after` directly from the client (`closureMethods.ts:71`), so a blanket column revoke would break closure.
+- **Fix (migration 0199, TD-172):** a `BEFORE UPDATE` guard trigger `posts_guard_client_status_transition` (SECURITY INVOKER, so `current_user` is the real role) enforces the legal status-transition graph for client-originated updates and rejects `reopen_count` rewrites — the only client-direct transition left is `open → deleted_no_recipient`. Every other status writer runs as `postgres` and bypasses via `current_user not in ('authenticated','anon')`: the admin/unmark/report/expiry writers were already SECURITY DEFINER, and the three closure/reopen RPCs (`close_post_with_recipient`, `reopen_post_marked`, `reopen_post_deleted_no_recipient`) were converted INVOKER→DEFINER (taking the audit's "move status writes behind SECURITY DEFINER RPCs" path; each already asserts `auth.uid() = owner`). That conversion also fixes a latent bug: `reopen_count` is absent from 0070's narrow client grant, so the INVOKER reopen RPCs raised `permission denied` whenever the grant was correctly narrow (a fresh stack) — reopen only "worked" on the drifted dev/prod DBs. Regression test `supabase/tests/0199_posts_status_transition_guard.sql`. (The audit-PR scope below predates this follow-up.)
 
 ## Finding M3 — [MEDIUM] `rpc_unread_counts_for_chats` IDOR
 
