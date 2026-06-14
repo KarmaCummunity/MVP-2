@@ -3324,6 +3324,12 @@ export type Database = {
         Args: { p_task_id: string; p_user_id: string }
         Returns: boolean
       }
+      admin_survey_overview: { Args: never; Returns: Json }
+      admin_survey_results: { Args: { p_slug: string }; Returns: Json }
+      admin_user_feedback_list: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
       admin_task_list: {
         Args: {
           p_assignee?: string

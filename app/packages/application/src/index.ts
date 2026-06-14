@@ -294,6 +294,10 @@ export { CheckSurveyPromptUseCase } from './survey/CheckSurveyPromptUseCase';
 export type { CheckSurveyPromptInput } from './survey/CheckSurveyPromptUseCase';
 export { SubmitFreeFeedbackUseCase } from './survey/SubmitFreeFeedbackUseCase';
 export type { SubmitFreeFeedbackInput } from './survey/SubmitFreeFeedbackUseCase';
+export type { ISurveyAdminRepository } from './ports/ISurveyAdminRepository';
+export { GetAdminSurveyOverviewUseCase } from './survey/GetAdminSurveyOverviewUseCase';
+export { GetAdminSurveyResultsUseCase } from './survey/GetAdminSurveyResultsUseCase';
+export { ListUserFeedbackUseCase } from './survey/ListUserFeedbackUseCase';
 
 // Public research use cases (FR-RESEARCH-001..003)
 export type { IPublicResearchRepository } from './ports/IPublicResearchRepository';
