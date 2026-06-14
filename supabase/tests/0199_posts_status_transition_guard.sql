@@ -4,8 +4,8 @@
 -- A post owner used to be able to bypass the closure state-machine with a raw
 -- PostgREST UPDATE (mint closure karma via status='closed_delivered', fake
 -- removed_admin/expired, reset reopen_count). 0199 adds a BEFORE UPDATE guard
--- that rejects illegal CLIENT-direct transitions while letting the legitimate
--- closure/reopen RPCs (flagged) and all SECURITY DEFINER paths through.
+-- that rejects illegal CLIENT-direct transitions while letting the closure/reopen
+-- RPCs (now SECURITY DEFINER → run as postgres) and other privileged paths through.
 --
 -- Runs as the `authenticated` role (the harness is otherwise postgres, which
 -- bypasses RLS *and* this guard via current_user). Wrapped in a rolled-back
@@ -31,8 +31,9 @@ begin
    where user_id = p_id;
 end $$;
 
--- Assert a statement is rejected by the guard with the expected message.
-create or replace function pg_temp.expect_blocked(p_sql text, p_expect text)
+-- Assert a statement is rejected, by ANY of the accepted error substrings.
+-- (reopen_count has two valid blockers depending on grant state — see its call.)
+create or replace function pg_temp.expect_blocked(p_sql text, variadic p_expects text[])
 returns void language plpgsql as $$
 declare v_blocked boolean := false;
 begin
@@ -40,8 +41,8 @@ begin
     execute p_sql;
   exception when others then
     v_blocked := true;
-    if sqlerrm not like '%' || p_expect || '%' then
-      raise exception 'ASSERT FAILED: expected "%", got: %', p_expect, sqlerrm;
+    if not exists (select 1 from unnest(p_expects) e where sqlerrm like '%' || e || '%') then
+      raise exception 'ASSERT FAILED: expected one of %, got: %', p_expects, sqlerrm;
     end if;
   end;
   if not v_blocked then
@@ -85,18 +86,22 @@ select pg_temp.expect_blocked(
 select pg_temp.expect_blocked(
   $q$update public.posts set status='expired' where post_id='00000000-0000-0000-0000-0000000199c3'$q$,
   'posts_illegal_status_transition');   -- fake expiry
+-- reopen-ceiling reset. Blocked by the 0070 column grant ("permission denied")
+-- on a clean stack (CI), or by the 0199 guard ("posts_reopen_count_is_server_managed")
+-- on a DB where the broad default UPDATE grant has drifted back (live dev/prod).
 select pg_temp.expect_blocked(
   $q$update public.posts set reopen_count = reopen_count + 5 where post_id='00000000-0000-0000-0000-0000000199c3'$q$,
-  'posts_reopen_count_is_server_managed');  -- reopen-ceiling reset
+  'posts_reopen_count_is_server_managed', 'permission denied');
 
 -- ── ALLOWED: content edit leaves status untouched ──
 update public.posts set title = 'TD-172 edited' where post_id = '00000000-0000-0000-0000-0000000199c3';
 
--- ── ALLOWED: legitimate closure via RPC (open -> closed_delivered, flagged) ──
+-- ── ALLOWED: legitimate closure via SECURITY DEFINER RPC (open -> closed_delivered) ──
 select public.close_post_with_recipient(
   '00000000-0000-0000-0000-0000000199c3', '00000000-0000-0000-0000-0000000199b2');
 
--- ── ALLOWED: legitimate reopen via RPC (closed_delivered -> open, flagged) ──
+-- ── ALLOWED: reopen via SECURITY DEFINER RPC (closed_delivered -> open; bumps
+--    reopen_count, which clients cannot write directly) ──
 select public.reopen_post_marked('00000000-0000-0000-0000-0000000199c3');
 
 -- ── ALLOWED: legitimate client-direct close-without-recipient ──
@@ -109,11 +114,17 @@ select public.reopen_post_deleted_no_recipient('00000000-0000-0000-0000-00000001
 
 -- Final state sanity + summary.
 do $$
-declare v_status text;
+declare v_status text; v_reopen int;
 begin
-  select status into v_status from public.posts where post_id = '00000000-0000-0000-0000-0000000199c3';
+  select status, reopen_count into v_status, v_reopen
+    from public.posts where post_id = '00000000-0000-0000-0000-0000000199c3';
   if v_status <> 'open' then
     raise exception 'ASSERT FAILED: expected final status open, got %', v_status;
+  end if;
+  -- The two reopen RPCs each bumped reopen_count (server-managed), proving the
+  -- DEFINER RPCs can write it even under the narrow client grant.
+  if v_reopen <> 2 then
+    raise exception 'ASSERT FAILED: expected reopen_count 2, got %', v_reopen;
   end if;
   raise notice '✓ 0199: illegal client status/reopen_count writes blocked; closure/reopen RPCs + open->deleted_no_recipient allowed';
 end $$;
