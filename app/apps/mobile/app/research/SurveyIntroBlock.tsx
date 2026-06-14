@@ -87,12 +87,12 @@ export function SurveyIntroBlock(): React.JSX.Element {
 
 const useStyles = makeUseStyles(({ colors }) => ({
   introBlock: {
-    gap: spacing.xs,
-    padding: spacing.base,
-    borderRadius: 12,
+    gap: spacing.sm,
+    padding: spacing.lg,
+    borderRadius: 16,
     backgroundColor: colors.primarySurface,
     borderWidth: 1,
-    borderColor: colors.primary,
+    borderColor: colors.border,
   },
   introTopRow: {
     flexDirection: 'row',
@@ -101,7 +101,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
     gap: spacing.sm,
   },
   introHeading: {
-    ...typography.h3,
+    ...typography.h2,
     color: colors.textPrimary,
     textAlign: rtlTextAlignStart,
     ...webTextRtl,
@@ -109,6 +109,7 @@ const useStyles = makeUseStyles(({ colors }) => ({
   introLine: {
     ...typography.body,
     color: colors.textSecondary,
+    lineHeight: 23,
     textAlign: rtlTextAlignStart,
     ...webTextRtl,
   },
