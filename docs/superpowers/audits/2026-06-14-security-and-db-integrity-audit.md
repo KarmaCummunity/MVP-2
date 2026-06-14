@@ -24,7 +24,7 @@ Six parallel static sub-agents (SQL/RLS, auth/authz, injection, secrets/CI/edge,
 | M3 | MEDIUM | ✅ verified | IDOR | `rpc_unread_counts_for_chats` trusts caller `p_viewer_id` | fixed (0197) |
 | 3 | MEDIUM | static | injection | CSV formula injection in moderation audit export | fixed (code) |
 | 4 | LOW | ✅ verified | db hygiene | `cron.job_run_details` unbounded (48.5k rows / 66 MB) | fixed (0195) |
-| 5 | LOW | ✅ verified | hardening | Privileged SECURITY DEFINER funcs anon-`EXECUTE`-able (not exploitable) | backlog |
+| 5 | MEDIUM | ✅ verified | authz / integrity | 5 internal SECURITY DEFINER funcs client-callable & ungated (karma mint, system-msg forge, audit read) | fixed (0198) |
 | 6 | LOW | static | authz | App-layer permission checks unwired (`PERMISSION_MATRIX` dead) | backlog |
 | 7 | LOW | ✅ verified | data exposure | Web session in `localStorage`; leaked-password protection off | backlog |
 
@@ -83,7 +83,7 @@ Supabase's **default privileges grant `ALL` on every table to `anon` and `authen
 
 ## Findings 5–7 — [LOW] (backlog)
 
-- **5:** ~153 privileged SECURITY DEFINER functions are anon-`EXECUTE`-able, but **verified not exploitable** — bodies self-gate on `auth.uid()` (`delete_account_data()` takes no params and raises if uid null; verified live). Revoke anon/PUBLIC EXECUTE for hygiene (clears ~153 advisor warnings). The 24 `function_search_path_mutable` advisor hits are all `SECURITY DEFINER = false` (invoker) — low risk.
+- **5:** ~153 privileged SECURITY DEFINER functions are anon/authenticated-`EXECUTE`-able (Postgres grants function EXECUTE to PUBLIC by default). Most **self-gate on `auth.uid()`** and are not exploitable (`admin_*` assert `is_admin`; `delete_account_data()` raises if uid null — verified live). **However, a follow-up sweep found 5 internal helpers that do NOT self-gate and ARE exploitable — fixed in migration `0198`:** `karma_apply` / `karma_grant_once` (mint arbitrary karma for any user), `inject_system_message` (forge `system` messages into any chat), `admin_audit_lookup` (read any user's `audit_events`, bypassing the `_guarded` admin check), `find_or_create_support_chat` (create support threads for arbitrary users). They have no app caller (the client uses the guarded wrapper / support RPC; the karma + system-message ones are trigger-only), so revoking client EXECUTE is safe. Remaining hardening (revoke client EXECUTE on the ~12 cron/maintenance helpers; the 24 invoker `function_search_path_mutable` hits — low risk) is tracked in TD-173.
 - **6:** `PERMISSION_MATRIX`/`hasPermission` defined but unwired (`GrantAdminRoleUseCase`/`BanUserUseCase` don't call them). Not exploitable (RPC+RLS enforce), incomplete FR-ADMIN-006.
 - **7:** web session in `localStorage` (supabase-js default; no in-repo XSS sink); leaked-password protection (HIBP) disabled on Auth (one toggle).
 
