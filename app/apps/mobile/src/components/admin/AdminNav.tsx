@@ -28,6 +28,7 @@ const ITEMS: readonly NavItem[] = [
   { key: 'reports',   href: '/(admin)/reports', icon: 'flag-outline',             perm: null },
   { key: 'tasks',     href: '/(admin)/tasks',   icon: 'checkbox-outline',         perm: 'tasks.view' },
   { key: 'admins',    href: '/(admin)/admins',  icon: 'shield-checkmark-outline', perm: 'admins.view' },
+  { key: 'orgFormation', href: '/(admin)/org-formation', icon: 'business-outline', perm: 'org_formation.view' },
   { key: 'users',     href: '/(admin)/users',   icon: 'people-outline',           perm: 'users.search' },
   { key: 'posts',     href: '/(admin)/posts',   icon: 'document-text-outline',    perm: 'posts.search' },
   { key: 'audit',     href: '/(admin)/audit',   icon: 'time-outline',             perm: 'audit.view_own' },

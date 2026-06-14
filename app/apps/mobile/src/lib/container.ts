@@ -21,6 +21,7 @@ import {
   SupabaseTimesheetsRepository,
   SupabaseFinanceLedgerRepository,
   SupabaseCrmContactsRepository,
+  SupabaseOrgFormationRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
   SupabasePublicResearchRepository,
@@ -67,6 +68,13 @@ import {
   DeleteAdminTaskUseCase,
   ListOrgApplicationsUseCase,
   DecideOrgApplicationUseCase,
+  GetFormationJourneyUseCase,
+  ListFormationStepsUseCase,
+  ListGovernanceUseCase,
+  SetStepProgressUseCase,
+  UpdateStepContentUseCase,
+  AssignGovernanceMemberUseCase,
+  RemoveGovernanceMemberUseCase,
   AdminSearchUsersUseCase,
   AdminSearchPostsUseCase,
   AdminSearchAuditUseCase,
@@ -128,6 +136,7 @@ const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
 const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
 const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
+const orgFormationRepo = new SupabaseOrgFormationRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
@@ -185,6 +194,14 @@ export const container = {
   // V2-ADMIN-ORG-7
   listOrgApplications: new ListOrgApplicationsUseCase(orgApplicationsRepo),
   decideOrgApplication: new DecideOrgApplicationUseCase(orgApplicationsRepo),
+  // FR-ADMIN-021 — org formation journey
+  getFormationJourney: new GetFormationJourneyUseCase(orgFormationRepo),
+  listFormationSteps: new ListFormationStepsUseCase(orgFormationRepo),
+  listGovernance: new ListGovernanceUseCase(orgFormationRepo),
+  setStepProgress: new SetStepProgressUseCase(orgFormationRepo),
+  updateStepContent: new UpdateStepContentUseCase(orgFormationRepo),
+  assignGovernanceMember: new AssignGovernanceMemberUseCase(orgFormationRepo),
+  removeGovernanceMember: new RemoveGovernanceMemberUseCase(orgFormationRepo),
 
   // Notification preferences
   updateNotificationPreferences: new UpdateNotificationPreferencesUseCase(userRepo),

@@ -4,6 +4,8 @@ import { adminTimeHe } from './adminTime';
 import { adminMoneyHe } from './adminMoney';
 import { adminCrmHe } from './adminCrm';
 import { adminOrgApprovalsHe } from './adminOrgApprovals';
+import { adminOrgFormationHe } from './adminOrgFormation';
+import { adminRolesHe } from './adminRoles';
 
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
@@ -19,20 +21,10 @@ export const adminHe = {
     money:         'כספים',
     crm:           'CRM',
     orgApprovals:  'אישור ארגונים',
+    orgFormation:  'המסע לעמותה',
     audit:         'יומן פעולות',
   },
-  roles: {
-    super_admin: 'מנהל-על',
-    moderator: 'מנחה',
-    support: 'תמיכה',
-    operator: 'מוקדן',
-    operators_manager: 'מנהל מוקדנים',
-    org_admin: 'מנהל ארגון',
-    org_manager: 'מנהל בארגון',
-    org_employee: 'עובד עמותה',
-    volunteer_manager: 'מנהל מתנדבים',
-    org_volunteer: 'מתנדב בארגון',
-  },
+  roles: adminRolesHe,
   dashboard: {
     welcome: 'ברוך הבא לפורטל הניהול',
     rolesLabel: 'התפקידים שלך',
@@ -296,4 +288,5 @@ export const adminHe = {
   money: adminMoneyHe,
   crm: adminCrmHe,
   orgApprovals: adminOrgApprovalsHe,
+  orgFormation: adminOrgFormationHe,
 } as const;

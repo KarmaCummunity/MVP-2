@@ -25,6 +25,9 @@ export const ADMIN_PERMISSIONS = [
   'money.manage',
   'crm.manage',
   'org.review_applications',
+  'org_formation.view',
+  'org_formation.manage',
+  'org_formation.edit_content',
 ] as const;
 
 export type AdminPermission = (typeof ADMIN_PERMISSIONS)[number];
@@ -54,6 +57,11 @@ export const PERMISSION_MATRIX: Readonly<Record<AdminPermission, readonly AdminR
   'money.manage':               ['super_admin', 'moderator'],
   'crm.manage':                 ['super_admin', 'moderator'],
   'org.review_applications':    ['super_admin', 'moderator'],
+  // FR-ADMIN-021 — super_admin only for now; modular: widen the arrays to open
+  // the journey to more roles without code changes elsewhere.
+  'org_formation.view':         ['super_admin'],
+  'org_formation.manage':       ['super_admin'],
+  'org_formation.edit_content': ['super_admin'],
 };
 
 export function hasPermission(

@@ -3,6 +3,7 @@ export const KNOWN_ADMIN_ROLES = [
   'operator', 'operators_manager',
   'org_admin', 'org_manager', 'org_employee',
   'volunteer_manager', 'org_volunteer',
+  'org_board_member', 'org_audit_member',
 ] as const;
 
 export type AdminRole = (typeof KNOWN_ADMIN_ROLES)[number];

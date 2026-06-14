@@ -402,6 +402,74 @@ Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(ad
 
 ---
 
+## §15 Admin Portal — Org Formation Journey ("המסע לעמותה")
+
+A guided, country-pluggable workspace for establishing a non-profit: an editable
+step checklist with progress tracking + per-step tips, plus a governance roster
+(board / audit committee) whose members are wired to real org-scoped RBAC grants.
+Israel (`country_code='IL'`) ships seeded; other countries are added later as
+pure data (no schema change). Scope follows the deployment's organisation
+(per D-40 the portal is single-org today; cloning per-NGO is the V2 path) — one
+journey per country in this deployment.
+
+Migrations: `0194_org_formation_schema.sql` (tables, RLS, role-enum widen for
+`org_board_member` / `org_audit_member`, audit-action widen v7 → v8, IL seed) and
+`0195_org_formation_rpcs.sql` (7 SECURITY DEFINER RPCs). Mobile route:
+`(admin)/org-formation`. Permissions: `org_formation.view` / `.manage` /
+`.edit_content` (super_admin only for now; widen the `PERMISSION_MATRIX` arrays
+to open it up — no other code change needed).
+
+---
+
+## FR-ADMIN-021 — Org Formation Journey
+
+**Description.**
+A super-admin workspace that walks the team through the legal steps of founding a
+nonprofit and captures its governance, granting real platform roles as members
+are assigned.
+
+**Acceptance Criteria.**
+- AC1. `(admin)/org-formation` is a portal nav entry gated by `org_formation.view`
+  (super_admin only in this slice). Non-permitted sessions see a deny card.
+- AC2. The screen lists the active steps for the journey's `country_code` ordered
+  by `sort_order`, each rendered as a card with title (in-app i18n keyed by
+  `step_key`, `title_fallback` as backstop), editable body text, tips, and a
+  3-state progress toggle (`not_started` → `in_progress` → `done`). A progress
+  bar shows the done ratio.
+- AC3. Holders of `org_formation.edit_content` can edit a step's body + tips via
+  `org_formation_update_step_content` (audit-logged `org_formation_content_edit`).
+- AC4. A governance section lists the **board (ועד מנהל)** and **audit committee
+  (ועדת ביקורת)** rosters. Members are added by display-name lookup over active
+  users; assigning grants the org-scoped RBAC role (`org_board_member` /
+  `org_audit_member`, `scope_org_id = journey.org_id`) and records it in
+  `org_formation_governance`. Removing a member revokes the linked grant.
+- AC5. Hybrid validation surfaced in a prominent banner (what's required vs the
+  current state): **critical** rules block — ≥2 board members, ≥1 audit member,
+  and no person on both bodies (§30 חוק העמותות, enforced at assignment); they
+  prevent marking the `is_critical_gate` "institutions" step `done`
+  (`governance_incomplete` server-side). **Warning** rules never block (e.g.
+  recommend an odd-sized board, recommend an auditing body for larger budgets).
+- AC6. All writes go through SECURITY DEFINER RPCs gated by
+  `admin_assert_role(['super_admin'])`; tables are SELECT-only from the client.
+  Step progress, content edits, and member assign/remove emit `audit_events`.
+
+**Related.** Tables: `org_formation_journeys`, `org_formation_steps`,
+`org_formation_step_progress`, `org_formation_governance`. RPCs:
+`org_formation_get_journey / list_steps / list_governance / set_step_progress /
+update_step_content / assign_member / remove_member`. Domain:
+`FormationJourney`, `FormationStep`, `GovernanceAssignment`, `validateGovernance`,
+`OrgFormationError`; RBAC roles `org_board_member` / `org_audit_member`.
+Application: `IOrgFormationRepository` + `OrgFormationUseCases`. Infrastructure:
+`SupabaseOrgFormationRepository`. Mobile: `useOrgFormation`, `StepCard`,
+`GovernanceSection`, `AssignMemberModal`, `StepContentEditModal`,
+`ValidationBanner`, `(admin)/org-formation/index.tsx`.
+
+**Deferred (TECH_DEBT).** Connecting completion to the `org-approvals` flow;
+document generation (takanon draft, registrar forms); seeding non-IL countries;
+an `organizations` FK for `scope_org_id`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
@@ -412,3 +480,4 @@ Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(ad
 | 0.6 | 2026-05-28 | Added §12 Admin Portal — RBAC management (A2). FR-ADMIN-015 (admin list), FR-ADMIN-016 (grant/revoke), FR-ADMIN-017 (amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support"). Migration `0143_admin_rbac_management.sql` ships `admin_grant_role` + `admin_revoke_role` + `admin_list_admins` (all gated by `admin_assert_role`). |
 | 0.7 | 2026-05-28 | Added §13 Admin Portal — Internal Tasks tracker (A3). FR-ADMIN-018. Migrations `0144_admin_tasks.sql` (tables + RLS + audit-action widen v4 → v5 with `admin_task_create`/`admin_task_update`/`admin_task_delete`) and `0145_admin_task_rpcs.sql` (8 SECURITY DEFINER RPCs for create/update/set_status/assign/add_comment/delete/list/detail). New `notifications.task_assigned*` i18n keys + `task_assigned` NotificationKind + pushRouteAllowlist handler for `(admin)/tasks/[taskId]`. |
 | 0.8 | 2026-05-28 | Added §14 Admin Portal — Content & Users management (A4). FR-ADMIN-019 (user + post search) and FR-ADMIN-020 (RBAC-tiered audit viewer). Migration `0149_admin_content_search.sql` ships `admin_search_users` (closes TD-93 at the UX layer), `admin_search_posts`, and `admin_audit_search` (super_admin sees all; moderator sees own + handled-target; support sees own only). Status header flipped 🟡 → ✅. |
+| 0.9 | 2026-06-14 | Added §15 Admin Portal — Org Formation Journey ("המסע לעמותה"). FR-ADMIN-021: country-pluggable editable step checklist + progress + tips, board/audit governance roster wired to new org-scoped RBAC roles `org_board_member` / `org_audit_member`, hybrid critical/warning validation. Migrations `0194_org_formation_schema.sql` (+audit-action widen v7 → v8, IL seed) and `0195_org_formation_rpcs.sql` (7 RPCs). New `org_formation.*` permissions (super_admin only). |

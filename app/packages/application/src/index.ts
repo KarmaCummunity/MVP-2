@@ -192,6 +192,10 @@ export * from './admin/IOrgApplicationsRepository';
 export * from './admin/ListOrgApplicationsUseCase';
 export * from './admin/DecideOrgApplicationUseCase';
 
+// FR-ADMIN-021 — org formation journey
+export * from './org-formation/IOrgFormationRepository';
+export * from './org-formation/OrgFormationUseCases';
+
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
 export * from './reports/ListOpenReportsUseCase';
