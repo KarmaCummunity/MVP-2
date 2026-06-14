@@ -1,6 +1,6 @@
 # 2.12 Super Admin (in-chat moderation)
 
-> **Status:** ✅ Done — FR-ADMIN-001..020 shipped. **P3.A0 + P3.A1 + Pre-A2 Hardening + P3.A2 + P3.A3 + P3.A4 all merged to `dev` as of 2026-05-28** (PRs #384, #385, #387, #394, #426/#428, #439 + this PR). Admin Portal roadmap is complete. TD-93 closed at the UX layer via `admin_search_users` (banned/suspended users now searchable from the portal). The portal infrastructure is production-ready for moderator/support roles: `admin_role_grants` table with PRD V2-wide role enum + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates wired into every moderation RPC (`admin_remove_post`, `admin_dismiss_report`, `admin_confirm_report`, `admin_restore_target`, `admin_delete_message`); `(admin)` route group with `AdminGate` redirect + responsive `AdminNav` + 7 nav entries (Reports live; Tasks/Admins/Users/Posts/Audit as A2..A4 stubs); reports inbox + per-case detail with permission-gated actions consuming the `@kc/domain` `PERMISSION_MATRIX` SSOT; chat-flow coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag; auto-removal protected by 14-day freshness window; 7 legacy `useIsSuperAdmin` callsites migrated to `hasPermission()`. **Closed TDs:** TD-95 (single-super-admin DB invariant), TD-94 #2 / #4 / #5 / #6 (already-moderated error / cascade-dismiss / audit metadata parity / freshness window). **Open TDs in this domain:** TD-93 (admin search visibility — closes in P3.A4); TD-94 #1 now by design per D-41 (tickets ≠ reports); TD-94 #3 (`is_post_visible_to` admin bypass — closes in P3.A4). **Suspect-queue producers (FR-MOD-008)** and **90-day re-registration block (FR-ADMIN-003 AC3)** deferred to TECH_DEBT. **Next:** P3.A2 RBAC management (FR-ADMIN-015..017) — gives super_admin a UI to grant moderator/support roles without raw SQL. See `docs/superpowers/specs/2026-05-25-admin-portal-design.md` for A2..A4 design and `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md` for the original audit.
+> **Status:** ✅ Done — FR-ADMIN-001..021 shipped. **FR-ADMIN-021 (Survey results & feedback dashboard, A5) added 2026-06-14** — `/admin/surveys` exposes aggregate per-question statistics + per-user answers + the free-text feedback list, gated by the new `surveys.view` permission (super_admin / moderator). See §15 + migration `0194_admin_survey_results.sql`. **P3.A0 + P3.A1 + Pre-A2 Hardening + P3.A2 + P3.A3 + P3.A4 all merged to `dev` as of 2026-05-28** (PRs #384, #385, #387, #394, #426/#428, #439 + this PR). Admin Portal roadmap is complete. TD-93 closed at the UX layer via `admin_search_users` (banned/suspended users now searchable from the portal). The portal infrastructure is production-ready for moderator/support roles: `admin_role_grants` table with PRD V2-wide role enum + partial-unique single-super_admin index (closes TD-95); `has_admin_role` / `admin_assert_role` SQL predicates wired into every moderation RPC (`admin_remove_post`, `admin_dismiss_report`, `admin_confirm_report`, `admin_restore_target`, `admin_delete_message`); `(admin)` route group with `AdminGate` redirect + responsive `AdminNav` + 7 nav entries (Reports live; Tasks/Admins/Users/Posts/Audit as A2..A4 stubs); reports inbox + per-case detail with permission-gated actions consuming the `@kc/domain` `PERMISSION_MATRIX` SSOT; chat-flow coexistence behind `EXPO_PUBLIC_ADMIN_PORTAL_REPORTS` flag; auto-removal protected by 14-day freshness window; 7 legacy `useIsSuperAdmin` callsites migrated to `hasPermission()`. **Closed TDs:** TD-95 (single-super-admin DB invariant), TD-94 #2 / #4 / #5 / #6 (already-moderated error / cascade-dismiss / audit metadata parity / freshness window). **Open TDs in this domain:** TD-93 (admin search visibility — closes in P3.A4); TD-94 #1 now by design per D-41 (tickets ≠ reports); TD-94 #3 (`is_post_visible_to` admin bypass — closes in P3.A4). **Suspect-queue producers (FR-MOD-008)** and **90-day re-registration block (FR-ADMIN-003 AC3)** deferred to TECH_DEBT. **Next:** P3.A2 RBAC management (FR-ADMIN-015..017) — gives super_admin a UI to grant moderator/support roles without raw SQL. See `docs/superpowers/specs/2026-05-25-admin-portal-design.md` for A2..A4 design and `docs/SSOT/audit/2026-05-16/05_following_moderation_admin.md` for the original audit.
 
 
 
@@ -402,6 +402,31 @@ Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(ad
 
 ---
 
+## §15 Admin Portal — Survey results & feedback dashboard (A5)
+
+---
+
+## FR-ADMIN-021 — Survey results & free-feedback dashboard
+
+**Description.**
+`/admin/surveys` gives super_admin / moderator a read-only dashboard over the server-driven surveys (`FR-SETTINGS-015..017`) and the free-text feedback (`FR-SETTINGS-017`). It surfaces both aggregate statistics and the raw per-user answers so the team can read what users actually wrote, not just averages.
+
+**Source.**
+- Extends FR-ADMIN-008 (database-level statistics access) with a portal UI.
+- Consumes data produced by FR-SETTINGS-015..017.
+
+**Acceptance Criteria.**
+- AC1. The screen has two tabs: **Surveys** and **Free feedback**. Access is gated by the new `surveys.view` permission (`super_admin`, `moderator`).
+- AC2. The Surveys tab lists every published survey (`current_version > 0`) with respondent count, total responses, question count, and last-response date.
+- AC3. Selecting a survey shows per-question statistics for its current version: response count, average rating, and the 1–7 rating distribution (bar chart).
+- AC4. The same survey view lists every respondent with their per-question rating **and** free-text answer (or an explicit "no comment" marker), most-recent submission first.
+- AC5. The Free feedback tab lists `user_feedback` rows (optional 1–7 rating + body) with the submitter's display name and date, newest first, paginated.
+- AC6. All reads go through SECURITY DEFINER RPCs gated by `admin_assert_role(auth.uid(), ARRAY['super_admin','moderator'])`; no direct table reads bypass RLS for non-admins.
+
+**Related.** RPCs (migration `0194_admin_survey_results.sql`): `admin_survey_overview()`, `admin_survey_results(p_slug)`, `admin_user_feedback_list(p_limit, p_offset)`. Domain: `AdminSurveyOverviewItem`, `AdminSurveyResults`, `AdminSurveyQuestionStat`, `AdminSurveyRespondent`, `AdminFeedbackEntry`, `surveys.view` permission. Application: `ISurveyAdminRepository` + `GetAdminSurveyOverviewUseCase` / `GetAdminSurveyResultsUseCase` / `ListUserFeedbackUseCase`. Infra: `SupabaseSurveyAdminRepository`. Mobile: `useAdminSurveys`, `(admin)/surveys`, `SurveyOverviewCard` / `QuestionStatCard` / `RespondentCard` / `FeedbackCard` / `SurveyResultsView`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
@@ -412,3 +437,4 @@ Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(ad
 | 0.6 | 2026-05-28 | Added §12 Admin Portal — RBAC management (A2). FR-ADMIN-015 (admin list), FR-ADMIN-016 (grant/revoke), FR-ADMIN-017 (amends FR-ADMIN-006 AC2 to "at most one active super_admin; any number of moderator/support"). Migration `0143_admin_rbac_management.sql` ships `admin_grant_role` + `admin_revoke_role` + `admin_list_admins` (all gated by `admin_assert_role`). |
 | 0.7 | 2026-05-28 | Added §13 Admin Portal — Internal Tasks tracker (A3). FR-ADMIN-018. Migrations `0144_admin_tasks.sql` (tables + RLS + audit-action widen v4 → v5 with `admin_task_create`/`admin_task_update`/`admin_task_delete`) and `0145_admin_task_rpcs.sql` (8 SECURITY DEFINER RPCs for create/update/set_status/assign/add_comment/delete/list/detail). New `notifications.task_assigned*` i18n keys + `task_assigned` NotificationKind + pushRouteAllowlist handler for `(admin)/tasks/[taskId]`. |
 | 0.8 | 2026-05-28 | Added §14 Admin Portal — Content & Users management (A4). FR-ADMIN-019 (user + post search) and FR-ADMIN-020 (RBAC-tiered audit viewer). Migration `0149_admin_content_search.sql` ships `admin_search_users` (closes TD-93 at the UX layer), `admin_search_posts`, and `admin_audit_search` (super_admin sees all; moderator sees own + handled-target; support sees own only). Status header flipped 🟡 → ✅. |
+| 0.9 | 2026-06-14 | Added §15 Admin Portal — Survey results & feedback dashboard (A5). FR-ADMIN-021 (`/admin/surveys`): aggregate per-question stats + per-user answers + free-feedback list, gated by new `surveys.view` permission. Migration `0194_admin_survey_results.sql` ships `admin_survey_overview` / `admin_survey_results` / `admin_user_feedback_list` (all SECURITY DEFINER + `admin_assert_role` super_admin\|moderator). Also redesigned the `(admin)/tasks` filter bar (chips no longer wrap vertically; centered max-width layout). |

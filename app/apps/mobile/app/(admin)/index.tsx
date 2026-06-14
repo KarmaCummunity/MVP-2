@@ -56,6 +56,7 @@ export default function AdminDashboard(): ReactElement {
   const canViewAdmins = hasPermission(roles, 'admins.view');
   const canSearchUsers = hasPermission(roles, 'users.search');
   const canSearchPosts = hasPermission(roles, 'posts.search');
+  const canViewSurveys = hasPermission(roles, 'surveys.view');
   const canViewAudit = hasPermission(roles, 'audit.view_own');
 
   const adminsQuery = useAdminsList(false, !rolesLoading && canViewAdmins);
@@ -87,6 +88,7 @@ export default function AdminDashboard(): ReactElement {
   if (canViewAdmins) cards.push({ key: 'admins', label: t.adminsKpi, value: adminsLabel, icon: 'shield-checkmark-outline', accent: colors.secondary, accentBg: colors.secondaryLight, href: '/(admin)/admins' });
   if (canSearchUsers) cards.push({ key: 'users', label: t.usersKpi, value: usersLabel, icon: 'people-outline', accent: colors.success, accentBg: colors.successLight, href: '/(admin)/users' });
   if (canSearchPosts) cards.push({ key: 'posts', label: t.postsKpi, value: postsLabel, icon: 'document-text-outline', accent: colors.primary, accentBg: colors.primaryLight, href: '/(admin)/posts' });
+  if (canViewSurveys) cards.push({ key: 'surveys', label: t.surveysKpi, value: t.auditOpenLabel, icon: 'bar-chart-outline', accent: colors.secondary, accentBg: colors.secondaryLight, href: '/(admin)/surveys' });
   if (canViewAudit) cards.push({ key: 'audit', label: t.auditKpi, value: t.auditOpenLabel, icon: 'time-outline', accent: colors.warning, accentBg: colors.warningLight, href: '/(admin)/audit' });
 
   const goTo = (path: string): void => router.push(path as never);

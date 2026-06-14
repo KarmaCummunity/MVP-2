@@ -29,22 +29,24 @@ if (!alphaPassword) fail('Set AGENT_ALPHA_PASSWORD or AGENT_TEST_PASSWORD');
 if (!betaPassword) fail('Set AGENT_BETA_PASSWORD or AGENT_TEST_PASSWORD');
 
 // ── User definitions ────────────────────────────────────────────────────────
-// Display names, cities, bios are realistic Israeli profiles so the users
-// "look real" in screenshots, admin queues, and inter-user flows.
+// Realistic test profiles. Names/cities/bios are kept in Latin script so this
+// script stays free of inline Hebrew (enforced by the Hebrew source scan — UI
+// copy belongs in locale bundles, not source). They still read as plausible
+// Israeli personas in screenshots, admin queues, and inter-user flows.
 const AGENT_USERS = [
   {
     key: 'alpha',
     email: 'agent-alpha@karma-community.test',
     password: alphaPassword,
     userMeta: {
-      full_name: 'דניאל לוי',
-      name: 'דניאל לוי',
+      full_name: 'Daniel Levi',
+      name: 'Daniel Levi',
     },
     profile: {
-      display_name: 'דניאל לוי',
+      display_name: 'Daniel Levi',
       city: 'tel-aviv',
-      city_name: 'תל אביב יפו',
-      biography: 'אוהב לעזור לשכנים. תורם פריטים שאינם בשימוש ומקשר אנשים שצריכים.',
+      city_name: 'Tel Aviv-Yafo',
+      biography: 'Loves helping neighbours. Donates unused items and connects people in need.',
       contact_phone: '050-1234567',
       onboarding_state: 'completed',
       account_status: 'active',
@@ -58,14 +60,14 @@ const AGENT_USERS = [
     email: 'agent-beta@karma-community.test',
     password: betaPassword,
     userMeta: {
-      full_name: 'מיכל כהן',
-      name: 'מיכל כהן',
+      full_name: 'Michal Cohen',
+      name: 'Michal Cohen',
     },
     profile: {
-      display_name: 'מיכל כהן',
+      display_name: 'Michal Cohen',
       city: 'jerusalem',
-      city_name: 'ירושלים',
-      biography: 'מאמינה בקהילה חזקה. מחפשת ונותנת פריטים יד שנייה.',
+      city_name: 'Jerusalem',
+      biography: 'Believes in a strong community. Seeks and gives second-hand items.',
       contact_phone: '052-9876543',
       onboarding_state: 'completed',
       account_status: 'active',
