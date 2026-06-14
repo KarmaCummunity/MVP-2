@@ -12,7 +12,19 @@ export interface AdminRowProps {
   readonly busy?: boolean;
 }
 
-function fmtLastSeen(d: Date | null): string {
+// The persisted React Query cache (queryPersist.ts) round-trips through
+// JSON.stringify, so on a warm-cache cold start an AdminGrant's `Date` fields
+// are rehydrated as ISO strings, not Date instances. Coerce defensively —
+// calling `.toLocaleDateString()` / `.getTime()` on a string throws and, since
+// it happens mid-render, crashes the whole portal via the root ErrorBoundary.
+function toDate(value: Date | string | number | null): Date | null {
+  if (value === null) return null;
+  const d = value instanceof Date ? value : new Date(value);
+  return Number.isNaN(d.getTime()) ? null : d;
+}
+
+function fmtLastSeen(value: Date | string | null): string {
+  const d = toDate(value);
   if (d === null) return he.admin.admins.row.neverSeen;
   const ms = Date.now() - d.getTime();
   if (ms < 60 * 60 * 1000) return he.admin.admins.row.seenMinutesAgo(Math.max(1, Math.floor(ms / 60_000)));
@@ -20,7 +32,9 @@ function fmtLastSeen(d: Date | null): string {
   return he.admin.admins.row.seenDaysAgo(Math.floor(ms / 86_400_000));
 }
 
-function fmtDate(d: Date): string {
+function fmtDate(value: Date | string | null): string {
+  const d = toDate(value);
+  if (d === null) return '';
   return d.toLocaleDateString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
