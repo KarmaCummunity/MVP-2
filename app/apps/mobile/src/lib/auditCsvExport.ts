@@ -25,7 +25,16 @@ const UTF8_BOM = '\ufeff';
 
 function escapeCsvField(value: unknown): string {
   if (value === null || value === undefined) return '';
-  const s = typeof value === 'string' ? value : JSON.stringify(value);
+  let s = typeof value === 'string' ? value : JSON.stringify(value);
+  // Spreadsheet formula-injection guard. Fields like actor/target display name
+  // and metadata are user-controlled; a value starting with = + - @ (or a tab /
+  // CR that shifts a value into the next cell) is interpreted as a formula by
+  // Excel / Google Sheets. Prefix such values with a single quote so the
+  // spreadsheet treats them as text, defusing =HYPERLINK()/=WEBSERVICE()/DDE
+  // payloads in an admin's exported audit log. Done BEFORE RFC-4180 quoting.
+  if (/^[=+\-@\t\r]/.test(s)) {
+    s = `'${s}`;
+  }
   // Quote whenever the value contains a delimiter, quote, or newline. Double
   // any embedded quotes per RFC 4180.
   if (/[",\r\n]/.test(s)) {
