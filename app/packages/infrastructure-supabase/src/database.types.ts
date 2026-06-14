@@ -3270,6 +3270,8 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_survey_overview: { Args: never; Returns: Json }
+      admin_survey_results: { Args: { p_slug: string }; Returns: Json }
       admin_task_add_comment: {
         Args: { p_body: string; p_task_id: string }
         Returns: string
@@ -3324,12 +3326,6 @@ export type Database = {
         Args: { p_task_id: string; p_user_id: string }
         Returns: boolean
       }
-      admin_survey_overview: { Args: never; Returns: Json }
-      admin_survey_results: { Args: { p_slug: string }; Returns: Json }
-      admin_user_feedback_list: {
-        Args: { p_limit?: number; p_offset?: number }
-        Returns: Json
-      }
       admin_task_list: {
         Args: {
           p_assignee?: string
@@ -3379,6 +3375,10 @@ export type Database = {
           p_title?: string
         }
         Returns: undefined
+      }
+      admin_user_feedback_list: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: Json
       }
       auth_check_account_gate: {
         Args: { p_user_id: string }
