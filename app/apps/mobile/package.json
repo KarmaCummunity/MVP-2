@@ -76,7 +76,7 @@
     "@testing-library/react": "^16.1.0",
     "@types/react": "~19.1.17",
     "jsdom": "^25.0.1",
-    "typescript": "^5.9.3",
+    "typescript": "^6.0.3",
     "vite": "^6.0.0",
     "vitest": "^4.1.8"
   }
