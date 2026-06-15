@@ -9,7 +9,8 @@ import {
   ModerationForbiddenError,
   InvalidRestoreStateError,
 } from '@kc/application';
-import type { AuditEvent } from '@kc/domain';
+import type { AdminRole, AuditEvent } from '@kc/domain';
+import { fetchMyAdminRoles } from '../admin/fetchMyAdminRoles';
 import type { Database } from '../database.types';
 
 /**
@@ -49,6 +50,10 @@ export class SupabaseModerationAdminRepository implements IModerationAdminReposi
     const { data, error } = await this.client.rpc('is_admin', { uid: userId });
     if (error) this.mapError(error, error);
     return data === true;
+  }
+
+  async getMyRoles(): Promise<readonly AdminRole[]> {
+    return fetchMyAdminRoles(this.client);
   }
 
   async restoreTarget(targetType: ModerationTargetType, targetId: string): Promise<void> {

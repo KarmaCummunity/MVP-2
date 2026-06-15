@@ -1,9 +1,12 @@
-import type { AuditEvent } from '@kc/domain';
+import type { AdminRole, AuditEvent } from '@kc/domain';
 
 export type ModerationTargetType = 'post' | 'user' | 'chat';
 export type BanReason = 'spam' | 'harassment' | 'policy_violation' | 'other';
 
 export interface IModerationAdminRepository {
+  /** The caller's own active admin roles — for defence-in-depth permission
+   *  checks against the @kc/domain PERMISSION_MATRIX (FR-ADMIN-006). */
+  getMyRoles(): Promise<readonly AdminRole[]>;
   restoreTarget(targetType: ModerationTargetType, targetId: string): Promise<void>;
   dismissReport(reportId: string): Promise<void>;
   confirmReport(reportId: string): Promise<void>;
