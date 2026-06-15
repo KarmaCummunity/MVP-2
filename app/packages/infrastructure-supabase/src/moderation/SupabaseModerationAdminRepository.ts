@@ -9,7 +9,8 @@ import {
   ModerationForbiddenError,
   InvalidRestoreStateError,
 } from '@kc/application';
-import type { AuditEvent } from '@kc/domain';
+import { parseAdminRole } from '@kc/domain';
+import type { AdminRole, AuditEvent } from '@kc/domain';
 import type { Database } from '../database.types';
 
 /**
@@ -49,6 +50,20 @@ export class SupabaseModerationAdminRepository implements IModerationAdminReposi
     const { data, error } = await this.client.rpc('is_admin', { uid: userId });
     if (error) this.mapError(error, error);
     return data === true;
+  }
+
+  async getMyRoles(): Promise<readonly AdminRole[]> {
+    // Mirrors SupabaseAdminRoleRepository.getMyRoles — the SECURITY DEFINER
+    // `get_my_admin_roles` RPC (0115) returns the caller's active RBAC roles.
+    const { data, error } = await this.client.rpc('get_my_admin_roles');
+    if (error) return [];
+    if (!Array.isArray(data)) return [];
+    const out: AdminRole[] = [];
+    for (const raw of data) {
+      const parsed = parseAdminRole(typeof raw === 'string' ? raw : null);
+      if (parsed !== null) out.push(parsed);
+    }
+    return out;
   }
 
   async restoreTarget(targetType: ModerationTargetType, targetId: string): Promise<void> {
