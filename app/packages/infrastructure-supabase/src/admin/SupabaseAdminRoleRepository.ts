@@ -8,6 +8,7 @@ import {
   type GrantableAdminRole,
   parseAdminRole,
 } from '@kc/domain';
+import { fetchMyAdminRoles } from './fetchMyAdminRoles';
 
 interface AdminGrantRow {
   grant_id: string;
@@ -68,15 +69,7 @@ export class SupabaseAdminRoleRepository implements IAdminRoleRepository {
   constructor(private readonly client: SupabaseClient) {}
 
   async getMyRoles(): Promise<readonly AdminRole[]> {
-    const { data, error } = await this.client.rpc('get_my_admin_roles');
-    if (error) return [];
-    if (!Array.isArray(data)) return [];
-    const out: AdminRole[] = [];
-    for (const raw of data) {
-      const parsed = parseAdminRole(typeof raw === 'string' ? raw : null);
-      if (parsed !== null) out.push(parsed);
-    }
-    return out;
+    return fetchMyAdminRoles(this.client);
   }
 
   async listAdmins(includeRevoked: boolean): Promise<readonly AdminGrant[]> {
