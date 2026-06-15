@@ -39,4 +39,5 @@ export { SupabaseRideRatingRepository } from './rides/SupabaseRideRatingReposito
 export { SupabaseDriverDeclarationRepository } from './rides/SupabaseDriverDeclarationRepository';
 export { SupabaseRidesRealtime } from './rides/SupabaseRidesRealtime';
 export { SupabaseSurveyRepository } from './survey/SupabaseSurveyRepository';
+export { SupabaseSurveyAdminRepository } from './survey/SupabaseSurveyAdminRepository';
 export { SupabasePublicResearchRepository } from './research/SupabasePublicResearchRepository';

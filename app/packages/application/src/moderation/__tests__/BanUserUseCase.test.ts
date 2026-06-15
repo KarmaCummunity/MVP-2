@@ -20,6 +20,18 @@ describe('BanUserUseCase', () => {
     ]);
   });
 
+  it('rejects a caller without super_admin (reports.permanent_ban) and does NOT call banUser', async () => {
+    const repo = new FakeModerationAdminRepository();
+    repo.myRoles = ['moderator']; // moderators cannot permanently ban
+    const uc = new BanUserUseCase(repo);
+
+    await expect(
+      uc.execute({ adminId: 'u_mod', targetUserId: 'u_target', reason: 'spam', note: '' }),
+    ).rejects.toMatchObject({ name: 'ModerationForbiddenError', code: 'forbidden' });
+
+    expect(repo.banCalls).toEqual([]);
+  });
+
   it('rejects self-ban with cannot_ban_self and does NOT call banUser', async () => {
     const repo = new FakeModerationAdminRepository();
     const uc = new BanUserUseCase(repo);
