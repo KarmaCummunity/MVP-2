@@ -23,6 +23,7 @@ import {
   SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
+  SupabaseSurveyAdminRepository,
   SupabasePublicResearchRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
@@ -91,6 +92,9 @@ import {
   SaveSurveyAnswersUseCase,
   CheckSurveyPromptUseCase,
   SubmitFreeFeedbackUseCase,
+  GetAdminSurveyOverviewUseCase,
+  GetAdminSurveyResultsUseCase,
+  ListUserFeedbackUseCase,
   LoadPublicResearchBundleUseCase,
   SubmitPublicResearchResponseUseCase,
 } from '@kc/application';
@@ -130,6 +134,7 @@ const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
+const surveyAdminRepo = new SupabaseSurveyAdminRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
@@ -233,6 +238,11 @@ export const container = {
   saveSurveyAnswers: new SaveSurveyAnswersUseCase(surveyRepo),
   checkSurveyPrompt: new CheckSurveyPromptUseCase(surveyRepo),
   submitFreeFeedback: new SubmitFreeFeedbackUseCase(surveyRepo),
+
+  // Admin survey dashboard (FR-ADMIN-021)
+  getAdminSurveyOverview: new GetAdminSurveyOverviewUseCase(surveyAdminRepo),
+  getAdminSurveyResults: new GetAdminSurveyResultsUseCase(surveyAdminRepo),
+  listUserFeedback: new ListUserFeedbackUseCase(surveyAdminRepo),
 
   // Public research — Survey B (FR-RESEARCH-001..003)
   publicResearchRepo,
