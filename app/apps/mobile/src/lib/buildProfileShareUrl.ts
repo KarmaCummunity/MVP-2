@@ -10,6 +10,9 @@ export function buildProfileShareUrl(handle: string, webBaseUrl: string): string
   if (!webBaseUrl || !webBaseUrl.trim()) {
     throw new Error('buildProfileShareUrl: webBaseUrl is required');
   }
-  const trimmed = webBaseUrl.replace(/\/+$/, '');
+  // Trim trailing slashes without a regex: `/\/+$/` trips Sonar's ReDoS rule
+  // (S5852) and `shareResearchSurvey.ts` already avoids it the same way.
+  let trimmed = webBaseUrl;
+  while (trimmed.endsWith('/')) trimmed = trimmed.slice(0, -1);
   return `${trimmed}/user/${encodeURIComponent(handle.trim())}`;
 }
