@@ -53,6 +53,7 @@ export type Database = {
           grant_id: string
           granted_at: string
           granted_by: string | null
+          manager_grant_id: string | null
           revoked_at: string | null
           revoked_by: string | null
           role: string
@@ -63,6 +64,7 @@ export type Database = {
           grant_id?: string
           granted_at?: string
           granted_by?: string | null
+          manager_grant_id?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           role: string
@@ -73,6 +75,7 @@ export type Database = {
           grant_id?: string
           granted_at?: string
           granted_by?: string | null
+          manager_grant_id?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           role?: string
@@ -95,6 +98,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "admin_role_grants_manager_grant_id_fkey"
+            columns: ["manager_grant_id"]
+            isOneToOne: false
+            referencedRelation: "admin_role_grants"
+            referencedColumns: ["grant_id"]
+          },
+          {
             foreignKeyName: "admin_role_grants_revoked_by_fkey"
             columns: ["revoked_by"]
             isOneToOne: false
@@ -107,6 +117,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users_public"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_scope_org_fk"
+            columns: ["scope_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "admin_role_grants_user_id_fkey"
@@ -1414,6 +1431,30 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
         ]
+      }
+      organizations: {
+        Row: {
+          created_at: string
+          is_platform: boolean
+          name: string
+          org_id: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          is_platform?: boolean
+          name: string
+          org_id?: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          is_platform?: boolean
+          name?: string
+          org_id?: string
+          slug?: string
+        }
+        Relationships: []
       }
       post_actor_identity: {
         Row: {
@@ -3226,6 +3267,22 @@ export type Database = {
         Args: { p_application_id: string; p_note?: string }
         Returns: undefined
       }
+      admin_org_tree: {
+        Args: { p_org_id?: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          effective_org_id: string
+          grant_id: string
+          is_platform: boolean
+          last_seen_at: string
+          manager_grant_id: string
+          org_name: string
+          role: string
+          scope_org_id: string
+          user_id: string
+        }[]
+      }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
         Args: { p_target_id: string; p_target_type: string }
@@ -3269,6 +3326,10 @@ export type Database = {
           total_count: number
           user_id: string
         }[]
+      }
+      admin_set_manager: {
+        Args: { p_grant_id: string; p_manager_grant_id?: string }
+        Returns: undefined
       }
       admin_survey_overview: { Args: never; Returns: Json }
       admin_survey_results: { Args: { p_slug: string }; Returns: Json }

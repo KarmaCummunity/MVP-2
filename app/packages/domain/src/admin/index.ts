@@ -3,6 +3,8 @@ export * from './AdminPermission';
 export * from './AdminGrant';
 export * from './AdminPerson';
 export * from './AdminRoleError';
+export * from './OrgTree';
+export * from './OrgHierarchyError';
 export * from './AdminTask';
 export * from './AdminTaskActivity';
 export * from './AdminTaskError';
