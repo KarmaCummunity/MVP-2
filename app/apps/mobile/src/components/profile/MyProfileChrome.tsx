@@ -30,6 +30,7 @@ import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
+import { useProfileShare } from '../../hooks/useProfileShare';
 import { KarmaBadge } from './KarmaBadge';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
 import { rowDirectionStart } from '../../lib/rtlLayout';
@@ -75,6 +76,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
   const displayName = user?.displayName?.trim() || fallbackName;
   const avatarUrl = user?.avatarUrl ?? null;
   const biography = user?.biography ?? null;
+  const profileShare = useProfileShare(user?.shareHandle, displayName);
 
   const goToTab = (next: ProfilePostsTab) => {
     if (next === activeTab) return;
@@ -134,7 +136,14 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
               <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
                 <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
               </TouchableOpacity>
-              <TouchableOpacity style={styles.shareBtn}>
+              <TouchableOpacity
+                style={styles.shareBtn}
+                onPress={profileShare.share}
+                disabled={!profileShare.canShare || profileShare.busy}
+                accessibilityRole="button"
+                accessibilityLabel={t('profile.shareProfile')}
+                accessibilityState={{ disabled: !profileShare.canShare || profileShare.busy }}
+              >
                 <Ionicons name="share-outline" size={18} color={colors.primary} />
               </TouchableOpacity>
             </View>
