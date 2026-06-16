@@ -16,8 +16,7 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
 import { TimesheetEntryCard } from '../../../src/components/admin/time/TimesheetEntryCard';
 import { TimesheetFormModal } from '../../../src/components/admin/time/TimesheetFormModal';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { AdminScreenGuard } from '../../../src/components/admin/AdminScreenGuard';
@@ -78,17 +77,18 @@ export default function TimeScreen() {
     <View style={styles.root}>
       <AdminScreenHeader title={t.title} newLabel={t.newBtn} onNew={() => setCreating(true)} />
 
-      <AdminFilterChipRow>
-        {(['mine', 'pending', 'all'] as readonly Tab[]).map((value) => (
-          <AdminFilterChip
-            key={value}
-            label={value === 'mine' ? t.myEntriesTab : value === 'pending' ? t.pendingTab : t.allTab}
-            active={tab === value}
-            onPress={() => setTab(value)}
-          />
-        ))}
-      </AdminFilterChipRow>
-      <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
+      <AdminListControls
+        filterGroups={[{
+          key: 'tab',
+          options: (['mine', 'pending', 'all'] as readonly Tab[]).map((value) => ({
+            key: value,
+            label: value === 'mine' ? t.myEntriesTab : value === 'pending' ? t.pendingTab : t.allTab,
+            active: tab === value,
+            onPress: () => setTab(value),
+          })),
+        }]}
+        totalLabel={t.totalCount(list.data?.totalCount ?? 0)}
+      />
 
       <FlatList
         data={[...(list.data?.rows ?? [])]}
@@ -144,5 +144,4 @@ export default function TimeScreen() {
 
 const useStyles = makeUseStyles(({ colors }) => ({
   root:        { flex: 1, backgroundColor: colors.background },
-  totalLabel:  { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
 }));

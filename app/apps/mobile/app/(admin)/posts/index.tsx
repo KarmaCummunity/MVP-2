@@ -1,16 +1,13 @@
 // app/apps/mobile/app/(admin)/posts/index.tsx
 // FR-ADMIN-019 — admin posts search screen.
 import { useMemo, useState } from 'react';
-import {
-  FlatList, RefreshControl, StyleSheet, Text, TextInput, View,
-} from 'react-native';
+import { FlatList, RefreshControl, Text, View } from 'react-native';
 import { type AdminPermission, type AdminRole, hasPermission } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminPostSearch } from '../../../src/hooks/useAdminContentSearch';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import { PostSearchRow } from '../../../src/components/admin/content/PostSearchRow';
 import he from '../../../src/i18n/locales/he';
 
@@ -47,25 +44,23 @@ export default function PostsScreen() {
   return (
     <View style={styles.root}>
       <AdminScreenHeader title={he.admin.content.postsTitle} />
-      <TextInput
-        style={styles.search}
-        value={query}
-        onChangeText={setQuery}
-        placeholder={he.admin.content.searchPostsPlaceholder}
-        autoCapitalize="none"
-        autoCorrect={false}
+      <AdminListControls
+        search={{
+          value: query,
+          onChangeText: setQuery,
+          placeholder: he.admin.content.searchPostsPlaceholder,
+        }}
+        filterGroups={[{
+          key: 'status',
+          options: STATUS_OPTIONS.map((s) => ({
+            key: s.key,
+            label: he.admin.content.postStatusFilter[s.key],
+            active: statusFilter === s.value,
+            onPress: () => setStatusFilter(s.value),
+          })),
+        }]}
+        totalLabel={he.admin.content.totalCount(result.page.totalCount)}
       />
-      <AdminFilterChipRow>
-        {STATUS_OPTIONS.map((s) => (
-          <AdminFilterChip
-            key={s.key}
-            label={he.admin.content.postStatusFilter[s.key]}
-            active={statusFilter === s.value}
-            onPress={() => setStatusFilter(s.value)}
-          />
-        ))}
-      </AdminFilterChipRow>
-      <Text style={styles.totalLabel}>{he.admin.content.totalCount(result.page.totalCount)}</Text>
       <FlatList
         data={[...result.page.rows]}
         keyExtractor={(p) => p.postId}
@@ -87,13 +82,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   root:        { flex: 1, backgroundColor: colors.background },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle: { fontSize: 18, fontWeight: '700' },
-  search: {
-    marginHorizontal: 16, marginBottom: 8, padding: 10,
-    borderRadius: 10, backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-    textAlign: 'right', fontSize: 14,
-  },
-  totalLabel:     { paddingHorizontal: 16, paddingBottom: 4, fontSize: 11, opacity: 0.6 },
-  empty:          { padding: 32, alignItems: 'center' },
-  emptyText:      { fontSize: 14, opacity: 0.6 },
+  empty:       { padding: 32, alignItems: 'center' },
+  emptyText:   { fontSize: 14, opacity: 0.6 },
 }));

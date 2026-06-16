@@ -18,8 +18,7 @@ import {
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import he from '../../../src/i18n/locales/he';
 
 type StatusFilter = OrgApplicationStatus | 'all';
@@ -87,17 +86,18 @@ export default function OrgApprovalsScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.title}>{t.title}</Text>
-      <AdminFilterChipRow>
-        {STATUS_TABS.map((s) => (
-          <AdminFilterChip
-            key={s}
-            label={t.filters[s]}
-            active={tab === s}
-            onPress={() => setTab(s)}
-          />
-        ))}
-      </AdminFilterChipRow>
-      <Text style={styles.totalLabel}>{t.totalCount(query.data?.totalCount ?? 0)}</Text>
+      <AdminListControls
+        filterGroups={[{
+          key: 'tab',
+          options: STATUS_TABS.map((s) => ({
+            key: s,
+            label: t.filters[s],
+            active: tab === s,
+            onPress: () => setTab(s),
+          })),
+        }]}
+        totalLabel={t.totalCount(query.data?.totalCount ?? 0)}
+      />
       <FlatList
         data={[...(query.data?.rows ?? [])]}
         keyExtractor={(a) => a.applicationId}
@@ -221,7 +221,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle: { fontSize: 18, fontWeight: '700' },
   title:       { fontSize: 22, fontWeight: '700', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 },
-  totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
   empty:          { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle:     { fontSize: 16, fontWeight: '600' },
   emptyHint:      { fontSize: 13, opacity: 0.6, textAlign: 'center' },

@@ -16,8 +16,7 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminTasksList } from '../../../src/hooks/useAdminTasks';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import { TaskRow } from '../../../src/components/admin/tasks/TaskRow';
 import {
   TaskAssigneeFilter,
@@ -97,57 +96,68 @@ export default function TasksScreen() {
         ) : undefined}
       />
 
-      <AdminFilterChipRow>
-        <AdminFilterChip
-          label={he.admin.tasks.filters.all}
-          active={statusFilter === null && !overdueOnly}
-          onPress={() => { setStatusFilter(null); setOverdueOnly(false); }}
-        />
-        {ADMIN_TASK_STATUSES.map((s) => (
-          <AdminFilterChip
-            key={s}
-            label={he.admin.tasks.status[s]}
-            active={statusFilter === s}
-            onPress={() => { setStatusFilter(statusFilter === s ? null : s); }}
-          />
-        ))}
-        <AdminFilterChip
-          label={he.admin.tasks.filters.overdue}
-          active={overdueOnly}
-          onPress={() => setOverdueOnly((v) => !v)}
-        />
-        <AdminFilterChip
-          label={he.admin.tasks.filters.onlyMine}
-          active={onlyMine}
-          onPress={() => setOnlyMine((v) => !v)}
-        />
-      </AdminFilterChipRow>
-
-      <AdminFilterChipRow>
-        <AdminFilterChip
-          label={he.admin.tasks.categoryFilters.all}
-          active={categoryFilter === null}
-          onPress={() => setCategoryFilter(null)}
-        />
-        {ADMIN_TASK_CATEGORIES.map((c) => (
-          <AdminFilterChip
-            key={c}
-            label={he.admin.tasks.category[c]}
-            active={categoryFilter === c}
-            onPress={() => setCategoryFilter(categoryFilter === c ? null : c)}
-          />
-        ))}
-      </AdminFilterChipRow>
-
-      {can('admins.view') && (
-        <TaskAssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
-      )}
-
-      <TaskDueRangeFilter
-        fromValue={dueFromText}
-        toValue={dueToText}
-        onChange={({ from, to }) => { setDueFromText(from); setDueToText(to); }}
-        onClear={() => { setDueFromText(''); setDueToText(''); }}
+      <AdminListControls
+        filterGroups={[
+          {
+            key: 'status',
+            options: [
+              {
+                key: '_all',
+                label: he.admin.tasks.filters.all,
+                active: statusFilter === null && !overdueOnly,
+                onPress: () => { setStatusFilter(null); setOverdueOnly(false); },
+              },
+              ...ADMIN_TASK_STATUSES.map((s) => ({
+                key: s,
+                label: he.admin.tasks.status[s],
+                active: statusFilter === s,
+                onPress: () => { setStatusFilter(statusFilter === s ? null : s); },
+              })),
+              {
+                key: '_overdue',
+                label: he.admin.tasks.filters.overdue,
+                active: overdueOnly,
+                onPress: () => setOverdueOnly((v) => !v),
+              },
+              {
+                key: '_mine',
+                label: he.admin.tasks.filters.onlyMine,
+                active: onlyMine,
+                onPress: () => setOnlyMine((v) => !v),
+              },
+            ],
+          },
+          {
+            key: 'category',
+            options: [
+              {
+                key: '_all',
+                label: he.admin.tasks.categoryFilters.all,
+                active: categoryFilter === null,
+                onPress: () => setCategoryFilter(null),
+              },
+              ...ADMIN_TASK_CATEGORIES.map((c) => ({
+                key: c,
+                label: he.admin.tasks.category[c],
+                active: categoryFilter === c,
+                onPress: () => setCategoryFilter(categoryFilter === c ? null : c),
+              })),
+            ],
+          },
+        ]}
+        afterFilters={(
+          <>
+            {can('admins.view') && (
+              <TaskAssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
+            )}
+            <TaskDueRangeFilter
+              fromValue={dueFromText}
+              toValue={dueToText}
+              onChange={({ from, to }) => { setDueFromText(from); setDueToText(to); }}
+              onClear={() => { setDueFromText(''); setDueToText(''); }}
+            />
+          </>
+        )}
       />
 
 

@@ -16,8 +16,7 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
 import { FinanceEntryCard } from '../../../src/components/admin/money/FinanceEntryCard';
 import { FinanceEntryFormModal } from '../../../src/components/admin/money/FinanceEntryFormModal';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
 import he from '../../../src/i18n/locales/he';
@@ -113,17 +112,18 @@ export default function MoneyScreen() {
         ))}
       </View>
 
-      <AdminFilterChipRow>
-        {(['all', 'in', 'out'] as readonly DirFilter[]).map((d) => (
-          <AdminFilterChip
-            key={d}
-            label={d === 'all' ? t.filters.all : d === 'in' ? t.filters.income : t.filters.expense}
-            active={dirFilter === d}
-            onPress={() => setDirFilter(d)}
-          />
-        ))}
-      </AdminFilterChipRow>
-      <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
+      <AdminListControls
+        filterGroups={[{
+          key: 'direction',
+          options: (['all', 'in', 'out'] as readonly DirFilter[]).map((d) => ({
+            key: d,
+            label: d === 'all' ? t.filters.all : d === 'in' ? t.filters.income : t.filters.expense,
+            active: dirFilter === d,
+            onPress: () => setDirFilter(d),
+          })),
+        }]}
+        totalLabel={t.totalCount(list.data?.totalCount ?? 0)}
+      />
 
       <FlatList
         data={[...(list.data?.rows ?? [])]}
@@ -192,5 +192,4 @@ const useStyles = makeUseStyles(({ colors }) => ({
   netPositive:    { color: colors.success },
   netNegative:    { color: colors.error },
 
-  totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
 }));

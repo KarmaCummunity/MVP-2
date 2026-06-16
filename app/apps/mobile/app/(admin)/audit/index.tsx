@@ -11,8 +11,7 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminAuditSearch } from '../../../src/hooks/useAdminContentSearch';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import { AuditLogRow } from '../../../src/components/admin/content/AuditLogRow';
 import { rowDirectionStart } from '../../../src/lib/rtlLayout';
 import { container } from '../../../src/lib/container';
@@ -122,58 +121,58 @@ export default function AuditScreen() {
           </Pressable>
         )}
       />
-      <TextInput
-        style={styles.search}
-        value={targetIdRaw}
-        onChangeText={setTargetIdRaw}
-        placeholder={he.admin.content.auditTargetPlaceholder}
-        autoCapitalize="none"
-        autoCorrect={false}
-      />
-
-      <View style={styles.dateRow}>
-        <View style={styles.dateField}>
-          <Text style={styles.dateLabel}>{he.admin.content.dateFromLabel}</Text>
-          <TextInput
-            style={styles.dateInput}
-            value={fromRaw}
-            onChangeText={setFromRaw}
-            placeholder="YYYY-MM-DD"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="numbers-and-punctuation"
-          />
-        </View>
-        <View style={styles.dateField}>
-          <Text style={styles.dateLabel}>{he.admin.content.dateToLabel}</Text>
-          <TextInput
-            style={styles.dateInput}
-            value={toRaw}
-            onChangeText={setToRaw}
-            placeholder="YYYY-MM-DD"
-            autoCapitalize="none"
-            autoCorrect={false}
-            keyboardType="numbers-and-punctuation"
-          />
-        </View>
-      </View>
-      {exportError !== null && (
-        <Text style={styles.exportError}>{exportError}</Text>
-      )}
-
-      <AdminFilterChipRow>
-        {COMMON_ACTIONS.map((a) => (
-          <AdminFilterChip
-            key={a ?? '_all'}
-            label={a === null
+      <AdminListControls
+        search={{
+          value: targetIdRaw,
+          onChangeText: setTargetIdRaw,
+          placeholder: he.admin.content.auditTargetPlaceholder,
+        }}
+        afterSearch={(
+          <>
+            <View style={styles.dateRow}>
+              <View style={styles.dateField}>
+                <Text style={styles.dateLabel}>{he.admin.content.dateFromLabel}</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  value={fromRaw}
+                  onChangeText={setFromRaw}
+                  placeholder="YYYY-MM-DD"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="numbers-and-punctuation"
+                />
+              </View>
+              <View style={styles.dateField}>
+                <Text style={styles.dateLabel}>{he.admin.content.dateToLabel}</Text>
+                <TextInput
+                  style={styles.dateInput}
+                  value={toRaw}
+                  onChangeText={setToRaw}
+                  placeholder="YYYY-MM-DD"
+                  autoCapitalize="none"
+                  autoCorrect={false}
+                  keyboardType="numbers-and-punctuation"
+                />
+              </View>
+            </View>
+            {exportError !== null && (
+              <Text style={styles.exportError}>{exportError}</Text>
+            )}
+          </>
+        )}
+        filterGroups={[{
+          key: 'action',
+          options: COMMON_ACTIONS.map((a) => ({
+            key: a ?? '_all',
+            label: a === null
               ? he.admin.content.auditActionFilterAll
-              : (he.admin.content.auditAction[a as keyof typeof he.admin.content.auditAction] ?? a)}
-            active={action === a}
-            onPress={() => setAction(a)}
-          />
-        ))}
-      </AdminFilterChipRow>
-      <Text style={styles.totalLabel}>{he.admin.content.totalCount(result.page.totalCount)}</Text>
+              : (he.admin.content.auditAction[a as keyof typeof he.admin.content.auditAction] ?? a),
+            active: action === a,
+            onPress: () => setAction(a),
+          })),
+        }]}
+        totalLabel={he.admin.content.totalCount(result.page.totalCount)}
+      />
       <FlatList
         data={[...result.page.rows]}
         keyExtractor={(e) => e.eventId}
@@ -195,13 +194,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   root:        { flex: 1, backgroundColor: colors.background },
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle: { fontSize: 18, fontWeight: '700' },
-  search: {
-    marginHorizontal: 16, marginBottom: 8, padding: 10,
-    borderRadius: 10, backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-    textAlign: 'right', fontSize: 14,
-  },
-  totalLabel:     { paddingHorizontal: 16, paddingBottom: 4, fontSize: 11, opacity: 0.6 },
   empty:          { padding: 32, alignItems: 'center' },
   emptyText:      { fontSize: 14, opacity: 0.6 },
   dateRow:        { flexDirection: rowDirectionStart, gap: 8, paddingHorizontal: 16, paddingBottom: 8, alignItems: 'flex-end' },

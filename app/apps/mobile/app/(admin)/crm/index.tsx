@@ -3,8 +3,7 @@
 // List + search + status filter + per-row edit / delete / "mark contacted".
 import { useMemo, useState } from 'react';
 import {
-  Alert, FlatList, Platform, Pressable, RefreshControl,
-  StyleSheet, Text, TextInput, View,
+  Alert, FlatList, Platform, Pressable, RefreshControl, Text, View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
 import {
@@ -15,8 +14,7 @@ import {
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
-import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
-import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
+import { AdminListControls } from '../../../src/components/admin/AdminListControls';
 import { ContactCard } from '../../../src/components/admin/crm/ContactCard';
 import { ContactFormModal } from '../../../src/components/admin/crm/ContactFormModal';
 import he from '../../../src/i18n/locales/he';
@@ -85,26 +83,23 @@ export default function CrmScreen() {
         </Pressable>
       </View>
 
-      <TextInput
-        style={styles.search}
-        value={query}
-        onChangeText={setQuery}
-        placeholder={t.searchPlaceholder}
-        autoCapitalize="none"
-        autoCorrect={false}
+      <AdminListControls
+        search={{
+          value: query,
+          onChangeText: setQuery,
+          placeholder: t.searchPlaceholder,
+        }}
+        filterGroups={[{
+          key: 'status',
+          options: (['all', ...CRM_CONTACT_STATUSES] as readonly StatusFilter[]).map((s) => ({
+            key: s,
+            label: t.statusFilters[s],
+            active: statusFilter === s,
+            onPress: () => setStatusFilter(s),
+          })),
+        }]}
+        totalLabel={t.totalCount(list.data?.totalCount ?? 0)}
       />
-
-      <AdminFilterChipRow>
-        {(['all', ...CRM_CONTACT_STATUSES] as readonly StatusFilter[]).map((s) => (
-          <AdminFilterChip
-            key={s}
-            label={t.statusFilters[s]}
-            active={statusFilter === s}
-            onPress={() => setStatusFilter(s)}
-          />
-        ))}
-      </AdminFilterChipRow>
-      <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
 
       <FlatList
         data={[...(list.data?.rows ?? [])]}
@@ -164,13 +159,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   title:       { fontSize: 22, fontWeight: '700' },
   newBtn:      { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
   newBtnText:  { color: colors.textInverse, fontSize: 13, fontWeight: '700' },
-  search: {
-    marginHorizontal: 16, marginBottom: 8, padding: 10,
-    borderRadius: 10, backgroundColor: colors.surface,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-    textAlign: 'right', fontSize: 14,
-  },
-  totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
   empty:          { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle:     { fontSize: 16, fontWeight: '600' },
   emptyHint:      { fontSize: 13, opacity: 0.6, textAlign: 'center' },
