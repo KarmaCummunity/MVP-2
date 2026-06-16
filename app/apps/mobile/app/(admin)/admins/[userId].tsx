@@ -12,9 +12,11 @@ import {
 import { makeUseStyles, radius, useTheme } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminPerson } from '../../../src/hooks/useAdminPerson';
+import { useOrgTree } from '../../../src/hooks/useOrgTree';
 import { useRevokeAdminRole } from '../../../src/hooks/useAdminRoleMutations';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { AdminRow } from '../../../src/components/admin/admins/AdminRow';
+import { GrantManagerSection } from '../../../src/components/admin/admins/GrantManagerSection';
 import { rowDirectionStart, textAlignStart } from '../../../src/lib/rtlLayout';
 import he from '../../../src/i18n/locales/he';
 
@@ -25,11 +27,14 @@ export default function AdminDetailScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const { person, isLoading } = useAdminPerson(userId);
+  const tree = useOrgTree(null);
   const revoke = useRevokeAdminRole();
   const [revokeErr, setRevokeErr] = useState<string | null>(null);
 
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const canRevoke = can('admins.revoke_role');
+  const canManage = can('admins.set_manager');
+  const myMemberships = tree.members.filter((m) => m.userId === userId);
 
   async function onRevoke(grantId: string) {
     setRevokeErr(null);
@@ -94,10 +99,21 @@ export default function AdminDetailScreen() {
       </View>
 
       <Text style={styles.sectionTitle}>{he.admin.admins.detail.managerSection}</Text>
-      <View style={styles.placeholder}>
-        <Ionicons name="git-network-outline" size={20} color={colors.textSecondary} />
-        <Text style={styles.hint}>{he.admin.admins.detail.comingSoon}</Text>
-      </View>
+      {myMemberships.length === 0 ? (
+        <View style={styles.placeholder}>
+          <Ionicons name="git-network-outline" size={20} color={colors.textSecondary} />
+          <Text style={styles.hint}>{he.admin.admins.detail.managerNone}</Text>
+        </View>
+      ) : (
+        myMemberships.map((m) => (
+          <GrantManagerSection
+            key={m.grantId}
+            member={m}
+            members={tree.members}
+            canManage={canManage}
+          />
+        ))
+      )}
     </ScrollView>
   );
 }

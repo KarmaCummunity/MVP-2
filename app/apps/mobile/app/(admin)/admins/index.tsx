@@ -12,7 +12,9 @@
 //   - moderator:   read-only list.
 //   - support:     no access (denial card; AdminGate may also block earlier).
 import { useMemo, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, Switch, Text, View } from 'react-native';
+import {
+  FlatList, Pressable, RefreshControl, ScrollView, Switch, Text, View,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import {
   type AdminPermission, type AdminPerson, type AdminRole,
@@ -21,11 +23,24 @@ import {
 import { makeUseStyles, useBreakpoint } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminsList } from '../../../src/hooks/useAdminsList';
+import { useOrgTree } from '../../../src/hooks/useOrgTree';
 import { rowDirectionStart, textAlignStart } from '../../../src/lib/rtlLayout';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { AdminPersonCard } from '../../../src/components/admin/admins/AdminPersonCard';
 import { GrantRoleModal } from '../../../src/components/admin/admins/GrantRoleModal';
+import { OrgTree } from '../../../src/components/admin/admins/OrgTree';
+import { OrgSwitcher, type OrgOption } from '../../../src/components/admin/admins/OrgSwitcher';
 import he from '../../../src/i18n/locales/he';
+
+type ViewMode = 'list' | 'tree';
+
+function distinctOrgs(members: readonly { orgId: string | null; orgName: string | null }[]): OrgOption[] {
+  const seen = new Map<string, string>();
+  for (const m of members) {
+    if (m.orgId !== null && !seen.has(m.orgId)) seen.set(m.orgId, m.orgName ?? m.orgId);
+  }
+  return [...seen].map(([id, name]) => ({ id, name }));
+}
 
 type Item =
   | { kind: 'header'; title: string; count: number }
@@ -53,11 +68,16 @@ export default function AdminsScreen() {
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [includeRevoked, setIncludeRevoked] = useState(false);
   const [grantOpen, setGrantOpen] = useState(false);
+  const [viewMode, setViewMode] = useState<ViewMode>('list');
+  const [orgId, setOrgId] = useState<string | null>(null);
 
   const list = useAdminsList(includeRevoked);
+  const tree = useOrgTree(orgId, viewMode === 'tree');
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const people = useMemo(() => groupGrantsByUser(list.grants), [list.grants]);
   const items = useMemo(() => buildItems(people, includeRevoked), [people, includeRevoked]);
+  const orgs = useMemo(() => distinctOrgs(tree.members), [tree.members]);
+  const isSuper = roles.includes('super_admin');
 
   if (rolesLoading) {
     return <View style={styles.center}><Text>{he.admin.admins.loading}</Text></View>;
@@ -79,9 +99,19 @@ export default function AdminsScreen() {
     <View style={styles.root}>
       <AdminScreenHeader title={he.admin.admins.title} />
       <View style={styles.headerControls}>
-        <View style={styles.toggleRow}>
-          <Switch value={includeRevoked} onValueChange={setIncludeRevoked} />
-          <Text style={styles.toggleLabel}>{he.admin.admins.includeRevokedLabel}</Text>
+        <View style={styles.segment}>
+          {(['list', 'tree'] as const).map((m) => (
+            <Pressable
+              key={m}
+              accessibilityRole="button"
+              onPress={() => setViewMode(m)}
+              style={[styles.segmentBtn, viewMode === m && styles.segmentBtnActive]}
+            >
+              <Text style={[styles.segmentText, viewMode === m && styles.segmentTextActive]}>
+                {m === 'list' ? he.admin.admins.viewList : he.admin.admins.viewTree}
+              </Text>
+            </Pressable>
+          ))}
         </View>
         {canGrant && (
           <Pressable accessibilityRole="button" onPress={() => setGrantOpen(true)} style={styles.grantBtn}>
@@ -90,30 +120,49 @@ export default function AdminsScreen() {
         )}
       </View>
 
-      <FlatList
-        data={items}
-        keyExtractor={(it, i) => (it.kind === 'header' ? `h:${it.title}` : `p:${it.person.userId}:${i}`)}
-        contentContainerStyle={[styles.listContent, isWide && styles.listContentWide]}
-        renderItem={({ item }) =>
-          item.kind === 'header' ? (
-            <View style={styles.sectionHeader}>
-              <Text style={styles.sectionHeaderText}>{item.title}</Text>
-              <Text style={styles.sectionHeaderCount}>{item.count}</Text>
-            </View>
-          ) : (
-            <AdminPersonCard person={item.person} onPress={openDetail} />
-          )
-        }
-        ListEmptyComponent={
-          !list.isLoading ? (
-            <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{he.admin.admins.emptyTitle}</Text>
-              <Text style={styles.emptyHint}>{he.admin.admins.emptyHint}</Text>
-            </View>
-          ) : null
-        }
-        refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={list.refetch} />}
-      />
+      {viewMode === 'list' && (
+        <View style={styles.toggleRow}>
+          <Switch value={includeRevoked} onValueChange={setIncludeRevoked} />
+          <Text style={styles.toggleLabel}>{he.admin.admins.includeRevokedLabel}</Text>
+        </View>
+      )}
+
+      {viewMode === 'list' ? (
+        <FlatList
+          data={items}
+          keyExtractor={(it, i) => (it.kind === 'header' ? `h:${it.title}` : `p:${it.person.userId}:${i}`)}
+          contentContainerStyle={[styles.listContent, isWide && styles.listContentWide]}
+          renderItem={({ item }) =>
+            item.kind === 'header' ? (
+              <View style={styles.sectionHeader}>
+                <Text style={styles.sectionHeaderText}>{item.title}</Text>
+                <Text style={styles.sectionHeaderCount}>{item.count}</Text>
+              </View>
+            ) : (
+              <AdminPersonCard person={item.person} onPress={openDetail} />
+            )
+          }
+          ListEmptyComponent={
+            !list.isLoading ? (
+              <View style={styles.empty}>
+                <Text style={styles.emptyTitle}>{he.admin.admins.emptyTitle}</Text>
+                <Text style={styles.emptyHint}>{he.admin.admins.emptyHint}</Text>
+              </View>
+            ) : null
+          }
+          refreshControl={<RefreshControl refreshing={list.isRefetching} onRefresh={list.refetch} />}
+        />
+      ) : (
+        <ScrollView
+          contentContainerStyle={[styles.listContent, isWide && styles.listContentWide]}
+          refreshControl={<RefreshControl refreshing={tree.isRefetching} onRefresh={tree.refetch} />}
+        >
+          {isSuper && orgs.length > 1 && (
+            <OrgSwitcher orgs={orgs} selected={orgId} onSelect={setOrgId} />
+          )}
+          <OrgTree forest={tree.forest} onSelect={openDetail} />
+        </ScrollView>
+      )}
 
       {canGrant && <GrantRoleModal visible={grantOpen} onClose={() => setGrantOpen(false)} />}
     </View>
@@ -129,8 +178,13 @@ const useStyles = makeUseStyles(({ colors }) => ({
     flexDirection: rowDirectionStart, alignItems: 'center', justifyContent: 'space-between',
     paddingHorizontal: 16, paddingVertical: 12, gap: 12,
   },
-  toggleRow:   { flexDirection: rowDirectionStart, alignItems: 'center', gap: 8 },
+  toggleRow:   { flexDirection: rowDirectionStart, alignItems: 'center', gap: 8, paddingHorizontal: 16, paddingBottom: 8 },
   toggleLabel: { fontSize: 13, color: colors.textSecondary },
+  segment:     { flexDirection: rowDirectionStart, backgroundColor: colors.surface, borderRadius: 999, padding: 3 },
+  segmentBtn:  { paddingHorizontal: 14, paddingVertical: 6, borderRadius: 999 },
+  segmentBtnActive: { backgroundColor: colors.primary },
+  segmentText: { fontSize: 13, fontWeight: '700', color: colors.textSecondary },
+  segmentTextActive: { color: colors.textInverse },
   grantBtn:    { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
   grantBtnText: { color: colors.textInverse, fontWeight: '700', fontSize: 13 },
   listContent:     { paddingBottom: 24 },
