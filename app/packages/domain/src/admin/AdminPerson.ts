@@ -76,15 +76,22 @@ function toPerson(userId: string, grants: readonly AdminGrant[]): AdminPerson {
   };
 }
 
+/** Stable sort key: active-first, then by highest role, then most-recently
+ *  seen, then name. Folded into a tuple so the comparator stays trivial. */
+function personSortKey(p: AdminPerson): readonly [number, number, number, string] {
+  const activeRank = p.hasActiveGrant ? 0 : 1;
+  const roleRank = p.highestActiveRole === null ? Infinity : adminRoleRank(p.highestActiveRole);
+  const seen = -(p.lastSeenAt?.getTime() ?? -1);
+  return [activeRank, roleRank, seen, p.displayName ?? ''];
+}
+
 function comparePeople(a: AdminPerson, b: AdminPerson): number {
-  if (a.hasActiveGrant !== b.hasActiveGrant) return a.hasActiveGrant ? -1 : 1;
-  const ra = a.highestActiveRole === null ? Infinity : adminRoleRank(a.highestActiveRole);
-  const rb = b.highestActiveRole === null ? Infinity : adminRoleRank(b.highestActiveRole);
-  if (ra !== rb) return ra - rb;
-  const ta = a.lastSeenAt?.getTime() ?? -1;
-  const tb = b.lastSeenAt?.getTime() ?? -1;
-  if (ta !== tb) return tb - ta;
-  return (a.displayName ?? '').localeCompare(b.displayName ?? '');
+  const ka = personSortKey(a);
+  const kb = personSortKey(b);
+  if (ka[0] !== kb[0]) return ka[0] - kb[0];
+  if (ka[1] !== kb[1]) return ka[1] - kb[1];
+  if (ka[2] !== kb[2]) return ka[2] - kb[2];
+  return ka[3].localeCompare(kb[3]);
 }
 
 /** Fold a flat grant list into one `AdminPerson` per user, ordered for display
