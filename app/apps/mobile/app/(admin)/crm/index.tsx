@@ -3,7 +3,7 @@
 // List + search + status filter + per-row edit / delete / "mark contacted".
 import { useMemo, useState } from 'react';
 import {
-  Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView,
+  Alert, FlatList, Platform, Pressable, RefreshControl,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -15,6 +15,8 @@ import {
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
+import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
 import { ContactCard } from '../../../src/components/admin/crm/ContactCard';
 import { ContactFormModal } from '../../../src/components/admin/crm/ContactFormModal';
 import he from '../../../src/i18n/locales/he';
@@ -92,19 +94,16 @@ export default function CrmScreen() {
         autoCorrect={false}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <AdminFilterChipRow>
         {(['all', ...CRM_CONTACT_STATUSES] as readonly StatusFilter[]).map((s) => (
-          <Pressable
+          <AdminFilterChip
             key={s}
+            label={t.statusFilters[s]}
+            active={statusFilter === s}
             onPress={() => setStatusFilter(s)}
-            style={[styles.chip, statusFilter === s && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, statusFilter === s && styles.chipTextActive]}>
-              {t.statusFilters[s]}
-            </Text>
-          </Pressable>
+          />
         ))}
-      </ScrollView>
+      </AdminFilterChipRow>
       <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
 
       <FlatList
@@ -171,15 +170,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
     borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
     textAlign: 'right', fontSize: 14,
   },
-  chips:          { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: colors.secondaryLight,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-  },
-  chipActive:     { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText:       { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  chipTextActive: { color: colors.textInverse },
   totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
   empty:          { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle:     { fontSize: 16, fontWeight: '600' },

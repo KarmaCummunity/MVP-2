@@ -2,7 +2,7 @@
 // V2-ADMIN-MONEY-9 — V2 §13.3 Admin Money — minimal donations / expenses ledger.
 import { useMemo, useState } from 'react';
 import {
-  Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView,
+  Alert, FlatList, Platform, Pressable, RefreshControl,
   StyleSheet, Text, View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import { container } from '../../../src/lib/container';
 import { FinanceEntryCard } from '../../../src/components/admin/money/FinanceEntryCard';
 import { FinanceEntryFormModal } from '../../../src/components/admin/money/FinanceEntryFormModal';
 import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
 import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
 import he from '../../../src/i18n/locales/he';
@@ -112,7 +113,7 @@ export default function MoneyScreen() {
         ))}
       </View>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <AdminFilterChipRow>
         {(['all', 'in', 'out'] as readonly DirFilter[]).map((d) => (
           <AdminFilterChip
             key={d}
@@ -121,7 +122,7 @@ export default function MoneyScreen() {
             onPress={() => setDirFilter(d)}
           />
         ))}
-      </ScrollView>
+      </AdminFilterChipRow>
       <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
 
       <FlatList
@@ -191,6 +192,5 @@ const useStyles = makeUseStyles(({ colors }) => ({
   netPositive:    { color: colors.success },
   netNegative:    { color: colors.error },
 
-  chips:          { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
   totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
 }));

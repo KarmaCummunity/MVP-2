@@ -2,7 +2,7 @@
 // V2-ADMIN-TIME-10 — V2 §13.10 Admin Time (timesheets).
 import { useMemo, useState } from 'react';
 import {
-  Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView,
+  Alert, FlatList, Platform, Pressable, RefreshControl,
   Text, View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -17,6 +17,7 @@ import { container } from '../../../src/lib/container';
 import { TimesheetEntryCard } from '../../../src/components/admin/time/TimesheetEntryCard';
 import { TimesheetFormModal } from '../../../src/components/admin/time/TimesheetFormModal';
 import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
 import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { AdminScreenGuard } from '../../../src/components/admin/AdminScreenGuard';
@@ -77,7 +78,7 @@ export default function TimeScreen() {
     <View style={styles.root}>
       <AdminScreenHeader title={t.title} newLabel={t.newBtn} onNew={() => setCreating(true)} />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <AdminFilterChipRow>
         {(['mine', 'pending', 'all'] as readonly Tab[]).map((value) => (
           <AdminFilterChip
             key={value}
@@ -86,7 +87,7 @@ export default function TimeScreen() {
             onPress={() => setTab(value)}
           />
         ))}
-      </ScrollView>
+      </AdminFilterChipRow>
       <Text style={styles.totalLabel}>{t.totalCount(list.data?.totalCount ?? 0)}</Text>
 
       <FlatList
@@ -143,6 +144,5 @@ export default function TimeScreen() {
 
 const useStyles = makeUseStyles(({ colors }) => ({
   root:        { flex: 1, backgroundColor: colors.background },
-  chips:       { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
   totalLabel:  { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
 }));

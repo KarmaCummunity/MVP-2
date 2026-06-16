@@ -3,7 +3,7 @@
 // V2-ADMIN-AUDIT-5 — date-range filter + CSV export (web).
 import { useMemo, useState } from 'react';
 import {
-  FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, TextInput, View,
+  FlatList, Pressable, RefreshControl, StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { type AdminPermission, type AdminRole, hasPermission } from '@kc/domain';
 import type { AdminAuditSearchFilters } from '@kc/application';
@@ -11,7 +11,10 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminAuditSearch } from '../../../src/hooks/useAdminContentSearch';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
+import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
 import { AuditLogRow } from '../../../src/components/admin/content/AuditLogRow';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
 import { container } from '../../../src/lib/container';
 import {
   downloadAuditCsv, isCsvExportSupported,
@@ -106,6 +109,18 @@ export default function AuditScreen() {
       <AdminScreenHeader
         title={he.admin.content.auditTitle}
         subtitle={!canSeeAll ? he.admin.content.tierLimited : undefined}
+        right={(
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => { void doExport(); }}
+            disabled={exporting}
+            style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
+          >
+            <Text style={styles.exportBtnText}>
+              {exporting ? he.admin.content.csvExport.busy : he.admin.content.csvExport.action}
+            </Text>
+          </Pressable>
+        )}
       />
       <TextInput
         style={styles.search}
@@ -141,36 +156,23 @@ export default function AuditScreen() {
             keyboardType="numbers-and-punctuation"
           />
         </View>
-        <Pressable
-          accessibilityRole="button"
-          onPress={() => { void doExport(); }}
-          disabled={exporting}
-          style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
-        >
-          <Text style={styles.exportBtnText}>
-            {exporting ? he.admin.content.csvExport.busy : he.admin.content.csvExport.action}
-          </Text>
-        </Pressable>
       </View>
       {exportError !== null && (
         <Text style={styles.exportError}>{exportError}</Text>
       )}
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <AdminFilterChipRow>
         {COMMON_ACTIONS.map((a) => (
-          <Pressable
+          <AdminFilterChip
             key={a ?? '_all'}
+            label={a === null
+              ? he.admin.content.auditActionFilterAll
+              : (he.admin.content.auditAction[a as keyof typeof he.admin.content.auditAction] ?? a)}
+            active={action === a}
             onPress={() => setAction(a)}
-            style={[styles.chip, action === a && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, action === a && styles.chipTextActive]}>
-              {a === null
-                ? he.admin.content.auditActionFilterAll
-                : (he.admin.content.auditAction[a as keyof typeof he.admin.content.auditAction] ?? a)}
-            </Text>
-          </Pressable>
+          />
         ))}
-      </ScrollView>
+      </AdminFilterChipRow>
       <Text style={styles.totalLabel}>{he.admin.content.totalCount(result.page.totalCount)}</Text>
       <FlatList
         data={[...result.page.rows]}
@@ -199,15 +201,10 @@ const useStyles = makeUseStyles(({ colors }) => ({
     borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
     textAlign: 'right', fontSize: 14,
   },
-  chips:          { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
-  chip:           { paddingHorizontal: 10, paddingVertical: 6, borderRadius: 14, backgroundColor: colors.secondaryLight },
-  chipActive:     { backgroundColor: colors.primary },
-  chipText:       { fontSize: 11, fontWeight: '600' },
-  chipTextActive: { color: colors.textInverse },
   totalLabel:     { paddingHorizontal: 16, paddingBottom: 4, fontSize: 11, opacity: 0.6 },
   empty:          { padding: 32, alignItems: 'center' },
   emptyText:      { fontSize: 14, opacity: 0.6 },
-  dateRow:        { flexDirection: 'row', gap: 8, paddingHorizontal: 16, paddingBottom: 8, alignItems: 'flex-end' },
+  dateRow:        { flexDirection: rowDirectionStart, gap: 8, paddingHorizontal: 16, paddingBottom: 8, alignItems: 'flex-end' },
   dateField:      { flex: 1, gap: 4 },
   dateLabel:      { fontSize: 11, opacity: 0.7 },
   dateInput: {
@@ -215,8 +212,8 @@ const useStyles = makeUseStyles(({ colors }) => ({
     padding: 8, fontSize: 13, textAlign: 'left', backgroundColor: colors.surface,
   },
   exportBtn: {
-    paddingHorizontal: 14, paddingVertical: 10, borderRadius: 8,
-    backgroundColor: colors.primary, alignSelf: 'flex-end',
+    paddingHorizontal: 12, paddingVertical: 8, borderRadius: 8,
+    backgroundColor: colors.primary,
   },
   exportBtnDisabled: { opacity: 0.5 },
   exportBtnText:  { color: colors.textInverse, fontSize: 12, fontWeight: '700' },

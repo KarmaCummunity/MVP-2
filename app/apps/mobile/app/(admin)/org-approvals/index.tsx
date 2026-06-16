@@ -6,7 +6,7 @@
 // schema is built.
 import { useMemo, useState } from 'react';
 import {
-  Alert, FlatList, Platform, Pressable, RefreshControl, ScrollView,
+  Alert, FlatList, Platform, Pressable, RefreshControl,
   StyleSheet, Text, TextInput, View,
 } from 'react-native';
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query';
@@ -18,6 +18,8 @@ import {
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
+import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
 import he from '../../../src/i18n/locales/he';
 
 type StatusFilter = OrgApplicationStatus | 'all';
@@ -85,19 +87,16 @@ export default function OrgApprovalsScreen() {
   return (
     <View style={styles.root}>
       <Text style={styles.title}>{t.title}</Text>
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
+      <AdminFilterChipRow>
         {STATUS_TABS.map((s) => (
-          <Pressable
+          <AdminFilterChip
             key={s}
+            label={t.filters[s]}
+            active={tab === s}
             onPress={() => setTab(s)}
-            style={[styles.chip, tab === s && styles.chipActive]}
-          >
-            <Text style={[styles.chipText, tab === s && styles.chipTextActive]}>
-              {t.filters[s]}
-            </Text>
-          </Pressable>
+          />
         ))}
-      </ScrollView>
+      </AdminFilterChipRow>
       <Text style={styles.totalLabel}>{t.totalCount(query.data?.totalCount ?? 0)}</Text>
       <FlatList
         data={[...(query.data?.rows ?? [])]}
@@ -222,15 +221,6 @@ const useStyles = makeUseStyles(({ colors }) => ({
   center:      { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle: { fontSize: 18, fontWeight: '700' },
   title:       { fontSize: 22, fontWeight: '700', paddingHorizontal: 16, paddingTop: 16, paddingBottom: 4 },
-  chips:       { paddingHorizontal: 16, gap: 8, paddingBottom: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: colors.secondaryLight,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-  },
-  chipActive:     { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText:       { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  chipTextActive: { color: colors.textInverse },
   totalLabel:     { paddingHorizontal: 16, paddingBottom: 8, fontSize: 11, opacity: 0.6 },
   empty:          { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle:     { fontSize: 16, fontWeight: '600' },

@@ -3,7 +3,7 @@
 import { useMemo, useState } from 'react';
 import { router } from 'expo-router';
 import {
-  FlatList, Pressable, RefreshControl, ScrollView, StyleSheet, Text, View,
+  FlatList, Pressable, RefreshControl, Text, View,
 } from 'react-native';
 import {
   ADMIN_TASK_CATEGORIES,
@@ -16,6 +16,8 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminTasksList } from '../../../src/hooks/useAdminTasks';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
+import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
+import { AdminFilterChipRow } from '../../../src/components/admin/AdminFilterChipRow';
 import { TaskRow } from '../../../src/components/admin/tasks/TaskRow';
 import {
   TaskAssigneeFilter,
@@ -95,47 +97,47 @@ export default function TasksScreen() {
         ) : undefined}
       />
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <FilterChip
+      <AdminFilterChipRow>
+        <AdminFilterChip
           label={he.admin.tasks.filters.all}
           active={statusFilter === null && !overdueOnly}
           onPress={() => { setStatusFilter(null); setOverdueOnly(false); }}
         />
         {ADMIN_TASK_STATUSES.map((s) => (
-          <FilterChip
+          <AdminFilterChip
             key={s}
             label={he.admin.tasks.status[s]}
             active={statusFilter === s}
             onPress={() => { setStatusFilter(statusFilter === s ? null : s); }}
           />
         ))}
-        <FilterChip
+        <AdminFilterChip
           label={he.admin.tasks.filters.overdue}
           active={overdueOnly}
           onPress={() => setOverdueOnly((v) => !v)}
         />
-        <FilterChip
+        <AdminFilterChip
           label={he.admin.tasks.filters.onlyMine}
           active={onlyMine}
           onPress={() => setOnlyMine((v) => !v)}
         />
-      </ScrollView>
+      </AdminFilterChipRow>
 
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
-        <FilterChip
+      <AdminFilterChipRow>
+        <AdminFilterChip
           label={he.admin.tasks.categoryFilters.all}
           active={categoryFilter === null}
           onPress={() => setCategoryFilter(null)}
         />
         {ADMIN_TASK_CATEGORIES.map((c) => (
-          <FilterChip
+          <AdminFilterChip
             key={c}
             label={he.admin.tasks.category[c]}
             active={categoryFilter === c}
             onPress={() => setCategoryFilter(categoryFilter === c ? null : c)}
           />
         ))}
-      </ScrollView>
+      </AdminFilterChipRow>
 
       {can('admins.view') && (
         <TaskAssigneeFilter value={assigneeFilter} onChange={setAssigneeFilter} />
@@ -169,36 +171,12 @@ export default function TasksScreen() {
   );
 }
 
-interface FilterChipProps {
-  readonly label: string;
-  readonly active: boolean;
-  readonly onPress: () => void;
-}
-
-function FilterChip({ label, active, onPress }: FilterChipProps) {
-  const styles = useStyles();
-  return (
-    <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
-    </Pressable>
-  );
-}
-
 const useStyles = makeUseStyles(({ colors }) => ({
   root:            { flex: 1, backgroundColor: colors.background },
   center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
   deniedTitle:     { fontSize: 18, fontWeight: '700' },
   newBtn:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
   newBtnText:      { color: colors.textInverse, fontWeight: '700', fontSize: 13 },
-  chips:           { paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
-  chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: colors.secondaryLight,
-    borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
-  },
-  chipActive:      { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText:        { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
-  chipTextActive:  { color: colors.textInverse },
   empty:           { padding: 32, alignItems: 'center', gap: 8 },
   emptyTitle:      { fontSize: 16, fontWeight: '600' },
   emptyHint:       { fontSize: 13, opacity: 0.6, textAlign: 'center' },
