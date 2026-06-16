@@ -6,6 +6,7 @@ import { adminCrmHe } from './adminCrm';
 import { adminOrgApprovalsHe } from './adminOrgApprovals';
 import { adminSurveysHe } from './adminSurveys';
 import { adminTasksHe } from './adminTasks';
+import { adminAdminsHe } from './adminAdmins';
 
 export const adminHe = {
   portalTitle: 'פורטל ניהול',
@@ -126,58 +127,7 @@ export const adminHe = {
     bubbleReadOnly: 'הפעולות זמינות בפורטל הניהול',
     bubbleOpenInPortal: 'פתח בפורטל',
   },
-  admins: {
-    title:                'צוות ניהול',
-    loading:              'טוען...',
-    forbiddenTitle:       'אין לך הרשאה לצפות במסך זה',
-    forbiddenHint:        'מסך ניהול הצוות זמין רק לתפקידי super_admin ו-moderator.',
-    includeRevokedLabel:  'כולל מבוטלים',
-    grantBtn:             '+ הוסף לתפקיד',
-    emptyTitle:           'אין חברי צוות פעילים',
-    emptyHint:            'הענקת תפקיד תופיע כאן.',
-    row: {
-      unnamed:             'משתמש ללא שם',
-      neverSeen:           'טרם נצפה',
-      seenMinutesAgo:      (n: number) => `נצפה לפני ${n} דקות`,
-      seenHoursAgo:        (n: number) => `נצפה לפני ${n} שעות`,
-      seenDaysAgo:         (n: number) => `נצפה לפני ${n} ימים`,
-      grantedAt:           (s: string) => `הוענק ב-${s}`,
-      grantedBy:           (s: string) => `על־ידי ${s}`,
-      revokedAt:           (s: string) => `בוטל ב-${s}`,
-      revokeShort:         'בטל',
-      revokeTitle:         'ביטול תפקיד',
-      revokeConfirm:       (name: string) => `לבטל את תפקידו של ${name}? הפעולה תירשם ביומן.`,
-      revokeCancel:        'ביטול',
-      revokeConfirmAction: 'בטל תפקיד',
-    },
-    revokeErrors: {
-      forbidden:                       'אין לך הרשאה לבטל תפקיד.',
-      grant_not_found:                 'המינוי לא נמצא — ייתכן שכבר בוטל.',
-      grant_already_revoked:           'המינוי כבר בוטל.',
-      cannot_revoke_last_super_admin:  'אסור לבטל את ה-super_admin היחיד הפעיל.',
-      invalid_input:                   'קלט לא תקין.',
-      unknown:                         'אירעה שגיאה. נסה שוב.',
-    },
-    grantModal: {
-      title:             'הענקת תפקיד אדמין',
-      searchLabel:       'חיפוש משתמש לפי שם',
-      searchPlaceholder: 'הקלד שם מוצג (לפחות 2 תווים)',
-      noMatches:         'לא נמצאו משתמשים פעילים בשם זה.',
-      changeUser:        'החלף משתמש',
-      roleLabel:         'בחר תפקיד',
-      cancel:            'ביטול',
-      submit:            'הענק תפקיד',
-      errors: {
-        forbidden:           'אין לך הרשאה להעניק תפקיד.',
-        invalid_input:       'יש לבחור משתמש.',
-        invalid_role:        'יש לבחור תפקיד (moderator או support).',
-        target_not_found:    'המשתמש לא נמצא.',
-        target_not_active:   'אפשר להעניק תפקיד רק למשתמש פעיל.',
-        role_already_active: 'למשתמש כבר יש מינוי פעיל בתפקיד זה.',
-        unknown:             'אירעה שגיאה. נסה שוב.',
-      },
-    },
-  },
+  admins: adminAdminsHe,
   tasks: adminTasksHe,
   content: adminContentHe,
   time: adminTimeHe,
