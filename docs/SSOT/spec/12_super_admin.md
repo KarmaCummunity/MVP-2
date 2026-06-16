@@ -427,6 +427,39 @@ Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(ad
 
 ---
 
+## §16 Admin Portal — Management hierarchy redesign (P3.A-Tree)
+
+Rebuilds `(admin)/admins` around a per-user card + admin-detail screen, and (in later phases) an organisation hierarchy tree. Plan: `docs/superpowers/plans/2026-06-16-admin-management-tree-redesign.md`. Phase 1 (FR-ADMIN-022/023) is FE-only (no schema change); Phases 2–3 (FR-ADMIN-024..026) add the `organizations` entity, the direct-manager link, the collapsible tree, and the public About tree with field-level privacy — specified when they ship.
+
+---
+
+## FR-ADMIN-022 — Unified admin card + detail + profile cross-links
+
+**Description.**
+The admins list shows one card per *user* (not per grant). Each card carries all of the user's active roles as badges and opens an admin-detail screen; role-holders are cross-linked with their public profile in both directions.
+
+**Acceptance Criteria.**
+- AC1. `(admin)/admins` renders one card per user. A user holding several roles (e.g. `moderator` + `support`) appears once, with each active role as a badge — replacing the previous one-row-per-grant rendering that duplicated multi-role users. Folding is pure domain logic (`@kc/domain` `groupGrantsByUser` → `AdminPerson`).
+- AC2. Section counts reflect **active** team members. Fully-revoked users render in a separate "מינויים שבוטלו" section shown only when the include-revoked toggle is on.
+- AC3. Tapping a card opens `(admin)/admins/[userId]`, which lists every grant (active + revoked) with per-role **revoke** (gated by `admins.revoke_role`) and a button to the user's public profile (`/user/[userId]`, resolved via the route's `findById` fallback — no `share_handle` round-trip).
+- AC4. A role-holder's public profile (`/user/[handle]`) shows a cross-link to their admin-detail card, visible only when the viewer holds `admins.view` and the target has ≥1 grant.
+- AC5. All surfaces use `@kc/ui` design tokens (`makeUseStyles`, `radius`, `shadow`, RTL helpers) and are responsive — a centered max-width column at ≥ `tablet` (768px) — per `spec/14_responsive_desktop.md`.
+
+**Related.** Domain: `AdminPerson`, `groupGrantsByUser`, `adminRoleRank`. Mobile: `AdminPersonCard`, `RoleBadge`, `useAdminPerson`, `(admin)/admins/index.tsx`, `(admin)/admins/[userId].tsx`, profile cross-link in `user/[handle]/index.tsx`.
+
+---
+
+## FR-ADMIN-023 — Include-revoked toggle & system-account clarity (bug fixes)
+
+**Description.**
+Fixes the two list defects the PM reported: the confusing include-revoked toggle and report-channel system accounts (`a1-reports-*`) appearing under `מנהל-על`.
+
+**Acceptance Criteria.**
+- AC1. The include-revoked toggle reliably switches the list (the query key carries `includeRevoked`); the default view is active-only.
+- AC2. Because the single-active-super_admin invariant (FR-ADMIN-017) guarantees at most one active `super_admin`, the historical **revoked** `super_admin` grants on test accounts (`a1-reports-*`) no longer inflate the active super_admin section — they surface only under the "revoked" section when the toggle is on. This is presentation-layer (FE) only; cleaning up stray dev-DB grants is a follow-up (no schema change in Phase 1).
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
@@ -438,3 +471,4 @@ Migration: `0149_admin_content_search.sql`. Mobile routes: `(admin)/users`, `(ad
 | 0.7 | 2026-05-28 | Added §13 Admin Portal — Internal Tasks tracker (A3). FR-ADMIN-018. Migrations `0144_admin_tasks.sql` (tables + RLS + audit-action widen v4 → v5 with `admin_task_create`/`admin_task_update`/`admin_task_delete`) and `0145_admin_task_rpcs.sql` (8 SECURITY DEFINER RPCs for create/update/set_status/assign/add_comment/delete/list/detail). New `notifications.task_assigned*` i18n keys + `task_assigned` NotificationKind + pushRouteAllowlist handler for `(admin)/tasks/[taskId]`. |
 | 0.8 | 2026-05-28 | Added §14 Admin Portal — Content & Users management (A4). FR-ADMIN-019 (user + post search) and FR-ADMIN-020 (RBAC-tiered audit viewer). Migration `0149_admin_content_search.sql` ships `admin_search_users` (closes TD-93 at the UX layer), `admin_search_posts`, and `admin_audit_search` (super_admin sees all; moderator sees own + handled-target; support sees own only). Status header flipped 🟡 → ✅. |
 | 0.9 | 2026-06-14 | Added §15 Admin Portal — Survey results & feedback dashboard (A5). FR-ADMIN-021 (`/admin/surveys`): aggregate per-question stats + per-user answers + free-feedback list, gated by new `surveys.view` permission. Migration `0194_admin_survey_results.sql` ships `admin_survey_overview` / `admin_survey_results` / `admin_user_feedback_list` (all SECURITY DEFINER + `admin_assert_role` super_admin\|moderator). Also redesigned the `(admin)/tasks` filter bar (chips no longer wrap vertically; centered max-width layout). |
+| 0.10 | 2026-06-16 | Added §16 Admin Portal — Management hierarchy redesign (P3.A-Tree). FR-ADMIN-022 (unified per-user card + `(admin)/admins/[userId]` detail + profile cross-links; `AdminPerson` / `groupGrantsByUser` domain fold) and FR-ADMIN-023 (include-revoked toggle + `a1-reports-*` revoked-grant presentation fix). Phase 1 is FE-only — no schema change. FR-ADMIN-024..026 (organizations + direct-manager tree + public About tree) specified when Phases 2–3 ship. Plan: `docs/superpowers/plans/2026-06-16-admin-management-tree-redesign.md`. |
