@@ -3661,6 +3661,10 @@ export type Database = {
       }
       is_active_member: { Args: { uid: string }; Returns: boolean }
       is_admin: { Args: { uid: string }; Returns: boolean }
+      is_ancestor: {
+        Args: { p_ancestor: string; p_node: string }
+        Returns: boolean
+      }
       is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       is_chat_visible_to: {
         Args: {

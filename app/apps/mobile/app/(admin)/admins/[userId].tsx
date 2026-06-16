@@ -1,7 +1,7 @@
 // app/apps/mobile/app/(admin)/admins/[userId].tsx
-// FR-ADMIN-022 — admin-detail screen: one consolidated view of a team member
-// with all their role grants, per-role revoke, a link to their public profile,
-// and placeholders for the direct-manager / subordinates tree (Phase 2).
+// FR-ADMIN-022 / FR-ADMIN-025 — admin-detail screen: one consolidated view of a
+// team member with all their role grants, per-role revoke, a link to their
+// public profile, and the live direct-manager / subordinates sections.
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -12,11 +12,10 @@ import {
 import { makeUseStyles, radius, useTheme } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminPerson } from '../../../src/hooks/useAdminPerson';
-import { useOrgTree } from '../../../src/hooks/useOrgTree';
 import { useRevokeAdminRole } from '../../../src/hooks/useAdminRoleMutations';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { AdminRow } from '../../../src/components/admin/admins/AdminRow';
-import { GrantManagerSection } from '../../../src/components/admin/admins/GrantManagerSection';
+import { AdminManagerSections } from '../../../src/components/admin/admins/AdminManagerSections';
 import { rowDirectionStart, textAlignStart } from '../../../src/lib/rtlLayout';
 import he from '../../../src/i18n/locales/he';
 
@@ -27,14 +26,11 @@ export default function AdminDetailScreen() {
   const { userId } = useLocalSearchParams<{ userId: string }>();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const { person, isLoading } = useAdminPerson(userId);
-  const tree = useOrgTree(null);
   const revoke = useRevokeAdminRole();
   const [revokeErr, setRevokeErr] = useState<string | null>(null);
 
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const canRevoke = can('admins.revoke_role');
-  const canManage = can('admins.set_manager');
-  const myMemberships = tree.members.filter((m) => m.userId === userId);
 
   async function onRevoke(grantId: string) {
     setRevokeErr(null);
@@ -98,22 +94,7 @@ export default function AdminDetailScreen() {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>{he.admin.admins.detail.managerSection}</Text>
-      {myMemberships.length === 0 ? (
-        <View style={styles.placeholder}>
-          <Ionicons name="git-network-outline" size={20} color={colors.textSecondary} />
-          <Text style={styles.hint}>{he.admin.admins.detail.managerNone}</Text>
-        </View>
-      ) : (
-        myMemberships.map((m) => (
-          <GrantManagerSection
-            key={m.grantId}
-            member={m}
-            members={tree.members}
-            canManage={canManage}
-          />
-        ))
-      )}
+      <AdminManagerSections userId={person.userId} canManage={can('admins.set_manager')} />
     </ScrollView>
   );
 }
@@ -137,9 +118,5 @@ const useStyles = makeUseStyles(({ colors }) => ({
   },
   sectionTitle: { fontSize: 14, fontWeight: '800', color: colors.textPrimary, marginTop: 12, textAlign: textAlignStart() },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden' },
-  placeholder: {
-    flexDirection: rowDirectionStart, alignItems: 'center', gap: 10,
-    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14,
-  },
   hint: { flex: 1, fontSize: 13, color: colors.textSecondary, textAlign: textAlignStart() },
 }));
