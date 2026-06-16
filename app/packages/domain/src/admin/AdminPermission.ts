@@ -15,6 +15,7 @@ export const ADMIN_PERMISSIONS = [
   'admins.view',
   'admins.grant_role',
   'admins.revoke_role',
+  'admins.set_manager',
   'users.search',
   'users.privacy_override',
   'posts.search',
@@ -45,6 +46,9 @@ export const PERMISSION_MATRIX: Readonly<Record<AdminPermission, readonly AdminR
   'admins.view':                ['super_admin', 'moderator'],
   'admins.grant_role':          ['super_admin'],
   'admins.revoke_role':         ['super_admin'],
+  // Convenience gate for the assign-manager UI; the RPC re-checks scoped
+  // authority via can_grant_role (org_admin/org_manager only within their org).
+  'admins.set_manager':         ['super_admin', 'org_admin', 'org_manager', 'volunteer_manager', 'operators_manager'],
   'users.search':               ['super_admin', 'moderator', 'support'],
   'users.privacy_override':     ['super_admin', 'moderator', 'support'],
   'posts.search':               ['super_admin', 'moderator', 'support'],

@@ -16,6 +16,7 @@ import {
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
+  SupabaseOrgHierarchyRepository,
   SupabaseOrgApplicationsRepository,
   SupabaseAdminContentRepository,
   SupabaseTimesheetsRepository,
@@ -58,6 +59,8 @@ import {
   GrantAdminRoleUseCase,
   RevokeAdminRoleUseCase,
   ListAdminsUseCase,
+  GetOrgTreeUseCase,
+  SetManagerUseCase,
   ListAdminTasksUseCase,
   GetAdminTaskDetailUseCase,
   CreateAdminTaskUseCase,
@@ -127,6 +130,7 @@ const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
+const orgHierarchyRepo = new SupabaseOrgHierarchyRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
 const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
 const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
@@ -159,6 +163,8 @@ export const container = {
   listAdmins: new ListAdminsUseCase(adminRoleRepo),
   grantAdminRole: new GrantAdminRoleUseCase(adminRoleRepo),
   revokeAdminRole: new RevokeAdminRoleUseCase(adminRoleRepo),
+  getOrgTree: new GetOrgTreeUseCase(orgHierarchyRepo),
+  setManager: new SetManagerUseCase(orgHierarchyRepo, adminRoleRepo),
   listAdminTasks: new ListAdminTasksUseCase(adminTaskRepo),
   getAdminTaskDetail: new GetAdminTaskDetailUseCase(adminTaskRepo),
   createAdminTask: new CreateAdminTaskUseCase(adminTaskRepo),

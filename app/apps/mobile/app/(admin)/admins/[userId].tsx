@@ -1,7 +1,7 @@
 // app/apps/mobile/app/(admin)/admins/[userId].tsx
-// FR-ADMIN-022 — admin-detail screen: one consolidated view of a team member
-// with all their role grants, per-role revoke, a link to their public profile,
-// and placeholders for the direct-manager / subordinates tree (Phase 2).
+// FR-ADMIN-022 / FR-ADMIN-025 — admin-detail screen: one consolidated view of a
+// team member with all their role grants, per-role revoke, a link to their
+// public profile, and the live direct-manager / subordinates sections.
 import { useState } from 'react';
 import { ActivityIndicator, Pressable, ScrollView, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -15,6 +15,7 @@ import { useAdminPerson } from '../../../src/hooks/useAdminPerson';
 import { useRevokeAdminRole } from '../../../src/hooks/useAdminRoleMutations';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { AdminRow } from '../../../src/components/admin/admins/AdminRow';
+import { AdminManagerSections } from '../../../src/components/admin/admins/AdminManagerSections';
 import { rowDirectionStart, textAlignStart } from '../../../src/lib/rtlLayout';
 import he from '../../../src/i18n/locales/he';
 
@@ -93,11 +94,7 @@ export default function AdminDetailScreen() {
         ))}
       </View>
 
-      <Text style={styles.sectionTitle}>{he.admin.admins.detail.managerSection}</Text>
-      <View style={styles.placeholder}>
-        <Ionicons name="git-network-outline" size={20} color={colors.textSecondary} />
-        <Text style={styles.hint}>{he.admin.admins.detail.comingSoon}</Text>
-      </View>
+      <AdminManagerSections userId={person.userId} canManage={can('admins.set_manager')} />
     </ScrollView>
   );
 }
@@ -121,9 +118,5 @@ const useStyles = makeUseStyles(({ colors }) => ({
   },
   sectionTitle: { fontSize: 14, fontWeight: '800', color: colors.textPrimary, marginTop: 12, textAlign: textAlignStart() },
   card: { backgroundColor: colors.surface, borderRadius: radius.lg, overflow: 'hidden' },
-  placeholder: {
-    flexDirection: rowDirectionStart, alignItems: 'center', gap: 10,
-    backgroundColor: colors.surface, borderRadius: radius.lg, padding: 14,
-  },
   hint: { flex: 1, fontSize: 13, color: colors.textSecondary, textAlign: textAlignStart() },
 }));

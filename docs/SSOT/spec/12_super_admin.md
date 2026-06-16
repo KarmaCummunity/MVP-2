@@ -460,6 +460,36 @@ Fixes the two list defects the PM reported: the confusing include-revoked toggle
 
 ---
 
+## FR-ADMIN-024 — Organisations entity
+
+**Description.**
+Introduces the `organizations` table so org-scoped roles reference a real entity. Karma Community is seeded as the single platform org (`is_platform = true`) and holds the platform-wide admin roles; platform-scoped grants (null `scope_org_id`) render under its tree.
+
+**Acceptance Criteria.**
+- AC1. `organizations` table exists (`org_id`, `name`, `slug`, `is_platform`, `created_at`) with public-read RLS; writes are DB/RPC-only. A partial unique index enforces at most one platform org.
+- AC2. Karma Community is seeded as the platform org (fixed `org_id`). Any pre-existing `admin_role_grants.scope_org_id` without a matching org is backfilled as a placeholder org so the FK validates.
+- AC3. The deferred FK `admin_role_grants.scope_org_id → organizations(org_id)` (migration 0173) is added and validated (`on delete restrict`), additively and backward-compatibly.
+
+**Related.** Migration `0203_admin_org_hierarchy.sql`. Decision `D-60`.
+
+---
+
+## FR-ADMIN-025 — Direct-manager link + hierarchy tree
+
+**Description.**
+Adds a per-grant direct-manager edge and a collapsible org-hierarchy tree. A grant may report to a manager in the same org (or a platform manager); the tree shows `level` (depth from the root). Tree visibility is org-scoped (every member sees their own org's full tree; `super_admin` sees all / any org) and is independent of the action permissions.
+
+**Acceptance Criteria.**
+- AC1. `admin_role_grants.manager_grant_id` (self-FK, `on delete set null`) holds the direct-manager edge; a CHECK forbids self-management; `is_ancestor(p_ancestor, p_node)` resolves the chain.
+- AC2. `admin_set_manager(p_grant_id, p_manager_grant_id)` is `SECURITY DEFINER`, gated by `can_grant_role` authority over the grant's role/scope, enforces same-org (or platform manager), rejects cycles (`manager_cycle`), and audit-logs `admin_set_manager`. Passing `null` clears the manager.
+- AC3. `admin_org_tree(p_org_id default null)` returns an RBAC-filtered adjacency list (caller's own org subtree; `super_admin` all, or a single org). Levels are computed client-side (`buildOrgForest`, `super_admin` root = 0).
+- AC4. `(admin)/admins` offers a list/tree view toggle; tree mode renders collapsible nodes with role + level badges. `super_admin` can switch orgs; scoped admins are pinned to their org.
+- AC5. The admin-detail screen shows live direct-manager + subordinates per grant and an assign/change/clear-manager picker gated by the `admins.set_manager` permission (server re-checks scoped authority); the tree updates without a full reload.
+
+**Related.** Migration `0203_admin_org_hierarchy.sql`. Domain: `OrgTree` (`buildOrgForest`, `OrgTreeNode`, `OrgTreeMember`), `OrgHierarchyError`, `admins.set_manager` permission. Application: `IOrgHierarchyRepository`, `GetOrgTreeUseCase`, `SetManagerUseCase`. Infrastructure: `SupabaseOrgHierarchyRepository`. Mobile: `useOrgTree`, `useSetManager`, `OrgTree` / `OrgTreeRow` / `LevelBadge` / `OrgSwitcher` / `ManagerPickerModal` / `GrantManagerSection`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
 | 0.1 | 2026-05-05 | Initial draft from PRD §2.2 and Flow 9. |
@@ -472,3 +502,4 @@ Fixes the two list defects the PM reported: the confusing include-revoked toggle
 | 0.8 | 2026-05-28 | Added §14 Admin Portal — Content & Users management (A4). FR-ADMIN-019 (user + post search) and FR-ADMIN-020 (RBAC-tiered audit viewer). Migration `0149_admin_content_search.sql` ships `admin_search_users` (closes TD-93 at the UX layer), `admin_search_posts`, and `admin_audit_search` (super_admin sees all; moderator sees own + handled-target; support sees own only). Status header flipped 🟡 → ✅. |
 | 0.9 | 2026-06-14 | Added §15 Admin Portal — Survey results & feedback dashboard (A5). FR-ADMIN-021 (`/admin/surveys`): aggregate per-question stats + per-user answers + free-feedback list, gated by new `surveys.view` permission. Migration `0194_admin_survey_results.sql` ships `admin_survey_overview` / `admin_survey_results` / `admin_user_feedback_list` (all SECURITY DEFINER + `admin_assert_role` super_admin\|moderator). Also redesigned the `(admin)/tasks` filter bar (chips no longer wrap vertically; centered max-width layout). |
 | 0.10 | 2026-06-16 | Added §16 Admin Portal — Management hierarchy redesign (P3.A-Tree). FR-ADMIN-022 (unified per-user card + `(admin)/admins/[userId]` detail + profile cross-links; `AdminPerson` / `groupGrantsByUser` domain fold) and FR-ADMIN-023 (include-revoked toggle + `a1-reports-*` revoked-grant presentation fix). Phase 1 is FE-only — no schema change. FR-ADMIN-024..026 (organizations + direct-manager tree + public About tree) specified when Phases 2–3 ship. Plan: `docs/superpowers/plans/2026-06-16-admin-management-tree-redesign.md`. |
+| 0.11 | 2026-06-16 | Phase 2 (P3.A-Tree.2) shipped. FR-ADMIN-024 (organisations entity + Karma Community platform org + `scope_org_id` FK) and FR-ADMIN-025 (per-grant `manager_grant_id` link, `is_ancestor`, `admin_set_manager` + `admin_org_tree` RPCs, collapsible tree with level badges, org-scoped visibility, assign-manager picker). Migration `0203_admin_org_hierarchy.sql`; decision `D-60` (per-grant manager edge). FR-ADMIN-026 (public About tree + field-level privacy) ships in Phase 3. |

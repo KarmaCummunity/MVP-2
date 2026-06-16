@@ -1094,6 +1094,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-60 — Org hierarchy uses a per-grant direct-manager edge (2026-06-16)
+
+**Date.** 2026-06-16
+
+**Decision.** The direct-manager link for the admin org hierarchy (FR-ADMIN-025) is a per-**grant** edge: `admin_role_grants.manager_grant_id` references another `grant_id`, not a per-user `manager_user_id`. A person who holds grants in several orgs can therefore sit under a different manager in each org, and the tree is built from the grant adjacency (`admin_org_tree` → `buildOrgForest`). Level = depth from the root; `super_admin` (platform root) = 0. Same-org rule: a grant may report to a grant in its own org or to a platform-scoped grant (e.g. `super_admin`); cycles are rejected server-side via `is_ancestor`.
+
+**Rationale.** Roles are already per-grant and org-scoped (`scope_org_id`, migration 0173). A per-user manager could not express "Dana manages me in Org A, but Yossi manages me in Org B," which the multi-org model (D-40) requires. Anchoring the edge on the grant keeps the hierarchy consistent with the authority model (`can_grant_role`) and lets the same recursive helpers power both the tree and Phase 3 field-level privacy (`is_ancestor`).
+
+**Alternatives rejected.** Per-user `manager_user_id` — simpler but cannot model multi-org membership and conflicts with org-scoped authority. Inferring hierarchy from role rank alone — ambiguous (many peers at a level) and cannot represent an explicit reporting line.
+
+**Affected docs.** `docs/SSOT/spec/12_super_admin.md` (FR-ADMIN-024/025), migration `0203_admin_org_hierarchy.sql`, `docs/SSOT/BACKLOG.md` (P3.A-Tree.2).
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08

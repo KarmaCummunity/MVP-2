@@ -147,17 +147,14 @@ export { ReportUserUseCase } from './moderation/ReportUserUseCase';
 export type { ReportUserInput } from './moderation/ReportUserUseCase';
 export { CheckAccountGateUseCase } from './moderation/CheckAccountGateUseCase';
 export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase';
-
 export type { IDeviceRepository } from './notifications/IDeviceRepository';
 export { RegisterDeviceUseCase } from './notifications/RegisterDeviceUseCase';
 export { DeactivateDeviceUseCase } from './notifications/DeactivateDeviceUseCase';
 export { UpdateNotificationPreferencesUseCase } from './notifications/UpdateNotificationPreferencesUseCase';
-
 export * from './ports/ILegalDocumentRepository';
 export * from './legal/LoadLegalDocumentUseCase';
 export * from './legal/CheckPendingLegalAcksUseCase';
 export * from './legal/AcceptLegalDocumentUseCase';
-
 export * from './admin/IAdminRoleRepository';
 export * from './admin/GetMyAdminRolesUseCase';
 export * from './admin/GrantAdminRoleUseCase';
@@ -191,6 +188,9 @@ export * from './admin/MarkCrmContactContactedUseCase';
 export * from './admin/IOrgApplicationsRepository';
 export * from './admin/ListOrgApplicationsUseCase';
 export * from './admin/DecideOrgApplicationUseCase';
+export * from './admin/IOrgHierarchyRepository';
+export * from './admin/GetOrgTreeUseCase';
+export * from './admin/SetManagerUseCase';
 
 // A1 — admin reports inbox & case detail
 export * from './reports/IReportsRepository';
