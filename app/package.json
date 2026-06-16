@@ -42,7 +42,11 @@
   },
   "pnpm": {
     "overrides": {
-      "shell-quote": ">=1.8.4"
+      "shell-quote": ">=1.8.4",
+      "form-data@4": ">=4.0.6",
+      "ws@6": ">=6.2.4",
+      "ws@7": ">=7.5.11",
+      "ws@8": ">=8.21.0"
     },
     "auditConfig": {
       "ignoreGhsas": [
