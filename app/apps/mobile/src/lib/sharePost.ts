@@ -10,11 +10,16 @@
 //   Web w/ files:  navigator.share({ title, text, url, files: [imageFile] })
 //   Web no files:  navigator.share({ title, text, url })
 //   Web no share:  navigator.clipboard.writeText(url) → outcome 'copied'.
+//
+// The web `navigator.share`/clipboard fallback and the native `Share.share`
+// call live in `shareViaSheet`; this module owns the post-specific URL +
+// image-binary orchestration.
 
-import { Platform, Share } from 'react-native';
+import { Platform } from 'react-native';
 
 import { buildPostShareUrl } from './buildPostShareUrl';
 import { downloadPostImageForShare } from './downloadPostImageForShare';
+import { shareViaNative, shareViaWeb, type ShareOutcome } from './shareViaSheet';
 
 export type PostShareInput = Readonly<{
   postId: string;
@@ -25,17 +30,7 @@ export type PostShareInput = Readonly<{
   remoteImageUrl?: string;
 }>;
 
-export type SharePostOutcome =
-  | { kind: 'shared' }
-  | { kind: 'dismissed' }
-  | { kind: 'copied' }
-  | { kind: 'failed'; reason: string };
-
-type WebShareNavigator = {
-  share?: (data: { title?: string; text?: string; url?: string; files?: File[] }) => Promise<void>;
-  canShare?: (data: { files?: File[] }) => boolean;
-  clipboard?: { writeText: (text: string) => Promise<void> };
-};
+export type SharePostOutcome = ShareOutcome;
 
 async function fetchAsFile(remoteUrl: string, postId: string): Promise<File | null> {
   if (typeof fetch === 'undefined' || typeof File === 'undefined') return null;
@@ -51,38 +46,13 @@ async function fetchAsFile(remoteUrl: string, postId: string): Promise<File | nu
   }
 }
 
-async function shareWeb(
-  input: PostShareInput,
-  url: string,
-  nav: WebShareNavigator | undefined,
-): Promise<SharePostOutcome> {
-  if (nav?.share) {
-    let file: File | null = null;
-    if (input.remoteImageUrl && input.remoteImageUrl.trim() !== '') {
-      file = await fetchAsFile(input.remoteImageUrl, input.postId);
-    }
-    const filesPayload = file && (!nav.canShare || nav.canShare({ files: [file] })) ? [file] : undefined;
-    try {
-      if (filesPayload) {
-        await nav.share({ title: input.title, text: input.message, url, files: filesPayload });
-      } else {
-        await nav.share({ title: input.title, text: input.message, url });
-      }
-      return { kind: 'shared' };
-    } catch (err) {
-      const name = err instanceof Error ? err.name : '';
-      if (name === 'AbortError') return { kind: 'dismissed' };
-    }
+async function sharePostWeb(input: PostShareInput, url: string): Promise<ShareOutcome> {
+  let files: File[] | undefined;
+  if (input.remoteImageUrl && input.remoteImageUrl.trim() !== '') {
+    const file = await fetchAsFile(input.remoteImageUrl, input.postId);
+    if (file) files = [file];
   }
-  if (nav?.clipboard?.writeText) {
-    try {
-      await nav.clipboard.writeText(url);
-      return { kind: 'copied' };
-    } catch (err) {
-      return { kind: 'failed', reason: err instanceof Error ? err.message : 'clipboard_failed' };
-    }
-  }
-  return { kind: 'failed', reason: 'no_share_api' };
+  return shareViaWeb({ title: input.title, text: input.message, url, files });
 }
 
 const SHARE_IMAGE_DOWNLOAD_MS = 2_500;
@@ -103,13 +73,10 @@ async function withShareImageDownloadTimeout<T>(promise: Promise<T>): Promise<T 
   }
 }
 
-export async function sharePost(input: PostShareInput): Promise<SharePostOutcome> {
+export async function sharePost(input: PostShareInput): Promise<ShareOutcome> {
   const url = buildPostShareUrl(input.postId, input.webBaseUrl);
 
-  if (Platform.OS === 'web') {
-    const nav = typeof navigator !== 'undefined' ? (navigator as unknown as WebShareNavigator) : undefined;
-    return shareWeb(input, url, nav);
-  }
+  if (Platform.OS === 'web') return sharePostWeb(input, url);
 
   // iOS attaches the image binary via the `url` field; the share URL lives
   // inline in `message`. Android never passes `url` because RN concatenates
@@ -122,21 +89,5 @@ export async function sharePost(input: PostShareInput): Promise<SharePostOutcome
     localImageUri = downloaded?.uri;
   }
 
-  try {
-    const messageWithUrl = `${input.message}\n${url}`;
-    if (localImageUri && Platform.OS === 'ios') {
-      const result = await Share.share({
-        message: messageWithUrl,
-        url: localImageUri,
-        title: input.title,
-      });
-      if (result.action === Share.dismissedAction) return { kind: 'dismissed' };
-      return { kind: 'shared' };
-    }
-    const result = await Share.share({ message: messageWithUrl, title: input.title });
-    if (result.action === Share.dismissedAction) return { kind: 'dismissed' };
-    return { kind: 'shared' };
-  } catch (err) {
-    return { kind: 'failed', reason: err instanceof Error ? err.message : 'share_failed' };
-  }
+  return shareViaNative({ message: `${input.message}\n${url}`, title: input.title, fileUri: localImageUri });
 }

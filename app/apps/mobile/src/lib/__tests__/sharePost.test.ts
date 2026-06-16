@@ -71,33 +71,8 @@ describe('sharePost — web', () => {
     expect(arg.text).toBe('body\nwithout url');
   });
 
-  it('returns dismissed when navigator.share throws AbortError', async () => {
-    const share = vi.fn().mockRejectedValue(Object.assign(new Error('cancelled'), { name: 'AbortError' }));
-    vi.stubGlobal('navigator', { share });
-    vi.stubGlobal('fetch', vi.fn().mockResolvedValue({ ok: false }));
-
-    const outcome = await sharePost({ ...baseInput, remoteImageUrl: undefined });
-
-    expect(outcome).toEqual({ kind: 'dismissed' });
-  });
-
-  it('falls back to clipboard when navigator.share is missing', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { clipboard: { writeText } });
-
-    const outcome = await sharePost({ ...baseInput, remoteImageUrl: undefined });
-
-    expect(outcome).toEqual({ kind: 'copied' });
-    expect(writeText).toHaveBeenCalledWith('https://karma-community-kc.com/post/abc-123');
-  });
-
-  it('returns failed when no share api is available', async () => {
-    vi.stubGlobal('navigator', {});
-
-    const outcome = await sharePost({ ...baseInput, remoteImageUrl: undefined });
-
-    expect(outcome.kind).toBe('failed');
-  });
+  // Generic web fallbacks (AbortError → dismissed, clipboard copy, no-api →
+  // failed) are owned by `shareViaSheet.test.ts`; sharePost only wires into it.
 });
 
 describe('sharePost — ios', () => {

@@ -4,7 +4,9 @@
 // a discriminated-union outcome. URL composition is centralized so the
 // ?src= attribution can't drift across call sites.
 
-import { Platform, Share } from 'react-native';
+import { Platform } from 'react-native';
+
+import { shareViaNative, shareViaWeb, type ShareOutcome } from './shareViaSheet';
 
 export const RESEARCH_SHARE_SLUG = 'alt-platforms-research';
 export const RESEARCH_SHARE_SRC_THANKS = 'share-thanks';
@@ -19,16 +21,7 @@ export type ResearchShareInput = Readonly<{
   message: string;
 }>;
 
-export type ShareResearchOutcome =
-  | { kind: 'shared' }
-  | { kind: 'dismissed' }
-  | { kind: 'copied' }
-  | { kind: 'failed'; reason: string };
-
-type WebShareNavigator = {
-  share?: (data: { title?: string; text?: string; url?: string }) => Promise<void>;
-  clipboard?: { writeText: (text: string) => Promise<void> };
-};
+export type ShareResearchOutcome = ShareOutcome;
 
 function trimTrailingSlashes(url: string): string {
   let end = url.length;
@@ -45,60 +38,12 @@ function composeMessage(message: string, url: string): string {
   return `${message.trim()}\n\n${url}`;
 }
 
-async function copyToClipboard(
-  nav: WebShareNavigator,
-  url: string,
-): Promise<ShareResearchOutcome> {
-  if (nav.clipboard?.writeText) {
-    try {
-      await nav.clipboard.writeText(url);
-      return { kind: 'copied' };
-    } catch (err) {
-      return { kind: 'failed', reason: (err as Error).message };
-    }
-  }
-  return { kind: 'failed', reason: 'no_share_or_clipboard' };
-}
-
-async function shareWeb(
-  url: string,
-  title: string,
-  body: string,
-): Promise<ShareResearchOutcome> {
-  const nav = typeof navigator !== 'undefined' ? (navigator as unknown as WebShareNavigator) : undefined;
-  if (!nav) return { kind: 'failed', reason: 'no_navigator' };
-  if (typeof nav.share === 'function') {
-    try {
-      await nav.share({ title, text: body, url });
-      return { kind: 'shared' };
-    } catch (err) {
-      const name = (err as { name?: string }).name;
-      if (name === 'AbortError') return { kind: 'dismissed' };
-    }
-  }
-  return copyToClipboard(nav, url);
-}
-
-async function shareNative(
-  title: string,
-  body: string,
-): Promise<ShareResearchOutcome> {
-  try {
-    const result = await Share.share({ message: body, title });
-    if (result.action === Share.sharedAction) return { kind: 'shared' };
-    if (result.action === Share.dismissedAction) return { kind: 'dismissed' };
-    return { kind: 'failed', reason: `unknown_action_${result.action}` };
-  } catch (err) {
-    return { kind: 'failed', reason: (err as Error).message };
-  }
-}
-
 export async function shareResearchSurvey(
   input: ResearchShareInput,
-): Promise<ShareResearchOutcome> {
+): Promise<ShareOutcome> {
   const url = buildResearchShareUrl(input.webBaseUrl, input.src);
   const body = composeMessage(input.message, url);
 
-  if (Platform.OS === 'web') return shareWeb(url, input.title, body);
-  return shareNative(input.title, body);
+  if (Platform.OS === 'web') return shareViaWeb({ title: input.title, text: body, url });
+  return shareViaNative({ message: body, title: input.title });
 }

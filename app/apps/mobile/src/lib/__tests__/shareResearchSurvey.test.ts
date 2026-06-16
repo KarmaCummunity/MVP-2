@@ -55,7 +55,7 @@ describe('buildResearchShareUrl', () => {
   });
 });
 
-describe('shareResearchSurvey — web (Platform.OS=web)', () => {
+describe('shareResearchSurvey — routing (web → navigator.share)', () => {
   beforeEach(() => {
     (Platform as { OS: string }).OS = 'web';
     vi.clearAllMocks();
@@ -66,7 +66,7 @@ describe('shareResearchSurvey — web (Platform.OS=web)', () => {
     vi.unstubAllGlobals();
   });
 
-  it('returns kind: "shared" when navigator.share resolves', async () => {
+  it('routes the composed body + url to navigator.share', async () => {
     const share = vi.fn().mockResolvedValue(undefined);
     vi.stubGlobal('navigator', { share });
 
@@ -78,96 +78,18 @@ describe('shareResearchSurvey — web (Platform.OS=web)', () => {
     });
 
     expect(result).toEqual({ kind: 'shared' });
-    expect(share).toHaveBeenCalledTimes(1);
-  });
-
-  it('returns kind: "dismissed" when navigator.share rejects with AbortError', async () => {
-    const share = vi.fn().mockRejectedValue(
-      Object.assign(new Error('cancelled'), { name: 'AbortError' }),
-    );
-    vi.stubGlobal('navigator', { share });
-
-    const result = await shareResearchSurvey({
-      webBaseUrl: 'https://example.com',
-      src: RESEARCH_SHARE_SRC_SETTINGS,
-      title: 'T',
-      message: 'M',
-    });
-
-    expect(result).toEqual({ kind: 'dismissed' });
-  });
-
-  it('returns kind: "copied" when navigator.share is undefined but clipboard.writeText succeeds', async () => {
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { clipboard: { writeText } });
-
-    const result = await shareResearchSurvey({
-      webBaseUrl: 'https://example.com',
-      src: RESEARCH_SHARE_SRC_SETTINGS,
-      title: 'T',
-      message: 'M',
-    });
-
-    expect(result).toEqual({ kind: 'copied' });
-    expect(writeText).toHaveBeenCalledWith(
+    expect(share.mock.calls[0][0].url).toBe(
       'https://example.com/research/alt-platforms-research?src=in-app-share-settings',
     );
   });
-
-  it('falls through to clipboard when navigator.share throws non-AbortError', async () => {
-    const share = vi.fn().mockRejectedValue(new Error('not_supported'));
-    const writeText = vi.fn().mockResolvedValue(undefined);
-    vi.stubGlobal('navigator', { share, clipboard: { writeText } });
-
-    const result = await shareResearchSurvey({
-      webBaseUrl: 'https://example.com',
-      src: RESEARCH_SHARE_SRC_THANKS,
-      title: 'T',
-      message: 'M',
-    });
-
-    expect(result).toEqual({ kind: 'copied' });
-    expect(writeText).toHaveBeenCalledTimes(1);
-  });
 });
 
+// Generic web/native share mechanics live in `shareViaSheet.test.ts`; these
+// cases assert the research-specific message composition + src routing only.
 describe('shareResearchSurvey — native (Platform.OS=ios)', () => {
   beforeEach(() => {
     (Platform as { OS: string }).OS = 'ios';
     vi.clearAllMocks();
-  });
-
-  it('returns kind: "shared" when sharedAction', async () => {
-    shareMock.mockResolvedValue({ action: 'sharedAction' });
-    const result = await shareResearchSurvey({
-      webBaseUrl: 'https://example.com',
-      src: RESEARCH_SHARE_SRC_SETTINGS,
-      title: 'T',
-      message: 'M',
-    });
-    expect(result).toEqual({ kind: 'shared' });
-  });
-
-  it('returns kind: "dismissed" when dismissedAction', async () => {
-    shareMock.mockResolvedValue({ action: 'dismissedAction' });
-    const result = await shareResearchSurvey({
-      webBaseUrl: 'https://example.com',
-      src: RESEARCH_SHARE_SRC_SETTINGS,
-      title: 'T',
-      message: 'M',
-    });
-    expect(result).toEqual({ kind: 'dismissed' });
-  });
-
-  it('returns kind: "failed" when Share.share throws', async () => {
-    shareMock.mockRejectedValue(new Error('os refused'));
-    const result = await shareResearchSurvey({
-      webBaseUrl: 'https://example.com',
-      src: RESEARCH_SHARE_SRC_SETTINGS,
-      title: 'T',
-      message: 'M',
-    });
-    expect(result).toEqual({ kind: 'failed', reason: 'os refused' });
   });
 
   it('includes the URL exactly once in the share message body', async () => {
