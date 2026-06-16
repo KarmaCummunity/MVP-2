@@ -5,36 +5,20 @@
 // build-up across tab toggles).
 // Mapped to: FR-PROFILE-001 AC1, AC4.
 import React from 'react';
-import {
-  ActivityIndicator,
-  I18nManager,
-  Platform,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  type ViewStyle,
-} from 'react-native';
+import { I18nManager, Platform, View, type ViewStyle } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
+import { makeUseStyles, spacing } from '@kc/ui';
 import { TopBar } from '../TopBar';
-import { ProfileHeader } from './ProfileHeader';
-import { ProfileStatsRow } from './ProfileStatsRow';
 import { ProfileTabs, type ProfilePostsTab } from './ProfileTabs';
 import { MyProfileOverflowMenu } from './MyProfileOverflowMenu';
-import { Card } from '../ui/Card';
+import { MyProfileCard } from './MyProfileCard';
 import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
 import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
 import { useProfileShare } from '../../hooks/useProfileShare';
-import { KarmaBadge } from './KarmaBadge';
-import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
-import { rowDirectionStart } from '../../lib/rtlLayout';
-import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 /**
  * RN-Web: absolute `start` ignores RTL like native. `I18nManager.isRTL` is also false at
@@ -53,12 +37,9 @@ function profileMenuCornerHorizontalInset(): Pick<ViewStyle, 'left' | 'right' | 
 
 export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePostsTab }>) {
   const styles = useMyProfileChromeStyles();
-  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
-  const session = useAuthStore((s) => s.session);
-  const userId = session?.userId;
-  const fallbackName = t('profile.fallbackName');
+  const userId = useAuthStore((s) => s.session)?.userId;
 
   const userQuery = useQuery({
     queryKey: ['user-profile', userId],
@@ -72,17 +53,16 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
     viewerUserId: userId ?? null,
     enabled: Boolean(userId),
   });
-  const profileLoading = userQuery.isLoading && user === null;
-  const displayName = user?.displayName?.trim() || fallbackName;
-  const avatarUrl = user?.avatarUrl ?? null;
-  const biography = user?.biography ?? null;
+  const displayName = user?.displayName?.trim() || t('profile.fallbackName');
   const profileShare = useProfileShare(user?.shareHandle, displayName);
+  const handle = user?.shareHandle ?? '';
 
   const goToTab = (next: ProfilePostsTab) => {
     if (next === activeTab) return;
-    if (next === 'closed') router.replace('/(tabs)/profile/closed');
-    else router.replace('/(tabs)/profile');
+    router.replace(next === 'closed' ? '/(tabs)/profile/closed' : '/(tabs)/profile');
   };
+  const pushToHandle = (segment: 'followers' | 'following') =>
+    router.push({ pathname: `/user/[handle]/${segment}` as never, params: { handle } });
 
   return (
     <>
@@ -95,69 +75,18 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
           >
             <MyProfileOverflowMenu showFollowRequests={user?.privacyMode === 'Private'} />
           </View>
-          <Card padding="base" style={styles.profileCard}>
-            {profileLoading ? (
-              <View style={styles.profileLoading}>
-                <ActivityIndicator color={colors.primary} />
-              </View>
-            ) : (
-              <>
-                <ProfileHeader
-                  displayName={displayName}
-                  locationLine={user ? formatUserLocationLine(user) : null}
-                  avatarUrl={avatarUrl}
-                  biography={biography}
-                  privacyMode={user?.privacyMode ?? 'Public'}
-                  onLockPress={() => router.push('/settings')}
-                  size={72}
-                />
-                <ProfileStatsRow
-                  followersCount={user?.followersCount ?? 0}
-                  followingCount={user?.followingCount ?? 0}
-                  postsCount={tabCounts.totalCount ?? 0}
-                  enabled={Boolean(user)}
-                  onPressFollowers={() =>
-                    router.push({
-                      pathname: '/user/[handle]/followers' as never,
-                      params: { handle: user?.shareHandle ?? '' },
-                    })
-                  }
-                  onPressFollowing={() =>
-                    router.push({
-                      pathname: '/user/[handle]/following' as never,
-                      params: { handle: user?.shareHandle ?? '' },
-                    })
-                  }
-                />
-                {user ? <KarmaBadge points={user.karmaPoints} /> : null}
-              </>
-            )}
-            <View style={styles.actionRow}>
-              <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
-                <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
-              </TouchableOpacity>
-              <TouchableOpacity
-                style={styles.shareBtn}
-                onPress={profileShare.share}
-                disabled={!profileShare.canShare || profileShare.busy}
-                accessibilityRole="button"
-                accessibilityLabel={t('profile.shareProfile')}
-                accessibilityState={{ disabled: !profileShare.canShare || profileShare.busy }}
-              >
-                <Ionicons name="share-outline" size={18} color={colors.primary} />
-              </TouchableOpacity>
-            </View>
-            <TouchableOpacity
-              style={styles.statsLink}
-              onPress={() => router.push('/stats')}
-              accessibilityRole="button"
-              accessibilityLabel={t('settings.stats')}
-            >
-              <Ionicons name="stats-chart-outline" size={20} color={colors.primary} />
-              <Text style={styles.statsLinkText}>{t('settings.stats')}</Text>
-              <Ionicons name="chevron-back" size={18} color={colors.textSecondary} />
-            </TouchableOpacity>
-          </Card>
+          <MyProfileCard
+            loading={userQuery.isLoading && user === null}
+            user={user}
+            displayName={displayName}
+            postsCount={tabCounts.totalCount ?? 0}
+            share={profileShare}
+            onEdit={() => router.push('/edit-profile')}
+            onStats={() => router.push('/stats')}
+            onLock={() => router.push('/settings')}
+            onFollowers={() => pushToHandle('followers')}
+            onFollowing={() => pushToHandle('following')}
+          />
         </View>
       </MotionEntry>
       <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
@@ -172,7 +101,7 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
   );
 }
 
-const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
+const useMyProfileChromeStyles = makeUseStyles(() => ({
   profileOuter: {
     margin: spacing.base,
     position: 'relative' as const,
@@ -182,42 +111,4 @@ const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
     top: spacing.sm,
     zIndex: 2,
   },
-  profileCard: { gap: spacing.base },
-  profileLoading: {
-    minHeight: 120,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  actionRow: { flexDirection: 'row' as const, gap: spacing.sm },
-  editBtn: {
-    flex: 1,
-    height: 44,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  editBtnText: { ...typography.button, color: colors.textPrimary },
-  shareBtn: {
-    width: 44,
-    height: 44,
-    borderRadius: radius.lg,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    justifyContent: 'center' as const,
-    alignItems: 'center' as const,
-  },
-  statsLink: {
-    flexDirection: rowDirectionStart,
-    alignItems: 'center' as const,
-    justifyContent: 'space-between' as const,
-    paddingVertical: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
-    gap: spacing.sm,
-  },
-  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
 }));
