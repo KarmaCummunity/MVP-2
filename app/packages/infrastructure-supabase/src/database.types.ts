@@ -952,6 +952,288 @@ export type Database = {
           },
         ]
       }
+      glowe_applications: {
+        Row: {
+          availability: string | null
+          created_at: string
+          id: string
+          motivation: string | null
+          opportunity_id: string
+          skills: string | null
+          status: string
+          user_id: string
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          id?: string
+          motivation?: string | null
+          opportunity_id: string
+          skills?: string | null
+          status?: string
+          user_id: string
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          id?: string
+          motivation?: string | null
+          opportunity_id?: string
+          skills?: string | null
+          status?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      glowe_comments: {
+        Row: {
+          author_name: string | null
+          created_at: string
+          id: string
+          post_id: string
+          text: string
+          user_id: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          created_at?: string
+          id?: string
+          post_id: string
+          text: string
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string
+          text?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      glowe_opportunities: {
+        Row: {
+          commitment: string | null
+          created_at: string
+          description: string | null
+          duration: string | null
+          featured: boolean
+          field: string | null
+          id: string
+          location: string | null
+          org_icon: string | null
+          organization: string
+          requirements: string[]
+          responsibilities: string[]
+          skills: string[]
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          commitment?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          featured?: boolean
+          field?: string | null
+          id?: string
+          location?: string | null
+          org_icon?: string | null
+          organization: string
+          requirements?: string[]
+          responsibilities?: string[]
+          skills?: string[]
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          commitment?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          featured?: boolean
+          field?: string | null
+          id?: string
+          location?: string | null
+          org_icon?: string | null
+          organization?: string
+          requirements?: string[]
+          responsibilities?: string[]
+          skills?: string[]
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      glowe_posts: {
+        Row: {
+          audience: string | null
+          author_id: string | null
+          author_name: string | null
+          category: string | null
+          created_at: string
+          id: string
+          language: string | null
+          link: string | null
+          tags: string[]
+          text: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          audience?: string | null
+          author_id?: string | null
+          author_name?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          link?: string | null
+          tags?: string[]
+          text?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          audience?: string | null
+          author_id?: string | null
+          author_name?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          language?: string | null
+          link?: string | null
+          tags?: string[]
+          text?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      glowe_profiles: {
+        Row: {
+          about: string | null
+          availability: string | null
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          focus: string | null
+          id: string
+          languages: string[]
+          location: string | null
+          needs: string | null
+          profile_status: string
+          profile_type: string | null
+          public_link: string | null
+          raw_profile: Json
+          skills: string[]
+          updated_at: string
+        }
+        Insert: {
+          about?: string | null
+          availability?: string | null
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          focus?: string | null
+          id: string
+          languages?: string[]
+          location?: string | null
+          needs?: string | null
+          profile_status?: string
+          profile_type?: string | null
+          public_link?: string | null
+          raw_profile?: Json
+          skills?: string[]
+          updated_at?: string
+        }
+        Update: {
+          about?: string | null
+          availability?: string | null
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          focus?: string | null
+          id?: string
+          languages?: string[]
+          location?: string | null
+          needs?: string | null
+          profile_status?: string
+          profile_type?: string | null
+          public_link?: string | null
+          raw_profile?: Json
+          skills?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      glowe_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      glowe_saved_items: {
+        Row: {
+          created_at: string
+          href: string | null
+          id: string
+          item_id: string
+          item_type: string
+          meta: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          href?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+          meta?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          href?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+          meta?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       karma_drift_events: {
         Row: {
           detected_at: string
