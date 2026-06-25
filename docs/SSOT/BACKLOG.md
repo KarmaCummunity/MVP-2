@@ -106,6 +106,16 @@
 | V3.0.11 | **Edge cases catalog (FR-RIDE-045)** — no-show auto-cancel + penalty; food spoilage handover trigger; international ban guard; breakdown flow via early-arrive with reason | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-045 |
 | V3.0.12 | **E2E test sweep + quality gates** — comprehensive unit + integration tests across all layers; RLS test sweep; vitest mobile component tests for hub, dashboard, active, ratings; `pnpm typecheck && pnpm test && pnpm lint` all green | agent-fullstack | ⏳ Planned | `spec/15_rides.md` FR-RIDE-045 |
 
+## GLOWE — Additional frontend on shared KC backend
+
+> The GloWe static frontend (`app/apps/glowe-web`) added *alongside* the KC mobile app, wired to the same Supabase project. Phased path toward GloWe-on-KC-infrastructure. See `spec/17_glowe_frontend.md`, `DECISIONS.md` D-61.
+
+| ID | Task | Owner | Status | Spec |
+|----|------|-------|--------|------|
+| GLOWE.A | **Phase A — shared auth** — vendor GloWe into monorepo (design 1:1); point `backend-config.js` at KC Supabase; namespace GloWe data with `glowe_` prefix (migration `0204`) + RLS; single shared `auth.users` identity across both frontends | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-001 |
+| GLOWE.B | **Phase B — shared content** — map overlapping entities (profiles, posts) onto KC native tables via DB views; retire corresponding `glowe_*` tables | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase B) |
+| GLOWE.C | **Phase C — convergence** — GloWe as primary frontend, unified schema | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase C) |
+
 ## P3 — Post-MVP (Deferred)
 
 | ID | Task | Status | Spec |
