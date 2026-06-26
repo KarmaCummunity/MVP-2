@@ -3974,6 +3974,98 @@ export type Database = {
       get_my_admin_roles: { Args: never; Returns: string[] }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      glowe_list_pending_orgs: {
+        Args: never
+        Returns: {
+          about: string | null
+          account_type: string | null
+          approval_status: string
+          availability: string | null
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          focus: string | null
+          id: string
+          languages: string[]
+          location: string | null
+          needs: string | null
+          onboarding_complete: boolean
+          org_contact_email: string | null
+          org_contact_name: string | null
+          org_contact_phone: string | null
+          org_country: string | null
+          org_description: string | null
+          org_field: string | null
+          org_name: string | null
+          org_registration_number: string | null
+          org_review_note: string | null
+          org_reviewed_at: string | null
+          org_reviewed_by: string | null
+          org_size: string | null
+          org_submitted_at: string | null
+          org_website: string | null
+          profile_status: string
+          profile_type: string | null
+          public_link: string | null
+          raw_profile: Json
+          skills: string[]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "glowe_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      glowe_set_org_approval: {
+        Args: { p_decision: string; p_note?: string; p_profile_id: string }
+        Returns: {
+          about: string | null
+          account_type: string | null
+          approval_status: string
+          availability: string | null
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          focus: string | null
+          id: string
+          languages: string[]
+          location: string | null
+          needs: string | null
+          onboarding_complete: boolean
+          org_contact_email: string | null
+          org_contact_name: string | null
+          org_contact_phone: string | null
+          org_country: string | null
+          org_description: string | null
+          org_field: string | null
+          org_name: string | null
+          org_registration_number: string | null
+          org_review_note: string | null
+          org_reviewed_at: string | null
+          org_reviewed_by: string | null
+          org_size: string | null
+          org_submitted_at: string | null
+          org_website: string | null
+          profile_status: string
+          profile_type: string | null
+          public_link: string | null
+          raw_profile: Json
+          skills: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_admin_role:
         | { Args: { role_name: string; uid: string }; Returns: boolean }
         | {

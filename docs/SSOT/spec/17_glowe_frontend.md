@@ -39,7 +39,7 @@ Non-goals for Phase A: shared *content* between GloWe and KC (same posts/profile
 
 ## FR-GLOWE-002 — Post-sign-in onboarding & account type (individual vs organization)
 
-**Status.** 🟡 In progress — onboarding step + data model delivered; org approval admin UI + view-only enforcement tracked separately (see Out of scope).
+**Status.** ✅ Done — onboarding step + data model + self-approval guard delivered (PR #577). Org approval admin UI + view-only enforcement tracked separately as FR-GLOWE-003.
 
 Because GloWe auth is Google-only (FR-GLOWE-001 AC2a), there is no registration wizard to collect a profile. Instead a lightweight onboarding step runs once after the first successful sign-in, capturing the minimum identity details and the account type. Two account types exist:
 
@@ -64,3 +64,21 @@ Because GloWe auth is Google-only (FR-GLOWE-001 AC2a), there is no registration 
 - An unverified organization is **view-only** — it can see everything but cannot upload a post/event/need.
 - Organization approval is performed via the GloWe Admin page.
 - The org field list is set at the agent's discretion ("make it professional") — see AC4.
+
+---
+
+## FR-GLOWE-003 — Organization approval workflow & view-only enforcement
+
+**Status.** 🟡 In progress — approval RPCs (DB) delivered; GloWe Admin review UI + client-side write gating land in the follow-up frontend PR.
+
+FR-GLOWE-002 lands an organization at `approval_status='pending'`, held view-only. This FR adds (a) the privileged admin path to review and decide, and (b) the client-side enforcement that keeps an unverified org (and an unregistered visitor) read-only.
+
+**Acceptance Criteria.**
+- AC1. **Approval RPC (migration `0206`).** `glowe_set_org_approval(p_profile_id, p_decision, p_note)` is `SECURITY DEFINER`, gated by `admin_assert_role(auth.uid(), {'super_admin'})` (raises `42501` for non-admins, mirroring `admin_org_application_decide`). It validates `p_decision ∈ {approved, rejected}` (`22023`), requires the target to be a `pending` `organization` (else `22023`/`P0002`), then sets `approval_status`, `org_reviewed_at`, `org_reviewed_by = auth.uid()`, and a trimmed `org_review_note`. The 0205 client-write guard does not block it (the DEFINER function runs as a non-login role). `revoke execute … from public; grant … to authenticated`.
+- AC2. **Review queue RPC (migration `0206`).** `glowe_list_pending_orgs()` is `SECURITY DEFINER`, super-admin-gated, returns `setof glowe_profiles` where `account_type='organization' and approval_status='pending'`, oldest submission first. Exposing the queue as an RPC (rather than a raw public-read query) gives the Admin page an admin-gated read path and room to later tighten the public `SELECT` on `glowe_profiles`.
+- AC3. Regression test `supabase/tests/0206_glowe_org_approval.sql`: non-admin blocked on both RPCs; super-admin sees + approves a pending org (reviewer/note/timestamp stamped); re-deciding a decided org rejected; bad decision value / non-org / unknown profile rejected.
+- AC4. **GloWe Admin review UI** *(frontend PR)* — the GloWe Admin page lists pending orgs (via `glowe_list_pending_orgs`) with their submitted details and Approve / Reject (+ optional note) controls wired to `glowe_set_org_approval`. *(pending)*
+- AC5. **View-only write gating** *(frontend PR)* — a single `canCreateContent()` guard (registered user AND not an unapproved org) blocks every content-create handler in `app/apps/glowe-web/js/app.js` (wish/need, post composer, opportunity/event, forum/discussion), showing a view-only notice instead of persisting. Unregistered "peek" visitors are blocked by the same guard. *(pending)*
+
+**Resolved decisions.**
+- Audit logging via `public.audit_events` is intentionally skipped for the approval RPCs (the `audit_events.action` CHECK allow-list has no GloWe action and the per-row `org_reviewed_*` columns already capture who/when/why). Revisit if a GloWe admin audit trail is required.
