@@ -2,9 +2,11 @@
 -- Regression for migration 0206 (FR-GLOWE-003).
 --
 -- glowe_set_org_approval / glowe_list_pending_orgs are SECURITY DEFINER and must
--- be callable only by a KC super_admin. This test verifies:
+-- be callable only by a KC reviewer (super_admin or moderator). We seed a
+-- moderator here because 'super_admin' is singleton-constrained (TD-95) and the
+-- shared CI/dev DBs already hold one. This test verifies:
 --   • a plain authenticated (non-admin) caller is blocked (42501 / 'forbidden')
---   • a super_admin can approve a pending org, stamping reviewer + note, and the
+--   • a reviewer can approve a pending org, stamping reviewer + note, and the
 --     0205 client-write guard does NOT block the privileged path
 --   • re-deciding an already-decided org is rejected (22023)
 --   • approving a non-organization / unknown profile is rejected
@@ -47,7 +49,7 @@ begin
   end if;
 end $$;
 
--- Seed: a pending org, a super_admin, and a plain (non-admin) user.
+-- Seed: a pending org, a moderator (reviewer), and a plain (non-admin) user.
 do $$
 begin
   perform pg_temp.mk_user('00000000-0000-0000-0000-0000000206a1', 'glowe_org6');
@@ -56,7 +58,7 @@ begin
 
   perform pg_temp.mk_user('00000000-0000-0000-0000-0000000206ad', 'glowe_admin6');
   insert into public.admin_role_grants (user_id, role)
-  values ('00000000-0000-0000-0000-0000000206ad', 'super_admin');
+  values ('00000000-0000-0000-0000-0000000206ad', 'moderator');
 
   perform pg_temp.mk_user('00000000-0000-0000-0000-0000000206b1', 'glowe_rando6');
 end $$;
@@ -73,7 +75,7 @@ select pg_temp.expect_blocked(
   $q$select * from public.glowe_list_pending_orgs()$q$,
   'forbidden');
 
--- ── ALLOWED: the super_admin sees the pending org in the queue ──
+-- ── ALLOWED: the reviewer sees the pending org in the queue ──
 reset role;
 select set_config('request.jwt.claims',
   jsonb_build_object('sub', '00000000-0000-0000-0000-0000000206ad', 'role', 'authenticated')::text, true);
@@ -90,7 +92,7 @@ begin
   end if;
 end $$;
 
--- ── ALLOWED: super_admin approves; reviewer + note stamped, guard not tripped ──
+-- ── ALLOWED: reviewer approves; reviewer + note stamped, guard not tripped ──
 do $$
 declare v_row public.glowe_profiles;
 begin
@@ -136,7 +138,7 @@ select pg_temp.expect_blocked(
 
 do $$
 begin
-  raise notice '✓ 0206: glowe org-approval RPCs gated to super_admin; approve stamps reviewer';
+  raise notice '✓ 0206: glowe org-approval RPCs gated to reviewers; approve stamps reviewer';
 end $$;
 
 reset role;

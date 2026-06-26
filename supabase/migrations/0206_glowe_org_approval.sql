@@ -2,15 +2,17 @@
 --
 -- FR-GLOWE-002 (migration 0205) lets an organization submit its details and
 -- lands it at approval_status='pending', held view-only. This migration adds
--- the privileged side: two SECURITY DEFINER RPCs, gated to KC super-admins, so
--- the GloWe Admin page can review the pending queue and approve/reject orgs.
+-- the privileged side: two SECURITY DEFINER RPCs, gated to KC reviewers, so the
+-- GloWe Admin page can review the pending queue and approve/reject orgs.
 --
 -- The client-write guard from 0205 (glowe_profiles_guard_approval) blocks
 -- authenticated/anon from setting 'approved'/'rejected'. These functions run as
 -- their owner (a non-login role), so current_user is neither 'authenticated' nor
 -- 'anon' and the guard lets the privileged write through — the only path to a
--- decided status. The admin gate is admin_assert_role(..., {'super_admin'}),
--- which raises 42501 for non-admins (mirrors admin_org_application_decide).
+-- decided status. The admin gate is admin_assert_role(..., {'super_admin',
+-- 'moderator'}), which raises 42501 for non-reviewers (mirrors
+-- admin_org_application_decide). 'super_admin' is singleton-constrained (TD-95),
+-- so the broader reviewer set also keeps the queue workable with moderators.
 --
 -- Mapped to spec: FR-GLOWE-003 (org approval workflow),
 --   docs/SSOT/spec/17_glowe_frontend.md.
@@ -32,8 +34,8 @@ declare
   v_actor uuid := auth.uid();
   v_row   public.glowe_profiles;
 begin
-  -- Gate: super-admins only. Raises 42501 otherwise.
-  perform public.admin_assert_role(v_actor, array['super_admin']);
+  -- Gate: KC reviewers only (super_admin or moderator). Raises 42501 otherwise.
+  perform public.admin_assert_role(v_actor, array['super_admin', 'moderator']);
 
   if p_decision not in ('approved', 'rejected') then
     raise exception 'glowe: decision must be approved or rejected, got %', p_decision
@@ -69,7 +71,7 @@ end;
 $$;
 
 comment on function public.glowe_set_org_approval(uuid, text, text) is
-  'Super-admin only: approve/reject a pending GloWe organization. Raises 42501 for non-admins.';
+  'Reviewers only (super_admin/moderator): approve/reject a pending GloWe organization. Raises 42501 otherwise.';
 
 revoke execute on function public.glowe_set_org_approval(uuid, text, text) from public;
 grant  execute on function public.glowe_set_org_approval(uuid, text, text) to authenticated;
@@ -86,7 +88,7 @@ security definer
 set search_path = public
 as $$
 begin
-  perform public.admin_assert_role(auth.uid(), array['super_admin']);
+  perform public.admin_assert_role(auth.uid(), array['super_admin', 'moderator']);
 
   return query
     select *
@@ -98,7 +100,7 @@ end;
 $$;
 
 comment on function public.glowe_list_pending_orgs() is
-  'Super-admin only: GloWe organizations awaiting review (approval_status=pending).';
+  'Reviewers only (super_admin/moderator): GloWe organizations awaiting review (approval_status=pending).';
 
 revoke execute on function public.glowe_list_pending_orgs() from public;
 grant  execute on function public.glowe_list_pending_orgs() to authenticated;
