@@ -5341,3 +5341,67 @@ ul {
         text-align: center;
     }
 }
+
+/* ── GloWe onboarding (FR-GLOWE-002) ───────────────────────────────────── */
+.onboarding-type-choice {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: 14px;
+}
+
+@media (max-width: 600px) {
+    .onboarding-type-choice {
+        grid-template-columns: 1fr;
+    }
+}
+
+.onboarding-type-card {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    padding: 16px;
+    border: 2px solid var(--border-color);
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: var(--transition);
+    background: var(--white);
+}
+
+.onboarding-type-card:hover {
+    border-color: var(--primary-light);
+}
+
+.onboarding-type-card:has(input:checked) {
+    border-color: var(--primary-color);
+    background: var(--mint-light);
+    box-shadow: var(--shadow-sm);
+}
+
+.onboarding-type-card input {
+    margin: 0 0 4px;
+}
+
+.onboarding-type-title {
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.onboarding-type-desc {
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+#onboarding-org-fields {
+    margin-top: 6px;
+    padding-top: 16px;
+    border-top: 1px solid var(--border-color);
+}
+
+.onboarding-review-note {
+    background: var(--mint-light);
+    border-radius: var(--radius-md);
+    padding: 12px 14px;
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    margin-bottom: 16px;
+}

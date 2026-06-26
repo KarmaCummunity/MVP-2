@@ -127,6 +127,13 @@ async function syncSupabaseSession() {
     if (profile) localStorage.setItem('glowePersonalProfile', JSON.stringify(profile));
     updateAuthUI();
     refreshPersonalAreaIfVisible();
+
+    // Invite the user to finish onboarding (basic details + account type). The
+    // helper no-ops if onboarding is already complete or was dismissed this
+    // session. (FR-GLOWE-002)
+    if (typeof window.maybeShowGloweOnboarding === 'function') {
+        window.maybeShowGloweOnboarding(profile);
+    }
 }
 
 async function attachSupabaseAuthListener() {

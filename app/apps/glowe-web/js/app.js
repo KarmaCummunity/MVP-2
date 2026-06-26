@@ -29,6 +29,118 @@ function showSuccessModal(title, message) {
     openModal('success-modal');
 }
 
+// ── Post-sign-in onboarding (FR-GLOWE-002) ──────────────────────────────────
+const GLOWE_ONBOARDING_DISMISSED_KEY = 'glowe-onboarding-dismissed';
+
+function toggleOnboardingOrgFields() {
+    const orgFields = document.getElementById('onboarding-org-fields');
+    if (!orgFields) return;
+    const checked = document.querySelector('input[name="onboarding-account-type"]:checked');
+    orgFields.hidden = !(checked && checked.value === 'organization');
+}
+
+function openGloweOnboarding(profile) {
+    ensureGlobalUI();
+    if (!document.getElementById('glowe-onboarding-modal')) return;
+    const user = (typeof getCurrentUser === 'function' && getCurrentUser()) || {};
+    const setVal = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ''; };
+    setVal('onboarding-display-name', (profile && profile.name) || user.name || '');
+    setVal('onboarding-country', (profile && profile.country) || '');
+    setVal('onboarding-about', (profile && profile.about) || '');
+    setVal('onboarding-org-contact-email', user.email || '');
+    toggleOnboardingOrgFields();
+    openModal('glowe-onboarding-modal');
+}
+
+function dismissGloweOnboarding() {
+    sessionStorage.setItem(GLOWE_ONBOARDING_DISMISSED_KEY, '1');
+    closeModal('glowe-onboarding-modal');
+}
+
+// Auto-invite an incomplete user once per browser session.
+function maybeShowGloweOnboarding(profile) {
+    if (profile && profile.onboardingComplete) return;
+    if (sessionStorage.getItem(GLOWE_ONBOARDING_DISMISSED_KEY) === '1') return;
+    sessionStorage.setItem(GLOWE_ONBOARDING_DISMISSED_KEY, '1');
+    openGloweOnboarding(profile);
+}
+
+async function handleGloweOnboarding(event) {
+    event.preventDefault();
+    if (!(window.gloweBackend && window.gloweBackend.configured()
+          && typeof window.gloweBackend.completeOnboarding === 'function')) {
+        dismissGloweOnboarding();
+        return;
+    }
+    const val = (id) => { const el = document.getElementById(id); return el ? el.value.trim() : ''; };
+    const checked = document.querySelector('input[name="onboarding-account-type"]:checked');
+    const accountType = checked ? checked.value : 'individual';
+    const isOrg = accountType === 'organization';
+
+    if (isOrg) {
+        const missing = [];
+        if (!val('onboarding-org-name')) missing.push('organization name');
+        if (!val('onboarding-org-description')) missing.push('about the organization');
+        if (!val('onboarding-org-contact-name')) missing.push('contact person');
+        if (!val('onboarding-org-contact-email')) missing.push('contact email');
+        if (missing.length) {
+            alert('To submit your organization for review, please add: ' + missing.join(', ') + '.');
+            return;
+        }
+    }
+
+    const submitBtn = document.getElementById('onboarding-submit');
+    if (submitBtn) submitBtn.disabled = true;
+
+    const details = {
+        displayName: val('onboarding-display-name'),
+        country: val('onboarding-country'),
+        about: val('onboarding-about'),
+        accountType,
+        org: isOrg ? {
+            name: val('onboarding-org-name'),
+            registrationNumber: val('onboarding-org-registration'),
+            website: val('onboarding-org-website'),
+            country: val('onboarding-org-country'),
+            field: val('onboarding-org-field'),
+            size: val('onboarding-org-size'),
+            description: val('onboarding-org-description'),
+            contactName: val('onboarding-org-contact-name'),
+            contactEmail: val('onboarding-org-contact-email'),
+            contactPhone: val('onboarding-org-contact-phone')
+        } : null
+    };
+
+    try {
+        const profile = await window.gloweBackend.completeOnboarding(details);
+        if (profile) {
+            localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify(profile));
+            // Keep the lightweight `gloweUser` name in sync with the chosen name.
+            if (typeof getCurrentUser === 'function') {
+                const current = getCurrentUser() || {};
+                localStorage.setItem('gloweUser', JSON.stringify({
+                    ...current,
+                    name: profile.name || current.name,
+                    type: profile.type || current.type
+                }));
+            }
+        }
+        closeModal('glowe-onboarding-modal');
+        if (typeof updateAuthUI === 'function') updateAuthUI();
+        if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+        showSuccessModal(
+            isOrg ? 'Application submitted' : "You're all set!",
+            isOrg
+                ? "Thanks! The GloWe team will review your organization. Until then you can explore everything — publishing unlocks once you're approved."
+                : 'Welcome to GloWe. Your profile is ready and you have full access.'
+        );
+    } catch (error) {
+        alert((error && error.message) || 'Could not save your details. Please try again.');
+    } finally {
+        if (submitBtn) submitBtn.disabled = false;
+    }
+}
+
 let activeWishForSupport = null;
 const OPPORTUNITY_STORAGE_KEY = 'gloweOpportunities';
 const PERSONAL_PROFILE_KEY = 'glowePersonalProfile';
@@ -1294,6 +1406,104 @@ function ensureGlobalUI() {
                             <small id="edit-profile-upload-status">Optional. When Cloudinary keys are configured, this uploads to Cloudinary.</small>
                         </div>
                         <button class="btn btn-primary btn-block" type="submit">Save Profile Draft</button>
+                    </form>
+                </div>
+            </div>
+        `);
+    }
+
+    if (!document.getElementById('glowe-onboarding-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="glowe-onboarding-modal" class="modal">
+                <div class="modal-content modal-wide">
+                    <span class="close-modal" onclick="dismissGloweOnboarding()">&times;</span>
+                    <h2>Welcome to GloWe 👋</h2>
+                    <p class="modal-intro">Tell us a little about you so the community knows who they're collaborating with. It only takes a minute.</p>
+                    <form id="glowe-onboarding-form" onsubmit="handleGloweOnboarding(event)">
+                        <div class="form-group">
+                            <label for="onboarding-display-name">Your name</label>
+                            <input id="onboarding-display-name" type="text" required placeholder="Full name">
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
+                                <label for="onboarding-country">Country / region</label>
+                                <input id="onboarding-country" type="text" placeholder="Country / region">
+                            </div>
+                            <div class="form-group">
+                                <label for="onboarding-about">A short line about you</label>
+                                <input id="onboarding-about" type="text" placeholder="One sentence people grasp quickly">
+                            </div>
+                        </div>
+                        <div class="form-group">
+                            <label>I'm joining as</label>
+                            <div class="onboarding-type-choice">
+                                <label class="onboarding-type-card">
+                                    <input type="radio" name="onboarding-account-type" value="individual" checked onchange="toggleOnboardingOrgFields()">
+                                    <span class="onboarding-type-title">Private individual</span>
+                                    <span class="onboarding-type-desc">Volunteer, donor, or community member. Full access right away.</span>
+                                </label>
+                                <label class="onboarding-type-card">
+                                    <input type="radio" name="onboarding-account-type" value="organization" onchange="toggleOnboardingOrgFields()">
+                                    <span class="onboarding-type-title">Organization</span>
+                                    <span class="onboarding-type-desc">NGO, nonprofit, or initiative. Reviewed before you can publish — only serious applications are accepted.</span>
+                                </label>
+                            </div>
+                        </div>
+                        <div id="onboarding-org-fields" hidden>
+                            <p class="onboarding-review-note">Organizations are reviewed by the GloWe team. Until you're approved you can browse everything, but posting opportunities, events, and needs stays locked. Please give us enough to take your application seriously.</p>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="onboarding-org-name">Organization name *</label>
+                                    <input id="onboarding-org-name" type="text" placeholder="Registered / public name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="onboarding-org-registration">Registration / NGO number</label>
+                                    <input id="onboarding-org-registration" type="text" placeholder="Legal registration number">
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="onboarding-org-website">Website / public link</label>
+                                    <input id="onboarding-org-website" type="url" placeholder="https://...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="onboarding-org-country">Country of operation</label>
+                                    <input id="onboarding-org-country" type="text" placeholder="Where you operate">
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="onboarding-org-field">Cause / field</label>
+                                    <input id="onboarding-org-field" type="text" placeholder="Education, health, climate...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="onboarding-org-size">Organization size</label>
+                                    <input id="onboarding-org-size" type="text" placeholder="Volunteers / staff, approx.">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="onboarding-org-description">About the organization *</label>
+                                <textarea id="onboarding-org-description" rows="4" placeholder="Mission, who you serve, and what you'd do on GloWe."></textarea>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="onboarding-org-contact-name">Contact person *</label>
+                                    <input id="onboarding-org-contact-name" type="text" placeholder="Who we should talk to">
+                                </div>
+                                <div class="form-group">
+                                    <label for="onboarding-org-contact-email">Contact email *</label>
+                                    <input id="onboarding-org-contact-email" type="email" placeholder="name@org.org">
+                                </div>
+                            </div>
+                            <div class="form-group">
+                                <label for="onboarding-org-contact-phone">Contact phone</label>
+                                <input id="onboarding-org-contact-phone" type="tel" placeholder="Optional">
+                            </div>
+                        </div>
+                        <div class="modal-actions">
+                            <button class="btn btn-primary" type="submit" id="onboarding-submit">Save and continue</button>
+                            <button class="btn btn-outline" type="button" onclick="dismissGloweOnboarding()">Maybe later</button>
+                        </div>
                     </form>
                 </div>
             </div>
