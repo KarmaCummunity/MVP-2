@@ -850,13 +850,19 @@ function normalizeMainNavigation() {
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const homeHref = inPages ? '../index.html' : 'index.html';
-    const links = [
-        { label: 'Home', href: homeHref, match: 'index.html' },
+    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
+    // Once signed in, Home gives way to the Personal Area as the primary tab —
+    // the logged-in user's landing context is their own dashboard, not the
+    // marketing home page.
+    const links = loggedIn
+        ? [{ label: 'Personal Area', href: `${prefix}my-applications.html`, match: 'my-applications.html' }]
+        : [{ label: 'Home', href: homeHref, match: 'index.html' }];
+    links.push(
         { label: 'Wishing Well', href: `${prefix}wishing-well.html`, match: 'wishing-well.html' },
         { label: 'Organizations', href: `${prefix}organizations.html`, match: 'organizations.html' },
         { label: 'Community', href: `${prefix}community.html`, match: 'community.html' },
         { label: 'About', href: `${prefix}about.html`, match: 'about.html' }
-    ];
+    );
     const path = window.location.pathname;
     nav.innerHTML = links.map(link => {
         const active = path.endsWith(link.match)
@@ -897,9 +903,10 @@ function normalizeHeaderAuthButtons() {
         authButtons.className = 'auth-buttons';
         headerContainer.appendChild(authButtons);
     }
+    // Auth is Google-only, so signing in and joining are the same action.
+    // A single combined button avoids the false "Log In vs Join" distinction.
     authButtons.innerHTML = `
-        <button class="btn btn-outline btn-small" type="button" onclick="openModal('login-modal')">Log In</button>
-        <button class="btn btn-primary btn-small" type="button" onclick="openModal('register-modal')">Join GloWe</button>
+        <button class="btn btn-primary btn-small" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
     `;
 }
 

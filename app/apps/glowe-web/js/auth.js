@@ -76,6 +76,75 @@ function refreshPersonalAreaIfVisible() {
     }
 }
 
+// --- Supabase session bridge -------------------------------------------------
+// The static UI only reads the `gloweUser` localStorage key, but Google OAuth
+// returns a Supabase session (captured by detectSessionInUrl) with no local
+// user record. Without this bridge the page still looks logged-out after a
+// successful Google sign-in. We mirror the live Supabase session into
+// `gloweUser` so isLoggedIn()/updateAuthUI() reflect reality.
+function gloweUserFromSupabase(supabaseUser, profile = null) {
+    const meta = supabaseUser.user_metadata || {};
+    const name = (profile && profile.name)
+        || meta.name || meta.full_name
+        || (supabaseUser.email ? supabaseUser.email.split('@')[0] : 'GloWe member');
+    return {
+        id: supabaseUser.id,
+        name,
+        email: supabaseUser.email || meta.email || '',
+        type: (profile && profile.type) || meta.profile_type || 'member',
+        avatarUrl: (profile && profile.avatarUrl) || meta.avatar_url || meta.picture || ''
+    };
+}
+
+async function syncSupabaseSession() {
+    if (!(window.gloweBackend && window.gloweBackend.configured())) return;
+
+    let supabaseUser = null;
+    try {
+        supabaseUser = await window.gloweBackend.currentUser();
+    } catch (error) {
+        return;
+    }
+
+    if (!supabaseUser) {
+        // Supabase reports signed out — clear any stale local session.
+        if (isLoggedIn()) {
+            localStorage.removeItem(GLOWE_USER_KEY);
+            updateAuthUI();
+            refreshPersonalAreaIfVisible();
+        }
+        return;
+    }
+
+    let profile = null;
+    try {
+        profile = await window.gloweBackend.fetchProfile();
+    } catch (error) {
+        profile = null;
+    }
+
+    localStorage.setItem(GLOWE_USER_KEY, JSON.stringify(gloweUserFromSupabase(supabaseUser, profile)));
+    if (profile) localStorage.setItem('glowePersonalProfile', JSON.stringify(profile));
+    updateAuthUI();
+    refreshPersonalAreaIfVisible();
+}
+
+async function attachSupabaseAuthListener() {
+    if (!(window.gloweBackend && window.gloweBackend.configured())) return;
+    let client = null;
+    try {
+        client = await window.gloweBackend.getClient();
+    } catch (error) {
+        return;
+    }
+    if (!client || !client.auth || typeof client.auth.onAuthStateChange !== 'function') return;
+    client.auth.onAuthStateChange(() => {
+        // Defer to avoid the supabase-js deadlock when calling client methods
+        // from inside the auth-state callback.
+        setTimeout(() => { syncSupabaseSession(); }, 0);
+    });
+}
+
 function readRegistrationImageAsDataUrl(file) {
     return new Promise((resolve, reject) => {
         const reader = new FileReader();
@@ -391,9 +460,19 @@ function updateAuthUI() {
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
     }
+
+    // Auth-aware nav (Home ⇄ Personal Area) must track the same state. Re-run
+    // the nav builder so login/logout flips the primary tab without a reload.
+    if (typeof window.normalizeMainNavigation === 'function') {
+        window.normalizeMainNavigation();
+    }
 }
 
 // Initialize auth state on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateAuthUI();
+    // Bridge any live Supabase session (e.g. after a Google OAuth redirect)
+    // into the local gloweUser store. The listener fires INITIAL_SESSION on
+    // subscribe, which performs the first sync.
+    attachSupabaseAuthListener();
 });
