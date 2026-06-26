@@ -85,7 +85,24 @@
             availability: row.availability,
             skills: row.skills || [],
             avatarUrl: row.avatar_url,
-            profileStatus: row.profile_status
+            profileStatus: row.profile_status,
+            // Onboarding & account type (migration 0205).
+            accountType: row.account_type || null,
+            onboardingComplete: row.onboarding_complete === true,
+            approvalStatus: row.approval_status || 'not_required',
+            country: row.country || '',
+            orgName: row.org_name || '',
+            orgWebsite: row.org_website || '',
+            orgRegistrationNumber: row.org_registration_number || '',
+            orgCountry: row.org_country || '',
+            orgField: row.org_field || '',
+            orgDescription: row.org_description || '',
+            orgContactName: row.org_contact_name || '',
+            orgContactEmail: row.org_contact_email || '',
+            orgContactPhone: row.org_contact_phone || '',
+            orgSize: row.org_size || '',
+            orgSubmittedAt: row.org_submitted_at || null,
+            orgReviewNote: row.org_review_note || ''
         };
     }
 
@@ -214,6 +231,47 @@
         return fromProfileRow(data);
     }
 
+    // Post-sign-in onboarding (FR-GLOWE-002). Writes only the onboarding-related
+    // columns via upsert so a partial pre-existing profile row is preserved.
+    // Individuals are approved implicitly ('not_required'); organizations are
+    // submitted for KC admin review ('pending') and stay view-only until then.
+    async function completeOnboarding(details = {}) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const isOrg = details.accountType === 'organization';
+        const org = details.org || {};
+        const payload = {
+            id: user.id,
+            email: user.email,
+            display_name: details.displayName || '',
+            about: details.about || '',
+            country: details.country || '',
+            account_type: isOrg ? 'organization' : 'individual',
+            onboarding_complete: true,
+            approval_status: isOrg ? 'pending' : 'not_required',
+            profile_type: isOrg ? 'Organization' : 'Individual',
+            org_name: isOrg ? (org.name || '') : null,
+            org_website: isOrg ? (org.website || '') : null,
+            org_registration_number: isOrg ? (org.registrationNumber || '') : null,
+            org_country: isOrg ? (org.country || details.country || '') : null,
+            org_field: isOrg ? (org.field || '') : null,
+            org_description: isOrg ? (org.description || '') : null,
+            org_contact_name: isOrg ? (org.contactName || '') : null,
+            org_contact_email: isOrg ? (org.contactEmail || user.email || '') : null,
+            org_contact_phone: isOrg ? (org.contactPhone || '') : null,
+            org_size: isOrg ? (org.size || '') : null,
+            org_submitted_at: isOrg ? new Date().toISOString() : null
+        };
+        const { data, error } = await supabaseClient
+            .from(tbl('profiles'))
+            .upsert(payload)
+            .select()
+            .single();
+        if (error) throw error;
+        return fromProfileRow(data);
+    }
+
     async function listOwned(table) {
         const supabaseClient = await getClient();
         const user = await currentUser();
@@ -279,6 +337,7 @@
         signOut,
         fetchProfile,
         upsertProfile,
+        completeOnboarding,
         listOwned,
         insertOwned,
         removeOwned,
