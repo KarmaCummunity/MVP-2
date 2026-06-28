@@ -171,18 +171,6 @@ const useStyles = makeUseStyles(({ colors, isDark }) => ({
     lineHeight: 16,
   },
   spacer: { flex: 1 },
-  gloweBanner: {
-    minHeight: 88,
-    width: '100%',
-    alignSelf: 'stretch' as const,
-    flexDirection: 'row' as const,
-    alignItems: 'center' as const,
-    gap: spacing.base,
-    borderRadius: radius.xl,
-    borderWidth: isDark ? 1 : 1.5,
-    borderColor: isDark ? colors.border : colors.primarySurface,
-    marginBottom: spacing.lg,
-  },
 }));
 
 export default function DonationsHubScreen() {
@@ -245,10 +233,10 @@ export default function DonationsHubScreen() {
           <PressableScale
             onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
             accessibilityRole="button"
-            accessibilityLabel="GLOWE – ידע מקצועי"
+            accessibilityLabel={t('donations.gloweSubtitle')}
             style={styles.blockStretch}
           >
-            <Card padding="base" style={styles.gloweBanner}>
+            <Card padding="base" style={styles.featuredCard}>
               <IconTile icon="school-outline" size="lg" />
               <View style={styles.featuredText}>
                 <Text style={styles.featuredTitle} numberOfLines={1}>GLOWE</Text>
