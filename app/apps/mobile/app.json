@@ -3,7 +3,7 @@
     "name": "KC - קהילת קארמה",
     "shortName": "KC",
     "slug": "karma-community",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
     "userInterfaceStyle": "light",
@@ -17,6 +17,7 @@
     ],
     "ios": {
       "supportsTablet": false,
+      "usesAppleSignIn": true,
       "bundleIdentifier": "com.karmacommunity.app",
       "associatedDomains": ["applinks:karma-community-kc.com"],
       "infoPlist": {
@@ -57,6 +58,7 @@
     },
     "plugins": [
       "expo-dev-client",
+      "expo-apple-authentication",
       "expo-router",
       "expo-secure-store",
       [
@@ -73,6 +75,14 @@
           "icon": "./assets/notification-icon.png",
           "color": "#0A8754",
           "sounds": []
+        }
+      ],
+      [
+        "@sentry/react-native/expo",
+        {
+          "url": "https://sentry.io/",
+          "organization": "karma-community",
+          "project": "kc-mobile"
         }
       ]
     ],

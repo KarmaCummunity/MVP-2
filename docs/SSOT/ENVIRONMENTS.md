@@ -1,7 +1,7 @@
 # Environments
 
-> **Canonical source for branch ↔ Supabase ↔ Railway ↔ env-var mapping.**
-> If another doc disagrees, this one wins. Last reviewed: 2026-05-15.
+> **Canonical source for branch ↔ Supabase ↔ Cloudflare Pages ↔ env-var mapping.**
+> If another doc disagrees, this one wins. Last reviewed: 2026-06-09.
 
 ## TL;DR
 
@@ -9,7 +9,8 @@
 |---|---|---|
 | Git branch | `main` | `dev` |
 | Supabase project | `slxijdfvinbjmrsfgbzx` — https://slxijdfvinbjmrsfgbzx.supabase.co | `roeefqpdbftlndzsvhfj` — https://roeefqpdbftlndzsvhfj.supabase.co |
-| Railway service env | `prod` | `dev` (`mvp-2-dev.up.railway.app`) |
+| Hosting | Cloudflare Pages — `karma-community-kc.com` | Cloudflare Pages — `dev.karma-community.pages.dev` |
+| GitHub Actions env | `cloudflare-prod` | `cloudflare-dev` |
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | `development` |
 | In-app dev banner | hidden | visible at top of every screen when the client bundle is dev (see below) |
 
@@ -30,6 +31,8 @@ All variables prefixed `EXPO_PUBLIC_*` are exposed to the client bundle by Expo'
 | `EXPO_PUBLIC_ENVIRONMENT` | `production` | `development` | `apps/mobile/src/config/environment.ts` — drives the in-app dev banner |
 | `EXPO_PUBLIC_SUPABASE_URL` | `https://slxijdfvinbjmrsfgbzx.supabase.co` | `https://roeefqpdbftlndzsvhfj.supabase.co` | `packages/infrastructure-supabase/src/client.ts` |
 | `EXPO_PUBLIC_SUPABASE_ANON_KEY` | (publishable key for prod project) | (publishable key for dev project) | `packages/infrastructure-supabase/src/client.ts` |
+
+**Edge Function secret (Survey B CORS, not in the client bundle):** set `PUBLIC_RESEARCH_ALLOWED_ORIGINS` on each Supabase project (or as a GitHub Environment **variable** on `supabase-prod` / `supabase-dev` — synced by **Supabase Functions deploy**). Values: prod → `https://karma-community-kc.com`; dev → `https://mvp-2-dev.up.railway.app,https://dev3.karma-community-kc.com,http://localhost:8081,http://localhost:19006`. See [`OPERATOR_RUNBOOK.md`](./OPERATOR_RUNBOOK.md) § Edge Functions.
 
 > **Pitfall:** Expo only exposes vars that start with `EXPO_PUBLIC_`. A var named `PUBLIC_ENVIRONMENT` (no `EXPO_` prefix) is invisible to the client bundle.
 >
@@ -66,3 +69,91 @@ Checklist in order:
 - Concurrency: `sync-main-to-dev` group with `cancel-in-progress: false` — back-to-back pushes queue rather than skip.
 - Strategy: `git merge --no-edit origin/main` on `dev`. Fast-forward when possible; merge commit otherwise.
 - Failure mode: merge conflict → workflow fails, operator resolves manually. Do not auto-resolve.
+
+## DB deploy automation
+
+`.github/workflows/db-deploy.yml` trigger modes:
+
+- **Auto** — on push to `dev` or `main` when any of these paths change: `supabase/migrations/**`, `supabase/seed.sql`, `supabase/config.toml`, or the workflow file. Pending migrations are applied via `supabase db push` to the matching GitHub Environment: `dev` → `supabase-dev` (`roeefqpdbftlndzsvhfj`); `main` → `supabase-prod` (`slxijdfvinbjmrsfgbzx`). PRs must keep **CI — backend** (`apply migrations · rls · types · sql probes`) green before merge — it applies all migrations on a fresh local stack.
+- **Manual** — `workflow_dispatch` lets an operator target `supabase-prod` or `supabase-dev`. Defaults to dry-run; flip `apply` to true to push (useful for inspection, retries, or one-off applies).
+
+Concurrency group `db-deploy-<environment>` (with `cancel-in-progress: false`) ensures back-to-back migration pushes queue rather than race.
+
+**DB apply gate (`D-53`, extended `D-54`):** every auto-push and every manual `workflow_dispatch` apply (both `supabase-dev` and `supabase-prod`) runs `supabase db push --dry-run` immediately before the real `db push`. No human reviewers on deploy environments — protection is automated CI only.
+
+**Migration safety guards:**
+
+- **Dev:** `.github/workflows/ci-dev-guard.yml` on PRs/pushes to `dev` runs `scripts/check-migration-safety.mjs` (blocks `DROP TABLE`, `DROP COLUMN`, `TRUNCATE`, unqualified `DELETE FROM` unless the line includes `migration-safety: allow`).
+- **Main release:** `.github/workflows/ci-main-guard.yml` on PRs to `main` enforces head branch `dev` **and** runs the same migration safety scan.
+
+## Dev merge gates (branch protection)
+
+All feature PRs target `dev`. Configure GitHub → Settings → Branches → `dev`:
+
+- Require a pull request before merging (0 approvals).
+- Block force-push and branch deletion.
+- Require status checks (path-filtered workflows may skip when unrelated paths change — that is OK):
+
+> The table below is machine-validated: `scripts/check-required-checks-drift.mjs` (workflow **CI — required-checks drift**) fails CI if any row references a workflow/job name that no longer exists. If you rename a job, update this table **and** the GitHub branch-protection required-checks list in the same change.
+
+| Check | Workflow | Job |
+| --- | --- | --- |
+| Quality | CI — frontend | `typecheck · test · lint` |
+| i18n guard | CI — frontend | `Hebrew source scan (no inline UI copy)` |
+| Web bundle | CI — frontend | `web export (production bundle)` |
+| Migration chain | CI — backend | `migration chain lint` |
+| DB + RLS + types | CI — backend | `apply migrations · rls · types · sql probes` |
+| Contract | CI — contract | `rpc · table contract` |
+| Architecture | CI — contract | `coalesce mirror · layer invariants` |
+| Manifest | CI — contract | `web manifest parity` |
+| PR hygiene | CI — PR hygiene | `PR hygiene` |
+| Migration safety | CI — dev guard | `migration destructive-op scan` |
+
+Do **not** require **CI — main release guard** on `dev` (prod-only release-source job). Prod-only post-merge jobs (`prod-smoke`, Edge Functions deploy to `supabase-prod`) stay on `main` only.
+
+## Production release
+
+Operator checklist: [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md).
+
+**CI layout (2026-05-22):** PR/push checks are split by responsibility with path filters so unrelated work doesn't burn time:
+
+- `.github/workflows/ci-frontend.yml` — `app/**`, `Dockerfile`, Hebrew scan. Jobs: `typecheck · test · lint`, `Hebrew source scan (no inline UI copy)`, `web export (production bundle)`.
+- `.github/workflows/ci-dev-guard.yml` — every non-draft PR to `dev`; migration destructive-op scan (`D-54`).
+- `.github/workflows/ci-backend.yml` — `supabase/**` + the migration chain script. Jobs: `migration chain lint`, then `apply migrations · rls · types · sql probes` against a fresh local Supabase stack (replaces the old `db-validate.yml`).
+- `.github/workflows/ci-contract.yml` — infra/application/domain packages + migrations + locale + manifest script. Jobs: `rpc · table contract`, `coalesce mirror · layer invariants` (file-size + layer + domain-typed-error guard), `web manifest parity`.
+- `.github/workflows/ci-pr.yml` — `pull_request` only, non-draft. Job: `PR hygiene` (Conventional Commits title + required `Mapped to spec` line).
+- `.github/workflows/ci-actionlint.yml` — `.github/workflows/**` only; runs `actionlint` (pinned) + shellcheck over every workflow's `run:` blocks. Meta-guard: agents edit CI unsupervised, so workflow files need their own linter. **Not** a required check (path-filtered — would hang "Expected" on non-workflow PRs).
+
+Tooling pins: Node version comes from the repo-root `.nvmrc` (all `setup-node` steps use `node-version-file`); pnpm version comes from the `packageManager` field in `app/package.json` (all `pnpm/action-setup` steps use `package_json_file`). Bump either in one place only. **One deliberate exception:** the `ci-backend.yml` db-validate job pins Node 22 — `@supabase/realtime-js` needs the native WebSocket global (Node ≥ 22) for the sqlProbes integration tests; do not align it back to `.nvmrc`.
+
+Draft PRs skip every job except none (PR hygiene waits for `ready_for_review`). Branch protection on `dev` uses the table above; `main` release PRs use [`RELEASE_CHECKLIST.md`](./RELEASE_CHECKLIST.md#merge-gates-automated--must-be-green).
+
+**CI gates on `main` PRs:** `CI — frontend / web export (production bundle)` mirrors the Dockerfile builder (`EXPO_PUBLIC_*` + `pnpm build:web`).
+
+**Post-merge smoke:** `.github/workflows/prod-smoke.yml` polls repository variable **`PROD_WEB_URL`** after app/Dockerfile changes on `main`. Set it under GitHub → Settings → Secrets and variables → Actions → Variables.
+
+## E2E automation (Web, `D-55`)
+
+Playwright P0 journeys run against the live dev deployment before every `dev` → `main` release PR. Policy: [`TESTING.md`](./TESTING.md).
+
+| GitHub | Name | Value / purpose |
+| --- | --- | --- |
+| Variable | `DEV_WEB_URL` | `https://dev.karma-community.pages.dev` |
+| Secret | `E2E_TEST_EMAIL` | Dev-only test user (active, verified) |
+| Secret | `E2E_TEST_PASSWORD` | Matching password |
+| Secret | `E2E_SUPABASE_ANON_KEY_DEV` | Dev project publishable anon key (for `scripts/ensure-e2e-user.mjs` preflight). Dev-scoped name keeps it distinct from prod. Wired to the `E2E_SUPABASE_ANON_KEY` env var the test code reads. |
+
+Workflow: `.github/workflows/ci-e2e-dev.yml` — required status check on `main`: **CI — E2E dev / user journeys (P0)**.
+
+Create user (once, if needed): `E2E_TEST_EMAIL=… E2E_TEST_PASSWORD=… node scripts/create-e2e-user.mjs` (requires dev `SUPABASE_SERVICE_ROLE_KEY`).
+
+Local run (after deploy on dev):
+
+```bash
+export DEV_WEB_URL=https://mvp-2-dev.up.railway.app
+export E2E_TEST_EMAIL=…
+export E2E_TEST_PASSWORD=…
+export E2E_SUPABASE_ANON_KEY=…
+node scripts/ensure-e2e-user.mjs
+cd tests/e2e && npm install && npm run install:browsers && npm test
+```

@@ -22,6 +22,15 @@ interface SearchState {
   addRecentSearch: (q: string) => void;
   clearRecentSearches: () => void;
 
+  /**
+   * One-shot query request from outside the search screen (desktop aside,
+   * FR-RESP-003). The screen consumes it into its own input state. Transient —
+   * never persisted.
+   */
+  requestedQuery: string | null;
+  requestSearch: (q: string) => void;
+  consumeRequestedQuery: () => string | null;
+
   // Active filters
   resultType: SearchResultType | null;
   postType: PostType | null;
@@ -29,6 +38,8 @@ interface SearchState {
   donationCategory: DonationCategorySlug | null;
   city: string | null;
   cityName: string | null; // display name for the city — UI-only
+  /** Distance radius (km) from `city`. Only meaningful when `city` is set. */
+  radiusKm: number | null;
   sortBy: SearchSortBy;
   minFollowers: number | null;
 
@@ -37,6 +48,7 @@ interface SearchState {
   setCategory: (c: Category | null) => void;
   setDonationCategory: (c: DonationCategorySlug | null) => void;
   setCity: (id: string | null, name: string | null) => void;
+  setRadiusKm: (km: number | null) => void;
   setSortBy: (s: SearchSortBy) => void;
   setMinFollowers: (n: number | null) => void;
   clearFilters: () => void;
@@ -50,6 +62,7 @@ const DEFAULT_FILTERS = {
   donationCategory: null as DonationCategorySlug | null,
   city: null as string | null,
   cityName: null as string | null,
+  radiusKm: null as number | null,
   sortBy: 'relevance' as SearchSortBy,
   minFollowers: null as number | null,
 };
@@ -70,11 +83,27 @@ export const useSearchStore = create<SearchState>()(
       },
       clearRecentSearches: () => set({ recentSearches: [] }),
 
+      requestedQuery: null,
+      requestSearch: (q: string) => {
+        const trimmed = q.trim();
+        if (trimmed.length === 0) return;
+        set({ requestedQuery: trimmed });
+      },
+      consumeRequestedQuery: () => {
+        const q = get().requestedQuery;
+        if (q !== null) set({ requestedQuery: null });
+        return q;
+      },
+
       setResultType: (resultType) => set({ resultType }),
       setPostType: (postType) => set({ postType }),
       setCategory: (category) => set({ category }),
       setDonationCategory: (donationCategory) => set({ donationCategory }),
-      setCity: (city, cityName) => set({ city, cityName }),
+      setCity: (city, cityName) =>
+        // Clearing the city also clears the radius — they're meaningful only
+        // together.
+        set(city ? { city, cityName } : { city: null, cityName: null, radiusKm: null }),
+      setRadiusKm: (radiusKm) => set({ radiusKm }),
       setSortBy: (sortBy) => set({ sortBy }),
       setMinFollowers: (minFollowers) => set({ minFollowers }),
 
@@ -88,6 +117,7 @@ export const useSearchStore = create<SearchState>()(
         if (s.category) count++;
         if (s.donationCategory) count++;
         if (s.city) count++;
+        if (s.city && s.radiusKm != null) count++;
         if (s.sortBy !== 'relevance') count++;
         if (s.minFollowers && s.minFollowers > 0) count++;
         return count;

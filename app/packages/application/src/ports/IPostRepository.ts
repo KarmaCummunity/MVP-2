@@ -19,9 +19,8 @@ import type { PostActorIdentityRow, UpsertPostActorIdentityInput } from './postA
  * Mapped to FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
  * FR-FEED-006 (distance sort).
  *
- * `searchQuery` and `city` (single-string equality) and `includeClosed` and
- * `sortBy: 'newest'|'city'` from the prior shape were dropped:
- *   - search bar moved off the Home Feed (the Universal Search tab owns it).
+ * `city` (single-string equality), `includeClosed`, and `sortBy: 'newest'|'city'`
+ * from the prior shape were dropped:
  *   - `city` equality replaced by `locationFilter` (city + radius).
  *   - `includeClosed` boolean expanded to `statusFilter` 3-mode.
  *   - `sortBy: 'city'` replaced by `sortOrder: 'distance'` with Haversine.
@@ -35,6 +34,8 @@ export interface PostFeedFilter {
   sortOrder?: FeedSortOrder;        // 'newest' (default) | 'oldest' | 'distance'
   proximitySortCity?: string;       // city_id of center for distance sort; undefined = viewer's city
   followersOnly?: boolean;          // true = restrict to posts whose owner the viewer follows (FR-FEED-020)
+  /** Trimmed free-text; applied only when length >= 2 after normalize (FR-FEED-003). */
+  searchQuery?: string;
 }
 
 export interface FeedPage {
@@ -101,6 +102,8 @@ export interface CreatePostInput {
   locationDisplayLevel: LocationDisplayLevel;
   itemCondition: ItemCondition | null;
   urgency: string | null;
+  /** FR-KARMA-004 — estimated item value 0..1000 (Give only). Optional; null/absent = unset. */
+  estimatedValue?: number | null;
   mediaAssets: MediaAssetInput[];
   /**
    * FR-POST-021 + D-31 — when true, persists `hide_from_counterparty` at publish time so
@@ -164,6 +167,13 @@ export interface IPostRepository {
   //   current status closed_delivered      → RPC `reopen_post_marked` (delete recipient row + status)
   //   current status deleted_no_recipient  → UPDATE status='open', delete_after=null
   reopen(postId: string): Promise<Post>;
+  /**
+   * FR-POST-013 AC3 — clones an expired post (and its media_assets rows) into
+   * a new `status='open'` post. Returns the new post id. Errors:
+   *   republish_not_owner, republish_wrong_status, republish_not_found,
+   *   active_post_limit_exceeded, followers_only_requires_private.
+   */
+  republish(postId: string): Promise<string>;
   // FR-CLOSURE-007: recipient removes their own credit (→ deleted_no_recipient, 7d window).
   unmrkRecipientSelf(postId: string): Promise<void>;
   /** Recipient picker source: distinct chat partners on this post, sorted by latest message recency. */
@@ -206,4 +216,14 @@ export interface IPostRepository {
 
   // Stats
   countOpenByUser(userId: string): Promise<number>;
+  /** FR-PROFILE-013 — profile headline counter (open + closed, viewer-aware). */
+  countProfilePostsForViewer(ownerId: string, viewerId: string | null): Promise<number>;
+  /** FR-PROFILE-001 AC4 — open-tab badge count. */
+  countProfileOpenPosts(ownerId: string, options?: { excludeOnlyMe?: boolean }): Promise<number>;
+  /** FR-PROFILE-001 AC4 — closed-tab badge count. */
+  countProfileClosedPosts(
+    profileUserId: string,
+    viewerUserId: string | null,
+    listMode?: ProfileClosedPostsListMode,
+  ): Promise<number>;
 }

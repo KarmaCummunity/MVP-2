@@ -3,7 +3,8 @@ import React from 'react';
 import { View, Text, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 type IoniconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -14,6 +15,8 @@ interface ValueItem {
 
 export function AboutValuesGrid() {
   const { t } = useTranslation();
+  const styles = useAboutValuesGridStyles();
+  const { colors } = useTheme();
   const values: ValueItem[] = t('aboutContent.valuesList', { returnObjects: true }) as ValueItem[];
 
   return (
@@ -28,14 +31,14 @@ export function AboutValuesGrid() {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutValuesGridStyles = makeUseStyles(({ colors }) => ({
   grid: {
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: spacing.sm,
   },
   chip: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.xs,
     paddingHorizontal: spacing.md,
@@ -54,5 +57,6 @@ const styles = StyleSheet.create({
     ...typography.caption,
     color: colors.primary,
     fontWeight: '700',
+    ...aboutRtlText,
   },
-});
+}));

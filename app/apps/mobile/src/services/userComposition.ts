@@ -10,6 +10,7 @@ import {
   getSupabaseClient,
   SupabaseUserRepository,
   SupabaseCityRepository,
+  SupabaseStreetRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
 import {
@@ -20,13 +21,18 @@ import {
   SearchUsersForClosureUseCase,
   SetAvatarUseCase,
   UpdateProfileUseCase,
+  ReconcileAuthProfileMetadataUseCase,
   type ICityRepository,
+  type IStreetRepository,
   type IUserRepository,
 } from '@kc/application';
-import type { City, OnboardingState } from '@kc/domain';
+import type { City, OnboardingState, Street } from '@kc/domain';
+import { getAuthService } from './authComposition';
+import { CachedCityRepository, CachedStreetRepository } from './cityStreetCache';
 
 let _userRepo: IUserRepository | null = null;
 let _cityRepo: ICityRepository | null = null;
+let _streetRepo: IStreetRepository | null = null;
 let _completeBasicInfo: CompleteBasicInfoUseCase | null = null;
 let _completeOnboarding: CompleteOnboardingUseCase | null = null;
 let _setAvatar: SetAvatarUseCase | null = null;
@@ -34,6 +40,7 @@ let _updateProfile: UpdateProfileUseCase | null = null;
 let _dismissClosureExplainer: DismissClosureExplainerUseCase | null = null;
 let _searchUsersForClosure: SearchUsersForClosureUseCase | null = null;
 let _deleteAccount: DeleteAccountUseCase | null = null;
+let _reconcileAuthProfile: ReconcileAuthProfileMetadataUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -51,13 +58,25 @@ export function getUserRepo(): IUserRepository {
 
 function getCityRepo(): ICityRepository {
   if (_cityRepo) return _cityRepo;
-  _cityRepo = new SupabaseCityRepository(getSupabaseClient({ storage: pickStorage() }));
+  // PERF-6: AsyncStorage-backed cache layer; cuts onboarding city-picker
+  // open-to-first-row from 600-1500ms cold to <100ms on warm cache.
+  _cityRepo = new CachedCityRepository(
+    new SupabaseCityRepository(getSupabaseClient({ storage: pickStorage() })),
+  );
   return _cityRepo;
+}
+
+function getStreetRepo(): IStreetRepository {
+  if (_streetRepo) return _streetRepo;
+  _streetRepo = new CachedStreetRepository(
+    new SupabaseStreetRepository(getSupabaseClient({ storage: pickStorage() })),
+  );
+  return _streetRepo;
 }
 
 export function getCompleteBasicInfoUseCase(): CompleteBasicInfoUseCase {
   if (!_completeBasicInfo) {
-    _completeBasicInfo = new CompleteBasicInfoUseCase(getUserRepo());
+    _completeBasicInfo = new CompleteBasicInfoUseCase(getUserRepo(), getAuthService());
   }
   return _completeBasicInfo;
 }
@@ -71,16 +90,24 @@ export function getCompleteOnboardingUseCase(): CompleteOnboardingUseCase {
 
 export function getSetAvatarUseCase(): SetAvatarUseCase {
   if (!_setAvatar) {
-    _setAvatar = new SetAvatarUseCase(getUserRepo());
+    _setAvatar = new SetAvatarUseCase(getUserRepo(), getAuthService());
   }
   return _setAvatar;
 }
 
 export function getUpdateProfileUseCase(): UpdateProfileUseCase {
   if (!_updateProfile) {
-    _updateProfile = new UpdateProfileUseCase(getUserRepo());
+    _updateProfile = new UpdateProfileUseCase(getUserRepo(), getAuthService());
   }
   return _updateProfile;
+}
+
+/** FR-AUTH-003 AC5 — one-shot JWT metadata reconcile after cold start. */
+export function getReconcileAuthProfileMetadataUseCase(): ReconcileAuthProfileMetadataUseCase {
+  if (!_reconcileAuthProfile) {
+    _reconcileAuthProfile = new ReconcileAuthProfileMetadataUseCase(getUserRepo(), getAuthService());
+  }
+  return _reconcileAuthProfile;
 }
 
 /** FR-PROFILE-007: read editable fields for the Edit Profile form. */
@@ -112,6 +139,11 @@ export async function setOnboardingStateDirect(
 /** Lists every Israeli city from `public.cities` ordered by Hebrew name. */
 export function listCities(): Promise<City[]> {
   return getCityRepo().listAll();
+}
+
+/** Lists every street for a city from `public.streets` ordered by Hebrew name. */
+export function listStreets(cityId: string): Promise<Street[]> {
+  return getStreetRepo().listByCity(cityId);
 }
 
 /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */

@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 import {
   projectActorIdentityForViewer,
   shouldAnonymizeForHideFromCounterpartyOnPartnerSurface,
+  shouldMaskActorIdentityForThirdPartyViewer,
   type ActorIdentityInput,
 } from '@kc/domain';
 
@@ -20,18 +21,19 @@ function ctx(
     isCounterparty: false,
     viewerFollowsActor: false,
     hideFromCounterparty: false,
-    ownerPostVisibilityOnlyMe: false,
+    actorSurfaceVisibility: 'Public',
     counterpartyUserId: 'u_partner',
     identityListingHostUserId: null,
     ...overrides,
   };
 }
 
-describe('shouldAnonymizeForHideFromCounterpartyOnPartnerSurface (D-31)', () => {
+describe('shouldMaskActorIdentityForThirdPartyViewer (D-31)', () => {
   it('is false when listing host is not the counterparty profile', () => {
     expect(
-      shouldAnonymizeForHideFromCounterpartyOnPartnerSurface(
+      shouldMaskActorIdentityForThirdPartyViewer(
         true,
+        'Public',
         'u_stranger',
         'u_owner',
         'u_partner',
@@ -42,8 +44,9 @@ describe('shouldAnonymizeForHideFromCounterpartyOnPartnerSurface (D-31)', () => 
 
   it('is false for the counterparty viewer (they know the actor from chat)', () => {
     expect(
-      shouldAnonymizeForHideFromCounterpartyOnPartnerSurface(
+      shouldMaskActorIdentityForThirdPartyViewer(
         true,
+        'Public',
         'u_partner',
         'u_owner',
         'u_partner',
@@ -54,12 +57,53 @@ describe('shouldAnonymizeForHideFromCounterpartyOnPartnerSurface (D-31)', () => 
 
   it('is true for a third party on the counterparty closed-post profile surface', () => {
     expect(
+      shouldMaskActorIdentityForThirdPartyViewer(
+        true,
+        'Public',
+        'u_stranger',
+        'u_owner',
+        'u_partner',
+        'u_partner',
+      ),
+    ).toBe(true);
+  });
+
+  it('is true for a third party on post detail (neutral listing host) when hide flag is set', () => {
+    expect(
+      shouldMaskActorIdentityForThirdPartyViewer(
+        true,
+        'Public',
+        'u_stranger',
+        'u_owner',
+        'u_partner',
+        null,
+      ),
+    ).toBe(true);
+  });
+
+  it('is true for a third party on post detail when actor surface is OnlyMe', () => {
+    expect(
+      shouldMaskActorIdentityForThirdPartyViewer(
+        false,
+        'OnlyMe',
+        'u_stranger',
+        'u_owner',
+        'u_partner',
+        null,
+      ),
+    ).toBe(true);
+  });
+});
+
+describe('shouldAnonymizeForHideFromCounterpartyOnPartnerSurface (legacy shim)', () => {
+  it('delegates hide flag on neutral surfaces to the new helper', () => {
+    expect(
       shouldAnonymizeForHideFromCounterpartyOnPartnerSurface(
         true,
         'u_stranger',
         'u_owner',
         'u_partner',
-        'u_partner',
+        null,
       ),
     ).toBe(true);
   });
@@ -103,14 +147,53 @@ describe('projectActorIdentityForViewer', () => {
     expect(r.profileNavigableFromPost).toBe(false);
   });
 
-  it('forces anonymous to counterparty when owner post is OnlyMe (coupling)', () => {
+  it('anonymizes owner for third party on post detail when hideFromCounterparty', () => {
+    const r = projectActorIdentityForViewer(
+      baseActor,
+      'Public',
+      ctx({
+        viewerUserId: 'u_stranger',
+        hideFromCounterparty: true,
+        identityListingHostUserId: null,
+      }),
+    );
+    expect(r.mode).toBe('anonymous');
+  });
+
+  it('counterparty always sees actor full even when actor surface is OnlyMe (D-39 dual-surface)', () => {
     const r = projectActorIdentityForViewer(baseActor, 'Public', ctx({
       viewerUserId: 'u_partner',
       isCounterparty: true,
       viewerFollowsActor: true,
-      hideFromCounterparty: false,
-      ownerPostVisibilityOnlyMe: true,
+      hideFromCounterparty: true,
+      actorSurfaceVisibility: 'OnlyMe',
     }));
+    expect(r.mode).toBe('full');
+    expect(r.displayName).toBe('Moshe');
+  });
+
+  it('anonymizes third party on counterparty profile when actor surface is OnlyMe', () => {
+    const r = projectActorIdentityForViewer(
+      baseActor,
+      'Public',
+      ctx({
+        viewerUserId: 'u_stranger',
+        actorSurfaceVisibility: 'OnlyMe',
+        identityListingHostUserId: 'u_partner',
+      }),
+    );
+    expect(r.mode).toBe('anonymous');
+  });
+
+  it('anonymizes for third party on neutral surface when actor surface is OnlyMe', () => {
+    const r = projectActorIdentityForViewer(
+      baseActor,
+      'Public',
+      ctx({
+        viewerUserId: 'u_stranger',
+        actorSurfaceVisibility: 'OnlyMe',
+      }),
+    );
     expect(r.mode).toBe('anonymous');
   });
 

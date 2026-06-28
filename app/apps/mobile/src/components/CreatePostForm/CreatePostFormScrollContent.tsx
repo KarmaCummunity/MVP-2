@@ -5,14 +5,17 @@ import {
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { ALL_CATEGORIES, ITEM_CONDITIONS } from '@kc/domain';
 import type { Category, ItemCondition, LocationDisplayLevel, PostType, PostVisibility } from '@kc/domain';
 import { CityPicker } from '../CityPicker';
+import { StreetPicker } from '../StreetPicker';
 import { CreatePostExposureSection } from './CreatePostExposureSection';
+import { EstimatedValueSlider } from './EstimatedValueSlider';
 import { PhotoPicker } from './PhotoPicker';
 import type { UploadedAsset } from '../../services/imageUpload';
-import { createPostStyles as styles } from '../../../app/(tabs)/create.styles';
+import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
+import { useShellTabBarScrollInset } from '../../navigation/useShellTabBarVisibility';
 import type { CreatePostCitySelection } from '../../hooks/useCreatePostPublish';
 
 export interface CreatePostFormScrollContentProps {
@@ -26,6 +29,8 @@ export interface CreatePostFormScrollContentProps {
   readonly onStreetChange: (next: string) => void;
   readonly streetNumber: string;
   readonly onStreetNumberChange: (next: string) => void;
+  /** Shown after Publish is tapped while address fields are incomplete (FR-POST-002 AC4). */
+  readonly addressInlineError: string | null;
   readonly category: Category;
   readonly onCategoryChange: (next: Category) => void;
   readonly isGive: boolean;
@@ -40,6 +45,8 @@ export interface CreatePostFormScrollContentProps {
   readonly isPublishing: boolean;
   readonly urgency: string;
   readonly onUrgencyChange: (next: string) => void;
+  readonly estimatedValue: number;
+  readonly onEstimatedValueChange: (next: number) => void;
   readonly visibility: PostVisibility;
   readonly onVisibilityChange: (next: PostVisibility) => void;
   readonly profilePrivacy: 'Public' | 'Private';
@@ -63,6 +70,7 @@ export function CreatePostFormScrollContent({
   onStreetChange,
   streetNumber,
   onStreetNumberChange,
+  addressInlineError,
   category,
   onCategoryChange,
   isGive,
@@ -77,6 +85,8 @@ export function CreatePostFormScrollContent({
   isPublishing,
   urgency,
   onUrgencyChange,
+  estimatedValue,
+  onEstimatedValueChange,
   visibility,
   onVisibilityChange,
   profilePrivacy,
@@ -89,9 +99,15 @@ export function CreatePostFormScrollContent({
   onPublishPress,
 }: CreatePostFormScrollContentProps) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useCreatePostStyles();
+  const tabBarPad = useShellTabBarScrollInset();
 
   return (
-    <ScrollView style={styles.scroll} contentContainerStyle={styles.scrollContent}>
+    <ScrollView
+      style={styles.scroll}
+      contentContainerStyle={[styles.scrollContent, { paddingBottom: tabBarPad }]}
+    >
       <View style={styles.typeToggle}>
         <TouchableOpacity
           style={[styles.typeBtn, type === 'Request' && styles.typeBtnActive]}
@@ -139,6 +155,7 @@ export function CreatePostFormScrollContent({
           {t('post.title')} <Text style={styles.required}>*</Text>
         </Text>
         <TextInput
+          testID="create-post-title"
           style={styles.input}
           value={title}
           onChangeText={onTitleChange}
@@ -156,23 +173,29 @@ export function CreatePostFormScrollContent({
         </Text>
         <CityPicker value={city} onChange={onCityChange} disabled={isPublishing} />
         <View style={styles.streetRow}>
+          <View style={styles.streetInputStreet}>
+            <StreetPicker
+              cityId={city?.id ?? null}
+              value={street ? { id: '', name: street } : null}
+              onChange={(sel) => onStreetChange(sel.name)}
+              disabled={isPublishing}
+            />
+          </View>
           <TextInput
-            style={[styles.input, styles.streetInputStreet]}
-            value={street}
-            onChangeText={onStreetChange}
-            placeholder={t('post.streetLabel')}
-            placeholderTextColor={colors.textDisabled}
-            textAlign="right"
-          />
-          <TextInput
-            style={[styles.input, styles.streetInputHouse]}
+            style={[styles.input, styles.streetInputHouse, !city ? { opacity: 0.5 } : null]}
             value={streetNumber}
             onChangeText={onStreetNumberChange}
             placeholder={t('post.streetNumberShort')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
+            editable={!isPublishing && !!city}
           />
         </View>
+        {addressInlineError ? (
+          <Text style={styles.sectionHint} accessibilityRole="alert">
+            {addressInlineError}
+          </Text>
+        ) : null}
       </View>
 
       <View style={styles.section}>
@@ -208,6 +231,7 @@ export function CreatePostFormScrollContent({
               </TouchableOpacity>
             ))}
           </View>
+          <EstimatedValueSlider value={estimatedValue} onChange={onEstimatedValueChange} />
         </View>
       )}
 

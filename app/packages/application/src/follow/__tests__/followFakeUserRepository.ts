@@ -113,6 +113,10 @@ export class FollowFakeUserRepository implements IUserRepository {
   async findById(): Promise<User | null> {
     return this.user;
   }
+  async getChatCounterpartyContact(): Promise<string | null> {
+    return null;
+  }
+
   async findByHandle(): Promise<User | null> {
     return this.user;
   }
@@ -173,6 +177,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     activePostsCountInternal: 0,
     followersCount: 0,
     followingCount: 0,
+    karmaPoints: 0,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
     ...overrides,

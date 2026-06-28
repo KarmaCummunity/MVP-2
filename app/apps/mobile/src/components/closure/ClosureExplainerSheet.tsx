@@ -1,13 +1,17 @@
 // FR-CLOSURE-004 — one-time educational explainer with "don't show again".
 import { useEffect, useState } from 'react';
-import { Modal, View, Text, Pressable, StyleSheet } from 'react-native';
+import { Modal, View, Text, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import { useClosureStore } from '../../store/closureStore';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export function ClosureExplainerSheet() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const step = useClosureStore((s) => s.step);
   const postType = useClosureStore((s) => s.postType);
@@ -101,7 +105,7 @@ export function ClosureExplainerSheet() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -111,22 +115,25 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     padding: 20,
     borderRadius: 12,
     width: '100%',
     maxWidth: 440,
   },
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 12, color: colors.textPrimary },
-  body: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 12, color: colors.textPrimary },
+  body: { fontSize: 15, color: colors.textSecondary, textAlign: rtlTextAlignStart, marginBottom: 8 },
   bullet: {
     fontSize: 14,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 8,
     lineHeight: 22,
   },
   checkboxRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     gap: 10,
     marginVertical: 16,
@@ -146,4 +153,4 @@ const styles = StyleSheet.create({
   btn: { paddingVertical: 12, borderRadius: 8, alignItems: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
-});
+}));

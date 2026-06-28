@@ -1,18 +1,15 @@
 // PostFilterSheet — bottom-sheet for the Home Feed's sort + filter affordances.
-// Mapped to SRS: FR-FEED-004 (filter modal), FR-FEED-005 (persisted state),
-// FR-FEED-006 (distance sort), FR-FEED-018 (shared component),
+// Mapped to SRS: FR-FEED-003 (text search), FR-FEED-004 (filter modal),
+// FR-FEED-005 (persisted state), FR-FEED-006 (distance sort), FR-FEED-018,
 // FR-FEED-020 (followers-only scope).
 //
-// State pattern: the sheet keeps a local snapshot of the store so the user
-// can preview changes; "Apply" commits, "Clear" resets. This mirrors the
-// existing SearchFilterSheet UX and avoids feed flicker while picking.
+// All controls commit immediately to the parent store; the feed refetches in place.
 
-import React, { useState } from 'react';
+import React, { useCallback } from 'react';
 import {
   Modal,
   Pressable,
   ScrollView,
-  StyleSheet,
   Text,
   View,
 } from 'react-native';
@@ -26,54 +23,49 @@ import type {
   LocationFilter,
   PostType,
 } from '@kc/domain';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { SortSection } from './SortSection';
 import { FiltersSection } from './FiltersSection';
 import { LocationFilterSection } from './LocationFilterSection';
+import { SearchSection } from './SearchSection';
 
 export interface PostFilterValue {
   type: PostType | null;
   categories: Category[];
   itemConditions: ItemCondition[];
-  /** Includes its own display name (`centerCityName`) so the picker re-hydrates correctly across reopens. */
   locationFilter: LocationFilter | null;
   statusFilter: FeedStatusFilter;
   sortOrder: FeedSortOrder;
   proximitySortCity: string | null;
   proximitySortCityName: string | null;
   followersOnly: boolean;
+  searchQuery: string;
 }
 
 interface PostFilterSheetProps {
   visible: boolean;
-  initial: PostFilterValue;
-  onApply: (next: PostFilterValue) => void;
+  value: PostFilterValue;
+  onPatch: (patch: Partial<PostFilterValue>) => void;
   onClear: () => void;
   onClose: () => void;
 }
 
 export function PostFilterSheet({
   visible,
-  initial,
-  onApply,
+  value,
+  onPatch,
   onClear,
   onClose,
 }: PostFilterSheetProps) {
   const { t } = useTranslation();
-  // Local snapshot — Modal stays mounted, so re-seed each time it opens.
-  const [draft, setDraft] = useState<PostFilterValue>(initial);
+  const styles = usePostFilterSheetStyles();
+  const { colors } = useTheme();
 
-  React.useEffect(() => {
-    if (visible) setDraft(initial);
-  }, [visible, initial]);
+  const handleSearchQueryChange = useCallback(
+    (q: string) => onPatch({ searchQuery: q }),
+    [onPatch],
+  );
 
-  const patch = <K extends keyof PostFilterValue>(k: K, v: PostFilterValue[K]) =>
-    setDraft((d) => ({ ...d, [k]: v }));
-
-  const handleApply = () => {
-    onApply(draft);
-    onClose();
-  };
   const handleClear = () => {
     onClear();
     onClose();
@@ -95,77 +87,72 @@ export function PostFilterSheet({
           </View>
 
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
+            {visible ? (
+              <SearchSection
+                searchQuery={value.searchQuery}
+                sheetVisible={visible}
+                onSearchQueryChange={handleSearchQueryChange}
+              />
+            ) : null}
             <SortSection
-              sortOrder={draft.sortOrder}
+              sortOrder={value.sortOrder}
               proximitySortCity={
-                draft.proximitySortCity && draft.proximitySortCityName
-                  ? { id: draft.proximitySortCity, name: draft.proximitySortCityName }
+                value.proximitySortCity && value.proximitySortCityName
+                  ? { id: value.proximitySortCity, name: value.proximitySortCityName }
                   : null
               }
-              onSortOrderChange={(s) => patch('sortOrder', s)}
-              onProximitySortCityChange={(c) => {
-                setDraft((d) => ({
-                  ...d,
+              onSortOrderChange={(s) => onPatch({ sortOrder: s })}
+              onProximitySortCityChange={(c) =>
+                onPatch({
                   proximitySortCity: c?.id ?? null,
                   proximitySortCityName: c?.name ?? null,
-                }));
-              }}
+                })
+              }
             />
             <FiltersSection
-              type={draft.type}
-              categories={draft.categories}
-              itemConditions={draft.itemConditions}
-              statusFilter={draft.statusFilter}
-              followersOnly={draft.followersOnly}
-              onTypeChange={(t) => patch('type', t)}
-              onCategoriesChange={(c) => patch('categories', c)}
-              onItemConditionsChange={(i) => patch('itemConditions', i)}
-              onStatusFilterChange={(s) => patch('statusFilter', s)}
-              onFollowersOnlyChange={(v) => patch('followersOnly', v)}
+              type={value.type}
+              categories={value.categories}
+              itemConditions={value.itemConditions}
+              statusFilter={value.statusFilter}
+              followersOnly={value.followersOnly}
+              onTypeChange={(type) => onPatch({ type })}
+              onCategoriesChange={(categories) => onPatch({ categories })}
+              onItemConditionsChange={(itemConditions) => onPatch({ itemConditions })}
+              onStatusFilterChange={(statusFilter) => onPatch({ statusFilter })}
+              onFollowersOnlyChange={(followersOnly) => onPatch({ followersOnly })}
             />
             <LocationFilterSection
-              value={draft.locationFilter}
-              onChange={(next) => patch('locationFilter', next)}
+              value={value.locationFilter}
+              onChange={(locationFilter) => onPatch({ locationFilter })}
             />
           </ScrollView>
-
-          <Pressable style={styles.applyBtn} onPress={handleApply}>
-            <Text style={styles.applyText}>{t('filters.apply')}</Text>
-          </Pressable>
         </View>
       </View>
     </Modal>
   );
 }
 
-const styles = StyleSheet.create({
+const usePostFilterSheetStyles = makeUseStyles(({ colors }) => ({
   overlay: { flex: 1, justifyContent: 'flex-end' },
-  backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
+  backdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: colors.overlay },
   sheet: {
     backgroundColor: colors.surface,
     borderTopLeftRadius: radius.xl,
     borderTopRightRadius: radius.xl,
-    maxHeight: '85%',
-    paddingBottom: spacing.lg,
+    maxHeight: '58%',
+    paddingBottom: spacing.md,
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
-    padding: spacing.base,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.base,
     borderBottomWidth: 1,
     borderBottomColor: colors.border,
   },
-  headerTitle: { ...typography.h2, color: colors.textPrimary },
+  headerTitle: { ...typography.h3, color: colors.textPrimary },
   clearText: { ...typography.caption, color: colors.error, fontWeight: '600' as const },
   body: { flexGrow: 0 },
-  bodyContent: { padding: spacing.base, paddingBottom: spacing.lg },
-  applyBtn: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    marginHorizontal: spacing.base,
-    borderRadius: radius.md,
-    alignItems: 'center',
-  },
-  applyText: { ...typography.body, color: colors.textInverse, fontWeight: '700' as const },
-});
+  bodyContent: { padding: spacing.sm, paddingBottom: spacing.md },
+}));

@@ -68,6 +68,17 @@ describe('GetFeedUseCase', () => {
     expect(repo.lastGetFeedArgs?.filter.itemConditions).toBeUndefined();
   });
 
+  it('drops searchQuery shorter than 2 chars and trims longer', async () => {
+    const repo = new FakePostRepository();
+    const uc = new GetFeedUseCase(repo);
+
+    await uc.execute({ viewerId: null, filter: { searchQuery: ' a ' }, limit: 20 });
+    expect(repo.lastGetFeedArgs?.filter.searchQuery).toBeUndefined();
+
+    await uc.execute({ viewerId: null, filter: { searchQuery: '  ספר  ' }, limit: 20 });
+    expect(repo.lastGetFeedArgs?.filter.searchQuery).toBe('ספר');
+  });
+
   it('drops blank proximitySortCity (falls back to viewer city in adapter)', async () => {
     const repo = new FakePostRepository();
     const uc = new GetFeedUseCase(repo);

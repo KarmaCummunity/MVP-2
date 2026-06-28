@@ -8,7 +8,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { Screen } from '../../src/components/ui/Screen';
 import { useAuthStore } from '../../src/store/authStore';
 import { useSoftGate } from '../../src/components/OnboardingSoftGate';
@@ -26,12 +26,14 @@ import { NotifyModal } from '../../src/components/NotifyModal';
 import { ConfirmActionModal } from '../../src/components/post/ConfirmActionModal';
 import { DraftResumeModal } from '../../src/components/post/DraftResumeModal';
 import { getUserRepo } from '../../src/services/userComposition';
-import { createPostStyles as styles } from './create.styles';
+import { useCreatePostStyles } from './create.styles';
 import { useCreatePostPublish } from '../../src/hooks/useCreatePostPublish';
 import { CreatePostFormScrollContent } from '../../src/components/CreatePostForm/CreatePostFormScrollContent';
 
 export default function CreatePostScreen() {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useCreatePostStyles();
   const router = useRouter();
   const session = useAuthStore((s) => s.session);
   const { requestSoftGate } = useSoftGate();
@@ -61,6 +63,7 @@ export default function CreatePostScreen() {
     category: form.category,
     condition: form.condition,
     urgency: form.urgency,
+    estimatedValue: form.estimatedValue,
     locationDisplayLevel: form.locationDisplayLevel,
     visibility: form.visibility,
     hideFromCounterparty: form.hideFromCounterparty,
@@ -74,6 +77,7 @@ export default function CreatePostScreen() {
       return getUserRepo().findById(ownerId);
     },
     enabled: Boolean(ownerId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const profilePrivacy = userQuery.data?.privacyMode ?? 'Public';
 
@@ -121,7 +125,8 @@ export default function CreatePostScreen() {
   const handleRemove = (path: string) =>
     form.setUploads((prev) => prev.filter((u) => u.path !== path));
 
-  const { tryPublish, runPublishAfterGate, isPublishing } = useCreatePostPublish({
+  const { tryPublish, runPublishAfterGate, isPublishing, addressInlineMessage } =
+    useCreatePostPublish({
     ownerId,
     type: form.type,
     title: form.title,
@@ -134,6 +139,7 @@ export default function CreatePostScreen() {
     condition: form.condition,
     isGive,
     urgency: form.urgency,
+    estimatedValue: form.estimatedValue,
     uploads: form.uploads,
     hideFromCounterparty: form.hideFromCounterparty,
     visibilityRef: form.visibilityRef,
@@ -154,7 +160,7 @@ export default function CreatePostScreen() {
   };
 
   return (
-    <Screen blobs="off">
+    <Screen blobs="off" testID="create-post-screen">
       <View style={styles.header}>
         <TouchableOpacity onPress={() => router.back()} style={styles.headerClose}>
           <Ionicons name="close" size={24} color={colors.textPrimary} />
@@ -185,6 +191,7 @@ export default function CreatePostScreen() {
         onStreetChange={setStreet}
         streetNumber={streetNumber}
         onStreetNumberChange={setStreetNumber}
+        addressInlineError={addressInlineMessage}
         category={form.category}
         onCategoryChange={form.setCategory}
         isGive={isGive}
@@ -199,6 +206,8 @@ export default function CreatePostScreen() {
         isPublishing={isPublishing}
         urgency={form.urgency}
         onUrgencyChange={form.setUrgency}
+        estimatedValue={form.estimatedValue}
+        onEstimatedValueChange={form.setEstimatedValue}
         visibility={form.visibility}
         onVisibilityChange={form.setVisibility}
         profilePrivacy={profilePrivacy}

@@ -1,22 +1,24 @@
-/** Hebrew About landing — hero, numbers, vision, problems. */
+/** Hebrew About landing — hero, numbers, vision, problems (v1.0 master narrative). */
 export const aboutContentCopyA = {
   title: 'אודות קהילת קארמה',
-  tagline: 'הקיבוץ הקפיטליסטי. רשת של נתינה, בלי תמורה.',
+  tagline: 'הקיבוץ הקפיטליסטי — רשת של נתינה, בלי תמורה בין אנשים.',
 
   // Hero
-  heroEyebrow: 'קיבוץ דיגיטלי בעולם קפיטליסטי',
-  heroTitle: 'המקום בו הטוב קורה',
+  heroEyebrow: 'קהילת קארמה · KC',
+  heroTitle: 'לתת — זה גם לקבל.',
   heroSubtitle:
-    'קארמה מחברת בין מי שיש לו מה לתת לבין מי שצריך — בשקיפות, בכבוד, ובלי תמורה כספית בין משתמשים. פרטיות היא בחירה כשזה נכון לכם.',
+    'קיבוץ דיגיטלי שמחבר מי שיש לו עם מי שצריך.\n' +
+    'בלי כסף בין אנשים. בלי פרסומות. בלי מתווכים.',
 
   footerVersion: 'גרסה 0.1.0',
-  footerRights: '© 2026 כל הזכויות שמורות לקהילת קארמה',
+  footerRights: '© 2026 קהילת קארמה',
 
-  // Numbers
+  // Numbers — "the community in numbers" (live + permanent principles)
   numbersTitle: 'הקהילה במספרים',
-  numbersLead: 'אנחנו מודדים הצלחה בקשרים אנושיים — לא בעסקאות.',
+  numbersLead: 'מתעדכן בזמן אמת. צמיחה אמיתית, מתחילה בקטן.',
   numbersBody:
-    'המספרים האלה מספרים סיפור פשוט: בכל יום עוד אנשים בוחרים לתת ולקבל בלי שום מחיר. כשמצטרפים אלינו, נהיים חלק מהסיפור.',
+    'מה לא משתנה לעולם: בחינם למשתמשים · בלי פרסומות · בלי מסחר בין אנשים · קוד פתוח.\n\n' +
+    'תרומות לפרויקט (מחוץ לאפליקציה) יושבות בקופה עד שנירשם כעמותה. אז ייפתחו ערוצי תרומה רשמיים בתוך האפליקציה — בהסכמה, בשקיפות, אף פעם לא חובה.',
 
   // Vision (body copy lives in aboutContentUxRefreshPartA/B)
   visionTitle: 'החזון',

@@ -4,10 +4,10 @@
 // Home feed passes an async onPress that shows success/error EphemeralToast when done.
 
 import React, { useEffect } from 'react';
-import { Platform, StyleSheet, TouchableOpacity } from 'react-native';
+import { Platform, TouchableOpacity } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing } from '@kc/ui';
+import { makeUseStyles, spacing, useTheme } from '@kc/ui';
 
 interface WebRefreshButtonProps {
   onPress: () => void;
@@ -15,6 +15,8 @@ interface WebRefreshButtonProps {
 }
 
 export function WebRefreshButton({ onPress, isLoading }: WebRefreshButtonProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   // R-key shortcut. Only attaches on web — and only fires when no input is
   // focused so we never hijack a typing user.
@@ -52,6 +54,6 @@ export function WebRefreshButton({ onPress, isLoading }: WebRefreshButtonProps) 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   btn: { padding: spacing.xs },
-});
+}));

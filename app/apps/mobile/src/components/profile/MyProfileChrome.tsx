@@ -5,12 +5,21 @@
 // build-up across tab toggles).
 // Mapped to: FR-PROFILE-001 AC1, AC4.
 import React from 'react';
-import { I18nManager, Platform, StyleSheet, Text, TouchableOpacity, View, type ViewStyle } from 'react-native';
+import {
+  ActivityIndicator,
+  I18nManager,
+  Platform,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  type ViewStyle,
+} from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { TopBar } from '../TopBar';
 import { ProfileHeader } from './ProfileHeader';
 import { ProfileStatsRow } from './ProfileStatsRow';
@@ -20,7 +29,11 @@ import { Card } from '../ui/Card';
 import { MotionEntry, ENTRY_DELAY } from '../ui/MotionEntry';
 import { useAuthStore } from '../../store/authStore';
 import { getUserRepo } from '../../services/userComposition';
+import { useProfileTabCounts } from '../../hooks/useProfileTabCounts';
+import { KarmaBadge } from './KarmaBadge';
 import { formatUserLocationLine } from '../../lib/formatUserLocationLine';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 /**
  * RN-Web: absolute `start` ignores RTL like native. `I18nManager.isRTL` is also false at
@@ -38,6 +51,8 @@ function profileMenuCornerHorizontalInset(): Pick<ViewStyle, 'left' | 'right' | 
 }
 
 export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePostsTab }>) {
+  const styles = useMyProfileChromeStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
@@ -48,10 +63,17 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
     queryKey: ['user-profile', userId],
     queryFn: () => getUserRepo().findById(userId!),
     enabled: Boolean(userId),
+    staleTime: 5 * 60_000, // PERF-3: profile (self) — edit-profile invalidates explicitly
   });
   const user = userQuery.data ?? null;
-  const displayName = user?.displayName?.trim() || resolveDisplayName(session, fallbackName);
-  const avatarUrl = user?.avatarUrl ?? session?.avatarUrl ?? null;
+  const tabCounts = useProfileTabCounts({
+    profileUserId: userId,
+    viewerUserId: userId ?? null,
+    enabled: Boolean(userId),
+  });
+  const profileLoading = userQuery.isLoading && user === null;
+  const displayName = user?.displayName?.trim() || fallbackName;
+  const avatarUrl = user?.avatarUrl ?? null;
   const biography = user?.biography ?? null;
 
   const goToTab = (next: ProfilePostsTab) => {
@@ -72,33 +94,42 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
             <MyProfileOverflowMenu showFollowRequests={user?.privacyMode === 'Private'} />
           </View>
           <Card padding="base" style={styles.profileCard}>
-            <ProfileHeader
-              displayName={displayName}
-              locationLine={user ? formatUserLocationLine(user) : null}
-              avatarUrl={avatarUrl}
-              biography={biography}
-              privacyMode={user?.privacyMode ?? 'Public'}
-              onLockPress={() => router.push('/settings/privacy' as never)}
-              size={72}
-            />
-            <ProfileStatsRow
-              followersCount={user?.followersCount ?? 0}
-              followingCount={user?.followingCount ?? 0}
-              postsCount={user?.activePostsCountInternal ?? 0}
-              enabled
-              onPressFollowers={() =>
-                router.push({
-                  pathname: '/user/[handle]/followers' as never,
-                  params: { handle: user?.shareHandle ?? '' },
-                })
-              }
-              onPressFollowing={() =>
-                router.push({
-                  pathname: '/user/[handle]/following' as never,
-                  params: { handle: user?.shareHandle ?? '' },
-                })
-              }
-            />
+            {profileLoading ? (
+              <View style={styles.profileLoading}>
+                <ActivityIndicator color={colors.primary} />
+              </View>
+            ) : (
+              <>
+                <ProfileHeader
+                  displayName={displayName}
+                  locationLine={user ? formatUserLocationLine(user) : null}
+                  avatarUrl={avatarUrl}
+                  biography={biography}
+                  privacyMode={user?.privacyMode ?? 'Public'}
+                  onLockPress={() => router.push('/settings')}
+                  size={72}
+                />
+                <ProfileStatsRow
+                  followersCount={user?.followersCount ?? 0}
+                  followingCount={user?.followingCount ?? 0}
+                  postsCount={tabCounts.totalCount ?? 0}
+                  enabled={Boolean(user)}
+                  onPressFollowers={() =>
+                    router.push({
+                      pathname: '/user/[handle]/followers' as never,
+                      params: { handle: user?.shareHandle ?? '' },
+                    })
+                  }
+                  onPressFollowing={() =>
+                    router.push({
+                      pathname: '/user/[handle]/following' as never,
+                      params: { handle: user?.shareHandle ?? '' },
+                    })
+                  }
+                />
+                {user ? <KarmaBadge points={user.karmaPoints} /> : null}
+              </>
+            )}
             <View style={styles.actionRow}>
               <TouchableOpacity style={styles.editBtn} onPress={() => router.push('/edit-profile')}>
                 <Text style={styles.editBtnText}>{t('profile.editProfile')}</Text>
@@ -121,39 +152,34 @@ export function MyProfileChrome({ activeTab }: Readonly<{ activeTab: ProfilePost
         </View>
       </MotionEntry>
       <MotionEntry variant="bottom" delay={ENTRY_DELAY.section}>
-        <ProfileTabs active={activeTab} onChange={goToTab} />
+        <ProfileTabs
+          active={activeTab}
+          onChange={goToTab}
+          openCount={tabCounts.openCount}
+          closedCount={tabCounts.closedCount}
+        />
       </MotionEntry>
     </>
   );
 }
 
-function resolveDisplayName(
-  session: ReturnType<typeof useAuthStore.getState>['session'],
-  fallbackName: string,
-): string {
-  if (session?.displayName && session.displayName.trim().length > 0) return session.displayName;
-  if (session?.email) {
-    const local = session.email.split('@')[0];
-    if (local && local.length > 0) return local;
-  }
-  return fallbackName;
-}
-
-const styles = StyleSheet.create({
+const useMyProfileChromeStyles = makeUseStyles(({ colors }) => ({
   profileOuter: {
     margin: spacing.base,
-    position: 'relative',
+    position: 'relative' as const,
   },
   profileMenuCorner: {
-    position: 'absolute',
+    position: 'absolute' as const,
     top: spacing.sm,
     zIndex: 2,
   },
-  // Card primitive supplies bg + radius + shadow; we only add layout-level gap.
   profileCard: { gap: spacing.base },
-  actionRow: { flexDirection: 'row', gap: spacing.sm },
-  // Edit / share pills mirror the secondary button in the welcome screen
-  // (white card surface, soft border, radius.lg).
+  profileLoading: {
+    minHeight: 120,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  actionRow: { flexDirection: 'row' as const, gap: spacing.sm },
   editBtn: {
     flex: 1,
     height: 44,
@@ -161,8 +187,8 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   editBtnText: { ...typography.button, color: colors.textPrimary },
   shareBtn: {
@@ -172,17 +198,17 @@ const styles = StyleSheet.create({
     borderWidth: 1.5,
     borderColor: colors.border,
     backgroundColor: colors.surface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   statsLink: {
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
+    flexDirection: rowDirectionStart,
+    alignItems: 'center' as const,
+    justifyContent: 'space-between' as const,
     paddingVertical: spacing.sm,
     borderTopWidth: StyleSheet.hairlineWidth,
     borderTopColor: colors.border,
     gap: spacing.sm,
   },
-  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-});
+  statsLinkText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+}));

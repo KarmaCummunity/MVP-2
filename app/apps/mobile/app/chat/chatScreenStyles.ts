@@ -1,8 +1,7 @@
 // Styles for `app/chat/[id].tsx` — keeps screen file under architecture LOC cap.
-import { StyleSheet } from 'react-native';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
 
-export const chatConversationStyles = StyleSheet.create({
+export const useChatConversationStyles = makeUseStyles(({ colors }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   headerTitle: { ...typography.h3, color: colors.textPrimary },
   messageList: { padding: spacing.base, gap: spacing.sm },
@@ -19,4 +18,4 @@ export const chatConversationStyles = StyleSheet.create({
   counter: { ...typography.caption, color: colors.textSecondary, alignSelf: 'flex-start', paddingHorizontal: spacing.sm },
   sendBtn: { width: 40, height: 40, borderRadius: 20, backgroundColor: colors.primary, justifyContent: 'center', alignItems: 'center' },
   sendBtnDisabled: { opacity: 0.5 },
-});
+}));

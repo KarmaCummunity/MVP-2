@@ -12,12 +12,22 @@ const CLOSURE_CODES = new Set<PostErrorCode>([
   'closure_wrong_status',
   'closure_recipient_not_in_chat',
   'reopen_window_expired',
+  'republish_not_owner',
+  'republish_wrong_status',
+  'republish_not_found',
+  'active_post_limit_exceeded',
 ]);
 
 export function mapClosurePgError(error: PostgrestError): PostError {
   const msg = error.message?.trim() ?? '';
   if (CLOSURE_CODES.has(msg as PostErrorCode))
     return new PostError(msg as PostErrorCode, msg, error);
+  // INSERT policy WITH CHECK miss for FollowersOnly without Private profile
+  // surfaces as 42501 with a generic message — map it explicitly so callers
+  // can show the right copy.
+  if (error.code === '42501') {
+    return new PostError('followers_only_requires_private', 'followers_only_requires_private', error);
+  }
   return new PostError('unknown', error.message ?? 'closure_unknown', error);
 }
 
@@ -103,6 +113,18 @@ export async function reopenPost(
   return reread;
 }
 
+export async function republishPost(
+  client: SupabaseClient<Database>,
+  postId: string,
+): Promise<string> {
+  const { data, error } = await client.rpc('rpc_republish_post', { p_post_id: postId });
+  if (error) throw mapClosurePgError(error);
+  if (typeof data !== 'string') {
+    throw new PostError('unknown', 'republish_no_id_returned');
+  }
+  return data;
+}
+
 export async function getClosureCandidates(
   client: SupabaseClient<Database>,
   postId: string,
@@ -119,15 +141,11 @@ export async function getClosureCandidates(
     throw new PostError('unknown', 'post_missing_owner');
   }
 
-  // Pull EVERY chat the owner is part of (not just chats anchored to THIS post).
-  // Reason: `findOrCreateChat` reuses an existing chat between two users and
-  // never re-anchors it to the new post — so a chat that started about post A
-  // remains anchor=A forever, even if the same two users are now talking about
-  // post B. Filtering by anchor_post_id was hiding real chat partners. Also
-  // exclude support threads (admin) and removed chats.
+  // FR-CLOSURE-003 AC1: partners in chats anchored to this post only.
   const { data: chats, error: chatErr } = await client
     .from('chats')
     .select('chat_id, participant_a, participant_b, last_message_at, is_support_thread, removed_at')
+    .eq('anchor_post_id', postId)
     .or(`participant_a.eq.${ownerId},participant_b.eq.${ownerId}`)
     .eq('is_support_thread', false)
     .is('removed_at', null);

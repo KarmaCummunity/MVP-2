@@ -22,11 +22,21 @@ export function counterpartId(r: ChatRow, userId: string): string | null {
   return r.participant_a === userId ? r.participant_b : r.participant_a;
 }
 
-/** One row per human counterpart — highest last_message_at wins (FR-CHAT-016). */
+/**
+ * One row per human counterpart — highest last_message_at wins (FR-CHAT-016).
+ *
+ * TD-110 bug 3: when `counterpartId` returns null (counterpart user deleted),
+ * the previous implementation collapsed every deleted-counterpart chat to a
+ * single `'__deleted__'` bucket — multiple distinct threads with different
+ * deleted users appeared as one row. Each deleted-counterpart chat is with a
+ * *different* user, so we key by `chat_id` in that case to keep them
+ * separate. Active counterparts continue to dedupe by user_id as before.
+ */
 export function dedupeRowsByCounterpart(userId: string, rows: ChatRow[]): ChatRow[] {
   const best = new Map<string, ChatRow>();
   for (const r of rows) {
-    const other = counterpartId(r, userId) ?? '__deleted__';
+    const counterpart = counterpartId(r, userId);
+    const other = counterpart ?? `__deleted__:${r.chat_id}`;
     const prev = best.get(other);
     if (!prev) {
       best.set(other, r);
@@ -45,9 +55,10 @@ export async function getMyChats(
 ): Promise<ChatWithPreview[]> {
   const chatsRes = await client
     .from('chats')
-    .select('*')
+    .select('chat_id, participant_a, participant_b, anchor_post_id, anchor_ride_id, is_support_thread, last_message_at, inbox_hidden_at_a, inbox_hidden_at_b, removed_at, created_at')
     .or(`participant_a.eq.${userId},participant_b.eq.${userId}`)
-    .order('last_message_at', { ascending: false });
+    .order('last_message_at', { ascending: false })
+    .limit(50);
   if (chatsRes.error) throw mapChatError(chatsRes.error);
 
   const raw = (chatsRes.data ?? []) as ChatRow[];
@@ -61,25 +72,28 @@ export async function getMyChats(
 
   const msgsRes = await client
     .from('messages')
-    .select('*')
+    .select('message_id, chat_id, sender_id, body, kind, system_payload, status, created_at, delivered_at, read_at')
     .in('chat_id', chatIds)
-    .order('created_at', { ascending: false });
+    .order('created_at', { ascending: false })
+    .limit(500);
   if (msgsRes.error) throw mapChatError(msgsRes.error);
   const lastMessageByChat = new Map<string, Message>();
   for (const m of (msgsRes.data ?? []).map(rowToMessage)) {
     if (!lastMessageByChat.has(m.chatId)) lastMessageByChat.set(m.chatId, m);
   }
 
-  const unreadRes = await client
-    .from('messages')
-    .select('chat_id, status, sender_id')
-    .in('chat_id', chatIds);
+  // PERF-5: server-side per-chat unread count. Replaces the prior fan-out
+  // (SELECT every non-read message + group client-side) which was the
+  // worst payload offender in this query family — for heavy chat users it
+  // pulled tens of MB just to compute small integers.
+  const unreadRes = await client.rpc('rpc_unread_counts_for_chats', {
+    p_viewer_id: userId,
+    p_chat_ids: chatIds,
+  });
   if (unreadRes.error) throw mapChatError(unreadRes.error);
   const unreadByChat: Record<string, number> = {};
   for (const r of unreadRes.data ?? []) {
-    if (r.status !== 'read' && r.sender_id !== userId) {
-      unreadByChat[r.chat_id] = (unreadByChat[r.chat_id] ?? 0) + 1;
-    }
+    unreadByChat[r.chat_id] = r.unread_count;
   }
 
   const otherIds = chats

@@ -12,8 +12,8 @@ import {
 import { useTranslation } from 'react-i18next';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
 import { DONATION_LINK_DESCRIPTION_MAX, DONATION_LINK_DISPLAY_NAME_MAX } from '@kc/domain';
-import { colors } from '@kc/ui';
-import { modalStyles as styles } from './AddDonationLinkModal.styles';
+import { useTheme } from '@kc/ui';
+import { useAddDonationLinkModalStyles } from './AddDonationLinkModal.styles';
 import { useAddOrEditDonationLinkModal } from './useAddOrEditDonationLinkModal';
 
 interface Props {
@@ -27,6 +27,8 @@ interface Props {
 
 export function AddDonationLinkModal(props: Readonly<Props>) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useAddDonationLinkModalStyles();
   const {
     url,
     setUrl,

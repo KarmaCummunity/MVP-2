@@ -2,22 +2,37 @@
 // support issue (injects system message), navigate to the support thread.
 import React, { useState } from 'react';
 import {
-  ActivityIndicator, ScrollView, StyleSheet, Text,
-  TextInput, TouchableOpacity, View,
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  Text,
+  TextInput,
+  View,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
-import { useRouter } from 'expo-router';
+import { Stack, useRouter } from 'expo-router';
+import { Ionicons } from '@expo/vector-icons';
 import { ChatError } from '@kc/application';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { useDetailStackScreenOptions } from '../../src/navigation/detailStackScreenOptions';
+import { Card } from '../../src/components/ui/Card';
+import { PrimaryButton } from '../../src/components/ui/Buttons';
 import { container } from '../../src/lib/container';
 import { NotifyModal } from '../../src/components/NotifyModal';
+import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
+import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 import he from '../../src/i18n/locales/he';
 
 const t = he.settings.reportIssueScreen;
 const CATEGORIES = ['Bug', 'Account', 'Suggestion', 'Other'] as const;
+const MAX_DESC = 500;
 
 export default function ReportIssueScreen() {
+  const detailStackScreenOptions = useDetailStackScreenOptions();
   const router = useRouter();
+  const styles = useReportIssueScreenStyles();
+  const { colors } = useTheme();
   const [category, setCategory] = useState<string | null>(null);
   const [description, setDescription] = useState('');
   const [busy, setBusy] = useState(false);
@@ -45,46 +60,85 @@ export default function ReportIssueScreen() {
   };
 
   return (
-    <SafeAreaView style={styles.safe}>
-      <ScrollView contentContainerStyle={styles.body} keyboardShouldPersistTaps="handled">
-        <Text style={styles.title}>{t.title}</Text>
-        <Text style={styles.copy}>{t.copy}</Text>
+    <SafeAreaView style={styles.safe} edges={['bottom', 'left', 'right']}>
+      <Stack.Screen
+        options={{
+          ...detailStackScreenOptions,
+          headerStyle: { backgroundColor: colors.surface },
+          headerTintColor: colors.primary,
+          headerTitle: t.title,
+        }}
+      />
+      <KeyboardAvoidingView
+        style={styles.flex}
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        keyboardVerticalOffset={Platform.OS === 'ios' ? 88 : 0}
+      >
+        <ScrollView
+          contentContainerStyle={styles.body}
+          keyboardShouldPersistTaps="handled"
+          showsVerticalScrollIndicator={false}
+        >
+          <View style={styles.introRow}>
+            <View style={styles.introIcon}>
+              <Ionicons name="chatbubbles-outline" size={22} color={colors.primary} />
+            </View>
+            <Text style={styles.copy}>{t.copy}</Text>
+          </View>
 
-        <Text style={styles.label}>{t.categoryLabel}</Text>
-        <View style={styles.chips}>
-          {CATEGORIES.map((cat) => (
-            <TouchableOpacity
-              key={cat}
-              style={[styles.chip, category === cat && styles.chipSelected]}
-              onPress={() => setCategory(category === cat ? null : cat)}
-            >
-              <Text style={[styles.chipText, category === cat && styles.chipTextSelected]}>
-                {(t.categories as Record<string, string>)[cat]}
-              </Text>
-            </TouchableOpacity>
-          ))}
-        </View>
+          <Card padding="base" style={styles.formCard}>
+            <Text style={styles.label}>{t.categoryLabel}</Text>
+            <View style={styles.chips}>
+              {CATEGORIES.map((cat) => {
+                const selected = category === cat;
+                return (
+                  <Pressable
+                    key={cat}
+                    style={[styles.chip, selected && styles.chipSelected]}
+                    onPress={() => setCategory(selected ? null : cat)}
+                    accessibilityRole="button"
+                    accessibilityState={{ selected }}
+                  >
+                    <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
+                      {t.categories[cat]}
+                    </Text>
+                  </Pressable>
+                );
+              })}
+            </View>
 
-        <Text style={styles.label}>{t.descriptionLabel}</Text>
-        <TextInput
-          style={styles.input}
-          multiline
-          numberOfLines={5}
-          placeholder={t.descriptionPlaceholder}
-          placeholderTextColor={colors.textSecondary}
-          value={description}
-          onChangeText={setDescription}
-          textAlign="right"
-          maxLength={500}
-        />
-        {descTrimmed.length > 0 && descTrimmed.length < 10 ? (
-          <Text style={styles.hint}>{t.descriptionMinLength}</Text>
-        ) : null}
+            <Text style={[styles.label, styles.labelSpaced]}>{t.descriptionLabel}</Text>
+            <TextInput
+              style={styles.input}
+              multiline
+              numberOfLines={6}
+              placeholder={t.descriptionPlaceholder}
+              placeholderTextColor={colors.textSecondary}
+              value={description}
+              onChangeText={setDescription}
+              textAlign={rtlTextAlignStart as 'left' | 'right'}
+              maxLength={MAX_DESC}
+            />
+            <View style={styles.inputFooter}>
+              {descTrimmed.length > 0 && descTrimmed.length < 10 ? (
+                <Text style={styles.hint}>{t.descriptionMinLength}</Text>
+              ) : (
+                <View />
+              )}
+              <Text style={styles.counter}>{`${description.length}/${MAX_DESC}`}</Text>
+            </View>
+          </Card>
 
-        <TouchableOpacity style={[styles.btn, !isValid && styles.btnDisabled]} onPress={submit} disabled={busy || !isValid}>
-          {busy ? <ActivityIndicator color={colors.textInverse} /> : <Text style={styles.btnText}>{t.submitBtn}</Text>}
-        </TouchableOpacity>
-      </ScrollView>
+          <PrimaryButton
+            label={busy ? t.submitting : t.submitBtn}
+            onPress={submit}
+            loading={busy}
+            disabled={!isValid}
+            fullWidth
+            icon="send-outline"
+          />
+        </ScrollView>
+      </KeyboardAvoidingView>
       <NotifyModal
         visible={notify !== null}
         title={notify?.title ?? ''}
@@ -95,41 +149,91 @@ export default function ReportIssueScreen() {
   );
 }
 
-const styles = StyleSheet.create({
-  safe: { flex: 1, backgroundColor: colors.surface },
-  body: { padding: spacing.base, gap: spacing.md },
-  title: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
-  copy: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
-  label: { ...typography.bodySmall, color: colors.textPrimary, fontWeight: '600' as const, textAlign: 'right' },
-  chips: { flexDirection: 'row-reverse', flexWrap: 'wrap', gap: spacing.sm },
-  chip: {
-    paddingHorizontal: spacing.sm,
-    paddingVertical: 6,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
+const useReportIssueScreenStyles = makeUseStyles(({ colors, isDark }) => ({
+  safe: { flex: 1, backgroundColor: colors.background, ...webViewRtl },
+  flex: { flex: 1, ...webViewRtl },
+  body: { padding: spacing.base, gap: spacing.lg, paddingBottom: spacing.xl, ...webViewRtl },
+  introRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: spacing.sm,
+    ...webViewRtl,
   },
-  chipSelected: { borderColor: colors.primary, backgroundColor: colors.primaryLight },
-  chipText: { ...typography.bodySmall, color: colors.textPrimary },
-  chipTextSelected: { color: colors.primary, fontWeight: '700' as const },
+  introIcon: {
+    width: 44,
+    height: 44,
+    borderRadius: radius.full,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.primaryLight,
+  },
+  copy: {
+    ...typography.body,
+    flex: 1,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+    lineHeight: 22,
+    ...webTextRtl,
+  },
+  formCard: { gap: spacing.sm, ...webViewRtl },
+  label: {
+    ...typography.bodySmall,
+    color: colors.textPrimary,
+    fontWeight: '600',
+    textAlign: rtlTextAlignStart,
+    width: '100%',
+    ...webTextRtl,
+  },
+  labelSpaced: { marginTop: spacing.xs },
+  chips: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, ...webViewRtl },
+  chip: {
+    paddingHorizontal: spacing.md,
+    paddingVertical: spacing.sm,
+    minHeight: 44,
+    justifyContent: 'center',
+    borderRadius: radius.full,
+    borderWidth: 1.5,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+  },
+  chipSelected: {
+    borderColor: colors.primary,
+    backgroundColor: colors.primaryLight,
+  },
+  chipText: {
+    ...typography.bodySmall,
+    color: colors.textPrimary,
+    fontWeight: '500',
+    textAlign: 'center',
+    ...webTextRtl,
+  },
+  chipTextSelected: { color: colors.primary, fontWeight: '700' },
   input: {
     borderWidth: 1,
     borderColor: colors.border,
     borderRadius: radius.md,
     padding: spacing.sm,
-    minHeight: 120,
+    minHeight: 140,
     textAlignVertical: 'top',
     ...typography.body,
     color: colors.textPrimary,
+    backgroundColor: isDark ? colors.background : colors.surface,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
   },
-  hint: { ...typography.bodySmall, color: colors.error, textAlign: 'right' },
-  btn: {
-    backgroundColor: colors.primary,
-    paddingVertical: spacing.md,
-    borderRadius: radius.md,
+  inputFooter: {
+    flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: spacing.sm,
+    ...webViewRtl,
   },
-  btnDisabled: { opacity: 0.45 },
-  btnText: { ...typography.body, color: colors.textInverse, fontWeight: '700' as const },
-});
+  hint: {
+    ...typography.caption,
+    color: colors.error,
+    flex: 1,
+    textAlign: rtlTextAlignStart,
+    ...webTextRtl,
+  },
+  counter: { ...typography.caption, color: colors.textSecondary, fontVariant: ['tabular-nums'] },
+}));

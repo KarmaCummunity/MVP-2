@@ -3,10 +3,12 @@ import { ActivityIndicator, Text, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack } from 'expo-router';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
-import { otherProfileScreenStyles as styles } from './otherProfileScreen.styles';
+import { useTheme } from '@kc/ui';
+import { useOtherProfileScreenStyles } from './otherProfileScreen.styles';
 
 export function OtherProfileLoading() {
+  const { colors } = useTheme();
+  const styles = useOtherProfileScreenStyles();
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <ActivityIndicator style={{ marginTop: 80 }} color={colors.primary} />
@@ -16,6 +18,7 @@ export function OtherProfileLoading() {
 
 export function OtherProfileNotFound() {
   const { t } = useTranslation();
+  const styles = useOtherProfileScreenStyles();
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen options={{ headerTitle: t('profile.headerTitle') }} />
@@ -30,6 +33,7 @@ type UnavailableProps = { title: string; description: string };
 
 export function OtherProfileUnavailable({ title, description }: UnavailableProps) {
   const { t } = useTranslation();
+  const styles = useOtherProfileScreenStyles();
   return (
     <SafeAreaView style={styles.container} edges={['bottom']}>
       <Stack.Screen options={{ headerTitle: t('profile.headerTitle') }} />

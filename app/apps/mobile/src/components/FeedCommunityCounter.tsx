@@ -4,8 +4,8 @@
 // Fetched on mount, refreshed every 60 seconds per FR-FEED-014.
 
 import React from 'react';
-import { StyleSheet, Text } from 'react-native';
-import { colors, typography } from '@kc/ui';
+import { Text } from 'react-native';
+import { makeUseStyles, typography } from '@kc/ui';
 import { useActivePostsCount } from '../hooks/useActivePostsCount';
 
 interface FeedCommunityCounterProps {
@@ -14,11 +14,12 @@ interface FeedCommunityCounterProps {
 }
 
 export function FeedCommunityCounter({ template, style }: FeedCommunityCounterProps) {
+  const styles = useFeedCommunityCounterStyles();
   const count = useActivePostsCount();
   if (count === undefined) return null;
   return <Text style={[styles.text, style]}>{template(count)}</Text>;
 }
 
-const styles = StyleSheet.create({
-  text: { ...typography.body, color: colors.textSecondary, textAlign: 'center' },
-});
+const useFeedCommunityCounterStyles = makeUseStyles(({ colors }) => ({
+  text: { ...typography.body, color: colors.textSecondary, textAlign: 'center' as const },
+}));

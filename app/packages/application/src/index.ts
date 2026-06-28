@@ -5,6 +5,7 @@ export * from './ports/postActorIdentity';
 export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
+export * from './ports/IStreetRepository';
 export type {
   IChatRealtime,
   InboxStreamCallbacks,
@@ -14,7 +15,10 @@ export type {
 } from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
+export type { IUserRealtime } from './ports/IUserRealtime';
+export type { IRidesRealtime, RidesRealtimeCallbacks } from './ports/IRidesRealtime';
 export type { CommunityStatsSnapshot, IStatsRepository } from './ports/IStatsRepository';
+export type { IAboutRepository } from './ports/IAboutRepository';
 
 export * from './auth/errors';
 export * from './auth/SignUpWithEmail';
@@ -22,12 +26,15 @@ export { ResendVerificationEmailUseCase, type ResendVerificationEmailInput } fro
 export { VerifyEmailUseCase, type VerifyEmailInput, type VerifyEmailOutput } from './auth/VerifyEmail';
 export * from './auth/SignInWithEmail';
 export * from './auth/SignInWithGoogle';
+export * from './auth/SignInWithApple';
 export * from './auth/SignOut';
 export * from './auth/RestoreSession';
 export * from './auth/CompleteBasicInfoUseCase';
 export * from './auth/CompleteOnboardingUseCase';
 export * from './auth/SetAvatarUseCase';
 export * from './auth/UpdateProfileUseCase';
+export * from './auth/assertSessionUser';
+export * from './auth/ReconcileAuthProfileMetadataUseCase';
 export * from './auth/DeleteAccountUseCase';
 export * from './feed/selectGuestPreviewPosts';
 export * from './feed/GetFeedUseCase';
@@ -35,6 +42,7 @@ export * from './feed/GetActivePostsCountUseCase';
 export * from './feed/DismissFirstPostNudgeUseCase';
 export * from './stats/GetCommunityStatsSnapshotUseCase';
 export * from './stats/ListMyActivityTimelineUseCase';
+export * from './about/ListAboutTeamMembersUseCase';
 
 export * from './posts/errors';
 export * from './posts/CreatePostUseCase';
@@ -49,13 +57,13 @@ export * from './posts/ListSavedPostsUseCase';
 export * from './posts/DeletePostUseCase';
 export * from './posts/MarkAsDeliveredUseCase';
 export * from './posts/ReopenPostUseCase';
+export * from './posts/RepublishPostUseCase';
 export * from './posts/UnmarkRecipientSelfUseCase';
 export * from './posts/GetClosureCandidatesUseCase';
 export { ListPostActorIdentityUseCase, type ListPostActorIdentityInput } from './posts/ListPostActorIdentityUseCase';
 export { UpsertPostActorIdentityUseCase } from './posts/UpsertPostActorIdentityUseCase';
 export * from './posts/AdminRemovePostUseCase';
 export * from './posts/SearchUsersForClosureUseCase';
-
 export * from './auth/DismissClosureExplainerUseCase';
 
 // Chat use cases
@@ -139,8 +147,159 @@ export { ReportUserUseCase } from './moderation/ReportUserUseCase';
 export type { ReportUserInput } from './moderation/ReportUserUseCase';
 export { CheckAccountGateUseCase } from './moderation/CheckAccountGateUseCase';
 export type { CheckAccountGateInput } from './moderation/CheckAccountGateUseCase';
-
 export type { IDeviceRepository } from './notifications/IDeviceRepository';
 export { RegisterDeviceUseCase } from './notifications/RegisterDeviceUseCase';
 export { DeactivateDeviceUseCase } from './notifications/DeactivateDeviceUseCase';
 export { UpdateNotificationPreferencesUseCase } from './notifications/UpdateNotificationPreferencesUseCase';
+export * from './ports/ILegalDocumentRepository';
+export * from './legal/LoadLegalDocumentUseCase';
+export * from './legal/CheckPendingLegalAcksUseCase';
+export * from './legal/AcceptLegalDocumentUseCase';
+export * from './admin/IAdminRoleRepository';
+export * from './admin/GetMyAdminRolesUseCase';
+export * from './admin/GrantAdminRoleUseCase';
+export * from './admin/RevokeAdminRoleUseCase';
+export * from './admin/ListAdminsUseCase';
+export * from './admin/IAdminTaskRepository';
+export * from './admin/ListAdminTasksUseCase';
+export * from './admin/GetAdminTaskDetailUseCase';
+export * from './admin/CreateAdminTaskUseCase';
+export * from './admin/UpdateAdminTaskUseCase';
+export * from './admin/SetAdminTaskStatusUseCase';
+export * from './admin/AssignAdminTaskUseCase';
+export * from './admin/AddAdminTaskCommentUseCase';
+export * from './admin/DeleteAdminTaskUseCase';
+export * from './admin/IAdminContentRepository';
+export * from './admin/AdminSearchUsersUseCase';
+export * from './admin/AdminSearchPostsUseCase';
+export * from './admin/AdminSearchAuditUseCase';
+export * from './admin/ITimesheetsRepository';
+export * from './admin/TimesheetUseCases';
+export * from './admin/IFinanceLedgerRepository';
+export * from './admin/ListFinanceLedgerUseCase';
+export * from './admin/GetFinanceSummaryUseCase';
+export * from './admin/UpsertFinanceEntryUseCase';
+export * from './admin/DeleteFinanceEntryUseCase';
+export * from './admin/ICrmContactsRepository';
+export * from './admin/ListCrmContactsUseCase';
+export * from './admin/UpsertCrmContactUseCase';
+export * from './admin/DeleteCrmContactUseCase';
+export * from './admin/MarkCrmContactContactedUseCase';
+export * from './admin/IOrgApplicationsRepository';
+export * from './admin/ListOrgApplicationsUseCase';
+export * from './admin/DecideOrgApplicationUseCase';
+export * from './admin/IOrgHierarchyRepository';
+export * from './admin/GetOrgTreeUseCase';
+export * from './admin/SetManagerUseCase';
+
+// A1 — admin reports inbox & case detail
+export * from './reports/IReportsRepository';
+export * from './reports/ListOpenReportsUseCase';
+export * from './reports/GetReportCaseDetailUseCase';
+
+// Rides V2.0 (FR-RIDE-*)
+export type {
+  IRideListingRepository,
+  RideListingRow,
+  CreateRideListingRepoInput,
+  SearchRideListingsInput,
+  RideVisibility,
+  ListMyRidesInput,
+} from './ports/IRideListingRepository';
+export { CreateRideListingUseCase } from './rides/CreateRideListingUseCase';
+export type { CreateRideListingInput } from './rides/CreateRideListingUseCase';
+export { SearchRideListingsUseCase } from './rides/SearchRideListingsUseCase';
+export { GetRideListingUseCase } from './rides/GetRideListingUseCase';
+export type { GetRideListingInput } from './rides/GetRideListingUseCase';
+export { CloseRideListingUseCase } from './rides/CloseRideListingUseCase';
+export type { CloseRideListingInput } from './rides/CloseRideListingUseCase';
+export { FindRideMatchesUseCase } from './rides/FindRideMatchesUseCase';
+export type { FindRideMatchesInput } from './ports/IRideListingRepository';
+export { UpdateRideVisibilityUseCase } from './rides/UpdateRideVisibilityUseCase';
+export type { UpdateRideVisibilityInput } from './rides/UpdateRideVisibilityUseCase';
+export { ListMyRidesUseCase } from './rides/ListMyRidesUseCase';
+export type {
+  IRideStopsRepository,
+  SetRideStopsInput,
+} from './ports/IRideStopsRepository';
+export { ListRideStopsUseCase } from './rides/ListRideStopsUseCase';
+export { SetRideStopsUseCase } from './rides/SetRideStopsUseCase';
+export type { SetRideStopsUseCaseInput } from './rides/SetRideStopsUseCase';
+export { StartRideUseCase } from './rides/StartRideUseCase';
+export { ArriveRideUseCase } from './rides/ArriveRideUseCase';
+export type { ArriveRideInput } from './rides/ArriveRideUseCase';
+export type {
+  IRideEmergencyRepository,
+  TriggerRideEmergencyInput,
+} from './ports/IRideEmergencyRepository';
+export { TriggerRideEmergencyUseCase } from './rides/TriggerRideEmergencyUseCase';
+export { ListRideEmergencyEventsUseCase } from './rides/ListRideEmergencyEventsUseCase';
+export type {
+  IRideRatingRepository,
+  SubmitRideRatingInput,
+} from './ports/IRideRatingRepository';
+export { SubmitRideRatingUseCase } from './rides/SubmitRideRatingUseCase';
+export { ListRideRatingsUseCase } from './rides/ListRideRatingsUseCase';
+export {
+  GetUserRideRatingSummaryUseCase,
+  RATING_DISPLAY_MIN_COUNT,
+} from './rides/GetUserRideRatingSummaryUseCase';
+export type { GetUserRideRatingSummaryResult } from './rides/GetUserRideRatingSummaryUseCase';
+
+// Ride templates (FR-RIDE-021 / FR-RIDE-022)
+export type {
+  IRideTemplateRepository,
+  CreateRideTemplateInput,
+} from './ports/IRideTemplateRepository';
+export { CreateRideTemplateUseCase } from './rides/CreateRideTemplateUseCase';
+export type { CreateRideTemplateUseCaseInput } from './rides/CreateRideTemplateUseCase';
+export { ListMyRideTemplatesUseCase } from './rides/ListMyRideTemplatesUseCase';
+export { SetRideTemplateStatusUseCase } from './rides/SetRideTemplateStatusUseCase';
+export { DeleteRideTemplateUseCase } from './rides/DeleteRideTemplateUseCase';
+
+export type { IRideJoinPolicy } from './rides/ports/IRideJoinPolicy';
+export type { IRideMatchScorer } from './rides/ports/IRideMatchScorer';
+export { DirectChatJoinPolicy } from './rides/DirectChatJoinPolicy';
+export { ChronologicalRideMatchScorer } from './rides/ChronologicalRideMatchScorer';
+
+// Ride participants (FR-RIDE-011 / FR-RIDE-012)
+export type { IRideParticipantRepository } from './ports/IRideParticipantRepository';
+export { RequestRideJoinUseCase } from './rides/RequestRideJoinUseCase';
+export type { RequestRideJoinInput } from './rides/RequestRideJoinUseCase';
+export { DecideRideJoinUseCase } from './rides/DecideRideJoinUseCase';
+export type { DecideRideJoinInput } from './rides/DecideRideJoinUseCase';
+export { CancelRideJoinUseCase } from './rides/CancelRideJoinUseCase';
+export type { CancelRideJoinInput } from './rides/CancelRideJoinUseCase';
+export { ListRideParticipantsUseCase } from './rides/ListRideParticipantsUseCase';
+export type { ListRideParticipantsInput } from './rides/ListRideParticipantsUseCase';
+export { ListUserRideRequestsUseCase } from './rides/ListUserRideRequestsUseCase';
+export type { ListUserRideRequestsInput } from './rides/ListUserRideRequestsUseCase';
+
+// Driver declaration gate (FR-RIDE-041)
+export type {
+  DriverDeclaration,
+  IDriverDeclarationRepository,
+} from './ports/IDriverDeclarationRepository';
+export { AcceptDriverDeclarationUseCase } from './rides/AcceptDriverDeclarationUseCase';
+export { GetDriverDeclarationUseCase } from './rides/GetDriverDeclarationUseCase';
+
+// Survey use cases (FR-SETTINGS-015..017)
+export type { ISurveyRepository } from './ports/ISurveyRepository';
+export { LoadSurveyBundleUseCase } from './survey/LoadSurveyBundleUseCase';
+export type { LoadSurveyBundleInput } from './survey/LoadSurveyBundleUseCase';
+export { SaveSurveyAnswersUseCase } from './survey/SaveSurveyAnswersUseCase';
+export type { SaveSurveyAnswersInput } from './survey/SaveSurveyAnswersUseCase';
+export { ListActiveSurveysUseCase } from './survey/ListActiveSurveysUseCase';
+export { CheckSurveyPromptUseCase } from './survey/CheckSurveyPromptUseCase';
+export type { CheckSurveyPromptInput } from './survey/CheckSurveyPromptUseCase';
+export { SubmitFreeFeedbackUseCase } from './survey/SubmitFreeFeedbackUseCase';
+export type { SubmitFreeFeedbackInput } from './survey/SubmitFreeFeedbackUseCase';
+export type { ISurveyAdminRepository } from './ports/ISurveyAdminRepository';
+export { GetAdminSurveyOverviewUseCase } from './survey/GetAdminSurveyOverviewUseCase';
+export { GetAdminSurveyResultsUseCase } from './survey/GetAdminSurveyResultsUseCase';
+export { ListUserFeedbackUseCase } from './survey/ListUserFeedbackUseCase';
+
+// Public research use cases (FR-RESEARCH-001..003)
+export type { IPublicResearchRepository } from './ports/IPublicResearchRepository';
+export { LoadPublicResearchBundleUseCase } from './research/LoadPublicResearchBundleUseCase';
+export { SubmitPublicResearchResponseUseCase } from './research/SubmitPublicResearchResponseUseCase';

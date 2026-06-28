@@ -24,13 +24,12 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; rpc
   const rpcs: { fn: string; args: unknown }[] = [];
   const ltCaptor: string[] = opts.capturedLts ?? [];
   const selectResult = () => ({ data: opts.selectData ?? null, error: opts.selectError ?? null });
-  const limitThenable: any = {
+  const limitQuery = Object.assign(Promise.resolve(selectResult()), {
     lt: (_col: string, val: string) => {
       ltCaptor.push(val);
       return Promise.resolve(selectResult());
     },
-    then: (onF: any, onR: any) => Promise.resolve(selectResult()).then(onF, onR),
-  };
+  });
   const client = {
     from: () => ({
       select: (_cols: string, options?: { count?: string; head?: boolean }) => {
@@ -46,7 +45,7 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; rpc
         return {
           eq: () => ({
             maybeSingle: async () => selectResult(),
-            order: () => ({ limit: () => limitThenable }),
+            order: () => ({ limit: () => limitQuery }),
           }),
         };
       },

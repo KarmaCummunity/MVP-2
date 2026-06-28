@@ -1,10 +1,11 @@
 // LocationDisplayLevelChooser — FR-POST-003 AC3.
 // Three-option pill selector for how much of the address shows publicly.
 import React from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
 import type { LocationDisplayLevel } from '@kc/domain';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   readonly value: LocationDisplayLevel;
@@ -18,8 +19,31 @@ const OPTION_KEYS: { value: LocationDisplayLevel; labelKey: string; hintKey: str
   { value: 'FullAddress',   labelKey: 'post.fullAddress',                hintKey: 'post.locationDisplayHintFullAddress' },
 ];
 
+const useLocationDisplayLevelChooserStyles = makeUseStyles(({ colors, isDark }) => ({
+  section: { gap: spacing.xs },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
+  row: { flexDirection: 'row' as const, gap: spacing.sm },
+  btn: {
+    flex: 1,
+    paddingVertical: spacing.sm,
+    paddingHorizontal: spacing.xs,
+    borderRadius: radius.md,
+    borderWidth: isDark ? 1 : 1.5,
+    borderColor: colors.border,
+    alignItems: 'center' as const,
+    backgroundColor: colors.surface,
+    gap: 2,
+  },
+  btnActive: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
+  btnLabel: { ...typography.label, color: colors.textSecondary },
+  btnLabelActive: { color: colors.primary },
+  btnHint: { ...typography.caption, color: colors.textDisabled },
+  btnHintActive: { color: colors.primary },
+}));
+
 export function LocationDisplayLevelChooser({ value, onChange, disabled }: Props) {
   const { t } = useTranslation();
+  const styles = useLocationDisplayLevelChooserStyles();
   return (
     <View style={styles.section}>
       <Text style={styles.label}>{t('post.locationDisplayLabel')}</Text>
@@ -43,19 +67,3 @@ export function LocationDisplayLevelChooser({ value, onChange, disabled }: Props
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  section: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  row: { flexDirection: 'row', gap: spacing.sm },
-  btn: {
-    flex: 1, paddingVertical: spacing.sm, paddingHorizontal: spacing.xs,
-    borderRadius: radius.md, borderWidth: 1.5, borderColor: colors.border,
-    alignItems: 'center', backgroundColor: colors.surface, gap: 2,
-  },
-  btnActive: { backgroundColor: colors.primarySurface, borderColor: colors.primary },
-  btnLabel: { ...typography.label, color: colors.textSecondary },
-  btnLabelActive: { color: colors.primary },
-  btnHint: { ...typography.caption, color: colors.textDisabled },
-  btnHintActive: { color: colors.primary },
-});

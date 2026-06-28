@@ -1,12 +1,24 @@
 import React from 'react';
 import {
-  ActivityIndicator, Image, StyleSheet, Text, TouchableOpacity, View,
+  ActivityIndicator, Image, Platform, Text, TouchableOpacity, View, type ViewStyle,
 } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { MAX_MEDIA_ASSETS } from '@kc/domain';
 import type { UploadedAsset } from '../../services/imageUpload';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
+import { isLayoutRtl } from '../../lib/rtlLayout';
+
+/**
+ * Pin the remove (X) button to the thumbnail's reading-end corner.
+ * Native auto-mirrors `end`; RN-Web ignores `start`/`end` for absolute
+ * positioning, so on web we resolve RTL live and emit a physical key.
+ */
+function removeBtnCornerEnd(): Pick<ViewStyle, 'left' | 'right' | 'end'> {
+  if (Platform.OS !== 'web') return { end: 4 };
+  return isLayoutRtl() ? { left: 4 } : { right: 4 };
+}
 
 interface Props {
   uploads: UploadedAsset[];
@@ -17,8 +29,52 @@ interface Props {
   onRemove: (path: string) => void;
 }
 
+const THUMB = 96;
+
+const usePhotoPickerStyles = makeUseStyles(({ colors, isDark }) => ({
+  section: { gap: spacing.xs },
+  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
+  required: { color: colors.error },
+  grid: { flexDirection: 'row' as const, flexWrap: 'wrap' as const, gap: spacing.sm },
+  thumb: {
+    width: THUMB,
+    height: THUMB,
+    borderRadius: radius.md,
+    backgroundColor: colors.surface,
+    overflow: 'hidden' as const,
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
+  },
+  thumbImage: { width: '100%', height: '100%' },
+  pending: { backgroundColor: colors.skeleton },
+  addBtn: {
+    borderWidth: 2,
+    borderStyle: 'dashed' as const,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    gap: 2,
+  },
+  addText: { ...typography.caption, color: colors.textSecondary },
+  removeBtn: {
+    position: 'absolute' as const,
+    top: 4,
+    ...removeBtnCornerEnd(),
+    width: 22,
+    height: 22,
+    borderRadius: 11,
+    backgroundColor: 'rgba(0,0,0,0.55)',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
+  },
+  hint: { ...typography.caption, color: colors.textDisabled, textAlign: rtlTextAlignStart },
+}));
+
 export function PhotoPicker({ uploads, isUploading, uploadingCount, required, onAdd, onRemove }: Props) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = usePhotoPickerStyles();
   const remaining = MAX_MEDIA_ASSETS - uploads.length - uploadingCount;
   const canAdd = remaining > 0 && !isUploading;
 
@@ -66,29 +122,3 @@ export function PhotoPicker({ uploads, isUploading, uploadingCount, required, on
     </View>
   );
 }
-
-const THUMB = 96;
-const styles = StyleSheet.create({
-  section: { gap: spacing.xs },
-  sectionLabel: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
-  required: { color: colors.error },
-  grid: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm },
-  thumb: {
-    width: THUMB, height: THUMB, borderRadius: radius.md,
-    backgroundColor: colors.surface, overflow: 'hidden',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  thumbImage: { width: '100%', height: '100%' },
-  pending: { backgroundColor: colors.skeleton },
-  addBtn: {
-    borderWidth: 2, borderStyle: 'dashed', borderColor: colors.border,
-    backgroundColor: colors.background, gap: 2,
-  },
-  addText: { ...typography.caption, color: colors.textSecondary },
-  removeBtn: {
-    position: 'absolute', top: 4, right: 4, width: 22, height: 22,
-    borderRadius: 11, backgroundColor: 'rgba(0,0,0,0.55)',
-    justifyContent: 'center', alignItems: 'center',
-  },
-  hint: { ...typography.caption, color: colors.textDisabled, textAlign: 'right' },
-});

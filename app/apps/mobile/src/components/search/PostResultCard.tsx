@@ -3,11 +3,11 @@ import { Image, Pressable, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { getSupabaseClient } from '@kc/infrastructure-supabase';
 import type { PostWithOwner } from '@kc/application';
 import { postOwnerDisplayLabel } from '../../lib/postOwnerDisplayLabel';
-import { styles } from './searchResultCard.styles';
+import { useSearchResultCardStyles } from './searchResultCard.styles';
 
 const STORAGE_BUCKET = 'post-images';
 function getPostImageUrl(path: string): string {
@@ -15,6 +15,8 @@ function getPostImageUrl(path: string): string {
 }
 
 export function PostResultCard({ post }: { post: PostWithOwner }) {
+  const styles = useSearchResultCardStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const { t } = useTranslation();
   const isGive = post.type === 'Give';

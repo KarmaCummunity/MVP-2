@@ -1,0 +1,94 @@
+import { describe, expect, it } from 'vitest';
+import {
+  ADMIN_TASK_CATEGORIES,
+  ADMIN_TASK_CATEGORY_DEFAULT,
+  ADMIN_TASK_PRIORITIES,
+  ADMIN_TASK_STATUSES,
+  coerceAdminTaskCategory,
+  isOverdue,
+  isStatusTransitionAllowed,
+  parseAdminTaskCategory,
+  parseAdminTaskPriority,
+  parseAdminTaskStatus,
+  type AdminTask,
+} from '../AdminTask';
+
+function makeTask(overrides: Partial<AdminTask> = {}): AdminTask {
+  return {
+    taskId: 'task-1',
+    title: 'Review report',
+    description: null,
+    status: 'open',
+    priority: 'medium',
+    category: 'other',
+    assigneeId: null,
+    assigneeDisplayName: null,
+    createdBy: 'admin-1',
+    createdByDisplayName: 'Admin',
+    dueAt: null,
+    labels: [],
+    createdAt: new Date('2026-01-01T00:00:00Z'),
+    updatedAt: new Date('2026-01-01T00:00:00Z'),
+    commentCount: 0,
+    ...overrides,
+  };
+}
+
+describe('AdminTask', () => {
+  it('exposes known statuses and priorities', () => {
+    expect(ADMIN_TASK_STATUSES).toContain('open');
+    expect(ADMIN_TASK_PRIORITIES).toContain('urgent');
+  });
+
+  it('parseAdminTaskStatus accepts known values and rejects unknown', () => {
+    expect(parseAdminTaskStatus('in_progress')).toBe('in_progress');
+    expect(parseAdminTaskStatus('nope')).toBeNull();
+    expect(parseAdminTaskStatus(null)).toBeNull();
+  });
+
+  it('parseAdminTaskPriority accepts known values and rejects unknown', () => {
+    expect(parseAdminTaskPriority('high')).toBe('high');
+    expect(parseAdminTaskPriority('critical')).toBeNull();
+    expect(parseAdminTaskPriority(undefined)).toBeNull();
+  });
+
+  it('isStatusTransitionAllowed permits same status and valid edges', () => {
+    expect(isStatusTransitionAllowed('open', 'open')).toBe(true);
+    expect(isStatusTransitionAllowed('open', 'in_progress')).toBe(true);
+    expect(isStatusTransitionAllowed('open', 'done')).toBe(false);
+    expect(isStatusTransitionAllowed('archived', 'open')).toBe(false);
+  });
+
+  it('isOverdue is false without due date or when closed', () => {
+    expect(isOverdue(makeTask())).toBe(false);
+    expect(isOverdue(makeTask({ status: 'done', dueAt: new Date('2020-01-01') }))).toBe(false);
+  });
+
+  it('isOverdue is true when due date is in the past for active tasks', () => {
+    const now = new Date('2026-05-28T12:00:00Z');
+    expect(
+      isOverdue(makeTask({ dueAt: new Date('2026-05-27T12:00:00Z') }), now),
+    ).toBe(true);
+  });
+
+  it('ADMIN_TASK_CATEGORIES includes the curated set', () => {
+    expect(ADMIN_TASK_CATEGORIES).toContain('moderation');
+    expect(ADMIN_TASK_CATEGORIES).toContain('engineering');
+    expect(ADMIN_TASK_CATEGORIES).toContain('other');
+    expect(ADMIN_TASK_CATEGORY_DEFAULT).toBe('other');
+  });
+
+  it('parseAdminTaskCategory accepts known values and rejects unknown', () => {
+    expect(parseAdminTaskCategory('moderation')).toBe('moderation');
+    expect(parseAdminTaskCategory('nonsense')).toBeNull();
+    expect(parseAdminTaskCategory(null)).toBeNull();
+    expect(parseAdminTaskCategory(undefined)).toBeNull();
+  });
+
+  it('coerceAdminTaskCategory falls back to the default on unknown / nullish', () => {
+    expect(coerceAdminTaskCategory('finance')).toBe('finance');
+    expect(coerceAdminTaskCategory('nonsense')).toBe('other');
+    expect(coerceAdminTaskCategory(null)).toBe('other');
+    expect(coerceAdminTaskCategory(undefined)).toBe('other');
+  });
+});

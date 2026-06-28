@@ -1,8 +1,8 @@
 // Chat conversation screen — FR-CHAT-002, 003, 004, 005, 010, 011, 013, 016.
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   View, Text, FlatList, TextInput, TouchableOpacity,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, type ListRenderItem,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useLocalSearchParams, useRouter } from 'expo-router';
@@ -10,20 +10,21 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
 import { MESSAGE_MAX_CHARS } from '@kc/domain';
 import { ChatError } from '@kc/application';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { useChatStore, type OptimisticMessage } from '../../src/store/chatStore';
 import { useAuthStore } from '../../src/store/authStore';
 import { container } from '../../src/lib/container';
 import { markNeedFreshThreadWith } from '../../src/lib/chatNavigationPrefs';
 import { MessageBubble } from '../../src/components/MessageBubble';
 import { ChatDaySeparator } from '../../src/components/chat/ChatDaySeparator';
-import { buildChatThreadRowsNewestFirst } from '../../src/lib/chatThreadListRows';
+import { buildChatThreadRowsNewestFirst, type ChatThreadListRow } from '../../src/lib/chatThreadListRows';
 import { computeHandledIds } from '../../src/components/chat/system/handledIds';
 import { AnchoredPostCard } from '../../src/components/chat/AnchoredPostCard';
+import { AnchoredRideCard } from '../../src/components/chat/AnchoredRideCard';
 import { ChatScreenOverlays } from '../../src/components/chat/ChatScreenOverlays';
 import { useChatInit } from '../../src/components/useChatInit';
 import { useChatSend } from '../../src/hooks/useChatSend';
-import { chatConversationStyles as styles } from './chatScreenStyles';
+import { useChatConversationStyles } from './chatScreenStyles';
 import { usePushPermissionGate, registerCurrentDeviceIfPermitted } from '../../src/lib/notifications';
 import { EnablePushModal } from '../../src/components/EnablePushModal';
 import { ChatNotFoundView } from '../../src/components/chat/ChatNotFoundView';
@@ -42,6 +43,8 @@ export default function ChatScreen() {
   const chatId = id!;
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = useChatConversationStyles();
+  const { colors } = useTheme();
   const userId = useAuthStore((s) => s.session?.userId)!;
 
   const messages = useChatStore((s) => s.threads[chatId] ?? EMPTY_MESSAGES);
@@ -67,6 +70,15 @@ export default function ChatScreen() {
   const [hideBusy, setHideBusy] = useState(false);
   const { modalState, presentPrePrompt, handleAccept, handleDecline } = usePushPermissionGate();
   const send = useChatSend({ chatId, userId, input, setInput, presentPrePrompt, setNotify });
+  // `send` is recreated each render (it closes over `input`); keep a stable
+  // retry callback via a ref so memoized MessageBubbles don't re-render on every
+  // composer keystroke.
+  const sendRef = useRef(send);
+  sendRef.current = send;
+  const handleRetry = useCallback(
+    (clientId: string, body: string) => void sendRef.current(clientId, body),
+    [],
+  );
 
   const unreadIncoming = useMemo(
     () => messages.some((m) => m.senderId !== userId && m.status !== 'read'),
@@ -92,6 +104,23 @@ export default function ChatScreen() {
   // bubble (FR-MOD-010). Built once per messages render; O(1) per row.
   const handledIds = useMemo(() => computeHandledIds(reversedMessages), [reversedMessages]);
   const listRows = useMemo(() => buildChatThreadRowsNewestFirst(reversedMessages), [reversedMessages]);
+
+  // Stable renderItem so the thread FlatList doesn't re-render every bubble on
+  // each composer keystroke — deps change only on real data changes.
+  const renderItem = useCallback<ListRenderItem<ChatThreadListRow>>(
+    ({ item }) =>
+      item.rowType === 'day' ? (
+        <ChatDaySeparator anchorIso={item.anchorIso} />
+      ) : (
+        <MessageBubble
+          m={item.message}
+          mine={item.message.senderId === userId}
+          onRetry={handleRetry}
+          handledByLaterAction={handledIds.has(item.message.messageId)}
+        />
+      ),
+    [userId, handleRetry, handledIds],
+  );
 
   const confirmHideFromInbox = async () => {
     setHideBusy(true);
@@ -128,7 +157,9 @@ export default function ChatScreen() {
         style={{ flex: 1 }}
         keyboardVerticalOffset={88}
       >
-        {chat ? (
+        {chat?.anchorRideId ? (
+          <AnchoredRideCard anchorRideId={chat.anchorRideId} />
+        ) : chat ? (
           <AnchoredPostCard
             chatId={chatId}
             anchorPostId={chat.anchorPostId}
@@ -141,17 +172,7 @@ export default function ChatScreen() {
           inverted
           keyExtractor={(row) => (row.rowType === 'message' ? row.message.clientId : row.rowKey)}
           contentContainerStyle={styles.messageList}
-          renderItem={({ item }) =>
-            item.rowType === 'day' ? (
-              <ChatDaySeparator anchorIso={item.anchorIso} />
-            ) : (
-              <MessageBubble
-                m={item.message}
-                mine={item.message.senderId === userId}
-                onRetry={() => send(item.message.clientId, item.message.body)}
-                handledByLaterAction={handledIds.has(item.message.messageId)}
-              />
-            )}
+          renderItem={renderItem}
         />
 
         <View style={styles.inputBar}>

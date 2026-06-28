@@ -2,14 +2,15 @@
 // Catches unexpected throws from descendant components so the app shell
 // renders a recoverable fallback instead of unmounting to a white screen.
 import React from 'react';
-import { View, Text, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 
 type Props = { children: React.ReactNode };
 type State = { error: Error | null };
 
 function ErrorBoundaryFallback({ error, onRetry }: { error: Error; onRetry: () => void }) {
+  const styles = useStyles();
   const { t } = useTranslation();
   return (
     <View style={styles.container}>
@@ -31,9 +32,15 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 
   componentDidCatch(error: Error, info: React.ErrorInfo): void {
-    if (__DEV__) {
-      console.error('ErrorBoundary caught:', error, info.componentStack);
-    }
+    if (__DEV__) console.error('ErrorBoundary caught:', error, info.componentStack);
+    try {
+      // eslint-disable-next-line @typescript-eslint/no-require-imports
+      const { getSentryIfInit } = require('../lib/observability/sentry');
+      const Sentry = getSentryIfInit();
+      if (Sentry) {
+        Sentry.captureException(error, { extra: { componentStack: info.componentStack ?? null } });
+      }
+    } catch { /* never crash the boundary */ }
   }
 
   reset = (): void => this.setState({ error: null });
@@ -45,7 +52,7 @@ export class ErrorBoundary extends React.Component<Props, State> {
   }
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: {
     flex: 1,
     backgroundColor: colors.surface,
@@ -67,4 +74,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.base,
   },
   ctaText: { ...typography.button, color: colors.textInverse },
-});
+}));

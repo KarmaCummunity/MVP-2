@@ -1,8 +1,12 @@
+import { initSentry } from '../src/lib/observability/sentry';
+initSentry();
+import { startMark, finishMark } from '../src/lib/observability/perfMarks';
+startMark('app.cold_start');
 import '../src/i18n';
 import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, usePathname } from 'expo-router';
-import { I18nManager, Platform, View } from 'react-native';
+import { I18nManager, Platform } from 'react-native';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
 // this at module load (not inside an effect) so the first paint is already RTL.
@@ -88,12 +92,15 @@ if (Platform.OS === 'web' && typeof document !== 'undefined') {
     document.head.appendChild(style);
   }
 }
-import { SafeAreaProvider, useSafeAreaInsets } from 'react-native-safe-area-context';
+import { SafeAreaProvider } from 'react-native-safe-area-context';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { queryClient, persistOptions } from '../src/lib/queryPersist';
 import { StatusBar } from 'expo-status-bar';
 import * as SplashScreen from 'expo-splash-screen';
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
+import { ShellWithResponsiveChrome } from '../src/components/shell/ShellWithResponsiveChrome';
+import { AppThemeProvider } from '../src/components/AppThemeProvider';
 import { useAuthStore } from '../src/store/authStore';
 import { container } from '../src/lib/container';
 import {
@@ -106,19 +113,15 @@ import {
 import { ErrorBoundary } from '../src/components/ErrorBoundary';
 import { SoftGateProvider } from '../src/components/OnboardingSoftGate';
 import { AuthGate } from '../src/components/AuthGate';
-import { detailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
+import { useDetailStackScreenOptions } from '../src/navigation/detailStackScreenOptions';
 import { DevBanner } from '../src/components/DevBanner';
-import { TabBar, TAB_BAR_HEIGHT } from '../src/components/TabBar';
-import { EphemeralToast } from '../src/components/EphemeralToast';
-import { useShellTabBarVisibility } from '../src/navigation/useShellTabBarVisibility';
+import { LegalConsentGate } from '../src/components/legal/LegalConsentGate';
+import { ModalStackProvider } from '../src/components/legal/useActiveModalStack';
+import { useMeRealtime } from '../src/hooks/useMeRealtime';
+
+function MeRealtimeMount() { useMeRealtime(); return null; }
 
 SplashScreen.preventAutoHideAsync();
-
-const queryClient = new QueryClient({
-  defaultOptions: {
-    queries: { staleTime: 1000 * 60 * 2, retry: 2 },
-  },
-});
 
 function NotificationsBridge(): null {
   const userId = useAuthStore((s) => s.session?.userId ?? null);
@@ -146,41 +149,79 @@ function NotificationsBridge(): null {
   return null;
 }
 
-// TabBar geometry. The pill is flush with the platform safe area on every
-// platform (sits directly above the iOS home indicator / Android gesture bar;
-// touches the viewport bottom on web where there's no inset). Screen content
-// fills the full viewport — the translucent pill floats over it so the user
-// sees real content through the bar, not a reserved blank strip. Scrollable
-// screens add their own bottom inset (via `shellTabBarHeightPx`) so the last
-// list item lands above the pill when scrolled to the end.
-const HORIZONTAL_INSET = 16;
+// Inner wiring lives after AppThemeProvider so screen options that depend on
+// the active palette (web html bg, surface backgrounds in screen headers,
+// StatusBar style) read fresh values when the user toggles dark mode.
+function ThemedRootShell() {
+  React.useEffect(() => { finishMark('app.cold_start'); }, []);
+  const { colors, isDark } = useTheme();
+  const detailStackScreenOptions = useDetailStackScreenOptions();
 
-function ShellWithTabBar({ children }: Readonly<{ children: React.ReactNode }>) {
-  const showTabBar = useShellTabBarVisibility();
-  const insets = useSafeAreaInsets();
+  React.useEffect(() => {
+    if (Platform.OS === 'web' && typeof document !== 'undefined') {
+      // Paint html/body with the active surface so the area outside the app
+      // root (and any iOS overscroll bounce on mobile-web) matches the theme.
+      document.documentElement.style.backgroundColor = colors.background;
+      if (document.body) document.body.style.backgroundColor = colors.background;
+    }
+  }, [colors.background]);
 
-  // Outer wrapper carries the app background so the translucent pill reveals
-  // the app surface even on routes whose own content stops short.
   return (
-    <View style={{ flex: 1, backgroundColor: colors.background }}>
-      <View style={{ flex: 1 }}>
-        {children}
-      </View>
-      <EphemeralToast />
-      {showTabBar && (
-        <View
-          pointerEvents="box-none"
-          style={{
-            position: 'absolute',
-            bottom: insets.bottom,
-            left: HORIZONTAL_INSET,
-            right: HORIZONTAL_INSET,
-          }}
-        >
-          <TabBar />
-        </View>
-      )}
-    </View>
+    <>
+      <StatusBar style={isDark ? 'light' : 'dark'} />
+      <DevBanner />
+      <NotificationsBridge />
+      <AuthGate>
+        <ModalStackProvider>
+          <LegalConsentGate>
+            <SoftGateProvider>
+              <ShellWithResponsiveChrome>
+            <Stack
+              screenOptions={{
+                headerShown: false,
+                contentStyle: { backgroundColor: colors.background },
+                // Subtle cross-fade across every platform so screen
+                // changes feel like part of the same surface, not a
+                // hard hand-off. 220 ms matches the welcome-screen
+                // hero entry, giving the whole app one motion vocab.
+                animation: 'fade',
+                animationDuration: 220,
+              }}
+            >
+              <Stack.Screen name="(auth)" />
+              <Stack.Screen name="(guest)" />
+              <Stack.Screen name="(onboarding)" />
+              <Stack.Screen name="(tabs)" />
+              {/* FR-ADMIN-011 AC1 — register the admin group at the root so
+                  native stack navigation can resolve `/(admin)` targets.
+                  Without this, `router.push('/(admin)')` is a no-op on iOS /
+                  Android (web URL routing falls back to resolved path). */}
+              <Stack.Screen name="(admin)" />
+              <Stack.Screen name="auth/callback" />
+              <Stack.Screen name="auth/verify" />
+              {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
+              <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
+              <Stack.Screen name="settings" />
+              <Stack.Screen name="about" options={{ headerShown: false }} />
+              <Stack.Screen name="about-site" options={{ headerShown: false }} />
+              {/* FR-RESEARCH-001 — public web survey; no auth shell */}
+              <Stack.Screen name="research" options={{ headerShown: false }} />
+              <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
+              <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
+              {/* user/[handle]/* owns its own header via the nested _layout */}
+              <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
+              {/* In-screen `ChatConversationHeader` owns the top bar; a native-stack header
+                  must stay off so it never sits above the custom bar on web/mobile (taps). */}
+              <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
+              {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
+              <Stack.Screen name="chat/index" options={{ headerShown: false }} />
+            </Stack>
+              </ShellWithResponsiveChrome>
+            </SoftGateProvider>
+          </LegalConsentGate>
+        </ModalStackProvider>
+      </AuthGate>
+    </>
   );
 }
 
@@ -199,48 +240,12 @@ export default function RootLayout() {
     <GestureHandlerRootView style={{ flex: 1, width: '100%', alignSelf: 'stretch' }}>
       <SafeAreaProvider>
         <ErrorBoundary>
-          <QueryClientProvider client={queryClient}>
-            <StatusBar style="dark" />
-            <DevBanner />
-            <NotificationsBridge />
-            <AuthGate>
-              <SoftGateProvider>
-                <ShellWithTabBar>
-                  <Stack
-                    screenOptions={{
-                      headerShown: false,
-                      contentStyle: { backgroundColor: colors.background },
-                      // Subtle cross-fade across every platform so screen
-                      // changes feel like part of the same surface, not a
-                      // hard hand-off. 220 ms matches the welcome-screen
-                      // hero entry, giving the whole app one motion vocab.
-                      animation: 'fade',
-                      animationDuration: 220,
-                    }}
-                  >
-                    <Stack.Screen name="(auth)" />
-                    <Stack.Screen name="(guest)" />
-                    <Stack.Screen name="(onboarding)" />
-                    <Stack.Screen name="(tabs)" />
-                    <Stack.Screen name="auth/callback" />
-                    <Stack.Screen name="auth/verify" />
-                    {/* FR-MOD-010 AC4 — terminal screen for blocked accounts. */}
-                    <Stack.Screen name="account-blocked" options={{ headerShown: true, headerTitle: '', headerBackVisible: false, headerStyle: { backgroundColor: colors.surface } }} />
-                    <Stack.Screen name="settings" />
-                    <Stack.Screen name="edit-profile" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('settings.editProfileTitle') }} />
-                    <Stack.Screen name="post/[id]" options={{ ...detailStackScreenOptions, headerTitle: i18n.t('post.detailTitle') }} />
-                    {/* user/[handle]/* owns its own header via the nested _layout */}
-                    <Stack.Screen name="user/[handle]" options={{ headerShown: false }} />
-                    {/* In-screen `ChatConversationHeader` owns the top bar; a native-stack header
-                        must stay off so it never sits above the custom bar on web/mobile (taps). */}
-                    <Stack.Screen name="chat/[id]" options={{ headerShown: false }} />
-                    {/* chat/index renders its own header inside the screen — disable the Stack one to avoid doubling. */}
-                    <Stack.Screen name="chat/index" options={{ headerShown: false }} />
-                  </Stack>
-                </ShellWithTabBar>
-              </SoftGateProvider>
-            </AuthGate>
-          </QueryClientProvider>
+          <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
+            <MeRealtimeMount />
+            <AppThemeProvider>
+              <ThemedRootShell />
+            </AppThemeProvider>
+          </PersistQueryClientProvider>
         </ErrorBoundary>
       </SafeAreaProvider>
     </GestureHandlerRootView>

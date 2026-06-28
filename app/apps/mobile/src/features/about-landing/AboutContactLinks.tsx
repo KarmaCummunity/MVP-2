@@ -3,16 +3,16 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import {
   ABOUT_DONATION_PHONE_DISPLAY,
   ABOUT_EMAIL_NAVE,
-  ABOUT_EMAIL_ORG,
   ABOUT_INSTAGRAM_PROFILE_URL,
   ABOUT_WHATSAPP_GROUP_URL,
   ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE,
 } from './aboutExternalLinks';
 import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 type Row = {
   readonly key: string;
@@ -24,6 +24,8 @@ type Row = {
 export function AboutContactLinks() {
   const { t } = useTranslation();
   const router = useRouter();
+  const styles = useAboutContactLinksStyles();
+  const { colors } = useTheme();
 
   const open = useCallback(
     async (url: string) => {
@@ -35,7 +37,6 @@ export function AboutContactLinks() {
   const rows: Row[] = useMemo(() => {
     const mailSubject = encodeURIComponent(t('aboutContent.contactMailSubjectDefault'));
     const mailtoNave = `mailto:${ABOUT_EMAIL_NAVE}?subject=${mailSubject}`;
-    const mailtoOrg = `mailto:${ABOUT_EMAIL_ORG}?subject=${mailSubject}`;
     const waPersonal = `${ABOUT_WHATSAPP_PERSONAL_WA_ME_BASE}?text=${encodeURIComponent(
       t('aboutContent.contactWhatsappPersonalPrefill'),
     )}`;
@@ -53,7 +54,6 @@ export function AboutContactLinks() {
         icon: 'chatbubble-ellipses-outline',
       },
       { key: 'm1', label: t('aboutContent.contactEmailNaveLabel'), url: mailtoNave, icon: 'mail-outline' },
-      { key: 'm2', label: t('aboutContent.contactEmailOrgLabel'), url: mailtoOrg, icon: 'mail-open-outline' },
       { key: 'ig', label: t('aboutContent.instagramOpen'), url: ABOUT_INSTAGRAM_PROFILE_URL, icon: 'logo-instagram' },
     ];
   }, [t]);
@@ -95,11 +95,11 @@ export function AboutContactLinks() {
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutContactLinksStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.sm },
-  h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
+  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.sm },
   row: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
     paddingVertical: spacing.md,
@@ -110,7 +110,7 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surfaceRaised,
   },
   rowPressed: { opacity: 0.92, backgroundColor: colors.primarySurface },
-  label: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right', fontWeight: '600' },
+  label: { flex: 1, ...typography.body, color: colors.textPrimary, ...aboutRtlText, fontWeight: '600' },
   donation: {
     marginTop: spacing.md,
     padding: spacing.md,
@@ -120,18 +120,18 @@ const styles = StyleSheet.create({
     borderColor: colors.warning,
     gap: spacing.xs,
   },
-  donationH: { ...typography.label, color: colors.textPrimary, textAlign: 'right', fontWeight: '800' },
-  donationP: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
-  mono: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', fontWeight: '800', letterSpacing: 1 },
+  donationH: { ...typography.label, color: colors.textPrimary, ...aboutRtlText, fontWeight: '800' },
+  donationP: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 22 },
+  mono: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, fontWeight: '800', letterSpacing: 1 },
   support: {
     ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     lineHeight: 20,
     marginTop: spacing.xs,
   },
   cta: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
@@ -141,5 +141,5 @@ const styles = StyleSheet.create({
     marginTop: spacing.md,
   },
   ctaPressed: { opacity: 0.9 },
-  ctaText: { ...typography.button, color: colors.textInverse },
-});
+  ctaText: { ...typography.button, color: colors.textInverse, ...aboutRtlText },
+}));

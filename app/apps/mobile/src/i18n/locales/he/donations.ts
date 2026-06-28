@@ -1,5 +1,9 @@
 // Hebrew — Donations hub + Search tab (D-16, FR-DONATE-001..009, FR-FEED-016).
 // Locale file under `locales/he/`; composed into the bundle via `locales/he/index.ts`.
+// Rides strings (FR-RIDE-*) live in `donations.rides.ts` to keep file sizes
+// under the architecture cap.
+
+import { rides } from './donations.rides';
 
 export const donations = {
   tabLabel: 'תרומות',
@@ -95,6 +99,20 @@ export const donations = {
     confirmRemoveOk: 'מחק',
     confirmRemoveCancel: 'ביטול',
   },
+  // FR-DONATE-010 — platform-support CTA card embedded on About + Settings.
+  supportUs: {
+    title: 'תורמים באהבה? תרמו גם לקהילה',
+    tagline:
+      'קארמה היא קהילה חופשית שרצה על האהבה והנדיבות שלכם. כל תרומה עוזרת לנו להמשיך לבנות מקום של נתינה לכולם.',
+    ctaBit: 'תרומה דרך ביט',
+    ctaPaybox: 'תרומה דרך פייבוקס',
+    ctaBitA11y: 'פתח את אפליקציית ביט לתרומה לקהילת קארמה',
+    ctaPayboxA11y: 'פתח את אפליקציית פייבוקס לתרומה לקהילת קארמה',
+    linkErrorTitle: 'לא הצלחנו לפתוח את הקישור',
+    linkErrorBody: 'נסו לעדכן את האפליקציה או לפתוח את הקישור בדפדפן.',
+  },
+  // FR-RIDE-001..045 — hitchhiking (rides V3.0). Strings live in donations.rides.ts.
+  rides,
   addLinkModal: {
     title: 'הוספת קישור חדש',
     editTitle: 'עריכת קישור',
@@ -147,6 +165,8 @@ export const search = {
   filterCategory: 'קטגוריה',
   filterDonationCategory: 'קטגוריית תרומה',
   filterMinFollowers: 'מינימום עוקבים',
+  filterRadius: 'רדיוס מהעיר',
+  radiusKm: 'עד {km} ק"מ',
   clearFilters: 'נקה סינון',
   applyFilters: 'החל סינון',
 

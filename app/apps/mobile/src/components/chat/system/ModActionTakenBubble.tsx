@@ -2,11 +2,18 @@
 // the trigger (server already substitutes action/time); falls back to the
 // template-with-blanks if the body is empty.
 import React from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
+import { makeUseStyles, typography } from '@kc/ui';
 import he from '../../../i18n/locales/he';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
+const useStyles = makeUseStyles(({ colors }) => ({
+  bubble: { padding: 6, alignSelf: 'center', opacity: 0.6 },
+  body: { ...typography.caption, color: colors.textSecondary },
+}));
+
 export function ModActionTakenBubble({ body, createdAt }: SystemMessageBubbleProps) {
+  const styles = useStyles();
   const t = he.moderation;
   const time = new Date(createdAt).toLocaleTimeString('he-IL', {
     hour: '2-digit',
@@ -22,8 +29,3 @@ export function ModActionTakenBubble({ body, createdAt }: SystemMessageBubblePro
     </View>
   );
 }
-
-const styles = StyleSheet.create({
-  bubble: { padding: 6, alignSelf: 'center', opacity: 0.6 },
-  body: { fontSize: 12, color: '#666' },
-});

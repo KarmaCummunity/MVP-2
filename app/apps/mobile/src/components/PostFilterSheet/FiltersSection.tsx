@@ -1,5 +1,5 @@
 import React from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import {
   ALL_CATEGORIES,
@@ -8,8 +8,9 @@ import {
   type ItemCondition,
   type PostType,
 } from '@kc/domain';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography } from '@kc/ui';
 import { Chip } from './Chip';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface FiltersSectionProps {
   type: PostType | null;
@@ -57,6 +58,7 @@ export function FiltersSection({
   onFollowersOnlyChange,
 }: FiltersSectionProps) {
   const { t } = useTranslation();
+  const styles = useFiltersSectionStyles();
   return (
     <>
       <View style={styles.section}>
@@ -141,8 +143,8 @@ export function FiltersSection({
   );
 }
 
-const styles = StyleSheet.create({
-  section: { gap: spacing.sm, marginBottom: spacing.lg },
-  title: { ...typography.h3, color: colors.textPrimary, textAlign: 'right' },
+const useFiltersSectionStyles = makeUseStyles(({ colors }) => ({
+  section: { gap: spacing.xs, marginBottom: spacing.md },
+  title: { ...typography.label, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   row: { flexDirection: 'row', flexWrap: 'wrap', gap: spacing.sm, justifyContent: 'flex-end' },
-});
+}));

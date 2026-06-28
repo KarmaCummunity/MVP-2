@@ -7,7 +7,11 @@ describe('AcceptFollowRequestUseCase', () => {
     const repo = new FollowFakeUserRepository();
     const uc = new AcceptFollowRequestUseCase(repo);
 
-    await uc.execute({ targetId: 'u_target', requesterId: 'u_requester' });
+    await uc.execute({
+      sessionUserId: 'u_target',
+      targetId: 'u_target',
+      requesterId: 'u_requester',
+    });
 
     expect(repo.lastAcceptRequest).toEqual({
       requesterId: 'u_requester',
@@ -20,7 +24,7 @@ describe('AcceptFollowRequestUseCase', () => {
     const uc = new AcceptFollowRequestUseCase(repo);
 
     await expect(
-      uc.execute({ targetId: 'u_a', requesterId: 'u_a' }),
+      uc.execute({ sessionUserId: 'u_a', targetId: 'u_a', requesterId: 'u_a' }),
     ).rejects.toMatchObject({ code: 'self_follow' });
   });
 });

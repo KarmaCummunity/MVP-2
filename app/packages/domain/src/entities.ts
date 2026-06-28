@@ -57,6 +57,8 @@ export interface User {
   activePostsCountInternal: number;
   followersCount: number;
   followingCount: number;
+  /** Engagement score (FR-KARMA-001). Server-maintained, floored at 0. */
+  karmaPoints: number;
   readonly createdAt: string;
   updatedAt: string;
 }
@@ -112,6 +114,7 @@ export interface Chat {
    */
   readonly participantIds: [string | null, string | null];
   readonly anchorPostId: string | null;
+  readonly anchorRideId: string | null;
   readonly isSupportThread: boolean;
   lastMessageAt: string | null;
   readonly createdAt: string;
@@ -170,6 +173,18 @@ export interface City {
   readonly cityId: string;
   readonly nameHe: string;
   readonly nameEn: string;
+}
+
+// ── Street (reference) ─────────────────────────
+// Canonical Israeli streets sourced from data.gov.il package 321.
+// (cityId, streetId) is the natural key; streetId is unique per city only.
+// Code 9000 represents "the village itself" — the only canonical entry for
+// 486 small settlements that have no named streets.
+
+export interface Street {
+  readonly cityId: string;
+  readonly streetId: number;
+  readonly nameHe: string;
 }
 
 // ── ReportSubmission (FR-MOD-001 minimal — submission only) ───────────────

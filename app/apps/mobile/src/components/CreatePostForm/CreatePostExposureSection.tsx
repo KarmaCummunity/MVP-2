@@ -2,12 +2,13 @@ import React from 'react';
 import { Text, TouchableOpacity, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, PlatformSwitch } from '@kc/ui';
+import { useTheme } from '@kc/ui';
+import { CounterpartyIdentityCard } from '../post/CounterpartyIdentityCard';
 import type { LocationDisplayLevel, PostVisibility } from '@kc/domain';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
-import { createPostStyles as styles } from '../../../app/(tabs)/create.styles';
+import { useCreatePostStyles } from '../../../app/(tabs)/create.styles';
 import { LocationDisplayLevelChooser } from './LocationDisplayLevelChooser';
-import { VisibilityChooser } from './VisibilityChooser';
+import { VisibilityChooser } from '../post/VisibilityChooser';
 
 export interface CreatePostExposureSectionProps {
   open: boolean;
@@ -35,6 +36,8 @@ export function CreatePostExposureSection({
   onHideFromCounterpartyChange,
 }: Readonly<CreatePostExposureSectionProps>) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useCreatePostStyles();
 
   return (
     <View style={styles.exposureAccordion}>
@@ -54,6 +57,7 @@ export function CreatePostExposureSection({
       </TouchableOpacity>
       {open ? (
         <View style={styles.exposureAccordionBody}>
+          <Text style={styles.exposureIntro}>{t('post.exposureSettingsIntro')}</Text>
           <LocationDisplayLevelChooser
             value={locationDisplayLevel}
             onChange={onLocationDisplayLevelChange}
@@ -62,7 +66,10 @@ export function CreatePostExposureSection({
 
           <VisibilityChooser
             value={visibility}
-            onChange={onVisibilityChange}
+            onChange={(next) => {
+              onVisibilityChange(next);
+              if (next === 'OnlyMe') onHideFromCounterpartyChange(true);
+            }}
             profilePrivacy={profilePrivacy}
             onFollowersOnlyBlockedPress={() =>
               useFeedSessionStore.getState().showEphemeralToast(
@@ -73,20 +80,11 @@ export function CreatePostExposureSection({
             }
           />
 
-          <View style={styles.counterpartyPrivacy}>
-            <View style={styles.counterpartyPrivacyHeader}>
-              <Text style={styles.counterpartyPrivacyTitle}>{t('post.createCounterpartyPrivacyTitle')}</Text>
-            </View>
-            <View style={styles.counterpartyPrivacyRow}>
-              <Text style={styles.counterpartyPrivacyLabel}>{t('post.counterpartyMaskLabel')}</Text>
-              <PlatformSwitch
-                value={hideFromCounterparty}
-                onValueChange={onHideFromCounterpartyChange}
-                disabled={isPublishing}
-              />
-            </View>
-            <Text style={styles.counterpartyPrivacyHint}>{t('post.createCounterpartyPrivacyHint')}</Text>
-          </View>
+          <CounterpartyIdentityCard
+            value={hideFromCounterparty}
+            onChange={onHideFromCounterpartyChange}
+            disabled={isPublishing}
+          />
         </View>
       ) : null}
     </View>

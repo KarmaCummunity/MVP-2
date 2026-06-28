@@ -1,8 +1,8 @@
 // Centered day label between message groups — FR-CHAT-002.
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet } from 'react-native';
+import { View, Text } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
 
 function startOfLocalDay(d: Date): number {
   return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
@@ -25,6 +25,7 @@ function labelForDay(anchorIso: string, t: (key: string) => string): string {
 
 export function ChatDaySeparator({ anchorIso }: { readonly anchorIso: string }) {
   const { t } = useTranslation();
+  const styles = useChatDaySeparatorStyles();
   const label = useMemo(() => labelForDay(anchorIso, t), [anchorIso, t]);
   return (
     <View style={styles.wrap} accessibilityRole="text" accessibilityLabel={label}>
@@ -35,7 +36,7 @@ export function ChatDaySeparator({ anchorIso }: { readonly anchorIso: string }) 
   );
 }
 
-const styles = StyleSheet.create({
+const useChatDaySeparatorStyles = makeUseStyles(({ colors }) => ({
   wrap: { alignItems: 'center', paddingVertical: spacing.xs },
   pill: {
     paddingHorizontal: spacing.md,
@@ -46,4 +47,4 @@ const styles = StyleSheet.create({
     borderColor: colors.border,
   },
   text: { ...typography.caption, color: colors.textSecondary, textAlign: 'center' },
-});
+}));

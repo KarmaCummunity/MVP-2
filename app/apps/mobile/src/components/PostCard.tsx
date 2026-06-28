@@ -7,7 +7,7 @@ import { useTranslation } from 'react-i18next';
 import type { PostWithOwner } from '@kc/application';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { AvatarInitials } from './AvatarInitials';
-import { styles } from './PostCard.styles';
+import { usePostCardStyles } from './PostCard.styles';
 
 interface PostCardProps {
   post: PostWithOwner;
@@ -16,16 +16,17 @@ interface PostCardProps {
   onPressOverride?: () => void;
 }
 
-export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProps) {
+function PostCardInner({ post, onMessagePress, onPressOverride }: PostCardProps) {
   const router = useRouter();
   const { t } = useTranslation();
+  const styles = usePostCardStyles();
 
   const isGive = post.type === 'Give';
 
-  const timeAgo = formatDistanceToNow(new Date(post.createdAt), {
-    addSuffix: true,
-    locale: dateFnsHe,
-  });
+  const timeAgo = React.useMemo(
+    () => formatDistanceToNow(new Date(post.createdAt), { addSuffix: true, locale: dateFnsHe }),
+    [post.createdAt],
+  );
 
   const locationText = (() => {
     if (post.locationDisplayLevel === 'CityOnly') return post.address.cityName;
@@ -38,6 +39,7 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
 
   return (
     <TouchableOpacity
+      testID="feed-post-card"
       style={styles.card}
       activeOpacity={0.8}
       onPress={() =>
@@ -74,6 +76,13 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
         <Text style={styles.description} numberOfLines={2}>{post.description}</Text>
       ) : null}
 
+      {/* Estimated item value (Give posts only) — small hint per FR-KARMA-004 */}
+      {isGive && post.estimatedValue && post.estimatedValue > 0 ? (
+        <Text style={styles.estimatedValue}>
+          {t('post.estimatedValueBadge', { value: post.estimatedValue })}
+        </Text>
+      ) : null}
+
       {/* Footer */}
       <View style={styles.footer}>
         <View style={styles.metaRow}>
@@ -101,3 +110,5 @@ export function PostCard({ post, onMessagePress, onPressOverride }: PostCardProp
     </TouchableOpacity>
   );
 }
+
+export const PostCard = React.memo(PostCardInner);

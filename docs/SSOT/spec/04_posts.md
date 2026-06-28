@@ -1,6 +1,6 @@
 # 2.4 Posts: Create, Edit, Discover
 
-> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013 AC1** (300-day status='expired' transition) ships notify-only — full FSM transition is BACKLOG P2.17. **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81). Actor-identity projection bypassed on profile-closed-posts + Search (BACKLOG P2.15 / TD-72).
+> **Status:** ✅ Core Complete — Create/edit/delete, images, visibility shipped. FR-POST-007 (local draft autosave) ✅ done under P2.22 (TD-108 resolved). **FR-POST-013** ✅ full FSM transition + Republish CTA shipped under P2.17 (migrations `0146`/`0147`/`0148`; TD-70 closed). **FR-POST-021 AC1** SELECT policy requires `auth.uid() IS NOT NULL` — guest projection defaults to `Public` exposure (no current leak surface; TD-81).
 
 
 
@@ -55,7 +55,7 @@ The set of required fields depends on `Post.type`.
 - AC1. For `type = Give`: `title` (≤80 chars) and at least one image are required.
 - AC2. For `type = Request`: only `title` (≤80 chars) is required.
 - AC3. For both types: `address` (city + street + number) is required (`R-MVP-Items-13`).
-- AC4. The "Publish" control stays tappable while required fields are incomplete; tapping it shows a short Hebrew toast listing what is still missing (instead of a disabled-looking control). When all required fields validate, publish proceeds as usual. A second "Publish" control appears at the bottom of the create form for users who scroll past the header action.
+- AC4. The "Publish" control stays tappable while required fields are incomplete. Tapping it reveals validation: **address** gaps (city / street / house number) show a persistent red inline message under the address block (including feed-projection copy when street or number is missing); **other** gaps (title, Give photo) show a short Hebrew toast. Inline address errors appear only after the first Publish attempt and stay until the address validates. When all required fields validate, publish proceeds as usual. A second "Publish" control appears at the bottom of the create form for users who scroll past the header action.
 
 **Related.** Screens: 2.4 · Domain: `Post`, `Address`.
 
@@ -176,6 +176,7 @@ The post owner **or** the Super Admin (`users.is_super_admin = true`) can re-ope
 - AC2. The post `type` (Give vs Request) is **not** editable in MVP; the user must delete and recreate.
 - AC3. Edits do **not** bump the post to the top of the feed; `created_at` is immutable while `updated_at` advances.
 - AC4. Editing a post emits an `audit_event` (`R-MVP-Safety-3`) with the changed fields.
+- AC5. When the post transitions to `removed_admin` (via `admin_remove_post`), the prior status is captured in `posts.status_before_admin_removal`. The owner's "פוסטים שהוסרו על ידי מנהל" overflow screen uses this field to split the list into prior-open and prior-closed sections (`D-35`). Legacy rows (NULL) render under the prior-open section.
 
 **Edge Cases.**
 - A post that has expired (`Post.status = expired`) cannot be edited; the form is disabled with a hint to "Republish".
@@ -198,6 +199,7 @@ The owner (or a closed-post participant for `surface_visibility`, `FR-POST-021`)
 - AC2. The same freedom applies to each participant's `post_actor_identity.surface_visibility` on **closed** posts (`FR-POST-021`), with the same `FollowersOnly` / public-profile gate.
 - AC3. Server and client must stay consistent: DB must **not** reject legal visibility writes solely for being a “downgrade”. Legacy `visibility_downgrade_forbidden` handling may remain in adapters for backwards compatibility with old DB snapshots but must not fire on current schema after migration `0094_posts_visibility_free_change.sql`.
 - AC4. Profile mode flipping mid-flight (`Private → Public`) does not retroactively rewrite stored post visibility (`R-MVP-Privacy-13`).
+- AC5. On `closed_delivered` and `deleted_no_recipient`, owner-driven Hide writes the owner's `post_actor_identity.surface_visibility = OnlyMe` (and auto-couples `hide_from_counterparty = true`). `posts.visibility` is **not** fanned out from this control — Hidden-screen routing (`FR-PROFILE-001 AC4`) reads the effective participant surface (migration `0107`, `D-39` supersedes `D-34`). `posts.visibility` on closed posts remains historically writeable via `UpdatePostUseCase` for legacy / admin paths, but the closed-post privacy UX no longer relies on it. `removed_admin` and `expired` remain locked.
 
 **Related.** Domain: `Post.visibility`, `canUpgradeVisibility()` (non–no-op helper only), migration `0094_posts_visibility_free_change.sql`.
 
@@ -305,7 +307,8 @@ The screen rendered when any non-owner viewer opens a post they are allowed to s
 - AC3. Secondary CTA: dynamic follow button per `FR-FOLLOW-011`.
 - AC4. `⋮` menu: "Report" (`FR-MOD-001`). (Per `EXEC-9`, the "Block User" item is removed from MVP scope.)
 - AC5. If the post is no longer visible to the viewer (e.g., follower removed, post auto-removed) the screen renders an empty state: *"This post is no longer available. It may have been removed or limited to followers only."*
-- AC6. The primary "Send Message to Poster" CTA (`FR-CHAT-005`) is shown only when `Post.status === 'open'`; it is hidden for any non-open lifecycle state (including `closed_delivered`, `expired`, `removed_admin`, etc.).
+- AC6. The primary "Send Message to Poster" CTA (`FR-CHAT-005`) is shown only when `Post.status === 'open'`; it is hidden for any non-open lifecycle state (including `closed_delivered`, `expired`, `removed_admin`, etc.). The CTA renders as a compact floating pill (not a full-width bottom bar).
+- AC7. When a viewer can still see a post in a limited/non-active state, the detail screen surfaces it explicitly: `removed_admin` and `expired` show both a hero status pill and an inline notice banner; `FollowersOnly` / `OnlyMe` visibility shows an inline notice (to owner and permitted viewers alike). Give posts additionally show an estimated-value chip when `estimated_value > 0`.
 
 **Related.** Screens: 2.3 · Domain: `Post`, `LocationDisplayLevel`.
 
@@ -393,7 +396,7 @@ Address fields are validated for shape only, not against a geocoder.
 
 **Acceptance Criteria.**
 - AC1. `city` is selected from the canonical seeded list (no free text).
-- AC2. `street` is free text (1–80 chars), trimmed.
+- AC2. `street` is 1–80 chars, trimmed. On Create Post + Edit Post the UI is a city-dependent canonical picker over `public.streets` (`D-36`) with a free-text fallback row for new construction / source gaps; the picker is disabled with helper text "בחרו עיר תחילה" until a city is selected, and tapping the disabled field surfaces an ephemeral toast. Switching the city resets street + number so a Tel Aviv street can never accompany a Jerusalem submission. The DB column remains `text` — what the UI saves is what the user picked or typed.
 - AC3. `street_number` accepts digits and an optional single-letter suffix. The suffix may be a Latin letter (`12A`, `12B`) or a Hebrew letter (`12א`, `15ב`) to support Israeli street numbering conventions. Punctuation and multi-character suffixes are rejected.
 - AC4. Geocoding to lat/lon is **not** performed in MVP.
 - AC5. The composed display string follows `location_display_level`:
@@ -428,25 +431,25 @@ At publish time, an advisory check warns users against posting forbidden categor
 Participants control **who may see the post** (audience), not a separate “identity chrome” tier in the MVP UI.
 
 - **Open posts (`status = open`, owner on post detail):** the same three-level control as `FR-POST-003` edits `posts.visibility` (subject to `FR-POST-009` free changes + public-profile gate for `FollowersOnly`). Shown in the post-detail **⋮** menu (open or closed) for quick changes.
-- **Closed posts (`status = closed_delivered`, owner or marked respondent):** each participant edits their own `post_actor_identity.surface_visibility` (`Public` / `FollowersOnly` / `OnlyMe`, default `Public`) — who, beyond the two participants, can discover the post **through that participant's surface** (their "פוסטים סגורים" profile tab and generic third-party fetch). Changes follow the same rules as open-post visibility (`FR-POST-009`, including the public-profile gate for `FollowersOnly`). UI: the post-detail **⋮** menu (same surface as open-post visibility controls).
-- **Third-party mask on the counterparty's profile surface (`hide_from_counterparty`):** when a marked respondent exists, each participant may toggle this flag so **non-participant viewers** who discover the post through the **counterparty's** "פוסטים סגורים" profile context see anonymous post chrome for that actor (name / avatar / profile link from the post row). The **counterparty** still sees the actor's real identity on post chrome (they already coordinate in chat, where identity stays real per `FR-POST-021` AC6). The historical column name `hide_from_counterparty` is retained in `public.post_actor_identity`; product semantics are defined in **`D-31`**.
+- **Closed posts (`status = closed_delivered`, owner or marked respondent):** each participant edits their own `post_actor_identity.surface_visibility` (`Public` / `FollowersOnly` / `OnlyMe`, default `Public`) — who, beyond the two participants, can discover the post **through that participant's surface** (their "פוסטים סגורים" profile tab and generic third-party fetch). Changes follow the same rules as open-post visibility (`FR-POST-009`, including the public-profile gate for `FollowersOnly`). The participant's audience is the **sole** truth for their profile-surface routing (Hidden tab vs Closed tab + third-party visibility) — `posts.visibility` is no longer fanned out from this control (`D-39` supersedes `D-34`). UI: the post-detail **⋮** menu (same surface as open-post visibility controls).
+- **Third-party mask on the counterparty's profile surface (`hide_from_counterparty`):** when a marked respondent exists, each participant may toggle this flag so **non-participant viewers** who discover the post through the **counterparty's** "פוסטים סגורים" profile context see anonymous post chrome for that actor (name / avatar / profile link from the post row). The **counterparty** always sees the actor's real identity on post chrome (chat is the mutual-recognition surface — `D-39` removes the legacy `D-26` owner-OnlyMe counterparty mask). Picking `surface_visibility = OnlyMe` also implies the third-party mask on the counterparty's surface even when `hide_from_counterparty = false` (an OnlyMe author appearing under their full name on a partner's public tab would defeat the privacy intent). The historical column name `hide_from_counterparty` is retained in `public.post_actor_identity`; product semantics are defined in **`D-31`** and **`D-39`**.
 
 The column `identity_visibility` remains in `public.post_actor_identity` for projection compatibility and is **written as `Public` by the app**; migration `0092_post_actor_identity_public_chrome.sql` normalizes legacy non-`Public` values. Advanced identity-chrome rules (`FollowersOnly` / `Hidden` on chrome only) are **out of MVP UI scope** (`D-30`).
 
 **Source.**
 - Design: `docs/superpowers/specs/2026-05-16-post-actor-privacy-design.md` (original) + addendum (2026-05-16) + PM revision (2026-05-16).
-- Decisions: `D-26`, `D-28`, `D-30`, `D-31`.
+- Decisions: `D-26` (superseded in part by `D-39`), `D-28`, `D-30`, `D-31`, `D-39`.
 
 **Acceptance Criteria.**
 - AC1. Table `public.post_actor_identity` stores per `(post_id, user_id)`: `surface_visibility ∈ {Public, FollowersOnly, OnlyMe}` (default `Public`), `identity_visibility` (app writes `Public` only in MVP), and `hide_from_counterparty boolean` (default `false`). RLS allows read when the viewer may read the post; write only by the participant for their own row. The SELECT policy uses a `SECURITY DEFINER` helper to avoid recursion with `is_post_visible_to`.
 - AC2. **Counterparty read invariant.** `posts.owner_id` and active `recipients.recipient_user_id` always retain read access to the post regardless of either participant's `surface_visibility`. Surface visibility governs **third-party** access only.
-- AC3. **Closed-post third-party access.** `is_post_visible_to(post, viewer)` for `closed_delivered` returns true to a non-participant `V` iff **either** participant's `surface_visibility` admits `V` (Public always; FollowersOnly iff `V` follows that participant; OnlyMe never for `V`). `profile_closed_posts(profile, viewer)` gates each row by **that row's role-actor** `surface_visibility` (publisher rows by owner's; respondent rows by respondent's) — not by `posts.visibility` (`D-28`).
-- AC4. **Identity projection (pure domain).** `projectActorIdentityForViewer` runs per participant after fetch. The viewer sees full identity unless **(a)** `D-26` coupling: the viewer is the counterparty **and** the owner's `posts.visibility = OnlyMe` (owner anonymized to counterparty on post chrome), **(b)** `D-31` + `hide_from_counterparty`: the viewer is a **third party** (not actor, not counterparty) **and** the hydration context is the counterparty's closed-post profile surface (`identityListingHostUserId = counterparty`), **(c)** legacy non-`Public` `identity_visibility` rows until migration `0092` runs, or **(d)** surface-coupling rules where implemented in the projection pipeline / SQL (`D-28` addendum).
+- AC3. **Closed-post third-party access.** `is_post_visible_to(post, viewer)` for `closed_delivered` returns true to a non-participant `V` iff **either** participant's `surface_visibility` admits `V` (Public always; FollowersOnly iff `V` follows that participant; OnlyMe never for `V`). `profile_closed_posts(profile, viewer)` gates each row by **that row's role-actor** effective `surface_visibility` — read from `post_actor_identity` and falling back to `posts.visibility` for the publisher (legacy preservation) and `'Public'` for the respondent (`D-28`, `D-39`, migration `0107`). The Hidden screen (`p_list_mode = 'owner_only_me'`, `FR-PROFILE-001 AC4`) and the owner's Standard exclusion both key on effective `surface_visibility = OnlyMe` — never on `posts.visibility` directly.
+- AC4. **Identity projection (pure domain).** `projectActorIdentityForViewer` runs per participant after fetch. The viewer sees full identity unless **(a)** the actor's `surface_visibility = OnlyMe` **or** `hide_from_counterparty = true` AND the viewer is a **third party** (not actor, not counterparty) on a surface where masking applies (post detail, feed, or the counterparty's closed-post profile tab when `identityListingHostUserId = counterparty`), **(b)** legacy non-`Public` `identity_visibility` rows until migration `0092` runs, or **(c)** `exposure === 'FollowersOnly'` and viewer does not follow the actor. The **counterparty always** sees the other participant's **full** identity on post chrome — `D-39` removes the legacy `D-26` owner-OnlyMe → counterparty mask (chat is the mutual-recognition surface and the partner already knows the actor).
 - AC5. When projection marks an identity as anonymous, post-detail must not offer a one-tap profile deep-link from that row (`ownerProfileNavigableFromPost` / `recipientProfileNavigableFromPost = false`).
 - AC6. Chat headers and profile shells remain real-user surfaces; masking applies to **post chrome** only (`D-26`).
 - AC7. **Create-time preference.** The new-post screen lets the publisher set `hide_from_counterparty` before publish. When enabled, the client upserts the owner's `post_actor_identity` row at publish time with `surface_visibility = posts.visibility` (at publish), `identity_visibility = Public`, and `hide_from_counterparty = true` (semantics per **`D-31`** — third parties on the counterparty's closed-post profile surface, not hiding from the counterparty in chat). When disabled, no row is written at create unless the user later changes closed-post surface settings from the post-detail **⋮** menu.
 
-**Migrations.** `0083_post_actor_identity.sql`, `0085_post_actor_identity_audience_split.sql`, `0092_post_actor_identity_public_chrome.sql`.
+**Migrations.** `0083_post_actor_identity.sql`, `0085_post_actor_identity_audience_split.sql`, `0092_post_actor_identity_public_chrome.sql`, `0106_recipients_select_visible_viewers.sql`, `0107_profile_closed_posts_surface_visibility.sql`.
 
 **Related.** `FR-POST-003`, `FR-POST-009`, `FR-POST-014`, `FR-POST-017` AC1, `FR-PROFILE-001` AC4, `FR-PROFILE-002` AC2, `FR-CLOSURE-005`, `FR-CLOSURE-007`.
 
@@ -472,10 +475,60 @@ A signed-in user may bookmark any post they can currently read (their own or ano
 
 ---
 
+## FR-POST-023 — Share post via link with image preview
+
+> **Status:** 🟡 In progress — ships under BACKLOG P2.33. Replaces the v0.9–v0.12 architecture (Supabase Edge Function) with a Hono web server on the same Railway service that serves the SPA — one canonical URL on `karma-community-kc.com`.
+
+**Description.**
+A signed-in viewer of a `Public` post that is `open` or `closed_delivered` may share a link to that post from the post-detail screen. The link is browsable to anyone (signed-in or not); social-media crawlers see an Open Graph card with the first post image, the post title, and the description; non-authenticated humans landing in the app are routed to the sign-in screen and, after sign-in, deep-linked back to the original post.
+
+**Source.**
+- Product request (2026-05-23). Re-scoped 2026-05-24 to eliminate the Supabase-domain leak observed in the prior shipped version.
+
+**Acceptance Criteria.**
+- AC1. When `post.status` is `open` or `closed_delivered` and either (a) `post.visibility === 'Public'` for any viewer, or (b) the viewer is a **participant** on a `closed_delivered` post (post owner **or** marked recipient — including after Hide / `surface_visibility` / counterparty privacy), a share affordance is available. Image presence is not required. **Surfaces:** (i) post-detail header — **in the trailing corner** (rightmost in RTL), with the existing ⋮ menu placed to its left; (ii) the post ⋮ menu on feed cards and profile post grids (same visibility gate, first row in the sheet).
+- AC2. Tapping the affordance opens the platform share sheet. The accompanying message body is composed per-post by `buildPostShareMessage` as a structured, scannable block of labeled lines (WhatsApp-style bold via `*…*`). All literal strings resolve through the active i18next locale (MVP: Hebrew only; keys live under `post.detail.share*` and reuse `post.detail.statusOpen` / `statusClosed`). Headline and CTA vary by **post type** (`Give` / `Request`) and **lifecycle** (`open` vs `closed_delivered`):
+   1. `shareHeadlineGiveOpen` / `shareHeadlineGiveClosed` / `shareHeadlineRequestOpen` / `shareHeadlineRequestClosed` + blank line.
+   2. `*מפרסם:* <ownerDisplay>` — resolved via the same rules as post-detail owner chrome (`postOwnerDisplayLabel`): full name when identity is visible, `אנונימי` when masked.
+   3. `*שותף/ה:* <counterpartyDisplay>` — only when `status = closed_delivered` and a marked recipient exists; resolved via `postRecipientDisplayLabel` (mirrors `RecipientCallout`). Omitted for open posts.
+   4. `*כותרת:* <title>`.
+   5. `*תיאור:* <description>` — truncated to 200 chars with `…`; whole line omitted when null/empty.
+   6. `*קטגוריה:* <category>` — always included, even for `Other`.
+   7. `*מיקום:* <address>` — `city`, `city + street`, or `city + street + number` per `locationDisplayLevel`.
+   8. `*פורסם:* <relativeTime>` — `formatDistanceToNow` with the date-fns locale mapped from `i18n.language`.
+   9. `*סטטוס:* <statusOpen|statusClosed>`.
+   10. Blank line, then `shareCtaGiveOpen` / `shareCtaGiveClosed` / `shareCtaRequestOpen` / `shareCtaRequestClosed`.
+   The share URL appears in the message body **exactly once** on every platform. iOS attaches the first image binary via the `url` field (`expo-file-system` cache download); Android never passes `url` (RN concatenates it onto EXTRA_TEXT, which is what caused the duplicated link in WhatsApp in the reverted version). Web uses `navigator.share({ files })` when Web Share Level 2 supports files; else `navigator.share({ title, text, url })`; else `navigator.clipboard.writeText(url)` with a Hebrew toast.
+- AC3. The share URL is `https://karma-community-kc.com/post/<id>` — the same URL as the in-app deep link, the universal-link claim path, and the SPA route. There is **no** Supabase URL anywhere — neither as the user-visible URL, nor in a redirect chain, nor in WhatsApp's preview "via" line. Built from `EXPO_PUBLIC_WEB_BASE_URL` (defaults to `https://karma-community-kc.com` when unset).
+- AC4. The Railway web service runs a Hono server (replaces `serve dist --single`) that, on `GET /post/:id` with a crawler UA, returns 200 `text/html` with `og:title`, `og:description`, `og:image`, `og:url`, `og:locale=he_IL`, `twitter:card=summary_large_image`. Posts the anon REST read cannot see (RLS), not-found, invalid UUIDs, and REST timeouts return a generic OG card pointing at the marketing landing — never the post's image or title.
+- AC5. The same `GET /post/:id` from a human (UA not matching the BOT regex) returns the SPA `index.html`; Expo Router renders the post-detail screen.
+- AC6. **Unauthenticated landing:** when an unauthenticated user follows `/post/<id>`, `AuthGate` captures the path before redirecting to `(auth)`, persists it in an in-memory store with a 10-minute TTL, and after sign-in / onboarding completion navigates to the captured path (`router.replace(pendingPath)`), then clears the intent. Refresh / app restart loses the intent, falling back to `(tabs)`.
+- AC7. The OG image is the public Supabase Storage URL for `mediaAssets[0].path`. When the post has no media (e.g. Request posts without images), the OG image is `${APP_BASE_URL}/pwa-icon-512.png` (the 512×512 community logo bundled with the web app).
+- AC8. The share action does not mutate post state, does not require a network round-trip on the client (the Hono server is hit only when the recipient opens the link), and emits no `audit_event` (read-only intent).
+
+**Edge Cases.**
+- Post deleted between share and link-open: crawler gets generic card (Hono REST filter excludes the row); human gets SPA → "not found" UX.
+- Post closed between share and link-open (was open when shared): crawler/human may no longer resolve the post if RLS no longer admits the viewer; generic OG card / not-found UX.
+- Owner shares a hidden (`OnlyMe`) closed post: share affordance remains; link opens for participants and for viewers RLS still admits; anon OG may fall back to the generic card.
+- Marked recipient shares after setting their own `surface_visibility` to `OnlyMe`: share affordance remains for the recipient; third-party link resolution follows RLS as usual.
+- Post shared while already `closed_delivered`: link and OG card resolve when RLS admits the recipient viewer (participant `surface_visibility` Public, or owner `posts.visibility` Public with default surface).
+- User offline at share time: OS share sheet still opens. Recipient's connectivity governs link resolution.
+- Image download failure on iOS: fall back to URL-only share. OG preview on the recipient still renders the image.
+
+**Related.** Screens: 2.3 (post detail). Domain: `Post.visibility`, `Post.status`. Cross-refs: `FR-POST-014` (viewer detail), `FR-AUTH-014` (guest entry), `TD-66` (deep-link manifests). Server: `app/apps/mobile/web-server/server.mjs`. Decision: `D-38`.
+
+---
+
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 0.15 | 2026-05-24 | `FR-POST-023` AC2 — share body adds `*מפרסם:*` (owner identity per `postOwnerDisplayLabel`) and `*שותף/ה:*` on closed posts with a marked recipient (`postRecipientDisplayLabel`). |
+| 0.15 | 2026-05-28 | `FR-POST-021` — `upsert_post_actor_identity` RPC (`0160`) replaces PostgREST `.upsert()` after TD-85 column-scoped UPDATE grants (fixes 403 on hide / exposure sync). |
+| 0.14 | 2026-05-24 | `FR-POST-021` AC3/AC4 + `FR-POST-009` AC5 — dual-surface closed-post privacy (`D-39`). Hidden-screen routing now keys on effective participant `surface_visibility` (migration `0107`); `posts.visibility` fan-out removed from the closed-post Hide control. Counterparty always sees the actor's full identity on post chrome (`D-26` legacy owner-OnlyMe counterparty mask removed). `surface_visibility = OnlyMe` always implies third-party mask on the partner's surface even when `hide_from_counterparty = false`. Migration `0106` (recipients RLS for third-party post detail) shipped in the same set. |
+| 0.13 | 2026-05-24 | `FR-POST-023` — re-architected to eliminate Supabase-domain leak. Hono server on the Railway web service replaces the Supabase Edge Function. One canonical URL `https://karma-community-kc.com/post/<id>` for share + deep link + SPA route. Share body adds `*פורסם:*` (relative time); category line is always included (incl. `Other`); address mirrors the post-detail screen's `locationDisplayLevel`. |
 | 0.1 | 2026-05-05 | Initial draft from PRD §3.3.3–§3.3.5 and Flows 4, 5, 10. |
 | 0.2 | 2026-05-12 | `FR-POST-008` — Super Admin may edit any open post; RLS `0049_admin_post_edit_rls.sql`; post overflow menu shows *Remove as admin* on own posts (`FR-ADMIN-009`). |
+| 0.8 | 2026-05-17 | `FR-POST-008` AC5 + `D-35` — `posts.status_before_admin_removal` captured by `admin_remove_post`; `/profile/removed` splits by prior status. |
+| 0.7 | 2026-05-17 | `FR-POST-009` AC5 + `D-34` — owner-driven Hide on `closed_delivered` / `deleted_no_recipient` writes `posts.visibility`; mobile fans out to owner's `surface_visibility`. |
 | 0.6 | 2026-05-17 | `FR-POST-009` — visibility may change freely after publish (incl. hide after exposure); `FR-POST-021`/`FR-POST-006`/`FR-POST-008` aligned; migration `0094_posts_visibility_free_change.sql`; decision `D-32`. |
 | 0.4 | 2026-05-16 | `FR-POST-022` — save/unsave post bookmarks; migration `0086_saved_posts.sql`. |
 | 0.3 | 2026-05-16 | `FR-POST-021` rewritten for the three-axis per-participant model (`surface_visibility` × `identity_visibility` × `hide_from_counterparty`); `FR-POST-017` AC1 updated to point at per-participant `surface_visibility` instead of `posts.visibility` for closed posts. Driven by `D-28` (supersedes `D-19`'s third-party visibility clause; refines `D-26`). Migration `0085_post_actor_identity_audience_split.sql`. |

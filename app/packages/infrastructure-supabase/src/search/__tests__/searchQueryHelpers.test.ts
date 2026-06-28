@@ -8,6 +8,7 @@ import { searchLinks, searchPosts, searchUsers } from '../searchQueryHelpers';
 interface FakeOpts {
   data?: unknown;
   error?: { message: string } | null;
+  count?: number | null;
 }
 interface Op {
   kind: 'from' | 'select' | 'eq' | 'in' | 'is' | 'or' | 'gte' | 'order' | 'limit';
@@ -16,7 +17,11 @@ interface Op {
 
 function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; ops: Op[] } {
   const ops: Op[] = [];
-  const result = () => ({ data: opts.data ?? null, error: opts.error ?? null });
+  const result = () => ({
+    data: opts.data ?? null,
+    error: opts.error ?? null,
+    count: opts.count ?? null,
+  });
   function makeChain(): any {
     return new Proxy({}, {
       get(_t, prop: string) {
@@ -70,7 +75,7 @@ describe('searchPosts', () => {
     const eqs = ops.filter((o) => o.kind === 'eq').map((o) => o.args?.[0]);
     expect(eqs).toEqual(['status', 'type', 'category', 'city']);
     const or = ops.find((o) => o.kind === 'or');
-    expect(or?.args?.[0]).toBe('title.ilike.%sofa%,description.ilike.%sofa%,category.ilike.%sofa%');
+    expect(or?.args?.[0]).toBe('title.ilike."%sofa%",description.ilike."%sofa%",category.ilike."%sofa%"');
   });
 
   it('skips type/category/city when not set; orders by created_at desc + applies limit', async () => {
@@ -81,11 +86,22 @@ describe('searchPosts', () => {
     expect(ops.find((o) => o.kind === 'limit')?.args).toEqual([25]);
   });
 
-  it('escapes % and _ in the query before building the or() clause', async () => {
+  it('escapes ilike wildcards and quote-wraps the value in the or() clause', async () => {
     const { client, ops } = makeFakeClient({ data: [] });
     await searchPosts(client, 'a%b_c', {}, 10);
     const or = ops.find((o) => o.kind === 'or');
-    expect(or?.args?.[0]).toBe('title.ilike.%a\\%b\\_c%,description.ilike.%a\\%b\\_c%,category.ilike.%a\\%b\\_c%');
+    expect(or?.args?.[0]).toBe(
+      String.raw`title.ilike."%a\\%b\\_c%",description.ilike."%a\\%b\\_c%",category.ilike."%a\\%b\\_c%"`,
+    );
+  });
+
+  it('quotes an injected comma/predicate so it stays inside the value (CWE-943)', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    await searchPosts(client, 'x,title.eq.secret', {}, 10);
+    const or = ops.find((o) => o.kind === 'or');
+    expect(or?.args?.[0]).toBe(
+      'title.ilike."%x,title.eq.secret%",description.ilike."%x,title.eq.secret%",category.ilike."%x,title.eq.secret%"',
+    );
   });
 
   it('throws with "searchPosts: <msg>" on query error', async () => {
@@ -93,15 +109,22 @@ describe('searchPosts', () => {
     await expect(searchPosts(client, 'q', {}, 10)).rejects.toThrow('searchPosts: rls denied');
   });
 
-  it('returns mapped PostWithOwner rows on success', async () => {
-    const { client } = makeFakeClient({ data: [POST_ROW] });
-    const out = await searchPosts(client, 'q', {}, 10);
-    expect(out[0]?.postId).toBe('p_1');
+  it('requests count: "exact" on select', async () => {
+    const { client, ops } = makeFakeClient({ data: [] });
+    await searchPosts(client, 'q', {}, 10);
+    expect(ops.find((o) => o.kind === 'select')?.args?.[1]).toEqual({ count: 'exact' });
   });
 
-  it('returns [] when data is null', async () => {
+  it('returns mapped PostWithOwner rows and total from PostgREST count', async () => {
+    const { client } = makeFakeClient({ data: [POST_ROW], count: 23 });
+    const out = await searchPosts(client, 'q', {}, 5);
+    expect(out.items[0]?.postId).toBe('p_1');
+    expect(out.total).toBe(23);
+  });
+
+  it('returns empty bucket when data is null', async () => {
     const { client } = makeFakeClient({ data: null });
-    expect(await searchPosts(client, 'q', {}, 10)).toEqual([]);
+    expect(await searchPosts(client, 'q', {}, 10)).toEqual({ items: [], total: 0 });
   });
 });
 
@@ -115,7 +138,7 @@ describe('searchUsers', () => {
     const gte = ops.find((o) => o.kind === 'gte');
     expect(gte?.args).toEqual(['followers_count', 5]);
     const or = ops.find((o) => o.kind === 'or');
-    expect(or?.args?.[0]).toBe('display_name.ilike.%ali%,biography.ilike.%ali%,share_handle.ilike.%ali%');
+    expect(or?.args?.[0]).toBe('display_name.ilike."%ali%",biography.ilike."%ali%",share_handle.ilike."%ali%"');
   });
 
   it('orders by followers_count desc by default', async () => {
@@ -142,9 +165,10 @@ describe('searchUsers', () => {
   });
 
   it('returns mapped UserSearchResult rows on success', async () => {
-    const { client } = makeFakeClient({ data: [USER_ROW] });
+    const { client } = makeFakeClient({ data: [USER_ROW], count: 7 });
     const out = await searchUsers(client, 'q', {}, null, 10);
-    expect(out[0]?.userId).toBe('u_1');
+    expect(out.items[0]?.userId).toBe('u_1');
+    expect(out.total).toBe(7);
   });
 });
 
@@ -155,7 +179,7 @@ describe('searchLinks', () => {
     const is = ops.find((o) => o.kind === 'is');
     expect(is?.args).toEqual(['hidden_at', null]);
     const or = ops.find((o) => o.kind === 'or');
-    expect(or?.args?.[0]).toBe('display_name.ilike.%help%,description.ilike.%help%,url.ilike.%help%');
+    expect(or?.args?.[0]).toBe('display_name.ilike."%help%",description.ilike."%help%",url.ilike."%help%"');
   });
 
   it('appends category_slug.eq.<slug> to or() when the query contains a Hebrew category label and donationCategory is not set', async () => {
@@ -163,7 +187,7 @@ describe('searchLinks', () => {
     await searchLinks(client, 'אוכל', {}, 10);
     const or = ops.find((o) => o.kind === 'or');
     expect(or?.args?.[0]).toBe(
-      'display_name.ilike.%אוכל%,description.ilike.%אוכל%,url.ilike.%אוכל%,category_slug.eq.food',
+      'display_name.ilike."%אוכל%",description.ilike."%אוכל%",url.ilike."%אוכל%",category_slug.eq.food',
     );
   });
 
@@ -171,7 +195,7 @@ describe('searchLinks', () => {
     const { client, ops } = makeFakeClient({ data: [] });
     await searchLinks(client, 'אוכל', { donationCategory: 'medical' }, 10);
     const or = ops.find((o) => o.kind === 'or');
-    expect(or?.args?.[0]).toBe('display_name.ilike.%אוכל%,description.ilike.%אוכל%,url.ilike.%אוכל%');
+    expect(or?.args?.[0]).toBe('display_name.ilike."%אוכל%",description.ilike."%אוכל%",url.ilike."%אוכל%"');
     const eq = ops.find((o) => o.kind === 'eq');
     expect(eq?.args).toEqual(['category_slug', 'medical']);
   });
@@ -189,8 +213,9 @@ describe('searchLinks', () => {
   });
 
   it('returns mapped DonationLinkSearchResult rows on success', async () => {
-    const { client } = makeFakeClient({ data: [LINK_ROW] });
+    const { client } = makeFakeClient({ data: [LINK_ROW], count: 12 });
     const out = await searchLinks(client, 'q', {}, 10);
-    expect(out[0]?.id).toBe('l_1');
+    expect(out.items[0]?.id).toBe('l_1');
+    expect(out.total).toBe(12);
   });
 });

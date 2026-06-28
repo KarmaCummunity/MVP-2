@@ -1,4 +1,8 @@
-export type ReportErrorCode = 'invalid_target' | 'duplicate_within_24h' | 'unknown';
+export type ReportErrorCode =
+  | 'invalid_target'
+  | 'duplicate_within_24h'
+  | 'target_already_moderated'
+  | 'unknown';
 
 export class ReportError extends Error {
   readonly code: ReportErrorCode;

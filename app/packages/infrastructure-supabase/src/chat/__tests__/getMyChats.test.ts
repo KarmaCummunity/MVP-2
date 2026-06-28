@@ -9,33 +9,31 @@ interface FakeOpts {
   chatsError?: { message: string } | null;
   messages?: any[];
   messagesError?: { message: string } | null;
-  unread?: any[];
+  /** Per-chat unread counts: `[{ chat_id, unread_count }, ...]`. */
+  unread?: Array<{ chat_id: string; unread_count: number }>;
   unreadError?: { message: string } | null;
   users?: any[];
   usersError?: { message: string } | null;
 }
 
 function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
-  // messages table hit twice: first call (with .order) = previews, second
-  // (no order) = unread counts.
-  let messagesCallCount = 0;
   const client = {
     from: (table: string) => {
       if (table === 'chats') {
-        const r = () => Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
-        const thenable: any = { then: (f: any, j: any) => r().then(f, j) };
-        return { select: () => ({ or: () => ({ order: () => thenable }) }) };
+        const chatsPromise = () =>
+          Promise.resolve({ data: opts.chats ?? [], error: opts.chatsError ?? null });
+        return { select: () => ({ or: () => ({ order: () => ({ limit: () => chatsPromise() }) }) }) };
       }
       if (table === 'messages') {
+        // Single call now (last-message preview only). PERF-5: unread counts
+        // moved to rpc_unread_counts_for_chats.
         return {
           select: () => ({
-            in: () => {
-              messagesCallCount++;
-              if (messagesCallCount === 1) {
-                return { order: async () => ({ data: opts.messages ?? [], error: opts.messagesError ?? null }) };
-              }
-              return Promise.resolve({ data: opts.unread ?? [], error: opts.unreadError ?? null });
-            },
+            in: () => ({
+              order: () => ({
+                limit: async () => ({ data: opts.messages ?? [], error: opts.messagesError ?? null }),
+              }),
+            }),
           }),
         };
       }
@@ -43,6 +41,12 @@ function makeFakeClient(opts: FakeOpts): { client: SupabaseClient<any> } {
         return { select: () => ({ in: async () => ({ data: opts.users ?? [], error: opts.usersError ?? null }) }) };
       }
       throw new Error(`fake: unexpected table ${table}`);
+    },
+    rpc: async (fnName: string) => {
+      if (fnName === 'rpc_unread_counts_for_chats') {
+        return { data: opts.unread ?? [], error: opts.unreadError ?? null };
+      }
+      throw new Error(`fake: unexpected rpc ${fnName}`);
     },
   } as unknown as SupabaseClient<any>;
   return { client };
@@ -146,19 +150,26 @@ describe('getMyChats — happy paths', () => {
     expect((await getMyChats(client, 'u_me'))[0]?.lastMessage?.messageId).toBe('m_new');
   });
 
-  it('unreadCount counts only messages where status !== "read" AND sender !== viewer', async () => {
+  it('unreadCount reads the server-computed per-chat count from rpc_unread_counts_for_chats (PERF-5)', async () => {
+    // PERF-5 moved the status<>'read' AND sender<>viewer logic into the RPC.
+    // The FE now just maps `unread_count` onto the matching chat row.
     const { client } = makeFakeClient({
       chats: [CHAT_ROW],
       messages: [MSG_ROW()],
-      unread: [
-        { chat_id: 'c_1', status: 'delivered', sender_id: 'u_other' },
-        { chat_id: 'c_1', status: 'delivered', sender_id: 'u_other' },
-        { chat_id: 'c_1', status: 'delivered', sender_id: 'u_me' },     // self → skip
-        { chat_id: 'c_1', status: 'read',       sender_id: 'u_other' }, // read → skip
-      ],
+      unread: [{ chat_id: 'c_1', unread_count: 2 }],
       users: [{ user_id: 'u_other', display_name: 'A', avatar_url: null, share_handle: 'a' }],
     });
     expect((await getMyChats(client, 'u_me'))[0]?.unreadCount).toBe(2);
+  });
+
+  it('unreadCount is 0 when the RPC returns no row for the chat (no unread messages)', async () => {
+    const { client } = makeFakeClient({
+      chats: [CHAT_ROW],
+      messages: [MSG_ROW()],
+      unread: [],
+      users: [{ user_id: 'u_other', display_name: 'A', avatar_url: null, share_handle: 'a' }],
+    });
+    expect((await getMyChats(client, 'u_me'))[0]?.unreadCount).toBe(0);
   });
 
   it('hides chats with inbox_hidden_at set on the viewer side (FR-CHAT-016)', async () => {

@@ -31,6 +31,7 @@ export interface Post {
   readonly ownerId: string;
   readonly type: PostType;
   status: PostStatus;
+  readonly statusBeforeAdminRemoval: 'open' | 'closed_delivered' | 'deleted_no_recipient' | null;
   visibility: PostVisibility;
   title: string;
   description: string | null;
@@ -39,6 +40,8 @@ export interface Post {
   locationDisplayLevel: LocationDisplayLevel;
   itemCondition: ItemCondition | null;  // only for Give
   urgency: string | null;               // only for Request
+  /** Optional estimated item value 0..1000 (FR-KARMA-004). Give posts only; null otherwise. */
+  estimatedValue: number | null;
   mediaAssets: MediaAsset[];
   recipient: Recipient | null;
   reopenCount: number;

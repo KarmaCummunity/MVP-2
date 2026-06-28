@@ -19,10 +19,24 @@ export class UpdatePostUseCase {
 
   async execute(input: UpdatePostUseCaseInput): Promise<UpdatePostOutput> {
     const current = await this.repo.findById(input.postId, input.viewerId);
-    if (!current) throw new Error(`UpdatePostUseCase: post ${input.postId} not found`);
+    if (!current) throw new PostError('not_found', `post ${input.postId} not found`);
+    if (input.viewerId && current.ownerId !== input.viewerId) {
+      throw new PostError('forbidden', 'forbidden');
+    }
 
     if (current.status !== 'open') {
-      throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+      // FR-POST-009 + D-34: on closed_delivered / deleted_no_recipient, only a
+      // visibility-only patch is allowed (owner-driven Hide / Unhide).
+      // removed_admin and expired remain fully locked.
+      const isClosedHideable =
+        current.status === 'closed_delivered' || current.status === 'deleted_no_recipient';
+      const patchKeys = Object.keys(input.patch).filter(
+        (k) => (input.patch as Record<string, unknown>)[k] !== undefined,
+      );
+      const isVisibilityOnly = patchKeys.length === 1 && patchKeys[0] === 'visibility';
+      if (!(isClosedHideable && isVisibilityOnly)) {
+        throw new PostError('post_not_open', `cannot edit post with status ${current.status}`);
+      }
     }
 
     const patch = this.validate(input.patch, current);

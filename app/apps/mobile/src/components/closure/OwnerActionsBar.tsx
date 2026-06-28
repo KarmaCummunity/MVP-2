@@ -6,10 +6,10 @@
 //   deleted_no_recipient (past grace) → no CTA (post is on its way out)
 //   removed_admin / expired           → no CTA
 import { useEffect, useState } from 'react';
-import { View, Pressable, Text, StyleSheet, ActivityIndicator } from 'react-native';
+import { View, Pressable, Text, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { useQueryClient } from '@tanstack/react-query';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { Post } from '@kc/domain';
 import { isPostError, type PostErrorCode } from '@kc/application';
 import { useClosureStore } from '../../store/closureStore';
@@ -24,6 +24,8 @@ import { ReopenConfirmModal } from './ReopenConfirmModal';
 interface Props {
   post: Post;
   ownerId: string;
+  /** Extra bottom padding when the global shell tab bar overlays this bar (post detail). */
+  tabBarOverlayInset?: number;
   /** Called after caches are invalidated following a successful "mark as delivered".
    * Parent typically shows confirmation and navigates away from post detail. */
   onClosed: () => void | Promise<void>;
@@ -32,7 +34,10 @@ interface Props {
   onReopened: () => void | Promise<void>;
 }
 
-export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) {
+export function OwnerActionsBar(props: Readonly<Props>) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const { post, ownerId, tabBarOverlayInset = 0, onClosed, onReopened } = props;
   const { t } = useTranslation();
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
@@ -101,7 +106,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
 
   return (
     <>
-      <View style={styles.bar}>
+      <View style={[styles.bar, { paddingBottom: spacing.base + tabBarOverlayInset }]}>
         {isOpen ? (
           <Pressable
             style={[styles.btnPrimary, (closureBusy || closureStep !== 'idle') && styles.btnDisabled]}
@@ -113,7 +118,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
           </Pressable>
         ) : (
           <Pressable
-            style={[styles.btnPrimary, (isReopening || reopenOpen) && styles.btnDisabled]}
+            style={[styles.btnSecondary, (isReopening || reopenOpen) && styles.btnDisabled]}
             disabled={isReopening || reopenOpen}
             onPress={() => {
               setReopenError(null);
@@ -121,7 +126,7 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
             }}
             accessibilityLabel={t('closure.itemNotDeliveredA11y')}
           >
-            <Text style={styles.btnPrimaryText}>{t('closure.itemNotDeliveredCta')}</Text>
+            <Text style={styles.btnSecondaryText}>{t('closure.itemNotDeliveredCta')}</Text>
           </Pressable>
         )}
       </View>
@@ -153,21 +158,37 @@ export function OwnerActionsBar({ post, ownerId, onClosed, onReopened }: Props) 
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   bar: {
-    padding: spacing.base,
+    paddingHorizontal: spacing.base,
+    paddingTop: spacing.md,
     backgroundColor: colors.surface,
     borderTopWidth: 1,
     borderTopColor: colors.border,
   },
   btnPrimary: {
-    height: 50,
+    height: 56,
     backgroundColor: colors.primary,
-    borderRadius: radius.md,
+    borderRadius: radius.xl,
     alignItems: 'center',
     justifyContent: 'center',
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: isDark ? 0.15 : 0.22,
+    shadowRadius: 10,
+    elevation: isDark ? 2 : 4,
   },
-  btnPrimaryText: { ...typography.button, color: colors.textInverse },
+  btnSecondary: {
+    height: 56,
+    backgroundColor: isDark ? colors.surfaceRaised : colors.background,
+    borderRadius: radius.xl,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    borderColor: colors.borderStrong,
+  },
+  btnPrimaryText: { ...typography.button, color: colors.textInverse, fontSize: 16 },
+  btnSecondaryText: { ...typography.button, color: colors.textPrimary, fontSize: 16 },
   btnDisabled: { opacity: 0.5 },
   busyOverlay: {
     position: 'absolute',
@@ -176,4 +197,4 @@ const styles = StyleSheet.create({
     right: 0,
     alignItems: 'center',
   },
-});
+}));

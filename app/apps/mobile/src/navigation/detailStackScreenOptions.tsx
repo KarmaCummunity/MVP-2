@@ -1,12 +1,15 @@
 // Shared native-stack options for modal/detail routes (see root `app/_layout.tsx`).
-import { colors } from '@kc/ui';
+import { useTheme } from '@kc/ui';
 import { nativeStackHeaderLeftIconOnly } from './nativeHeaderIconOnly';
 
-export const detailStackScreenOptions = {
-  headerShown: true,
-  ...nativeStackHeaderLeftIconOnly,
-  headerBackVisible: false,
-  headerTintColor: colors.primary,
-  headerStyle: { backgroundColor: colors.surface },
-  headerTitleAlign: 'center' as const,
-};
+export function useDetailStackScreenOptions() {
+  const { colors } = useTheme();
+  return {
+    headerShown: true,
+    ...nativeStackHeaderLeftIconOnly(colors.primary),
+    headerBackVisible: false,
+    headerTintColor: colors.primary,
+    headerStyle: { backgroundColor: colors.surface },
+    headerTitleAlign: 'center' as const,
+  } as const;
+}

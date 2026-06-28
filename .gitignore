@@ -31,3 +31,15 @@ supabase/.branches/
 
 # Aider AI coding assistant
 .aider*
+
+# Hebrew literal scan — generated report (timestamp churn); CI uses --check only.
+scripts/hebrew-text-report.md
+
+# Superpowers brainstorming sessions (visual companion mockups, transient)
+.superpowers/
+
+# Turborepo local cache — per-machine build artifacts, never committed.
+.turbo/
+
+# Git worktrees (local isolated checkouts — never commit contents).
+.worktrees/

@@ -8,12 +8,14 @@
 //   2. Close without marking → closeWith(null)
 //   3. Pick a chat partner → toggle 'chats' mode + select + Mark and Close
 //   4. Pick from any user (with search) → toggle 'search' mode + select + Mark and Close
-import { ActivityIndicator, Pressable, StyleSheet, Text, View } from 'react-native';
+import { ActivityIndicator, Pressable, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
 import { useClosureStore } from '../../store/closureStore';
 import { ChatsPane, ModeTabs, SearchPane } from './ClosureRecipientPanes';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   ownerId: string;
@@ -34,6 +36,8 @@ export function ClosureStep2({
   onCloseWithoutMarking,
   onCancel,
 }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const pickMode = useClosureStore((s) => s.pickMode);
   const candidates = useClosureStore((s) => s.candidates);
@@ -107,11 +111,11 @@ export function ClosureStep2({
   );
 }
 
-const styles = StyleSheet.create({
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 12, color: colors.textPrimary },
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 12, color: colors.textPrimary },
   helper: { fontSize: 13, color: colors.textSecondary, textAlign: 'center', marginTop: 6 },
-  error: { fontSize: 14, color: colors.error, textAlign: 'right', marginBottom: 8 },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+  error: { fontSize: 14, color: colors.error, textAlign: rtlTextAlignStart, marginBottom: 8 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
@@ -120,4 +124,4 @@ const styles = StyleSheet.create({
   btnGhost: { backgroundColor: 'transparent', borderWidth: 1, borderColor: colors.border },
   btnGhostText: { color: colors.textPrimary, fontSize: 14, fontWeight: '500' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

@@ -37,6 +37,7 @@ import { fetchRankedFeedPage, needsRankedPath } from './feedQueryRanked';
 import {
   closePost as closePostHelper,
   reopenPost as reopenPostHelper,
+  republishPost as republishPostHelper,
   getClosureCandidates as getClosureCandidatesHelper,
 } from './closureMethods';
 import { executePostUpdate } from './executePostUpdate';
@@ -47,7 +48,13 @@ import {
   upsertPostActorIdentityRow,
 } from './postActorIdentityMethods';
 import { getMyPostsPage } from './getMyPostsPage';
-import { countOpenByUser as countOpenByUserQuery, fetchPostById } from './postRepoQueries';
+import {
+  countOpenByUser as countOpenByUserQuery,
+  countProfileClosedPosts as countProfileClosedPostsQuery,
+  countProfileOpenPosts as countProfileOpenPostsQuery,
+  countProfilePostsForViewer as countProfilePostsForViewerQuery,
+  fetchPostById,
+} from './postRepoQueries';
 
 const FEED_HARD_MAX = 100;
 
@@ -124,6 +131,7 @@ export class SupabasePostRepository implements IPostRepository {
         location_display_level: input.locationDisplayLevel,
         item_condition: input.itemCondition,
         urgency: input.urgency,
+        estimated_value: input.estimatedValue ?? null,
       })
       .select('post_id')
       .single();
@@ -209,6 +217,9 @@ export class SupabasePostRepository implements IPostRepository {
   reopen(postId: string): Promise<Post> {
     return reopenPostHelper(this.client, postId);
   }
+  republish(postId: string): Promise<string> {
+    return republishPostHelper(this.client, postId);
+  }
   async unmrkRecipientSelf(postId: string): Promise<void> {
     const { error } = await this.client.rpc('rpc_recipient_unmark_self', { p_post_id: postId });
     if (error) throw new Error(`unmrkRecipientSelf: ${error.message}`);
@@ -266,5 +277,21 @@ export class SupabasePostRepository implements IPostRepository {
   // ── Stats ───────────────────────────────────────────────────────────────
   countOpenByUser(userId: string): Promise<number> {
     return countOpenByUserQuery(this.client, userId);
+  }
+
+  countProfilePostsForViewer(ownerId: string, viewerId: string | null): Promise<number> {
+    return countProfilePostsForViewerQuery(this.client, ownerId, viewerId);
+  }
+
+  countProfileOpenPosts(ownerId: string, options?: { excludeOnlyMe?: boolean }): Promise<number> {
+    return countProfileOpenPostsQuery(this.client, ownerId, options);
+  }
+
+  countProfileClosedPosts(
+    profileUserId: string,
+    viewerUserId: string | null,
+    listMode?: ProfileClosedPostsListMode,
+  ): Promise<number> {
+    return countProfileClosedPostsQuery(this.client, profileUserId, viewerUserId, listMode);
   }
 }

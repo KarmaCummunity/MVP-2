@@ -2,25 +2,59 @@
   "name": "karma-community",
   "private": true,
   "version": "0.1.0",
-  "packageManager": "pnpm@9.0.0",
+  "packageManager": "pnpm@9.15.9",
   "scripts": {
     "dev": "turbo run dev",
     "build": "turbo run build",
-    "lint": "pnpm lint:arch && turbo run lint",
+    "lint": "pnpm lint:arch && pnpm lint:i18n && turbo run lint",
     "lint:arch": "node scripts/check-architecture.mjs && node scripts/check-ssot-links.mjs",
+    "lint:i18n": "node ../scripts/extract-hebrew-text.mjs --check",
     "typecheck": "turbo run typecheck",
     "test": "turbo run test",
-    "deps": "npx pnpm@9.0.0 install",
-    "mobile": "npx pnpm@9.0.0 --filter @kc/mobile start",
-    "mobile:go": "npx pnpm@9.0.0 --filter @kc/mobile run start:go",
-    "mobile:go:tunnel": "npx pnpm@9.0.0 --filter @kc/mobile run start:go:tunnel",
-    "ios": "npx pnpm@9.0.0 --filter @kc/mobile ios",
-    "android": "npx pnpm@9.0.0 --filter @kc/mobile android",
+    "test:coverage": "turbo run test:coverage",
+    "deps": "npx pnpm@9.15.9 install",
+    "mobile": "npx pnpm@9.15.9 --filter @kc/mobile start",
+    "mobile:go": "npx pnpm@9.15.9 --filter @kc/mobile run start:go",
+    "mobile:go:tunnel": "npx pnpm@9.15.9 --filter @kc/mobile run start:go:tunnel",
+    "ios": "npx pnpm@9.15.9 --filter @kc/mobile ios",
+    "android": "npx pnpm@9.15.9 --filter @kc/mobile android",
     "build:web": "pnpm --filter @kc/mobile exec expo export -p web && node scripts/web-postbuild.mjs",
-    "preview:web": "npx serve apps/mobile/dist --single"
+    "preview:web": "npx serve apps/mobile/dist --single",
+    "check:migration-chain": "node ../scripts/check-migration-chain.mjs",
+    "check:migration-safety": "node ../scripts/check-migration-safety.mjs",
+    "check:rpc-contract": "node ../scripts/check-rpc-contract.mjs",
+    "check:web-manifest": "node ../scripts/check-web-manifest.mjs",
+    "check:backend-guards": "node ../scripts/check-migration-chain.mjs && node ../scripts/check-migration-safety.mjs && node ../scripts/check-rpc-contract.mjs",
+    "test:scripts": "node --test ../scripts/check-migration-chain.test.mjs ../scripts/check-migration-safety.test.mjs ../scripts/check-rpc-contract.test.mjs ../scripts/check-web-manifest.test.mjs ../scripts/extract-hebrew-text.test.mjs ../scripts/check-required-checks-drift.test.mjs",
+    "test:e2e": "npm --prefix ../tests/e2e test",
+    "test:e2e:ui": "npm --prefix ../tests/e2e run test:ui"
   },
   "devDependencies": {
+    "@eslint/js": "^10.0.1",
+    "@vitest/coverage-v8": "^4.1.8",
+    "eslint": "^10.4.1",
+    "eslint-plugin-react": "^7.37.0",
+    "eslint-plugin-react-hooks": "^7.1.1",
+    "globals": "^17.6.0",
     "turbo": "^2.0.0",
-    "typescript": "^5.5.0"
+    "typescript": "^5.5.0",
+    "typescript-eslint": "^8.60.1"
+  },
+  "pnpm": {
+    "overrides": {
+      "shell-quote": ">=1.8.4",
+      "form-data@4": ">=4.0.6",
+      "ws@6": ">=6.2.4",
+      "ws@7": ">=7.5.11",
+      "ws@8": ">=8.21.0",
+      "hono@4": ">=4.12.25",
+      "undici@6": "^6.27.0"
+    },
+    "auditConfig": {
+      "ignoreGhsas": [
+        "GHSA-gv7w-rqvm-qjhr",
+        "GHSA-22p9-wv53-3rq4"
+      ]
+    }
   }
 }

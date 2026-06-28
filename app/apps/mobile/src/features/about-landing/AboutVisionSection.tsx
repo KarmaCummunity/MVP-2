@@ -2,10 +2,13 @@ import React, { useCallback, useState } from 'react';
 import { View, Text, Pressable, StyleSheet, LayoutAnimation, Platform } from 'react-native';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
+import { aboutRtlText, aboutRtlRow } from './aboutWebRtlStyle';
 
 export function AboutVisionSection() {
   const { t } = useTranslation();
+  const styles = useAboutVisionSectionStyles();
+  const { colors } = useTheme();
   const [open, setOpen] = useState(false);
   const purpose = t('aboutContent.visionPurposeItems', { returnObjects: true }) as string[];
 
@@ -52,12 +55,12 @@ export function AboutVisionSection() {
 }
 
 const BADGE = 24;
-const styles = StyleSheet.create({
-  h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
+const useAboutVisionSectionStyles = makeUseStyles(({ colors }) => ({
+  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.sm },
   lead: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     lineHeight: 24,
     marginBottom: spacing.lg,
     fontWeight: '600',
@@ -65,14 +68,14 @@ const styles = StyleSheet.create({
   subh: {
     ...typography.label,
     color: colors.secondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     marginBottom: spacing.xs,
     marginTop: spacing.md,
     fontWeight: '800',
   },
-  p: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
+  p: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 24 },
   ol: { gap: spacing.sm, marginTop: spacing.xs },
-  olRow: { flexDirection: 'row-reverse', alignItems: 'flex-start', gap: spacing.sm },
+  olRow: { flexDirection: aboutRtlRow, alignItems: 'flex-start', gap: spacing.sm },
   olBadge: {
     width: BADGE,
     height: BADGE,
@@ -84,9 +87,9 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
   },
   olNum: { ...typography.caption, color: colors.primary, fontWeight: '800' },
-  olText: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right', lineHeight: 22 },
+  olText: { flex: 1, ...typography.body, color: colors.textPrimary, ...aboutRtlText, lineHeight: 22 },
   expandHead: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     gap: spacing.sm,
     marginTop: spacing.lg,
@@ -100,15 +103,15 @@ const styles = StyleSheet.create({
   expandTitle: {
     ...typography.body,
     flex: 1,
-    textAlign: 'right',
+    ...aboutRtlText,
     fontWeight: '700',
     color: colors.textPrimary,
   },
   expandBody: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    ...aboutRtlText,
     lineHeight: 24,
     marginTop: spacing.sm,
   },
-});
+}));

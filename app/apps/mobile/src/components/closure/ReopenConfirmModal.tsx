@@ -2,10 +2,12 @@
 // Copy varies on TWO axes:
 //   1. status:  closed_delivered (with consequences) vs deleted_no_recipient (cancel cleanup)
 //   2. type:    Give (owner gave / marked received) vs Request (owner received / marked gave)
-import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
 import type { PostType } from '@kc/domain';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   visible: boolean;
@@ -26,6 +28,8 @@ export function ReopenConfirmModal({
   onCancel,
   onConfirm,
 }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const give = postType === 'Give';
   // Marked-user direction depends on post type (see RecipientCallout for the
@@ -74,7 +78,7 @@ export function ReopenConfirmModal({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: colors.overlay,
@@ -84,27 +88,30 @@ const styles = StyleSheet.create({
   },
   sheet: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     padding: 20,
     borderRadius: 12,
     width: '100%',
     maxWidth: 440,
   },
-  title: { fontSize: 18, fontWeight: '700', textAlign: 'right', marginBottom: 12, color: colors.textPrimary },
-  body: { fontSize: 15, color: colors.textPrimary, textAlign: 'right', marginBottom: 8 },
+  title: { fontSize: 18, fontWeight: '700', textAlign: rtlTextAlignStart, marginBottom: 12, color: colors.textPrimary },
+  body: { fontSize: 15, color: colors.textPrimary, textAlign: rtlTextAlignStart, marginBottom: 8 },
   bullet: {
     fontSize: 14,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginBottom: 8,
     lineHeight: 22,
   },
   error: {
     fontSize: 14,
     color: colors.error,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     marginTop: 8,
   },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 16 },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 16 },
   btn: {
     flex: 1,
     paddingVertical: 12,
@@ -117,4 +124,4 @@ const styles = StyleSheet.create({
   btnSecondary: { backgroundColor: colors.skeleton },
   btnSecondaryText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

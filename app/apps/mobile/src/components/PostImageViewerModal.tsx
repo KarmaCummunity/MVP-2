@@ -7,7 +7,6 @@ import {
   Modal,
   NativeScrollEvent,
   NativeSyntheticEvent,
-  StyleSheet,
   Text,
   TouchableOpacity,
   View,
@@ -16,7 +15,7 @@ import {
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, typography } from '@kc/ui';
+import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 
 export interface PostImageViewerModalProps {
   readonly visible: boolean;
@@ -31,6 +30,8 @@ export function PostImageViewerModal({
   initialIndex,
   onClose,
 }: PostImageViewerModalProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { width, height } = useWindowDimensions();
   const insets = useSafeAreaInsets();
@@ -123,7 +124,7 @@ export function PostImageViewerModal({
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   root: {
     flex: 1,
     backgroundColor: '#000',
@@ -146,4 +147,4 @@ const styles = StyleSheet.create({
   },
   counterText: { ...typography.caption, color: colors.textInverse, fontWeight: '600' },
   list: { flex: 1 },
-});
+}));

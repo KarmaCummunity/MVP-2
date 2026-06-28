@@ -3,10 +3,10 @@
 // into the user's scroll position).
 
 import React from 'react';
-import { Pressable, StyleSheet, Text, View } from 'react-native';
+import { Pressable, Text, View } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 
 interface NewPostsBannerProps {
   count: number;
@@ -14,6 +14,8 @@ interface NewPostsBannerProps {
 }
 
 export function NewPostsBanner({ count, onPress }: NewPostsBannerProps) {
+  const styles = useNewPostsBannerStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   if (count <= 0) return null;
   const label = count === 1 ? t('feed.newPostsOne') : t('feed.newPostsMany', { count });
@@ -27,23 +29,21 @@ export function NewPostsBanner({ count, onPress }: NewPostsBannerProps) {
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: { alignItems: 'center', paddingVertical: spacing.sm },
+const useNewPostsBannerStyles = makeUseStyles(({ colors, isDark }) => ({
+  wrap: { alignItems: 'center' as const, paddingVertical: spacing.sm },
   pill: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     gap: spacing.xs,
     backgroundColor: colors.primary,
     paddingHorizontal: spacing.lg,
     paddingVertical: spacing.sm,
     borderRadius: radius.full,
-    // Match the elevated press surfaces from the welcome screen so the pill
-    // feels like it's floating on top of the cream feed.
     shadowColor: colors.primary,
     shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.25,
+    shadowOpacity: isDark ? 0 : 0.25,
     shadowRadius: 10,
-    elevation: 4,
+    elevation: isDark ? 0 : 4,
   },
   text: { ...typography.caption, color: colors.textInverse, fontWeight: '700' as const },
-});
+}));

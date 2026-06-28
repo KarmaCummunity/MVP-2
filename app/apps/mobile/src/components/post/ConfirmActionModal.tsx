@@ -1,8 +1,10 @@
 // Generic two-button confirmation modal used by post-detail ⋮ menu actions
 // (delete-owner, admin-remove, block).
-import { Modal, View, Text, Pressable, StyleSheet, ActivityIndicator } from 'react-native';
+import { Modal, View, Text, Pressable, ActivityIndicator } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors } from '@kc/ui';
+import { makeUseStyles, useTheme } from '@kc/ui';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   visible: boolean;
@@ -32,6 +34,8 @@ export function ConfirmActionModal({
   onConfirm,
 }: Props) {
   const { t } = useTranslation();
+  const styles = useConfirmActionModalStyles();
+  const { colors } = useTheme();
   const cancelLabel = cancelLabelProp ?? t('general.cancel');
   return (
     <Modal visible={visible} animationType="fade" transparent onRequestClose={onCancel}>
@@ -72,13 +76,13 @@ export function ConfirmActionModal({
   );
 }
 
-const styles = StyleSheet.create({
-  backdrop: { flex: 1, backgroundColor: 'rgba(0,0,0,0.4)', justifyContent: 'center', padding: 16 },
-  sheet: { backgroundColor: colors.surface, borderRadius: 12, padding: 20, gap: 12 },
-  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: 'right' },
-  message: { fontSize: 15, color: colors.textSecondary, textAlign: 'right', lineHeight: 22 },
-  error: { fontSize: 13, color: colors.error, textAlign: 'right' },
-  actions: { flexDirection: 'row-reverse', gap: 8, marginTop: 8 },
+const useConfirmActionModalStyles = makeUseStyles(({ colors }) => ({
+  backdrop: { flex: 1, backgroundColor: colors.overlay, justifyContent: 'center', padding: 16 },
+  sheet: { backgroundColor: colors.surfaceRaised, borderRadius: 12, padding: 20, gap: 12 },
+  title: { fontSize: 18, fontWeight: '600', color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  message: { fontSize: 15, color: colors.textSecondary, textAlign: rtlTextAlignStart, lineHeight: 22 },
+  error: { fontSize: 13, color: colors.error, textAlign: rtlTextAlignStart },
+  actions: { flexDirection: rowDirectionStart, gap: 8, marginTop: 8 },
   btn: { flex: 1, paddingVertical: 12, borderRadius: 8, alignItems: 'center', justifyContent: 'center' },
   btnPrimary: { backgroundColor: colors.primary },
   btnDestructive: { backgroundColor: colors.error },
@@ -86,4 +90,4 @@ const styles = StyleSheet.create({
   btnPrimaryText: { color: colors.textInverse, fontSize: 15, fontWeight: '600' },
   btnSecondaryText: { color: colors.textPrimary, fontSize: 15, fontWeight: '600' },
   btnDisabled: { opacity: 0.5 },
-});
+}));

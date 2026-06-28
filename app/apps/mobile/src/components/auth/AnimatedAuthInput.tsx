@@ -1,16 +1,53 @@
 // Animated input with orange border glow on focus — RTL-ready.
 import React, { useState } from 'react';
-import { View, TextInput, Text, StyleSheet, type TextInputProps } from 'react-native';
+import { View, TextInput, Text, type TextInputProps } from 'react-native';
 import Animated, {
   useSharedValue,
   useAnimatedStyle,
   withTiming,
 } from 'react-native-reanimated';
-import { colors, spacing, radius, typography } from '@kc/ui';
+import { makeUseStyles, spacing, radius, typography, useTheme } from '@kc/ui';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface AnimatedAuthInputProps extends TextInputProps {
   label: string;
+  testID?: string;
 }
+
+const useAnimatedAuthInputStyles = makeUseStyles(({ colors, isDark }) => ({
+  field: { gap: spacing.xs },
+  label: {
+    ...typography.label,
+    color: colors.textSecondary,
+    textAlign: rtlTextAlignStart,
+  },
+  labelFocused: {
+    color: colors.primary,
+  },
+  inputContainer: {
+    height: 54,
+    backgroundColor: colors.background,
+    borderRadius: radius.md,
+    borderWidth: isDark ? 1 : 1.5,
+    borderColor: colors.border,
+    paddingHorizontal: spacing.base,
+    justifyContent: 'center' as const,
+  },
+  inputContainerFocused: {
+    borderColor: colors.primary,
+    backgroundColor: isDark ? colors.surface : colors.background,
+    shadowColor: colors.primary,
+    shadowOffset: { width: 0, height: 0 },
+    shadowOpacity: isDark ? 0.2 : 0.12,
+    shadowRadius: 6,
+    elevation: isDark ? 0 : 2,
+  },
+  input: {
+    flex: 1,
+    ...typography.body,
+    color: colors.textPrimary,
+  },
+}));
 
 export function AnimatedAuthInput({
   label,
@@ -18,6 +55,8 @@ export function AnimatedAuthInput({
   onBlur,
   ...rest
 }: AnimatedAuthInputProps) {
+  const { colors } = useTheme();
+  const styles = useAnimatedAuthInputStyles();
   const [focused, setFocused] = useState(false);
   const scale = useSharedValue(1);
   const borderProgress = useSharedValue(0);
@@ -53,7 +92,7 @@ export function AnimatedAuthInput({
         <TextInput
           style={styles.input}
           placeholderTextColor={colors.textDisabled}
-          textAlign="right"
+          textAlign={rtlTextAlignStart}
           onFocus={handleFocus}
           onBlur={handleBlur}
           {...rest}
@@ -62,40 +101,3 @@ export function AnimatedAuthInput({
     </View>
   );
 }
-
-const ORANGE = '#F97316';
-
-const styles = StyleSheet.create({
-  field: { gap: spacing.xs },
-  label: {
-    ...typography.label,
-    color: colors.textSecondary,
-    textAlign: 'right',
-  },
-  labelFocused: {
-    color: ORANGE,
-  },
-  inputContainer: {
-    height: 54,
-    backgroundColor: colors.background,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    paddingHorizontal: spacing.base,
-    justifyContent: 'center',
-  },
-  inputContainerFocused: {
-    borderColor: ORANGE,
-    backgroundColor: '#FFFBF7',
-    shadowColor: ORANGE,
-    shadowOffset: { width: 0, height: 0 },
-    shadowOpacity: 0.12,
-    shadowRadius: 6,
-    elevation: 2,
-  },
-  input: {
-    flex: 1,
-    ...typography.body,
-    color: colors.textPrimary,
-  },
-});

@@ -1,28 +1,34 @@
-import { I18nManager, Platform, StyleSheet } from 'react-native';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { I18nManager, Platform } from 'react-native';
+import { makeUseStyles, radius, shadow, spacing, typography } from '@kc/ui';
 
 const isRTL = I18nManager.isRTL;
 const isWeb = Platform.OS === 'web';
 const alignStart: 'left' | 'right' = isWeb ? (isRTL ? 'right' : 'left') : 'left';
 
-export const styles = StyleSheet.create({
+export const usePostCardStyles = makeUseStyles(({ colors, isDark }) => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
     padding: spacing.base,
     marginHorizontal: spacing.base,
     marginBottom: spacing.md,
+    // Soft hairline in dark mode so cards detach from the matching dark backdrop.
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     ...shadow.card,
+    // Card shadow is heavy on dark mode (black on near-black washes out); fade it.
+    shadowOpacity: isDark ? 0 : shadow.card.shadowOpacity,
+    elevation: isDark ? 0 : shadow.card.elevation,
   },
   header: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
     marginBottom: spacing.sm,
   },
   authorRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     flex: 1,
     gap: spacing.sm,
   },
@@ -32,7 +38,7 @@ export const styles = StyleSheet.create({
   },
   authorName: {
     ...typography.body,
-    fontWeight: '600',
+    fontWeight: '600' as const,
     color: colors.textPrimary,
     textAlign: alignStart,
   },
@@ -74,15 +80,21 @@ export const styles = StyleSheet.create({
     marginBottom: spacing.sm,
     textAlign: alignStart,
   },
+  estimatedValue: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    marginBottom: spacing.sm,
+    textAlign: alignStart,
+  },
   footer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    justifyContent: 'space-between' as const,
+    alignItems: 'center' as const,
     marginTop: spacing.xs,
   },
   metaRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
     flex: 1,
   },
   categoryText: {
@@ -103,12 +115,12 @@ export const styles = StyleSheet.create({
     height: 36,
     borderRadius: radius.full,
     backgroundColor: colors.primarySurface,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: 'center' as const,
+    alignItems: 'center' as const,
   },
   messageBtnText: {
     fontSize: 16,
   },
-  visibilityBadge: { marginTop: spacing.sm, alignSelf: 'flex-end' },
+  visibilityBadge: { marginTop: spacing.sm, alignSelf: 'flex-end' as const },
   visibilityText: { ...typography.caption, color: colors.followersOnlyBadge },
-});
+}));

@@ -4,13 +4,13 @@
 // FR-PROFILE-009 / FR-PROFILE-010. Each row carries dynamic Follow + ⋮ "Remove follower" if self.
 
 import React from 'react';
-import { ActivityIndicator, StyleSheet, Text, TextInput, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, TextInput, TouchableOpacity, View } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { useTranslation } from 'react-i18next';
-import { colors, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import type { User } from '@kc/domain';
 import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { ConfirmActionModal } from '../../../src/components/post/ConfirmActionModal';
@@ -20,8 +20,12 @@ import {
   getListFollowersUseCase,
   getRemoveFollowerUseCase,
 } from '../../../src/services/followComposition';
+import { rowDirectionStart } from '../../../src/lib/rtlLayout';
+import { rtlTextAlignStart } from '../../../src/lib/rtlTextAlignStart';
 
 export default function FollowersListScreen() {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const { handle } = useLocalSearchParams<{ handle: string }>();
   const router = useRouter();
@@ -35,6 +39,7 @@ export default function FollowersListScreen() {
     queryKey: ['profile-other', handle],
     queryFn: () => getUserRepo().findByHandle(handle!),
     enabled: Boolean(handle),
+    staleTime: 60_000, // PERF-3: profile (others) — follow state can flip; keep relatively fresh
   });
   const owner = userQuery.data;
   const isMe = me === owner?.userId;
@@ -43,6 +48,7 @@ export default function FollowersListScreen() {
     queryKey: ['followers', owner?.userId],
     queryFn: () => getListFollowersUseCase().execute({ userId: owner!.userId, limit: 50 }),
     enabled: Boolean(owner?.userId),
+    staleTime: 60_000, // PERF-3: profile (others) — remove-follower action invalidates explicitly
   });
 
   if (!owner) {
@@ -57,7 +63,11 @@ export default function FollowersListScreen() {
     if (!me || !isMe || !pendingRemove) return;
     setBusyRemove(true);
     try {
-      await getRemoveFollowerUseCase().execute({ ownerId: me, followerId: pendingRemove.userId });
+      await getRemoveFollowerUseCase().execute({
+        sessionUserId: me,
+        ownerId: me,
+        followerId: pendingRemove.userId,
+      });
       qc.invalidateQueries({ queryKey: ['followers', me] });
       qc.invalidateQueries({ queryKey: ['user-profile', me] });
       setPendingRemove(null);
@@ -119,22 +129,22 @@ export default function FollowersListScreen() {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   container: { flex: 1, backgroundColor: colors.background },
   searchRow: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.xs,
+    flexDirection: rowDirectionStart, alignItems: 'center', gap: spacing.xs,
     backgroundColor: colors.surface, margin: spacing.base, padding: spacing.sm,
     borderRadius: radius.md, borderWidth: 1, borderColor: colors.border,
   },
-  searchInput: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: 'right' },
+  searchInput: { flex: 1, ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   row: {
-    flexDirection: 'row-reverse', alignItems: 'center', gap: spacing.sm,
+    flexDirection: rowDirectionStart, alignItems: 'center', gap: spacing.sm,
     paddingHorizontal: spacing.base, paddingVertical: spacing.sm,
     borderBottomWidth: 1, borderBottomColor: colors.border,
   },
   rowText: { flex: 1 },
-  name: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  city: { ...typography.caption, color: colors.textSecondary, textAlign: 'right' },
+  name: { ...typography.body, color: colors.textPrimary, textAlign: rtlTextAlignStart },
+  city: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   menuBtn: { padding: spacing.xs },
   empty: { ...typography.body, color: colors.textSecondary, textAlign: 'center', marginTop: spacing.lg },
-});
+}));

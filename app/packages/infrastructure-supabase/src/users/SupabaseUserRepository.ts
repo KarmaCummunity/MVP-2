@@ -24,7 +24,13 @@ import {
 } from './editableProfileSupabase';
 import { mapUserRow, type UserRow } from './mapUserRow';
 import { fetchUserBy } from './fetchUserBy';
+import { getChatCounterpartyContact } from './getChatCounterpartyContact';
 import { searchUsers } from './searchUsers';
+import { USER_PUBLIC_SELECT_COLUMNS } from './userPublicColumns';
+import {
+  fetchUsersSelfPrivateFields,
+  mergeSelfPrivateFields,
+} from './usersSelfPrivateFields';
 import {
   followEdge,
   unfollowEdge,
@@ -98,10 +104,13 @@ export class SupabaseUserRepository implements IUserRepository {
       .from('users')
       .update({ privacy_mode: mode, privacy_changed_at: new Date().toISOString() })
       .eq('user_id', userId)
-      .select('*')
+      .select(USER_PUBLIC_SELECT_COLUMNS)
       .single();
     if (error) throw new Error(`setPrivacyMode: ${error.message}`);
-    return mapUserRow(data as unknown as UserRow);
+    let user = mapUserRow(data as unknown as UserRow);
+    const slice = await fetchUsersSelfPrivateFields(this.client);
+    if (slice) user = mergeSelfPrivateFields(user, slice);
+    return user;
   }
 
   /** FR-CLOSURE-004 AC3 — flips users.closure_explainer_dismissed = true. */
@@ -149,6 +158,11 @@ export class SupabaseUserRepository implements IUserRepository {
   }
   async findByHandle(handle: string): Promise<User | null> {
     return fetchUserBy(this.client, 'share_handle', handle);
+  }
+
+  /** FR-CHAT-014 AC7 — counterpart contact_phone when viewer is a chat participant. */
+  getChatCounterpartyContact(chatId: string): Promise<string | null> {
+    return getChatCounterpartyContact(this.client, chatId);
   }
   async create(): Promise<never> {
     throw NOT_IMPL('create', 'auto-created by handle_new_user trigger');

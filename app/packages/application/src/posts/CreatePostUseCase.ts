@@ -50,11 +50,18 @@ export class CreatePostUseCase {
     }
 
     const urgency = input.urgency?.trim() ?? null;
+    const street = input.address.street.trim();
+    const streetNumber = input.address.streetNumber.trim();
     return {
       ...input,
       title,
       description,
       urgency: urgency && urgency.length > 0 ? urgency : null,
+      address: {
+        ...input.address,
+        street,
+        streetNumber,
+      },
       hideFromCounterparty: Boolean(input.hideFromCounterparty),
     };
   }

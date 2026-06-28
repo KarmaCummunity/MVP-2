@@ -1,7 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { MOTION, staggerDelay } from '../../lib/animations/motion';
@@ -26,6 +26,8 @@ export function AboutInstagramEmbed({
   webFallbackTitle,
 }: AboutInstagramEmbedProps) {
   const { t } = useTranslation();
+  const styles = useAboutInstagramEmbedStyles();
+  const { colors } = useTheme();
 
   const openProfile = () =>
     void aboutOpenExternalUrl(ABOUT_INSTAGRAM_PROFILE_URL, t('aboutContent.contactLinkError'));
@@ -55,7 +57,7 @@ export function AboutInstagramEmbed({
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutInstagramEmbedStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.md },
   title: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', ...aboutWebTextRtl },
   caption: {
@@ -83,4 +85,4 @@ const styles = StyleSheet.create({
   },
   ctaPressed: { opacity: 0.9 },
   ctaText: { ...typography.button, color: colors.textInverse, ...aboutWebTextRtl },
-});
+}));

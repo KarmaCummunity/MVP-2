@@ -26,6 +26,14 @@ export interface SearchFilters {
   donationCategory?: DonationCategorySlug | null;
   /** Filter posts + users by city slug. Links are national — city is ignored. */
   city?: string | null;
+  /**
+   * Filter posts by distance (km) from the selected `city`. Ignored when
+   * `city` is null. The UI exposes this; the infra layer's eq-on-city filter
+   * does not yet honor radius — wiring through the `feed_ranked_ids` RPC is
+   * tracked as a follow-up. The field is part of `SearchFilters` today so the
+   * query-key changes and the value persists across re-opens of the sheet.
+   */
+  radiusKm?: number | null;
   /** Sort strategy. */
   sortBy?: SearchSortBy;
   /** Filter users by minimum followers. */
@@ -52,7 +60,6 @@ export interface UserSearchResult {
 export interface DonationLinkSearchResult {
   readonly id: string;
   readonly categorySlug: DonationCategorySlug;
-  readonly categoryLabelHe: string;
   readonly url: string;
   readonly displayName: string;
   readonly description: string | null;

@@ -9,7 +9,7 @@ interface FakeOpts {
   data?: unknown;
   error?: { message: string; code?: string } | null;
   count?: number | null;
-  rpc?: { error?: { message: string; code?: string } | null };
+  rpc?: { data?: unknown; error?: { message: string; code?: string } | null };
 }
 
 function makeFakeClient(opts: FakeOpts = {}): {
@@ -56,7 +56,10 @@ function makeFakeClient(opts: FakeOpts = {}): {
     },
     rpc: (name: string, params: any) => {
       rpcCalls.push({ name, params });
-      return Promise.resolve({ data: null, error: opts.rpc?.error ?? null });
+      return Promise.resolve({
+        data: opts.rpc?.data ?? null,
+        error: opts.rpc?.error ?? null,
+      });
     },
   } as unknown as SupabaseClient<any>;
   return { client, ops, rpcCalls };
@@ -156,6 +159,32 @@ describe('SupabasePostRepository.unmrkRecipientSelf', () => {
     const { client } = makeFakeClient({ rpc: { error: { message: 'not in chat' } } });
     const repo = new SupabasePostRepository(client);
     await expect(repo.unmrkRecipientSelf('p_1')).rejects.toThrow('unmrkRecipientSelf: not in chat');
+  });
+});
+
+describe('SupabasePostRepository.countProfilePostsForViewer', () => {
+  it('returns the RPC result for viewer-aware profile post count', async () => {
+    const { client } = makeFakeClient({ rpc: { data: 12 } });
+    const repo = new SupabasePostRepository(client);
+    expect(await repo.countProfilePostsForViewer('owner_1', 'viewer_1')).toBe(12);
+  });
+
+  it('passes null viewer for guest profile views', async () => {
+    const { client, rpcCalls } = makeFakeClient({ rpc: { data: 3 } });
+    const repo = new SupabasePostRepository(client);
+    await repo.countProfilePostsForViewer('owner_1', null);
+    expect(rpcCalls[0]).toEqual({
+      name: 'active_posts_count_for_viewer',
+      params: { p_owner: 'owner_1', p_viewer: null },
+    });
+  });
+
+  it('throws "countProfilePostsForViewer: <msg>" on RPC error', async () => {
+    const { client } = makeFakeClient({ rpc: { error: { message: 'rpc down' } } });
+    const repo = new SupabasePostRepository(client);
+    await expect(repo.countProfilePostsForViewer('o', 'v')).rejects.toThrow(
+      'countProfilePostsForViewer: rpc down',
+    );
   });
 });
 

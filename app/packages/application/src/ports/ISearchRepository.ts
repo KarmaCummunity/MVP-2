@@ -15,7 +15,12 @@ export interface UniversalSearchResults {
   readonly posts: PostWithOwner[];
   readonly users: UserSearchResult[];
   readonly links: DonationLinkSearchResult[];
-  readonly totalCount: number;
+  /** Total matches for posts (may exceed `posts.length` when preview-limited). */
+  readonly postsTotal: number;
+  /** Total matches for users (may exceed `users.length` when preview-limited). */
+  readonly usersTotal: number;
+  /** Total matches for links (may exceed `links.length` when preview-limited). */
+  readonly linksTotal: number;
 }
 
 export interface ISearchRepository {

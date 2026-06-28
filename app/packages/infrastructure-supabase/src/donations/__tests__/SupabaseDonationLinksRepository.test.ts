@@ -42,7 +42,9 @@ function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; cal
       select: () => ({
         eq: () => ({
           is: () => ({
-            order: () => result('list'),
+            order: () => ({
+              limit: () => result('list'),
+            }),
           }),
         }),
       }),

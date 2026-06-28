@@ -1,6 +1,7 @@
 import React from 'react';
 import { View, Text, StyleSheet, LayoutChangeEvent } from 'react-native';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius } from '@kc/ui';
+import { aboutRtlText } from './aboutWebRtlStyle';
 import { useTranslation } from 'react-i18next';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { MOTION } from '../../lib/animations/motion';
@@ -10,11 +11,16 @@ import { AboutValuesGrid } from './AboutValuesGrid';
 import { AboutVisionSection } from './AboutVisionSection';
 import { AboutScopedSection } from './AboutScopedSection';
 import { AboutMissionTeamSection } from './AboutMissionTeamSection';
+import { AboutGovernanceSection } from './AboutGovernanceSection';
+import { AboutLogoEvolutionSection } from './AboutLogoEvolutionSection';
+import { AboutAudienceSection } from './AboutAudienceSection';
+import { DonationSupportCard } from '../../components/DonationSupportCard';
 
 function SectionCard({
   children,
   style,
 }: Readonly<{ children: React.ReactNode; style?: object }>) {
+  const styles = useAboutSectionBlocksTopStyles();
   return <View style={[styles.card, style]}>{children}</View>;
 }
 
@@ -39,6 +45,7 @@ export interface AboutSectionBlocksTopProps {
 
 export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps) {
   const { t } = useTranslation();
+  const styles = useAboutSectionBlocksTopStyles();
   let d = 0;
   const next = () => {
     const cur = d;
@@ -77,6 +84,26 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           </SectionCard>
         </AnimatedEntry>
       </View>
+      <View onLayout={track('logo', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutLogoEvolutionSection />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
+      <AnimatedEntry
+        delay={next()}
+        duration={MOTION.duration.slow}
+        distance={12}
+        scaleEntrance={0.985}
+      >
+        <DonationSupportCard />
+      </AnimatedEntry>
       <View onLayout={track('problems', onSectionY)} collapsable={false}>
         <AnimatedEntry
           delay={next()}
@@ -131,10 +158,7 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           distance={12}
           scaleEntrance={0.985}
         >
-          <SectionCard>
-            <Text style={styles.h}>{t('aboutContent.audienceTitle')}</Text>
-            <Text style={styles.p}>{t('aboutContent.audienceText')}</Text>
-          </SectionCard>
+          <AboutAudienceSection />
         </AnimatedEntry>
       </View>
       <View onLayout={trackMissionTeam(onSectionY)} collapsable={false}>
@@ -164,11 +188,23 @@ export function AboutSectionBlocksTop({ onSectionY }: AboutSectionBlocksTopProps
           </SectionCard>
         </AnimatedEntry>
       </View>
+      <View onLayout={track('governance', onSectionY)} collapsable={false}>
+        <AnimatedEntry
+          delay={next()}
+          duration={MOTION.duration.slow}
+          distance={12}
+          scaleEntrance={0.985}
+        >
+          <SectionCard>
+            <AboutGovernanceSection />
+          </SectionCard>
+        </AnimatedEntry>
+      </View>
     </>
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutSectionBlocksTopStyles = makeUseStyles(({ colors }) => ({
   card: {
     backgroundColor: colors.surface,
     borderRadius: radius.lg,
@@ -181,9 +217,9 @@ const styles = StyleSheet.create({
     shadowOffset: { width: 0, height: 4 },
     elevation: 2,
   },
-  h: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
-  lead: { ...typography.body, fontWeight: '600', color: colors.textPrimary, textAlign: 'right', marginBottom: spacing.sm },
-  p: { ...typography.body, color: colors.textSecondary, textAlign: 'right', lineHeight: 24 },
+  h: { ...typography.h4, color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.sm },
+  lead: { ...typography.body, fontWeight: '600', color: colors.textPrimary, ...aboutRtlText, marginBottom: spacing.sm },
+  p: { ...typography.body, color: colors.textSecondary, ...aboutRtlText, lineHeight: 24 },
   liveStatsWrap: { marginTop: spacing.lg },
   valuesSpacer: { height: spacing.sm },
-});
+}));

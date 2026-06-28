@@ -19,6 +19,7 @@ export type PostErrorCode =
   | 'invalid_visibility'
   | 'invalid_category'
   | 'invalid_location_display_level'
+  | 'not_found'
   | 'forbidden'
   | 'closure_not_owner'
   | 'closure_wrong_status'
@@ -26,6 +27,11 @@ export type PostErrorCode =
   | 'reopen_window_expired'
   | 'post_not_open'
   | 'post_owner_delete_forbidden'
+  | 'republish_not_owner'
+  | 'republish_wrong_status'
+  | 'republish_not_found'
+  | 'active_post_limit_exceeded'
+  | 'followers_only_requires_private'
   | 'unknown';
 
 export class PostError extends Error {

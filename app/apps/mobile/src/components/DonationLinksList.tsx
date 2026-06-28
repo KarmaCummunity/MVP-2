@@ -11,14 +11,15 @@ import {
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
 import type { DonationCategorySlug, DonationLink } from '@kc/domain';
+import { useTheme } from '@kc/ui';
 import { useAuthStore } from '../store/authStore';
-import { colors } from '@kc/ui';
 import { AddDonationLinkModal } from './AddDonationLinkModal';
-import { donationLinksListStyles as styles } from './DonationLinksList.styles';
+import { useDonationLinksListStyles } from './DonationLinksList.styles';
 import { DonationLinkRow } from './DonationLinkRow';
 import { DonationLinkRowMenu } from './DonationLinkRowMenu';
 import { useDonationLinkActions } from './useDonationLinkActions';
-import { useIsSuperAdmin } from '../hooks/useIsSuperAdmin';
+import { hasPermission, type AdminRole } from '@kc/domain';
+import { useAdminRoles } from '../hooks/useAdminRoles';
 import { useDonationLinksListState } from './useDonationLinksListState';
 
 interface Props {
@@ -27,8 +28,11 @@ interface Props {
 
 export function DonationLinksList({ categorySlug }: Readonly<Props>) {
   const { t } = useTranslation();
+  const { colors } = useTheme();
+  const styles = useDonationLinksListStyles();
   const me = useAuthStore((s) => s.session?.userId ?? null);
-  const isSuperAdmin = useIsSuperAdmin();
+  const { roles } = useAdminRoles();
+  const canManuallyRemovePost = hasPermission(roles as readonly AdminRole[], 'reports.manual_remove_post');
 
   const { links, loading, errored, load, onAdded, onUpdated, onRemoved } =
     useDonationLinksListState(categorySlug);
@@ -45,7 +49,7 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
     setEditingLink(null);
     setModalOpen(true);
   }, []);
-  const runNativeMenu = useDonationLinkActions({ me, isSuperAdmin, onRemoved, onEdit: onEditLink });
+  const runNativeMenu = useDonationLinkActions({ me, isSuperAdmin: canManuallyRemovePost, onRemoved, onEdit: onEditLink });
   const onMenuPress = useCallback(
     (link: DonationLink) => {
       if (Platform.OS === 'web') setWebMenuLink(link);
@@ -69,7 +73,7 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
         </Pressable>
       </View>
     ),
-    [t, openAddModal],
+    [t, openAddModal, styles, colors.textInverse],
   );
 
   const renderRow = useCallback(
@@ -128,7 +132,7 @@ export function DonationLinksList({ categorySlug }: Readonly<Props>) {
       visible={webMenuLink !== null}
       link={webMenuLink}
       me={me}
-      isSuperAdmin={isSuperAdmin}
+      isSuperAdmin={canManuallyRemovePost}
       onClose={() => setWebMenuLink(null)}
       onRemoved={(id) => {
         onRemoved(id);

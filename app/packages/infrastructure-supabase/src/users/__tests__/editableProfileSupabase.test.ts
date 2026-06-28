@@ -1,6 +1,7 @@
 import { describe, it, expect } from 'vitest';
 import type { SupabaseClient } from '@supabase/supabase-js';
 import { supabaseGetEditableProfile } from '../editableProfileSupabase';
+import type { UsersSelfPrivateSlice } from '../usersSelfPrivateFields';
 
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
@@ -14,9 +15,20 @@ interface SelectCall {
   eqVal: unknown;
 }
 
+const PRIVATE_SLICE: UsersSelfPrivateSlice = {
+  profile_street: 'Allenby',
+  profile_street_number: '12',
+  contact_phone: '050-1234567',
+  notification_preferences: { critical: true, social: true },
+  is_super_admin: false,
+  active_posts_count_internal: 0,
+  karma_points: 0,
+};
+
 function makeFakeClient(opts: {
   data?: unknown;
   error?: { message: string } | null;
+  privateSlice?: UsersSelfPrivateSlice | null;
 }): { client: SupabaseClient<any>; calls: SelectCall[] } {
   const calls: SelectCall[] = [];
   const client = {
@@ -30,39 +42,41 @@ function makeFakeClient(opts: {
         }),
       }),
     }),
+    rpc: async (fn: string) => {
+      if (fn === 'users_get_self_private_fields') {
+        return { data: opts.privateSlice ?? PRIVATE_SLICE, error: null };
+      }
+      return { data: null, error: null };
+    },
   } as unknown as SupabaseClient<any>;
   return { client, calls };
 }
 
-const FULL_ROW = {
+const PUBLIC_ROW = {
   display_name: 'Alice',
   city: 'IL-001',
   city_name: 'Tel Aviv',
-  profile_street: 'Allenby',
-  profile_street_number: '12',
-  contact_phone: '050-1234567',
   biography: 'I give books.',
   avatar_url: 'https://cdn.example.com/u_1.jpg',
 };
 
 describe('supabaseGetEditableProfile', () => {
-  it('selects exactly the eight editable columns from users for the given user_id (single-row)', async () => {
-    const { client, calls } = makeFakeClient({ data: FULL_ROW });
+  it('selects public editable columns and loads PII via users_get_self_private_fields', async () => {
+    const { client, calls } = makeFakeClient({ data: PUBLIC_ROW });
 
     await supabaseGetEditableProfile(client, 'u_me');
 
     expect(calls).toHaveLength(1);
     expect(calls[0]).toEqual({
       table: 'users',
-      selected:
-        'display_name, city, city_name, profile_street, profile_street_number, contact_phone, biography, avatar_url',
+      selected: 'display_name, city, city_name, biography, avatar_url',
       eqCol: 'user_id',
       eqVal: 'u_me',
     });
   });
 
   it('maps snake_case columns to the camelCase DTO', async () => {
-    const { client } = makeFakeClient({ data: FULL_ROW });
+    const { client } = makeFakeClient({ data: PUBLIC_ROW });
 
     const out = await supabaseGetEditableProfile(client, 'u_me');
 
@@ -81,12 +95,15 @@ describe('supabaseGetEditableProfile', () => {
   it('preserves null for the five nullable columns', async () => {
     const { client } = makeFakeClient({
       data: {
-        ...FULL_ROW,
+        ...PUBLIC_ROW,
+        biography: null,
+        avatar_url: null,
+      },
+      privateSlice: {
+        ...PRIVATE_SLICE,
         profile_street: null,
         profile_street_number: null,
         contact_phone: null,
-        biography: null,
-        avatar_url: null,
       },
     });
 

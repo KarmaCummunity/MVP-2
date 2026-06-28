@@ -3,11 +3,10 @@ import {
   Modal,
   Text,
   TouchableOpacity,
-  StyleSheet,
   Pressable,
 } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import { colors, spacing, radius, typography, shadow } from '@kc/ui';
+import { makeUseStyles, spacing, radius, typography, shadow } from '@kc/ui';
 
 export interface GuestJoinModalProps {
   visible: boolean;
@@ -26,6 +25,7 @@ export function GuestJoinModal({
   onDismiss,
 }: Readonly<GuestJoinModalProps>) {
   const { t } = useTranslation();
+  const styles = useGuestJoinModalStyles();
   return (
     <Modal
       visible={visible}
@@ -63,10 +63,10 @@ export function GuestJoinModal({
   );
 }
 
-const styles = StyleSheet.create({
+const useGuestJoinModalStyles = makeUseStyles(({ colors }) => ({
   backdrop: {
     flex: 1,
-    backgroundColor: 'rgba(0,0,0,0.45)',
+    backgroundColor: colors.overlay,
     justifyContent: 'flex-end',
   },
   sheet: {
@@ -103,4 +103,4 @@ const styles = StyleSheet.create({
     ...typography.body,
     color: colors.textSecondary,
   },
-});
+}));

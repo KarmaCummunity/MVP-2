@@ -40,6 +40,8 @@ export const profileHe = {
   // Tabs
   tabOpen: 'פוסטים פתוחים',
   tabClosed: 'פוסטים סגורים',
+  tabOpenWithCount: 'פתוחים ({{count}})',
+  tabClosedWithCount: 'סגורים ({{count}})',
 
   // My Profile top-bar ⋮ (admin-removed posts — FR-POST-008 owner list)
   myProfileMenuA11y: 'אפשרויות פרופיל',
@@ -53,8 +55,13 @@ export const profileHe = {
   emptyHiddenClosedTitle: 'אין פוסטים מוסתרים סגורים',
   emptyHiddenClosedSubtitle: 'פוסטים מוסתרים שסגרת יופיעו כאן.',
   myProfileMenuSavedPosts: 'שמורים',
-  emptySavedTitle: 'אין פוסטים שמורים',
-  emptySavedSubtitle: 'שמרי פוסטים מהפיד או ממסך הפוסט כדי לראות אותם כאן.',
+  savedBanner: 'פוסטים ששמרת. אם פוסט אינו זמין עוד (נמחק, הוסר, או חזר להיות פרטי) הוא לא יוצג כאן.',
+  savedSectionOpen: 'פוסטים פתוחים',
+  savedSectionClosed: 'פוסטים סגורים',
+  emptySavedOpenTitle: 'אין פוסטים פתוחים בשמורים',
+  emptySavedOpenSubtitle: 'שמרי פוסט פתוח מהפיד כדי לראות אותו כאן.',
+  emptySavedClosedTitle: 'אין פוסטים סגורים בשמורים',
+  emptySavedClosedSubtitle: 'פוסטים סגורים ששמרת יופיעו כאן.',
 
   // Stats row
   statsPostsLabel: 'פוסטים',
@@ -98,12 +105,26 @@ export const profileHe = {
   cityPickerEmpty: 'לא נמצאו ערים תואמות.',
   cityPickerCloseA11y: 'סגור',
 
+  // StreetPicker (FR-PROFILE-007 AC1 — city-dependent canonical streets)
+  streetPickerTitle: 'בחרו רחוב',
+  streetPickerSearchPlaceholder: '...חיפוש רחוב',
+  streetPickerError: 'שגיאה בטעינת רשימת הרחובות. נסו שוב.',
+  streetPickerEmpty: 'לא נמצאו רחובות תואמים.',
+  streetPickerNeedCity: 'בחרו עיר תחילה',
+  streetPickerUseMyText: 'השתמשו ב־"{{value}}"',
+
   // EditProfileAddressBlock
   addressLabel: 'כתובת',
   streetNumberShort: 'מס׳',
 
   // Removed-tab banner (FR-POST-008 owner-view of removed_admin posts)
   removedBanner: 'פוסטים אלה הוסרו על ידי מנהל הקהילה. הם גלויים רק לך.',
+  removedSectionOpen: 'פוסטים שהיו פתוחים',
+  removedSectionClosed: 'פוסטים שהיו סגורים',
+  emptyRemovedOpenTitle: 'אין פוסטים פתוחים שהוסרו',
+  emptyRemovedOpenSubtitle: 'פוסטים פתוחים שיוסרו על ידי מנהל יופיעו כאן.',
+  emptyRemovedClosedTitle: 'אין פוסטים סגורים שהוסרו',
+  emptyRemovedClosedSubtitle: 'פוסטים סגורים שיוסרו על ידי מנהל יופיעו כאן.',
 
   // Edit Profile screen (FR-PROFILE-007)
   editScreen: {

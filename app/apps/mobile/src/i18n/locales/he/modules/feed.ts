@@ -1,7 +1,7 @@
 // FR-FEED — feed-surface strings split from main bundle to keep `index.ts`
 // under the 200-LOC cap. Covers the Home Feed chrome, filters, empty state,
 // first-post nudge, new-posts banner, and the post-card type/visibility tags
-// reused across PostCard / PostCardGrid / PostCardProfile.
+// reused across PostCard / PostCardGrid (profile grids reuse PostCardGrid).
 export const feedHe = {
   title: 'פיד ראשי',
   filters: 'סננים',

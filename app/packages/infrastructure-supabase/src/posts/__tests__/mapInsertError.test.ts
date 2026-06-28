@@ -23,9 +23,9 @@ describe('mapInsertError (TD-50 follow-up)', () => {
     expect(out.code).toBe('city_not_found');
   });
 
-  it('maps 23503 without any "city" hint → address_invalid', () => {
+  it('maps 23503 owner FK → forbidden', () => {
     const out = mapInsertError(pg('23503', 'violates foreign key constraint posts_owner_fkey'));
-    expect(out.code).toBe('address_invalid');
+    expect(out.code).toBe('forbidden');
   });
 
   // ── 23514 check_violation ───────────────────────────────────────────────
@@ -44,6 +44,21 @@ describe('mapInsertError (TD-50 follow-up)', () => {
     expect(out.code).toBe('address_invalid');
   });
 
+  it('maps 23514 active_post_limit_exceeded → active_post_limit_exceeded', () => {
+    const out = mapInsertError(pg('23514', 'active_post_limit_exceeded', 'limit=20'));
+    expect(out.code).toBe('active_post_limit_exceeded');
+  });
+
+  it('maps 23514 item_condition check → condition_required_for_give', () => {
+    const out = mapInsertError(pg('23514', 'violates posts_item_condition_check'));
+    expect(out.code).toBe('condition_required_for_give');
+  });
+
+  it('maps 23514 street (not street_number) check → address_required', () => {
+    const out = mapInsertError(pg('23514', 'violates posts_street_check'));
+    expect(out.code).toBe('address_required');
+  });
+
   // ── 23502 not_null_violation ────────────────────────────────────────────
   it('maps 23502 → address_required', () => {
     const out = mapInsertError(pg('23502', 'null value in column "city" violates not-null'));
@@ -51,9 +66,9 @@ describe('mapInsertError (TD-50 follow-up)', () => {
   });
 
   // ── 42501 insufficient_privilege ────────────────────────────────────────
-  it('maps 42501 → forbidden', () => {
+  it('maps 42501 → followers_only_requires_private', () => {
     const out = mapInsertError(pg('42501', 'new row violates row-level security policy'));
-    expect(out.code).toBe('forbidden');
+    expect(out.code).toBe('followers_only_requires_private');
   });
 
   // ── Fallthrough ─────────────────────────────────────────────────────────

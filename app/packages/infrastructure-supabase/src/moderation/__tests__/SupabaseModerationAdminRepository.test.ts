@@ -10,7 +10,7 @@ import { SupabaseModerationAdminRepository } from '../SupabaseModerationAdminRep
 /* eslint-disable @typescript-eslint/no-explicit-any */
 
 interface FakeOpts {
-  isAdminData?: { is_super_admin: boolean } | null;
+  isAdminResult?: boolean | null;
   isAdminError?: { code?: string; message: string } | null;
   rpcError?: { code?: string; message: string } | null;
   auditData?: any[];
@@ -20,18 +20,11 @@ interface Calls { rpcs: { fn: string; args: unknown }[] }
 function makeFakeClient(opts: FakeOpts = {}): { client: SupabaseClient<any>; calls: Calls } {
   const calls: Calls = { rpcs: [] };
   const client = {
-    from: () => ({
-      select: () => ({
-        eq: () => ({
-          maybeSingle: async () => ({
-            data: opts.isAdminData ?? null,
-            error: opts.isAdminError ?? null,
-          }),
-        }),
-      }),
-    }),
     rpc: async (fn: string, args: unknown) => {
       calls.rpcs.push({ fn, args });
+      if (fn === 'is_admin') {
+        return { data: opts.isAdminResult ?? null, error: opts.isAdminError ?? null };
+      }
       if (fn === 'admin_audit_lookup_guarded') {
         return { data: opts.auditData ?? [], error: opts.rpcError ?? null };
       }
@@ -82,22 +75,25 @@ describe('SupabaseModerationAdminRepository — error mapping (SQLSTATE → type
 });
 
 describe('SupabaseModerationAdminRepository — isUserAdmin', () => {
-  it('returns true when is_super_admin === true', async () => {
-    const { client } = makeFakeClient({ isAdminData: { is_super_admin: true } });
+  // TD-163: is_super_admin is no longer client-readable (0163 revoked the column
+  // grant); admin status is resolved via the SECURITY DEFINER is_admin(uid) RPC.
+  it('calls is_admin(uid) and returns true when it returns true', async () => {
+    const { client, calls } = makeFakeClient({ isAdminResult: true });
     expect(await new SupabaseModerationAdminRepository(client).isUserAdmin('u_1')).toBe(true);
+    expect(calls.rpcs).toContainEqual({ fn: 'is_admin', args: { uid: 'u_1' } });
   });
 
-  it('returns false when is_super_admin === false', async () => {
-    const { client } = makeFakeClient({ isAdminData: { is_super_admin: false } });
+  it('returns false when is_admin() returns false', async () => {
+    const { client } = makeFakeClient({ isAdminResult: false });
     expect(await new SupabaseModerationAdminRepository(client).isUserAdmin('u_1')).toBe(false);
   });
 
-  it('returns false when the row is missing (strict === true check)', async () => {
-    const { client } = makeFakeClient({ isAdminData: null });
+  it('returns false when is_admin() returns null (strict === true check)', async () => {
+    const { client } = makeFakeClient({ isAdminResult: null });
     expect(await new SupabaseModerationAdminRepository(client).isUserAdmin('u_1')).toBe(false);
   });
 
-  it('routes query errors through the SQLSTATE mapper', async () => {
+  it('routes RPC errors through the SQLSTATE mapper', async () => {
     const { client } = makeFakeClient({ isAdminError: { code: '42501', message: 'rls' } });
     await expect(new SupabaseModerationAdminRepository(client).isUserAdmin('u_1')).rejects.toBeInstanceOf(
       ModerationForbiddenError,
@@ -180,5 +176,35 @@ describe('SupabaseModerationAdminRepository — auditLookup', () => {
       metadata: { reason: 'abuse' }, createdAt: '2026-05-16T12:00:00.000Z',
     });
     expect(out[1]).toMatchObject({ actorId: null, targetType: null, targetId: null, metadata: {} });
+  });
+});
+
+describe('SupabaseModerationAdminRepository — getMyRoles', () => {
+  function clientReturning(data: unknown, error: unknown = null): { client: SupabaseClient<any>; calls: string[] } {
+    const calls: string[] = [];
+    const client = {
+      rpc: async (fn: string) => {
+        calls.push(fn);
+        return { data, error };
+      },
+    } as unknown as SupabaseClient<any>;
+    return { client, calls };
+  }
+
+  it('calls get_my_admin_roles and parses the array, dropping unknown roles', async () => {
+    const { client, calls } = clientReturning(['super_admin', 'moderator', 'emperor']);
+    const out = await new SupabaseModerationAdminRepository(client).getMyRoles();
+    expect(out).toEqual(['super_admin', 'moderator']);
+    expect(calls).toContain('get_my_admin_roles');
+  });
+
+  it('returns [] on RPC error (fail-closed)', async () => {
+    const { client } = clientReturning(null, { message: 'boom' });
+    expect(await new SupabaseModerationAdminRepository(client).getMyRoles()).toEqual([]);
+  });
+
+  it('returns [] when data is not an array', async () => {
+    const { client } = clientReturning('nope');
+    expect(await new SupabaseModerationAdminRepository(client).getMyRoles()).toEqual([]);
   });
 });

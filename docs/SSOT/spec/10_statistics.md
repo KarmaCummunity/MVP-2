@@ -1,6 +1,6 @@
 # 2.10 Personal & Community Statistics
 
-> **Status:** ✅ Done — Personal stats screen (`/stats`), counters from `users`, community panel from `community_stats`, activity timeline from `user_personal_activity_log` + `rpc_my_activity_timeline` (migrations `0044_personal_activity_log`, `0045_stats_recompute_nightly`). Nightly `stats_recompute_personal_counters_nightly` + `stats_drift_events` + pg_cron job `stats_recompute_nightly` satisfy **FR-STATS-005** (operator: enable `pg_cron`, see `OPERATOR_RUNBOOK.md`). ⚠️ Audit 2026-05-16: FR-STATS-001 AC2 "reactive" is focus-only (no `users`-row Realtime); FR-STATS-006 AC2 says auth-only but view is granted to `anon` to satisfy FR-FEED-014 (spec contradiction); FR-STATS-003 AC1 caps at 30 but use case allows 50; section order on screen is community-first, spec is counters-first. TD-98. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`.
+> **Status:** ✅ Done — Personal stats screen (`/stats`), counters from `users`, community panel from `community_stats`, activity timeline from `user_personal_activity_log` + `rpc_my_activity_timeline` (migrations `0044_personal_activity_log`, `0045_stats_recompute_nightly`). Nightly `stats_recompute_personal_counters_nightly` + `stats_drift_events` + pg_cron job `stats_recompute_nightly` satisfy **FR-STATS-005** (operator: enable `pg_cron`, see `OPERATOR_RUNBOOK.md`). ⚠️ Audit 2026-05-16 (partial): FR-STATS-001 AC2 "reactive" focus-only gap **closed by FR-KARMA-009** — `useMeRealtime` (`_layout.tsx`) subscribes persistently to `postgres_changes UPDATE` on own `users` row and patches the React Query cache, so counters update live without a focus-refetch. Remaining open items tracked in TD-98: FR-STATS-006 AC2 says auth-only but view is granted to `anon` to satisfy FR-FEED-014 (spec contradiction); FR-STATS-003 AC1 caps at 30 but use case allows 50; section order on screen is community-first, spec is counters-first. See `docs/SSOT/audit/2026-05-16/06_donations_stats_settings.md`.
 
 
 
@@ -61,7 +61,7 @@ Each counter has precise increment/decrement rules.
    - +1 when a `Recipient` row is created (post owner marked the user).
    - −1 when a `Recipient` row is deleted (reopen, un-mark, post removal).
 - AC3. **Active posts** (`active_posts_count_internal`):
-   - Equal to count of posts where `owner = user`, `status = open`, and `visibility <> 'OnlyMe'` (hidden posts are excluded from stats and the profile headline counter).
+   - Equal to count of posts where `owner = user`, `status ∈ {open, closed_delivered, deleted_no_recipient}`, and `visibility <> 'OnlyMe'` (hidden posts are excluded; closed posts are included — same semantics as `FR-PROFILE-013` AC1).
    - The public-projection variant (`active_posts_count_public`, `FR-PROFILE-013`) is not surfaced on this screen.
 - AC4. Counters never go below zero; an attempt is treated as a domain integrity error and triggers an alert (`NFR-RELI-005`).
 

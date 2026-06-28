@@ -61,6 +61,8 @@ export function mapPostRow(row: PostJoinedRow): Post {
     ownerId: row.owner_id,
     type: row.type as PostType,
     status: row.status as PostStatus,
+    statusBeforeAdminRemoval:
+      (row.status_before_admin_removal as 'open' | 'closed_delivered' | 'deleted_no_recipient' | null) ?? null,
     visibility: row.visibility as PostVisibility,
     title: row.title,
     description: row.description,
@@ -69,6 +71,7 @@ export function mapPostRow(row: PostJoinedRow): Post {
     locationDisplayLevel: row.location_display_level as LocationDisplayLevel,
     itemCondition: (row.item_condition as ItemCondition | null) ?? null,
     urgency: row.urgency,
+    estimatedValue: (row as { estimated_value?: number | null }).estimated_value ?? null,
     mediaAssets: media.map(mapMediaAsset),
     recipient: row.recipient
       ? {

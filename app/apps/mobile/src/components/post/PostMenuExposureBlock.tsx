@@ -1,11 +1,18 @@
 // FR-POST-003, FR-POST-021 + D-32 — exposure controls inside post ⋮ menu (detail).
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { ActivityIndicator, Text, View } from 'react-native';
 import { useTranslation } from 'react-i18next';
-import type { PostVisibility } from '@kc/domain';
-import { colors, PlatformSwitch, radius, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, spacing, typography } from '@kc/ui';
+import { CounterpartyIdentityCard } from './CounterpartyIdentityCard';
 import { usePostActorPrivacyModel } from '../../hooks/usePostActorPrivacyModel';
 import type { PostWithOwner } from '@kc/application';
 import { useFeedSessionStore } from '../../store/feedSessionStore';
+import {
+  crossAxisAlignStart,
+  layoutDirectionStyle,
+  layoutWritingDirectionStyle,
+  textAlignStart,
+} from '../../lib/rtlLayout';
+import { VisibilityChooser } from './VisibilityChooser';
 
 interface Props {
   readonly post: PostWithOwner;
@@ -14,169 +21,89 @@ interface Props {
 
 export function PostMenuExposureBlock({ post, viewerId }: Props) {
   const { t } = useTranslation();
+  const styles = usePostMenuExposureBlockStyles();
   const m = usePostActorPrivacyModel(post, viewerId);
-  const followersLocked = m.profilePrivacy === 'Public';
-  const v = m.audienceValue;
+  const isClosed = post.status === 'closed_delivered';
 
   const onFollowersBlocked = () =>
     useFeedSessionStore.getState().showEphemeralToast(t('post.visibilityFollowersLockedSub'), 'success', 3200);
 
-  const onPublicFollowersSwitch = (wantPublic: boolean) => {
-    if (m.saving) return;
-    const next: PostVisibility = wantPublic ? 'Public' : 'FollowersOnly';
-    if (next === 'FollowersOnly' && followersLocked) {
-      onFollowersBlocked();
-      return;
-    }
-    if (next === v) return;
-    m.onAudienceChange(next);
-  };
-
-  const onPressHide = () => {
-    if (m.saving || v === 'OnlyMe') return;
-    m.onAudienceChange('OnlyMe');
-  };
-
   return (
-    <View style={styles.wrap}>
-      <Text style={styles.subheading}>{t('post.exposureSettingsSectionTitle')}</Text>
+    <View style={styles.card}>
+      <View style={styles.header}>
+        <Text style={styles.title}>{t('post.exposureSettingsSectionTitle')}</Text>
+        {isClosed ? (
+          <Text style={styles.hint}>{t('post.menuExposureClosedHint')}</Text>
+        ) : null}
+      </View>
 
-      {v === 'OnlyMe' ? (
-        <View style={styles.onlyMeBanner}>
-          <Text style={styles.onlyMeText}>{t('post.exposureOnlyMeActive')}</Text>
-          <View style={styles.upgradeRow}>
-            <TouchableOpacity
-              style={[styles.upgradeChip, m.saving && styles.disabled]}
-              disabled={m.saving}
-              onPress={() => {
-                if (m.saving) return;
-                m.onAudienceChange('Public');
-              }}
-            >
-              <Text style={styles.upgradeChipText}>{t('post.visibilityPublic')}</Text>
-            </TouchableOpacity>
-            <TouchableOpacity
-              style={[styles.upgradeChip, (m.saving || followersLocked) && styles.disabled]}
-              disabled={m.saving || followersLocked}
-              onPress={() => {
-                if (m.saving) return;
-                if (followersLocked) {
-                  onFollowersBlocked();
-                  return;
-                }
-                m.onAudienceChange('FollowersOnly');
-              }}
-            >
-              <Text style={styles.upgradeChipText}>{t('post.visibilityFollowers')}</Text>
-            </TouchableOpacity>
-          </View>
-        </View>
-      ) : (
-        <View style={styles.switchRow}>
-          <Text style={styles.switchLabel}>{t('post.visibilityFollowers')}</Text>
-          <PlatformSwitch
-            value={v === 'Public'}
-            onValueChange={onPublicFollowersSwitch}
-            disabled={m.saving}
-          />
-          <Text style={styles.switchLabel}>{t('post.visibilityPublic')}</Text>
-        </View>
-      )}
-
-      <TouchableOpacity
-        style={[styles.hideBtn, v === 'OnlyMe' && styles.hideBtnSelected, m.saving && styles.hideBtnDisabled]}
-        onPress={onPressHide}
-        disabled={m.saving || v === 'OnlyMe'}
-        accessibilityRole="button"
-        accessibilityState={{ selected: v === 'OnlyMe', disabled: m.saving || v === 'OnlyMe' }}
-      >
-        <Text style={[styles.hideBtnLabel, v === 'OnlyMe' && styles.hideBtnLabelSelected]}>
-          {t('post.exposureHideOnlyMe')}
-        </Text>
-      </TouchableOpacity>
+      <VisibilityChooser
+        value={m.audienceValue}
+        onChange={m.onAudienceChange}
+        profilePrivacy={m.profilePrivacy}
+        disabled={m.saving}
+        onFollowersOnlyBlockedPress={onFollowersBlocked}
+      />
 
       {m.showCounterpartyRow ? (
-        <View style={styles.partnerRow}>
-          <Text style={styles.partnerLabel}>{t('post.counterpartyMaskLabel')}</Text>
-          <PlatformSwitch
-            value={m.hide}
-            onValueChange={(next) => {
-              if (m.saving) return;
-              m.onHideChange(next);
-            }}
-            disabled={m.saving}
-          />
+        <CounterpartyIdentityCard
+          value={m.hide}
+          onChange={(next) => {
+            if (m.saving) return;
+            m.onHideChange(next);
+          }}
+          disabled={m.saving}
+        />
+      ) : null}
+
+      {m.saving ? (
+        <View style={styles.savingRow}>
+          <ActivityIndicator size="small" />
+          <Text style={styles.savingText}>{t('post.menuExposureSaving')}</Text>
         </View>
       ) : null}
     </View>
   );
 }
 
-const styles = StyleSheet.create({
-  wrap: {
-    paddingHorizontal: spacing.md,
-    paddingTop: spacing.sm,
-    paddingBottom: spacing.sm,
-    borderTopWidth: StyleSheet.hairlineWidth,
-    borderTopColor: colors.border,
+const usePostMenuExposureBlockStyles = makeUseStyles(({ colors }) => ({
+  card: {
+    marginHorizontal: spacing.md,
+    marginTop: spacing.sm,
+    marginBottom: spacing.xs,
+    padding: spacing.md,
     gap: spacing.sm,
+    borderRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: colors.border,
+    backgroundColor: colors.background,
+    ...layoutDirectionStyle(),
   },
-  subheading: {
-    ...typography.label,
+  header: { gap: spacing.xs, alignItems: crossAxisAlignStart },
+  title: {
+    ...typography.semiBold,
+    fontSize: 15,
+    color: colors.textPrimary,
+    textAlign: textAlignStart(),
+    ...layoutWritingDirectionStyle(),
+  },
+  hint: {
+    ...typography.caption,
     color: colors.textSecondary,
-    textAlign: 'right',
-    marginTop: spacing.xs,
+    textAlign: textAlignStart(),
+    lineHeight: 18,
+    ...layoutWritingDirectionStyle(),
   },
-  switchRow: {
-    flexDirection: 'row-reverse',
+  savingRow: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingVertical: spacing.sm,
-    gap: spacing.md,
+    justifyContent: 'center',
+    gap: spacing.xs,
+    paddingTop: spacing.xs,
   },
-  switchLabel: { ...typography.bodySmall, color: colors.textPrimary, flexShrink: 1, textAlign: 'center' },
-  onlyMeBanner: {
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    gap: spacing.sm,
+  savingText: {
+    ...typography.caption,
+    color: colors.textSecondary,
+    ...layoutWritingDirectionStyle(),
   },
-  onlyMeText: { ...typography.bodySmall, color: colors.textPrimary, textAlign: 'right' },
-  upgradeRow: { flexDirection: 'row-reverse', gap: spacing.sm, justifyContent: 'flex-end' },
-  upgradeChip: {
-    paddingVertical: spacing.xs,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.sm,
-    borderWidth: 1,
-    borderColor: colors.primary,
-    backgroundColor: colors.primarySurface,
-  },
-  upgradeChipText: { ...typography.bodySmall, color: colors.primary, textAlign: 'center' },
-  disabled: { opacity: 0.45 },
-  hideBtn: {
-    paddingVertical: spacing.md,
-    paddingHorizontal: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1.5,
-    borderColor: colors.border,
-    backgroundColor: colors.surface,
-    alignItems: 'flex-end',
-  },
-  hideBtnSelected: { borderColor: colors.primary, backgroundColor: colors.primarySurface },
-  hideBtnDisabled: { opacity: 0.55 },
-  hideBtnLabel: { ...typography.body, color: colors.textPrimary, textAlign: 'right' },
-  hideBtnLabelSelected: { color: colors.primary },
-  partnerRow: {
-    marginTop: spacing.xs,
-    padding: spacing.md,
-    borderRadius: radius.md,
-    borderWidth: 1,
-    borderColor: colors.border,
-    flexDirection: 'row-reverse',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
-  partnerLabel: { ...typography.bodySmall, flex: 1, color: colors.textPrimary, textAlign: 'right' },
-});
+}));

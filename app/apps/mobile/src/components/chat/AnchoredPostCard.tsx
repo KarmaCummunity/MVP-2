@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Ionicons } from '@expo/vector-icons';
-import { colors, radius, shadow, spacing, typography } from '@kc/ui';
+import { makeUseStyles, radius, shadow, spacing, typography, useTheme } from '@kc/ui';
 import type { GestureResponderEvent } from 'react-native';
 import type { PostType } from '@kc/domain';
 import { getPostByIdUseCase } from '../../services/postsComposition';
@@ -17,6 +17,8 @@ import { ClosureExplainerSheet } from '../closure/ClosureExplainerSheet';
 import { invalidatePersonalStatsCaches } from '../../lib/invalidatePersonalStatsCaches';
 import { invalidateMyProfilePostQueries } from '../../lib/invalidateMyProfilePostQueries';
 import { AnchoredPostCardPreview } from './AnchoredPostCardPreview';
+import { rowDirectionStart } from '../../lib/rtlLayout';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 interface Props {
   chatId: string;
@@ -33,6 +35,8 @@ const TYPE_LABEL_KEYS: Record<PostType, string> = {
 
 export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId }: Props) {
   const { t } = useTranslation();
+  const styles = useAnchoredPostCardStyles();
+  const { colors } = useTheme();
   const router = useRouter();
   const queryClient = useQueryClient();
   const startClosure = useClosureStore((s) => s.start);
@@ -45,16 +49,17 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
     queryKey: ['post', anchorPostId, viewerId],
     queryFn: () => getPostByIdUseCase().execute({ postId: anchorPostId!, viewerId }),
     enabled: Boolean(anchorPostId),
+    staleTime: 60_000, // PERF-3: chat anchored post — closure event invalidates explicitly
   });
 
-  // FR-CHAT-014 AC7 — surface counterpart's optional contact phone as a tel: link.
-  const counterpartQuery = useQuery({
-    queryKey: ['user', counterpartId],
-    queryFn: () => getUserRepo().findById(counterpartId!),
+  // FR-CHAT-014 AC7 — counterpart contact phone via chat-scoped RPC (TD-163).
+  const counterpartPhoneQuery = useQuery({
+    queryKey: ['chat-counterparty-contact', chatId],
+    queryFn: () => getUserRepo().getChatCounterpartyContact(chatId),
     enabled: Boolean(counterpartId),
     staleTime: 60_000,
   });
-  const counterpartPhone = counterpartQuery.data?.contactPhone ?? null;
+  const counterpartPhone = counterpartPhoneQuery.data ?? null;
 
   // When a `post_closed` system message lands in this chat, invalidate the
   // post query so the card hides — but only when there is no active closure
@@ -186,9 +191,9 @@ export function AnchoredPostCard({ chatId, anchorPostId, viewerId, counterpartId
   );
 }
 
-const styles = StyleSheet.create({
+const useAnchoredPostCardStyles = makeUseStyles(({ colors }) => ({
   card: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     gap: spacing.md,
     marginHorizontal: spacing.base,
@@ -216,11 +221,11 @@ const styles = StyleSheet.create({
   title: {
     ...typography.body,
     color: colors.textPrimary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     fontWeight: '600',
   },
   phoneRow: {
-    flexDirection: 'row-reverse',
+    flexDirection: rowDirectionStart,
     alignItems: 'center',
     gap: 4,
     alignSelf: 'flex-end',
@@ -239,4 +244,4 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   ctaText: { ...typography.button, color: colors.textInverse, fontSize: 14 },
-});
+}));

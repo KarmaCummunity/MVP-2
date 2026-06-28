@@ -2,13 +2,14 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, Pressable } from 'react-native';
 import { WebView } from 'react-native-webview';
 import { useTranslation } from 'react-i18next';
-import { colors, typography, spacing, radius } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, useTheme } from '@kc/ui';
 import { Ionicons } from '@expo/vector-icons';
 import { AnimatedEntry } from '../../components/animations/AnimatedEntry';
 import { MOTION, staggerDelay } from '../../lib/animations/motion';
 import { ABOUT_INSTAGRAM_EMBED_URL, ABOUT_INSTAGRAM_PROFILE_URL } from './aboutExternalLinks';
 import { aboutOpenExternalUrl } from './aboutOpenExternalUrl';
-import { aboutWebTextRtl } from './aboutWebRtlStyle';
+import { aboutWebTextRtl, aboutRtlRow } from './aboutWebRtlStyle';
+import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 export interface AboutInstagramEmbedProps {
   readonly title: string;
@@ -26,6 +27,8 @@ export function AboutInstagramEmbed({
   webFallbackTitle: _webFallbackTitle,
 }: AboutInstagramEmbedProps) {
   const { t } = useTranslation();
+  const styles = useAboutInstagramEmbedStyles();
+  const { colors } = useTheme();
   const [embedFailed, setEmbedFailed] = useState(false);
 
   const openProfile = () =>
@@ -46,6 +49,8 @@ export function AboutInstagramEmbed({
               source={{ uri: ABOUT_INSTAGRAM_EMBED_URL }}
               style={styles.web}
               scrollEnabled
+              originWhitelist={['https://*']}
+              onShouldStartLoadWithRequest={(req) => req.url.startsWith('https://')}
               onError={() => setEmbedFailed(true)}
               onHttpError={() => setEmbedFailed(true)}
               accessibilityLabel={title}
@@ -71,13 +76,13 @@ export function AboutInstagramEmbed({
   );
 }
 
-const styles = StyleSheet.create({
+const useAboutInstagramEmbedStyles = makeUseStyles(({ colors }) => ({
   wrap: { gap: spacing.md },
-  title: { ...typography.h4, color: colors.textPrimary, textAlign: 'right', ...aboutWebTextRtl },
+  title: { ...typography.h4, color: colors.textPrimary, textAlign: rtlTextAlignStart, ...aboutWebTextRtl },
   caption: {
     ...typography.body,
     color: colors.textSecondary,
-    textAlign: 'right',
+    textAlign: rtlTextAlignStart,
     ...aboutWebTextRtl,
     lineHeight: 24,
   },
@@ -90,9 +95,9 @@ const styles = StyleSheet.create({
     backgroundColor: colors.surface,
   },
   web: { flex: 1, backgroundColor: colors.surface },
-  note: { ...typography.caption, color: colors.textSecondary, textAlign: 'right', ...aboutWebTextRtl },
+  note: { ...typography.caption, color: colors.textSecondary, textAlign: rtlTextAlignStart, ...aboutWebTextRtl },
   cta: {
-    flexDirection: 'row-reverse',
+    flexDirection: aboutRtlRow,
     alignItems: 'center',
     justifyContent: 'center',
     gap: spacing.sm,
@@ -102,4 +107,4 @@ const styles = StyleSheet.create({
   },
   ctaPressed: { opacity: 0.9 },
   ctaText: { ...typography.button, color: colors.textInverse, ...aboutWebTextRtl },
-});
+}));

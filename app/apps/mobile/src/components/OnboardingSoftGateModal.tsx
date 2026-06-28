@@ -6,13 +6,12 @@ import {
   Text,
   TextInput,
   TouchableOpacity,
-  StyleSheet,
   ActivityIndicator,
   KeyboardAvoidingView,
   Platform,
   ScrollView,
 } from 'react-native';
-import { colors, typography, spacing, radius, shadow } from '@kc/ui';
+import { makeUseStyles, typography, spacing, radius, shadow, useTheme } from '@kc/ui';
 import { EditProfileAddressBlock } from './EditProfileAddressBlock';
 import { NotifyModal } from './NotifyModal';
 import { useAuthStore } from '../store/authStore';
@@ -21,6 +20,7 @@ import { mapEditProfileSaveError } from '../lib/editProfileSaveErrors';
 import { getProfileAddressPairIssue } from '../lib/profileAddressFieldGate';
 import { useFeedSessionStore } from '../store/feedSessionStore';
 import { useTranslation } from 'react-i18next';
+import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
 
 interface Props {
   readonly visible: boolean;
@@ -29,6 +29,8 @@ interface Props {
 }
 
 export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
+  const styles = useStyles();
+  const { colors } = useTheme();
   const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const setOnboardingState = useAuthStore((s) => s.setOnboardingState);
@@ -63,6 +65,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
     setSaving(true);
     try {
       await getCompleteBasicInfoUseCase().execute({
+        sessionUserId: session.userId,
         userId: session.userId,
         displayName,
         cityId: city.id,
@@ -115,7 +118,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                   placeholder={t('onboarding.fullNamePlaceholder')}
                   placeholderTextColor={colors.textDisabled}
                   maxLength={50}
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!saving}
                 />
               </View>
@@ -140,7 +143,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
                   placeholderTextColor={colors.textDisabled}
                   maxLength={20}
                   keyboardType="phone-pad"
-                  textAlign="right"
+                  textAlign={rtlTextAlignStart}
                   editable={!saving}
                 />
               </View>
@@ -170,7 +173,7 @@ export function OnboardingSoftGateModal({ visible, onClose, onSaved }: Props) {
   );
 }
 
-const styles = StyleSheet.create({
+const useStyles = makeUseStyles(({ colors, isDark }) => ({
   backdrop: {
     flex: 1,
     backgroundColor: 'rgba(0,0,0,0.45)',
@@ -180,17 +183,20 @@ const styles = StyleSheet.create({
   kav: { width: '100%' },
   card: {
     backgroundColor: colors.surface,
+
+    borderWidth: isDark ? 1 : 0,
+    borderColor: isDark ? colors.border : 'transparent',
     borderRadius: radius.lg,
     maxHeight: '85%',
     ...shadow.card,
   },
   cardContent: { padding: spacing.lg, gap: spacing.base },
   headerRow: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
-  title: { ...typography.h2, color: colors.textPrimary, textAlign: 'right' },
+  title: { ...typography.h2, color: colors.textPrimary, textAlign: rtlTextAlignStart },
   cancel: { ...typography.body, color: colors.textSecondary },
-  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: 'right' },
+  subtitle: { ...typography.body, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   field: { gap: spacing.xs },
-  label: { ...typography.label, color: colors.textSecondary, textAlign: 'right' },
+  label: { ...typography.label, color: colors.textSecondary, textAlign: rtlTextAlignStart },
   input: {
     height: 50,
     backgroundColor: colors.background,
@@ -210,4 +216,4 @@ const styles = StyleSheet.create({
     marginTop: spacing.sm,
   },
   ctaText: { ...typography.button, color: colors.textInverse },
-});
+}));

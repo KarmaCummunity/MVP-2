@@ -1,0 +1,60 @@
+name: CI — PR hygiene
+
+on:
+  pull_request:
+    branches: [main, dev]
+    types: [opened, synchronize, reopened, ready_for_review]
+
+concurrency:
+  group: ci-pr-${{ github.event.pull_request.number }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+  pull-requests: read
+
+jobs:
+  pr-hygiene:
+    name: PR hygiene
+    if: github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 2
+    steps:
+      - name: Require Conventional Commits PR title
+        uses: amannn/action-semantic-pull-request@v5
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        with:
+          types: |
+            feat
+            fix
+            refactor
+            chore
+            docs
+            test
+            perf
+            build
+            ci
+            style
+          requireScope: false
+          subjectPattern: ^(?![A-Z]).+$
+          subjectPatternError: |
+            The PR title subject must start with a lowercase letter
+            (Conventional Commits style).
+
+      # Bot-authored PRs (dependabot dependency bumps) have no spec mapping and
+      # never will — requiring it permanently wedges every dependency-update PR.
+      # Skip the body check for them; the Conventional Commits title rule above
+      # still applies (dependabot uses `chore(deps): …`).
+      - name: Require "Mapped to spec" line in PR body
+        if: github.event.pull_request.user.login != 'dependabot[bot]'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const body = context.payload.pull_request.body || '';
+            if (!/Mapped to spec/i.test(body)) {
+              core.setFailed(
+                'PR body is missing a "Mapped to spec" section. ' +
+                'See .github/PULL_REQUEST_TEMPLATE.md.'
+              );
+            }

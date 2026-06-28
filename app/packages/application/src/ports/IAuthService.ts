@@ -26,6 +26,23 @@ export interface AuthSession {
   readonly avatarUrl: string | null;
 }
 
+/** Patch for `IAuthService.syncProfileMetadata` — mirrors `public.users` display fields. */
+export interface AuthProfileMetadataPatch {
+  readonly displayName?: string;
+  readonly avatarUrl?: string | null;
+}
+
+/**
+ * FR-AUTH-004: Apple identity credential exchanged for a Supabase session.
+ * Produced by the native Sign in with Apple sheet in the mobile composition root.
+ */
+export interface AppleIdentityCredential {
+  /** Apple identity token (JWT) returned by the native authorization. */
+  readonly identityToken: string;
+  /** Un-hashed nonce; Supabase verifies SHA-256(rawNonce) against the token's claim. */
+  readonly rawNonce: string;
+}
+
 export interface IAuthService {
   /**
    * Create a new credentialed user. Returns the active session, or null if
@@ -51,6 +68,13 @@ export interface IAuthService {
   exchangeCodeForSession(code: string): Promise<AuthSession>;
 
   /**
+   * FR-AUTH-004 (iOS Sign in with Apple). Exchange the Apple identity token from
+   * the native authorization sheet for a Supabase session. Supabase auto-routes
+   * by `sub`: a new Apple user is signed up, an existing one is signed in.
+   */
+  signInWithApple(credential: AppleIdentityCredential): Promise<AuthSession>;
+
+  /**
    * FR-AUTH-006 (MVP gate): resend the signup verification email to `email`.
    * `emailRedirectTo` controls where the link lands after Supabase verifies the
    * token. Throws AuthError('rate_limited', ...) on too-frequent calls.
@@ -65,4 +89,10 @@ export interface IAuthService {
    * link) for an authenticated session.
    */
   verifyEmail(tokenHash: string): Promise<AuthSession>;
+
+  /**
+   * FR-PROFILE-007 / FR-AUTH-003 AC5: keep Supabase Auth `user_metadata` aligned with
+   * `public.users` so cold-start `AuthSession` matches the profile the UI reads from DB.
+   */
+  syncProfileMetadata(patch: AuthProfileMetadataPatch): Promise<void>;
 }

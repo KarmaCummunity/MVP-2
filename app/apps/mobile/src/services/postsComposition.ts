@@ -26,6 +26,7 @@ import {
   ListPostActorIdentityUseCase,
   MarkAsDeliveredUseCase,
   ReopenPostUseCase,
+  RepublishPostUseCase,
   UnmarkRecipientSelfUseCase,
   UpdatePostUseCase,
   UpsertPostActorIdentityUseCase,
@@ -46,6 +47,7 @@ let _myPosts: GetMyPostsUseCase | null = null;
 let _profileClosedPosts: GetProfileClosedPostsUseCase | null = null;
 let _markDelivered: MarkAsDeliveredUseCase | null = null;
 let _reopen: ReopenPostUseCase | null = null;
+let _republish: RepublishPostUseCase | null = null;
 let _unmrkRecipientSelf: UnmarkRecipientSelfUseCase | null = null;
 let _getClosureCandidates: GetClosureCandidatesUseCase | null = null;
 let _getActivePostsCount: GetActivePostsCountUseCase | null = null;
@@ -113,6 +115,11 @@ export function getMarkAsDeliveredUseCase(): MarkAsDeliveredUseCase {
 export function getReopenPostUseCase(): ReopenPostUseCase {
   if (!_reopen) _reopen = new ReopenPostUseCase(getRepo());
   return _reopen;
+}
+
+export function getRepublishPostUseCase(): RepublishPostUseCase {
+  if (!_republish) _republish = new RepublishPostUseCase(getRepo());
+  return _republish;
 }
 
 export function getUnmarkRecipientSelfUseCase(): UnmarkRecipientSelfUseCase {
