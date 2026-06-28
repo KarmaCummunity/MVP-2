@@ -570,27 +570,6 @@ function canUseBackend() {
     return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
 
-function getBackendMode() {
-    return window.gloweBackend && window.gloweBackend.configured() ? 'supabase' : 'local';
-}
-
-function renderBackendModeNotice() {
-    if (getBackendMode() === 'supabase') {
-        return `
-            <div class="backend-mode-notice backend-mode-live">
-                <strong>Supabase connected</strong>
-                <span>Profile, posts, saved items, applications, and opportunities sync to the backend.</span>
-            </div>
-        `;
-    }
-    return `
-        <div class="backend-mode-notice">
-            <strong>Local demo mode</strong>
-            <span>Data is saved in this browser until Supabase URL and anon key are added in backend-config.js.</span>
-        </div>
-    `;
-}
-
 async function apiRequest(path, options = {}) {
     if (!canUseBackend()) return null;
     if (window.gloweBackend && window.gloweBackend.configured()) {
@@ -1038,10 +1017,11 @@ function normalizeHeaderUserMenu() {
     userMenu.style.display = 'none';
     // "Personal Area" already appears once as the primary nav tab when signed in
     // (see normalizeMainNavigation), so the greeting block keeps only the
-    // identity link + Log Out to avoid showing the label twice.
+    // identity link + Settings to avoid showing the label twice. Log Out now
+    // lives inside the Settings screen (see initSettingsPage).
     userMenu.innerHTML = `
         <a class="user-greeting" href="${prefix}my-applications.html">Hi, <span id="user-name">there</span></a>
-        <button class="btn btn-primary btn-small" type="button" onclick="logout()">Log Out</button>
+        <a class="btn btn-primary btn-small" href="${prefix}settings.html">Settings</a>
     `;
 }
 
@@ -4112,7 +4092,6 @@ function initMyApplicationsPage() {
                 </aside>
 
                 <div class="personal-main">
-                    ${renderBackendModeNotice()}
                     <section class="social-profile-hero" id="personal-profile">
                         <div class="social-cover"></div>
                         <div class="social-profile-row">
@@ -4131,6 +4110,7 @@ function initMyApplicationsPage() {
                                 <button class="btn btn-primary" type="button" onclick="openEditProfile()">Edit Profile</button>
                                 <button class="btn btn-outline" type="button" onclick="openPersonalProjectModal()">Add Project</button>
                                 <a class="btn btn-outline" href="community.html">Write Post</a>
+                                <a class="btn btn-outline" href="settings.html">Settings</a>
                             </div>
                         </div>
                     </section>
@@ -4236,6 +4216,85 @@ function initMyApplicationsPage() {
     });
 }
 
+const GLOWE_LANG_KEY = 'gloweLang';
+
+function getGloweLanguage() {
+    return localStorage.getItem(GLOWE_LANG_KEY) || 'en';
+}
+
+function setGloweLanguage(lang) {
+    localStorage.setItem(GLOWE_LANG_KEY, lang);
+    // Full Hebrew translation + RTL is on the roadmap; persist the choice now so
+    // the switch is ready the moment localized copy ships.
+    showSuccessModal(
+        'Language preference saved',
+        lang === 'he'
+            ? 'Hebrew is on the way. Your preference is saved and will apply once Hebrew is available.'
+            : 'GloWe is shown in English.'
+    );
+}
+
+// Settings page: account summary, language preference, and session controls.
+function initSettingsPage() {
+    const container = document.getElementById('settings-content');
+    if (!container) return;
+
+    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
+    if (!loggedIn) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Sign in to manage settings</h3>
+                <p>Your account, language, and session options live here once you are signed in.</p>
+                <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
+            </div>
+        `;
+        return;
+    }
+
+    const profile = getPersonalProfile();
+    const lang = getGloweLanguage();
+    container.innerHTML = `
+        <div class="settings-grid">
+            <article class="profile-section-card">
+                <div class="profile-section-heading">
+                    <span>01</span>
+                    <h2>Account</h2>
+                </div>
+                <div class="profile-info-list">
+                    <p><strong>Name</strong><span>${escapeHtml(profile.name || 'GloWe member')}</span></p>
+                    <p><strong>Email</strong><span>${escapeHtml(profile.email || 'Not available')}</span></p>
+                    <p><strong>Account type</strong><span>${escapeHtml(profile.type || 'Community member')}</span></p>
+                </div>
+                <a class="btn btn-outline btn-small" href="my-applications.html">Open Personal Area</a>
+            </article>
+
+            <article class="profile-section-card">
+                <div class="profile-section-heading">
+                    <span>02</span>
+                    <h2>Language</h2>
+                </div>
+                <p class="muted-note">Choose the language for the GloWe interface. Hebrew (with right-to-left layout) is coming soon.</p>
+                <div class="form-group">
+                    <label for="settings-language">Interface language</label>
+                    <select id="settings-language" onchange="setGloweLanguage(this.value)">
+                        <option value="en"${lang === 'en' ? ' selected' : ''}>English</option>
+                        <option value="he"${lang === 'he' ? ' selected' : ''}>Hebrew (coming soon)</option>
+                    </select>
+                </div>
+            </article>
+
+            <article class="profile-section-card">
+                <div class="profile-section-heading">
+                    <span>03</span>
+                    <h2>Session</h2>
+                </div>
+                <p class="muted-note">End your session on this device. You can sign back in any time with Google.</p>
+                <button class="btn btn-primary" type="button" onclick="logout()">Log Out</button>
+            </article>
+        </div>
+    `;
+}
+
 // Page initialization
 document.addEventListener('DOMContentLoaded', function() {
     ensureGlobalUI();
@@ -4272,5 +4331,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initMyApplicationsPage();
     } else if (path.includes('admin.html')) {
         initAdminPage();
+    } else if (path.includes('settings.html')) {
+        initSettingsPage();
     }
 });
