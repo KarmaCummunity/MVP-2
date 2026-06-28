@@ -1,3 +1,5 @@
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@400;500;700&display=swap');
+
 /* ===== CSS Variables ===== */
 :root {
     --primary-color: #147c75;
@@ -5475,4 +5477,65 @@ a.user-greeting:hover {
     font-size: 0.9rem;
     color: var(--text-secondary);
     margin-bottom: 16px;
+}
+
+/* ===== FR-GLOWE-004: Hebrew interface + RTL ===== */
+/* Hebrew typography. dir="rtl" on <html> handles most layout mirroring
+   (flex order, default alignment, list markers) automatically; the rules
+   below cover spots with explicit physical alignment. */
+html[dir="rtl"] body,
+body.lang-he {
+    font-family: 'Assistant', 'Heebo', 'Rubik', 'Noto Sans Hebrew', 'Inter', system-ui, sans-serif;
+    line-height: 1.7;
+    letter-spacing: normal;
+}
+
+html[dir="rtl"] {
+    text-align: right;
+}
+
+/* Mirror the in-scope blocks that hard-code text-align:left. */
+html[dir="rtl"] .page-header h1,
+html[dir="rtl"] .page-header p,
+html[dir="rtl"] .wizard-heading h2,
+html[dir="rtl"] .path-grid button,
+html[dir="rtl"] .modal-content,
+html[dir="rtl"] .form-group label,
+html[dir="rtl"] .footer-section,
+html[dir="rtl"] .settings-grid {
+    text-align: right;
+}
+
+/* Inputs/selects keep their own direction so placeholders sit on the right. */
+html[dir="rtl"] input,
+html[dir="rtl"] select,
+html[dir="rtl"] textarea {
+    text-align: right;
+}
+
+/* Keep brand/identifier values left-to-right inside RTL text. */
+html[dir="rtl"] .logo-text,
+html[dir="rtl"] .lang-toggle {
+    direction: ltr;
+}
+
+/* Header language switch (visible on every page). */
+.lang-toggle {
+    flex: 0 0 auto;
+    min-width: 42px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 93, 85, 0.25);
+    background: var(--white);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.lang-toggle:hover {
+    background: rgba(15, 93, 85, 0.08);
+    box-shadow: 0 6px 16px rgba(15, 93, 85, 0.08);
 }
