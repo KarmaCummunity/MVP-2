@@ -241,6 +241,49 @@ a.user-greeting:hover {
     color: var(--primary-color);
 }
 
+.header-icon-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 40px;
+    height: 40px;
+    border-radius: 50%;
+    border: 1px solid var(--border-color);
+    background: var(--white);
+    color: var(--text-secondary);
+    text-decoration: none;
+    flex: 0 0 auto;
+    transition: color 0.2s ease, border-color 0.2s ease;
+}
+
+.header-icon-btn:hover {
+    color: var(--primary-color);
+    border-color: var(--primary-color);
+}
+
+.header-icon-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+.header-settings-btn {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    gap: 6px;
+}
+
+.header-settings-btn svg {
+    width: 20px;
+    height: 20px;
+}
+
+/* Settings keeps its text label on desktop; the gear icon is shown only on
+   phone widths (see the max-width: 680px block). */
+.header-settings-icon {
+    display: none;
+}
+
 /* ===== Hero Section ===== */
 .hero {
     background:
@@ -5013,18 +5056,41 @@ a.user-greeting:hover {
         font-size: 1.25rem;
     }
 
-    .auth-buttons,
-    .user-menu {
+    .auth-buttons {
         width: 100%;
         justify-content: stretch;
         gap: 8px;
     }
 
-    .auth-buttons .btn,
-    .user-menu .btn,
-    .user-menu a.btn {
+    .auth-buttons .btn {
         flex: 1 1 0;
         min-width: 0;
+    }
+
+    /* On phones the user-menu collapses to compact icon buttons aligned to the
+       end of the header, rather than full-width text buttons. */
+    .user-menu {
+        width: auto;
+        justify-content: flex-end;
+        gap: 8px;
+    }
+
+    .user-menu .header-icon-btn,
+    .user-menu a.header-settings-btn {
+        flex: 0 0 auto;
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        padding: 0;
+        border-radius: 50%;
+    }
+
+    .header-settings-label {
+        display: none;
+    }
+
+    .header-settings-icon {
+        display: inline-flex;
     }
 
     .user-greeting {
