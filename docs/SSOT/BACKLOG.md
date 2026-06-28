@@ -116,6 +116,7 @@
 | GLOWE.A2 | **Onboarding & account type** — post-sign-in onboarding modal; individual (no review) vs organization (admin-reviewed, view-only until approved); `glowe_profiles` columns + self-approval guard (migration `0205`) | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-002 |
 | GLOWE.A3 | **Org approval — backend** — super-admin RPCs `glowe_set_org_approval` + `glowe_list_pending_orgs` (migration `0206`) + regression test | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-003 AC1–AC3 |
 | GLOWE.A4 | **Org approval — frontend** — GloWe Admin review UI (approve/reject pending orgs); `canCreateContent()` write gating blocking post/event/need for unverified orgs & unregistered "peek" visitors | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-003 AC4–AC5 |
+| GLOWE.A5 | **Settings screen & cleanups** — remove user-facing Supabase/backend notice; add `settings.html` (Account / Language / Session) reachable from Personal Area + header; move Log Out into Settings; persist `gloweLang` as scaffold for the language selector | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-004 |
 | GLOWE.B | **Phase B — shared content** — map overlapping entities (profiles, posts) onto KC native tables via DB views; retire corresponding `glowe_*` tables | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase B) |
 | GLOWE.C | **Phase C — convergence** — GloWe as primary frontend, unified schema | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase C) |
 

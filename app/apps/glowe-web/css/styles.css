@@ -1801,31 +1801,14 @@ a.user-greeting:hover {
     gap: 20px;
 }
 
-.backend-mode-notice {
-    display: flex;
-    justify-content: space-between;
-    gap: 16px;
-    align-items: center;
-    padding: 14px 16px;
-    border: 1px solid var(--border-color);
-    border-radius: var(--radius-md);
-    background: #fff8e8;
-    color: var(--text-primary);
-    box-shadow: var(--shadow-sm);
+.settings-grid {
+    display: grid;
+    gap: 20px;
+    max-width: 720px;
 }
 
-.backend-mode-notice strong {
-    color: var(--primary-dark);
-    white-space: nowrap;
-}
-
-.backend-mode-notice span {
-    color: var(--text-secondary);
-    font-size: 0.92rem;
-}
-
-.backend-mode-live {
-    background: var(--primary-light);
+.settings-grid .form-group {
+    margin-top: 12px;
 }
 
 .social-profile-hero {
