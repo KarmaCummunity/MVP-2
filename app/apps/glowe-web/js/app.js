@@ -4219,22 +4219,278 @@ function initMyApplicationsPage() {
 }
 
 const GLOWE_LANG_KEY = 'gloweLang';
+const GLOWE_RTL_LANGS = ['he'];
 
 function getGloweLanguage() {
     return localStorage.getItem(GLOWE_LANG_KEY) || 'en';
 }
 
-function setGloweLanguage(lang) {
-    localStorage.setItem(GLOWE_LANG_KEY, lang);
-    // Full Hebrew translation + RTL is on the roadmap; persist the choice now so
-    // the switch is ready the moment localized copy ships.
-    showSuccessModal(
-        'Language preference saved',
-        lang === 'he'
-            ? 'Hebrew is on the way. Your preference is saved and will apply once Hebrew is available.'
-            : 'GloWe is shown in English.'
-    );
+// FR-GLOWE-004 — interface i18n. English is the base; only the chrome (nav,
+// auth, footer, modals, settings) and the home page are localized for now.
+// Untranslated copy intentionally falls back to English. Keys are the exact
+// English text nodes / attribute values produced by the page or by app.js.
+const GLOWE_TRANSLATIONS = {
+    he: {
+        // Header / navigation
+        'Home': 'בית',
+        'Personal Area': 'האזור האישי',
+        'Wishing Well': 'באר המשאלות',
+        'The Wishing Well': 'באר המשאלות',
+        'Wishes': 'משאלות',
+        'Organizations': 'ארגונים',
+        'Community': 'קהילה',
+        'Forums': 'פורומים',
+        'About': 'אודות',
+        'About Us': 'עלינו',
+        'Profile': 'פרופיל',
+        'Sign up / Sign in': 'הרשמה / כניסה',
+        'Log In': 'כניסה',
+        'Log in': 'כניסה',
+        'Join GloWe': 'הצטרפו ל-GloWe',
+        'Log Out': 'התנתקות',
+        'Hi,': 'שלום,',
+        'there': 'חבר/ה',
+        // Footer
+        'Global Learning, Open Knowledge & Wisdom Exchange.': 'למידה גלובלית, ידע פתוח וחילופי חוכמה.',
+        'Bridging local solutions to global challenges through shared knowledge, solidarity, and practical action.': 'מחברים פתרונות מקומיים לאתגרים גלובליים דרך ידע משותף, סולידריות ופעולה מעשית.',
+        'Quick Links': 'קישורים מהירים',
+        'Explore': 'ניווט',
+        'Participate': 'להשתתף',
+        'Write a post': 'כתיבת פוסט',
+        'Volunteer Network': 'רשת המתנדבים',
+        "What's next": 'מה הלאה',
+        'What Comes Next': 'מה צופן העתיד',
+        'Built With Care': 'נבנה באהבה',
+        'An MVP by the GloWe community, with product and implementation support by Topaz.': 'גרסת MVP של קהילת GloWe, בליווי מוצר ופיתוח של Topaz.',
+        'Admin Review': 'ניהול ובקרה',
+        'Terms & Community Charter': 'תנאים ואמנת קהילה',
+        'For Organizations': 'לארגונים',
+        'Register Your Organization': 'רישום הארגון שלכם',
+        'Post an Opportunity': 'פרסום הזדמנות',
+        'Connect': 'יצירת קשר',
+        // Auth + shared modals
+        'Welcome Back': 'ברוכים השבים',
+        'Welcome Back!': 'ברוכים השבים!',
+        'Sign in with your Google account to continue.': 'התחברו עם חשבון Google כדי להמשיך.',
+        'Continue with Google': 'המשך עם Google',
+        "Don't have an account?": 'אין לכם חשבון?',
+        'Join our community': 'הצטרפו לקהילה',
+        'Join the GloWe Community': 'הצטרפו לקהילת GloWe',
+        'Sign in with your Google account to get started.': 'התחברו עם חשבון Google כדי להתחיל.',
+        'Already have an account?': 'כבר יש לכם חשבון?',
+        'Success': 'הצלחה',
+        'Your action was completed successfully.': 'הפעולה הושלמה בהצלחה.',
+        'Continue': 'המשך',
+        // Onboarding
+        'Find your GloWe path': 'מצאו את הדרך שלכם ב-GloWe',
+        'Choose the path that matches what you want to do first.': 'בחרו את הדרך שמתאימה למה שתרצו לעשות קודם.',
+        'I represent an organization': 'אני מייצג/ת ארגון',
+        'Create a profile, post a need, and receive structured offers.': 'יצירת פרופיל, פרסום צורך וקבלת הצעות מסודרות.',
+        'I can help': 'אני יכול/ה לעזור',
+        'Find wishes that match your skills, language, location, and time.': 'איתור משאלות שמתאימות לכישורים, לשפה, למיקום ולזמן שלכם.',
+        'I am a business partner': 'אני שותף/ה עסקי/ת',
+        'Match CSR teams, logistics, funding, or services with verified needs.': 'התאמת צוותי CSR, לוגיסטיקה, מימון או שירותים לצרכים מאומתים.',
+        // Settings
+        'Settings': 'הגדרות',
+        'Manage your account, language, and session preferences.': 'ניהול החשבון, השפה והעדפות ההתחברות שלכם.',
+        'Account': 'חשבון',
+        'Name': 'שם',
+        'Email': 'דוא"ל',
+        'Account type': 'סוג חשבון',
+        'Community member': 'חבר/ת קהילה',
+        'Open Personal Area': 'מעבר לאזור האישי',
+        'Language': 'שפה',
+        'Interface language': 'שפת הממשק',
+        'Choose the language for the GloWe interface. Hebrew is shown in a right-to-left (RTL) layout.': 'בחרו את שפת הממשק של GloWe. עברית מוצגת בפריסת ימין-לשמאל (RTL).',
+        'English': 'אנגלית',
+        'Hebrew': 'עברית',
+        'Session': 'התנתקות',
+        'End your session on this device. You can sign back in any time with Google.': 'סיום ההתחברות במכשיר זה. תוכלו להתחבר מחדש בכל עת באמצעות Google.',
+        'Sign in to manage settings': 'התחברו כדי לנהל הגדרות',
+        'Your account, language, and session options live here once you are signed in.': 'החשבון, השפה ואפשרויות ההתחברות יופיעו כאן לאחר הכניסה.',
+        // Home — hero + intro
+        'A home for people building impact together': 'בית לאנשים שיוצרים השפעה ביחד',
+        'You do not have to carry the work alone.': 'אתם לא צריכים לשאת את העבודה לבד.',
+        'GloWe is a warm, professional community for people, organizations, initiatives, volunteers, and partners working around the SDGs. Here you can ask for support, offer what you know, share field wisdom, and meet people who walk beside you in the work.': 'GloWe היא קהילה חמה ומקצועית לאנשים, ארגונים, יוזמות, מתנדבים ושותפים שפועלים סביב יעדי הקיימות (SDGs). כאן אפשר לבקש תמיכה, להציע את הידע שלכם, לחלוק חוכמת שטח ולפגוש אנשים שצועדים לצידכם בעבודה.',
+        'Find Your Place': 'מצאו את מקומכם',
+        'Meet the Community': 'הכירו את הקהילה',
+        'Ask for Support': 'בקשו תמיכה',
+        'You have something to give, and something to receive.': 'יש לכם מה לתת, ויש לכם מה לקבל.',
+        'You can ask': 'אפשר לבקש',
+        'You can offer': 'אפשר להציע',
+        'You can learn': 'אפשר ללמוד',
+        'You can connect': 'אפשר להתחבר',
+        'You can belong': 'אפשר להשתייך',
+        // Home — community layers
+        'Three communities, one living network': 'שלוש קהילות, רשת חיה אחת',
+        'Enter the Community': 'כניסה לקהילה',
+        'Local Community': 'קהילה מקומית',
+        'People who know the place': 'אנשים שמכירים את המקום',
+        'Share a local need': 'שיתוף צורך מקומי',
+        'Expert Community': 'קהילת מומחים',
+        'People who can strengthen the work': 'אנשים שיכולים לחזק את העבודה',
+        'Offer your expertise': 'הציעו את המומחיות שלכם',
+        'Global Community': 'קהילה גלובלית',
+        'People who help knowledge travel': 'אנשים שעוזרים לידע לנדוד',
+        'Join a discussion': 'הצטרפו לדיון',
+        'Ask with honesty': 'לבקש בכנות',
+        'Offer with care': 'להציע באכפתיות',
+        'Build with solidarity': 'לבנות מתוך סולידריות',
+        // Home — journey
+        'Start where you are': 'התחילו מהמקום שבו אתם נמצאים',
+        'Choose the doorway that feels right today': 'בחרו את הדלת שמרגישה נכונה היום',
+        'Need support': 'זקוקים לתמיכה',
+        'Share what would help': 'שתפו במה שיעזור',
+        'Want to contribute': 'רוצים לתרום',
+        'Offer your time or expertise': 'הציעו מהזמן או מהמומחיות שלכם',
+        'Offer Help': 'הצעת עזרה',
+        'Looking for people': 'מחפשים אנשים',
+        'Step into the community': 'היכנסו לקהילה',
+        'Enter Community': 'כניסה לקהילה',
+        // Home — values + sections
+        'What you can do in GloWe now': 'מה אפשר לעשות ב-GloWe עכשיו',
+        'Create a profile': 'יצירת פרופיל',
+        'Share with the community': 'שיתוף עם הקהילה',
+        'Use the Wishing Well': 'שימוש בבאר המשאלות',
+        'Find ways to help': 'מצאו דרכים לעזור',
+        'Values that guide the space': 'הערכים שמנחים את המרחב',
+        'Solidarity': 'סולידריות',
+        'Shared Knowledge': 'ידע משותף',
+        'Practical Action': 'פעולה מעשית',
+        'Trust and Respect': 'אמון וכבוד',
+        'The GloWe ecosystem': 'המערכת האקולוגית של GloWe',
+        // Home — CTA + misc
+        'A glimpse into the community': 'הצצה אל הקהילה',
+        'Read Community Posts': 'קראו פוסטים מהקהילה',
+        'Who is invited?': 'מי מוזמן?',
+        'How GloWe is structured': 'איך GloWe בנויה',
+        'User Roles': 'תפקידי משתמשים',
+        'Business Model': 'מודל עסקי',
+        'Development Roadmap': 'מפת דרכים לפיתוח',
+        'Trusted by the GloWe Community': 'זוכה לאמון קהילת GloWe',
+        'You have a place in this community.': 'יש לכם מקום בקהילה הזו.',
+        'Bring what you know. Ask for what you need. Meet people who are working, learning, building, and caring around the SDGs.': 'הביאו את מה שאתם יודעים. בקשו את מה שאתם צריכים. פגשו אנשים שעובדים, לומדים, בונים ואכפת להם, סביב יעדי הקיימות.',
+        'Read Community': 'קראו את הקהילה',
+        'Open Community': 'פתחו את הקהילה',
+        'Read What\'s Next': 'קראו מה הלאה',
+        'See How This Could Grow': 'ראו איך זה יכול לצמוח'
+    }
+};
+
+function gloweDict() {
+    return GLOWE_TRANSLATIONS[getGloweLanguage()] || null;
 }
+
+const GLOWE_I18N_ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
+
+function applyGloweTextNode(node, dict) {
+    const raw = node.nodeValue;
+    if (!raw) return;
+    const key = raw.trim();
+    const hit = key && dict[key];
+    // Replace only the trimmed segment so surrounding whitespace is preserved.
+    if (hit) node.nodeValue = raw.replace(key, hit);
+}
+
+function applyGloweAttrs(el, dict) {
+    if (!el.hasAttribute) return;
+    GLOWE_I18N_ATTRS.forEach(attr => {
+        if (!el.hasAttribute(attr)) return;
+        const raw = el.getAttribute(attr);
+        const key = (raw || '').trim();
+        const hit = key && dict[key];
+        if (hit) el.setAttribute(attr, raw.replace(key, hit));
+    });
+}
+
+// Translate a freshly-rendered subtree in place. Idempotent: localized text no
+// longer matches an English key, so re-running is a no-op.
+function translateGloweTree(root) {
+    const dict = gloweDict();
+    if (!dict || !root) return;
+    if (root.nodeType === Node.TEXT_NODE) {
+        applyGloweTextNode(root, dict);
+        return;
+    }
+    if (root.nodeType !== Node.ELEMENT_NODE) return;
+    const walker = document.createTreeWalker(root, NodeFilter.SHOW_TEXT, {
+        acceptNode(node) {
+            const parent = node.parentNode;
+            if (!parent) return NodeFilter.FILTER_REJECT;
+            if (parent.nodeName === 'SCRIPT' || parent.nodeName === 'STYLE') {
+                return NodeFilter.FILTER_REJECT;
+            }
+            return node.nodeValue && node.nodeValue.trim()
+                ? NodeFilter.FILTER_ACCEPT
+                : NodeFilter.FILTER_REJECT;
+        }
+    });
+    const texts = [];
+    let node;
+    while ((node = walker.nextNode())) texts.push(node);
+    texts.forEach(t => applyGloweTextNode(t, dict));
+    applyGloweAttrs(root, dict);
+    root.querySelectorAll('*').forEach(el => applyGloweAttrs(el, dict));
+}
+
+let gloweI18nObserver = null;
+function startGloweI18nObserver() {
+    if (gloweI18nObserver || !gloweDict()) return;
+    // Catches content injected after first paint (modals, settings, data-driven
+    // lists). Only childList is observed, so our own text edits never re-trigger.
+    gloweI18nObserver = new MutationObserver(mutations => {
+        mutations.forEach(m => m.addedNodes.forEach(n => translateGloweTree(n)));
+    });
+    gloweI18nObserver.observe(document.body, { childList: true, subtree: true });
+}
+
+function applyGloweDirection() {
+    const lang = getGloweLanguage();
+    const rtl = GLOWE_RTL_LANGS.includes(lang);
+    document.documentElement.setAttribute('lang', lang);
+    document.documentElement.setAttribute('dir', rtl ? 'rtl' : 'ltr');
+    if (document.body) document.body.classList.toggle('lang-he', lang === 'he');
+}
+
+function initGloweI18n() {
+    applyGloweDirection();
+    if (!gloweDict()) return;
+    translateGloweTree(document.body);
+    startGloweI18nObserver();
+}
+
+function setGloweLanguage(lang) {
+    if (lang === getGloweLanguage()) return;
+    localStorage.setItem(GLOWE_LANG_KEY, lang);
+    // A full reload re-renders every page in the new direction from a clean
+    // English baseline, avoiding half-flipped layout state.
+    window.location.reload();
+}
+
+function toggleGloweLanguage() {
+    setGloweLanguage(getGloweLanguage() === 'he' ? 'en' : 'he');
+}
+
+// A compact header switch reachable on every page (Settings is sign-in gated,
+// so anonymous visitors need this entry point too).
+function injectLanguageToggle() {
+    const container = document.querySelector('.main-header .container');
+    if (!container || container.querySelector('.lang-toggle')) return;
+    const current = getGloweLanguage();
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-toggle';
+    btn.setAttribute('data-no-i18n', '');
+    btn.setAttribute('aria-label', current === 'he' ? 'Switch to English' : 'מעבר לעברית');
+    btn.textContent = current === 'he' ? 'EN' : 'עב';
+    btn.addEventListener('click', toggleGloweLanguage);
+    const authButtons = container.querySelector('.auth-buttons');
+    container.insertBefore(btn, authButtons || null);
+}
+
+// Set direction as early as app.js evaluates (it loads at end of <body>, so the
+// element is present) to minimize the LTR→RTL flash on Hebrew loads.
+applyGloweDirection();
 
 // Settings page: account summary, language preference, and session controls.
 function initSettingsPage() {
@@ -4275,12 +4531,12 @@ function initSettingsPage() {
                     <span>02</span>
                     <h2>Language</h2>
                 </div>
-                <p class="muted-note">Choose the language for the GloWe interface. Hebrew (with right-to-left layout) is coming soon.</p>
+                <p class="muted-note">Choose the language for the GloWe interface. Hebrew is shown in a right-to-left (RTL) layout.</p>
                 <div class="form-group">
                     <label for="settings-language">Interface language</label>
                     <select id="settings-language" onchange="setGloweLanguage(this.value)">
                         <option value="en"${lang === 'en' ? ' selected' : ''}>English</option>
-                        <option value="he"${lang === 'he' ? ' selected' : ''}>Hebrew (coming soon)</option>
+                        <option value="he"${lang === 'he' ? ' selected' : ''}>Hebrew</option>
                     </select>
                 </div>
             </article>
@@ -4344,8 +4600,10 @@ function resolveGlowePage(pathname) {
 
 // Page initialization
 document.addEventListener('DOMContentLoaded', function() {
+    applyGloweDirection();
     ensureGlobalUI();
     normalizeMainNavigation();
+    injectLanguageToggle();
     if (localStorage.getItem('gloweLowDataMode') === 'true') {
         document.body.classList.add('low-data-mode');
     }
@@ -4383,4 +4641,7 @@ document.addEventListener('DOMContentLoaded', function() {
     } else if (page === 'messages') {
         initMessagesPage();
     }
+
+    // Translate the now-rendered chrome + page, then watch for later injections.
+    initGloweI18n();
 });

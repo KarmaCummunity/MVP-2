@@ -17,6 +17,7 @@
  * - `docs/`, `PRD_V2_NOT_FOR_MVP/`, `app/apps/mobile/app.json` (Expo metadata).
  * - `app/apps/mobile/src/i18n/**` — canonical locale bundles (`he`, future `en`, etc.).
  * - `app/apps/mobile/web-server/i18n/**` — web-server locale bundles (Hono server has no React/i18next runtime).
+ * - `app/apps/glowe-web/js/app.js` — vendored static frontend; its `GLOWE_TRANSLATIONS` dictionary is the locale bundle (no i18next runtime).
  * - `supabase/migrations/**`, `supabase/seed.sql` — excluded until SQL adopts D-24 indirection.
  * - `supabase/functions/**` — Edge bundles (including `i18n.json`).
  * - `__tests__/**`, `*.test.ts(x)`, `*.test.mjs`, `*.test.js` — fixtures.
@@ -43,6 +44,12 @@ const DEFAULT_OUT = path.join(REPO_ROOT, "scripts", "hebrew-text-report.md");
  */
 const SKIP_HEBREW_SCAN_EXACT_RELS = new Set([
   "app/packages/infrastructure-supabase/src/search/searchConstants.ts",
+  // GloWe is a vendored standalone static frontend with no i18next runtime; its
+  // interface translations live in the `GLOWE_TRANSLATIONS` dictionary inside
+  // `js/app.js`, which IS its canonical locale bundle (analogous to the
+  // `app/apps/mobile/src/i18n/**` and `web-server/i18n/**` exclusions). The rest
+  // of the GloWe tree (HTML/CSS/other JS) stays under scan.
+  "app/apps/glowe-web/js/app.js",
 ]);
 
 function parseArgs(argv) {
