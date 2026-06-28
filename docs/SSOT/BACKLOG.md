@@ -114,8 +114,8 @@
 |----|------|-------|--------|------|
 | GLOWE.A | **Phase A — shared auth** — vendor GloWe into monorepo (design 1:1); point `backend-config.js` at KC Supabase; namespace GloWe data with `glowe_` prefix (migration `0204`) + RLS; single shared `auth.users` identity across both frontends | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-001 |
 | GLOWE.A2 | **Onboarding & account type** — post-sign-in onboarding modal; individual (no review) vs organization (admin-reviewed, view-only until approved); `glowe_profiles` columns + self-approval guard (migration `0205`) | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-002 |
-| GLOWE.A3 | **Org approval — backend** — super-admin RPCs `glowe_set_org_approval` + `glowe_list_pending_orgs` (migration `0206`) + regression test | agent-fullstack | 🟡 In progress | `spec/17_glowe_frontend.md` FR-GLOWE-003 AC1–AC3 |
-| GLOWE.A4 | **Org approval — frontend** — GloWe Admin review UI (approve/reject pending orgs); `canCreateContent()` write gating blocking post/event/need for unverified orgs & unregistered "peek" visitors | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` FR-GLOWE-003 AC4–AC5 |
+| GLOWE.A3 | **Org approval — backend** — super-admin RPCs `glowe_set_org_approval` + `glowe_list_pending_orgs` (migration `0206`) + regression test | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-003 AC1–AC3 |
+| GLOWE.A4 | **Org approval — frontend** — GloWe Admin review UI (approve/reject pending orgs); `canCreateContent()` write gating blocking post/event/need for unverified orgs & unregistered "peek" visitors | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-003 AC4–AC5 |
 | GLOWE.B | **Phase B — shared content** — map overlapping entities (profiles, posts) onto KC native tables via DB views; retire corresponding `glowe_*` tables | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase B) |
 | GLOWE.C | **Phase C — convergence** — GloWe as primary frontend, unified schema | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase C) |
 
