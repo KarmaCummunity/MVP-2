@@ -41,12 +41,23 @@
         <section class="admin-dashboard-section">
             <div class="container">
                 <div class="admin-stats">
+                    <article><strong data-admin-stat="orgs">0</strong><span>Pending organizations</span></article>
                     <article><strong data-admin-stat="requests">0</strong><span>Pending profiles</span></article>
                     <article><strong data-admin-stat="reports">0</strong><span>Open reports</span></article>
                     <article><strong data-admin-stat="hidden">0</strong><span>Hidden items</span></article>
                 </div>
 
                 <div class="admin-grid">
+                    <section class="admin-panel admin-panel-wide">
+                        <div class="section-toolbar">
+                            <div>
+                                <h2>Pending organizations</h2>
+                                <p>Organizations awaiting verification. Approve serious requests; rejected ones stay view-only.</p>
+                            </div>
+                        </div>
+                        <div id="admin-org-requests" class="admin-list"></div>
+                    </section>
+
                     <section class="admin-panel">
                         <div class="section-toolbar">
                             <div>

@@ -272,6 +272,30 @@
         return fromProfileRow(data);
     }
 
+    // Org review queue (FR-GLOWE-003). Both RPCs are reviewer-gated server-side
+    // (super_admin/moderator); a non-reviewer caller gets a PostgREST error
+    // surfaced from the 42501 the function raises — the Admin page treats that
+    // as "not authorized" and shows a locked state rather than a crash.
+    async function listPendingOrgs() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_list_pending_orgs');
+        if (error) throw error;
+        return (data || []).map(fromProfileRow);
+    }
+
+    async function setOrgApproval(profileId, decision, note = '') {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_set_org_approval', {
+            p_profile_id: profileId,
+            p_decision: decision,
+            p_note: note ? String(note) : null
+        });
+        if (error) throw error;
+        return fromProfileRow(data);
+    }
+
     async function listOwned(table) {
         const supabaseClient = await getClient();
         const user = await currentUser();
@@ -338,6 +362,8 @@
         fetchProfile,
         upsertProfile,
         completeOnboarding,
+        listPendingOrgs,
+        setOrgApproval,
         listOwned,
         insertOwned,
         removeOwned,

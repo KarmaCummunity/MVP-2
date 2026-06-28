@@ -29,6 +29,43 @@ function showSuccessModal(title, message) {
     openModal('success-modal');
 }
 
+// ── View-only write gating (FR-GLOWE-003) ───────────────────────────────────
+// Browsing is open to everyone, but creating content (a need, post, event, or
+// discussion) requires a registered account that is allowed to publish. Two
+// gates: (1) unregistered "peek" visitors cannot write; (2) an organization is
+// view-only until a KC reviewer approves it (approval_status === 'approved').
+// Individuals never need approval. Returns { allowed, reason }.
+function gloweWriteGate() {
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        return { allowed: false, reason: 'anon' };
+    }
+    const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
+    const isOrg = profile.accountType === 'organization' || profile.type === 'organization';
+    if (isOrg && profile.approvalStatus && profile.approvalStatus !== 'approved') {
+        return { allowed: false, reason: 'org-unverified' };
+    }
+    return { allowed: true, reason: 'ok' };
+}
+
+// Guard for content-create handlers: returns true when the caller may publish,
+// otherwise shows the appropriate view-only notice and returns false.
+function canCreateContent() {
+    const gate = gloweWriteGate();
+    if (gate.allowed) return true;
+    if (gate.reason === 'anon') {
+        showSuccessModal(
+            'Sign in to contribute',
+            'Browsing GloWe is open to everyone. To publish a need, post, event, or discussion, please sign in or create a free account first.'
+        );
+    } else {
+        showSuccessModal(
+            'Awaiting verification',
+            'Your organization is under review. Until it is approved you can explore everything, but publishing needs, posts, and events is paused — we only publish verified organizations.'
+        );
+    }
+    return false;
+}
+
 // ── Post-sign-in onboarding (FR-GLOWE-002) ──────────────────────────────────
 const GLOWE_ONBOARDING_DISMISSED_KEY = 'glowe-onboarding-dismissed';
 
@@ -999,9 +1036,11 @@ function normalizeHeaderUserMenu() {
         headerContainer.appendChild(userMenu);
     }
     userMenu.style.display = 'none';
+    // "Personal Area" already appears once as the primary nav tab when signed in
+    // (see normalizeMainNavigation), so the greeting block keeps only the
+    // identity link + Log Out to avoid showing the label twice.
     userMenu.innerHTML = `
-        <span class="user-greeting">Hi, <span id="user-name">there</span></span>
-        <a class="btn btn-outline btn-small" href="${prefix}my-applications.html">Personal Area</a>
+        <a class="user-greeting" href="${prefix}my-applications.html">Hi, <span id="user-name">there</span></a>
         <button class="btn btn-primary btn-small" type="button" onclick="logout()">Log Out</button>
     `;
 }
@@ -1879,6 +1918,7 @@ function openPersonalProjectModal() {
 
 async function handlePersonalProjectSubmit(event) {
     event.preventDefault();
+    if (!canCreateContent()) return;
     await persistPersonalProject({
         title: document.getElementById('personal-project-title').value,
         status: document.getElementById('personal-project-status').value,
@@ -1910,6 +1950,7 @@ function choosePath(path) {
 
 function handleWishSubmit(event) {
     event.preventDefault();
+    if (!canCreateContent()) return;
     closeModal('wish-modal');
     showSuccessModal('Need sent for verification', 'A community manager will review the request, confirm safety details, and then publish it to matching helpers.');
 }
@@ -2736,6 +2777,7 @@ function closeInlineComposer() {
 
 function handleInlinePostSubmit(event) {
     event.preventDefault();
+    if (!canCreateContent()) return;
     const topic = postTopics.find(item => item.id === document.getElementById('inline-post-topic').value) || postTopics[0];
     saveCommunityPost({
         authorId: 'sample-user-6',
@@ -2809,6 +2851,7 @@ function initWritePostPage() {
     });
     form.addEventListener('submit', event => {
         event.preventDefault();
+        if (!canCreateContent()) return;
         const topic = selectedTopic();
         saveCommunityPost({
             authorId: 'sample-user-6',
@@ -3030,6 +3073,7 @@ function closeOpportunityComposer() {
 
 function handleOpportunitySubmit(event) {
     event.preventDefault();
+    if (!canCreateContent()) return;
     const title = document.getElementById('opportunity-title').value.trim();
     const organization = document.getElementById('opportunity-organization').value.trim();
     const commitment = document.getElementById('opportunity-type').value;
@@ -3295,8 +3339,11 @@ function initAdminPage() {
     const requestsContainer = document.getElementById('admin-join-requests');
     const reportsContainer = document.getElementById('admin-reports');
     const hiddenContainer = document.getElementById('admin-hidden-items');
+    const orgContainer = document.getElementById('admin-org-requests');
     const stats = document.querySelectorAll('[data-admin-stat]');
-    if (!requestsContainer && !reportsContainer && !hiddenContainer) return;
+    if (!requestsContainer && !reportsContainer && !hiddenContainer && !orgContainer) return;
+
+    if (orgContainer) loadPendingOrgs();
 
     const requests = getAdminReviewUsers();
     const reports = getModerationReports();
@@ -3354,6 +3401,91 @@ function initAdminPage() {
         if (type === 'reports') stat.textContent = reports.filter(report => report.status === 'Open').length;
         if (type === 'hidden') stat.textContent = hidden.length;
     });
+}
+
+// FR-GLOWE-003 AC4: live pending-organization review queue, backed by the
+// admin-gated glowe_list_pending_orgs RPC. Non-reviewers get a 42501 from the
+// RPC, which we surface as a "locked" empty state rather than a crash.
+async function loadPendingOrgs() {
+    const container = document.getElementById('admin-org-requests');
+    if (!container) return;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) {
+        container.innerHTML = '<div class="empty-state"><h3>Backend not configured</h3><p>Organization review is available once the shared backend is connected.</p></div>';
+        return;
+    }
+    container.innerHTML = '<div class="empty-state"><h3>Loading…</h3><p>Fetching organizations awaiting verification.</p></div>';
+    let orgs;
+    try {
+        orgs = await backend.listPendingOrgs();
+    } catch (error) {
+        const forbidden = error && (error.code === '42501' || /forbidden|permission/i.test(error.message || ''));
+        container.innerHTML = forbidden
+            ? '<div class="empty-state"><h3>Reviewers only</h3><p>This queue is visible to GloWe reviewers. Ask an administrator for access.</p></div>'
+            : '<div class="empty-state"><h3>Could not load queue</h3><p>Please refresh and try again.</p></div>';
+        return;
+    }
+    renderPendingOrgs(orgs || []);
+}
+
+function renderPendingOrgs(orgs) {
+    const container = document.getElementById('admin-org-requests');
+    if (!container) return;
+    const orgStat = document.querySelector('[data-admin-stat="orgs"]');
+    if (orgStat) orgStat.textContent = orgs.length;
+    if (!orgs.length) {
+        container.innerHTML = '<div class="empty-state"><h3>No pending organizations</h3><p>Verified organizations will publish freely; new submissions show up here.</p></div>';
+        return;
+    }
+    container.innerHTML = orgs.map(org => {
+        const id = escapeHtml(org.id);
+        const detail = (label, value) => value
+            ? `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>` : '';
+        return `
+            <article class="admin-card">
+                <span class="post-type-tag">Pending verification</span>
+                <h3>${escapeHtml(org.orgName || org.name || 'Unnamed organization')}</h3>
+                ${detail('Country', org.orgCountry || org.country)}
+                ${detail('Field', org.orgField)}
+                ${detail('Website', org.orgWebsite)}
+                ${detail('Registration', org.orgRegistrationNumber)}
+                ${detail('Contact', org.orgContactName)}
+                ${detail('Contact email', org.orgContactEmail || org.email)}
+                ${detail('Contact phone', org.orgContactPhone)}
+                ${detail('Size', org.orgSize)}
+                ${org.orgDescription ? `<p>${escapeHtml(org.orgDescription)}</p>` : ''}
+                <label class="admin-note-label">Review note (optional)
+                    <input type="text" id="org-note-${id}" placeholder="Add a short note for the record">
+                </label>
+                <div class="card-actions">
+                    <button class="btn btn-primary btn-small" type="button" onclick="decideGloweOrg('${id}', 'approved')">Approve</button>
+                    <button class="btn btn-outline btn-small" type="button" onclick="decideGloweOrg('${id}', 'rejected')">Reject</button>
+                </div>
+            </article>
+        `;
+    }).join('');
+}
+
+async function decideGloweOrg(profileId, decision) {
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.setOrgApproval !== 'function') return;
+    const noteInput = document.getElementById(`org-note-${profileId}`);
+    const note = noteInput ? noteInput.value.trim() : '';
+    try {
+        await backend.setOrgApproval(profileId, decision, note);
+    } catch (error) {
+        const forbidden = error && (error.code === '42501' || /forbidden|permission/i.test(error.message || ''));
+        showSuccessModal(
+            forbidden ? 'Reviewers only' : 'Could not save decision',
+            forbidden
+                ? 'Only GloWe reviewers can approve or reject organizations.'
+                : 'Something went wrong while saving the decision. Please try again.'
+        );
+        return;
+    }
+    const verb = decision === 'approved' ? 'approved' : 'rejected';
+    showSuccessModal('Decision saved', `The organization has been ${verb}.`);
+    loadPendingOrgs();
 }
 
 function initForumsPage() {
@@ -3421,6 +3553,7 @@ function initForumsPage() {
 
 function handleForumQuestionSubmit(event) {
     event.preventDefault();
+    if (!canCreateContent()) return;
     const form = event.target;
     const groupId = form.querySelector('#forum-question-group').value;
     const group = discussionGroups.find(item => item.id === groupId) || discussionGroups[0];
@@ -3558,6 +3691,7 @@ function focusGroupReply() {
 
 function handleDiscussionSubmit(event, groupId) {
     event.preventDefault();
+    if (!canCreateContent()) return;
     const group = discussionGroups.find(item => item.id === groupId) || discussionGroups[0];
     saveCommunityPost({
         authorId: 'sample-user-6',

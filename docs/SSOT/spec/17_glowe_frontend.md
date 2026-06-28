@@ -1,6 +1,6 @@
 # 2.16 GloWe Frontend (shared KC backend)
 
-> **Status:** 🟡 Phase A complete (shared-auth) + onboarding (FR-GLOWE-002) — The GloWe static frontend (`app/apps/glowe-web`) is added *alongside* the KC mobile app and wired to the **same** Supabase project, so a single Supabase Auth identity (`auth.users`) is shared across both frontends. Long-term intent: GloWe becomes the primary frontend riding on KC's infrastructure, with GloWe-owned data migrated entity-by-entity onto KC's native tables. See `DECISIONS.md` D-61.
+> **Status:** 🟡 Phase A complete (shared-auth) + onboarding (FR-GLOWE-002) + org approval & view-only gating (FR-GLOWE-003) — The GloWe static frontend (`app/apps/glowe-web`) is added *alongside* the KC mobile app and wired to the **same** Supabase project, so a single Supabase Auth identity (`auth.users`) is shared across both frontends. Long-term intent: GloWe becomes the primary frontend riding on KC's infrastructure, with GloWe-owned data migrated entity-by-entity onto KC's native tables. See `DECISIONS.md` D-61.
 > **Phase A delivered:** GloWe vendored into the monorepo unchanged (design 1:1); `backend-config.js` → KC Supabase URL + publishable key; GloWe data namespaced with the `glowe_` table prefix (migration `0204_glowe_schema.sql`) to avoid colliding with KC's native tables. Auth is **Google-only** (email/password hidden). Hosted at the **`/glowe` sub-path** of the main domain (copied into the Cloudflare Pages build by `web-postbuild.mjs`), so OAuth returns to GloWe via KC's already-allowlisted origins. Verified live on dev: Supabase client init, Auth endpoint reachable, `glowe_*` RLS read OK, zero console errors.
 
 Prefix: `FR-GLOWE-*`
@@ -69,7 +69,7 @@ Because GloWe auth is Google-only (FR-GLOWE-001 AC2a), there is no registration 
 
 ## FR-GLOWE-003 — Organization approval workflow & view-only enforcement
 
-**Status.** 🟡 In progress — approval RPCs (DB) delivered; GloWe Admin review UI + client-side write gating land in the follow-up frontend PR.
+**Status.** ✅ Done — approval RPCs (DB), GloWe Admin review UI, and client-side view-only write gating all delivered.
 
 FR-GLOWE-002 lands an organization at `approval_status='pending'`, held view-only. This FR adds (a) the privileged admin path to review and decide, and (b) the client-side enforcement that keeps an unverified org (and an unregistered visitor) read-only.
 
