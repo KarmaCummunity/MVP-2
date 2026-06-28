@@ -1017,11 +1017,15 @@ function normalizeHeaderUserMenu() {
     userMenu.style.display = 'none';
     // "Personal Area" already appears once as the primary nav tab when signed in
     // (see normalizeMainNavigation), so the greeting block keeps only the
-    // identity link + Settings to avoid showing the label twice. Log Out now
-    // lives inside the Settings screen (see initSettingsPage).
+    // identity link + the Messages and Settings actions. Log Out lives inside
+    // the Settings screen (see initSettingsPage). Settings collapses to its gear
+    // icon on phone widths; Messages is icon-only everywhere.
+    const chatIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
+    const gearIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
     userMenu.innerHTML = `
         <a class="user-greeting" href="${prefix}my-applications.html">Hi, <span id="user-name">there</span></a>
-        <a class="btn btn-primary btn-small" href="${prefix}settings.html">Settings</a>
+        <a class="header-icon-btn" href="${prefix}messages.html" aria-label="Messages" title="Messages">${chatIcon}</a>
+        <a class="btn btn-primary btn-small header-settings-btn" href="${prefix}settings.html" aria-label="Settings" title="Settings"><span class="header-settings-icon">${gearIcon}</span><span class="header-settings-label">Settings</span></a>
     `;
 }
 
@@ -4295,6 +4299,37 @@ function initSettingsPage() {
     `;
 }
 
+// Messages page: inbox surface for direct conversations. Real-time chat is on
+// the roadmap (shared KC messaging backend); for now this is a signed-in
+// placeholder so the header chat icon has a destination.
+function initMessagesPage() {
+    const container = document.getElementById('messages-content');
+    if (!container) return;
+
+    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
+    if (!loggedIn) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Sign in to see your messages</h3>
+                <p>Direct conversations with volunteers, organizations, and partners live here once you are signed in.</p>
+                <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
+            </div>
+        `;
+        return;
+    }
+
+    container.innerHTML = `
+        <div class="empty-state">
+            <h3>Direct messaging is coming soon</h3>
+            <p>Private conversations between volunteers, organizations, and partners are on the way. In the meantime, you can reach an organization from its profile.</p>
+            <div class="modal-actions">
+                <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
+                <a class="btn btn-outline" href="community.html">Back to Community</a>
+            </div>
+        </div>
+    `;
+}
+
 // Page initialization
 document.addEventListener('DOMContentLoaded', function() {
     ensureGlobalUI();
@@ -4333,5 +4368,7 @@ document.addEventListener('DOMContentLoaded', function() {
         initAdminPage();
     } else if (path.includes('settings.html')) {
         initSettingsPage();
+    } else if (path.includes('messages.html')) {
+        initMessagesPage();
     }
 });
