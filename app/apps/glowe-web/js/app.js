@@ -983,21 +983,20 @@ function normalizeMainNavigation() {
     // the logged-in user's landing context is their own dashboard, not the
     // marketing home page.
     const links = loggedIn
-        ? [{ label: 'Personal Area', href: `${prefix}my-applications.html`, match: 'my-applications.html' }]
-        : [{ label: 'Home', href: homeHref, match: 'index.html' }];
+        ? [{ label: 'Personal Area', href: `${prefix}my-applications.html`, match: 'my-applications' }]
+        : [{ label: 'Home', href: homeHref, match: 'index' }];
     links.push(
-        { label: 'Wishing Well', href: `${prefix}wishing-well.html`, match: 'wishing-well.html' },
-        { label: 'Organizations', href: `${prefix}organizations.html`, match: 'organizations.html' },
-        { label: 'Community', href: `${prefix}community.html`, match: 'community.html' },
-        { label: 'About', href: `${prefix}about.html`, match: 'about.html' }
+        { label: 'Wishing Well', href: `${prefix}wishing-well.html`, match: 'wishing-well' },
+        { label: 'Organizations', href: `${prefix}organizations.html`, match: 'organizations' },
+        { label: 'Community', href: `${prefix}community.html`, match: 'community' },
+        { label: 'About', href: `${prefix}about.html`, match: 'about' }
     );
-    const path = window.location.pathname;
+    const page = resolveGlowePage(window.location.pathname);
     nav.innerHTML = links.map(link => {
-        const active = path.endsWith(link.match)
-            || (link.match === 'about.html' && path.includes('whats-next.html'))
-            || (link.match === 'community.html' && (path.includes('forums.html') || path.includes('discussion-group.html')))
-            || (link.match === 'wishing-well.html' && (path.includes('volunteer-network.html') || path.includes('opportunities.html') || path.includes('opportunity.html')))
-            || (link.match === 'index.html' && (path.endsWith('/') || path.endsWith('/app/')));
+        const active = page === link.match
+            || (link.match === 'about' && page === 'whats-next')
+            || (link.match === 'community' && (page === 'forums' || page === 'discussion-group'))
+            || (link.match === 'wishing-well' && (page === 'volunteer-network' || page === 'opportunities' || page === 'opportunity'));
         return `<a href="${link.href}" class="nav-link${active ? ' active' : ''}">${link.label}</a>`;
     }).join('');
 }
@@ -1101,44 +1100,43 @@ function ensureBottomNavigation() {
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const homeHref = inPages ? '../index.html' : 'index.html';
-    const path = window.location.pathname;
+    const page = resolveGlowePage(window.location.pathname);
 
     const nav = document.createElement('nav');
     nav.className = 'mobile-bottom-nav';
 
     const links = [
-        { 
-            label: 'Home', 
-            href: homeHref, 
-            match: 'index.html',
+        {
+            label: 'Home',
+            href: homeHref,
+            match: 'index',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>'
         },
         { 
-            label: 'Wishes', 
-            href: `${prefix}wishing-well.html`, 
-            match: 'wishing-well.html',
+            label: 'Wishes',
+            href: `${prefix}wishing-well.html`,
+            match: 'wishing-well',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
         },
         { 
-            label: 'Community', 
-            href: `${prefix}community.html`, 
-            match: 'community.html',
+            label: 'Community',
+            href: `${prefix}community.html`,
+            match: 'community',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
         },
         { 
-            label: 'Profile', 
-            href: `${prefix}my-applications.html`, 
-            match: 'my-applications.html',
+            label: 'Profile',
+            href: `${prefix}my-applications.html`,
+            match: 'my-applications',
             icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'
         }
     ];
 
     nav.innerHTML = links.map(link => {
-        const active = path.endsWith(link.match)
-            || (link.match === 'community.html' && (path.includes('forums.html') || path.includes('discussion-group.html') || path.includes('organizations.html')))
-            || (link.match === 'wishing-well.html' && (path.includes('volunteer-network.html') || path.includes('opportunities.html') || path.includes('opportunity.html')))
-            || (link.match === 'index.html' && (path.endsWith('/') || path.endsWith('/app/')));
-        
+        const active = page === link.match
+            || (link.match === 'community' && (page === 'forums' || page === 'discussion-group' || page === 'organizations'))
+            || (link.match === 'wishing-well' && (page === 'volunteer-network' || page === 'opportunities' || page === 'opportunity'));
+
         return `
             <a href="${link.href}" class="bottom-nav-link${active ? ' active' : ''}">
                 <span class="nav-icon">${link.icon}</span>
@@ -4330,6 +4328,20 @@ function initMessagesPage() {
     `;
 }
 
+// Derive the logical page key from a pathname, tolerant of both
+// extension-style URLs (local: /pages/settings.html) and clean URLs
+// (Cloudflare Pages on dev/prod: /glowe/pages/settings).
+function resolveGlowePage(pathname) {
+    const clean = (pathname || '/').split(/[?#]/)[0].replace(/\/+$/, '');
+    // Every page except the home page lives under /pages/. Anything outside
+    // that directory (the app root, with or without a trailing index.html) is
+    // the home page — this holds for both local .html URLs and the clean URLs
+    // Cloudflare Pages serves on dev/prod (e.g. /glowe, /glowe/pages/settings).
+    if (!clean.includes('/pages/')) return 'index';
+    const seg = clean.split('/').pop().replace(/\.html$/, '');
+    return (!seg || seg === 'index') ? 'index' : seg;
+}
+
 // Page initialization
 document.addEventListener('DOMContentLoaded', function() {
     ensureGlobalUI();
@@ -4338,37 +4350,37 @@ document.addEventListener('DOMContentLoaded', function() {
         document.body.classList.add('low-data-mode');
     }
     // Determine which page we're on and initialize accordingly
-    const path = window.location.pathname;
-    
-    if (path.endsWith('index.html') || path.endsWith('/') || path.endsWith('/app/')) {
+    const page = resolveGlowePage(window.location.pathname);
+
+    if (page === 'index') {
         initFeaturedOpportunities();
-    } else if (path.includes('opportunities.html') || path.includes('volunteer-network.html')) {
+    } else if (page === 'opportunities' || page === 'volunteer-network') {
         initOpportunitiesPage();
-    } else if (path.includes('organizations.html')) {
+    } else if (page === 'organizations') {
         initOrganizationsPage();
-    } else if (path.includes('wishing-well.html')) {
+    } else if (page === 'wishing-well') {
         initWishingWellPage();
-    } else if (path.includes('community.html')) {
+    } else if (page === 'community') {
         initCommunityPage();
-    } else if (path.includes('write-post.html')) {
+    } else if (page === 'write-post') {
         initWritePostPage();
-    } else if (path.includes('forums.html')) {
+    } else if (page === 'forums') {
         initForumsPage();
-    } else if (path.includes('saved.html')) {
+    } else if (page === 'saved') {
         initSavedPage();
-    } else if (path.includes('discussion-group.html')) {
+    } else if (page === 'discussion-group') {
         initDiscussionGroupPage();
-    } else if (path.includes('profile.html')) {
+    } else if (page === 'profile') {
         initProfilePage();
-    } else if (path.includes('opportunity.html')) {
+    } else if (page === 'opportunity') {
         initOpportunityDetailPage();
-    } else if (path.includes('my-applications.html')) {
+    } else if (page === 'my-applications') {
         initMyApplicationsPage();
-    } else if (path.includes('admin.html')) {
+    } else if (page === 'admin') {
         initAdminPage();
-    } else if (path.includes('settings.html')) {
+    } else if (page === 'settings') {
         initSettingsPage();
-    } else if (path.includes('messages.html')) {
+    } else if (page === 'messages') {
         initMessagesPage();
     }
 });
