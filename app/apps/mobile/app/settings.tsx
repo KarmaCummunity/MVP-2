@@ -1,6 +1,6 @@
 // Settings screen stub — SRS §3.5, FR-AUTH-017 (logout)
 import React from 'react';
-import { View, Text, TouchableOpacity, ScrollView } from 'react-native';
+import { View, Text, TouchableOpacity, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -121,6 +121,11 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
+          <SettingsScreenRow
+            label={t('settings.glowe')}
+            icon="school-outline"
+            onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
+          />
           <SettingsScreenRow
             label={t('settings.reportIssue')}
             icon="alert-circle-outline"
