@@ -280,9 +280,10 @@ a.user-greeting:hover {
     height: 20px;
 }
 
-/* Settings keeps its text label on desktop; the gear icon is shown only on
+/* Settings/Admin keep their text labels on desktop; icons shown only on
    phone widths (see the max-width: 680px block). */
-.header-settings-icon {
+.header-settings-icon,
+.glowe-admin-icon {
     display: none;
 }
 
@@ -5078,7 +5079,8 @@ a.user-greeting:hover {
     }
 
     .user-menu .header-icon-btn,
-    .user-menu a.header-settings-btn {
+    .user-menu a.header-settings-btn,
+    .user-menu a.glowe-admin-link {
         flex: 0 0 auto;
         width: 40px;
         height: 40px;
@@ -5087,11 +5089,13 @@ a.user-greeting:hover {
         border-radius: 50%;
     }
 
-    .header-settings-label {
+    .header-settings-label,
+    .glowe-admin-label {
         display: none;
     }
 
-    .header-settings-icon {
+    .header-settings-icon,
+    .glowe-admin-icon {
         display: inline-flex;
     }
 
