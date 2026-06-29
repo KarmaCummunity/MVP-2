@@ -184,6 +184,19 @@
 
 ---
 
+## TRANSLATE — Cross-language UGC translation (shared KC/GLOWE infra)
+
+Demand-driven (lazy) AI translation of user-generated content into each reader's language. Translate per `(content, field, target_language)` only on real reader demand; cache in Postgres; supports unlimited languages but materializes only the few actually requested. Serves both KC and GLOWE (world/product-agnostic). Posts auto-translate; chat translation is opt-in (sender-consent gate) and deferred to last. Design: `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`.
+
+| ID | Task | Owner | Status | Spec |
+|----|------|-------|--------|------|
+| TRANSLATE-P0 | **Phase 0 — Foundations.** `LanguageTag` BCP-47 value object + `resolvePreferredLanguage` resolver (`@kc/domain`); `users.preferred_language` + `posts/messages.source_language(+confidence)` columns (migration `0207`); `IUserRepository.setPreferredLanguage` port+adapter; mobile device-locale wrapper. Inert plumbing only — no translation/LLM/UI yet. | agent-fullstack | 🟡 In progress | `spec/18_translation.md` FR-TRANSLATE-001; `docs/superpowers/plans/2026-06-29-ugc-translation-phase-0-foundations.md` |
+| TRANSLATE-P1 | **Phase 1 — Translation core.** `content_translations` cache table + single-flight UNIQUE; translate Edge Function (LLM-flash, zero-retention/DPA provider); source-language detection on create; SECURITY INVOKER read RPC; demand-driven materialization for posts. | agent-fullstack | ⏳ Planned | `spec/18_translation.md` FR-TRANSLATE-002 (to be detailed) |
+| TRANSLATE-P2 | **Phase 2 — Reader UX.** Language picker in Settings (persists `preferred_language`); translated-field rendering with "show original" toggle; accessibility + low-bandwidth handling. | agent-fe | ⏳ Planned | `spec/18_translation.md` FR-TRANSLATE-003 (to be detailed) |
+| TRANSLATE-P3 | **Phase 3 — Chat translation (opt-in, last).** Sender-consent gate (a message is translated only if its sender opted in); per-conversation translation; LRU cache eviction for chat. | agent-fullstack | ⏳ Planned | `spec/18_translation.md` FR-TRANSLATE-004 (to be detailed) |
+
+---
+
 ## Sprint Protocol
 
 1. Pick the highest ⏳ item above
