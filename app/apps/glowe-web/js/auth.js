@@ -108,11 +108,14 @@ async function syncSupabaseSession() {
 
     if (!supabaseUser) {
         // Supabase reports signed out — clear any stale local session.
-        if (isLoggedIn()) {
+        const wasLoggedIn = isLoggedIn();
+        if (wasLoggedIn) {
             localStorage.removeItem(GLOWE_USER_KEY);
             updateAuthUI();
-            refreshPersonalAreaIfVisible();
         }
+        // Always refresh the Personal Area so it reflects the signed-out state
+        // even when logout() already cleared gloweUser before this fires.
+        refreshPersonalAreaIfVisible();
         return;
     }
 
@@ -443,7 +446,10 @@ function logout() {
     localStorage.removeItem(GLOWE_USER_KEY);
     localStorage.removeItem(LEGACY_USER_KEY);
     updateAuthUI();
-    
+    // Refresh the Personal Area immediately so the profile card disappears
+    // without waiting for the async signOut → onAuthStateChange cycle.
+    refreshPersonalAreaIfVisible();
+
     // Redirect to home if on protected page
     if (window.location.pathname.includes('my-applications')) {
         window.location.href = '../index.html';
