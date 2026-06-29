@@ -132,6 +132,8 @@
 | GLOWE.B9 | **Direct Messaging — Phase B stub** — outreach post (`post_type='outreach'`) + linear reply via comments; messages page lists conversations; unread badge; Phase C upgrade banner; Hebrew locale keys (FR-GLOWE-014) | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` FR-GLOWE-014 |
 | GLOWE.B10 | **Moderation & Reporting** — Report CTA on all content cards + `glowe_reports` table; Admin Reports tab with dismiss/remove-content RPC; duplicate-report guard; Hebrew locale keys (FR-GLOWE-015) | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` FR-GLOWE-015 |
 | GLOWE.C | **Phase C — convergence** — GloWe as primary frontend, unified schema, KC mobile deprecated | agent-fullstack | ⏳ Planned | `spec/17_glowe_frontend.md` (Phase C) |
+| GLOWE.M | **Member experience shell & adaptive create system** — clean sign-out, adaptive logged-in home, account-type-aware `+` create menu, Event RSVP, Need "I'll help" chat on KC's shared `public.chats`/`public.messages` (supersedes FR-GLOWE-014). Composes Phase-B surfaces. Design: `docs/superpowers/specs/2026-06-29-glowe-member-experience-and-create-system-design.md` | agent-fullstack | 🟡 In progress | `spec/17_glowe_frontend.md` FR-GLOWE-016 |
+| GLOWE.M1 | **Session integrity** — `logout()` clears all identity keys incl. cached `glowePersonalProfile` + always redirects to guest home via `inPages`-aware href; `requireGloweMember()` guards the Personal Area; `settings`/`messages`/`profile` keep their existing behavior | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-016 AC1 |
 
 ## P3 — Post-MVP (Deferred)
 

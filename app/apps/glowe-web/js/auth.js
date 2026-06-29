@@ -438,6 +438,21 @@ function redirectPendingOpportunity(existingValue = null) {
     window.location.href = `${basePath}opportunity.html?id=${pendingOpportunity}`;
 }
 
+// Resolve the guest home href from any page (pages/* live one level down).
+function gloweHomeHref(pathname) {
+    const path = pathname || (typeof window !== 'undefined' ? window.location.pathname : '/');
+    return path.includes('/pages/') ? '../index.html' : 'index.html';
+}
+
+// Guard for member-only surfaces (the Personal Area). Anonymous visitors are
+// bounced to the guest home; pages with a graceful sign-in prompt (Settings,
+// Messages) and the public profile view must NOT call this.
+function requireGloweMember() {
+    if (isLoggedIn()) return true;
+    window.location.href = gloweHomeHref();
+    return false;
+}
+
 // Handle logout
 function logout() {
     if (window.gloweBackend && window.gloweBackend.configured()) {
@@ -445,15 +460,14 @@ function logout() {
     }
     localStorage.removeItem(GLOWE_USER_KEY);
     localStorage.removeItem(LEGACY_USER_KEY);
+    // Drop the cached personal profile so the Personal Area can't re-render a
+    // stale member card after sign-out.
+    localStorage.removeItem('glowePersonalProfile');
     updateAuthUI();
-    // Refresh the Personal Area immediately so the profile card disappears
-    // without waiting for the async signOut → onAuthStateChange cycle.
     refreshPersonalAreaIfVisible();
-
-    // Redirect to home if on protected page
-    if (window.location.pathname.includes('my-applications')) {
-        window.location.href = '../index.html';
-    }
+    // Always return to the guest home: a full nav tears down any open modal and
+    // guarantees no member-only view survives the session change.
+    window.location.href = gloweHomeHref();
 }
 
 // Update UI based on auth state
