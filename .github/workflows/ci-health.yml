@@ -63,7 +63,11 @@ jobs:
   fallow:
     name: fallow audit (code quality)
     needs: changes
-    if: needs.changes.outputs.frontend == 'true'
+    # Gates on issues a PR INTRODUCES relative to its base. Skip on release PRs
+    # (base = main): a dev→main promotion introduces nothing new — every change
+    # was already audited against dev on its way in — so `--changed-since
+    # origin/main` would re-flag the whole accumulated release diff as if new.
+    if: needs.changes.outputs.frontend == 'true' && github.base_ref != 'main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
     defaults:
