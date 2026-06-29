@@ -7,6 +7,11 @@ export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
 export * from './ports/IStreetRepository';
 export type {
+  ITranslationCacheRepository,
+  CachedTranslation,
+  TranslationCacheKey,
+} from './ports/ITranslationCacheRepository';
+export type {
   IChatRealtime,
   InboxStreamCallbacks,
   SubscribeInboxOptions,
