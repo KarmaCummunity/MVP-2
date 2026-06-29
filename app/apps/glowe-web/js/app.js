@@ -4133,6 +4133,7 @@ function handleApplicationSubmit(event) {
 function initMyApplicationsPage() {
     const container = document.getElementById('personal-area-content');
     if (!container) return;
+    if (typeof requireGloweMember === 'function' && !requireGloweMember()) return;
 
     function renderPersonalArea() {
         const profile = getPersonalProfile();
