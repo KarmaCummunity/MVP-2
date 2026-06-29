@@ -1,6 +1,6 @@
 # 2.18 Cross-language UGC Translation
 
-> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. ✅ Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter. ✅ Phase 1b (provider + pipeline) landed: `translate` Edge Function (free Gemini Flash behind a pluggable provider seam, D-65) + `ITranslationService` port/adapter; inert — nothing auto-invokes it yet. Phase 1c (posts read path), 2–4 ⏳ Planned.
+> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. ✅ Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter. ✅ Phase 1b (provider + pipeline) landed: `translate` Edge Function (free Gemini Flash behind a pluggable provider seam, D-65) + `ITranslationService` port/adapter; inert — nothing auto-invokes it yet. ✅ Phase 1c (posts read substrate) landed: narrow `content_translations` SELECT policy + `get_post_translations` SECURITY INVOKER read RPC (migration `0210`, closes TD-58) + `IPostTranslationReader` port/adapter + `GetTranslatedPosts`/`MaterializePostTranslations` use cases. Mobile rendering is Phase 2. Phases 2–4 ⏳ Planned.
 
 Prefix: `FR-TRANSLATE-*`
 
@@ -45,7 +45,7 @@ Inert language primitives the rest of the system depends on: a validated, normal
 
 ## FR-TRANSLATE-002 — Translation core (Phase 1)
 
-> **Status:** ✅ Phase 1a (cache substrate) + ✅ Phase 1b (provider/pipeline) landed. Phase 1c (posts read path) ⏳ Planned.
+> **Status:** ✅ Phase 1a (cache substrate) + ✅ Phase 1b (provider/pipeline) + ✅ Phase 1c (posts read substrate) landed. Mobile rendering of translated fields is Phase 2 (FR-TRANSLATE-003).
 
 **Description.**
 Demand-driven materialization for posts. Phase 1a delivers the inert cache substrate the later phases populate and consume: a Postgres cache table keyed per `(content_type, content_id, target_language, field)` with single-flight semantics, the pure domain primitives that model a translation request and decide whether/how to cache, and a cache repository behind an application port. No LLM, Edge Function, read-path change, or UI in 1a.
@@ -70,7 +70,13 @@ Demand-driven materialization for posts. Phase 1a delivers the inert cache subst
 - AC10. The provider is pluggable behind a Deno `TranslationProvider` seam selected by `TRANSLATION_PROVIDER`; the default `GeminiFlashProvider` uses the free tier (`GEMINI_API_KEY`), and swapping to a paid zero-retention/DPA model (D-63/D-65) is env-only.
 - AC11. `ITranslationService` (application) + `EdgeFnTranslationService` (infra) expose the pipeline to the app; any failure/skip returns `null` so callers render the original (graceful degradation). Nothing auto-invokes it yet — the posts read path is Phase 1c.
 
-**Related.** Migration `0208_content_translations.sql` (Phase 1a; Phase 1b adds no migration). Edge Function `supabase/functions/translate`. Phase 1c (SECURITY INVOKER read RPC + SELECT policy + posts read path) consumes `ITranslationService` on a cache miss. The `content_translations` authenticated SELECT policy is intentionally deferred to Phase 1c.
+**Acceptance Criteria (Phase 1c — posts read substrate).**
+- AC12. Migration `0210` replaces the Phase-1a deny-by-default SELECT policy with `content_translations_select_visible_post`: an authenticated reader may `SELECT` a translation row only when `content_type = 'post'` and the post exists, reusing the posts `is_post_visible_to` RLS via an `EXISTS` subquery (no duplicated visibility logic). Message (chat) translations stay unreadable (Phase 3). Closes TD-58.
+- AC13. `get_post_translations(p_post_ids uuid[], p_target_language text)` is a SECURITY INVOKER, STABLE SQL function that returns cached post translations (cache HITS only; misses absent) for the reader's target language, batched by post id in one round-trip. The join through `posts` is filtered by posts RLS first, so translations for invisible posts are unreachable; `execute` is granted to `authenticated`, revoked from `public`/`anon`.
+- AC14. `IPostTranslationReader` port (`getForPosts(postIds, targetLanguage)`) + `SupabasePostTranslationReader` adapter call the RPC and map rows to `PostTranslationHit[]`; an empty `postIds` short-circuits without a round-trip.
+- AC15. `GetTranslatedPostsUseCase` returns reader hits plus the eligible-but-uncached fields as `misses` (filtering via `isTranslatable` + `needsTranslation`, deduping post ids); `MaterializePostTranslationsUseCase` demand-translates each miss via `ITranslationService`, dropping any `null` (skip/failure) so callers render the original — never throwing on the read path. Mobile rendering of these results is Phase 2.
+
+**Related.** Migrations `0208_content_translations.sql` (Phase 1a) + `0210_content_translations_read.sql` (Phase 1c; Phase 1b adds no migration). Edge Function `supabase/functions/translate`. Phase 1c consumes `ITranslationService` on a cache miss via `MaterializePostTranslationsUseCase`. SQL regression: `supabase/tests/0210_content_translations_read.sql`.
 
 ## FR-TRANSLATE-003 — Reader UX (Phase 2, ⏳ Planned)
 
