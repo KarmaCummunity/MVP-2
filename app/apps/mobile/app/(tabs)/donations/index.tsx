@@ -10,7 +10,7 @@
 // with the rest of the redesigned main-screen idiom (welcome-style cream
 // backdrop, soft shadow, orange-tinted icon tiles, staggered spring entries).
 import React from 'react';
-import { ScrollView, Text, View } from 'react-native';
+import { Linking, ScrollView, Text, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { Ionicons } from '@expo/vector-icons';
@@ -224,6 +224,27 @@ export default function DonationsHubScreen() {
                 </Text>
               </View>
               <Ionicons name="chevron-back" size={22} color={colors.primary} />
+            </Card>
+          </PressableScale>
+        </MotionEntry>
+
+        {/* ── GLOWE partnership banner ─────── */}
+        <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 40} style={styles.blockStretch}>
+          <PressableScale
+            onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
+            accessibilityRole="button"
+            accessibilityLabel={t('donations.gloweSubtitle')}
+            style={styles.blockStretch}
+          >
+            <Card padding="base" style={styles.featuredCard}>
+              <IconTile icon="school-outline" size="lg" />
+              <View style={styles.featuredText}>
+                <Text style={styles.featuredTitle} numberOfLines={1}>GLOWE</Text>
+                <Text style={styles.featuredSubtitle} numberOfLines={2}>
+                  {t('donations.gloweSubtitle')}
+                </Text>
+              </View>
+              <Ionicons name="open-outline" size={20} color={colors.primary} />
             </Card>
           </PressableScale>
         </MotionEntry>

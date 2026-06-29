@@ -3,6 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
+  "expo": {
+    "install": {
+      "exclude": [
+        "@react-native-community/slider",
+        "@sentry/react-native",
+        "expo-device",
+        "expo-file-system",
+        "expo-font",
+        "expo-localization",
+        "expo-router"
+      ]
+    }
+  },
   "scripts": {
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",

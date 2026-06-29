@@ -1,0 +1,168 @@
+name: CI — health checks
+
+# npx-based project health checks. NONE of these are required status checks
+# (intentionally absent from the SSOT "Merge gates" tables) so they never block
+# auto-merge — they surface signal, not gates. Rationale per check:
+#   • fallow audit      → codebase intelligence (dead code, dup, cycles,
+#                         complexity); scoped to PR-changed files so it flags
+#                         NEW issues, not existing debt → fails the job on new
+#                         findings (red = a regression the PR introduced)
+#   • expo-doctor       → meaningful, low-noise → fails the job (red = real issue)
+#   • depcheck          → false-positive-prone in a RN monorepo → informational
+#   • npm-check-updates → always reports updates by design → informational
+#   • link check        → external links flake → informational
+# Heavy jobs are gated on frontend changes; the markdown link check is cheap and
+# runs on doc changes. `push` is path-filtered; `pull_request` runs on non-draft.
+
+on:
+  pull_request:
+    branches: [main, dev]
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main, dev]
+    paths:
+      - 'app/**'
+      - 'docs/**'
+      - '**/*.md'
+      - '.github/workflows/ci-health.yml'
+
+concurrency:
+  group: ci-health-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  changes:
+    name: detect relevant changes
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft == false
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+    outputs:
+      frontend: ${{ steps.filter.outputs.frontend }}
+      docs: ${{ steps.filter.outputs.docs }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+      - name: Detect changes
+        uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            frontend:
+              - 'app/**'
+              - '.github/workflows/ci-health.yml'
+            docs:
+              - 'docs/**'
+              - '**/*.md'
+              - '.github/workflows/ci-health.yml'
+
+  fallow:
+    name: fallow audit (code quality)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          # Full history so `--changed-since <base>` can diff against the PR base.
+          fetch-depth: 0
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Run fallow audit (gates on PR-introduced issues)
+        env:
+          # On pull_request this is the base branch (e.g. dev); on push it is
+          # empty, so fall back to dev for the diff base.
+          BASE_REF: ${{ github.base_ref || 'dev' }}
+        run: |
+          # Full fetch (no --depth) so a merge base with the PR branch exists;
+          # checkout above is fetch-depth:0, so the repo is already complete.
+          git fetch --no-tags origin "$BASE_REF" || true
+          npx --yes fallow audit --changed-since "origin/$BASE_REF"
+
+  expo-doctor:
+    name: expo-doctor (project health)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: app
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup pnpm
+        uses: pnpm/action-setup@v4
+        with:
+          package_json_file: app/package.json
+          run_install: false
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+          cache: pnpm
+          cache-dependency-path: app/pnpm-lock.yaml
+
+      - name: Install dependencies
+        run: pnpm install --frozen-lockfile
+
+      - name: Run expo-doctor
+        working-directory: app/apps/mobile
+        run: npx --yes expo-doctor
+
+  dependency-health:
+    name: dependency health (depcheck · ncu)
+    needs: changes
+    if: needs.changes.outputs.frontend == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Unused / missing dependencies (depcheck — informational)
+        continue-on-error: true
+        working-directory: app/apps/mobile
+        run: npx --yes depcheck --ignore-bin-package
+
+      - name: Outdated dependencies (npm-check-updates — informational)
+        continue-on-error: true
+        working-directory: app/apps/mobile
+        run: npx --yes npm-check-updates
+
+  link-check:
+    name: markdown link check (informational)
+    needs: changes
+    if: needs.changes.outputs.docs == 'true'
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Check markdown links
+        continue-on-error: true
+        uses: lycheeverse/lychee-action@v2
+        with:
+          args: --no-progress --max-concurrency 8 './**/*.md'
+          fail: false

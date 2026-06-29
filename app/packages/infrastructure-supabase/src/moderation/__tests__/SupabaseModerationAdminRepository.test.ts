@@ -178,3 +178,33 @@ describe('SupabaseModerationAdminRepository — auditLookup', () => {
     expect(out[1]).toMatchObject({ actorId: null, targetType: null, targetId: null, metadata: {} });
   });
 });
+
+describe('SupabaseModerationAdminRepository — getMyRoles', () => {
+  function clientReturning(data: unknown, error: unknown = null): { client: SupabaseClient<any>; calls: string[] } {
+    const calls: string[] = [];
+    const client = {
+      rpc: async (fn: string) => {
+        calls.push(fn);
+        return { data, error };
+      },
+    } as unknown as SupabaseClient<any>;
+    return { client, calls };
+  }
+
+  it('calls get_my_admin_roles and parses the array, dropping unknown roles', async () => {
+    const { client, calls } = clientReturning(['super_admin', 'moderator', 'emperor']);
+    const out = await new SupabaseModerationAdminRepository(client).getMyRoles();
+    expect(out).toEqual(['super_admin', 'moderator']);
+    expect(calls).toContain('get_my_admin_roles');
+  });
+
+  it('returns [] on RPC error (fail-closed)', async () => {
+    const { client } = clientReturning(null, { message: 'boom' });
+    expect(await new SupabaseModerationAdminRepository(client).getMyRoles()).toEqual([]);
+  });
+
+  it('returns [] when data is not an array', async () => {
+    const { client } = clientReturning('nope');
+    expect(await new SupabaseModerationAdminRepository(client).getMyRoles()).toEqual([]);
+  });
+});

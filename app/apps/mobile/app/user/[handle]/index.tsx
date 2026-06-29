@@ -28,6 +28,9 @@ import { getMyPostsUseCase } from '../../../src/services/postsComposition';
 import { getGetFollowStateUseCase } from '../../../src/services/followComposition';
 import { useOptimisticFollowAction, type FollowActionError } from '../../../src/hooks/useOptimisticFollowAction';
 import { useOtherProfileActions } from '../../../src/hooks/useOtherProfileActions';
+import { hasPermission, type AdminRole } from '@kc/domain';
+import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
+import { useAdminPerson } from '../../../src/hooks/useAdminPerson';
 import { NotifyModal } from '../../../src/components/NotifyModal';
 import { ProfileOverflowMenu } from '../../../src/components/profile/ProfileOverflowMenu';
 import { formatUserLocationLine } from '../../../src/lib/formatUserLocationLine';
@@ -97,6 +100,13 @@ export default function OtherProfileScreen() {
   // ✅ RULES OF HOOKS: useOtherProfileActions must be called before any early return.
   // The hook accepts `target: User | null` so passing `u` (possibly null) is safe.
   const { onFollowPress, startChat } = useOtherProfileActions({ me, target: u, dispatchFollowAction });
+
+  // FR-ADMIN-022 — if the viewer can see the admin roster and this user holds
+  // an admin grant, expose a cross-link to their admin-detail card.
+  const { roles: viewerRoles } = useAdminRoles();
+  const canViewAdmins = hasPermission(viewerRoles as readonly AdminRole[], 'admins.view');
+  const { person: adminPerson } = useAdminPerson(u?.userId, canViewAdmins);
+  const showAdminLink = canViewAdmins && adminPerson !== null && adminPerson.grants.length > 0;
 
   // /user/[my-handle] redirects to the My Profile tab.
   React.useEffect(() => { if (isMe) router.replace('/(tabs)/profile'); }, [isMe, router]);
@@ -171,6 +181,16 @@ export default function OtherProfileScreen() {
             onPressFollowers={() => router.push({ pathname: '/user/[handle]/followers' as never, params: { handle } } as never)}
             onPressFollowing={() => router.push({ pathname: '/user/[handle]/following' as never, params: { handle } } as never)}
           />
+
+          {showAdminLink ? (
+            <TouchableOpacity
+              style={styles.adminLink}
+              onPress={() => router.push({ pathname: '/(admin)/admins/[userId]' as never, params: { userId: u.userId } } as never)}
+            >
+              <Ionicons name="shield-checkmark-outline" size={16} color={colors.primary} />
+              <Text style={styles.adminLinkText}>{t('admin.admins.profileLink')}</Text>
+            </TouchableOpacity>
+          ) : null}
 
           {!isMe ? (
             <View style={styles.actionRow}>

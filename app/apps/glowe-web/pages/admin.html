@@ -1,0 +1,103 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Admin Review - GloWe</title>
+    <link rel="stylesheet" href="../css/styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
+</head>
+<body class="about-page-body admin-page">
+    <header class="main-header">
+        <div class="container">
+            <a href="../index.html" class="logo">
+                <span class="logo-icon"></span>
+                <span class="logo-text">GloWe</span>
+            </a>
+            <nav class="main-nav"></nav>
+            <div class="auth-buttons">
+                <button class="btn btn-outline" onclick="openModal('login-modal')">Log In</button>
+                <button class="btn btn-primary" onclick="openModal('register-modal')">Join GloWe</button>
+            </div>
+            <div class="user-menu" style="display: none;">
+                <span class="user-greeting">Welcome, <span id="user-name"></span>!</span>
+                <a href="my-applications.html" class="nav-link">Personal Area</a>
+                <button class="btn btn-outline" onclick="logout()">Log Out</button>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <section class="page-header admin-hero">
+            <div class="container">
+                <span class="hero-kicker">Admin review</span>
+                <h1>Keep the community safe and trustworthy.</h1>
+                <p>Review new profile submissions, respond to reports, and hide content that does not fit the GloWe community standards.</p>
+            </div>
+        </section>
+
+        <section class="admin-dashboard-section">
+            <div class="container">
+                <div class="admin-stats">
+                    <article><strong data-admin-stat="orgs">0</strong><span>Pending organizations</span></article>
+                    <article><strong data-admin-stat="requests">0</strong><span>Pending profiles</span></article>
+                    <article><strong data-admin-stat="reports">0</strong><span>Open reports</span></article>
+                    <article><strong data-admin-stat="hidden">0</strong><span>Hidden items</span></article>
+                </div>
+
+                <div class="admin-grid">
+                    <section class="admin-panel admin-panel-wide">
+                        <div class="section-toolbar">
+                            <div>
+                                <h2>Pending organizations</h2>
+                                <p>Organizations awaiting verification. Approve serious requests; rejected ones stay view-only.</p>
+                            </div>
+                        </div>
+                        <div id="admin-org-requests" class="admin-list"></div>
+                    </section>
+
+                    <section class="admin-panel">
+                        <div class="section-toolbar">
+                            <div>
+                                <h2>Join requests</h2>
+                                <p>Approve profiles that are ready, or send them back for changes.</p>
+                            </div>
+                        </div>
+                        <div id="admin-join-requests" class="admin-list"></div>
+                    </section>
+
+                    <section class="admin-panel">
+                        <div class="section-toolbar">
+                            <div>
+                                <h2>Community reports</h2>
+                                <p>Reports from users who saw something inaccurate, harmful, or inappropriate.</p>
+                            </div>
+                        </div>
+                        <div id="admin-reports" class="admin-list"></div>
+                    </section>
+
+                    <section class="admin-panel admin-panel-wide">
+                        <div class="section-toolbar">
+                            <div>
+                                <h2>Hidden content</h2>
+                                <p>Items hidden by admin review can be restored while this MVP uses local storage.</p>
+                            </div>
+                        </div>
+                        <div id="admin-hidden-items" class="admin-list compact-admin-list"></div>
+                    </section>
+                </div>
+            </div>
+        </section>
+    </main>
+
+    <footer class="main-footer"></footer>
+
+    <script src="../js/backend-config.js"></script>
+    <script src="../js/backend.js"></script>
+    <script src="../js/data.js"></script>
+    <script src="../js/auth.js"></script>
+    <script src="../js/app.js"></script>
+</body>
+</html>
