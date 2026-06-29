@@ -81,6 +81,8 @@ FR-GLOWE-002 lands an organization at `approval_status='pending'`, held view-onl
 - AC4. **GloWe Admin review UI** — the GloWe Admin page lists pending orgs (via `glowe_list_pending_orgs`) with their submitted details and Approve / Reject (+ optional note) controls wired to `glowe_set_org_approval`. ✅
 - AC5. **View-only write gating** — a single `canCreateContent()` guard (registered user AND not an unapproved org) blocks every content-create handler in `app/apps/glowe-web/js/app.js` (wish/need, post composer, opportunity/event, forum/discussion), showing a view-only notice instead of persisting. Unregistered "peek" visitors are blocked by the same guard. ✅
 
+**Implementation (2026-06-29):** Admin gate uses `glowe_admin` role in the existing `admin_role_grants` table (no new table needed — `handle_new_user()` creates `public.users` rows for all sign-ins). Predicate: `is_glowe_admin(uid)` checks `glowe_admin OR super_admin`. Frontend: `backend.isGloweAdmin()` via `get_my_admin_roles()` RPC; `admin.html` redirects non-admins.
+
 **Resolved decisions.**
 - Audit logging via `public.audit_events` is intentionally skipped for the approval RPCs (the `audit_events.action` CHECK allow-list has no GloWe action and the per-row `org_reviewed_*` columns already capture who/when/why). Revisit if a GloWe admin audit trail is required.
 
