@@ -1027,11 +1027,13 @@ async function applyAdminLink() {
     if (!isAdmin) return;
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
+    const shieldSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>';
     const link = document.createElement('a');
     link.className = 'btn btn-outline btn-small glowe-admin-link';
     link.href = `${prefix}admin.html`;
-    link.textContent = 'Admin';
-    link.title = 'GLOWE Admin';
+    link.title = 'Admin review';
+    link.setAttribute('aria-label', 'Admin review');
+    link.innerHTML = `<span class="glowe-admin-icon">${shieldSvg}</span><span class="glowe-admin-label">Admin review</span>`;
     userMenu.appendChild(link);
 }
 window.applyAdminLink = applyAdminLink;
