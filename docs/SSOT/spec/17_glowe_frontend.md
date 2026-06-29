@@ -381,7 +381,7 @@ RLS: reporter can read own reports; admin RPCs gate moderation actions.
 
 ## FR-GLOWE-016 — Member experience shell & adaptive create system
 
-**Status.** 🟡 In progress — Part A (session integrity) done; Parts B/C/D planned.
+**Status.** 🟡 In progress — Part A (session integrity) and Part B (adaptive home) done; Parts C/D planned.
 
 The logged-in member layer that ties the Phase-B surfaces together: a clean sign-out, an
 adaptive home, and a single account-type-aware "create" entry point. This FR **composes** the
@@ -398,9 +398,14 @@ FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
   Personal Area (`my-applications`) is guarded by `requireGloweMember()` — anonymous visitors are
   redirected home before any member body renders. `settings`/`messages` keep their FR-GLOWE-004
   AC2 sign-in prompts and `profile` stays the public profile view; none are force-guarded.
-- AC2. **Adaptive home.** ⏳ Signed-in members see a personal hero, a "Your activity" rail (their
-  own creates), and a unified "What's happening" feed in place of the marketing home; guests keep
-  the marketing home. Per-segment personalization deferred to Phase B real content.
+- AC2. **Adaptive home (done).** Signed-in members see a personal hero ("Welcome back, {first
+  name}" + create CTAs), a "Your activity" rail (their own posts, filtered by `authorId`), and a
+  unified "What's happening" feed (recency-interleaved opportunities + posts, capped) in place of
+  the marketing home; guests keep the marketing home untouched. The member view renders into a
+  hidden `#member-home` section revealed by `initMemberHome()`; a `body.glowe-member-home` class
+  hides the marketing sections. Empty states are creation CTAs. Selectors (`selectMemberActivity`,
+  `selectCommunityHighlights`) are pure; cards reuse `renderOpportunityCard` (root-relative) plus a
+  compact `renderMemberFeedPost`. Per-segment personalization deferred to Phase B real content.
 - AC3. **Adaptive create menu.** ⏳ A `+` FAB (phone, center of bottom nav) and a desktop "Create"
   button open one menu showing only permitted types: organization → Post/Event/Need; individual →
   Volunteer-offer/Need; anon → sign-in prompt; unverified org → awaiting-verification prompt.
