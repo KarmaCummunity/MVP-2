@@ -304,6 +304,46 @@
         return fromProfileRow(data);
     }
 
+    // Fetch all public records from a table (no user filter). RLS on the table
+    // controls what anonymous vs. authenticated callers can see.
+    async function listAll(table, { orderBy = 'created_at', ascending = false } = {}) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl(table))
+            .select('*')
+            .order(orderBy, { ascending });
+        if (error) throw error;
+        return data || [];
+    }
+
+    // Fetch approved organization profiles from glowe_profiles.
+    async function listApprovedOrgs() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl('profiles'))
+            .select('*')
+            .eq('account_type', 'organization')
+            .eq('approval_status', 'approved')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(fromProfileRow);
+    }
+
+    // Fetch individual profiles (volunteers / members).
+    async function listMembers() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl('profiles'))
+            .select('*')
+            .eq('account_type', 'individual')
+            .order('created_at', { ascending: false });
+        if (error) throw error;
+        return (data || []).map(fromProfileRow);
+    }
+
     async function listOwned(table) {
         const supabaseClient = await getClient();
         const user = await currentUser();
@@ -372,6 +412,9 @@
         completeOnboarding,
         listPendingOrgs,
         setOrgApproval,
+        listAll,
+        listApprovedOrgs,
+        listMembers,
         listOwned,
         insertOwned,
         removeOwned,
