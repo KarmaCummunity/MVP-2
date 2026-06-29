@@ -7,6 +7,7 @@ export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
 export * from './ports/IStreetRepository';
 export type { ITranslationCacheRepository, CachedTranslation, TranslationCacheKey } from './ports/ITranslationCacheRepository';
+export type { ITranslationService } from './ports/ITranslationService';
 export type { IChatRealtime, InboxStreamCallbacks, SubscribeInboxOptions, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
@@ -235,10 +236,7 @@ export type {
 } from './ports/IRideRatingRepository';
 export { SubmitRideRatingUseCase } from './rides/SubmitRideRatingUseCase';
 export { ListRideRatingsUseCase } from './rides/ListRideRatingsUseCase';
-export {
-  GetUserRideRatingSummaryUseCase,
-  RATING_DISPLAY_MIN_COUNT,
-} from './rides/GetUserRideRatingSummaryUseCase';
+export { GetUserRideRatingSummaryUseCase, RATING_DISPLAY_MIN_COUNT } from './rides/GetUserRideRatingSummaryUseCase';
 export type { GetUserRideRatingSummaryResult } from './rides/GetUserRideRatingSummaryUseCase';
 
 // Ride templates (FR-RIDE-021 / FR-RIDE-022)

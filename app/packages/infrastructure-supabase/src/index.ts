@@ -43,3 +43,4 @@ export { SupabaseSurveyRepository } from './survey/SupabaseSurveyRepository';
 export { SupabaseSurveyAdminRepository } from './survey/SupabaseSurveyAdminRepository';
 export { SupabasePublicResearchRepository } from './research/SupabasePublicResearchRepository';
 export { SupabaseTranslationCacheRepository } from './translations/SupabaseTranslationCacheRepository';
+export { EdgeFnTranslationService } from './translations/EdgeFnTranslationService';

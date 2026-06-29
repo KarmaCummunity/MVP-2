@@ -1,6 +1,6 @@
 # 2.18 Cross-language UGC Translation
 
-> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. 🟡 Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter; no LLM/Edge Function/read-path yet. Phases 1b/1c, 2–4 ⏳ Planned.
+> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. ✅ Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter. ✅ Phase 1b (provider + pipeline) landed: `translate` Edge Function (free Gemini Flash behind a pluggable provider seam, D-65) + `ITranslationService` port/adapter; inert — nothing auto-invokes it yet. Phase 1c (posts read path), 2–4 ⏳ Planned.
 
 Prefix: `FR-TRANSLATE-*`
 
@@ -45,7 +45,7 @@ Inert language primitives the rest of the system depends on: a validated, normal
 
 ## FR-TRANSLATE-002 — Translation core (Phase 1)
 
-> **Status:** 🟡 Phase 1a (cache substrate) landed. Phases 1b (provider/pipeline) + 1c (posts read path) ⏳ Planned.
+> **Status:** ✅ Phase 1a (cache substrate) + ✅ Phase 1b (provider/pipeline) landed. Phase 1c (posts read path) ⏳ Planned.
 
 **Description.**
 Demand-driven materialization for posts. Phase 1a delivers the inert cache substrate the later phases populate and consume: a Postgres cache table keyed per `(content_type, content_id, target_language, field)` with single-flight semantics, the pure domain primitives that model a translation request and decide whether/how to cache, and a cache repository behind an application port. No LLM, Edge Function, read-path change, or UI in 1a.
@@ -63,7 +63,14 @@ Demand-driven materialization for posts. Phase 1a delivers the inert cache subst
 - AC5. Cache-decision helpers: `normalizeForCache` (whitespace fold, case preserved), `isTranslatable` (empty/emoji-only/url-only/number-only short-circuit), `needsTranslation(source,target)` (true on unknown source or differing base language).
 - AC6. `ITranslationCacheRepository` port (`get`, `putIfAbsent`, `deleteForContent`) with a `SupabaseTranslationCacheRepository` adapter; `putIfAbsent` returns `false` on UNIQUE violation (`23505`) — the single-flight loser — and `true` when it inserts.
 
-**Related.** Migration `0208_content_translations.sql`. Phase 1b (Edge Function/provider + `TranslateAndCache`) and Phase 1c (SECURITY INVOKER read RPC + SELECT policy + posts read path) consume this substrate. The `content_translations` authenticated SELECT policy is intentionally deferred to Phase 1c.
+**Acceptance Criteria (Phase 1b — provider + translate Edge Function).**
+- AC7. `supabase/functions/translate` authenticates the caller (JWT) and, before spending a provider call, verifies the caller can `SELECT` the source row under RLS (`posts`/`messages`); returns `403` otherwise.
+- AC8. Detection is folded into the translate call (one round-trip returns translated text + detected `source_language` + confidence); emoji/url/number-only/empty input short-circuits to `{status:'skipped'}`, and same-base-language results are not cached.
+- AC9. Persist is single-flight: the winner inserts via service-role `INSERT … ON CONFLICT DO NOTHING` (23505 = loser), so concurrent readers of a freshly-viral item share one provider call.
+- AC10. The provider is pluggable behind a Deno `TranslationProvider` seam selected by `TRANSLATION_PROVIDER`; the default `GeminiFlashProvider` uses the free tier (`GEMINI_API_KEY`), and swapping to a paid zero-retention/DPA model (D-63/D-65) is env-only.
+- AC11. `ITranslationService` (application) + `EdgeFnTranslationService` (infra) expose the pipeline to the app; any failure/skip returns `null` so callers render the original (graceful degradation). Nothing auto-invokes it yet — the posts read path is Phase 1c.
+
+**Related.** Migration `0208_content_translations.sql` (Phase 1a; Phase 1b adds no migration). Edge Function `supabase/functions/translate`. Phase 1c (SECURITY INVOKER read RPC + SELECT policy + posts read path) consumes `ITranslationService` on a cache miss. The `content_translations` authenticated SELECT policy is intentionally deferred to Phase 1c.
 
 ## FR-TRANSLATE-003 — Reader UX (Phase 2, ⏳ Planned)
 
