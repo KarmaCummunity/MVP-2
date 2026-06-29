@@ -1523,6 +1523,8 @@ export type Database = {
           message_id: string
           read_at: string | null
           sender_id: string | null
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           system_payload: Json | null
         }
@@ -1535,6 +1537,8 @@ export type Database = {
           message_id?: string
           read_at?: string | null
           sender_id?: string | null
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           system_payload?: Json | null
         }
@@ -1547,6 +1551,8 @@ export type Database = {
           message_id?: string
           read_at?: string | null
           sender_id?: string | null
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           system_payload?: Json | null
         }
@@ -1852,6 +1858,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -1875,6 +1883,8 @@ export type Database = {
           post_id?: string
           reopen_count?: number
           search_vector?: unknown
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           status_before_admin_removal?: string | null
           street: string
@@ -1898,6 +1908,8 @@ export type Database = {
           post_id?: string
           reopen_count?: number
           search_vector?: unknown
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           status_before_admin_removal?: string | null
           street?: string
@@ -3214,6 +3226,7 @@ export type Database = {
           notification_preferences: Json
           onboarding_state: string
           posts_created_total: number
+          preferred_language: string | null
           privacy_changed_at: string | null
           privacy_mode: string
           profile_street: string | null
@@ -3251,6 +3264,7 @@ export type Database = {
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
+          preferred_language?: string | null
           privacy_changed_at?: string | null
           privacy_mode?: string
           profile_street?: string | null
@@ -3288,6 +3302,7 @@ export type Database = {
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
+          preferred_language?: string | null
           privacy_changed_at?: string | null
           privacy_mode?: string
           profile_street?: string | null
@@ -3805,6 +3820,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -4223,6 +4240,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -4255,6 +4274,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
