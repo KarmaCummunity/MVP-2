@@ -45,7 +45,11 @@ importers:
         specifier: ^8.60.1
         version: 8.60.1(eslint@10.4.1)(typescript@5.9.3)
 
-  apps/glowe-web: {}
+  apps/glowe-web:
+    devDependencies:
+      vitest:
+        specifier: ^4.1.8
+        version: 4.1.8(@types/node@25.9.1)(@vitest/coverage-v8@4.1.8)(jsdom@25.0.1)(vite@6.4.3(@types/node@25.9.1)(lightningcss@1.32.0)(terser@5.46.2)(yaml@2.8.4))
 
   apps/mobile:
     dependencies:

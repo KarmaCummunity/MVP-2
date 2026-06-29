@@ -2389,7 +2389,14 @@ function mapOpportunityRow(row) {
         field: row.field || '',
         description: row.description || '',
         skills: Array.isArray(row.skills) ? row.skills : [],
-        featured: Boolean(row.featured)
+        featured: Boolean(row.featured),
+        // Event fields (additive model, migration 0211). Null on plain opportunities.
+        startAt: row.start_at || null,
+        endAt: row.end_at || null,
+        eventType: row.event_type || null,
+        capacity: typeof row.capacity === 'number' ? row.capacity : null,
+        registrationMode: row.registration_mode || 'gated',
+        status: row.status || 'active'
     };
 }
 
@@ -2437,6 +2444,14 @@ function renderOpportunityCard(opportunity, basePath = '') {
     const titleForMessage = jsString(opportunity.title);
     const detailHref = `${basePath}pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
     const skills = Array.isArray(opportunity.skills) ? opportunity.skills : [];
+    const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
+    const isEvent = events ? events.isEvent(opportunity) : false;
+    const badge = isEvent
+        ? (events.eventTypeLabel(opportunity.eventType) || 'Event')
+        : (opportunity.commitment || '');
+    const eventMeta = isEvent
+        ? `<span class="opportunity-detail">${escapeHtml(events.formatEventDate(opportunity))}</span>`
+        : '';
 
     return `
         <div class="opportunity-card">
@@ -2453,11 +2468,12 @@ function renderOpportunityCard(opportunity, basePath = '') {
                     ${renderEntityMark(opportunity.organization)}
                     <span>${escapeHtml(opportunity.organization)}</span>
                 </div>
-                <span class="opportunity-badge">${escapeHtml(opportunity.commitment)}</span>
+                <span class="opportunity-badge">${escapeHtml(badge)}</span>
             </div>
             <h3 class="opportunity-title">${escapeHtml(opportunity.title)}</h3>
             <p class="opportunity-description">${escapeHtml(opportunity.description)}</p>
             <div class="opportunity-details">
+                ${eventMeta}
                 <span class="opportunity-detail">${escapeHtml(opportunity.location)}</span>
                 <span class="opportunity-detail">${escapeHtml(opportunity.duration)}</span>
             </div>
@@ -3102,13 +3118,22 @@ async function initOpportunitiesPage() {
         location: 'all',
         field: 'all',
         commitment: 'all',
+        event: 'all',
         search: ''
     };
 
+    function applyEventFilter(list) {
+        if (filters.event === 'all' || typeof GloweEvents === 'undefined') return list;
+        const eventFilters = filters.event === 'physical' || filters.event === 'digital'
+            ? { type: filters.event }
+            : { timeframe: filters.event === 'upcoming' ? 'upcoming' : 'all' };
+        return GloweEvents.sortByStart(GloweEvents.filterEvents(list, eventFilters));
+    }
+
     function renderOpportunities() {
-        const filtered = filterOpportunityCatalog(getAllOpportunitiesForDisplay(), filters);
+        const filtered = applyEventFilter(filterOpportunityCatalog(getAllOpportunitiesForDisplay(), filters));
         if (filtered.length === 0) {
-            const hasFilters = filters.location !== 'all' || filters.field !== 'all' || filters.commitment !== 'all' || filters.search;
+            const hasFilters = filters.location !== 'all' || filters.field !== 'all' || filters.commitment !== 'all' || filters.event !== 'all' || filters.search;
             container.innerHTML = hasFilters
                 ? '<div class="empty-state"><div class="empty-state-icon">No results</div><h3>No opportunities found</h3><p>Try adjusting your filters or search terms.</p></div>'
                 : '<div class="empty-state"><h3>No opportunities posted yet</h3><p>Be the first to share a volunteer role or collaboration request with the GloWe community.</p><button class="btn btn-primary btn-small" type="button" onclick="openOpportunityComposer()">Post an opportunity</button></div>';
@@ -3123,6 +3148,7 @@ async function initOpportunitiesPage() {
     const locationFilter = document.getElementById('filter-location');
     const fieldFilter = document.getElementById('filter-field');
     const commitmentFilter = document.getElementById('filter-commitment');
+    const eventFilter = document.getElementById('filter-event');
     const searchInput = document.getElementById('search-opportunities');
 
     if (locationFilter) {
@@ -3142,6 +3168,13 @@ async function initOpportunitiesPage() {
     if (commitmentFilter) {
         commitmentFilter.addEventListener('change', function() {
             filters.commitment = this.value;
+            renderOpportunities();
+        });
+    }
+
+    if (eventFilter) {
+        eventFilter.addEventListener('change', function() {
+            filters.event = this.value;
             renderOpportunities();
         });
     }
