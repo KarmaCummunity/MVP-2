@@ -1,5 +1,5 @@
--- supabase/tests/0209_content_translations_read.sql
--- Regression for migration 0209 (FR-TRANSLATE-002 Phase 1c, posts read path).
+-- supabase/tests/0210_content_translations_read.sql
+-- Regression for migration 0210 (FR-TRANSLATE-002 Phase 1c, posts read path).
 --
 -- Verifies the narrow content_translations SELECT policy + get_post_translations
 -- RPC: an authenticated reader sees cached translations ONLY for posts visible
@@ -117,10 +117,10 @@ begin
   if v_de <> 0 then
     raise exception 'ASSERT FAILED: RPC should return 0 rows for an un-cached language, got %', v_de;
   end if;
-  raise notice '✓ 0209: narrow read policy + get_post_translations RPC honor post visibility';
+  raise notice '✓ 0210: narrow read policy + get_post_translations RPC honor post visibility';
 end $$;
 
 reset role;
 rollback;
 
-\echo '✓ 0209 content_translations read-path RLS + RPC regression test passed'
+\echo '✓ 0210 content_translations read-path RLS + RPC regression test passed'

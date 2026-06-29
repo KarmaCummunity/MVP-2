@@ -1,4 +1,4 @@
--- 0209_content_translations_read — FR-TRANSLATE-002 (Phase 1c, posts read path).
+-- 0210_content_translations_read — FR-TRANSLATE-002 (Phase 1c, posts read path).
 -- Replaces the Phase-1a deny-by-default SELECT policy on content_translations
 -- with a narrow policy that reuses the posts visibility predicate, and adds a
 -- SECURITY INVOKER read RPC that returns cached post translations for the
