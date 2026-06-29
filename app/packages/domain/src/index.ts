@@ -34,3 +34,7 @@ export * from './rides/RideTemplate';
 export * from './rides/validateRideTemplateDraft';
 export * from './rides/RideEmergencyEvent';
 export * from './rides/RideRating';
+export * from './translations/TranslationTypes';
+export * from './translations/TranslationError';
+export * from './translations/TranslationRequest';
+export * from './translations/cacheKey';
