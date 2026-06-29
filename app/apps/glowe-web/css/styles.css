@@ -5539,3 +5539,118 @@ html[dir="rtl"] .lang-toggle {
     background: rgba(15, 93, 85, 0.08);
     box-shadow: 0 6px 16px rgba(15, 93, 85, 0.08);
 }
+
+/* ===== Member home (FR-GLOWE-016) ===== */
+/* When a signed-in member is on the home page, the marketing sections are
+   hidden and the personalized member-home section takes over the same container. */
+body.glowe-member-home main > section:not(#member-home) {
+    display: none;
+}
+
+.member-home {
+    background: var(--background);
+    padding: 48px 0 72px;
+}
+
+.member-home-inner {
+    display: flex;
+    flex-direction: column;
+    gap: 40px;
+}
+
+.member-hero {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: flex-end;
+    justify-content: space-between;
+    gap: 24px;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-lg);
+    padding: 36px;
+    box-shadow: var(--shadow-md);
+}
+
+.member-hero-copy {
+    max-width: 620px;
+}
+
+.member-hero-copy h1 {
+    margin: 8px 0 12px;
+    font-size: clamp(1.6rem, 3vw, 2.4rem);
+    color: var(--primary-dark);
+}
+
+.member-hero-copy p {
+    color: var(--text-secondary);
+}
+
+.member-hero-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+}
+
+.member-section {
+    display: flex;
+    flex-direction: column;
+    gap: 18px;
+}
+
+.member-feed-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+    gap: 20px;
+}
+
+.member-feed-card {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    padding: 20px;
+    text-decoration: none;
+    color: inherit;
+    box-shadow: var(--shadow-sm);
+    transition: var(--transition);
+}
+
+.member-feed-card:hover {
+    box-shadow: var(--shadow-md);
+    transform: translateY(-2px);
+}
+
+.member-feed-type {
+    font-size: 0.78rem;
+    font-weight: 700;
+    letter-spacing: 0.02em;
+    text-transform: uppercase;
+    color: var(--primary-color);
+}
+
+.member-feed-card h3 {
+    font-size: 1.1rem;
+    color: var(--primary-dark);
+}
+
+.member-feed-card p {
+    color: var(--text-secondary);
+    font-size: 0.95rem;
+}
+
+.member-feed-author {
+    margin-top: auto;
+    font-size: 0.85rem;
+    color: var(--text-light);
+}
+
+@media (max-width: 640px) {
+    .member-hero {
+        padding: 24px;
+    }
+    .member-hero-actions .btn {
+        flex: 1 1 100%;
+    }
+}
