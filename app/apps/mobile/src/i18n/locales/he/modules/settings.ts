@@ -139,4 +139,7 @@ export const settingsHe = {
 
   // Report-issue notify-modal title (FR-MOD-002 / FR-CHAT-007 AC3)
   reportIssueErrorTitle: 'שגיאה',
+
+  // GLOWE partnership link
+  glowe: 'GLOWE – ידע מקצועי',
 } as const;

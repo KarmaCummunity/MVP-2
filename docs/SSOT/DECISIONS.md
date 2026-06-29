@@ -1094,6 +1094,52 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-60 — Org hierarchy uses a per-grant direct-manager edge (2026-06-16)
+
+**Date.** 2026-06-16
+
+**Decision.** The direct-manager link for the admin org hierarchy (FR-ADMIN-025) is a per-**grant** edge: `admin_role_grants.manager_grant_id` references another `grant_id`, not a per-user `manager_user_id`. A person who holds grants in several orgs can therefore sit under a different manager in each org, and the tree is built from the grant adjacency (`admin_org_tree` → `buildOrgForest`). Level = depth from the root; `super_admin` (platform root) = 0. Same-org rule: a grant may report to a grant in its own org or to a platform-scoped grant (e.g. `super_admin`); cycles are rejected server-side via `is_ancestor`.
+
+**Rationale.** Roles are already per-grant and org-scoped (`scope_org_id`, migration 0173). A per-user manager could not express "Dana manages me in Org A, but Yossi manages me in Org B," which the multi-org model (D-40) requires. Anchoring the edge on the grant keeps the hierarchy consistent with the authority model (`can_grant_role`) and lets the same recursive helpers power both the tree and Phase 3 field-level privacy (`is_ancestor`).
+
+**Alternatives rejected.** Per-user `manager_user_id` — simpler but cannot model multi-org membership and conflicts with org-scoped authority. Inferring hierarchy from role rank alone — ambiguous (many peers at a level) and cannot represent an explicit reporting line.
+
+**Affected docs.** `docs/SSOT/spec/12_super_admin.md` (FR-ADMIN-024/025), migration `0203_admin_org_hierarchy.sql`, `docs/SSOT/BACKLOG.md` (P3.A-Tree.2).
+
+---
+
+## D-61 — GloWe frontend shares KC's Supabase backend; data namespaced `glowe_` (2026-06-25)
+
+**Date.** 2026-06-25
+
+**Decision.** The GloWe static frontend is added as an **additional** frontend (`app/apps/glowe-web`, design 1:1, not a replacement for the KC mobile app) wired to the **same** Supabase project as KC. Phase A shares **identity only**: a single Supabase Auth user (`auth.users`) backs both frontends ("log in once, same account in both"). GloWe-owned data lives in `public` under the `glowe_` table prefix (migration `0204`), kept deliberately isolated so it can later be migrated entity-by-entity onto KC's native tables and dropped as the products converge. Long-term intent (per PM): GloWe becomes the primary frontend riding on KC's infrastructure.
+
+**Rationale.** GloWe was already a Supabase-aware static app with a backend adapter + local fallback, so the design ports for almost no work — the real cost is data wiring. Sharing identity first delivers the headline goal immediately with minimal, reversible change and zero risk to KC's native schema. The `glowe_` prefix avoids collision with `public.posts` / `public.users` without a PostgREST exposed-schema config change on the shared project, keeping the blast radius to the GloWe app + one additive migration.
+
+**Alternatives rejected.** (a) Dedicated `glowe` Postgres schema — cleaner namespacing but needs the project's exposed-schemas list changed (shared-config blast radius) for no Phase-A benefit. (b) Rewriting GloWe in React Native inside the KC app — discards the 1:1 design and is weeks of work for the same identity outcome. (c) Mapping GloWe onto KC's native tables now — that is Phase B (shared content); entity models don't map 1:1, so it would block the quick win.
+
+**Phase A follow-ons (2026-06-25, PM calls).**
+- **Auth is Google-only.** Email/password sign-up and sign-in are hidden from the GloWe UI — both modals show a single "Continue with Google" CTA. The static email/password markup in GloWe's original page templates is overwritten at runtime (`upgradeLoginModal()` / `renderRegistrationWizard()` in `js/app.js`) so every page is consistently Google-only. The legacy email/password handlers and multi-step profile wizard remain in code but unrendered; profile completion moves to a post-sign-in step (Phase B).
+- **Hosting: `/glowe` sub-path of the main domain** (not a separate domain). `app/scripts/web-postbuild.mjs` copies `app/apps/glowe-web/**` into `dist/glowe/` during `pnpm build:web`, so the Cloudflare Pages deploy serves GloWe at `<main-domain>/glowe` alongside the KC web app. GloWe uses relative paths, so it works unchanged; Cloudflare serves the real `/glowe/*` static files before the KC SPA catch-all. Same-domain hosting means OAuth `redirectTo` reuses KC's already-allowlisted origins. A dedicated GloWe domain remains possible later.
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-001), migration `0204_glowe_schema.sql`, `docs/SSOT/BACKLOG.md` (GLOWE.A/B/C), `app/apps/glowe-web/**`, `app/scripts/web-postbuild.mjs`.
+
+---
+
+## D-62 — GloWe session isolation from KC via dedicated Supabase storageKey + local signOut scope (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** GloWe's Supabase client (`app/apps/glowe-web/js/backend.js`) now initialises with `auth.storageKey: 'glowe-auth-v1'` instead of the Supabase default `sb-<project-ref>-auth-token`. Sign-out uses `scope: 'local'` (clears only GloWe's own localStorage token without revoking the server-side refresh token). `logout()` in `auth.js` immediately calls `refreshPersonalAreaIfVisible()` so the Personal Area card disappears without waiting for the async `onAuthStateChange` cycle.
+
+**Rationale.** GloWe and KC are both served under `karma-community.pages.dev` and connect to the same Supabase project. Without a distinct storage key they share `sb-<ref>-auth-token` in localStorage, meaning (a) a KC sign-in silently signs GloWe in, (b) a GloWe sign-out revokes the server-side token and also logs KC out, and (c) GloWe's Personal Area still displayed the cached profile after logout because the `onAuthStateChange` callback only refreshed it when `gloweUser` was still set at the time it fired (it wasn't, since `logout()` removed it synchronously first). Using `scope:'local'` is correct here: KC retains a fully working session because its refresh token is untouched; GloWe gets a clean sign-out.
+
+**Alternatives rejected.** Global `signOut()` — the current default; revokes the shared Supabase session and silently kills KC. Separate Supabase project for GloWe — overkill for Phase A; sharing identity is intentional (D-61).
+
+**Affected docs.** `app/apps/glowe-web/js/backend.js`, `app/apps/glowe-web/js/auth.js`, `docs/SSOT/spec/17_glowe_frontend.md`.
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08
@@ -1126,6 +1172,8 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.3 | 2026-06-29 | Added `D-62` (GloWe session isolation: `storageKey:'glowe-auth-v1'` + `scope:'local'` signOut + immediate Personal Area refresh on logout; fixes profile-still-visible-after-logout bug). |
+| 4.2 | 2026-06-25 | Added `D-61` (GloWe added as an additional frontend on KC's shared Supabase backend; Phase A shares Auth identity only; GloWe data namespaced `glowe_`, migration `0204`; `FR-GLOWE-001`, `spec/17_glowe_frontend.md`). |
 | 4.1 | 2026-06-08 | Added `D-155` (karma economy: self-only at MVP, single-anchor awards, status-anchored closure, own-row Realtime). Added `D-156` (anti-collusion caps as hard precondition for karma public flip; `FR-KARMA-008`). |
 | 4.0 | 2026-06-04 | Added `D-58` (native Sign in with Apple via `signInWithIdToken` + raw nonce; `FR-AUTH-004` implemented; mirrors `D-33`; Apple portion of `TD-24` closed in code; live flow pends Supabase Apple provider config). |
 | 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |

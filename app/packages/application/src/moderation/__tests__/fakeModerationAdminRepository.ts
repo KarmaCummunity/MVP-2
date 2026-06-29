@@ -3,9 +3,12 @@ import type {
   ModerationTargetType,
   BanReason,
 } from '../../ports/IModerationAdminRepository';
-import type { AuditEvent } from '@kc/domain';
+import type { AdminRole, AuditEvent } from '@kc/domain';
 
 export class FakeModerationAdminRepository implements IModerationAdminRepository {
+  /** Caller's roles; defaults to an authorized super_admin so existing happy-path
+   *  tests pass. Override to exercise the permission gate. */
+  public myRoles: readonly AdminRole[] = ['super_admin'];
   public restoreCalls: Array<{ targetType: ModerationTargetType; targetId: string }> = [];
   public dismissCalls: string[] = [];
   public confirmCalls: string[] = [];
@@ -52,5 +55,9 @@ export class FakeModerationAdminRepository implements IModerationAdminRepository
   async isUserAdmin(userId: string) {
     this.maybeThrow();
     return this.adminIds.has(userId);
+  }
+  async getMyRoles() {
+    this.maybeThrow();
+    return this.myRoles;
   }
 }

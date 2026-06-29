@@ -80,20 +80,9 @@ export default function TasksScreen() {
     );
   }
 
-  return (
-    <View style={styles.root}>
-      <AdminScreenHeader
-        title={he.admin.tasks.title}
-        right={can('tasks.create') ? (
-          <Pressable
-            accessibilityRole="button"
-            onPress={() => router.push('/(admin)/tasks/new' as never)}
-            style={styles.newBtn}
-          >
-            <Text style={styles.newBtnText}>{he.admin.tasks.newBtn}</Text>
-          </Pressable>
-        ) : undefined}
-      />
+  const filtersBar = (
+    <View style={styles.filterCard}>
+      <Text style={styles.filterTitle}>{he.admin.tasks.filtersTitle}</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <FilterChip
@@ -147,12 +136,33 @@ export default function TasksScreen() {
         onChange={({ from, to }) => { setDueFromText(from); setDueToText(to); }}
         onClear={() => { setDueFromText(''); setDueToText(''); }}
       />
+    </View>
+  );
 
+  return (
+    <View style={styles.root}>
+      <AdminScreenHeader
+        title={he.admin.tasks.title}
+        subtitle={!q.isLoading ? he.admin.tasks.countLabel(q.tasks.length) : undefined}
+        right={can('tasks.create') ? (
+          <Pressable
+            accessibilityRole="button"
+            onPress={() => router.push('/(admin)/tasks/new' as never)}
+            style={styles.newBtn}
+          >
+            <Text style={styles.newBtnText}>{he.admin.tasks.newBtn}</Text>
+          </Pressable>
+        ) : undefined}
+      />
 
       <FlatList
         data={[...q.tasks]}
         keyExtractor={(t) => t.taskId}
-        renderItem={({ item }) => <TaskRow task={item} />}
+        renderItem={({ item }) => (
+          <View style={styles.rowWrap}><TaskRow task={item} /></View>
+        )}
+        ListHeaderComponent={filtersBar}
+        contentContainerStyle={styles.listContent}
         refreshControl={
           <RefreshControl refreshing={q.isRefetching} onRefresh={q.refetch} />
         }
@@ -179,7 +189,9 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
   const styles = useStyles();
   return (
     <Pressable onPress={onPress} style={[styles.chip, active && styles.chipActive]}>
-      <Text style={[styles.chipText, active && styles.chipTextActive]}>{label}</Text>
+      <Text style={[styles.chipText, active && styles.chipTextActive]} numberOfLines={1}>
+        {label}
+      </Text>
     </Pressable>
   );
 }
@@ -187,19 +199,48 @@ function FilterChip({ label, active, onPress }: FilterChipProps) {
 const useStyles = makeUseStyles(({ colors }) => ({
   root:            { flex: 1, backgroundColor: colors.background },
   center:          { flex: 1, alignItems: 'center', justifyContent: 'center', padding: 24 },
-  deniedTitle:     { fontSize: 18, fontWeight: '700' },
-  newBtn:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 8, backgroundColor: colors.primary },
+  deniedTitle:     { fontSize: 18, fontWeight: '700', color: colors.textPrimary },
+  newBtn:          { paddingHorizontal: 14, paddingVertical: 8, borderRadius: 10, backgroundColor: colors.primary },
   newBtnText:      { color: colors.textInverse, fontWeight: '700', fontSize: 13 },
-  chips:           { paddingHorizontal: 16, paddingBottom: 12, gap: 8 },
+
+  listContent: {
+    paddingBottom: 96,
+    gap: 10,
+    width: '100%',
+    maxWidth: 900,
+    alignSelf: 'center',
+  },
+  rowWrap: { paddingHorizontal: 16 },
+
+  filterCard: {
+    marginHorizontal: 16,
+    marginTop: 12,
+    marginBottom: 4,
+    padding: 14,
+    gap: 10,
+    backgroundColor: colors.surface,
+    borderRadius: 16,
+    borderWidth: 1,
+    borderColor: colors.border,
+  },
+  filterTitle: {
+    fontSize: 12,
+    fontWeight: '800',
+    color: colors.textSecondary,
+    letterSpacing: 0.3,
+    writingDirection: 'rtl',
+  },
+  chips:           { gap: 8, paddingVertical: 2 },
   chip: {
-    paddingHorizontal: 12, paddingVertical: 6, borderRadius: 14,
-    backgroundColor: colors.secondaryLight,
+    flexShrink: 0,
+    paddingHorizontal: 14, paddingVertical: 8, borderRadius: 999,
+    backgroundColor: colors.background,
     borderWidth: StyleSheet.hairlineWidth, borderColor: colors.border,
   },
   chipActive:      { backgroundColor: colors.primary, borderColor: colors.primary },
-  chipText:        { fontSize: 12, fontWeight: '600', color: colors.textPrimary },
+  chipText:        { fontSize: 13, fontWeight: '600', color: colors.textPrimary },
   chipTextActive:  { color: colors.textInverse },
   empty:           { padding: 32, alignItems: 'center', gap: 8 },
-  emptyTitle:      { fontSize: 16, fontWeight: '600' },
-  emptyHint:       { fontSize: 13, opacity: 0.6, textAlign: 'center' },
+  emptyTitle:      { fontSize: 16, fontWeight: '600', color: colors.textPrimary },
+  emptyHint:       { fontSize: 13, opacity: 0.6, textAlign: 'center', color: colors.textSecondary },
 }));

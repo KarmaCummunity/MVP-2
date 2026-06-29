@@ -67,4 +67,22 @@ describe('auditCsvExport.rowsToCsv', () => {
     expect(cells[6]).toBe(''); // target_id
     expect(cells[7]).toBe(''); // target
   });
+
+  it('neutralizes spreadsheet formula injection in user-controlled fields', () => {
+    const csv = rowsToCsv([
+      row({ actorDisplayName: '+1+2' }),
+      row({ eventId: 'e-2', actorDisplayName: '-cmd' }),
+      row({ eventId: 'e-3', actorDisplayName: '@SUM(A1)' }),
+      row({ eventId: 'e-4', actorDisplayName: '=HYPERLINK("http://evil","x")' }),
+    ]);
+    const lines = stripBom(csv).split('\r\n');
+    // Leading formula triggers (= + - @) are prefixed with a single quote so the
+    // value is treated as text by Excel / Sheets. The actor column is index 4.
+    expect(lines[1].split(',')[4]).toBe(`'+1+2`);
+    expect(lines[2].split(',')[4]).toBe(`'-cmd`);
+    expect(lines[3].split(',')[4]).toBe(`'@SUM(A1)`);
+    // The HYPERLINK payload contains a comma, so after the quote prefix it is
+    // also RFC-4180 quoted (embedded quotes doubled).
+    expect(lines[4]).toContain(`"'=HYPERLINK(""http://evil"",""x"")"`);
+  });
 });

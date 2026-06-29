@@ -210,6 +210,9 @@ export const search = {
     Other: 'אחר',
   },
 
+  // GLOWE partnership banner
+  gloweSubtitle: 'פלטפורמת ידע מקצועי – הרחב את האפקט שלך',
+
   // Donation categories for filter
   donationCategories: {
     time: 'זמן',

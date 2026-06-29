@@ -1,0 +1,75 @@
+// app/apps/mobile/src/components/admin/admins/AdminPersonCard.tsx
+// FR-ADMIN-022 — one card per user carrying all their roles. Tapping it opens
+// the admin-detail screen. Replaces the per-grant row in the list (the per-role
+// rows + revoke action now live on the detail screen).
+import { Pressable, Text, View } from 'react-native';
+import type { AdminPerson } from '@kc/domain';
+import { Ionicons } from '@expo/vector-icons';
+import { makeUseStyles, radius, shadow, useTheme } from '@kc/ui';
+import { AvatarInitials } from '../../AvatarInitials';
+import { rowDirectionStart, textAlignStart } from '../../../lib/rtlLayout';
+import he from '../../../i18n/locales/he';
+import { RoleBadge } from './RoleBadge';
+
+const MAX_BADGES = 3;
+
+function lastSeenLabel(d: Date | null): string {
+  if (d === null) return he.admin.admins.row.neverSeen;
+  const ms = Date.now() - d.getTime();
+  if (ms < 60 * 60 * 1000) return he.admin.admins.row.seenMinutesAgo(Math.max(1, Math.floor(ms / 60_000)));
+  if (ms < 24 * 60 * 60 * 1000) return he.admin.admins.row.seenHoursAgo(Math.floor(ms / 3_600_000));
+  return he.admin.admins.row.seenDaysAgo(Math.floor(ms / 86_400_000));
+}
+
+export interface AdminPersonCardProps {
+  readonly person: AdminPerson;
+  readonly onPress: (userId: string) => void;
+}
+
+export function AdminPersonCard({ person, onPress }: AdminPersonCardProps) {
+  const styles = useStyles();
+  const { colors } = useTheme();
+  const name = person.displayName ?? he.admin.admins.row.unnamed;
+  const badgeRoles = person.activeRoles.slice(0, MAX_BADGES);
+  const overflow = person.activeRoles.length - badgeRoles.length;
+
+  return (
+    <Pressable
+      accessibilityRole="button"
+      onPress={() => onPress(person.userId)}
+      style={({ pressed }) => [styles.card, pressed && styles.pressed, !person.hasActiveGrant && styles.revoked]}
+    >
+      <AvatarInitials name={name} avatarUrl={person.avatarUrl} size={44} />
+      <View style={styles.body}>
+        <Text style={styles.name} numberOfLines={1}>{name}</Text>
+        <View style={styles.badges}>
+          {badgeRoles.map((r) => <RoleBadge key={r} role={r} muted={!person.hasActiveGrant} />)}
+          {overflow > 0 && <Text style={styles.more}>{he.admin.admins.card.rolesMore(overflow)}</Text>}
+          {person.activeRoles.length === 0 && (
+            <Text style={styles.noRole}>{he.admin.admins.card.rolesNone}</Text>
+          )}
+        </View>
+        <Text style={styles.meta} numberOfLines={1}>{lastSeenLabel(person.lastSeenAt)}</Text>
+      </View>
+      <Ionicons name="chevron-back" size={18} color={colors.textSecondary} style={styles.chevron} />
+    </Pressable>
+  );
+}
+
+const useStyles = makeUseStyles(({ colors }) => ({
+  card: {
+    flexDirection: rowDirectionStart, alignItems: 'center', gap: 12,
+    backgroundColor: colors.surface, borderRadius: radius.lg,
+    paddingVertical: 12, paddingHorizontal: 14, marginHorizontal: 16, marginVertical: 5,
+    ...shadow.card,
+  },
+  pressed: { opacity: 0.7 },
+  revoked: { opacity: 0.6 },
+  body:    { flex: 1, gap: 5 },
+  name:    { fontSize: 15, fontWeight: '700', color: colors.textPrimary, textAlign: textAlignStart() },
+  badges:  { flexDirection: rowDirectionStart, alignItems: 'center', flexWrap: 'wrap', gap: 6 },
+  more:    { fontSize: 11, fontWeight: '700', color: colors.textSecondary },
+  noRole:  { fontSize: 11, color: colors.textSecondary },
+  meta:    { fontSize: 11, color: colors.textSecondary, textAlign: textAlignStart() },
+  chevron: { transform: [{ scaleX: 1 }] },
+}));

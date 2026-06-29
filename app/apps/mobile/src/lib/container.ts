@@ -16,6 +16,7 @@ import {
   SupabaseDeviceRepository,
   SupabaseAdminRoleRepository,
   SupabaseAdminTaskRepository,
+  SupabaseOrgHierarchyRepository,
   SupabaseOrgApplicationsRepository,
   SupabaseAdminContentRepository,
   SupabaseTimesheetsRepository,
@@ -23,6 +24,7 @@ import {
   SupabaseCrmContactsRepository,
   SupabaseReportsRepository,
   SupabaseSurveyRepository,
+  SupabaseSurveyAdminRepository,
   SupabasePublicResearchRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
@@ -57,6 +59,8 @@ import {
   GrantAdminRoleUseCase,
   RevokeAdminRoleUseCase,
   ListAdminsUseCase,
+  GetOrgTreeUseCase,
+  SetManagerUseCase,
   ListAdminTasksUseCase,
   GetAdminTaskDetailUseCase,
   CreateAdminTaskUseCase,
@@ -91,6 +95,9 @@ import {
   SaveSurveyAnswersUseCase,
   CheckSurveyPromptUseCase,
   SubmitFreeFeedbackUseCase,
+  GetAdminSurveyOverviewUseCase,
+  GetAdminSurveyResultsUseCase,
+  ListUserFeedbackUseCase,
   LoadPublicResearchBundleUseCase,
   SubmitPublicResearchResponseUseCase,
 } from '@kc/application';
@@ -123,6 +130,7 @@ const accountGateRepo = new SupabaseAccountGateRepository(supabase);
 const deviceRepo = new SupabaseDeviceRepository(supabase);
 const adminRoleRepo = new SupabaseAdminRoleRepository(supabase);
 const adminTaskRepo = new SupabaseAdminTaskRepository(supabase);
+const orgHierarchyRepo = new SupabaseOrgHierarchyRepository(supabase);
 const adminContentRepo = new SupabaseAdminContentRepository(supabase);
 const timesheetsRepo = new SupabaseTimesheetsRepository(supabase);
 const financeLedgerRepo = new SupabaseFinanceLedgerRepository(supabase);
@@ -130,6 +138,7 @@ const crmContactsRepo = new SupabaseCrmContactsRepository(supabase);
 const orgApplicationsRepo = new SupabaseOrgApplicationsRepository(supabase);
 const reportsRepo = new SupabaseReportsRepository(supabase);
 const surveyRepo = new SupabaseSurveyRepository(supabase);
+const surveyAdminRepo = new SupabaseSurveyAdminRepository(supabase);
 const publicResearchRepo = new SupabasePublicResearchRepository(supabase);
 
 const hideChatFromInbox = new HideChatFromInboxUseCase(chatRepo);
@@ -154,6 +163,8 @@ export const container = {
   listAdmins: new ListAdminsUseCase(adminRoleRepo),
   grantAdminRole: new GrantAdminRoleUseCase(adminRoleRepo),
   revokeAdminRole: new RevokeAdminRoleUseCase(adminRoleRepo),
+  getOrgTree: new GetOrgTreeUseCase(orgHierarchyRepo),
+  setManager: new SetManagerUseCase(orgHierarchyRepo, adminRoleRepo),
   listAdminTasks: new ListAdminTasksUseCase(adminTaskRepo),
   getAdminTaskDetail: new GetAdminTaskDetailUseCase(adminTaskRepo),
   createAdminTask: new CreateAdminTaskUseCase(adminTaskRepo),
@@ -233,6 +244,11 @@ export const container = {
   saveSurveyAnswers: new SaveSurveyAnswersUseCase(surveyRepo),
   checkSurveyPrompt: new CheckSurveyPromptUseCase(surveyRepo),
   submitFreeFeedback: new SubmitFreeFeedbackUseCase(surveyRepo),
+
+  // Admin survey dashboard (FR-ADMIN-021)
+  getAdminSurveyOverview: new GetAdminSurveyOverviewUseCase(surveyAdminRepo),
+  getAdminSurveyResults: new GetAdminSurveyResultsUseCase(surveyAdminRepo),
+  listUserFeedback: new ListUserFeedbackUseCase(surveyAdminRepo),
 
   // Public research — Survey B (FR-RESEARCH-001..003)
   publicResearchRepo,
