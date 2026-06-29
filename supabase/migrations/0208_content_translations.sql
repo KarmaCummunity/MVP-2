@@ -44,9 +44,17 @@ revoke all on public.content_translations from anon, authenticated;
 grant select on public.content_translations to authenticated;
 
 alter table public.content_translations enable row level security;
--- No SELECT policy yet = deny by default for authenticated. Reads flow through a
--- SECURITY INVOKER RPC joined to the already-RLS'd source row (Phase 1c).
--- Service role bypasses RLS for the translate pipeline writes.
+-- Deny-by-default for authenticated: an explicit `using (false)` SELECT policy
+-- keeps direct reads blocked until Phase 1c (which replaces it with a narrow
+-- policy backing the SECURITY INVOKER read RPC, joined to the already-RLS'd
+-- source row). Service role bypasses RLS for the translate pipeline writes.
+-- (A policy is required even when deny-by-default — RLS-lint enforces >=1 policy.)
+drop policy if exists content_translations_no_direct_read on public.content_translations;
+create policy content_translations_no_direct_read
+  on public.content_translations
+  for select
+  to authenticated
+  using (false);
 
 -- Purge translations when the source post is deleted.
 create or replace function public.content_translations_purge_post()
