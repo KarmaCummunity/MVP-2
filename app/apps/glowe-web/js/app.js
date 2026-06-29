@@ -1016,6 +1016,26 @@ function normalizeHeaderUserMenu() {
     `;
 }
 
+async function applyAdminLink() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || typeof backend.isGloweAdmin !== 'function') return;
+    const isAdmin = await backend.isGloweAdmin();
+    const userMenu = document.querySelector('.user-menu');
+    if (!userMenu) return;
+    const existing = userMenu.querySelector('.glowe-admin-link');
+    if (existing) existing.remove();
+    if (!isAdmin) return;
+    const inPages = window.location.pathname.includes('/pages/');
+    const prefix = inPages ? '' : 'pages/';
+    const link = document.createElement('a');
+    link.className = 'btn btn-outline btn-small glowe-admin-link';
+    link.href = `${prefix}admin.html`;
+    link.textContent = 'Admin';
+    link.title = 'GLOWE Admin';
+    userMenu.appendChild(link);
+}
+window.applyAdminLink = applyAdminLink;
+
 function normalizeHeaderAuthButtons() {
     const headerContainer = document.querySelector('.main-header .container');
     if (!headerContainer) return;
@@ -1063,7 +1083,6 @@ function ensureGlobalFooter() {
                 <div class="footer-section">
                     <h4>Built With Care</h4>
                     <p>An MVP by the GloWe community, with product and implementation support by Topaz.</p>
-                    <a href="${prefix}admin.html">Admin Review</a>
                     <a href="${prefix}terms.html">Terms & Community Charter</a>
                 </div>
             </div>
