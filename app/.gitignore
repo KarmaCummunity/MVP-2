@@ -4,10 +4,13 @@ node_modules/
 
 # Build outputs
 dist/
-# Expo: keep generated typed routes; ignore other .expo cache (per app)
-apps/mobile/.expo/**
-!apps/mobile/.expo/types/
-!apps/mobile/.expo/types/**
+# Expo cache. The bare directory must be ignored so `expo-doctor`'s
+# ProjectSetupCheck (`git check-ignore .expo`) passes. The generated typed
+# routes at apps/mobile/.expo/types/router.d.ts stay tracked because they are
+# required by the `typecheck` gate (tsc --noEmit) and gitignore never untracks
+# already-tracked files. If router.d.ts is ever regenerated, re-add with
+# `git add -f apps/mobile/.expo/types/router.d.ts`.
+apps/mobile/.expo/
 *.tsbuildinfo
 
 # Environment

@@ -5,6 +5,9 @@
 supabase/.temp/
 supabase/.branches/
 
+# Expo cache (transient; never tracked at any level)
+.expo/
+
 # IDE caches
 .vscode/
 .idea/
