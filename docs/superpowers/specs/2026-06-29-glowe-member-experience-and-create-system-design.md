@@ -105,22 +105,38 @@ Implications:
 
 ## 5. Part A — Logout / session integrity
 
-**Problem.** After logout the member still sees their profile and the home does not revert, because
-`logout()` only redirects from `my-applications`, never clears the cached profile, and member-only
-pages have no signed-out guard.
+**Problem.** After logout the member still saw their profile and the home did not revert. Three
+distinct defects compounded: (a) `logout()` only redirected from `my-applications`, never cleared the
+cached profile, and member-only pages had no signed-out guard; (b) `logout()` fired the async Supabase
+`signOut()` **without awaiting it** and redirected immediately, so the session under the
+`glowe-auth-v1` storageKey survived and the next page's session bridge re-mirrored the previous member
+back into `gloweUser`/`glowePersonalProfile`; (c) the session bridge's signed-out branch cleared only
+`gloweUser`, leaving the cached `glowePersonalProfile` — so surfaces that read `getPersonalProfile()`
+(e.g. the Community sidebar) kept rendering the previous member's name even though the header showed
+"Sign in".
 
 **Design.**
-1. `logout()` clears **all identity keys**: `gloweUser`, legacy user key, and `PERSONAL_PROFILE_KEY`.
-   Demo/seed content keys stay (not identity).
-2. `logout()` **always** redirects to the guest home via an `inPages`-aware relative path (correct on
+1. **One identity-clear path.** A `clearGloweIdentity()` helper removes **all** identity keys
+   (`gloweUser`, legacy user key, and `PERSONAL_PROFILE_KEY`). Both `logout()` and the signed-out
+   branch of `syncSupabaseSession()` call it, so they can never drift. Demo/seed content keys stay.
+2. **Await sign-out before nav.** `logout()` is `async`: it clears local identity, then **awaits**
+   `gloweBackend.signOut()` (and drops the `glowe-auth-v1` session key as a backstop) **before**
+   redirecting, so the live Supabase session can't be re-mirrored on the next load.
+3. `logout()` **always** redirects to the guest home via an `inPages`-aware relative path (correct on
    local `.html` and dev clean URLs), from any page. The full navigation inherently tears down any open
    create/chat modal — no separate modal-close step needed.
-3. **Route guard** `requireGloweMember()` at the top of the Personal Area init (`my-applications`):
+4. **Session bridge re-render.** When `syncSupabaseSession()` finds no Supabase user but the page was
+   rendered as logged-in (`wasLoggedIn`), it clears identity **and reloads** the page so any
+   already-rendered member content (read synchronously at load, before this async bridge resolves)
+   re-renders as anonymous. After the reload `gloweUser` is gone → `wasLoggedIn` is false → no loop.
+   Because `logout()` clears identity *before* triggering `signOut()`, this reload never fires during an
+   explicit logout (which redirects on its own).
+5. **Route guard** `requireGloweMember()` at the top of the Personal Area init (`my-applications`):
    if `!isLoggedIn()` it redirects to the guest home and returns `false` so the init aborts (no stale
    body render). **Scope note:** `settings` and `messages` keep their FR-004 AC2 graceful sign-in
    prompts, and `profile` is the **public** profile view (`?id=`), so none of those are force-guarded —
    only the Personal Area is.
-4. The adaptive home (Part B) keys off `isLoggedIn()` at render time → guest home renders after the
+6. The adaptive home (Part B) keys off `isLoggedIn()` at render time → guest home renders after the
    post-logout redirect.
 
 **Pure unit:** the `inPages`-aware home-href resolution + `resolveGlowePage`; the guard is a thin branch.
@@ -295,11 +311,14 @@ surface + Supabase discriminator so Phase B swaps persistence without touching t
 
 ## 14. Acceptance Criteria (FR-GLOWE-016)
 
-- **AC1 — Session integrity.** `logout()` clears all identity keys (incl. `PERSONAL_PROFILE_KEY`) and
-  redirects to the guest home from any page (the full nav tears down any open modal); the Personal Area
-  (`my-applications`) redirects to home when signed out. `settings`/`messages` keep their FR-004 AC2
-  sign-in prompts and `profile` stays public — they are not force-guarded. The home renders the guest view
-  post-logout.
+- **AC1 — Session integrity.** `logout()` clears all identity keys via `clearGloweIdentity()` (incl.
+  `PERSONAL_PROFILE_KEY`), **awaits** the Supabase `signOut()` (clearing the `glowe-auth-v1` session) so
+  it can't be re-mirrored, and redirects to the guest home from any page (the full nav tears down any
+  open modal). The session bridge (`syncSupabaseSession`) clears the **same** keys on a signed-out
+  session and reloads any page that was rendered as logged-in, so no surface (e.g. the Community sidebar)
+  shows the previous member after sign-out or session expiry. The Personal Area (`my-applications`)
+  redirects to home when signed out; `settings`/`messages` keep their FR-004 AC2 sign-in prompts and
+  `profile` stays public — they are not force-guarded. The home renders the guest view post-logout.
 - **AC2 — Adaptive home.** Signed-in members see, in place of the marketing home: a personal hero, a
   **"Your activity"** rail listing their own creates, and a unified **"What's happening"** feed (≤ a fixed
   cap per section, each with a "See all" link and a named creation-CTA empty state). Guests still see the
