@@ -5,7 +5,21 @@ import type { Chat, Message, MessageKind, MessageStatus } from '@kc/domain';
 import type { Database } from '../database.types';
 
 type ChatRow = Database['public']['Tables']['chats']['Row'];
-type MessageRow = Database['public']['Tables']['messages']['Row'];
+// Only the columns the mapper reads — keeps callers free to project a narrower
+// SELECT (e.g. without source_language) without breaking type-compatibility.
+type MessageRow = Pick<
+  Database['public']['Tables']['messages']['Row'],
+  | 'message_id'
+  | 'chat_id'
+  | 'sender_id'
+  | 'kind'
+  | 'body'
+  | 'system_payload'
+  | 'status'
+  | 'created_at'
+  | 'delivered_at'
+  | 'read_at'
+>;
 
 export function rowToChat(r: ChatRow): Chat {
   return {

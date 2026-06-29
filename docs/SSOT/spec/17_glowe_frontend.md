@@ -378,3 +378,41 @@ glowe_reports (
 )
 ```
 RLS: reporter can read own reports; admin RPCs gate moderation actions.
+
+## FR-GLOWE-016 — Member experience shell & adaptive create system
+
+**Status.** 🟡 In progress — Part A (session integrity) and Part B (adaptive home) done; Parts C/D planned.
+
+The logged-in member layer that ties the Phase-B surfaces together: a clean sign-out, an
+adaptive home, and a single account-type-aware "create" entry point. This FR **composes** the
+Phase-B FRs rather than rebuilding them — Post→FR-008, Event (opportunity+date)→FR-007,
+Need→FR-006 (`post_type='wish'`), Offer→new `post_type='offer'` (extends FR-006 CHECK), and the
+Need "I'll help" chat **reuses KC's shared `public.chats`/`public.messages`** (supersedes the
+FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
+`docs/superpowers/specs/2026-06-29-glowe-member-experience-and-create-system-design.md`.
+
+**Acceptance Criteria.**
+- AC1. **Session integrity (done).** `logout()` clears all identity keys (`gloweUser`, legacy
+  key, and the cached `glowePersonalProfile`) and always redirects to the guest home from any
+  page via an `inPages`-aware relative href (correct on local `.html` and dev clean URLs). The
+  Personal Area (`my-applications`) is guarded by `requireGloweMember()` — anonymous visitors are
+  redirected home before any member body renders. `settings`/`messages` keep their FR-GLOWE-004
+  AC2 sign-in prompts and `profile` stays the public profile view; none are force-guarded.
+- AC2. **Adaptive home (done).** Signed-in members see a personal hero ("Welcome back, {first
+  name}" + create CTAs), a "Your activity" rail (their own posts, filtered by `authorId`), and a
+  unified "What's happening" feed (recency-interleaved opportunities + posts, capped) in place of
+  the marketing home; guests keep the marketing home untouched. The member view renders into a
+  hidden `#member-home` section revealed by `initMemberHome()`; a `body.glowe-member-home` class
+  hides the marketing sections. Empty states are creation CTAs. Selectors (`selectMemberActivity`,
+  `selectCommunityHighlights`) are pure; cards reuse `renderOpportunityCard` (root-relative) plus a
+  compact `renderMemberFeedPost`. Per-segment personalization deferred to Phase B real content.
+- AC3. **Adaptive create menu.** ⏳ A `+` FAB (phone, center of bottom nav) and a desktop "Create"
+  button open one menu showing only permitted types: organization → Post/Event/Need; individual →
+  Volunteer-offer/Need; anon → sign-in prompt; unverified org → awaiting-verification prompt.
+- AC4. **Tailored create forms.** ⏳ Each type validates its required fields client-side before a
+  save; submissions route to the composed Phase-B surface.
+- AC5. **Event RSVP.** ⏳ Registering to an Event records an application surfaced in "My Applications".
+- AC6. **Need help-chat on KC backend.** ⏳ "I'll help" opens a 1:1 chat on KC's real
+  `public.chats`/`public.messages` (anchor `NULL` + a seeded first message carrying the need title).
+- AC7. **Modular type registry.** ⏳ Create types are a declarative data table (id, label,
+  permittedAccountTypes, surface, requiredFields) + dispatch, so adding a type is one entry.

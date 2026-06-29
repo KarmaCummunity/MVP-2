@@ -2917,6 +2917,13 @@ function renderApplicationCard(application) {
 
 // Initialize featured opportunities on home page
 async function initFeaturedOpportunities() {
+    // FR-GLOWE-016 AC2 — signed-in members get a personalized home in the same
+    // page container; guests fall through to the marketing home below untouched.
+    if (typeof isLoggedIn === 'function' && isLoggedIn()) {
+        await initMemberHome();
+        return;
+    }
+
     const COMING_SOON = '<p class="muted-note">This section will come alive as the community grows.</p>';
 
     const container = document.getElementById('featured-opportunities');
@@ -2958,6 +2965,112 @@ async function initFeaturedOpportunities() {
 
     const roadmapContainer = document.getElementById('roadmap-phases');
     if (roadmapContainer) roadmapContainer.innerHTML = roadmapPhases.length ? roadmapPhases.map(renderRoadmapPhase).join('') : COMING_SOON;
+}
+
+// --- Member home (FR-GLOWE-016 AC2) -----------------------------------------
+// Pure selector: the member's own posts, newest first, capped.
+function selectMemberActivity(posts, userId, limit = 3) {
+    if (!userId) return [];
+    return posts
+        .filter(post => String(post.authorId) === String(userId))
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .slice(0, limit);
+}
+
+// Pure selector: one unified, recency-interleaved glimpse across the catalog.
+function selectCommunityHighlights(opportunities, posts, limit = 6) {
+    const oppItems = opportunities.map(item => ({ kind: 'opportunity', item }));
+    const postItems = posts
+        .slice()
+        .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+        .map(item => ({ kind: 'post', item }));
+    const mixed = [];
+    const max = Math.max(oppItems.length, postItems.length);
+    for (let i = 0; i < max; i++) {
+        if (postItems[i]) mixed.push(postItems[i]);
+        if (oppItems[i]) mixed.push(oppItems[i]);
+    }
+    return mixed.slice(0, limit);
+}
+
+// Compact card for the member feed. Links resolve from the site root (home page),
+// so they point into pages/* unlike the /pages/-local renderPostCard.
+function renderMemberFeedPost(post) {
+    const postId = post.id || '';
+    const href = `pages/community.html#post-${encodeURIComponent(postId)}`;
+    const snippet = (post.text || '').slice(0, 140);
+    return `
+        <a class="member-feed-card" href="${href}">
+            <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
+            <h3>${escapeHtml(post.title || 'Community post')}</h3>
+            <p>${escapeHtml(snippet)}</p>
+            <span class="member-feed-author">${escapeHtml(post.authorName || 'Community Member')}</span>
+        </a>`;
+}
+
+function renderMemberHighlight(entry) {
+    return entry.kind === 'opportunity'
+        ? renderOpportunityCard(entry.item)
+        : renderMemberFeedPost(entry.item);
+}
+
+function renderMemberHomeMarkup(firstName, activity, highlights) {
+    const activityBody = activity.length
+        ? activity.map(renderMemberFeedPost).join('')
+        : '<div class="empty-state"><h3>You have not shared anything yet</h3><p>Your posts, opportunities, and requests will gather here.</p><a class="btn btn-primary btn-small" href="pages/community.html">Write your first post</a></div>';
+    const highlightsBody = highlights.length
+        ? highlights.map(renderMemberHighlight).join('')
+        : '<div class="empty-state"><h3>The community is just getting started</h3><p>Be the first to share a post or an opportunity others can join.</p><a class="btn btn-primary btn-small" href="pages/community.html">Start the conversation</a></div>';
+    return `
+        <div class="container member-home-inner">
+            <section class="member-hero">
+                <div class="member-hero-copy">
+                    <span class="hero-kicker">Your GloWe</span>
+                    <h1>Welcome back, <span class="member-hero-name">${escapeHtml(firstName)}</span></h1>
+                    <p>What would you like to do today? Share knowledge, post an opportunity, or ask the community for support.</p>
+                </div>
+                <div class="member-hero-actions">
+                    <a class="btn btn-primary btn-large" href="pages/community.html">Share a post</a>
+                    <a class="btn btn-outline btn-large" href="pages/opportunities.html">Post an opportunity</a>
+                    <button class="btn btn-outline btn-large" type="button" onclick="openWishModal()">Ask for support</button>
+                </div>
+            </section>
+            <section class="member-section">
+                <div class="section-toolbar">
+                    <div><h2>Your activity</h2></div>
+                    <a class="btn btn-outline btn-small" href="pages/my-applications.html">Open Personal Area</a>
+                </div>
+                <div class="member-feed-grid">${activityBody}</div>
+            </section>
+            <section class="member-section">
+                <div class="section-toolbar">
+                    <div><h2>What is happening on GloWe</h2></div>
+                    <a class="btn btn-outline btn-small" href="pages/community.html">See all</a>
+                </div>
+                <div class="member-feed-grid">${highlightsBody}</div>
+            </section>
+        </div>`;
+}
+
+async function initMemberHome() {
+    const root = document.getElementById('member-home');
+    if (!root) return;
+    document.body.classList.add('glowe-member-home');
+    root.hidden = false;
+    root.innerHTML = '<div class="container"><p class="muted-note">Loading your GloWe home…</p></div>';
+
+    await Promise.all([
+        fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow),
+        fetchAndPopulate(() => gloweBackend.listAll('posts'), communityPosts, mapPostRow)
+    ]);
+
+    const profile = getPersonalProfile();
+    const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    const firstName = (profile.firstName || (profile.name || '').split(' ')[0] || 'there').trim();
+    const allPosts = getAllCommunityPosts();
+    const activity = selectMemberActivity(allPosts, user ? user.id : '');
+    const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts);
+    root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights);
 }
 
 // Initialize all opportunities page
@@ -4130,6 +4243,7 @@ function handleApplicationSubmit(event) {
 function initMyApplicationsPage() {
     const container = document.getElementById('personal-area-content');
     if (!container) return;
+    if (typeof requireGloweMember === 'function' && !requireGloweMember()) return;
 
     function renderPersonalArea() {
         const profile = getPersonalProfile();
@@ -4381,6 +4495,25 @@ const GLOWE_TRANSLATIONS = {
         'End your session on this device. You can sign back in any time with Google.': 'סיום ההתחברות במכשיר זה. תוכלו להתחבר מחדש בכל עת באמצעות Google.',
         'Sign in to manage settings': 'התחברו כדי לנהל הגדרות',
         'Your account, language, and session options live here once you are signed in.': 'החשבון, השפה ואפשרויות ההתחברות יופיעו כאן לאחר הכניסה.',
+        // Member home (FR-GLOWE-016)
+        'Your GloWe': 'ה-GloWe שלכם',
+        'Welcome back,': 'ברוכים השבים,',
+        'What would you like to do today? Share knowledge, post an opportunity, or ask the community for support.': 'מה תרצו לעשות היום? לשתף ידע, לפרסם הזדמנות, או לבקש תמיכה מהקהילה.',
+        'Share a post': 'שיתוף פוסט',
+        'Post an opportunity': 'פרסום הזדמנות',
+        'Ask for support': 'בקשת תמיכה',
+        'Your activity': 'הפעילות שלכם',
+        'What is happening on GloWe': 'מה קורה ב-GloWe',
+        'See all': 'הצגת הכול',
+        'Loading your GloWe home…': 'טוען את ה-GloWe שלכם…',
+        'You have not shared anything yet': 'עדיין לא שיתפתם דבר',
+        'Your posts, opportunities, and requests will gather here.': 'הפוסטים, ההזדמנויות והבקשות שלכם יופיעו כאן.',
+        'Write your first post': 'כתבו את הפוסט הראשון שלכם',
+        'The community is just getting started': 'הקהילה רק מתחילה',
+        'Be the first to share a post or an opportunity others can join.': 'היו הראשונים לשתף פוסט או הזדמנות שאחרים יוכלו להצטרף אליהם.',
+        'Start the conversation': 'פתחו את השיחה',
+        'Community post': 'פוסט קהילתי',
+        'Community Member': 'חבר/ת קהילה',
         // Home — hero + intro
         'A home for people building impact together': 'בית לאנשים שיוצרים השפעה ביחד',
         'You do not have to carry the work alone.': 'אתם לא צריכים לשאת את העבודה לבד.',

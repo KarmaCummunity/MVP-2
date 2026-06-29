@@ -3,6 +3,8 @@ const LEGACY_USER_KEY = 'revolutionaryUser';
 const LEGACY_USERS_KEY = 'revolutionaryUsers';
 const GLOWE_USER_KEY = 'gloweUser';
 const GLOWE_USERS_KEY = 'gloweUsers';
+// Must match backend.js getClient() storageKey — the Supabase session lives here.
+const GLOWE_SUPABASE_SESSION_KEY = 'glowe-auth-v1';
 
 function migrateAuthStorage() {
     if (!localStorage.getItem(GLOWE_USER_KEY) && localStorage.getItem(LEGACY_USER_KEY)) {
@@ -24,6 +26,16 @@ function isLoggedIn() {
 function getCurrentUser() {
     const userData = localStorage.getItem(GLOWE_USER_KEY);
     return userData ? JSON.parse(userData) : null;
+}
+
+// Single place that wipes every local identity artifact. Both logout() and the
+// signed-out branch of syncSupabaseSession() must clear the SAME keys, otherwise
+// a stale glowePersonalProfile keeps rendering the previous member on surfaces
+// that read getPersonalProfile() (e.g. the Community sidebar).
+function clearGloweIdentity() {
+    localStorage.removeItem(GLOWE_USER_KEY);
+    localStorage.removeItem(LEGACY_USER_KEY);
+    localStorage.removeItem('glowePersonalProfile');
 }
 
 function buildPersonalProfileFromRegistration(user = {}) {
@@ -107,14 +119,24 @@ async function syncSupabaseSession() {
     }
 
     if (!supabaseUser) {
-        // Supabase reports signed out — clear any stale local session.
+        // Supabase reports signed out — clear ALL stale local identity (incl. the
+        // cached personal profile), not just gloweUser.
         const wasLoggedIn = isLoggedIn();
+        clearGloweIdentity();
         if (wasLoggedIn) {
-            localStorage.removeItem(GLOWE_USER_KEY);
             updateAuthUI();
+            // The page already rendered member content (e.g. the Community
+            // sidebar reads getPersonalProfile() synchronously at load, before
+            // this async bridge resolves). Clearing storage alone leaves that
+            // stale DOM in place, so force a reload to re-render as anonymous.
+            // After the reload gloweUser is gone → wasLoggedIn is false → no loop.
+            // logout() clears identity *before* it triggers signOut, so this path
+            // never fires during an explicit logout (which redirects on its own).
+            window.location.reload();
+            return;
         }
-        // Always refresh the Personal Area so it reflects the signed-out state
-        // even when logout() already cleared gloweUser before this fires.
+        // Already anonymous (e.g. logout() cleared identity before this fired):
+        // just refresh the Personal Area to reflect the signed-out state.
         refreshPersonalAreaIfVisible();
         return;
     }
@@ -438,22 +460,43 @@ function redirectPendingOpportunity(existingValue = null) {
     window.location.href = `${basePath}opportunity.html?id=${pendingOpportunity}`;
 }
 
+// Resolve the guest home href from any page (pages/* live one level down).
+function gloweHomeHref(pathname) {
+    const path = pathname || (typeof window !== 'undefined' ? window.location.pathname : '/');
+    return path.includes('/pages/') ? '../index.html' : 'index.html';
+}
+
+// Guard for member-only surfaces (the Personal Area). Anonymous visitors are
+// bounced to the guest home; pages with a graceful sign-in prompt (Settings,
+// Messages) and the public profile view must NOT call this.
+function requireGloweMember() {
+    if (isLoggedIn()) return true;
+    window.location.href = gloweHomeHref();
+    return false;
+}
+
 // Handle logout
-function logout() {
-    if (window.gloweBackend && window.gloweBackend.configured()) {
-        window.gloweBackend.signOut().catch(() => {});
-    }
-    localStorage.removeItem(GLOWE_USER_KEY);
-    localStorage.removeItem(LEGACY_USER_KEY);
+async function logout() {
+    // Clear the local identity first so the UI flips immediately even if the
+    // async Supabase sign-out below is slow.
+    clearGloweIdentity();
     updateAuthUI();
-    // Refresh the Personal Area immediately so the profile card disappears
-    // without waiting for the async signOut → onAuthStateChange cycle.
     refreshPersonalAreaIfVisible();
 
-    // Redirect to home if on protected page
-    if (window.location.pathname.includes('my-applications')) {
-        window.location.href = '../index.html';
+    // CRITICAL: await the Supabase sign-out BEFORE navigating. The session lives
+    // under the 'glowe-auth-v1' storageKey; if we redirect before it is cleared,
+    // the next page's session bridge (syncSupabaseSession) re-mirrors the live
+    // Supabase user back into gloweUser/glowePersonalProfile and the previous
+    // member's details reappear. We also drop the key directly as a backstop in
+    // case signOut fails to load the client.
+    if (window.gloweBackend && window.gloweBackend.configured()) {
+        try { await window.gloweBackend.signOut(); } catch (error) { /* fall through */ }
     }
+    localStorage.removeItem(GLOWE_SUPABASE_SESSION_KEY);
+
+    // Always return to the guest home: a full nav tears down any open modal and
+    // guarantees no member-only view survives the session change.
+    window.location.href = gloweHomeHref();
 }
 
 // Update UI based on auth state
