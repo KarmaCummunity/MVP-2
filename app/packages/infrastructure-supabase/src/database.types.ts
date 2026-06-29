@@ -4028,6 +4028,16 @@ export type Database = {
         Returns: string
       }
       get_my_admin_roles: { Args: never; Returns: string[] }
+      get_post_translations: {
+        Args: { p_post_ids: string[]; p_target_language: string }
+        Returns: {
+          confidence: number
+          field: string
+          post_id: string
+          source_language: string
+          translated_text: string
+        }[]
+      }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
       glowe_list_pending_orgs: {
