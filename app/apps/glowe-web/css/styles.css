@@ -5514,6 +5514,28 @@ html[dir="rtl"] textarea {
 }
 
 /* Keep brand/identifier values left-to-right inside RTL text. */
-html[dir="rtl"] .logo-text {
+html[dir="rtl"] .logo-text,
+html[dir="rtl"] .lang-toggle {
     direction: ltr;
+}
+
+/* Header language switch — visible only for anonymous visitors (removed on sign-in). */
+.lang-toggle {
+    flex: 0 0 auto;
+    min-width: 42px;
+    height: 36px;
+    padding: 0 12px;
+    border-radius: 999px;
+    border: 1px solid rgba(15, 93, 85, 0.25);
+    background: var(--white);
+    color: var(--primary-dark);
+    font-weight: 700;
+    font-size: 0.9rem;
+    cursor: pointer;
+    transition: var(--transition);
+}
+
+.lang-toggle:hover {
+    background: rgba(15, 93, 85, 0.08);
+    box-shadow: 0 6px 16px rgba(15, 93, 85, 0.08);
 }

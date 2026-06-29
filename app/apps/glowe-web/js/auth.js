@@ -469,9 +469,13 @@ function updateAuthUI() {
             userMenu.style.display = 'flex';
             if (userNameSpan) userNameSpan.textContent = user.name.split(' ')[0];
         }
+        // Language is managed in Settings once signed in — remove the header toggle.
+        if (typeof window.removeLanguageToggle === 'function') window.removeLanguageToggle();
     } else {
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
+        // Anonymous visitors have no Settings page — expose the toggle in the header.
+        if (typeof window.injectLanguageToggle === 'function') window.injectLanguageToggle();
     }
 
     // Auth-aware nav (Home ⇄ Personal Area) must track the same state. Re-run
