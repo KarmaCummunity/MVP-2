@@ -1140,6 +1140,34 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-63 — Cross-language UGC translation: demand-driven cache + zero-retention/DPA LLM-flash provider (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** User-generated content is translated by an **LLM-flash** provider (Gemini Flash / GPT-4o-mini tier) called only from a Supabase Edge Function that holds the API key. The provider chosen for production **must be zero-retention and operate under a DPA** (no training on, or retention of, user content). Translations are **demand-driven (lazy)**: we materialize a `(content, field, target_language)` translation only when a real reader requests that language, then cache it in Postgres and serve all subsequent readers from cache. The LLM never runs on the read path (translate-ahead-of-read; cache hits are served inline as ordinary fields). Unlimited target languages are supported, but only the few actually demanded per item are paid for and stored.
+
+**Rationale.** Eagerly translating every item into every language would bloat the database and the budget without bound. Lazy materialization makes cost scale with real demand (~2–5 languages per popular item), not with the language catalog. Caching turns repeat reads into ordinary field reads — fast and zero marginal cost. LLM-flash is ~100× cheaper than classic NMT at comparable quality for short UGC. Zero-retention/DPA is a hard privacy precondition for sending user content to a third party.
+
+**Alternatives rejected.** Eager translate-all (cost + storage blowup); classic NMT API (lower quality on idiomatic short UGC, higher per-char cost); on-device translation (inconsistent quality, large model download, no shared cache).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`, `docs/SSOT/spec/18_translation.md`, `docs/SSOT/BACKLOG.md` (TRANSLATE epic).
+
+---
+
+## D-64 — Posts auto-translate; chat translation opt-in with a sender-consent gate (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** Public posts are **auto-translated** into the reader's preferred language on demand. **Chat translation is opt-in and default off.** When chat translation ships (last phase), a message is sent to the translation provider **only if its sender opted in** (sender-consent gate) — the reader's preference alone never causes a non-consenting sender's private message to be transmitted to a third party.
+
+**Rationale.** Posts are public content authored for broad audiences, so translating them carries no additional privacy expectation. Private messages are different: sending a private message to an external provider without the author's consent would breach the sender's reasonable privacy expectation. Gating on the sender (not the reader) keeps control with the person whose words are being transmitted. Default-off avoids surprising users and keeps chat costs (the only component that scales linearly) opt-in.
+
+**Alternatives rejected.** Auto-translate chat for everyone (privacy breach + unbounded cost); gate on reader consent (sends the sender's words without their consent); no chat translation at all (fails the full-accessibility goal).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`, `docs/SSOT/spec/18_translation.md`.
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08
