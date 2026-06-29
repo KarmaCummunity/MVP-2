@@ -995,32 +995,53 @@ export type Database = {
         Row: {
           availability: string | null
           created_at: string
+          decided_at: string | null
+          decided_by: string | null
           id: string
           motivation: string | null
           opportunity_id: string
+          rejection_note: string | null
           skills: string | null
           status: string
+          submitted_comment: string | null
+          submitted_email: string | null
+          submitted_phone: string | null
           user_id: string
+          waitlist_position: number | null
         }
         Insert: {
           availability?: string | null
           created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
           id?: string
           motivation?: string | null
           opportunity_id: string
+          rejection_note?: string | null
           skills?: string | null
           status?: string
+          submitted_comment?: string | null
+          submitted_email?: string | null
+          submitted_phone?: string | null
           user_id: string
+          waitlist_position?: number | null
         }
         Update: {
           availability?: string | null
           created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
           id?: string
           motivation?: string | null
           opportunity_id?: string
+          rejection_note?: string | null
           skills?: string | null
           status?: string
+          submitted_comment?: string | null
+          submitted_email?: string | null
+          submitted_phone?: string | null
           user_id?: string
+          waitlist_position?: number | null
         }
         Relationships: []
       }
@@ -1053,53 +1074,80 @@ export type Database = {
       }
       glowe_opportunities: {
         Row: {
+          capacity: number | null
           commitment: string | null
           created_at: string
           description: string | null
           duration: string | null
+          end_at: string | null
+          event_link: string | null
+          event_type: string | null
           featured: boolean
           field: string | null
           id: string
+          link_reveal_hours: number | null
+          link_visibility: string
           location: string | null
           org_icon: string | null
           organization: string
+          registration_mode: string
           requirements: string[]
           responsibilities: string[]
           skills: string[]
+          start_at: string | null
+          status: string
           title: string
           user_id: string | null
         }
         Insert: {
+          capacity?: number | null
           commitment?: string | null
           created_at?: string
           description?: string | null
           duration?: string | null
+          end_at?: string | null
+          event_link?: string | null
+          event_type?: string | null
           featured?: boolean
           field?: string | null
           id?: string
+          link_reveal_hours?: number | null
+          link_visibility?: string
           location?: string | null
           org_icon?: string | null
           organization: string
+          registration_mode?: string
           requirements?: string[]
           responsibilities?: string[]
           skills?: string[]
+          start_at?: string | null
+          status?: string
           title: string
           user_id?: string | null
         }
         Update: {
+          capacity?: number | null
           commitment?: string | null
           created_at?: string
           description?: string | null
           duration?: string | null
+          end_at?: string | null
+          event_link?: string | null
+          event_type?: string | null
           featured?: boolean
           field?: string | null
           id?: string
+          link_reveal_hours?: number | null
+          link_visibility?: string
           location?: string | null
           org_icon?: string | null
           organization?: string
+          registration_mode?: string
           requirements?: string[]
           responsibilities?: string[]
           skills?: string[]
+          start_at?: string | null
+          status?: string
           title?: string
           user_id?: string | null
         }

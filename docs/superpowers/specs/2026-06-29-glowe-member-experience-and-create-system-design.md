@@ -63,10 +63,14 @@ persistence adapter, not the create system.
 | **Chat** (Need "I'll help" thread) | both | Messages (`messages.html`) | **supersedes FR-GLOWE-014** | **reuse KC `public.chats`/`public.messages`** |
 
 Implications:
-- **Event** = a client-side **validation profile** over an FR-007 opportunity (date+location made
-  required). It is **not** a new table or schema subtype. Consequence: on read-back an Event is not
-  distinguishable from a plain opportunity, so home/cards do not filter "Events" separately — they
-  render as opportunities. RSVP reuses the FR-007/FR-011 application flow.
+- **Event** = an FR-007 opportunity with a date. For *this* milestone it is a client-side
+  **validation profile** (date+location made required) and RSVP reuses the FR-007/FR-011 application
+  flow. **Update (D-66):** the events feature now grows beyond a pure validation profile — see
+  `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md`. It stays **additive on
+  `glowe_opportunities`/`glowe_applications` (still no new tables)**, but adds event-metadata and
+  registration-lifecycle columns (migration `0211`), so an Event *is* distinguishable from a plain
+  opportunity by `start_at`/`event_type`. Home/cards may still render events as opportunities; a
+  dedicated events surface is delivered in later EVT slices.
 - **Need** = an FR-006 wish. "I'll help" = an FR-006/FR-012 offer (upsert, honoring FR-012's
   `unique(post_id,user_id)`) **plus** opening a chat (§8.2).
 - **Volunteer offer** is the one genuinely new content shape: a new `post_type='offer'` discriminator

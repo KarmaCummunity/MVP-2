@@ -200,6 +200,7 @@ The Volunteer Network page (`pages/volunteer-network.html`) and opportunity deta
 - AC6. **Featured.** Opportunities with `featured = true` appear at the top of the listing grid.
 - AC7. **Empty state.** Friendly empty state with "Post the first opportunity" CTA when no results.
 - AC8. **Translations.** New UI strings added to Hebrew locale.
+- AC9. **Events (additive model).** An opportunity becomes an **Event** when `start_at` is set. Events are not a separate table or schema subtype — they ride the `glowe_opportunities` read/write/RLS paths and add event metadata: `start_at`/`end_at`, `event_type ∈ {physical, digital}`, `event_link` + `link_visibility ∈ {immediate, before_event}` (+ `link_reveal_hours`), `capacity` (null = unlimited), `registration_mode ∈ {open, gated}`, and `status ∈ {active, cancelled, closed}`. An **RSVP** reuses `glowe_applications` (no separate registrations table). Schema foundation: migration `0211`. Design: `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md` (D-66).
 
 ---
 
@@ -297,8 +298,9 @@ Opportunity owners need to see who applied; wish owners need to see who offered 
 - AC2. **Accept/decline application.** Opportunity owner can update `glowe_applications.status` to `'Accepted'` or `'Declined'` (via a dedicated `SECURITY DEFINER` RPC `glowe_update_application_status(p_application_id, p_decision)` gated to the opportunity owner). The RPC validates `p_decision ∈ {'Accepted','Declined'}`.
 - AC3. **Wish owner offer inbox.** On the wish detail view (expanded card or a dedicated URL), the wish owner sees all `glowe_offers` for that wish (offerer name, offer text, availability, contact preference, submitted-at).
 - AC4. **Contact link.** Each application/offer row has a "Connect" CTA; for Phase B this copies the applicant's contact info (email from `glowe_profiles`) to clipboard. Phase C: routes to KC direct messages.
-- AC5. **Status badge.** Application status badge (`Pending / Accepted / Declined`) is visible to the applicant on their My Applications tab (FR-GLOWE-011 AC8).
+- AC5. **Status badge.** Application status badge (`Pending / Accepted / Declined / Waitlisted / Cancelled`) is visible to the applicant on their My Applications tab (FR-GLOWE-011 AC8).
 - AC6. **Translations.** New UI strings added to Hebrew locale.
+- AC7. **Registration lifecycle guard (events).** `glowe_applications.status` is constrained to `{Pending, Accepted, Declined, Waitlisted, Cancelled}` and a `BEFORE INSERT/UPDATE` guard (`glowe_applications_guard_status`, migration `0211`) blocks clients from self-deciding: a client INSERT must be `Pending`, a client UPDATE may only move to `Cancelled`, and server-managed fields (`decided_at`, `decided_by`, `waitlist_position`, `rejection_note`) cannot be set by the client. A partial unique index permits exactly one active RSVP per `(opportunity_id, user_id)` while allowing re-RSVP after `Cancelled`/`Declined`. Organizer decisions (accept / decline + reason, capacity routing) flow through a `SECURITY DEFINER` RPC that bypasses the guard.
 
 **New table.**
 ```sql

@@ -1182,6 +1182,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-66 — GloWe Events are opportunities-with-a-date; RSVPs are applications (additive, no new tables) (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** The GloWe event-publishing & RSVP feature is built as an **additive extension** of `glowe_opportunities` (FR-GLOWE-007) and `glowe_applications` (FR-GLOWE-012), not as a parallel `glowe_events` / `glowe_event_registrations` schema. An **Event** is an opportunity that carries `start_at` plus event metadata (`event_type`, `event_link`/`link_visibility`/`link_reveal_hours`, `capacity`, `registration_mode`, `status`); an **RSVP** is a `glowe_applications` row with registration columns (`submitted_email`/`phone`/`comment`, `waitlist_position`, `rejection_note`, `decided_at`/`decided_by`). A `BEFORE INSERT/UPDATE` status guard (`glowe_applications_guard_status`) prevents applicants from self-deciding their status; privileged organizer decisions go through `SECURITY DEFINER` RPCs that bypass the guard (mirrors the posts guard, migration `0199`). Schema foundation lands in migration `0211`.
+
+**Rationale.** This honors the convergence direction (D-61): events ride the existing read/write/RLS/translation paths, so home and cards render an event as an opportunity with zero new plumbing, and entity-by-entity migration onto KC-native tables stays simple. It also resolves the conflict between the richer PM brainstorm (gated/open approval, capacity/waitlist, organizer mini-portal) and the member-experience design's thin "Event = validation profile over an opportunity": the rich features are delivered **incrementally as additive columns + RPCs**, never as a separate table.
+
+**Alternatives rejected.** Separate `glowe_events` + `glowe_event_registrations` tables (duplicates the opportunity/application read, RLS, translation, and moderation paths; fights the convergence goal); keeping events a pure client-side validation profile with no schema (cannot express gated approval, capacity, link-reveal timing, or organizer decisions safely).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md`, `docs/superpowers/specs/2026-06-29-glowe-member-experience-and-create-system-design.md`, `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-007 AC9, FR-GLOWE-012 AC7).
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08
@@ -1214,6 +1228,7 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.5 | 2026-06-29 | Added `D-66` (GloWe Events are opportunities-with-a-date and RSVPs are applications — additive columns + status guard in migration `0211`, no `glowe_events`/`glowe_event_registrations` tables; reconciles the rich event brainstorm with the convergence model; `FR-GLOWE-007` AC9, `FR-GLOWE-012` AC7). |
 | 4.4 | 2026-06-29 | Added `D-65` (UGC translation Phase 1b: free Gemini Flash now + pluggable provider seam → paid DPA Flash before public launch is env-only; `TranslateAndCache`/`ITranslationProvider` realized server-side in the `translate` Edge Function; app depends on new `ITranslationService` port). Recorded alongside `D-63`/`D-64` (translation epic). |
 | 4.3 | 2026-06-29 | Added `D-62` (GloWe session isolation: `storageKey:'glowe-auth-v1'` + `scope:'local'` signOut + immediate Personal Area refresh on logout; fixes profile-still-visible-after-logout bug). |
 | 4.2 | 2026-06-25 | Added `D-61` (GloWe added as an additional frontend on KC's shared Supabase backend; Phase A shares Auth identity only; GloWe data namespaced `glowe_`, migration `0204`; `FR-GLOWE-001`, `spec/17_glowe_frontend.md`). |
