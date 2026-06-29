@@ -411,6 +411,30 @@
         return data.includes('glowe_admin') || data.includes('super_admin');
     }
 
+    async function fetchAdminCounts() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return { members: 0, orgs: 0 };
+        const [membersRes, orgsRes] = await Promise.all([
+            supabaseClient.from(tbl('profiles')).select('*', { count: 'exact', head: true })
+                .eq('account_type', 'individual'),
+            supabaseClient.from(tbl('profiles')).select('*', { count: 'exact', head: true })
+                .eq('account_type', 'organization')
+        ]);
+        return { members: membersRes.count || 0, orgs: orgsRes.count || 0 };
+    }
+
+    async function fetchProfileById(id) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient || !id) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl('profiles'))
+            .select('*')
+            .eq('id', id)
+            .maybeSingle();
+        if (error) throw error;
+        return fromProfileRow(data);
+    }
+
     window.gloweBackend = {
         configured,
         getClient,
@@ -420,10 +444,12 @@
         signInWithGoogle,
         signOut,
         fetchProfile,
+        fetchProfileById,
         upsertProfile,
         completeOnboarding,
         listPendingOrgs,
         setOrgApproval,
+        fetchAdminCounts,
         isGloweAdmin,
         listAll,
         listApprovedOrgs,
