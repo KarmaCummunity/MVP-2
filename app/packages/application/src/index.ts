@@ -6,13 +6,8 @@ export * from './ports/IChatRepository';
 export * from './ports/IAuthService';
 export * from './ports/ICityRepository';
 export * from './ports/IStreetRepository';
-export type {
-  IChatRealtime,
-  InboxStreamCallbacks,
-  SubscribeInboxOptions,
-  ChatStreamCallbacks,
-  Unsubscribe,
-} from './ports/IChatRealtime';
+export type { ITranslationCacheRepository, CachedTranslation, TranslationCacheKey } from './ports/ITranslationCacheRepository';
+export type { IChatRealtime, InboxStreamCallbacks, SubscribeInboxOptions, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
 export type { IUserRealtime } from './ports/IUserRealtime';

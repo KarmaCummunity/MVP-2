@@ -1,6 +1,6 @@
 # 2.18 Cross-language UGC Translation
 
-> **Status:** 🟡 Phase 0 (Foundations) in progress — language primitives + schema plumbing landing; no translation/LLM/UI yet. Phases 1–4 ⏳ Planned.
+> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. 🟡 Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter; no LLM/Edge Function/read-path yet. Phases 1b/1c, 2–4 ⏳ Planned.
 
 Prefix: `FR-TRANSLATE-*`
 
@@ -43,9 +43,27 @@ Inert language primitives the rest of the system depends on: a validated, normal
 
 ---
 
-## FR-TRANSLATE-002 — Translation core (Phase 1, ⏳ Planned)
+## FR-TRANSLATE-002 — Translation core (Phase 1)
 
-Demand-driven materialization for posts: `content_translations` cache table with a single-flight UNIQUE constraint; translate Edge Function (LLM-flash, zero-retention/DPA); source-language detection on content create; SECURITY INVOKER read RPC for the feed join. To be detailed before implementation.
+> **Status:** 🟡 Phase 1a (cache substrate) landed. Phases 1b (provider/pipeline) + 1c (posts read path) ⏳ Planned.
+
+**Description.**
+Demand-driven materialization for posts. Phase 1a delivers the inert cache substrate the later phases populate and consume: a Postgres cache table keyed per `(content_type, content_id, target_language, field)` with single-flight semantics, the pure domain primitives that model a translation request and decide whether/how to cache, and a cache repository behind an application port. No LLM, Edge Function, read-path change, or UI in 1a.
+
+**Source.**
+- Design spec: `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` §4 (data model), §7 (single-flight/dedup), §8 (variant-aware keys, short-circuit).
+- Plan (1a): `docs/superpowers/plans/2026-06-29-ugc-translation-phase-1a-cache-core.md`.
+- Decisions: `D-63` (demand-driven cache + zero-retention/DPA provider), `D-64` (posts auto / chat opt-in).
+
+**Acceptance Criteria (Phase 1a — cache core).**
+- AC1. `content_translations` table (migration `0208`) stores one row per `(content_type, content_id, target_language, field)`, enforced by UNIQUE index `content_translations_key_uidx`; CHECKs constrain `content_type ∈ {post,message}`, `field ∈ {title,description,body}`, `confidence ∈ [0,1]`.
+- AC2. Mutations are service-role only: `anon`/`authenticated` are revoked all and granted table-level `SELECT` only; RLS is enabled with an explicit deny-by-default SELECT policy (`using (false)`) that blocks direct authenticated reads — replaced in Phase 1c by the narrow policy backing the read RPC.
+- AC3. Cache self-cleans so no readable translated copy of removed content survives: `BEFORE DELETE` triggers on `posts`/`messages` purge by source PK, and an `AFTER UPDATE OF status` trigger on `posts` purges when status flips to `removed_admin`.
+- AC4. Domain primitives in `@kc/domain`: `ContentType`/`TranslationField` literal unions + guards; `TranslationError extends DomainError` (`code='translation'`); `createTranslationRequest` validating content-type/field coupling (posts→title/description, messages→body) and normalizing source/target via `createLanguageTag`.
+- AC5. Cache-decision helpers: `normalizeForCache` (whitespace fold, case preserved), `isTranslatable` (empty/emoji-only/url-only/number-only short-circuit), `needsTranslation(source,target)` (true on unknown source or differing base language).
+- AC6. `ITranslationCacheRepository` port (`get`, `putIfAbsent`, `deleteForContent`) with a `SupabaseTranslationCacheRepository` adapter; `putIfAbsent` returns `false` on UNIQUE violation (`23505`) — the single-flight loser — and `true` when it inserts.
+
+**Related.** Migration `0208_content_translations.sql`. Phase 1b (Edge Function/provider + `TranslateAndCache`) and Phase 1c (SECURITY INVOKER read RPC + SELECT policy + posts read path) consume this substrate. The `content_translations` authenticated SELECT policy is intentionally deferred to Phase 1c.
 
 ## FR-TRANSLATE-003 — Reader UX (Phase 2, ⏳ Planned)
 
