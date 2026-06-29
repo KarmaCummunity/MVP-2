@@ -1168,6 +1168,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-65 — UGC translation: free Gemini Flash now, paid DPA Flash before public launch; orchestration realized server-side (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** Phase 1b ships translation on the **free** Gemini Flash tier so dev/testing costs nothing while the architecture proves out. The provider sits behind a one-method Deno seam (`TranslationProvider` + `selectProvider()` keyed on `TRANSLATION_PROVIDER`/`GEMINI_MODEL`), so the **D-63** requirement (zero-retention / no-training tier under a signed DPA) is satisfied later by an env/key change — **no code change** — and **must** be done before exposing translation to real users (tracked in `TECH_DEBT.md`). Because the cache table is **service-role-write-only** (Phase 1a) and the provider needs a secret key, the design's `TranslateAndCache` use case and `ITranslationProvider` port are **realized inside the `translate` Edge Function** (server-side), not as client-side application code; the app depends only on the new `ITranslationService` port.
+
+**Rationale.** Translation orchestration cannot run client-side: persisting to the cache requires the service role, and the provider key must never reach the bundle. Keeping the orchestration in the Edge Function avoids introducing a Deno↔workspace bundling pattern while preserving Clean Architecture's inward dependency rule (the app depends on a port, not on infrastructure). Starting on the free tier removes all cost during the inert (pre-read-path) phases; the pluggable seam makes the privacy upgrade trivial.
+
+**Alternatives rejected.** Client-side `TranslateAndCache` (impossible — can't hold the service role or the API key); LibreTranslate self-hosted from day one (privacy-clean but lower quality and ops overhead before it's even wired in); committing to the paid DPA tier immediately (needless cost while the feature is inert).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`, `docs/SSOT/spec/18_translation.md`, `docs/SSOT/TECH_DEBT.md`.
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08
@@ -1200,6 +1214,7 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.4 | 2026-06-29 | Added `D-65` (UGC translation Phase 1b: free Gemini Flash now + pluggable provider seam → paid DPA Flash before public launch is env-only; `TranslateAndCache`/`ITranslationProvider` realized server-side in the `translate` Edge Function; app depends on new `ITranslationService` port). Recorded alongside `D-63`/`D-64` (translation epic). |
 | 4.3 | 2026-06-29 | Added `D-62` (GloWe session isolation: `storageKey:'glowe-auth-v1'` + `scope:'local'` signOut + immediate Personal Area refresh on logout; fixes profile-still-visible-after-logout bug). |
 | 4.2 | 2026-06-25 | Added `D-61` (GloWe added as an additional frontend on KC's shared Supabase backend; Phase A shares Auth identity only; GloWe data namespaced `glowe_`, migration `0204`; `FR-GLOWE-001`, `spec/17_glowe_frontend.md`). |
 | 4.1 | 2026-06-08 | Added `D-155` (karma economy: self-only at MVP, single-anchor awards, status-anchored closure, own-row Realtime). Added `D-156` (anti-collusion caps as hard precondition for karma public flip; `FR-KARMA-008`). |
