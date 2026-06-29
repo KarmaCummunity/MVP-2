@@ -226,50 +226,38 @@ const discussionGroups = [
     {
         id: 'education',
         title: 'Education & Knowledge',
-        members: 42,
-        posts: 18,
+        members: 0,
+        posts: 0,
         description: 'A focused group for learning spaces, youth programs, multilingual knowledge sharing, and practical education tools.',
         tags: ['Education', 'Knowledge Sharing', 'Youth'],
-        threads: [
-            { title: 'How do we onboard remote tutors safely?', replies: 8, lastActive: 'Today' },
-            { title: 'Templates for multilingual learning kits', replies: 5, lastActive: 'Yesterday' }
-        ]
+        threads: []
     },
     {
         id: 'environment',
         title: 'Environment & Climate Action',
-        members: 37,
-        posts: 14,
+        members: 0,
+        posts: 0,
         description: 'For climate, food systems, waste, restoration, repair, and local environmental action.',
         tags: ['Climate', 'Food Security', 'Repair'],
-        threads: [
-            { title: 'What makes a cleanup day worth repeating?', replies: 11, lastActive: 'Today' },
-            { title: 'Composting workshop equipment list', replies: 6, lastActive: '2 days ago' }
-        ]
+        threads: []
     },
     {
         id: 'health',
         title: 'Health & Community Care',
-        members: 28,
-        posts: 11,
+        members: 0,
+        posts: 0,
         description: 'A moderated space for wellbeing, preventive health, emergency response, and community care methods.',
         tags: ['Health', 'Wellbeing', 'Crisis Response'],
-        threads: [
-            { title: 'Mobile clinic intake questions that work', replies: 7, lastActive: 'Today' },
-            { title: 'Mental health first response training', replies: 4, lastActive: '3 days ago' }
-        ]
+        threads: []
     },
     {
         id: 'rights',
         title: 'Rights, Safety & Civic Power',
-        members: 31,
-        posts: 9,
+        members: 0,
+        posts: 0,
         description: 'For rights-based action, civic participation, safe moderation, and community trust.',
         tags: ['Justice', 'Safety', 'Civic Action'],
-        threads: [
-            { title: 'Community guidelines for difficult conversations', replies: 9, lastActive: 'Yesterday' },
-            { title: 'What should moderators escalate?', replies: 3, lastActive: '4 days ago' }
-        ]
+        threads: []
     }
 ];
 
@@ -3348,7 +3336,7 @@ async function initCommunityPage() {
     if (groupsContainer) {
         groupsContainer.innerHTML = discussionGroups.map(group => `
             <a class="filter-pill group-link-pill" href="discussion-group.html?group=${group.id}">
-                ${group.title}<span>${group.members}</span>
+                ${group.title}${group.members > 0 ? `<span>${group.members}</span>` : ''}
             </a>
         `).join('');
     }
@@ -3561,24 +3549,26 @@ function initForumsPage() {
         groupSelect.innerHTML = discussionGroups.map(group => `<option value="${group.id}">${group.title}</option>`).join('');
     }
     if (leadersContainer) {
-        leadersContainer.innerHTML = people.slice(0, 4).map((person, index) => `
-            <article class="forum-leader-card">
-                <a href="profile.html?id=${person.id}" class="forum-leader-main">
-                    ${renderEntityMark(person.name, 'avatar')}
-                    <span>
-                        <strong>${person.name}</strong>
-                        <small>${person.skills.slice(0, 2).join(', ')}</small>
-                    </span>
-                </a>
-                <p>${index % 2 === 0 ? 'Available for peer advice and focused questions.' : 'Can help facilitate a respectful, practical discussion.'}</p>
-                <button class="btn btn-outline btn-small" type="button" onclick="openPrivateMessage('${jsString(person.name)}')">Message</button>
-            </article>
-        `).join('');
+        leadersContainer.innerHTML = people.length > 0
+            ? people.slice(0, 4).map((person, index) => `
+                <article class="forum-leader-card">
+                    <a href="profile.html?id=${person.id}" class="forum-leader-main">
+                        ${renderEntityMark(person.name, 'avatar')}
+                        <span>
+                            <strong>${escapeHtml(person.name)}</strong>
+                            <small>${(person.skills || []).slice(0, 2).join(', ')}</small>
+                        </span>
+                    </a>
+                    <p>${index % 2 === 0 ? 'Available for peer advice and focused questions.' : 'Can help facilitate a respectful, practical discussion.'}</p>
+                    <button class="btn btn-outline btn-small" type="button" onclick="openPrivateMessage('${jsString(person.name)}')">Message</button>
+                </article>
+            `).join('')
+            : '<p class="muted-note">Community members with active contributions will be featured here.</p>';
     }
     if (container) {
         container.innerHTML = discussionGroups.map(group => `
             <a class="forum-group-card" href="discussion-group.html?group=${group.id}">
-                <span>${group.members} members</span>
+                ${group.members > 0 ? `<span>${group.members} members</span>` : ''}
                 <h3>${group.title}</h3>
                 <p>${group.description}</p>
                 <div class="post-tag-row">${group.tags.map(tag => `<span>${tag}</span>`).join('')}</div>
@@ -3586,16 +3576,18 @@ function initForumsPage() {
         `).join('');
     }
     if (threadsContainer) {
-        threadsContainer.innerHTML = allThreads.map(thread => `
-            <article class="thread-row">
-                <div>
-                    <span class="post-type-tag">${escapeHtml(thread.group.title)}</span>
-                    <h3><a href="discussion-group.html?group=${thread.group.id}">${escapeHtml(thread.title)}</a></h3>
-                    <p>${thread.replies || 0} replies | Last active ${thread.lastActive || 'Just now'}${thread.fileName ? ` | Attachment: ${escapeHtml(thread.fileName)}` : ''}</p>
-                </div>
-                <a class="btn btn-outline btn-small" href="discussion-group.html?group=${thread.group.id}">Open</a>
-            </article>
-        `).join('');
+        threadsContainer.innerHTML = allThreads.length > 0
+            ? allThreads.map(thread => `
+                <article class="thread-row">
+                    <div>
+                        <span class="post-type-tag">${escapeHtml(thread.group.title)}</span>
+                        <h3><a href="discussion-group.html?group=${thread.group.id}">${escapeHtml(thread.title)}</a></h3>
+                        <p>${thread.replies || 0} replies | Last active ${thread.lastActive || 'Just now'}${thread.fileName ? ` | Attachment: ${escapeHtml(thread.fileName)}` : ''}</p>
+                    </div>
+                    <a class="btn btn-outline btn-small" href="discussion-group.html?group=${thread.group.id}">Open</a>
+                </article>
+            `).join('')
+            : '<p class="muted-note">Active threads will appear here once community members start discussions.</p>';
     }
     if (stats.length) {
         const totals = {
@@ -3702,31 +3694,36 @@ function initDiscussionGroupPage() {
         <h1>${group.title}</h1>
         <p>${group.description}</p>
         <div class="post-tag-row">${group.tags.map(tag => `<span>${tag}</span>`).join('')}</div>
+        ${group.members > 0 || group.posts > 0 || group.threads.length > 0 ? `
         <div class="group-stats-row">
-            <span>${group.members} members</span>
-            <span>${group.posts} posts</span>
-            <span>${group.threads.length} active threads</span>
-        </div>
+            ${group.members > 0 ? `<span>${group.members} members</span>` : ''}
+            ${group.posts > 0 ? `<span>${group.posts} posts</span>` : ''}
+            ${group.threads.length > 0 ? `<span>${group.threads.length} active threads</span>` : ''}
+        </div>` : ''}
     `;
-    members.innerHTML = people.slice(0, 5).map(person => `
-        <div class="person-row">
-            <a href="profile.html?id=${person.id}">
-                ${renderEntityMark(person.name, 'avatar')}
-                <span><strong>${person.name}</strong><small>${person.skills.slice(0, 2).join(', ')}</small></span>
-            </a>
-            <button type="button" onclick="openPrivateMessage('${jsString(person.name)}')">Message</button>
-        </div>
-    `).join('');
-    threads.innerHTML = group.threads.map(thread => `
-        <article class="thread-row">
-            <div>
-                <span class="post-type-tag">${thread.lastActive}</span>
-                <h3>${thread.title}</h3>
-                <p>${thread.replies} replies from members of ${group.title}.</p>
+    members.innerHTML = people.length > 0
+        ? people.slice(0, 5).map(person => `
+            <div class="person-row">
+                <a href="profile.html?id=${person.id}">
+                    ${renderEntityMark(person.name, 'avatar')}
+                    <span><strong>${escapeHtml(person.name)}</strong><small>${(person.skills || []).slice(0, 2).join(', ')}</small></span>
+                </a>
+                <button type="button" onclick="openPrivateMessage('${jsString(person.name)}')">Message</button>
             </div>
-            <button class="btn btn-outline btn-small" type="button" onclick="focusGroupReply()">Reply</button>
-        </article>
-    `).join('');
+        `).join('')
+        : '<p class="muted-note">Members will appear here once they join this group.</p>';
+    threads.innerHTML = group.threads.length > 0
+        ? group.threads.map(thread => `
+            <article class="thread-row">
+                <div>
+                    <span class="post-type-tag">${thread.lastActive}</span>
+                    <h3>${thread.title}</h3>
+                    <p>${thread.replies} replies from members of ${group.title}.</p>
+                </div>
+                <button class="btn btn-outline btn-small" type="button" onclick="focusGroupReply()">Reply</button>
+            </article>
+        `).join('')
+        : '<div class="empty-state"><h3>No threads yet</h3><p>Start the first conversation in this group.</p></div>';
     composer.innerHTML = `
         <form class="inline-post-form" onsubmit="handleDiscussionSubmit(event, '${group.id}')">
             <div class="form-group">
