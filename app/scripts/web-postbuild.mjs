@@ -42,21 +42,28 @@ if (existsSync(gloweSrc)) {
   console.warn(`[web-postbuild] GloWe source not found at ${gloweSrc} — skipping /glowe mount`);
 }
 
-// _redirects: /glowe/* paths fall back to glowe index for SPA-style routing;
-// everything else is redirected (302) to /glowe/.
-// Note: Cloudflare serves real static files before checking _redirects, so
-// actual files under /glowe/ (HTML pages, assets) are always served directly.
-writeFileSync(
-  redirectsPath,
-  '/glowe/*  /glowe/index.html  200\n/*        /glowe/           302\n',
-  'utf8',
-);
+// _redirects strategy:
+// Cloudflare Pages applies ALL _redirects rules before serving static files
+// (despite docs suggesting otherwise). A broad wildcard like /* therefore
+// overrides real files — causing redirect loops for /glowe/* assets.
+//
+// Safe approach: only redirect the exact paths we want to gate (/  and
+// individual KC named routes), never with a catch-all that matches /glowe/*.
+// GloWe's own static files (/glowe/index.html, /glowe/pages/*, assets…) are
+// served directly because they have no matching redirect rule.
+// The KC SPA fallback (/* → index.html 200) is replaced by the shim below.
+const redirectsContent = [
+  // GloWe root: serve index.html for the bare /glowe path (no trailing slash)
+  '/glowe    /glowe/index.html  200',
+  // Redirect the KC root to GloWe
+  '/         /glowe/            302',
+].join('\n') + '\n';
+writeFileSync(redirectsPath, redirectsContent, 'utf8');
 console.log(`[web-postbuild] wrote ${redirectsPath}`);
 
 // Replace dist/index.html with a redirect shim.
-// Cloudflare Pages serves the directory index (index.html) for "/" before
-// evaluating _redirects, so without this the Expo SPA would still be reachable
-// at the root. The shim immediately forwards the browser to /glowe/.
+// "/" serves dist/index.html as a directory-index before _redirects fires,
+// so we overwrite it with a page that immediately sends the browser to /glowe/.
 const rootIndexPath = resolve(distDir, 'index.html');
 writeFileSync(
   rootIndexPath,
