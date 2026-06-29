@@ -92,6 +92,16 @@
                             <option value="project-based">Project-based</option>
                         </select>
                     </div>
+                    <div class="filter-group">
+                        <label for="filter-event">Events:</label>
+                        <select id="filter-event">
+                            <option value="all">All listings</option>
+                            <option value="events">Events only</option>
+                            <option value="upcoming">Upcoming events</option>
+                            <option value="physical">In-person events</option>
+                            <option value="digital">Online events</option>
+                        </select>
+                    </div>
                     <div class="search-box">
                         <span class="search-label">Search</span>
                         <input type="text" id="search-opportunities" placeholder="Search volunteer roles...">
@@ -113,6 +123,7 @@
     <script src="../js/backend.js"></script>
     <script src="../js/data.js"></script>
     <script src="../js/auth.js"></script>
+    <script src="../js/glowe-events.js"></script>
     <script src="../js/app.js"></script>
 </body>
 </html>

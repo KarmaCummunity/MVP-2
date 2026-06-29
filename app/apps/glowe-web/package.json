@@ -5,6 +5,11 @@
   "description": "GloWe static frontend served on the shared Karma Community Supabase backend (shared auth identity). See docs/SSOT/spec/17_glowe_frontend.md.",
   "scripts": {
     "dev": "npx serve . --listen 4321",
-    "start": "npx serve . --listen 4321"
+    "start": "npx serve . --listen 4321",
+    "test": "vitest run",
+    "test:coverage": "vitest run --coverage"
+  },
+  "devDependencies": {
+    "vitest": "^4.1.8"
   }
 }
