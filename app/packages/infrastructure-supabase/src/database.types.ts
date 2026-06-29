@@ -4158,6 +4158,7 @@ export type Database = {
         Args: { followed: string; follower: string }
         Returns: boolean
       }
+      is_glowe_admin: { Args: { uid: string }; Returns: boolean }
       is_post_visible_to: {
         Args: {
           p_post: Database["public"]["Tables"]["posts"]["Row"]

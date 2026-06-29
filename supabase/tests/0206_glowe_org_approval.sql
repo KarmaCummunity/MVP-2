@@ -2,8 +2,8 @@
 -- Regression for migration 0206 (FR-GLOWE-003).
 --
 -- glowe_set_org_approval / glowe_list_pending_orgs are SECURITY DEFINER and must
--- be callable only by a KC reviewer (super_admin or moderator). We seed a
--- moderator here because 'super_admin' is singleton-constrained (TD-95) and the
+-- be callable only by a GLOWE admin (glowe_admin or super_admin). We seed a
+-- glowe_admin here because 'super_admin' is singleton-constrained (TD-95) and the
 -- shared CI/dev DBs already hold one. This test verifies:
 --   • a plain authenticated (non-admin) caller is blocked (42501 / 'forbidden')
 --   • a reviewer can approve a pending org, stamping reviewer + note, and the
@@ -58,7 +58,7 @@ begin
 
   perform pg_temp.mk_user('00000000-0000-0000-0000-0000000206ad', 'glowe_admin6');
   insert into public.admin_role_grants (user_id, role)
-  values ('00000000-0000-0000-0000-0000000206ad', 'moderator');
+  values ('00000000-0000-0000-0000-0000000206ad', 'glowe_admin');
 
   perform pg_temp.mk_user('00000000-0000-0000-0000-0000000206b1', 'glowe_rando6');
 end $$;

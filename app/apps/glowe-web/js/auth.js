@@ -514,6 +514,10 @@ function updateAuthUI() {
         }
         // Language is managed in Settings once signed in — remove the header toggle.
         if (typeof window.removeLanguageToggle === 'function') window.removeLanguageToggle();
+        // Show admin link for GLOWE admins (async; runs after render).
+        if (typeof window.applyAdminLink === 'function') {
+            window.applyAdminLink();
+        }
     } else {
         if (authButtons) authButtons.style.display = 'flex';
         if (userMenu) userMenu.style.display = 'none';
