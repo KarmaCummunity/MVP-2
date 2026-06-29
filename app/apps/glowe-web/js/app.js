@@ -5200,6 +5200,31 @@ function toggleGloweLanguage() {
     setGloweLanguage(getGloweLanguage() === 'he' ? 'en' : 'he');
 }
 
+// Header language toggle — shown only for anonymous visitors.
+// Logged-in users access language via the Settings page.
+function injectLanguageToggle() {
+    const container = document.querySelector('.main-header .container');
+    if (!container || container.querySelector('.lang-toggle')) return;
+    const current = getGloweLanguage();
+    const btn = document.createElement('button');
+    btn.type = 'button';
+    btn.className = 'lang-toggle';
+    btn.setAttribute('data-no-i18n', '');
+    btn.setAttribute('aria-label', current === 'he' ? 'Switch to English' : 'מעבר לעברית');
+    btn.textContent = current === 'he' ? 'EN' : 'עב';
+    btn.addEventListener('click', toggleGloweLanguage);
+    const authButtons = container.querySelector('.auth-buttons');
+    container.insertBefore(btn, authButtons || null);
+}
+
+function removeLanguageToggle() {
+    const btn = document.querySelector('.main-header .lang-toggle');
+    if (btn) btn.remove();
+}
+
+// Expose on window so auth.js (loaded separately) can call these after sign-in/out.
+window.injectLanguageToggle = injectLanguageToggle;
+window.removeLanguageToggle = removeLanguageToggle;
 
 // Set direction as early as app.js evaluates (it loads at end of <body>, so the
 // element is present) to minimize the LTR→RTL flash on Hebrew loads.
