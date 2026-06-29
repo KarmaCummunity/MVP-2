@@ -399,6 +399,18 @@
         return null;
     }
 
+    async function isGloweAdmin() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return false;
+        const { data: { user }, error: userError } = await supabaseClient.auth.getUser();
+        if (userError || !user) return false;
+        // get_my_admin_roles() returns the caller's active roles via SECURITY DEFINER.
+        // Both glowe_admin and super_admin grant GLOWE admin access.
+        const { data, error } = await supabaseClient.rpc('get_my_admin_roles');
+        if (error || !Array.isArray(data)) return false;
+        return data.includes('glowe_admin') || data.includes('super_admin');
+    }
+
     window.gloweBackend = {
         configured,
         getClient,
@@ -412,6 +424,7 @@
         completeOnboarding,
         listPendingOrgs,
         setOrgApproval,
+        isGloweAdmin,
         listAll,
         listApprovedOrgs,
         listMembers,
