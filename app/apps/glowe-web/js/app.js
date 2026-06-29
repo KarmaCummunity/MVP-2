@@ -2366,6 +2366,64 @@ document.addEventListener('keydown', function(e) {
 });
 
 // Render opportunity card
+// ── Supabase row → render-format mappers ────────────────────────────────────
+
+function mapOpportunityRow(row) {
+    return {
+        id: row.id,
+        title: row.title || '',
+        organization: row.organization || 'GloWe Member',
+        orgIcon: row.org_icon || getInitials(row.organization || 'GloWe'),
+        location: row.location || '',
+        commitment: row.commitment || '',
+        duration: row.duration || '',
+        field: row.field || '',
+        description: row.description || '',
+        skills: Array.isArray(row.skills) ? row.skills : [],
+        featured: Boolean(row.featured)
+    };
+}
+
+function mapPostRow(row) {
+    return {
+        id: row.id,
+        title: row.title || '',
+        category: row.category || '',
+        text: row.text || '',
+        tags: Array.isArray(row.tags) ? row.tags : [],
+        authorId: row.user_id || '',
+        authorName: row.author_name || 'Community Member',
+        createdAt: row.created_at || ''
+    };
+}
+
+function mapProfileToOrg(profile) {
+    return {
+        id: profile.id,
+        name: profile.orgName || profile.name || 'Organization',
+        type: profile.orgField || profile.type || 'Organization',
+        mission: profile.orgDescription || profile.about || '',
+        location: profile.orgCountry || profile.location || '',
+        scope: profile.country || '',
+        volunteers: 0,
+        impactArea: profile.focus || '',
+        status: 'Verified',
+        size: profile.orgSize || '',
+        website: profile.orgWebsite || ''
+    };
+}
+
+async function fetchAndPopulate(backendFn, targetArray, mapper) {
+    try {
+        if (typeof gloweBackend === 'undefined' || !gloweBackend.configured()) return;
+        const rows = await backendFn();
+        if (!rows) return;
+        targetArray.splice(0, targetArray.length, ...rows.map(mapper));
+    } catch (_e) {
+        // leave array empty; page shows empty state
+    }
+}
+
 function renderOpportunityCard(opportunity, basePath = '') {
     const titleForMessage = jsString(opportunity.title);
     const detailHref = `${basePath}pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
@@ -2870,46 +2928,52 @@ function renderApplicationCard(application) {
 }
 
 // Initialize featured opportunities on home page
-function initFeaturedOpportunities() {
+async function initFeaturedOpportunities() {
+    const COMING_SOON = '<p class="muted-note">This section will come alive as the community grows.</p>';
+
     const container = document.getElementById('featured-opportunities');
     if (container) {
+        container.innerHTML = '<p class="muted-note">Loading opportunities…</p>';
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
         const featured = getFeaturedOpportunities().slice(0, 3);
-        container.innerHTML = featured.map(opp => renderOpportunityCard(opp)).join('');
+        container.innerHTML = featured.length
+            ? featured.map(opp => renderOpportunityCard(opp)).join('')
+            : '<div class="empty-state"><h3>No opportunities posted yet</h3><p>Be the first to share a volunteer role or collaboration request with the community.</p><a class="btn btn-primary btn-small" href="pages/opportunities.html">Post an opportunity</a></div>';
     }
 
     const dailyContainer = document.getElementById('daily-actions');
-    if (dailyContainer) dailyContainer.innerHTML = dailyActions.map(renderDailyActionCard).join('');
+    if (dailyContainer) dailyContainer.innerHTML = dailyActions.length ? dailyActions.map(renderDailyActionCard).join('') : COMING_SOON;
 
     const matchContainer = document.getElementById('smart-matches');
-    if (matchContainer) matchContainer.innerHTML = smartMatches.map(renderSmartMatch).join('');
+    if (matchContainer) matchContainer.innerHTML = smartMatches.length ? smartMatches.map(renderSmartMatch).join('') : COMING_SOON;
 
     const playbookContainer = document.getElementById('applied-playbooks');
-    if (playbookContainer) playbookContainer.innerHTML = appliedPlaybooks.map(renderPlaybook).join('');
+    if (playbookContainer) playbookContainer.innerHTML = appliedPlaybooks.length ? appliedPlaybooks.map(renderPlaybook).join('') : COMING_SOON;
 
     const distributionContainer = document.getElementById('distribution-tools');
-    if (distributionContainer) distributionContainer.innerHTML = distributionChannels.map(renderDistributionTool).join('');
+    if (distributionContainer) distributionContainer.innerHTML = distributionChannels.length ? distributionChannels.map(renderDistributionTool).join('') : COMING_SOON;
 
     const grantContainer = document.getElementById('grant-recommendations');
-    if (grantContainer) grantContainer.innerHTML = grantRecommendations.map(renderGrantRecommendation).join('');
+    if (grantContainer) grantContainer.innerHTML = grantRecommendations.length ? grantRecommendations.map(renderGrantRecommendation).join('') : COMING_SOON;
 
     const engagementContainer = document.getElementById('engagement-tools');
-    if (engagementContainer) engagementContainer.innerHTML = engagementTools.map(renderEngagementTool).join('');
+    if (engagementContainer) engagementContainer.innerHTML = engagementTools.length ? engagementTools.map(renderEngagementTool).join('') : COMING_SOON;
 
     const rewardsContainer = document.getElementById('reward-leaders');
-    if (rewardsContainer) rewardsContainer.innerHTML = rewardLeaders.map(renderRewardLeader).join('');
+    if (rewardsContainer) rewardsContainer.innerHTML = rewardLeaders.length ? rewardLeaders.map(renderRewardLeader).join('') : COMING_SOON;
 
     const rolesContainer = document.getElementById('user-roles');
-    if (rolesContainer) rolesContainer.innerHTML = userRoleBlueprint.map(renderRole).join('');
+    if (rolesContainer) rolesContainer.innerHTML = userRoleBlueprint.length ? userRoleBlueprint.map(renderRole).join('') : COMING_SOON;
 
     const businessContainer = document.getElementById('business-model');
-    if (businessContainer) businessContainer.innerHTML = businessModelItems.map(renderBusinessItem).join('');
+    if (businessContainer) businessContainer.innerHTML = businessModelItems.length ? businessModelItems.map(renderBusinessItem).join('') : COMING_SOON;
 
     const roadmapContainer = document.getElementById('roadmap-phases');
-    if (roadmapContainer) roadmapContainer.innerHTML = roadmapPhases.map(renderRoadmapPhase).join('');
+    if (roadmapContainer) roadmapContainer.innerHTML = roadmapPhases.length ? roadmapPhases.map(renderRoadmapPhase).join('') : COMING_SOON;
 }
 
 // Initialize all opportunities page
-function initOpportunitiesPage() {
+async function initOpportunitiesPage() {
     const container = document.getElementById('opportunities-list');
     const composer = document.getElementById('opportunity-composer');
     const filters = {
@@ -2918,60 +2982,59 @@ function initOpportunitiesPage() {
         commitment: 'all',
         search: ''
     };
-    
+
     function renderOpportunities() {
         const filtered = filterOpportunityCatalog(getAllOpportunitiesForDisplay(), filters);
         if (filtered.length === 0) {
-            container.innerHTML = `
-                <div class="empty-state">
-                    <div class="empty-state-icon">No results</div>
-                    <h3>No opportunities found</h3>
-                    <p>Try adjusting your filters or search terms.</p>
-                </div>
-            `;
+            const hasFilters = filters.location !== 'all' || filters.field !== 'all' || filters.commitment !== 'all' || filters.search;
+            container.innerHTML = hasFilters
+                ? '<div class="empty-state"><div class="empty-state-icon">No results</div><h3>No opportunities found</h3><p>Try adjusting your filters or search terms.</p></div>'
+                : '<div class="empty-state"><h3>No opportunities posted yet</h3><p>Be the first to share a volunteer role or collaboration request with the GloWe community.</p><button class="btn btn-primary btn-small" type="button" onclick="openOpportunityComposer()">Post an opportunity</button></div>';
         } else {
             container.innerHTML = filtered.map(opp => renderOpportunityCard(opp, '../')).join('');
         }
     }
 
     window.renderOpportunitiesList = renderOpportunities;
-    
+
     // Add filter event listeners
     const locationFilter = document.getElementById('filter-location');
     const fieldFilter = document.getElementById('filter-field');
     const commitmentFilter = document.getElementById('filter-commitment');
     const searchInput = document.getElementById('search-opportunities');
-    
+
     if (locationFilter) {
         locationFilter.addEventListener('change', function() {
             filters.location = this.value;
             renderOpportunities();
         });
     }
-    
+
     if (fieldFilter) {
         fieldFilter.addEventListener('change', function() {
             filters.field = this.value;
             renderOpportunities();
         });
     }
-    
+
     if (commitmentFilter) {
         commitmentFilter.addEventListener('change', function() {
             filters.commitment = this.value;
             renderOpportunities();
         });
     }
-    
+
     if (searchInput) {
         searchInput.addEventListener('input', function() {
             filters.search = this.value;
             renderOpportunities();
         });
     }
-    
-    // Initial render
+
+    // Fetch real data then render
     if (container) {
+        container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading opportunities…</p></div>';
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
         renderOpportunities();
     }
 
@@ -3087,7 +3150,7 @@ function handleOpportunitySubmit(event) {
 }
 
 // Initialize organizations page
-function initOrganizationsPage() {
+async function initOrganizationsPage() {
     const container = document.getElementById('organizations-list');
     if (!container) return;
 
@@ -3096,53 +3159,44 @@ function initOrganizationsPage() {
     const typeSelect = document.getElementById('organization-type-filter');
     const clearButton = document.getElementById('organization-clear-filters');
     const countLabel = document.getElementById('organization-results-count');
-    const visibleOrganizations = organizations.filter(org => !isModerationHidden('profile', org.id));
-    const regions = [...new Set(visibleOrganizations.map(org => org.country || org.scope || org.location).filter(Boolean))].sort();
-    const types = [...new Set(visibleOrganizations.map(org => org.type || 'Organization').filter(Boolean))].sort();
 
-    if (regionSelect) {
-        regionSelect.innerHTML = '<option value="all">All regions</option>' + regions.map(region => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`).join('');
+    function buildVisibleOrgs() {
+        return organizations.filter(org => !isModerationHidden('profile', org.id));
     }
-    if (typeSelect) {
-        typeSelect.innerHTML = '<option value="all">All types</option>' + types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('');
+
+    function refreshFilters(visibleOrgs) {
+        const regions = [...new Set(visibleOrgs.map(org => org.country || org.scope || org.location).filter(Boolean))].sort();
+        const types = [...new Set(visibleOrgs.map(org => org.type || 'Organization').filter(Boolean))].sort();
+        if (regionSelect) {
+            regionSelect.innerHTML = '<option value="all">All regions</option>' + regions.map(region => `<option value="${escapeHtml(region)}">${escapeHtml(region)}</option>`).join('');
+        }
+        if (typeSelect) {
+            typeSelect.innerHTML = '<option value="all">All types</option>' + types.map(type => `<option value="${escapeHtml(type)}">${escapeHtml(type)}</option>`).join('');
+        }
     }
 
     function renderOrganizations() {
+        const visibleOrgs = buildVisibleOrgs();
         const query = (searchInput ? searchInput.value : '').trim().toLowerCase();
         const region = regionSelect ? regionSelect.value : 'all';
         const type = typeSelect ? typeSelect.value : 'all';
-        const filtered = visibleOrganizations.filter(org => {
-            const searchable = [
-                org.name,
-                org.type,
-                org.status,
-                org.mission,
-                org.values,
-                org.community,
-                org.problem,
-                org.solution,
-                org.methods,
-                org.publicActions,
-                org.impactArea,
-                org.country,
-                org.location,
-                org.scope,
-                org.size,
-                ...(org.languages || []),
-                ...(org.projects || []).flatMap(project => [project.title, project.description, project.status])
-            ].filter(Boolean).join(' ').toLowerCase();
-            const regionMatch = region === 'all' || [org.country, org.scope, org.location].filter(Boolean).some(value => String(value).toLowerCase().includes(region.toLowerCase()));
+        const filtered = visibleOrgs.filter(org => {
+            const searchable = [org.name, org.type, org.mission, org.impactArea, org.country, org.location, org.scope, org.size].filter(Boolean).join(' ').toLowerCase();
+            const regionMatch = region === 'all' || [org.country, org.scope, org.location].filter(Boolean).some(v => String(v).toLowerCase().includes(region.toLowerCase()));
             const typeMatch = type === 'all' || String(org.type || '').toLowerCase() === type.toLowerCase();
             const queryMatch = !query || searchable.includes(query);
             return regionMatch && typeMatch && queryMatch;
         });
 
+        const hasFilters = query || (regionSelect && regionSelect.value !== 'all') || (typeSelect && typeSelect.value !== 'all');
         container.innerHTML = filtered.length
             ? filtered.map(org => renderOrganizationCard(org, '../')).join('')
-            : '<div class="empty-state organizations-empty-state"><h3>No matching profiles yet</h3><p>Try a broader keyword, clear one filter, or search by impact area, location, or support need.</p></div>';
+            : hasFilters
+                ? '<div class="empty-state organizations-empty-state"><h3>No matching profiles</h3><p>Try a broader keyword or clear a filter.</p></div>'
+                : '<div class="empty-state organizations-empty-state"><h3>No organizations yet</h3><p>Organizations join GloWe by creating a profile and completing verification. The first approved profiles will appear here.</p></div>';
 
         if (countLabel) {
-            countLabel.textContent = `${filtered.length} of ${visibleOrganizations.length} profiles shown`;
+            countLabel.textContent = `${filtered.length} of ${visibleOrgs.length} profiles shown`;
         }
     }
 
@@ -3159,10 +3213,13 @@ function initOrganizationsPage() {
         });
     }
 
+    container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading organizations…</p></div>';
+    await fetchAndPopulate(() => gloweBackend.listApprovedOrgs(), organizations, mapProfileToOrg);
+    refreshFilters(buildVisibleOrgs());
     renderOrganizations();
 }
 
-function initWishingWellPage() {
+async function initWishingWellPage() {
     const container = document.getElementById('wishes-list');
     const typeButtons = document.querySelectorAll('[data-wish-type]');
     const areaButtons = document.querySelectorAll('[data-impact-area]');
@@ -3171,15 +3228,18 @@ function initWishingWellPage() {
     const filters = { type: 'all', area: 'all', location: '' };
 
     function renderWishes() {
+        const hasFilters = filters.type !== 'all' || filters.area !== 'all' || filters.location;
         const filtered = wishes.filter(wish => {
             if (filters.type !== 'all' && wish.type !== filters.type) return false;
-            if (filters.area !== 'all' && !wish.areas.includes(filters.area)) return false;
-            if (filters.location && !wish.location.toLowerCase().includes(filters.location.toLowerCase())) return false;
+            if (filters.area !== 'all' && !(wish.areas || []).includes(filters.area)) return false;
+            if (filters.location && !(wish.location || '').toLowerCase().includes(filters.location.toLowerCase())) return false;
             return true;
         });
         container.innerHTML = filtered.length
             ? filtered.map(renderWishCard).join('')
-            : '<div class="empty-state"><div class="empty-state-icon">No results</div><h3>No wishes found</h3><p>Try clearing one of the filters.</p></div>';
+            : hasFilters
+                ? '<div class="empty-state"><div class="empty-state-icon">No results</div><h3>No wishes found</h3><p>Try clearing one of the filters.</p></div>'
+                : '<div class="empty-state"><h3>No wishes yet</h3><p>The Wishing Well fills up as community members post support requests, calls for volunteers, and collaboration opportunities. Be the first to share what your project needs.</p><button class="btn btn-primary btn-small" type="button" onclick="openWishComposer()">Post a wish</button></div>';
     }
 
     typeButtons.forEach(button => button.addEventListener('click', function() {
@@ -3207,10 +3267,14 @@ function initWishingWellPage() {
         areaButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.impactArea === 'all'));
         renderWishes();
     });
-    if (container) renderWishes();
+    if (container) {
+        container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading wishes…</p></div>';
+        // glowe_wishes table is planned for a future milestone; show empty state for now
+        renderWishes();
+    }
 }
 
-function initCommunityPage() {
+async function initCommunityPage() {
     const container = document.getElementById('community-feed');
     const peopleContainer = document.getElementById('people-list');
     const groupsContainer = document.getElementById('topic-groups-list');
@@ -3223,6 +3287,7 @@ function initCommunityPage() {
     if (profileName) profileName.textContent = communityProfile.name || 'GloWe Member';
     if (profileLine) profileLine.textContent = communityProfile.shortLine || communityProfile.about || 'Share knowledge, ask for support, and build practical impact with the community.';
     if (profileAvatar) profileAvatar.textContent = getInitials(communityProfile.name || 'GloWe Member');
+
     function postMatchesFilter(post, filter) {
         if (filter === 'all') return true;
         const haystack = `${post.title || ''} ${post.category || ''} ${post.text || ''}`.toLowerCase();
@@ -3243,7 +3308,7 @@ function initCommunityPage() {
         });
         container.innerHTML = posts.length
             ? posts.map(renderPostCard).join('')
-            : '<div class="empty-state"><h3>No posts match this view yet</h3><p>Try a different tab, search a broader word, or start the next conversation.</p><button class="btn btn-primary btn-small" type="button" onclick="openInlineComposer()">Write a post</button></div>';
+            : '<div class="empty-state"><h3>The conversation starts here</h3><p>No posts yet — share knowledge, ask for support, or open a discussion to get things going.</p><button class="btn btn-primary btn-small" type="button" onclick="openInlineComposer()">Write the first post</button></div>';
     }
 
     if (searchInput) searchInput.addEventListener('input', renderFeed);
@@ -3254,21 +3319,32 @@ function initCommunityPage() {
             renderFeed();
         });
     });
-    renderFeed();
-    if (peopleContainer) {
-        peopleContainer.innerHTML = people.filter(person => !isModerationHidden('profile', person.id)).map(person => `
-            <div class="person-row">
-                <a href="profile.html?id=${person.id}">
-                    ${renderEntityMark(person.name, 'avatar')}
-                    <span><strong>${person.name}</strong><small>${person.location}</small></span>
-                </a>
-                <div class="person-actions">
-                    <button type="button" onclick="showSuccessModal('Profile saved', '${person.name.replace(/'/g, "\\'")} was saved to your profile list.')">Save</button>
-                    <button type="button" onclick="openPrivateMessage('${person.name.replace(/'/g, "\\'")}')">Message</button>
-                </div>
-            </div>
-        `).join('');
+
+    // Fetch real posts, then render
+    if (container) {
+        container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading posts…</p></div>';
+        await fetchAndPopulate(() => gloweBackend.listAll('posts'), communityPosts, mapPostRow);
+        renderFeed();
     }
+
+    if (peopleContainer) {
+        const visiblePeople = people.filter(person => !isModerationHidden('profile', person.id));
+        peopleContainer.innerHTML = visiblePeople.length
+            ? visiblePeople.map(person => `
+                <div class="person-row">
+                    <a href="profile.html?id=${person.id}">
+                        ${renderEntityMark(person.name, 'avatar')}
+                        <span><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.location || '')}</small></span>
+                    </a>
+                    <div class="person-actions">
+                        <button type="button" onclick="showSuccessModal('Profile saved', '${person.name.replace(/'/g, "\\'")} was saved to your profile list.')">Save</button>
+                        <button type="button" onclick="openPrivateMessage('${person.name.replace(/'/g, "\\'")}')">Message</button>
+                    </div>
+                </div>
+            `).join('')
+            : '<p class="muted-note">Members will appear here once they join the community.</p>';
+    }
+
     if (groupsContainer) {
         groupsContainer.innerHTML = discussionGroups.map(group => `
             <a class="filter-pill group-link-pill" href="discussion-group.html?group=${group.id}">
