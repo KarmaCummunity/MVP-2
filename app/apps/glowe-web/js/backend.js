@@ -40,7 +40,12 @@
                     auth: {
                         autoRefreshToken: true,
                         persistSession: true,
-                        detectSessionInUrl: true
+                        detectSessionInUrl: true,
+                        // Separate GloWe's session from the KC app's session.
+                        // Both use the same Supabase project; without a distinct key
+                        // they share sb-<ref>-auth-token in localStorage, so signing
+                        // out of one would also sign out the other.
+                        storageKey: 'glowe-auth-v1'
                     }
                 });
             })();
@@ -199,7 +204,10 @@
     async function signOut() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return null;
-        const { error } = await supabaseClient.auth.signOut();
+        // scope:'local' clears only GloWe's own session (stored under
+        // 'glowe-auth-v1') without revoking the server-side refresh token.
+        // This keeps any active KC session untouched.
+        const { error } = await supabaseClient.auth.signOut({ scope: 'local' });
         if (error) throw error;
         return true;
     }
