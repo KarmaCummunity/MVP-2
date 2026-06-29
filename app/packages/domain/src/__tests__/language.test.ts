@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { createLanguageTag } from '../language';
+import { createLanguageTag, resolvePreferredLanguage } from '../language';
 import { ValidationError } from '../errors';
 
 describe('createLanguageTag', () => {
@@ -34,5 +34,35 @@ describe('createLanguageTag', () => {
     expect(() => createLanguageTag('english')).toThrow(ValidationError);
     expect(() => createLanguageTag('he_IL')).toThrow(ValidationError);
     expect(() => createLanguageTag('123')).toThrow(ValidationError);
+  });
+});
+
+describe('resolvePreferredLanguage', () => {
+  it('prefers a valid explicit user preference', () => {
+    const out = resolvePreferredLanguage({
+      userPreference: 'en', deviceLocales: ['fr-FR'], fallback: 'he',
+    });
+    expect(out).toBe('en');
+  });
+
+  it('falls back to the first valid device locale when no user preference', () => {
+    const out = resolvePreferredLanguage({
+      userPreference: null, deviceLocales: ['not valid', 'pt-br'], fallback: 'he',
+    });
+    expect(out).toBe('pt-BR');
+  });
+
+  it('uses fallback when preference and all device locales are invalid/empty', () => {
+    const out = resolvePreferredLanguage({
+      userPreference: '   ', deviceLocales: [], fallback: 'he',
+    });
+    expect(out).toBe('he');
+  });
+
+  it('ignores an invalid user preference and uses device locale', () => {
+    const out = resolvePreferredLanguage({
+      userPreference: 'english', deviceLocales: ['ar'], fallback: 'he',
+    });
+    expect(out).toBe('ar');
   });
 });

@@ -17,14 +17,37 @@ export function createLanguageTag(raw: string): LanguageTag {
   if (!BCP47.test(trimmed)) {
     throw new ValidationError(`LanguageTag: '${raw}' is not a valid BCP-47 tag`, 'languageTag');
   }
-  const parts = trimmed.split('-');
-  const out: string[] = [parts[0].toLowerCase()];
-  for (const part of parts.slice(1)) {
+  const [language, ...rest] = trimmed.split('-');
+  const out: string[] = [(language ?? '').toLowerCase()];
+  for (const part of rest) {
     if (/^[a-z]{4}$/i.test(part)) {
-      out.push(part[0].toUpperCase() + part.slice(1).toLowerCase()); // script: Title
+      out.push(part.charAt(0).toUpperCase() + part.slice(1).toLowerCase()); // script: Title
     } else {
       out.push(part.toUpperCase()); // region: UPPER (digits unaffected)
     }
   }
   return out.join('-') as LanguageTag;
+}
+
+function tryTag(raw: string | null | undefined): LanguageTag | null {
+  if (!raw) return null;
+  try { return createLanguageTag(raw); } catch { return null; }
+}
+
+/**
+ * Resolve the reader's effective language: explicit user preference, else the first
+ * device locale that parses, else the provided fallback. The fallback MUST be a valid tag.
+ */
+export function resolvePreferredLanguage(opts: {
+  userPreference?: string | null;
+  deviceLocales?: readonly string[];
+  fallback: string;
+}): LanguageTag {
+  const fromUser = tryTag(opts.userPreference);
+  if (fromUser) return fromUser;
+  for (const loc of opts.deviceLocales ?? []) {
+    const tag = tryTag(loc);
+    if (tag) return tag;
+  }
+  return createLanguageTag(opts.fallback);
 }
