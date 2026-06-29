@@ -1,3 +1,4 @@
+Connecting to db 5432
 export type Json =
   | string
   | number
@@ -4028,6 +4029,16 @@ export type Database = {
         Returns: string
       }
       get_my_admin_roles: { Args: never; Returns: string[] }
+      get_post_translations: {
+        Args: { p_post_ids: string[]; p_target_language: string }
+        Returns: {
+          confidence: number
+          field: string
+          post_id: string
+          source_language: string
+          translated_text: string
+        }[]
+      }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
       glowe_list_pending_orgs: {
@@ -4158,6 +4169,7 @@ export type Database = {
         Args: { followed: string; follower: string }
         Returns: boolean
       }
+      is_glowe_admin: { Args: { uid: string }; Returns: boolean }
       is_post_visible_to: {
         Args: {
           p_post: Database["public"]["Tables"]["posts"]["Row"]
@@ -5051,3 +5063,6 @@ export const Constants = {
   },
 } as const
 
+<claude-code-hint v="1" type="plugin" value="supabase@claude-plugins-official" />
+A new version of Supabase CLI is available: v2.108.0 (currently installed v2.98.2)
+We recommend updating regularly for new features and bug fixes: https://supabase.com/docs/guides/cli/getting-started#updating-the-supabase-cli
