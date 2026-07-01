@@ -34,6 +34,10 @@ import { startMark } from '../../src/lib/observability/perfMarks';
 import { useScreenAside } from '../../src/components/aside/useScreenAside';
 import { GivingWorldsAside } from '../../src/components/aside/GivingWorldsAside';
 
+// Feed grid shows only the title, so only translate that field here (post
+// detail translates the description on open). FR-TRANSLATE-003.
+const FEED_TRANSLATABLE_FIELDS = ['title'] as const;
+
 // Module-scope guard: fires once per JS context (cold home-tab mount).
 let feedFirstRenderStarted = false;
 if (!feedFirstRenderStarted) {
@@ -141,7 +145,7 @@ export default function HomeFeedScreen() {
     () => feedPosts.filter((p) => visibleIds.includes(p.postId)),
     [feedPosts, visibleIds],
   );
-  const translations = useTranslatedPosts(visiblePosts, readerLanguage);
+  const translations = useTranslatedPosts(visiblePosts, readerLanguage, FEED_TRANSLATABLE_FIELDS);
 
   const refetchAndReset = useCallback(() => {
     resetNewPosts();

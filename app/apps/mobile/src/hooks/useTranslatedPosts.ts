@@ -17,13 +17,25 @@ export interface TranslatedFields {
   description?: string;
 }
 
-export function useTranslatedPosts(posts: PostWithOwner[], readerLanguage: string) {
+// `fields` restricts which translatable fields the overlay materializes (e.g.
+// the feed grid renders only the title, so it should not pay for description
+// translations). It is a useMemo dependency below, so the caller MUST pass a
+// stable (module-scope) constant — never a fresh array per render. Undefined
+// means "all fields" (post-detail default).
+export function useTranslatedPosts(
+  posts: PostWithOwner[],
+  readerLanguage: string,
+  fields?: readonly ('title' | 'description')[],
+) {
   const queryClient = useQueryClient();
   const skipRef = useRef<Set<FieldKey>>(new Set());
 
   const eligible = useMemo(
-    () => posts.flatMap((p) => toTranslatableFields(p, readerLanguage)),
-    [posts, readerLanguage],
+    () =>
+      posts
+        .flatMap((p) => toTranslatableFields(p, readerLanguage))
+        .filter((f) => !fields || fields.includes(f.field as 'title' | 'description')),
+    [posts, readerLanguage, fields],
   );
   const postIds = useMemo(() => Array.from(new Set(eligible.map((f) => f.postId))), [eligible]);
 
