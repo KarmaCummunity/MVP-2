@@ -166,3 +166,26 @@ describe('organizer helpers', () => {
         expect(GloweEvents.capacityLabel({}, 0)).toBe('Unlimited');
     });
 });
+
+describe('event lifecycle helpers', () => {
+    it('isEventCancelled reflects the event status', () => {
+        expect(GloweEvents.isEventCancelled({ status: 'cancelled' })).toBe(true);
+        expect(GloweEvents.isEventCancelled({ status: 'active' })).toBe(false);
+        expect(GloweEvents.isEventCancelled(null)).toBe(false);
+    });
+
+    it('isDigital detects digital events (snake or camel)', () => {
+        expect(GloweEvents.isDigital({ event_type: 'digital' })).toBe(true);
+        expect(GloweEvents.isDigital({ eventType: 'digital' })).toBe(true);
+        expect(GloweEvents.isDigital({ event_type: 'physical' })).toBe(false);
+    });
+
+    it('linkRevealHint only speaks for before_event digital links', () => {
+        expect(GloweEvents.linkRevealHint({ event_type: 'digital', link_visibility: 'before_event', link_reveal_hours: 24 }))
+            .toBe('The event link will appear 24h before the event.');
+        expect(GloweEvents.linkRevealHint({ event_type: 'digital', link_visibility: 'before_event' }))
+            .toBe('The event link will appear closer to the event.');
+        expect(GloweEvents.linkRevealHint({ event_type: 'digital', link_visibility: 'immediate' })).toBe('');
+        expect(GloweEvents.linkRevealHint({ event_type: 'physical' })).toBe('');
+    });
+});

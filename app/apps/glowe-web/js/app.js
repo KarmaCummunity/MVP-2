@@ -4380,6 +4380,10 @@ async function renderEventRegisterArea(opportunity, events) {
         area.innerHTML = '<p class="muted-note">This event has ended.</p>';
         return;
     }
+    if (events.isEventCancelled(opportunity)) {
+        area.innerHTML = '<p class="muted-note">This event has been cancelled by the organizer.</p>';
+        return;
+    }
     if (opportunity.status && opportunity.status !== 'active') {
         area.innerHTML = '<p class="muted-note">This event is no longer open for registration.</p>';
         return;
@@ -4409,14 +4413,33 @@ function renderRegisteredState(area, opportunity, events, registration) {
     const canCancel = events.canCancelRegistration(registration.status);
     area.innerHTML = `
         <p class="event-register-status">Status: <strong>${escapeHtml(label)}</strong></p>
+        <div id="event-link-area"></div>
         ${canCancel ? '<button class="btn btn-outline btn-block" type="button" id="event-cancel-btn">Cancel registration</button>' : ''}
     `;
+    if (registration.status === 'Accepted') renderEventLink(opportunity, events);
     if (!canCancel) return;
     document.getElementById('event-cancel-btn').addEventListener('click', async function() {
         const backend = window.gloweBackend;
         try { await backend.cancelRegistration(registration.id); } catch (_e) { /* reload reflects truth */ }
         renderEventRegisterArea(opportunity, events);
     });
+}
+
+// For a confirmed registrant on a digital event, reveal the join link when the
+// server allows it, otherwise show when it will appear.
+async function renderEventLink(opportunity, events) {
+    if (!events.isDigital(opportunity)) return;
+    const holder = document.getElementById('event-link-area');
+    if (!holder) return;
+    const backend = window.gloweBackend;
+    let link = null;
+    try { link = backend ? await backend.getEventLink(opportunity.id) : null; } catch (_e) { link = null; }
+    if (link) {
+        holder.innerHTML = `<p class="event-link-line">Join link: <a href="${escapeHtml(link)}" target="_blank" rel="noopener noreferrer">${escapeHtml(link)}</a></p>`;
+        return;
+    }
+    const hint = events.linkRevealHint(opportunity);
+    holder.innerHTML = hint ? `<p class="muted-note">${escapeHtml(hint)}</p>` : '';
 }
 
 function renderRegisterForm(area, opportunity) {
@@ -4505,16 +4528,23 @@ async function renderOrganizerPanel(area, opportunity, events) {
             handleOrganizerDecision(btn.getAttribute('data-reg'), btn.getAttribute('data-decide'), opportunity, events);
         });
     });
+    const cancelBtn = document.getElementById('event-cancel-event-btn');
+    if (cancelBtn) cancelBtn.addEventListener('click', function () { handleCancelEvent(opportunity, events); });
 }
 
 function organizerPanelHtml(registrations, opportunity, events) {
     const accepted = events.acceptedCount(registrations);
     const rows = (registrations || []).map(function (r) { return organizerRegistrationRowHtml(r, events); }).join('');
+    const cancelled = events.isEventCancelled(opportunity);
+    const cancelControl = cancelled
+        ? '<p class="event-register-status"><strong>This event is cancelled.</strong></p>'
+        : '<button class="btn btn-outline btn-block" type="button" id="event-cancel-event-btn">Cancel event</button>';
     return `
         <div class="organizer-panel">
             <h4>Manage registrations</h4>
             <p class="organizer-capacity">${escapeHtml(events.capacityLabel(opportunity, accepted))}</p>
             <div class="organizer-reg-list">${rows || '<p class="muted-note">No registrations yet.</p>'}</div>
+            <div class="organizer-cancel-event">${cancelControl}</div>
         </div>
     `;
 }
@@ -4554,6 +4584,21 @@ async function handleOrganizerDecision(registrationId, decision, opportunity, ev
     }
     try {
         await backend.decideEventRegistration(registrationId, decision, note.slice(0, 500));
+    } catch (_e) {
+        /* re-render reflects the server's authoritative state */
+    }
+    const area = document.getElementById('event-register-area');
+    if (area) renderOrganizerPanel(area, opportunity, events);
+}
+
+// Organizer cancels the whole event (after confirmation), then refreshes.
+async function handleCancelEvent(opportunity, events) {
+    const backend = window.gloweBackend;
+    if (!backend) return;
+    if (!window.confirm('Cancel this event? Registrants will see it as cancelled.')) return;
+    try {
+        const row = await backend.cancelEvent(opportunity.id);
+        if (row && row.status) opportunity.status = row.status;
     } catch (_e) {
         /* re-render reflects the server's authoritative state */
     }
@@ -4823,15 +4868,17 @@ function buildMyEventRows(registrations, opportunities, events) {
 
 function renderMyEventCard(row, events) {
     const { reg, event } = row;
-    const statusLabel = events.registrationStatusLabel(reg.status);
-    const canCancel = events.canCancelRegistration(reg.status);
+    const cancelled = events.isEventCancelled(event);
+    const statusLabel = cancelled ? 'Event cancelled' : events.registrationStatusLabel(reg.status);
+    const badgeClass = cancelled ? 'status-cancelled' : `status-${reg.status.toLowerCase()}`;
+    const canCancel = !cancelled && events.canCancelRegistration(reg.status);
     const detailHref = `opportunity.html?id=${encodeURIComponent(event.id)}`;
     return `
         <article class="personal-list-item my-event-item">
             <div>
                 <a href="${detailHref}"><h3>${escapeHtml(event.title)}</h3></a>
                 <p class="muted-note">${escapeHtml(event.organization || '')} · ${escapeHtml(events.formatEventDate(event))}</p>
-                <span class="status-badge status-${reg.status.toLowerCase()}">${escapeHtml(statusLabel)}</span>
+                <span class="status-badge ${badgeClass}">${escapeHtml(statusLabel)}</span>
             </div>
             ${canCancel ? `<button class="btn btn-outline btn-small" type="button" onclick="cancelMyEvent('${reg.id}')">Cancel</button>` : ''}
         </article>

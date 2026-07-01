@@ -463,6 +463,29 @@
         return data;
     }
 
+    // Reveal a digital event's link to an entitled caller (migration 0214). The
+    // server returns null when not accepted / not yet revealed.
+    async function getEventLink(opportunityId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_get_event_link', {
+            p_opportunity_id: String(opportunityId)
+        });
+        if (error) throw error;
+        return data || null;
+    }
+
+    // Organizer cancels their own event (migration 0214).
+    async function cancelEvent(opportunityId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_cancel_event', {
+            p_opportunity_id: String(opportunityId)
+        });
+        if (error) throw error;
+        return data;
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -526,6 +549,8 @@
         listMyRegistrations,
         listEventRegistrations,
         decideEventRegistration,
+        getEventLink,
+        cancelEvent,
         apiRequest
     };
 })();

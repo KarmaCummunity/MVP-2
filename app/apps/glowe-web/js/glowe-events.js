@@ -161,6 +161,26 @@
         return used + ' / ' + cap + ' spots';
     }
 
+    // ── Event lifecycle (FR-GLOWE-007-D / -E, migration 0214) ───────────────
+    function isEventCancelled(event) {
+        return Boolean(event && event.status === 'cancelled');
+    }
+
+    function isDigital(event) {
+        return Boolean(event && (event.eventType || event.event_type) === 'digital');
+    }
+
+    // UI hint for when a digital event's link becomes available. Empty for
+    // non-digital events and for links that are already visible ('immediate').
+    function linkRevealHint(event) {
+        if (!isDigital(event)) return '';
+        const visibility = event.linkVisibility || event.link_visibility || 'immediate';
+        if (visibility !== 'before_event') return '';
+        const hours = event.linkRevealHours != null ? event.linkRevealHours : event.link_reveal_hours;
+        return hours ? 'The event link will appear ' + hours + 'h before the event.'
+                     : 'The event link will appear closer to the event.';
+    }
+
     return {
         isEvent: isEvent,
         eventTiming: eventTiming,
@@ -176,6 +196,9 @@
         canDecideRegistration: canDecideRegistration,
         acceptedCount: acceptedCount,
         groupRegistrationsByStatus: groupRegistrationsByStatus,
-        capacityLabel: capacityLabel
+        capacityLabel: capacityLabel,
+        isEventCancelled: isEventCancelled,
+        isDigital: isDigital,
+        linkRevealHint: linkRevealHint
     };
 });
