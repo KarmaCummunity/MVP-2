@@ -131,3 +131,38 @@ describe('findRegistration', () => {
         expect(GloweEvents.findRegistration(regs, null)).toBeNull();
     });
 });
+
+describe('organizer helpers', () => {
+    const regs = [
+        { status: 'Pending' }, { status: 'Accepted' }, { status: 'Accepted' },
+        { status: 'Waitlisted' }, { status: 'Declined' }, { status: 'Cancelled' }
+    ];
+
+    it('canDecideRegistration is true only for Pending/Waitlisted', () => {
+        expect(GloweEvents.canDecideRegistration('Pending')).toBe(true);
+        expect(GloweEvents.canDecideRegistration('Waitlisted')).toBe(true);
+        expect(GloweEvents.canDecideRegistration('Accepted')).toBe(false);
+        expect(GloweEvents.canDecideRegistration('Declined')).toBe(false);
+    });
+
+    it('acceptedCount counts only Accepted rows', () => {
+        expect(GloweEvents.acceptedCount(regs)).toBe(2);
+        expect(GloweEvents.acceptedCount([])).toBe(0);
+        expect(GloweEvents.acceptedCount(null)).toBe(0);
+    });
+
+    it('groupRegistrationsByStatus buckets by lowercased status', () => {
+        const g = GloweEvents.groupRegistrationsByStatus(regs);
+        expect(g.pending).toHaveLength(1);
+        expect(g.accepted).toHaveLength(2);
+        expect(g.waitlisted).toHaveLength(1);
+        expect(g.declined).toHaveLength(1);
+        expect(g.cancelled).toHaveLength(1);
+    });
+
+    it('capacityLabel reflects capacity and unlimited', () => {
+        expect(GloweEvents.capacityLabel({ capacity: 5 }, 2)).toBe('2 / 5 spots');
+        expect(GloweEvents.capacityLabel({ capacity: null }, 3)).toBe('Unlimited');
+        expect(GloweEvents.capacityLabel({}, 0)).toBe('Unlimited');
+    });
+});

@@ -1797,6 +1797,49 @@ a.user-greeting:hover {
     margin-top: 6px;
 }
 
+/* ===== Organizer portal (FR-GLOWE-007-E) ===== */
+.organizer-panel {
+    text-align: right;
+    margin-top: 8px;
+}
+
+.organizer-panel h4 {
+    margin-bottom: 4px;
+}
+
+.organizer-capacity {
+    color: var(--text-secondary);
+    font-size: 0.9rem;
+    margin-bottom: 12px;
+}
+
+.organizer-reg-list {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+.organizer-reg-item {
+    display: flex;
+    align-items: flex-start;
+    justify-content: space-between;
+    gap: 12px;
+    padding: 12px;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    background: var(--white);
+}
+
+.organizer-reg-item strong {
+    margin-inline-end: 8px;
+}
+
+.organizer-actions {
+    display: flex;
+    gap: 6px;
+    flex-shrink: 0;
+}
+
 /* ===== Applications Page ===== */
 .applications-page,
 .personal-area-page {
