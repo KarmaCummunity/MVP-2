@@ -1,4 +1,4 @@
--- 0214 — FR-TRANSLATE-003: purge cached post translations on content edit.
+-- 0216 — FR-TRANSLATE-003: purge cached post translations on content edit.
 -- Phase 1a purged on delete + admin-removal only; an edited title/description
 -- would otherwise serve a stale translation forever. Re-translation happens
 -- lazily on the next read (cache miss).
