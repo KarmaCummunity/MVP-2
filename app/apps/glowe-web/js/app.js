@@ -1948,7 +1948,7 @@ function handleWishSubmit(event) {
 
 function showSupportModal(wishId = null) {
     ensureGlobalUI();
-    activeWishForSupport = wishId ? wishes.find(item => item.id === parseInt(wishId)) : null;
+    activeWishForSupport = wishId ? wishes.find(item => String(item.id) === String(wishId)) : null;
     const context = document.getElementById('connect-context');
     const summary = document.getElementById('support-summary');
     const message = document.getElementById('connect-message');
@@ -2316,7 +2316,7 @@ function handleReportSubmit(event) {
 
 function openWishDetail(wishId) {
     ensureGlobalUI();
-    const wish = wishes.find(item => item.id === parseInt(wishId));
+    const wish = wishes.find(item => String(item.id) === String(wishId));
     if (!wish) return;
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
     const content = document.getElementById('wish-detail-content');
@@ -2346,7 +2346,7 @@ function openWishDetail(wishId) {
                 </div>
             </div>
             <div class="card-actions wish-detail-actions">
-                <button class="btn btn-primary" type="button" onclick="showSupportModal(${wish.id})">Offer Support</button>
+                <button class="btn btn-primary" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
                 <button class="btn btn-outline" type="button" onclick="saveItem('wish', '${wish.id}', '${jsString(wish.title)}', '${jsString(wish.author)}', 'wishing-well.html?wish=${wish.id}')">Save</button>
                 <button class="btn btn-outline" type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 <button class="btn btn-outline" type="button" onclick="closeModal('wish-detail-modal')">Back to wishes</button>
@@ -2544,11 +2544,11 @@ function renderWishCard(wish) {
                 <span class="wish-type" style="background:${style.color}">${escapeHtml(wish.type)}</span>
                 <button class="heart-button" type="button" aria-label="Save wish" onclick="saveItem('wish', '${wish.id}', '${jsString(wish.title)}', '${jsString(wish.author)}', 'wishing-well.html?wish=${wish.id}')">Save</button>
             </div>
-            <button class="card-open-button" type="button" onclick="openWishDetail(${wish.id})">
+            <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
                 ${renderEntityMark(wish.author, 'wish-image')}
                 <span class="sr-only">Open wish details</span>
             </button>
-            <h3><button type="button" onclick="openWishDetail(${wish.id})">${escapeHtml(wish.title)}</button></h3>
+            <h3><button type="button" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
             <a class="wish-author" href="profile.html?id=${wish.authorId}">
                 ${renderEntityMark(wish.author)}
                 <span>${escapeHtml(wish.author)}</span>
@@ -2560,8 +2560,8 @@ function renderWishCard(wish) {
                 <span class="opportunity-detail">${escapeHtml(areas.join(', '))}</span>
             </div>
         <div class="card-actions">
-            <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail(${wish.id})">Learn More</button>
-            <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal(${wish.id})">Offer Support</button>
+            <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail('${wish.id}')">Learn More</button>
+            <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
         </div>
         ${renderShareButtons(wish.title, `wishing-well.html?wish=${wish.id}`)}
     </article>
@@ -3384,18 +3384,12 @@ async function initWishingWellPage() {
     const filters = { type: 'all', area: 'all', location: '' };
 
     function renderWishes() {
+        const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
         const hasFilters = filters.type !== 'all' || filters.area !== 'all' || filters.location;
-        const filtered = wishes.filter(wish => {
-            if (filters.type !== 'all' && wish.type !== filters.type) return false;
-            if (filters.area !== 'all' && !(wish.areas || []).includes(filters.area)) return false;
-            if (filters.location && !(wish.location || '').toLowerCase().includes(filters.location.toLowerCase())) return false;
-            return true;
-        });
+        const filtered = helpers ? helpers.filterWishes(wishes, filters) : wishes;
         container.innerHTML = filtered.length
             ? filtered.map(renderWishCard).join('')
-            : hasFilters
-                ? '<div class="empty-state"><div class="empty-state-icon">No results</div><h3>No wishes found</h3><p>Try clearing one of the filters.</p></div>'
-                : '<div class="empty-state"><h3>No wishes yet</h3><p>The Wishing Well fills up as community members post support requests, calls for volunteers, and collaboration opportunities. Be the first to share what your project needs.</p><button class="btn btn-primary btn-small" type="button" onclick="openWishComposer()">Post a wish</button></div>';
+            : hasFilters ? emptyWishFilteredHtml() : emptyWishBoardHtml();
     }
 
     typeButtons.forEach(button => button.addEventListener('click', function() {
@@ -3425,9 +3419,45 @@ async function initWishingWellPage() {
     });
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading wishes…</p></div>';
-        // glowe_wishes table is planned for a future milestone; show empty state for now
+        await loadLiveWishes();
         renderWishes();
     }
+}
+
+function emptyWishFilteredHtml() {
+    return '<div class="empty-state"><div class="empty-state-icon">No results</div><h3>No wishes found</h3><p>Try clearing one of the filters.</p></div>';
+}
+
+function emptyWishBoardHtml() {
+    return '<div class="empty-state"><h3>No wishes yet</h3><p>The Wishing Well fills up as community members post support requests, calls for volunteers, and collaboration opportunities. Be the first to share what your project needs.</p><button class="btn btn-primary btn-small" type="button" onclick="openWishComposer()">Post a wish</button></div>';
+}
+
+// Load open wishes from glowe_posts (post_type='wish', status='open') into the
+// shared `wishes` array, then refresh the hero stats. Falls back to empty on any error.
+async function loadLiveWishes() {
+    const backend = window.gloweBackend;
+    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    wishes.length = 0;
+    if (!backend || !backend.configured() || !helpers) { updateWellSummary(0); return; }
+    let rows = [];
+    try { rows = await backend.listAll('posts'); } catch (_e) { rows = []; }
+    wishes.push(...(rows || []).filter(helpers.isOpenWish).map(helpers.mapWishRow));
+    let projectCount = 0;
+    try { projectCount = ((await backend.listAll('projects')) || []).length; } catch (_e) { projectCount = 0; }
+    updateWellSummary(projectCount);
+}
+
+// Render the hero stats strip from the live wish list (FR-GLOWE-006 AC7).
+function updateWellSummary(projectCount) {
+    const panel = document.getElementById('well-summary-panel');
+    if (!panel) return;
+    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    const stats = helpers ? helpers.wishStats(wishes) : { openWishes: wishes.length, impactAreas: 0 };
+    panel.innerHTML = `
+        <div class="well-summary-stat"><strong>${stats.openWishes}</strong><span>Open wishes</span></div>
+        <div class="well-summary-stat"><strong>${stats.impactAreas}</strong><span>Impact areas</span></div>
+        <div class="well-summary-stat"><strong>${projectCount || 0}</strong><span>Active projects</span></div>
+    `;
 }
 
 async function initCommunityPage() {
@@ -4191,7 +4221,7 @@ function _renderProfileContent(profile, container) {
                                     <span class="wish-type">${wish.type}</span>
                                     <h3>${wish.title}</h3>
                                     <p>${wish.description}</p>
-                                    <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal(${wish.id})">Offer Support</button>
+                                    <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
                                 </article>
                             `).join('')}
                         </div>
