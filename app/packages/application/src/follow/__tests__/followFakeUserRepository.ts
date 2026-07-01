@@ -181,6 +181,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     karmaPoints: 0,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
+    preferredLanguage: null,
     ...overrides,
   };
 }

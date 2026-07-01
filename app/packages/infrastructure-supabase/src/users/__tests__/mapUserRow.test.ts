@@ -65,6 +65,7 @@ describe('mapUserRow', () => {
       karmaPoints: 5,
       createdAt: '2026-01-01T00:00:00.000Z',
       updatedAt: '2026-05-16T00:00:00.000Z',
+      preferredLanguage: null,
     });
   });
 
@@ -201,6 +202,16 @@ describe('mapUserRow', () => {
 
       expect(out.closureExplainerDismissed).toBe(true);
       expect(out.firstPostNudgeDismissed).toBe(true);
+    });
+  });
+
+  describe('mapUserRow — preferredLanguage (FR-TRANSLATE-003)', () => {
+    it('maps preferred_language when present', () => {
+      expect(mapUserRow(makeRow({ preferred_language: 'ru' })).preferredLanguage).toBe('ru');
+    });
+
+    it('defaults to null when absent', () => {
+      expect(mapUserRow(makeRow()).preferredLanguage).toBeNull();
     });
   });
 });
