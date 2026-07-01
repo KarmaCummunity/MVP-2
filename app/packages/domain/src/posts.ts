@@ -48,6 +48,8 @@ export interface Post {
   deleteAfter: string | null;
   readonly createdAt: string;
   updatedAt: string;
+  /** FR-TRANSLATE — detected BCP-47 source language of title/description; null = not yet detected. */
+  sourceLanguage: string | null;
 }
 
 // ── Profile closed-posts view ─────────────────

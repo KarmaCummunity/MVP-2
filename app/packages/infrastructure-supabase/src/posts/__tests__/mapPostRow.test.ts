@@ -51,6 +51,14 @@ describe('mapPostRow (TD-50)', () => {
     expect(mapPostRow(makeRow()).estimatedValue).toBeNull();
   });
 
+  it('maps source_language → sourceLanguage when present (FR-TRANSLATE)', () => {
+    expect(mapPostRow(makeRow({ source_language: 'en' })).sourceLanguage).toBe('en');
+  });
+
+  it('defaults sourceLanguage to null when source_language is absent (FR-TRANSLATE)', () => {
+    expect(mapPostRow(makeRow()).sourceLanguage).toBeNull();
+  });
+
   it('uses city_ref.name_he when present', () => {
     const out = mapPostRow(makeRow({ city_ref: { name_he: 'תל אביב' } }));
     expect(out.address.cityName).toBe('תל אביב');
