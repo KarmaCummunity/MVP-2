@@ -4088,6 +4088,41 @@ export type Database = {
       }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      glowe_cancel_event: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          capacity: number | null
+          commitment: string | null
+          created_at: string
+          description: string | null
+          duration: string | null
+          end_at: string | null
+          event_link: string | null
+          event_type: string | null
+          featured: boolean
+          field: string | null
+          id: string
+          link_reveal_hours: number | null
+          link_visibility: string
+          location: string | null
+          org_icon: string | null
+          organization: string
+          registration_mode: string
+          requirements: string[]
+          responsibilities: string[]
+          skills: string[]
+          start_at: string | null
+          status: string
+          title: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_opportunities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       glowe_decide_event_registration: {
         Args: { p_decision: string; p_note?: string; p_registration_id: string }
         Returns: {
@@ -4113,6 +4148,10 @@ export type Database = {
           isOneToOne: true
           isSetofReturn: false
         }
+      }
+      glowe_get_event_link: {
+        Args: { p_opportunity_id: string }
+        Returns: string
       }
       glowe_list_event_registrations: {
         Args: { p_opportunity_id: string }
