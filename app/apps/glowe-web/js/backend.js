@@ -145,7 +145,13 @@
             audience: payload.audience || '',
             language: payload.language || '',
             link: payload.link || '',
-            author_name: payload.authorName || payload.author_name || ''
+            author_name: payload.authorName || payload.author_name || '',
+            // Wish discriminator + lifecycle (migration 0215). Defaults keep
+            // community posts unchanged.
+            post_type: payload.post_type || 'community',
+            wish_type: payload.wish_type || null,
+            impact_area: payload.impact_area || null,
+            status: payload.status || 'open'
         };
     }
 

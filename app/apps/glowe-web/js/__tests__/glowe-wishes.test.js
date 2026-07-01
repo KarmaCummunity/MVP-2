@@ -73,3 +73,33 @@ describe('wishStats', () => {
         expect(GloweWishes.wishStats([])).toEqual({ openWishes: 0, impactAreas: 0 });
     });
 });
+
+describe('validateWishDraft', () => {
+    it('requires title, wish_type, and impact_area', () => {
+        expect(GloweWishes.validateWishDraft({ title: 'T', wish_type: 'Funding Support', impact_area: 'Health' }).valid).toBe(true);
+        expect(GloweWishes.validateWishDraft({ title: '  ', wish_type: 'X', impact_area: 'Y' }).valid).toBe(false);
+        expect(GloweWishes.validateWishDraft({ title: 'T', wish_type: '', impact_area: 'Y' }).valid).toBe(false);
+        expect(GloweWishes.validateWishDraft({ title: 'T', wish_type: 'X', impact_area: '' }).valid).toBe(false);
+        expect(GloweWishes.validateWishDraft(null).valid).toBe(false);
+    });
+
+    it('returns a helpful error message for the first missing field', () => {
+        expect(GloweWishes.validateWishDraft({}).error).toMatch(/describe what you need/i);
+        expect(GloweWishes.validateWishDraft({ title: 'T' }).error).toMatch(/wish type/i);
+        expect(GloweWishes.validateWishDraft({ title: 'T', wish_type: 'X' }).error).toMatch(/impact area/i);
+    });
+});
+
+describe('buildWishText', () => {
+    it('folds details, success and location into a body', () => {
+        const text = GloweWishes.buildWishText({ details: 'Need help', success: '3 mentors', location: 'Haifa' });
+        expect(text).toContain('Need help');
+        expect(text).toContain('Success looks like: 3 mentors');
+        expect(text).toContain('Location: Haifa');
+    });
+
+    it('omits empty optional parts', () => {
+        expect(GloweWishes.buildWishText({ details: 'Only this' })).toBe('Only this');
+        expect(GloweWishes.buildWishText({})).toBe('');
+    });
+});

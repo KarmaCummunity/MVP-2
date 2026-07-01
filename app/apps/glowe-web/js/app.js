@@ -1231,18 +1231,25 @@ function ensureGlobalUI() {
                                 </select>
                             </div>
                             <div class="form-group">
-                                <label for="wish-urgency">Urgency</label>
-                                <select id="wish-urgency" required>
-                                    <option value="">Choose urgency</option>
-                                    <option>This week</option>
-                                    <option>This month</option>
-                                    <option>Flexible timeline</option>
+                                <label for="wish-impact-area">Impact area</label>
+                                <select id="wish-impact-area" required>
+                                    <option value="">Select an area</option>
+                                    <option>Education</option>
+                                    <option>Climate</option>
+                                    <option>Social Justice</option>
+                                    <option>Tech for Good</option>
+                                    <option>Community Building</option>
+                                    <option>Health</option>
+                                    <option>Food Security</option>
+                                    <option>Knowledge Sharing</option>
+                                    <option>Civic Innovation</option>
+                                    <option>Business-Social Collaboration</option>
                                 </select>
                             </div>
                         </div>
                         <div class="form-group">
-                            <label for="wish-location-input">Location</label>
-                            <input type="text" id="wish-location-input" required placeholder="City, region, remote, or hybrid">
+                            <label for="wish-location-input">Location (optional)</label>
+                            <input type="text" id="wish-location-input" placeholder="City, region, remote, or hybrid">
                         </div>
                         <div class="form-group">
                             <label for="wish-details">Short description</label>
@@ -1939,11 +1946,49 @@ function choosePath(path) {
         : 'pages/organizations.html';
 }
 
-function handleWishSubmit(event) {
+// Open the "Post a Need" composer, gated by the write-permission check.
+function openWishComposer() {
+    ensureGlobalUI();
+    if (!canCreateContent()) return;
+    openModal('wish-modal');
+}
+
+async function handleWishSubmit(event) {
     event.preventDefault();
     if (!canCreateContent()) return;
-    closeModal('wish-modal');
-    showSuccessModal('Need sent for verification', 'A community manager will review the request, confirm safety details, and then publish it to matching helpers.');
+    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    const draft = {
+        title: (document.getElementById('wish-title').value || '').trim(),
+        wish_type: document.getElementById('wish-type').value,
+        impact_area: document.getElementById('wish-impact-area').value,
+        details: document.getElementById('wish-details').value,
+        success: document.getElementById('wish-success').value,
+        location: document.getElementById('wish-location-input').value
+    };
+    const check = helpers ? helpers.validateWishDraft(draft)
+        : { valid: Boolean(draft.title && draft.wish_type && draft.impact_area) };
+    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please fill in the required fields.'); return; }
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Publishing...'; }
+    try {
+        const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : null;
+        await backend.insertOwned('posts', {
+            post_type: 'wish', status: 'open',
+            title: draft.title, wish_type: draft.wish_type, impact_area: draft.impact_area,
+            text: helpers ? helpers.buildWishText(draft) : (draft.details || ''),
+            authorName: (profile && profile.name) || 'GloWe Member'
+        });
+        closeModal('wish-modal');
+        event.target.reset();
+        showSuccessModal('Wish published', 'Your need is now live on the Wishing Well.');
+        if (reloadWishBoard) await reloadWishBoard();
+    } catch (_e) {
+        showSuccessModal('Could not publish', 'Something went wrong publishing your wish. Please try again.');
+    } finally {
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Publish Wish'; }
+    }
 }
 
 function showSupportModal(wishId = null) {
@@ -3375,6 +3420,10 @@ async function initOrganizationsPage() {
     renderOrganizations();
 }
 
+// Re-read + re-render the wish board after a create/close. Assigned when the
+// Wishing Well page initialises; a no-op elsewhere.
+let reloadWishBoard = null;
+
 async function initWishingWellPage() {
     const container = document.getElementById('wishes-list');
     const typeButtons = document.querySelectorAll('[data-wish-type]');
@@ -3391,6 +3440,8 @@ async function initWishingWellPage() {
             ? filtered.map(renderWishCard).join('')
             : hasFilters ? emptyWishFilteredHtml() : emptyWishBoardHtml();
     }
+
+    reloadWishBoard = async function () { await loadLiveWishes(); renderWishes(); };
 
     typeButtons.forEach(button => button.addEventListener('click', function() {
         filters.type = this.dataset.wishType;
