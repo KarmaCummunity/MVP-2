@@ -3,7 +3,7 @@
 
 /** Columns granted to anon/authenticated SELECT on public.users. */
 export const USER_PUBLIC_SELECT_COLUMNS =
-  'user_id, auth_provider, share_handle, display_name, city, city_name, biography, avatar_url, privacy_mode, privacy_changed_at, account_status, onboarding_state, closure_explainer_dismissed, first_post_nudge_dismissed, items_given_count, items_received_count, followers_count, following_count, created_at, updated_at' as const;
+  'user_id, auth_provider, share_handle, display_name, city, city_name, biography, avatar_url, privacy_mode, privacy_changed_at, account_status, onboarding_state, closure_explainer_dismissed, first_post_nudge_dismissed, items_given_count, items_received_count, followers_count, following_count, created_at, updated_at, preferred_language' as const;
 
 /** Embed shape for follow_edges → users joins (no PII). */
 export const USER_PUBLIC_EMBED = `(${USER_PUBLIC_SELECT_COLUMNS})` as const;

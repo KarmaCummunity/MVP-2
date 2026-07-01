@@ -25,6 +25,7 @@ export interface PostJoinedRow extends PostRow {
   city_ref?: { name_he: string } | null;
   media_assets?: MediaAssetRow[] | null;
   recipient?: RecipientWithUserRow | null;
+  // source_language is inherited from PostRow (database.types.ts Row type)
 }
 
 export interface PostWithOwnerJoinedRow extends PostJoinedRow {
@@ -84,6 +85,7 @@ export function mapPostRow(row: PostJoinedRow): Post {
     deleteAfter: row.delete_after,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    sourceLanguage: row.source_language ?? null,
   };
 }
 

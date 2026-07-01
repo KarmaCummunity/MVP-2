@@ -61,6 +61,8 @@ export interface User {
   karmaPoints: number;
   readonly createdAt: string;
   updatedAt: string;
+  /** FR-TRANSLATE — reader's BCP-47 output language; null = resolve from device locale. */
+  preferredLanguage: string | null;
 }
 
 // ── AuthIdentity ──────────────────────────────
