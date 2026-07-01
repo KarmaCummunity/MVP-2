@@ -89,3 +89,45 @@ describe('eventTypeLabel', () => {
         expect(GloweEvents.eventTypeLabel('hybrid')).toBe('');
     });
 });
+
+describe('registrationStatusLabel', () => {
+    it('maps each status to a label and unknowns to empty', () => {
+        expect(GloweEvents.registrationStatusLabel('Accepted')).toBe('Registered');
+        expect(GloweEvents.registrationStatusLabel('Pending')).toBe('Pending approval');
+        expect(GloweEvents.registrationStatusLabel('Waitlisted')).toBe('Waitlisted');
+        expect(GloweEvents.registrationStatusLabel('Declined')).toBe('Not accepted');
+        expect(GloweEvents.registrationStatusLabel('Cancelled')).toBe('Cancelled');
+        expect(GloweEvents.registrationStatusLabel('Bogus')).toBe('');
+    });
+});
+
+describe('canCancelRegistration / isActiveRegistration', () => {
+    it('is true for live statuses and false otherwise', () => {
+        ['Accepted', 'Pending', 'Waitlisted'].forEach(s => {
+            expect(GloweEvents.canCancelRegistration(s)).toBe(true);
+            expect(GloweEvents.isActiveRegistration(s)).toBe(true);
+        });
+        ['Declined', 'Cancelled', undefined].forEach(s => {
+            expect(GloweEvents.canCancelRegistration(s)).toBe(false);
+            expect(GloweEvents.isActiveRegistration(s)).toBe(false);
+        });
+    });
+});
+
+describe('findRegistration', () => {
+    const regs = [
+        { opportunity_id: 'o1', status: 'Cancelled' },
+        { opportunity_id: 'o1', status: 'Accepted' },
+        { opportunityId: 'o2', status: 'Declined' }
+    ];
+
+    it('returns the live registration for an opportunity (snake or camel)', () => {
+        expect(GloweEvents.findRegistration(regs, 'o1').status).toBe('Accepted');
+    });
+
+    it('ignores cancelled/declined-only history and missing ids', () => {
+        expect(GloweEvents.findRegistration(regs, 'o2')).toBeNull();
+        expect(GloweEvents.findRegistration(regs, 'o3')).toBeNull();
+        expect(GloweEvents.findRegistration(regs, null)).toBeNull();
+    });
+});

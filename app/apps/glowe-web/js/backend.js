@@ -399,6 +399,44 @@
         return null;
     }
 
+    // Register the current user for an event via the SECURITY DEFINER RPC
+    // (migration 0212). The server routes open→Accepted / gated→Pending and
+    // validates event state; the resolved value is the new glowe_applications row.
+    async function registerForEvent(opportunityId, { email = '', phone = '', comment = '' } = {}) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_register_for_event', {
+            p_opportunity_id: String(opportunityId),
+            p_email: email ? String(email) : null,
+            p_phone: phone ? String(phone) : null,
+            p_comment: comment ? String(comment) : null
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    // Cancel the current user's own registration. The 0211 status guard permits a
+    // client to move only their own row to 'Cancelled'.
+    async function cancelRegistration(registrationId) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl('applications'))
+            .update({ status: 'Cancelled' })
+            .eq('id', registrationId)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    // All registrations belonging to the current user (owner-only RLS).
+    async function listMyRegistrations() {
+        return listOwned('applications');
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -431,6 +469,9 @@
         listOwned,
         insertOwned,
         removeOwned,
+        registerForEvent,
+        cancelRegistration,
+        listMyRegistrations,
         apiRequest
     };
 })();
