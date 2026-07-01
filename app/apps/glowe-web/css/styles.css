@@ -1730,6 +1730,73 @@ a.user-greeting:hover {
     font-size: 0.95rem;
 }
 
+/* ===== Event registration (FR-GLOWE-007) ===== */
+.event-register-form {
+    text-align: right;
+    margin-top: 8px;
+}
+
+.event-register-form .form-group {
+    margin-bottom: 14px;
+}
+
+.event-register-status {
+    margin: 4px 0 16px;
+    color: var(--text-secondary);
+}
+
+.event-register-error {
+    background: var(--rose-light);
+    color: #8a1c2b;
+    border-radius: var(--radius-sm);
+    padding: 10px 14px;
+    margin-bottom: 14px;
+    font-size: 0.9rem;
+}
+
+.status-badge {
+    display: inline-block;
+    padding: 3px 12px;
+    border-radius: 999px;
+    font-size: 0.8rem;
+    font-weight: 600;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+}
+
+.status-accepted {
+    background: #e2f2ea;
+    color: #1a7a4f;
+}
+
+.status-pending,
+.status-waitlisted {
+    background: #fbf1dd;
+    color: #8a6314;
+}
+
+.status-declined,
+.status-cancelled {
+    background: var(--rose-light);
+    color: #8a1c2b;
+}
+
+.my-event-item {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+}
+
+.my-event-item h3 {
+    font-size: 1.05rem;
+    margin-bottom: 4px;
+}
+
+.my-event-item .status-badge {
+    margin-top: 6px;
+}
+
 /* ===== Applications Page ===== */
 .applications-page,
 .personal-area-page {

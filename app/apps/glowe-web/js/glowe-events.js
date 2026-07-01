@@ -94,6 +94,43 @@
         });
     }
 
+    // ── Registration lifecycle (FR-GLOWE-007-C / -F) ────────────────────────
+    // Maps a glowe_applications.status to a user-facing label.
+    function registrationStatusLabel(status) {
+        switch (status) {
+            case 'Accepted': return 'Registered';
+            case 'Pending': return 'Pending approval';
+            case 'Waitlisted': return 'Waitlisted';
+            case 'Declined': return 'Not accepted';
+            case 'Cancelled': return 'Cancelled';
+            default: return '';
+        }
+    }
+
+    // A registration is active (occupies a spot / shown as live) unless the
+    // registrant cancelled it or the organizer declined it.
+    function isActiveRegistration(status) {
+        return status === 'Accepted' || status === 'Pending' || status === 'Waitlisted';
+    }
+
+    // Only active registrations can be cancelled by the registrant.
+    function canCancelRegistration(status) {
+        return isActiveRegistration(status);
+    }
+
+    // Find the caller's live registration for an opportunity, ignoring
+    // Cancelled/Declined history. Accepts snake- or camel-case id fields.
+    function findRegistration(registrations, opportunityId) {
+        if (!opportunityId) return null;
+        const list = registrations || [];
+        for (let i = 0; i < list.length; i += 1) {
+            const r = list[i];
+            const oppId = r && (r.opportunity_id || r.opportunityId);
+            if (oppId === opportunityId && isActiveRegistration(r.status)) return r;
+        }
+        return null;
+    }
+
     return {
         isEvent: isEvent,
         eventTiming: eventTiming,
@@ -101,6 +138,10 @@
         eventTypeLabel: eventTypeLabel,
         formatEventDate: formatEventDate,
         filterEvents: filterEvents,
-        sortByStart: sortByStart
+        sortByStart: sortByStart,
+        registrationStatusLabel: registrationStatusLabel,
+        isActiveRegistration: isActiveRegistration,
+        canCancelRegistration: canCancelRegistration,
+        findRegistration: findRegistration
     };
 });

@@ -4266,15 +4266,22 @@ function _renderProfileContent(profile, container) {
 }
 
 // Initialize opportunity detail page
-function initOpportunityDetailPage() {
+async function initOpportunityDetailPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const opportunityId = urlParams.get('id');
-    
+
     if (!opportunityId) {
         window.location.href = 'volunteer-network.html';
         return;
     }
-    
+
+    // A full page load starts with an empty in-memory store, so remote
+    // opportunities/events aren't present yet — fetch before the lookup.
+    if (!getOpportunityByAnyId(opportunityId)
+        && typeof gloweBackend !== 'undefined' && gloweBackend.configured()) {
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+    }
+
     const opportunity = getOpportunityByAnyId(opportunityId);
     if (!opportunity) {
         window.location.href = 'volunteer-network.html';
@@ -4321,9 +4328,12 @@ function initOpportunityDetailPage() {
         `;
     }
     
-    // Apply button
+    const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
+    const isEvent = events ? events.isEvent(opportunity) : false;
+
+    // Events use the registration panel; plain opportunities keep the apply-modal.
     const applyBtn = document.getElementById('apply-btn');
-    if (applyBtn) {
+    if (applyBtn && !isEvent) {
         applyBtn.addEventListener('click', function() {
             if (!isLoggedIn()) {
                 sessionStorage.setItem('pendingOpportunityApplication', opportunityId);
@@ -4333,6 +4343,135 @@ function initOpportunityDetailPage() {
             }
         });
     }
+
+    if (isEvent) setupEventRegistration(opportunity, events);
+}
+
+// Replace the apply card with an event summary + registration panel (FR-GLOWE-007-C).
+function setupEventRegistration(opportunity, events) {
+    const card = document.querySelector('.apply-card');
+    if (!card) return;
+    const typeLabel = events.eventTypeLabel(opportunity.eventType) || 'Event';
+    const modeLabel = opportunity.registrationMode === 'open' ? 'Instant registration' : 'Approval required';
+    card.innerHTML = `
+        <h3>Event registration</h3>
+        <div class="opportunity-details">
+            <span class="opportunity-detail"><strong>When:</strong> ${escapeHtml(events.formatEventDate(opportunity))}</span>
+            <span class="opportunity-detail"><strong>Type:</strong> ${escapeHtml(typeLabel)}</span>
+            <span class="opportunity-detail"><strong>Registration:</strong> ${escapeHtml(modeLabel)}</span>
+        </div>
+        <div id="event-register-area" aria-live="polite"></div>
+    `;
+    renderEventRegisterArea(opportunity, events);
+}
+
+// Decide what to show in the registration area: ended / closed notice, sign-in
+// prompt, current-status panel, or the registration form.
+async function renderEventRegisterArea(opportunity, events) {
+    const area = document.getElementById('event-register-area');
+    if (!area) return;
+    if (events.eventTiming(opportunity) === 'past') {
+        area.innerHTML = '<p class="muted-note">This event has ended.</p>';
+        return;
+    }
+    if (opportunity.status && opportunity.status !== 'active') {
+        area.innerHTML = '<p class="muted-note">This event is no longer open for registration.</p>';
+        return;
+    }
+    if (!isLoggedIn()) {
+        area.innerHTML = `<button class="btn btn-primary btn-block" type="button" onclick="openModal('login-modal')">Sign in to register</button>`;
+        return;
+    }
+    const registration = await findMyRegistration(opportunity.id, events);
+    if (registration) renderRegisteredState(area, opportunity, events, registration);
+    else renderRegisterForm(area, opportunity);
+}
+
+async function findMyRegistration(opportunityId, events) {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return null;
+    try {
+        const regs = await backend.listMyRegistrations();
+        return events.findRegistration(regs || [], opportunityId);
+    } catch (_e) {
+        return null;
+    }
+}
+
+function renderRegisteredState(area, opportunity, events, registration) {
+    const label = events.registrationStatusLabel(registration.status);
+    const canCancel = events.canCancelRegistration(registration.status);
+    area.innerHTML = `
+        <p class="event-register-status">Status: <strong>${escapeHtml(label)}</strong></p>
+        ${canCancel ? '<button class="btn btn-outline btn-block" type="button" id="event-cancel-btn">Cancel registration</button>' : ''}
+    `;
+    if (!canCancel) return;
+    document.getElementById('event-cancel-btn').addEventListener('click', async function() {
+        const backend = window.gloweBackend;
+        try { await backend.cancelRegistration(registration.id); } catch (_e) { /* reload reflects truth */ }
+        renderEventRegisterArea(opportunity, events);
+    });
+}
+
+function renderRegisterForm(area, opportunity) {
+    const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : null;
+    const email = (profile && profile.email) || '';
+    area.innerHTML = `
+        <form id="event-register-form" class="event-register-form">
+            <div class="form-group">
+                <label for="event-reg-email">Email</label>
+                <input type="email" id="event-reg-email" value="${escapeHtml(email)}" placeholder="your@email.com">
+            </div>
+            <div class="form-group">
+                <label for="event-reg-phone">Phone (optional)</label>
+                <input type="text" id="event-reg-phone" placeholder="050-0000000">
+            </div>
+            <div class="form-group">
+                <label for="event-reg-comment">Message to the organizer (optional)</label>
+                <textarea id="event-reg-comment" rows="2" placeholder="Anything the organizer should know..."></textarea>
+            </div>
+            <button class="btn btn-primary btn-block" type="submit">Register for event</button>
+        </form>
+    `;
+    document.getElementById('event-register-form')
+        .addEventListener('submit', (e) => submitEventRegistration(e, opportunity));
+}
+
+async function submitEventRegistration(event, opportunity) {
+    event.preventDefault();
+    const backend = window.gloweBackend;
+    const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
+    if (!backend || !backend.configured() || !events) return;
+    const submitBtn = event.target.querySelector('button[type="submit"]');
+    if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Registering...'; }
+    try {
+        const row = await backend.registerForEvent(opportunity.id, {
+            email: document.getElementById('event-reg-email').value,
+            phone: document.getElementById('event-reg-phone').value,
+            comment: document.getElementById('event-reg-comment').value
+        });
+        const accepted = row && row.status === 'Accepted';
+        showSuccessModal(
+            accepted ? 'You are registered!' : 'Registration submitted',
+            accepted
+                ? 'Your spot is confirmed. Manage it from your personal area.'
+                : 'Your registration is pending review by the organizer.'
+        );
+        renderEventRegisterArea(opportunity, events);
+    } catch (err) {
+        const area = document.getElementById('event-register-area');
+        if (area) area.insertAdjacentHTML('afterbegin', `<p class="event-register-error">${escapeHtml(registrationErrorMessage(err))}</p>`);
+        if (submitBtn) { submitBtn.disabled = false; submitBtn.textContent = 'Register for event'; }
+    }
+}
+
+// Map a Postgres/PostgREST error from glowe_register_for_event to friendly copy.
+function registrationErrorMessage(err) {
+    const raw = (err && (err.message || err.error_description)) || '';
+    if (raw.includes('already have an active registration')) return 'You are already registered for this event.';
+    if (raw.includes('not open for registration') || raw.includes('already ended')) return 'This event is no longer open for registration.';
+    if (raw.includes('sign in')) return 'Please sign in to register.';
+    return 'Could not complete your registration. Please try again.';
 }
 
 // Handle application submission
@@ -4416,6 +4555,7 @@ function initMyApplicationsPage() {
                         <a href="#personal-profile">Overview</a>
                         <a href="#personal-projects">Projects</a>
                         <a href="#personal-opportunities">Opportunities</a>
+                        <a href="#personal-events">My Events</a>
                         <a href="#personal-saved">Saved</a>
                         <a href="#personal-activity">Activity</a>
                     </nav>
@@ -4492,9 +4632,19 @@ function initMyApplicationsPage() {
                             </div>
                         </article>
 
-                        <article class="profile-section-card" id="personal-saved">
+                        <article class="profile-section-card" id="personal-events">
                             <div class="profile-section-heading">
                                 <span>04</span>
+                                <h2>My Events</h2>
+                            </div>
+                            <div class="personal-list" id="my-events-list" aria-live="polite">
+                                <p class="muted-note">Loading your event registrations…</p>
+                            </div>
+                        </article>
+
+                        <article class="profile-section-card" id="personal-saved">
+                            <div class="profile-section-heading">
+                                <span>05</span>
                                 <h2>Saved</h2>
                             </div>
                             <div class="saved-mini-grid">
@@ -4520,7 +4670,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-activity">
                             <div class="profile-section-heading">
-                                <span>05</span>
+                                <span>06</span>
                                 <h2>Recent Activity</h2>
                             </div>
                             <div class="profile-post-list">
@@ -4541,9 +4691,86 @@ function initMyApplicationsPage() {
 
     window.renderPersonalArea = renderPersonalArea;
     renderPersonalArea();
+    loadMyEvents();
     syncPersonalDataFromBackend().then((updated) => {
         if (updated) renderPersonalArea();
+        loadMyEvents();
     });
+}
+
+// Populate the personal-area "My Events" list from the user's live event
+// registrations (FR-GLOWE-007-F). Renders after the synchronous personal-area
+// shell so a slow Supabase round-trip never blocks the page.
+async function loadMyEvents() {
+    const list = document.getElementById('my-events-list');
+    if (!list) return;
+    const backend = window.gloweBackend;
+    const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
+    if (!backend || !backend.configured() || !events) {
+        list.innerHTML = emptyMyEventsHtml();
+        return;
+    }
+    try {
+        const [regs, opportunities] = await Promise.all([
+            backend.listMyRegistrations(),
+            backend.listAll('opportunities')
+        ]);
+        const rows = buildMyEventRows(regs || [], opportunities || [], events);
+        list.innerHTML = rows.length
+            ? rows.map(row => renderMyEventCard(row, events)).join('')
+            : emptyMyEventsHtml();
+    } catch (_e) {
+        list.innerHTML = emptyMyEventsHtml();
+    }
+}
+
+// Join registration rows to their event, newest event first, dropping rows
+// whose opportunity is missing or is not an event.
+function buildMyEventRows(registrations, opportunities, events) {
+    const byId = new Map(opportunities.map(o => [o.id, mapOpportunityRow(o)]));
+    return registrations
+        .map(reg => ({ reg, event: byId.get(reg.opportunity_id || reg.opportunityId) }))
+        .filter(row => row.event && events.isEvent(row.event))
+        .sort((a, b) => Date.parse(b.event.startAt || 0) - Date.parse(a.event.startAt || 0));
+}
+
+function renderMyEventCard(row, events) {
+    const { reg, event } = row;
+    const statusLabel = events.registrationStatusLabel(reg.status);
+    const canCancel = events.canCancelRegistration(reg.status);
+    const detailHref = `opportunity.html?id=${encodeURIComponent(event.id)}`;
+    return `
+        <article class="personal-list-item my-event-item">
+            <div>
+                <a href="${detailHref}"><h3>${escapeHtml(event.title)}</h3></a>
+                <p class="muted-note">${escapeHtml(event.organization || '')} · ${escapeHtml(events.formatEventDate(event))}</p>
+                <span class="status-badge status-${reg.status.toLowerCase()}">${escapeHtml(statusLabel)}</span>
+            </div>
+            ${canCancel ? `<button class="btn btn-outline btn-small" type="button" onclick="cancelMyEvent('${reg.id}')">Cancel</button>` : ''}
+        </article>
+    `;
+}
+
+function emptyMyEventsHtml() {
+    return `
+        <div class="empty-state compact-empty">
+            <h3>No event registrations yet</h3>
+            <p>Register for an event from the Volunteer Network and track it here.</p>
+            <a href="volunteer-network.html" class="btn btn-primary btn-small">Browse events</a>
+        </div>
+    `;
+}
+
+// Cancel a registration from the My Events list, then reload the list.
+async function cancelMyEvent(registrationId) {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    try {
+        await backend.cancelRegistration(registrationId);
+    } catch (_e) {
+        /* leave the list as-is; a reload will reflect server truth */
+    }
+    loadMyEvents();
 }
 
 const GLOWE_LANG_KEY = 'gloweLang';

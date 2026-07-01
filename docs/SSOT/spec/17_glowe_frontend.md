@@ -200,7 +200,7 @@ The Volunteer Network page (`pages/volunteer-network.html`) and opportunity deta
 - AC6. **Featured.** Opportunities with `featured = true` appear at the top of the listing grid.
 - AC7. **Empty state.** Friendly empty state with "Post the first opportunity" CTA when no results.
 - AC8. **Translations.** New UI strings added to Hebrew locale.
-- AC9. **Events (additive model).** An opportunity becomes an **Event** when `start_at` is set. Events are not a separate table or schema subtype — they ride the `glowe_opportunities` read/write/RLS paths and add event metadata: `start_at`/`end_at`, `event_type ∈ {physical, digital}`, `event_link` + `link_visibility ∈ {immediate, before_event}` (+ `link_reveal_hours`), `capacity` (null = unlimited), `registration_mode ∈ {open, gated}`, and `status ∈ {active, cancelled, closed}`. An **RSVP** reuses `glowe_applications` (no separate registrations table). Schema foundation: migration `0211`. Design: `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md` (D-66).
+- AC9. **Events (additive model).** An opportunity becomes an **Event** when `start_at` is set. Events are not a separate table or schema subtype — they ride the `glowe_opportunities` read/write/RLS paths and add event metadata: `start_at`/`end_at`, `event_type ∈ {physical, digital}`, `event_link` + `link_visibility ∈ {immediate, before_event}` (+ `link_reveal_hours`), `capacity` (null = unlimited), `registration_mode ∈ {open, gated}`, and `status ∈ {active, cancelled, closed}`. An **RSVP** reuses `glowe_applications` (no separate registrations table). Schema foundation: migration `0211`; the individual registration entry point is the `glowe_register_for_event` `SECURITY DEFINER` RPC (migration `0212`, open→`Accepted` / gated→`Pending`, event-state validation). Design: `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md` (D-66).
 
 ---
 
@@ -415,7 +415,7 @@ FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
   Volunteer-offer/Need; anon → sign-in prompt; unverified org → awaiting-verification prompt.
 - AC4. **Tailored create forms.** ⏳ Each type validates its required fields client-side before a
   save; submissions route to the composed Phase-B surface.
-- AC5. **Event RSVP.** ⏳ Registering to an Event records an application surfaced in "My Applications".
+- AC5. **Event RSVP.** ✅ Registering to an Event goes through the `glowe_register_for_event` `SECURITY DEFINER` RPC (migration `0212`): open events are instantly `Accepted`, gated events become `Pending`; event state (is-event, `active`, not-ended) is validated server-side and submitted contact fields are stored. The opportunity detail page renders a registration panel (sign-in gate → register form → current-status + cancel), and the personal area has a "My Events" list with a per-status badge and cancel. Registrations remain `glowe_applications` rows (also visible in "My Applications").
 - AC6. **Need help-chat on KC backend.** ⏳ "I'll help" opens a 1:1 chat on KC's real
   `public.chats`/`public.messages` (anchor `NULL` + a seeded first message carrying the need title).
 - AC7. **Modular type registry.** ⏳ Create types are a declarative data table (id, label,
