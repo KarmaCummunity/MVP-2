@@ -50,11 +50,35 @@ jobs:
           DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
         run: node scripts/wait-for-url.mjs "${DEV_WEB_URL%/}/" 12 15000
 
+      # The dev deploy may be GLOWE-only: web-postbuild.mjs then gates the KC web
+      # app behind /glowe and overwrites the root index.html with a redirect shim
+      # to /glowe/ (see app/scripts/web-postbuild.mjs, DECISIONS D-61). When that
+      # is in effect, the KC P0 journeys (which navigate to /, /chat, /create)
+      # cannot run — the root serves GloWe, not the KC feed. Detect that state and
+      # skip the KC suite cleanly instead of failing. Self-healing: when KC web is
+      # restored to the dev root, the shim disappears and the journeys run again.
+      - name: Detect whether dev serves the KC web app
+        id: detect
+        env:
+          DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
+        run: |
+          set -euo pipefail
+          body="$(curl -fsSL --max-redirs 0 "${DEV_WEB_URL%/}/" 2>/dev/null || true)"
+          if printf '%s' "$body" | grep -q 'url=/glowe/'; then
+            echo "kc_web=false" >> "$GITHUB_OUTPUT"
+            echo "::notice::Dev is GLOWE-only (root redirects to /glowe/). Skipping KC P0 journeys until KC web returns to the dev root."
+          else
+            echo "kc_web=true" >> "$GITHUB_OUTPUT"
+            echo "KC web is served at the dev root — running P0 journeys."
+          fi
+
       - uses: actions/setup-node@v4
+        if: steps.detect.outputs.kc_web == 'true'
         with:
           node-version-file: .nvmrc
 
       - name: Verify E2E credentials (Supabase auth API)
+        if: steps.detect.outputs.kc_web == 'true'
         env:
           E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
           E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
@@ -64,12 +88,14 @@ jobs:
         run: node scripts/ensure-e2e-user.mjs
 
       - name: Install Playwright
+        if: steps.detect.outputs.kc_web == 'true'
         working-directory: tests/e2e
         run: |
           npm install
           npx playwright install --with-deps chromium
 
       - name: Run P0 journeys
+        if: steps.detect.outputs.kc_web == 'true'
         working-directory: tests/e2e
         env:
           DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
@@ -80,7 +106,7 @@ jobs:
         run: npm test
 
       - uses: actions/upload-artifact@v4
-        if: failure()
+        if: failure() && steps.detect.outputs.kc_web == 'true'
         with:
           name: playwright-report
           path: |
