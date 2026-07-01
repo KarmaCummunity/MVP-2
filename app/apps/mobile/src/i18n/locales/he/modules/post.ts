@@ -194,4 +194,10 @@ export const postHe = {
     visibilityOnlyMeNotice: 'פוסט פרטי — גלוי רק לבעליו.',
   },
 
+  // FR-TRANSLATE-003 — translation reader UX
+  translating: 'מתרגם…',
+  showOriginal: 'הצג מקור',
+  showTranslation: 'הצג תרגום',
+  autoTranslated: 'תורגם אוטומטית',
+
 } as const;

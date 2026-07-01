@@ -142,4 +142,8 @@ export const settingsHe = {
 
   // GLOWE partnership link
   glowe: 'GLOWE – ידע מקצועי',
+
+  // FR-TRANSLATE-003 — translation language preference
+  translationLanguage: 'שפת תרגום',
+  translationLanguageDeviceDefault: 'ברירת מחדל של המכשיר',
 } as const;
