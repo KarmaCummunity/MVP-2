@@ -73,11 +73,32 @@
         return { openWishes: wishes.length, impactAreas: Object.keys(areas).length };
     }
 
+    // Validate a "Post a Need" draft. Required: title, wish_type, impact_area.
+    function validateWishDraft(draft) {
+        const d = draft || {};
+        if (!d.title || !String(d.title).trim()) return { valid: false, error: 'Please describe what you need.' };
+        if (!d.wish_type) return { valid: false, error: 'Please choose a wish type.' };
+        if (!d.impact_area) return { valid: false, error: 'Please choose an impact area.' };
+        return { valid: true, error: '' };
+    }
+
+    // Fold the optional context fields of a draft into the post body.
+    function buildWishText(draft) {
+        const d = draft || {};
+        const parts = [];
+        if (d.details) parts.push(String(d.details).trim());
+        if (d.success) parts.push('Success looks like: ' + String(d.success).trim());
+        if (d.location) parts.push('Location: ' + String(d.location).trim());
+        return parts.filter(Boolean).join('\n\n');
+    }
+
     return {
         isOpenWish: isOpenWish,
         mapWishRow: mapWishRow,
         filterWishes: filterWishes,
         wishStats: wishStats,
-        formatWishTime: formatWishTime
+        formatWishTime: formatWishTime,
+        validateWishDraft: validateWishDraft,
+        buildWishText: buildWishText
     };
 });
