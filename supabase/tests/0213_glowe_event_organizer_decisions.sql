@@ -188,8 +188,8 @@ select pg_temp.expect_blocked(
 do $$
 declare v_id uuid;
 begin
-  select id into v_id from public.glowe_list_event_registrations('opportunity-evt0213')
-   where user_id = '00000000-0000-0000-0000-0000000213b1';
+  select id into v_id from public.glowe_applications
+   where opportunity_id = 'opportunity-evt0213' and user_id = '00000000-0000-0000-0000-0000000213b1';
   perform pg_temp.expect_blocked(
     format($f$select public.glowe_decide_event_registration(%L, 'accept')$f$, v_id),
     'not the event organizer');
