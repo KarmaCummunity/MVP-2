@@ -437,6 +437,32 @@
         return listOwned('applications');
     }
 
+    // Organizer view of an event's registrations (migration 0213). The RPC is
+    // owner-scoped and returns rows enriched with the registrant's display name.
+    async function listEventRegistrations(opportunityId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_list_event_registrations', {
+            p_opportunity_id: String(opportunityId)
+        });
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
+    // Organizer accept/decline of a registration (migration 0213). Accept applies
+    // capacity routing (→ Waitlisted when full); decline requires a reason.
+    async function decideEventRegistration(registrationId, decision, note = '') {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_decide_event_registration', {
+            p_registration_id: String(registrationId),
+            p_decision: String(decision),
+            p_note: note ? String(note) : null
+        });
+        if (error) throw error;
+        return data;
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -498,6 +524,8 @@
         registerForEvent,
         cancelRegistration,
         listMyRegistrations,
+        listEventRegistrations,
+        decideEventRegistration,
         apiRequest
     };
 })();

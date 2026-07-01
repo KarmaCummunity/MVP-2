@@ -131,6 +131,36 @@
         return null;
     }
 
+    // ── Organizer portal (FR-GLOWE-007-E) ──────────────────────────────────
+    // A registration is awaiting an organizer decision (accept / decline).
+    function canDecideRegistration(status) {
+        return status === 'Pending' || status === 'Waitlisted';
+    }
+
+    // Count registrations currently holding a confirmed spot.
+    function acceptedCount(registrations) {
+        return (registrations || []).filter(function (r) { return r && r.status === 'Accepted'; }).length;
+    }
+
+    // Group an organizer's registrations by status into ordered buckets.
+    function groupRegistrationsByStatus(registrations) {
+        const buckets = { pending: [], waitlisted: [], accepted: [], declined: [], cancelled: [] };
+        (registrations || []).forEach(function (r) {
+            const key = (r && r.status ? r.status : '').toLowerCase();
+            if (buckets[key]) buckets[key].push(r);
+        });
+        return buckets;
+    }
+
+    // Capacity summary for an event given the confirmed count. Unlimited when
+    // the event has no capacity set.
+    function capacityLabel(event, accepted) {
+        const cap = event && (event.capacity != null ? event.capacity : null);
+        const used = typeof accepted === 'number' ? accepted : 0;
+        if (cap == null) return 'Unlimited';
+        return used + ' / ' + cap + ' spots';
+    }
+
     return {
         isEvent: isEvent,
         eventTiming: eventTiming,
@@ -142,6 +172,10 @@
         registrationStatusLabel: registrationStatusLabel,
         isActiveRegistration: isActiveRegistration,
         canCancelRegistration: canCancelRegistration,
-        findRegistration: findRegistration
+        findRegistration: findRegistration,
+        canDecideRegistration: canDecideRegistration,
+        acceptedCount: acceptedCount,
+        groupRegistrationsByStatus: groupRegistrationsByStatus,
+        capacityLabel: capacityLabel
     };
 });

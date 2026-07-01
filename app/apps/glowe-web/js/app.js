@@ -2390,6 +2390,7 @@ function mapOpportunityRow(row) {
         description: row.description || '',
         skills: Array.isArray(row.skills) ? row.skills : [],
         featured: Boolean(row.featured),
+        ownerId: row.user_id || null,
         // Event fields (additive model, migration 0211). Null on plain opportunities.
         startAt: row.start_at || null,
         endAt: row.end_at || null,
@@ -4370,6 +4371,11 @@ function setupEventRegistration(opportunity, events) {
 async function renderEventRegisterArea(opportunity, events) {
     const area = document.getElementById('event-register-area');
     if (!area) return;
+    // The organizer manages registrations instead of registering for their own event.
+    if (isLoggedIn() && isEventOwner(opportunity)) {
+        renderOrganizerPanel(area, opportunity, events);
+        return;
+    }
     if (events.eventTiming(opportunity) === 'past') {
         area.innerHTML = '<p class="muted-note">This event has ended.</p>';
         return;
@@ -4472,6 +4478,87 @@ function registrationErrorMessage(err) {
     if (raw.includes('not open for registration') || raw.includes('already ended')) return 'This event is no longer open for registration.';
     if (raw.includes('sign in')) return 'Please sign in to register.';
     return 'Could not complete your registration. Please try again.';
+}
+
+// ── Organizer portal (FR-GLOWE-007-E) ──────────────────────────────────────
+// True when the signed-in user published this event.
+function isEventOwner(opportunity) {
+    const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    return Boolean(user && opportunity && opportunity.ownerId && user.id === opportunity.ownerId);
+}
+
+// Render the organizer's registrant list with accept/decline controls.
+async function renderOrganizerPanel(area, opportunity, events) {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { area.innerHTML = ''; return; }
+    area.innerHTML = '<p class="muted-note">Loading registrations…</p>';
+    let regs = [];
+    try {
+        regs = await backend.listEventRegistrations(opportunity.id);
+    } catch (_e) {
+        area.innerHTML = '<p class="event-register-error">Could not load registrations.</p>';
+        return;
+    }
+    area.innerHTML = organizerPanelHtml(regs, opportunity, events);
+    area.querySelectorAll('[data-decide]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            handleOrganizerDecision(btn.getAttribute('data-reg'), btn.getAttribute('data-decide'), opportunity, events);
+        });
+    });
+}
+
+function organizerPanelHtml(registrations, opportunity, events) {
+    const accepted = events.acceptedCount(registrations);
+    const rows = (registrations || []).map(function (r) { return organizerRegistrationRowHtml(r, events); }).join('');
+    return `
+        <div class="organizer-panel">
+            <h4>Manage registrations</h4>
+            <p class="organizer-capacity">${escapeHtml(events.capacityLabel(opportunity, accepted))}</p>
+            <div class="organizer-reg-list">${rows || '<p class="muted-note">No registrations yet.</p>'}</div>
+        </div>
+    `;
+}
+
+function organizerRegistrationRowHtml(reg, events) {
+    const name = reg.registrant_name || reg.submitted_email || 'Registrant';
+    const contact = [reg.submitted_email, reg.submitted_phone].filter(Boolean).join(' · ');
+    const statusLabel = events.registrationStatusLabel(reg.status) || reg.status;
+    const note = reg.rejection_note ? `<p class="muted-note">Reason: ${escapeHtml(reg.rejection_note)}</p>` : '';
+    const actions = events.canDecideRegistration(reg.status)
+        ? `<div class="organizer-actions">
+               <button class="btn btn-small btn-primary" type="button" data-decide="accept" data-reg="${escapeHtml(reg.id)}">Accept</button>
+               <button class="btn btn-small btn-outline" type="button" data-decide="decline" data-reg="${escapeHtml(reg.id)}">Decline</button>
+           </div>`
+        : '';
+    return `
+        <article class="organizer-reg-item">
+            <div>
+                <strong>${escapeHtml(name)}</strong>
+                <span class="status-badge status-${reg.status.toLowerCase()}">${escapeHtml(statusLabel)}</span>
+                ${contact ? `<p class="muted-note">${escapeHtml(contact)}</p>` : ''}
+                ${note}
+            </div>
+            ${actions}
+        </article>
+    `;
+}
+
+// Accept or decline a registration, then refresh the panel from server truth.
+async function handleOrganizerDecision(registrationId, decision, opportunity, events) {
+    const backend = window.gloweBackend;
+    if (!backend || !registrationId) return;
+    let note = '';
+    if (decision === 'decline') {
+        note = (window.prompt('Reason for declining (required, shown to the registrant):') || '').trim();
+        if (!note) return;
+    }
+    try {
+        await backend.decideEventRegistration(registrationId, decision, note.slice(0, 500));
+    } catch (_e) {
+        /* re-render reflects the server's authoritative state */
+    }
+    const area = document.getElementById('event-register-area');
+    if (area) renderOrganizerPanel(area, opportunity, events);
 }
 
 // Handle application submission
