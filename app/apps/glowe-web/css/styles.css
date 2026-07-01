@@ -4360,7 +4360,7 @@ a.user-greeting:hover {
 
 .admin-stats {
     display: grid;
-    grid-template-columns: repeat(3, minmax(0, 1fr));
+    grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
     gap: 16px;
     margin-bottom: 28px;
 }
@@ -4440,7 +4440,13 @@ a.user-greeting:hover {
     color: var(--text-secondary);
 }
 
-.admin-note-label input {
+.admin-note-required {
+    color: var(--primary-dark);
+    font-style: italic;
+}
+
+.admin-note-label input,
+.admin-note-label textarea {
     display: block;
     width: 100%;
     margin-top: 4px;
@@ -4448,6 +4454,79 @@ a.user-greeting:hover {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     font: inherit;
+    resize: vertical;
+}
+
+/* Accordion rows for pending org list */
+.admin-org-accordion {
+    border: 1px solid rgba(15, 93, 85, 0.15);
+    border-radius: var(--radius-md);
+    background: rgba(255,255,255,0.96);
+    overflow: hidden;
+}
+
+.admin-org-accordion + .admin-org-accordion {
+    margin-top: 8px;
+}
+
+.admin-org-summary {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 14px 18px;
+    cursor: pointer;
+    list-style: none;
+    user-select: none;
+}
+
+.admin-org-summary::-webkit-details-marker { display: none; }
+
+.admin-org-accordion[open] .admin-org-summary {
+    border-bottom: 1px solid rgba(15, 93, 85, 0.12);
+    background: var(--primary-light);
+}
+
+.admin-org-summary-name {
+    font-weight: 700;
+    color: var(--primary-dark);
+    flex: 1;
+    min-width: 0;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+}
+
+.admin-org-summary-meta {
+    font-size: 0.82rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.admin-org-summary-date {
+    font-size: 0.78rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+}
+
+.admin-org-summary-chevron {
+    font-size: 0.9rem;
+    color: var(--text-secondary);
+    flex-shrink: 0;
+    transition: transform 0.2s;
+}
+
+.admin-org-accordion[open] .admin-org-summary-chevron {
+    transform: rotate(180deg);
+}
+
+.admin-org-detail {
+    padding: 0;
+}
+
+.admin-org-detail .admin-card {
+    border: none;
+    border-radius: 0;
+    box-shadow: none;
 }
 
 .report-target-box {

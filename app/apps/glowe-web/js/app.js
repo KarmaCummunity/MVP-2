@@ -3558,6 +3558,16 @@ function initAdminPage() {
 
     if (orgContainer) loadPendingOrgs();
 
+    const backend = window.gloweBackend;
+    if (backend && backend.configured()) {
+        backend.fetchAdminCounts().then(({ members, orgs }) => {
+            const mStat = document.querySelector('[data-admin-stat="total-members"]');
+            const oStat = document.querySelector('[data-admin-stat="total-orgs"]');
+            if (mStat) mStat.textContent = members;
+            if (oStat) oStat.textContent = orgs;
+        }).catch(() => {});
+    }
+
     const requests = getAdminReviewUsers();
     const reports = getModerationReports();
     const hidden = getHiddenModerationItems();
@@ -3652,29 +3662,44 @@ function renderPendingOrgs(orgs) {
     }
     container.innerHTML = orgs.map(org => {
         const id = escapeHtml(org.id);
+        const orgName = escapeHtml(org.orgName || org.name || 'Unnamed organization');
+        const submittedDate = org.orgSubmittedAt
+            ? new Date(org.orgSubmittedAt).toLocaleDateString('en-GB', { day: '2-digit', month: 'short', year: 'numeric' })
+            : '';
         const detail = (label, value) => value
             ? `<p><strong>${label}:</strong> ${escapeHtml(value)}</p>` : '';
         return `
-            <article class="admin-card">
-                <span class="post-type-tag">Pending verification</span>
-                <h3>${escapeHtml(org.orgName || org.name || 'Unnamed organization')}</h3>
-                ${detail('Country', org.orgCountry || org.country)}
-                ${detail('Field', org.orgField)}
-                ${detail('Website', org.orgWebsite)}
-                ${detail('Registration', org.orgRegistrationNumber)}
-                ${detail('Contact', org.orgContactName)}
-                ${detail('Contact email', org.orgContactEmail || org.email)}
-                ${detail('Contact phone', org.orgContactPhone)}
-                ${detail('Size', org.orgSize)}
-                ${org.orgDescription ? `<p>${escapeHtml(org.orgDescription)}</p>` : ''}
-                <label class="admin-note-label">Review note (optional)
-                    <input type="text" id="org-note-${id}" placeholder="Add a short note for the record">
-                </label>
-                <div class="card-actions">
-                    <button class="btn btn-primary btn-small" type="button" onclick="decideGloweOrg('${id}', 'approved')">Approve</button>
-                    <button class="btn btn-outline btn-small" type="button" onclick="decideGloweOrg('${id}', 'rejected')">Reject</button>
+            <details class="admin-org-accordion">
+                <summary class="admin-org-summary">
+                    <span class="admin-org-summary-name">${orgName}</span>
+                    <span class="admin-org-summary-meta">${escapeHtml(org.orgField || '')}${org.orgField && org.orgCountry ? ' · ' : ''}${escapeHtml(org.orgCountry || '')}</span>
+                    ${submittedDate ? `<span class="admin-org-summary-date">Submitted ${submittedDate}</span>` : ''}
+                    <span class="admin-org-summary-chevron" aria-hidden="true">▾</span>
+                </summary>
+                <div class="admin-org-detail">
+                    <article class="admin-card">
+                        <span class="post-type-tag">Pending verification</span>
+                        <h3>${orgName}</h3>
+                        ${detail('Country', org.orgCountry || org.country)}
+                        ${detail('Field', org.orgField)}
+                        ${detail('Website', org.orgWebsite)}
+                        ${detail('Registration', org.orgRegistrationNumber)}
+                        ${detail('Contact', org.orgContactName)}
+                        ${detail('Contact email', org.orgContactEmail || org.email)}
+                        ${detail('Contact phone', org.orgContactPhone)}
+                        ${detail('Size', org.orgSize)}
+                        ${org.orgDescription ? `<p>${escapeHtml(org.orgDescription)}</p>` : ''}
+                        <label class="admin-note-label">
+                            Review note <span class="admin-note-required">(required for rejection)</span>
+                            <textarea id="org-note-${id}" rows="2" placeholder="Explain the decision — especially required when rejecting"></textarea>
+                        </label>
+                        <div class="card-actions">
+                            <button class="btn btn-primary btn-small" type="button" onclick="decideGloweOrg('${id}', 'approved')">Approve</button>
+                            <button class="btn btn-outline btn-small" type="button" onclick="decideGloweOrg('${id}', 'rejected')">Reject</button>
+                        </div>
+                    </article>
                 </div>
-            </article>
+            </details>
         `;
     }).join('');
 }
@@ -3684,6 +3709,14 @@ async function decideGloweOrg(profileId, decision) {
     if (!backend || typeof backend.setOrgApproval !== 'function') return;
     const noteInput = document.getElementById(`org-note-${profileId}`);
     const note = noteInput ? noteInput.value.trim() : '';
+    if (decision === 'rejected' && !note) {
+        showSuccessModal(
+            'Rejection reason required',
+            'Please explain why this organization is being rejected. The organization will see this note.'
+        );
+        if (noteInput) noteInput.focus();
+        return;
+    }
     try {
         await backend.setOrgApproval(profileId, decision, note);
     } catch (error) {
@@ -3927,25 +3960,79 @@ function handleDiscussionSubmit(event, groupId) {
     event.target.reset();
 }
 
-function initProfilePage() {
+// UUID pattern used to detect real DB profile IDs vs. static sample IDs.
+const UUID_RE = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+
+function _profileNotFound(container) {
+    container.innerHTML = `
+        <div class="empty-state">
+            <h3>Profile not found</h3>
+            <p>This profile is not available yet, or the link points to an older demo profile.</p>
+            <div class="modal-actions">
+                <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
+                <a class="btn btn-outline" href="community.html">Back to Community</a>
+                <a class="btn btn-outline" href="my-applications.html">Open Personal Area</a>
+            </div>
+        </div>
+    `;
+}
+
+// Map a glowe_profiles DB row (fromProfileRow output) to the shape that
+// the profile-page rendering code expects (same as static sample profiles).
+function _adaptDbProfile(p) {
+    const isOrg = p.accountType === 'organization';
+    return {
+        id: p.id,
+        name: isOrg ? (p.orgName || p.name || 'Unnamed organization') : (p.name || 'Anonymous'),
+        type: isOrg ? (p.orgField || 'Organization') : 'Community Member',
+        email: p.orgContactEmail || p.email || '',
+        location: p.location || p.orgCountry || '',
+        scope: p.orgCountry || '',
+        languages: p.languages || [],
+        skills: p.skills || [],
+        impactArea: p.orgField || p.focus || '',
+        mission: isOrg ? (p.orgDescription || p.about || '') : '',
+        bio: p.about || '',
+        story: p.about || '',
+        focus: p.focus || '',
+        website: p.orgWebsite || '',
+        volunteers: 0,
+        opportunities: 0,
+        projects: [],
+        status: p.approvalStatus === 'approved' ? 'Verified organization' : 'Pending verification'
+    };
+}
+
+async function initProfilePage() {
     const params = new URLSearchParams(window.location.search);
-    const profile = getProfileById(params.get('id') || 'sample-org-1');
+    const id = params.get('id') || 'sample-org-1';
     const container = document.getElementById('profile-content');
     if (!container) return;
-    if (!profile) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <h3>Profile not found</h3>
-                <p>This profile is not available yet, or the link points to an older demo profile.</p>
-                <div class="modal-actions">
-                    <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
-                    <a class="btn btn-outline" href="community.html">Back to Community</a>
-                    <a class="btn btn-outline" href="my-applications.html">Open Personal Area</a>
-                </div>
-            </div>
-        `;
+
+    const staticProfile = getProfileById(id);
+    if (staticProfile) {
+        _renderProfileContent(staticProfile, container);
         return;
     }
+
+    if (!UUID_RE.test(id)) {
+        _profileNotFound(container);
+        return;
+    }
+
+    container.innerHTML = '<div class="empty-state"><h3>Loading profile…</h3><p>Fetching from the community directory.</p></div>';
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { _profileNotFound(container); return; }
+    try {
+        const dbProfile = await backend.fetchProfileById(id);
+        if (!dbProfile) { _profileNotFound(container); return; }
+        _renderProfileContent(_adaptDbProfile(dbProfile), container);
+    } catch {
+        _profileNotFound(container);
+    }
+}
+
+function _renderProfileContent(profile, container) {
 
     const isOrg = Boolean(profile.mission);
     const typeConfig = getProfileTypeConfig(profile);
