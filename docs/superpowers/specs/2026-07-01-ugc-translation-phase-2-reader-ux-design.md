@@ -114,3 +114,38 @@ All new UI code lives in `apps/mobile`; all new business logic reuses the existi
 - **AC5.** The full post renders translated fields by default with a discreet "auto-translated" indicator, and a per-post (non-persisted) "show original / show translation" toggle that is hidden when the post's source language equals the reader language.
 - **AC6.** Any translation failure, skip, or offline miss degrades silently to the source text — no error UI on the read path; the feed remains usable in the source language.
 - **AC7.** Accessibility: translated text carries an auto-translated `accessibilityLabel`; the show-original toggle is a labeled button whose state change is announced to screen readers.
+
+---
+
+## 10. Revision 1 — council review incorporated (2026-07-01)
+
+A 7-lens design council reviewed §1–§9 and confirmed the direction and locked decisions are sound. The following concrete amendments close the gaps it found. They are binding on the implementation plan.
+
+### 10.1 Contract prerequisite (P0 — blocks everything)
+The current entities/queries do not expose what the reader layer needs. Before any UI work, ship a `(contract)`-scoped change:
+- Add `sourceLanguage: string | null` to the `PostWithOwner` (and underlying post) shape, populated by the feed read RPC and single-post read. Without it the client cannot tell which posts need translation, and D2-C ("hide toggle when source == reader language") is unimplementable.
+- Expose `preferredLanguage: string | null` on the current-user read (and `IUserRepository.findById`) so `useReaderLanguage()` (AC2) has its input.
+- Add a pure helper `toTranslatableFields(post): TranslatablePostField[]` deriving the eligible fields from the post + its source language (reused by feed and detail).
+
+### 10.2 Materialization is batched and viewport-gated (P0)
+- **Batch endpoint:** the `translate` Edge Function (or a thin batch wrapper) accepts N `(postId, field)` items in one call so a feed window is one round-trip, not one call per field. `MaterializePostTranslationsUseCase` sends one batched request per settled window instead of looping `translateOne`.
+- **Viewport + dwell gate:** translation targets only the *actually visible* posts via the feed `FlatList` `onViewableItemsChanged` (not `pages.flatMap` of all loaded posts), and only after a dwell threshold (~400 ms visible) so fast scrolling does not fire translations for posts that flash by.
+- **Per-session ceiling:** a soft cap on materialization calls per session guards against runaway cost; beyond it, misses render as source until reset.
+
+### 10.3 No re-fire, no stale, no poisoning (P0/P1)
+- **Session skip-map (P1):** the client keeps an in-memory `Set` of `(postId, field, lang)` that resolved to skip/failure/`null`, so they are not re-requested on every re-render (prevents feed flashing and wasted calls).
+- **Stale-on-edit purge (P0, backend):** add a `BEFORE UPDATE OF title, description` trigger on `posts` that purges the affected `content_translations` rows, so an edited post is re-translated rather than serving the old translation forever. (Phase 1a only purged on delete/moderation.) Ships as a migration in this phase.
+- **Translate the real source row, never client text (P1, security):** the Edge Function translates the field read from the source row it already SELECT-verifies (Phase 1b AC7) — it must not translate client-supplied text, which would let a client poison the shared cache for all readers.
+- **Server-side language allow-list (P1):** the supported target-language set is validated server-side (Edge Function), not only in the client picker; an unsupported tag is rejected, not translated.
+
+### 10.4 RTL, swap, and accessibility (P0/P1)
+- **Direction-aware text (P0):** text alignment/base direction is computed per rendered string (source vs translation may differ in direction — e.g. English source → Hebrew translation, or "show original" of an LTR source inside the RTL card), not fixed at module load. Use bidi isolation for mixed-direction content.
+- **Reflow-free swap (P1):** the source→translation swap happens at the card level with a reserved `minHeight` so the swap does not shift scroll position; the "translating…" indicator is a sibling, not inline in the clamped text.
+- **Screen-reader-safe (P1):** no aggressive live region on swap (it would interrupt reading); translated text exposes an auto-translated `accessibilityLabel`; the toggle is a ≥44×44 target with a politely-announced state change; the indicator has sufficient contrast and is not a focus stop.
+
+### 10.5 Amended / added Acceptance Criteria
+- **AC8.** `PostWithOwner` and the current-user read expose `sourceLanguage` and `preferredLanguage` respectively (contract change); `toTranslatableFields` derives eligible fields purely and is unit-tested.
+- **AC9.** Feed materialization is driven by `onViewableItemsChanged` with a dwell gate and a per-session ceiling; it issues one batched translate request per settled window, and never re-requests a `(post, field, lang)` that previously resolved to skip/failure within the session.
+- **AC10.** Editing a post's `title`/`description` purges its cached translations (DB trigger); the next reader re-materializes the current text.
+- **AC11.** The `translate` Edge Function translates the SELECT-verified source-row field (never client-supplied text) and rejects unsupported target languages server-side.
+- **AC12.** Feed cards render with a reserved `minHeight`; the source→translation swap causes no scroll shift, and per-string base direction is resolved at render time (RTL-safe), with the "translating…" indicator as a non-clamped sibling.
