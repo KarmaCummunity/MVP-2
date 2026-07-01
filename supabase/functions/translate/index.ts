@@ -16,6 +16,7 @@ import { getAuthedUser } from './auth.ts';
 import { isTranslatable, needsTranslation } from './shortcircuit.ts';
 import { getCached, putIfAbsent, type CacheKey } from './cache.ts';
 import { selectProvider } from './provider.ts';
+import { isSupportedTarget } from './supportedLanguages.ts';
 
 const SUPABASE_URL = Deno.env.get('SUPABASE_URL') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
@@ -25,10 +26,12 @@ const FIELDS_BY_TYPE: Record<string, string[]> = {
   post: ['title', 'description'],
   message: ['body'],
 };
-// Which source table/PK to RLS-check for visibility before spending a call.
-const SOURCE: Record<string, { table: string; pk: string }> = {
-  post: { table: 'posts', pk: 'post_id' },
-  message: { table: 'messages', pk: 'message_id' },
+// Which source table/PK to RLS-check for visibility before spending a call, plus
+// the DB column each field maps to. The text we translate is READ FROM THIS ROW
+// (not client-supplied) so a malicious client cannot poison the shared cache.
+const SOURCE: Record<string, { table: string; pk: string; fields: Record<string, string> }> = {
+  post: { table: 'posts', pk: 'post_id', fields: { title: 'title', description: 'description' } },
+  message: { table: 'messages', pk: 'message_id', fields: { body: 'body' } },
 };
 
 function json(body: unknown, status: number, h: Record<string, string> = {}): Response {
@@ -80,18 +83,34 @@ Deno.serve(async (req) => {
     return json({ error: 'invalid_body' }, 400, hdrs);
   }
 
-  // §9 — verify the caller can actually SELECT the source row (RLS) before spending.
+  // FR-TRANSLATE-003 — reject unsupported targets before spending a provider call.
+  if (!isSupportedTarget(body.targetLanguage)) {
+    return json({ error: 'unsupported_language' }, 400, hdrs);
+  }
+
+  // §9 — verify the caller can SELECT the source row (RLS) AND read the field value
+  // from it. We translate this DB value, never the client-supplied text, so a
+  // malicious client cannot poison the cache shared by all readers of the row.
   const src = SOURCE[body.contentType];
-  const { data: visible, error: visErr } = await authed.userClient
+  const column = src.fields[body.field];
+  if (!column) return json({ error: 'invalid_body' }, 400, hdrs);
+  const { data: srcRow, error: visErr } = await authed.userClient
     .from(src.table)
-    .select(src.pk)
+    .select(`${src.pk}, ${column}`)
     .eq(src.pk, body.contentId)
     .maybeSingle();
   if (visErr) return json({ error: 'internal' }, 500, hdrs);
-  if (!visible) return json({ error: 'forbidden' }, 403, hdrs);
+  if (!srcRow) return json({ error: 'forbidden' }, 403, hdrs);
+  const sourceText = (srcRow as unknown as Record<string, unknown>)[column];
+  if (typeof sourceText !== 'string' || sourceText.trim().length === 0) {
+    return json({ status: 'skipped' }, 200, hdrs);
+  }
+  if (sourceText.length > MAX_INPUT) {
+    return json({ status: 'skipped' }, 200, hdrs);
+  }
 
   // Short-circuit untranslatable input (emoji/url/number-only/empty).
-  if (!isTranslatable(body.sourceText)) {
+  if (!isTranslatable(sourceText)) {
     return json({ status: 'skipped' }, 200, hdrs);
   }
 
@@ -111,7 +130,7 @@ Deno.serve(async (req) => {
   let result;
   try {
     result = await selectProvider().translate({
-      text: body.sourceText,
+      text: sourceText,
       targetLanguage: body.targetLanguage,
     });
   } catch (_e) {
