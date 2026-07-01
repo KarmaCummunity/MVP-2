@@ -159,7 +159,7 @@ GloWe shipped English-only (FR-GLOWE-001 AC1, "design byte-for-byte the original
 
 ## FR-GLOWE-006 — Wishing Well: live needs board
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress — DB foundation delivered (migration `0215`: `post_type`/`wish_type`/`impact_area`/`status` columns on `glowe_posts` + owner-only `glowe_offers` table + SQL regression). Frontend slices (live read+filters+stats, Post-a-Need, Offer-Support/close) pending.
 
 The Wishing Well page (`pages/wishing-well.html`) shows community needs posted by members. Phase B replaces the mock data with live reads from `glowe_posts` (type discriminator `post_type = 'wish'`) and connects the "Post a Need" form to persist.
 
