@@ -1072,6 +1072,44 @@ export type Database = {
         }
         Relationships: []
       }
+      glowe_offers: {
+        Row: {
+          availability: string | null
+          contact_preference: string | null
+          created_at: string
+          id: string
+          offer_text: string | null
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          availability?: string | null
+          contact_preference?: string | null
+          created_at?: string
+          id?: string
+          offer_text?: string | null
+          post_id: string
+          user_id?: string
+        }
+        Update: {
+          availability?: string | null
+          contact_preference?: string | null
+          created_at?: string
+          id?: string
+          offer_text?: string | null
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowe_offers_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "glowe_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glowe_opportunities: {
         Row: {
           capacity: number | null
@@ -1161,12 +1199,16 @@ export type Database = {
           category: string | null
           created_at: string
           id: string
+          impact_area: string | null
           language: string | null
           link: string | null
+          post_type: string
+          status: string
           tags: string[]
           text: string | null
           title: string
           user_id: string | null
+          wish_type: string | null
         }
         Insert: {
           audience?: string | null
@@ -1175,12 +1217,16 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          impact_area?: string | null
           language?: string | null
           link?: string | null
+          post_type?: string
+          status?: string
           tags?: string[]
           text?: string | null
           title: string
           user_id?: string | null
+          wish_type?: string | null
         }
         Update: {
           audience?: string | null
@@ -1189,12 +1235,16 @@ export type Database = {
           category?: string | null
           created_at?: string
           id?: string
+          impact_area?: string | null
           language?: string | null
           link?: string | null
+          post_type?: string
+          status?: string
           tags?: string[]
           text?: string | null
           title?: string
           user_id?: string | null
+          wish_type?: string | null
         }
         Relationships: []
       }
