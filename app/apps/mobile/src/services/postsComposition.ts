@@ -7,8 +7,10 @@ import { Platform } from 'react-native';
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import {
   getSupabaseClient,
+  EdgeFnTranslationService,
   SupabaseFeedRealtime,
   SupabasePostRepository,
+  SupabasePostTranslationReader,
   SupabaseStatsRepository,
   type SupabaseAuthStorage,
 } from '@kc/infrastructure-supabase';
@@ -22,9 +24,11 @@ import {
   GetMyPostsUseCase,
   GetProfileClosedPostsUseCase,
   GetPostByIdUseCase,
+  GetTranslatedPostsUseCase,
   ListMyActivityTimelineUseCase,
   ListPostActorIdentityUseCase,
   MarkAsDeliveredUseCase,
+  MaterializePostTranslationsUseCase,
   ReopenPostUseCase,
   RepublishPostUseCase,
   UnmarkRecipientSelfUseCase,
@@ -56,6 +60,8 @@ let _listMyActivityTimeline: ListMyActivityTimelineUseCase | null = null;
 let _dismissFirstPostNudge: DismissFirstPostNudgeUseCase | null = null;
 let _listPostActorIdentity: ListPostActorIdentityUseCase | null = null;
 let _upsertPostActorIdentity: UpsertPostActorIdentityUseCase | null = null;
+let _getTranslatedPosts: GetTranslatedPostsUseCase | null = null;
+let _materializePostTranslations: MaterializePostTranslationsUseCase | null = null;
 
 function pickStorage(): SupabaseAuthStorage | undefined {
   if (Platform.OS === 'web') {
@@ -187,4 +193,23 @@ export function getUpsertPostActorIdentityUseCase(): UpsertPostActorIdentityUseC
     _upsertPostActorIdentity = new UpsertPostActorIdentityUseCase(getRepo());
   }
   return _upsertPostActorIdentity;
+}
+
+// ── Translation (FR-TRANSLATE-003) ────────────────────────────────────────────
+export function getTranslatedPostsUseCase(): GetTranslatedPostsUseCase {
+  if (!_getTranslatedPosts) {
+    _getTranslatedPosts = new GetTranslatedPostsUseCase(
+      new SupabasePostTranslationReader(getSupabaseClient({ storage: pickStorage() })),
+    );
+  }
+  return _getTranslatedPosts;
+}
+
+export function materializePostTranslationsUseCase(): MaterializePostTranslationsUseCase {
+  if (!_materializePostTranslations) {
+    _materializePostTranslations = new MaterializePostTranslationsUseCase(
+      new EdgeFnTranslationService(getSupabaseClient({ storage: pickStorage() })),
+    );
+  }
+  return _materializePostTranslations;
 }
