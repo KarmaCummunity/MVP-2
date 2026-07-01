@@ -11,6 +11,7 @@ export type { ITranslationService } from './ports/ITranslationService';
 export type { IPostTranslationReader, PostTranslationHit } from './ports/IPostTranslationReader';
 export { GetTranslatedPostsUseCase, MaterializePostTranslationsUseCase, type TranslatablePostField, type PostTranslationResult } from './translations/PostTranslationsUseCases';
 export { toTranslatableFields } from './translations/toTranslatableFields';
+export { deriveTranslationStatus, type TranslationStatus } from './translations/deriveTranslationStatus';
 export type { IChatRealtime, InboxStreamCallbacks, SubscribeInboxOptions, ChatStreamCallbacks, Unsubscribe } from './ports/IChatRealtime';
 export type { IReportRepository } from './ports/IReportRepository';
 export type { IFeedRealtime, FeedRealtimeCallbacks } from './ports/IFeedRealtime';
