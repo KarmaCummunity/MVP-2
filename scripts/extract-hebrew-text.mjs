@@ -44,6 +44,10 @@ const DEFAULT_OUT = path.join(REPO_ROOT, "scripts", "hebrew-text-report.md");
  */
 const SKIP_HEBREW_SCAN_EXACT_RELS = new Set([
   "app/packages/infrastructure-supabase/src/search/searchConstants.ts",
+  // PWA manifest: the `name`/`short_name` are the localized installed-app label
+  // (Hebrew is the MVP locale, R-MVP-Core-4). A static manifest.json cannot hold
+  // i18next keys, so its localized name is canonical here, not an inline leak.
+  "app/apps/mobile/public/manifest.json",
   // GloWe is a vendored standalone static frontend with no i18next runtime; its
   // interface translations live in the `GLOWE_TRANSLATIONS` dictionary inside
   // `js/app.js`, which IS its canonical locale bundle (analogous to the

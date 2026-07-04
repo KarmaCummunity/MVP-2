@@ -2670,6 +2670,11 @@ function setSavedItems(items) {
 }
 
 function saveItem(type, id, title, meta = '', href = '') {
+    // FR-GLOWE-013 AC1 — saving requires login (saved items sync per user).
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        return;
+    }
     const items = getSavedItems();
     const itemId = String(id);
     const exists = items.some(item => item.type === type && String(item.id) === itemId);
@@ -2677,13 +2682,11 @@ function saveItem(type, id, title, meta = '', href = '') {
         const savedItem = { type, id: itemId, title, meta, href, savedAt: new Date().toISOString() };
         setSavedItems([savedItem, ...items]);
         if (window.gloweBackend && window.gloweBackend.configured()) {
-            window.gloweBackend.insertOwned('saved_items', {
-                item_type: type,
-                item_id: itemId,
-                title,
-                meta,
-                href
-            }).catch(() => {});
+            const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+            const payload = helpers
+                ? helpers.buildSavedItemPayload(type, itemId, title, meta, href)
+                : { item_type: type, item_id: itemId, title, meta, href };
+            window.gloweBackend.insertOwned('saved_items', payload).catch(() => {});
         }
     }
     showSuccessModal('Saved', `${title} was added to your saved area.`);
@@ -2699,6 +2702,47 @@ function removeSavedItem(type, id) {
     }
     if (typeof window.renderSavedItemsPage === 'function') window.renderSavedItemsPage();
     if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+}
+
+// FR-GLOWE-013 AC2 — render a Save/Saved toggle button that reflects whether the
+// item is already in the user's saved list. Raw values are escaped here (callers
+// pass unescaped title/meta/href). The saved-state label is "Saved"; the unsaved
+// label is card-specific (kept on data-save-label for the in-place flip).
+function savedToggleButtonHtml(type, id, title, meta, href, saveLabel, className) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    const cls = (className || 'btn btn-outline btn-small') + (saved ? ' is-saved' : '');
+    const label = saved ? 'Saved' : saveLabel;
+    return `<button class="${cls}" type="button" aria-pressed="${saved}" data-save-label="${escapeHtml(saveLabel)}" onclick="toggleSavedItem(this, '${jsString(type)}', '${jsString(String(id))}', '${jsString(String(title))}', '${jsString(String(meta))}', '${jsString(String(href))}')">${escapeHtml(label)}</button>`;
+}
+
+// Flip a rendered toggle button in place after a save/unsave (avoids a full list
+// re-render / scroll reset). Setting textContent replaces the text node, which the
+// i18n MutationObserver catches and localizes.
+function refreshSavedToggleButton(btn, type, id) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    btn.setAttribute('aria-pressed', String(saved));
+    btn.classList.toggle('is-saved', saved);
+    btn.textContent = saved ? 'Saved' : (btn.getAttribute('data-save-label') || 'Save');
+}
+
+// FR-GLOWE-013 AC2 — toggle a card's saved state: unsave when already saved, else
+// save. Login-gated (saved items sync per user). saveItem shows its own "Saved"
+// confirmation; the button flips in place either way.
+function toggleSavedItem(btn, type, id, title, meta, href) {
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        return;
+    }
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    if (saved) {
+        removeSavedItem(type, id);
+    } else {
+        saveItem(type, id, title, meta, href);
+    }
+    if (btn) refreshSavedToggleButton(btn, type, id);
 }
 
 function getPostComments() {
@@ -3107,9 +3151,69 @@ function openWishDetail(wishId) {
                 <button class="btn btn-outline" type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 <button class="btn btn-outline" type="button" onclick="closeModal('wish-detail-modal')">Back to wishes</button>
             </div>
+            <div id="wish-offers" class="wish-offers" aria-live="polite" hidden></div>
         </div>
     `;
     openModal('wish-detail-modal');
+    renderWishOffers(wish);
+}
+
+// FR-GLOWE-012 AC3 — resolve whether the current viewer owns this wish, so the
+// "Offers" inbox only renders to the wish author. Mirrors isOpportunityOwner.
+function isWishOwnerViewing(wish) {
+    const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!user || !wish) return false;
+    const wishesApi = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    if (wishesApi) return wishesApi.isWishOwner(wish, user.id);
+    return Boolean(wish.authorId && wish.authorId === user.id);
+}
+
+// FR-GLOWE-012 AC3 — render the wish owner's "Offers" inbox inside the wish
+// detail modal (read-only for this slice). Fetches offers via the owner-scoped
+// glowe_list_offers_for_post RPC (migration 0225) and lists each offerer's name,
+// offer text, availability, contact preference and submitted date.
+async function renderWishOffers(wish) {
+    const area = document.getElementById('wish-offers');
+    if (!area) return;
+    if (!isWishOwnerViewing(wish)) { area.hidden = true; return; }
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { area.hidden = true; return; }
+    area.hidden = false;
+    area.innerHTML = '<h3>Offers</h3><p class="muted-note">Loading offers…</p>';
+    let rows = [];
+    try {
+        rows = await backend.listOffersForPost(wish.id);
+    } catch (_e) {
+        area.innerHTML = '<h3>Offers</h3><p class="event-register-error">Could not load offers.</p>';
+        return;
+    }
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const views = orgHelpers ? orgHelpers.mapOffersForOwner(rows) : [];
+    area.innerHTML = wishOffersHtml(views);
+    wireConnectButtons(area);
+}
+
+// Build the offers-inbox markup from mapped offer views.
+function wishOffersHtml(views) {
+    const header = `<h3>Offers <span class="applicant-count">(${views.length})</span></h3>`;
+    if (!views.length) {
+        return `${header}<p class="muted-note">No offers yet.</p>`;
+    }
+    const rows = views.map(function (v) {
+        const date = v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '';
+        return `
+        <li class="applicant-row">
+            <div class="applicant-head">
+                <strong>${escapeHtml(v.name || 'GloWe volunteer')}</strong>
+            </div>
+            ${v.offerText ? `<p class="applicant-field">${escapeHtml(v.offerText)}</p>` : ''}
+            ${v.availability ? `<p class="applicant-field"><strong>Availability:</strong> ${escapeHtml(v.availability)}</p>` : ''}
+            ${v.contactPreference ? `<p class="applicant-field"><strong>Preferred contact:</strong> ${escapeHtml(v.contactPreference)}</p>` : ''}
+            ${date ? `<p class="applicant-meta">Offered ${escapeHtml(date)}</p>` : ''}
+            ${connectButtonHtml(v) ? `<div class="applicant-actions">${connectButtonHtml(v)}</div>` : ''}
+        </li>`;
+    }).join('');
+    return `${header}<ul class="applicant-list">${rows}</ul>`;
 }
 
 // Close modal when clicking outside
@@ -3245,6 +3349,7 @@ function mapProfileToOrg(profile) {
         name: profile.orgName || profile.name || 'Organization',
         type: profile.orgField || profile.type || 'Organization',
         mission: profile.orgDescription || profile.about || '',
+        missionField: profile.orgDescription ? 'org_description' : 'about',
         location: profile.orgCountry || profile.location || '',
         scope: profile.country || '',
         volunteers: 0,
@@ -3280,7 +3385,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
         : '';
 
     return `
-        <div class="opportunity-card">
+        <div class="opportunity-card" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${opportunity.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More opportunity actions">...</summary>
                 <div class="post-more-panel">
@@ -3296,8 +3401,8 @@ function renderOpportunityCard(opportunity, basePath = '') {
                 </div>
                 <span class="opportunity-badge">${escapeHtml(badge)}</span>
             </div>
-            <h3 class="opportunity-title">${escapeHtml(opportunity.title)}</h3>
-            <p class="opportunity-description">${escapeHtml(opportunity.description)}</p>
+            <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
+            <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
             <div class="opportunity-details">
                 ${eventMeta}
                 <span class="opportunity-detail">${escapeHtml(opportunity.location)}</span>
@@ -3308,7 +3413,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
             </div>
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
-                <button class="btn btn-outline btn-small" type="button" onclick="saveItem('opportunity', '${opportunity.id}', '${titleForMessage}', '${jsString(opportunity.organization)}', '${detailHref}')">Save Opportunity</button>
+                ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save Opportunity')}
             </div>
         </div>
     `;
@@ -3318,7 +3423,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
 function renderOrganizationCard(organization, basePath = '') {
     const profileHref = `${basePath}pages/profile.html?id=${organization.id}`;
     return `
-        <div class="opportunity-card">
+        <div class="opportunity-card" data-tr-card data-tr-type="glowe_profile" data-tr-id="${organization.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More profile actions">...</summary>
                 <div class="post-more-panel">
@@ -3334,14 +3439,14 @@ function renderOrganizationCard(organization, basePath = '') {
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
             <h3 class="opportunity-title">${escapeHtml(organization.name)}</h3>
-            <p class="opportunity-description">${escapeHtml(organization.mission)}</p>
+            <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
             <div class="opportunity-details">
                 <span class="opportunity-detail">${escapeHtml(organization.location)}</span>
                 <span class="opportunity-detail">${escapeHtml(organization.scope || 'Global')}</span>
                 <span class="opportunity-detail">${escapeHtml(organization.volunteers)} volunteers</span>
             </div>
             <div class="opportunity-skills">
-                <span class="skill-tag">${escapeHtml(organization.type || 'Organization')}</span>
+                <span class="skill-tag" data-tr-field="org_field">${escapeHtml(organization.type || 'Organization')}</span>
                 <span class="skill-tag">${escapeHtml(organization.impactArea || 'Impact')}</span>
             </div>
             <div class="card-actions">
@@ -3357,7 +3462,7 @@ function renderWishCard(wish) {
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
     const areas = Array.isArray(wish.areas) ? wish.areas : [];
     return `
-        <article class="wish-card" style="--tag-color: ${style.color}">
+        <article class="wish-card" style="--tag-color: ${style.color}" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More wish actions">...</summary>
                 <div class="post-more-panel">
@@ -3374,13 +3479,13 @@ function renderWishCard(wish) {
                 ${renderEntityMark(wish.author, 'wish-image')}
                 <span class="sr-only">Open wish details</span>
             </button>
-            <h3><button type="button" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
+            <h3><button type="button" data-tr-field="title" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
             <a class="wish-author" href="profile.html?id=${wish.authorId}">
                 ${renderEntityMark(wish.author)}
                 <span>${escapeHtml(wish.author)}</span>
                 <small>${escapeHtml(wish.time)}</small>
             </a>
-            <p>${escapeHtml(wish.description)}</p>
+            <p data-tr-field="text">${escapeHtml(wish.description)}</p>
             <div class="opportunity-details">
                 <span class="opportunity-detail">${escapeHtml(wish.location)}</span>
                 <span class="opportunity-detail">${escapeHtml(areas.join(', '))}</span>
@@ -3407,10 +3512,10 @@ function renderProjectCard(project, options) {
         </div>`
         : '';
     return `
-        <div class="project-card">
+        <div class="project-card" data-tr-card data-tr-type="glowe_project" data-tr-id="${project.id}">
             <span class="opportunity-badge">${escapeHtml(project.status)}</span>
-            <h3>${escapeHtml(project.title)}</h3>
-            <p>${escapeHtml(project.description)}</p>
+            <h3 data-tr-field="title">${escapeHtml(project.title)}</h3>
+            <p data-tr-field="description">${escapeHtml(project.description)}</p>
             ${ownerActions}
         </div>
     `;
@@ -3437,7 +3542,7 @@ function renderPostCard(post) {
         ? `<button type="button" class="post-delete-action" onclick="deleteCommunityPost('${postId}')">Delete post</button>`
         : '';
     return `
-        <article class="post-card" id="post-${postId}">
+        <article class="post-card" id="post-${postId}" data-tr-card data-tr-type="glowe_post" data-tr-id="${postId}">
             <details class="post-more-menu">
                 <summary aria-label="More post actions">...</summary>
                 <div class="post-more-panel">
@@ -3458,8 +3563,8 @@ function renderPostCard(post) {
                 </a>
                 <span class="post-type-tag">Post | ${escapeHtml(post.category)}</span>
             </div>
-            <h3>${escapeHtml(post.title)}</h3>
-            <p>${escapeHtml(post.text)}</p>
+            <h3 data-tr-field="title">${escapeHtml(post.title)}</h3>
+            <p data-tr-field="text">${escapeHtml(post.text)}</p>
             ${tags.length ? `<div class="post-tag-row">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             <div class="post-engagement-row">
                 <span>${reactionCount} reactions</span>
@@ -5373,6 +5478,28 @@ async function renderOpportunityApplicants(opportunity) {
             handleApplicationDecision(opportunity, btn.getAttribute('data-app'), btn.getAttribute('data-decide'));
         });
     });
+    wireConnectButtons(area);
+}
+
+// FR-GLOWE-012 AC4 — wire the delegated "Connect" CTA handlers within a rendered
+// inbox (shared by the applicants and offers lists). Each button carries the
+// contact email in data-connect.
+function wireConnectButtons(area) {
+    if (!area) return;
+    area.querySelectorAll('[data-connect]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            handleConnectEmail(btn.getAttribute('data-connect'));
+        });
+    });
+}
+
+// FR-GLOWE-012 AC4 — the "Connect" CTA button markup, rendered only when the
+// view carries a contact email.
+function connectButtonHtml(view) {
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const hasEmail = orgHelpers ? orgHelpers.hasContactEmail(view) : Boolean(view && view.email);
+    if (!hasEmail) return '';
+    return `<button class="btn btn-outline btn-sm" type="button" data-connect="${escapeHtml(String(view.email))}">Connect</button>`;
 }
 
 // Build the applicants-inbox markup from mapped applicant views.
@@ -5385,11 +5512,12 @@ function opportunityApplicantsHtml(views) {
     const rows = views.map(function (v) {
         const date = v.appliedAt ? new Date(v.appliedAt).toLocaleDateString() : '';
         const canDecide = orgHelpers ? orgHelpers.canDecideApplication(v.status) : v.status === 'Pending';
-        const actions = canDecide ? `
-            <div class="applicant-actions">
+        const decideButtons = canDecide ? `
                 <button class="btn btn-primary btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Accepted">Accept</button>
-                <button class="btn btn-outline btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Declined">Decline</button>
-            </div>` : '';
+                <button class="btn btn-outline btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Declined">Decline</button>` : '';
+        const connectButton = connectButtonHtml(v);
+        const actions = (decideButtons || connectButton) ? `
+            <div class="applicant-actions">${decideButtons}${connectButton}</div>` : '';
         return `
         <li class="applicant-row">
             <div class="applicant-head">
@@ -5404,6 +5532,42 @@ function opportunityApplicantsHtml(views) {
         </li>`;
     }).join('');
     return `${header}<ul class="applicant-list">${rows}</ul>`;
+}
+
+// FR-GLOWE-012 AC4 — copy text (a contact email) to the clipboard for the
+// "Connect" CTA. Prefers the async Clipboard API, falling back to a temporary
+// textarea + document.execCommand('copy') where it is unavailable (older
+// browsers, insecure contexts). Returns true on success.
+async function copyTextToClipboard(text) {
+    const value = String(text || '');
+    if (!value) return false;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(value);
+            return true;
+        }
+    } catch (_e) { /* fall through to the legacy path */ }
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    } catch (_e) {
+        return false;
+    }
+}
+
+// FR-GLOWE-012 AC4 — the "Connect" CTA copies the applicant/offerer contact
+// email to the clipboard and confirms (Phase B). Phase C will route to KC DMs.
+async function handleConnectEmail(email) {
+    const ok = await copyTextToClipboard(email);
+    showSuccessModal('Connect', ok ? 'Email copied to clipboard' : 'Could not copy the email.');
 }
 
 // FR-GLOWE-012 AC2 — owner accept/decline of an application. Fires the
@@ -6102,6 +6266,31 @@ function getGloweLanguage() {
 // English text nodes / attribute values produced by the page or by app.js.
 const GLOWE_TRANSLATIONS = {
     he: {
+        // UGC translation toggle (FR-TRANSLATE-005)
+        'Show original': 'הצג מקור',
+        'Show translation': 'הצג תרגום',
+        // Personal-area nav + labels (were rendering in English on the Hebrew UI)
+        'Opportunities': 'הזדמנויות',
+        'My Events': 'האירועים שלי',
+        'Focus not added yet': 'תחום מיקוד טרם נוסף',
+        'Saved from the GloWe community': 'נשמר מקהילת GloWe',
+        'Loading your event registrations…': 'טוען את ההרשמות שלך לאירועים…',
+        // Discussion / topic groups (fixed taxonomy shown on Community + Forums)
+        'Education & Knowledge': 'חינוך וידע',
+        'Environment & Climate Action': 'סביבה ופעולה אקלימית',
+        'Health & Community Care': 'בריאות וטיפול קהילתי',
+        'Rights, Safety & Civic Power': 'זכויות, בטיחות וכוח אזרחי',
+        'A focused group for learning spaces, youth programs, multilingual knowledge sharing, and practical education tools.': 'קבוצה ממוקדת למרחבי למידה, תוכניות נוער, שיתוף ידע רב-לשוני וכלים חינוכיים מעשיים.',
+        'For climate, food systems, waste, restoration, repair, and local environmental action.': 'לאקלים, מערכות מזון, פסולת, שיקום, תיקון ופעולה סביבתית מקומית.',
+        'A moderated space for wellbeing, preventive health, emergency response, and community care methods.': 'מרחב מנוהל לרווחה, בריאות מונעת, מענה לחירום ושיטות טיפול קהילתי.',
+        'For rights-based action, civic participation, safe moderation, and community trust.': 'לפעולה מבוססת זכויות, השתתפות אזרחית, ניהול שיח בטוח ואמון קהילתי.',
+        'Youth': 'נוער',
+        'Repair': 'תיקון',
+        'Wellbeing': 'רווחה',
+        'Crisis Response': 'מענה לחירום',
+        'Justice': 'צדק',
+        'Safety': 'בטיחות',
+        'Civic Action': 'פעולה אזרחית',
         // Header / navigation
         'Home': 'בית',
         'Personal Area': 'האזור האישי',
@@ -6496,6 +6685,14 @@ const GLOWE_TRANSLATIONS = {
         "Accept": "אישור",
         "Decline": "דחייה",
         "Could not update the application. Please try again.": "לא ניתן לעדכן את המועמדות. נסו שוב.",
+        "Offers": "הצעות עזרה",
+        "Loading offers…": "טוען הצעות…",
+        "Could not load offers.": "לא ניתן לטעון את ההצעות.",
+        "No offers yet.": "אין עדיין הצעות.",
+        "Preferred contact:": "אופן יצירת קשר מועדף:",
+        "Connect": "יצירת קשר",
+        "Email copied to clipboard": "האימייל הועתק ללוח",
+        "Could not copy the email.": "לא ניתן היה להעתיק את האימייל.",
         "GloWe volunteer": "מתנדב/ת GloWe",
         "Availability:": "זמינות:",
         "Skills:": "כישורים:",
@@ -6699,6 +6896,8 @@ const GLOWE_TRANSLATIONS = {
         "Save the opportunity if you want to compare it later.": "שמרו את ההזדמנות אם תרצו להשוות אותה מאוחר יותר.",
         "Save wish": "שמירת משאלה",
         "Saved": "נשמר",
+        "Sign in to save": "התחברו כדי לשמור",
+        "Please sign in or create a free account to save items to your area.": "התחברו או צרו חשבון חינם כדי לשמור פריטים לאזור שלכם.",
         "Saved items": "פריטים שמורים",
         "Saved Items": "פריטים שמורים",
         "Scope": "היקף",
@@ -7067,6 +7266,8 @@ const GLOWE_TRANSLATIONS = {
         "Organization name": "שם הארגון",
         "Email verified": "דוא\"ל מאומת",
         "Pending": "ממתין",
+        "Accepted": "התקבל",
+        "Declined": "נדחה",
         "Public link": "קישור ציבורי",
         "Public line": "משפט ציבורי",
         "Open to volunteers, donations, or partnerships?": "פתוחים למתנדבים, לתרומות או לשותפויות?",

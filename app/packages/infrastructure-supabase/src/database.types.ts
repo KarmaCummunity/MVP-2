@@ -1072,6 +1072,45 @@ export type Database = {
         }
         Relationships: []
       }
+      glowe_content_translations: {
+        Row: {
+          confidence: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          field: string
+          id: string
+          model: string | null
+          source_language: string | null
+          target_language: string
+          translated_text: string
+        }
+        Insert: {
+          confidence?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          field: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language: string
+          translated_text: string
+        }
+        Update: {
+          confidence?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          field?: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language?: string
+          translated_text?: string
+        }
+        Relationships: []
+      }
       glowe_forum_groups: {
         Row: {
           created_at: string
@@ -4327,6 +4366,20 @@ export type Database = {
           submitted_phone: string
           user_id: string
           waitlist_position: number
+        }[]
+      }
+      glowe_list_offers_for_post: {
+        Args: { p_post_id: string }
+        Returns: {
+          availability: string
+          contact_preference: string
+          created_at: string
+          id: string
+          offer_text: string
+          offerer_avatar: string
+          offerer_email: string
+          offerer_name: string
+          user_id: string
         }[]
       }
       glowe_list_pending_orgs: {

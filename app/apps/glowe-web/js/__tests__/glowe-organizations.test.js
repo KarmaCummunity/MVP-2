@@ -26,7 +26,12 @@ const {
     validateAvatarFile,
     mapApplicantRow,
     mapApplicantRows,
-    canDecideApplication
+    canDecideApplication,
+    mapOfferForOwner,
+    mapOffersForOwner,
+    hasContactEmail,
+    buildSavedItemPayload,
+    isItemSaved
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -537,5 +542,111 @@ describe('canDecideApplication (FR-GLOWE-012 AC2)', () => {
         expect(canDecideApplication('')).toBe(false);
         expect(canDecideApplication(null)).toBe(false);
         expect(canDecideApplication(undefined)).toBe(false);
+    });
+});
+
+describe('mapOfferForOwner (FR-GLOWE-012 AC3)', () => {
+    it('maps a snake_case RPC row to the wish-owner inbox shape', () => {
+        const v = mapOfferForOwner({
+            id: 'offer-1',
+            user_id: 'u-7',
+            offer_text: 'I can help move boxes',
+            availability: 'Weekends',
+            contact_preference: 'email',
+            created_at: '2026-07-02T00:00:00Z',
+            offerer_name: 'Dana',
+            offerer_avatar: 'http://x/d.png',
+            offerer_email: 'dana@x.dev'
+        });
+        expect(v).toEqual({
+            id: 'offer-1',
+            offererId: 'u-7',
+            name: 'Dana',
+            avatarUrl: 'http://x/d.png',
+            email: 'dana@x.dev',
+            offerText: 'I can help move boxes',
+            availability: 'Weekends',
+            contactPreference: 'email',
+            createdAt: '2026-07-02T00:00:00Z'
+        });
+    });
+
+    it('blanks missing fields', () => {
+        const v = mapOfferForOwner({ id: 'offer-2', user_id: 'u-1' });
+        expect(v.name).toBe('');
+        expect(v.email).toBe('');
+        expect(v.offerText).toBe('');
+        expect(v.contactPreference).toBe('');
+    });
+
+    it('mapOffersForOwner maps an array and tolerates non-arrays', () => {
+        expect(mapOffersForOwner([{ id: 'o', user_id: 'u' }])).toHaveLength(1);
+        expect(mapOffersForOwner(null)).toEqual([]);
+        expect(mapOffersForOwner(undefined)).toEqual([]);
+    });
+});
+
+describe('hasContactEmail (FR-GLOWE-012 AC4)', () => {
+    it('is true when the view carries a non-empty email', () => {
+        expect(hasContactEmail({ email: 'a@b.dev' })).toBe(true);
+    });
+
+    it('is false for blank / missing emails and non-objects', () => {
+        expect(hasContactEmail({ email: '' })).toBe(false);
+        expect(hasContactEmail({ email: '   ' })).toBe(false);
+        expect(hasContactEmail({})).toBe(false);
+        expect(hasContactEmail(null)).toBe(false);
+        expect(hasContactEmail(undefined)).toBe(false);
+    });
+});
+
+describe('buildSavedItemPayload (FR-GLOWE-013 AC1)', () => {
+    it('maps a card descriptor to the glowe_saved_items column shape', () => {
+        expect(buildSavedItemPayload('opportunity', 'op-1', 'Beach cleanup', 'GreenOrg', 'opportunity.html?id=op-1')).toEqual({
+            item_type: 'opportunity',
+            item_id: 'op-1',
+            title: 'Beach cleanup',
+            meta: 'GreenOrg',
+            href: 'opportunity.html?id=op-1'
+        });
+    });
+
+    it('coerces a numeric id to a string (matches the text column + 0204 unique index)', () => {
+        expect(buildSavedItemPayload('post', 42, 'Hi', '', '').item_id).toBe('42');
+    });
+
+    it('defaults missing meta/href/title to empty strings', () => {
+        expect(buildSavedItemPayload('wish', 'w-9')).toEqual({
+            item_type: 'wish',
+            item_id: 'w-9',
+            title: '',
+            meta: '',
+            href: ''
+        });
+    });
+});
+
+describe('isItemSaved (FR-GLOWE-013 AC2)', () => {
+    const saved = [
+        { type: 'opportunity', id: 'op-1' },
+        { type: 'wish', id: '42' }
+    ];
+
+    it('is true when a matching type+id is present', () => {
+        expect(isItemSaved(saved, 'opportunity', 'op-1')).toBe(true);
+    });
+
+    it('compares id as text (numeric vs string id still matches)', () => {
+        expect(isItemSaved(saved, 'wish', 42)).toBe(true);
+    });
+
+    it('is false when the type differs even if the id matches', () => {
+        expect(isItemSaved(saved, 'post', 'op-1')).toBe(false);
+    });
+
+    it('is false for a missing item and for a non-array saved list', () => {
+        expect(isItemSaved(saved, 'opportunity', 'nope')).toBe(false);
+        expect(isItemSaved(null, 'opportunity', 'op-1')).toBe(false);
+        expect(isItemSaved(undefined, 'wish', '42')).toBe(false);
     });
 });

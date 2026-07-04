@@ -240,11 +240,64 @@
         return (Array.isArray(rows) ? rows : []).map(mapApplicantRow);
     }
 
+    // FR-GLOWE-012 AC3 — normalize a row from glowe_list_offers_for_post (the
+    // owner-scoped RPC, migration 0225) into the shape the wish owner's "Offers"
+    // inbox renders: the offerer's identity + offer answers + contact email (for
+    // the AC4 Connect CTA). Owner-side view, distinct from the offerer-side card.
+    function mapOfferForOwner(row) {
+        return {
+            id: field(row, 'id', 'id'),
+            offererId: field(row, 'user_id', 'userId') || '',
+            name: field(row, 'offerer_name', 'offererName') || '',
+            avatarUrl: field(row, 'offerer_avatar', 'offererAvatar') || '',
+            email: field(row, 'offerer_email', 'offererEmail') || '',
+            offerText: field(row, 'offer_text', 'offerText') || '',
+            availability: field(row, 'availability', 'availability') || '',
+            contactPreference: field(row, 'contact_preference', 'contactPreference') || '',
+            createdAt: field(row, 'created_at', 'createdAt') || ''
+        };
+    }
+
+    function mapOffersForOwner(rows) {
+        return (Array.isArray(rows) ? rows : []).map(mapOfferForOwner);
+    }
+
     // FR-GLOWE-012 AC2 — an application can be accepted/declined by the owner
     // only while it is still awaiting a decision (Pending). Already-decided rows
     // (Accepted / Declined / Waitlisted / Cancelled) show no action buttons.
     function canDecideApplication(status) {
         return String(status || '') === 'Pending';
+    }
+
+    // FR-GLOWE-012 AC4 — the "Connect" CTA (copy contact email) only renders when
+    // the applicant/offer view actually carries a non-empty email address.
+    function hasContactEmail(view) {
+        return Boolean(view && String(view.email || '').trim());
+    }
+
+    // FR-GLOWE-013 AC2 — is this item already in the user's saved list? Matches
+    // the local saved-items cache shape ({ type, id, … }) used by getSavedItems();
+    // id is compared as text so a numeric vs string id can't cause a false miss.
+    function isItemSaved(savedItems, type, id) {
+        if (!Array.isArray(savedItems)) return false;
+        const wantId = String(id == null ? '' : id);
+        return savedItems.some(function (item) {
+            return item && item.type === type && String(item.id) === wantId;
+        });
+    }
+
+    // FR-GLOWE-013 AC1 — build the glowe_saved_items insert payload from a card's
+    // save descriptor. Keeps the column shape (item_type/item_id/title/meta/href)
+    // in one tested place so the Save CTA and the DB row can't drift. item_id is
+    // coerced to a string to match the text column + the 0204 unique constraint.
+    function buildSavedItemPayload(type, id, title, meta, href) {
+        return {
+            item_type: String(type || ''),
+            item_id: String(id == null ? '' : id),
+            title: String(title || ''),
+            meta: String(meta || ''),
+            href: String(href || '')
+        };
     }
 
     // FR-GLOWE-011 AC10 — guard the destructive "Delete Account" action: the
@@ -310,6 +363,11 @@
         mapApplicantRow: mapApplicantRow,
         mapApplicantRows: mapApplicantRows,
         canDecideApplication: canDecideApplication,
+        hasContactEmail: hasContactEmail,
+        isItemSaved: isItemSaved,
+        buildSavedItemPayload: buildSavedItemPayload,
+        mapOfferForOwner: mapOfferForOwner,
+        mapOffersForOwner: mapOffersForOwner,
         volunteerApplicationViews: volunteerApplicationViews,
         isDeleteAccountConfirmed: isDeleteAccountConfirmed,
         shouldShowProfileSkeleton: shouldShowProfileSkeleton,
