@@ -2458,6 +2458,7 @@ function mapOpportunityRow(row) {
 }
 
 function mapPostRow(row) {
+    if (typeof GlowePosts !== 'undefined') return GlowePosts.mapPostRow(row);
     return {
         id: row.id,
         title: row.title || '',
@@ -2468,6 +2469,22 @@ function mapPostRow(row) {
         authorName: row.author_name || 'Community Member',
         createdAt: row.created_at || ''
     };
+}
+
+// Load community posts from glowe_posts (post_type='community') into the shared
+// `communityPosts` array. Wishes (post_type='wish') are filtered out so they do
+// not leak into the community feed (FR-GLOWE-008).
+async function loadCommunityPosts() {
+    const backend = window.gloweBackend;
+    communityPosts.length = 0;
+    if (!backend || !backend.configured()) return;
+    const helpers = (typeof GlowePosts !== 'undefined') ? GlowePosts : null;
+    let rows = [];
+    try { rows = await backend.listAll('posts'); } catch (_e) { rows = []; }
+    const mapped = helpers
+        ? helpers.mapCommunityRows(rows)
+        : (rows || []).map(mapPostRow);
+    communityPosts.push(...mapped);
 }
 
 function mapProfileToOrg(profile) {
@@ -3156,7 +3173,7 @@ async function initMemberHome() {
 
     await Promise.all([
         fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow),
-        fetchAndPopulate(() => gloweBackend.listAll('posts'), communityPosts, mapPostRow)
+        loadCommunityPosts()
     ]);
 
     const profile = getPersonalProfile();
@@ -3600,7 +3617,7 @@ async function initCommunityPage() {
     // Fetch real posts, then render
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading posts…</p></div>';
-        await fetchAndPopulate(() => gloweBackend.listAll('posts'), communityPosts, mapPostRow);
+        await loadCommunityPosts();
         renderFeed();
     }
 
