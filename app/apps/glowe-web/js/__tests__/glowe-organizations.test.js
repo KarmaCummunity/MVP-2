@@ -10,7 +10,8 @@ const {
     buildOutreachPayload,
     personalProjectsView,
     validateProjectDraft,
-    buildProjectPayload
+    buildProjectPayload,
+    myWishPosts
 } = GloweOrganizations;
 
 describe('mapProjectRow', () => {
@@ -173,6 +174,34 @@ describe('buildProjectPayload', () => {
 
     it('is safe with no input', () => {
         expect(buildProjectPayload()).toEqual({ title: '', status: 'Draft', description: '' });
+    });
+});
+
+describe('myWishPosts', () => {
+    const rows = [
+        { id: 'w1', post_type: 'wish', status: 'open' },
+        { id: 'c1', post_type: 'community' },
+        { id: 'w2', post_type: 'wish', status: 'fulfilled' },
+        { id: 'o1', post_type: 'outreach', status: 'sent' }
+    ];
+
+    it('keeps only wish posts, open and fulfilled alike', () => {
+        expect(myWishPosts(rows).map(r => r.id)).toEqual(['w1', 'w2']);
+    });
+
+    it('excludes community and outreach posts', () => {
+        const ids = myWishPosts(rows).map(r => r.id);
+        expect(ids).not.toContain('c1');
+        expect(ids).not.toContain('o1');
+    });
+
+    it('accepts camelCase postType as a fallback', () => {
+        expect(myWishPosts([{ id: 'w3', postType: 'wish' }]).map(r => r.id)).toEqual(['w3']);
+    });
+
+    it('returns an empty array for non-array input', () => {
+        expect(myWishPosts(null)).toEqual([]);
+        expect(myWishPosts(undefined)).toEqual([]);
     });
 });
 
