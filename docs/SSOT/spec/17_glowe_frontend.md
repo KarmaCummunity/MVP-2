@@ -187,7 +187,7 @@ The Wishing Well page (`pages/wishing-well.html`) shows community needs posted b
 
 ## FR-GLOWE-007 — Volunteer Network: live opportunities
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress — AC1 (live read), AC2 (client filters), AC3 (create) and AC4 (detail page) delivered: `initOpportunitiesPage`/`initOpportunityDetailPage` fetch `glowe_opportunities` via `listAll('opportunities')` → `mapOpportunityRow`; publishing goes through a `canCreateContent()`-gated async `handleOpportunitySubmit` → awaited `insertOwned('opportunities', …)` + live-board reload (`js/glowe-opportunities.js` `validateOpportunityDraft`/`normalizeOpportunityDraft` helpers, unit-tested). AC5 (Apply + duplicate-application guard) pending.
 
 The Volunteer Network page (`pages/volunteer-network.html`) and opportunity detail page (`pages/opportunity.html`) currently show mock `opportunities` from `data.js`. Phase B replaces these with live reads from `glowe_opportunities`.
 
