@@ -23,7 +23,7 @@
     // Keys are Unicode-escaped (not raw Hebrew) so this healing data doesn't
     // trip the "no inline UI copy" Hebrew source guard — it is persisted data,
     // not user-facing copy.
-    const PROJECT_STATUS_ALIASES = {
+    const CANONICAL_STATUS_ALIASES = {
         '\u05D8\u05D9\u05D5\u05D8\u05D4': 'Draft',
         '\u05E4\u05E2\u05D9\u05DC': 'Active',
         '\u05DE\u05D2\u05D9\u05D9\u05E1\u05D9\u05DD \u05E9\u05D5\u05EA\u05E4\u05D9\u05DD': 'Recruiting partners',
@@ -32,7 +32,7 @@
     };
     function canonicalStatus(status) {
         const s = String(status == null ? '' : status).trim();
-        return PROJECT_STATUS_ALIASES[s] || s;
+        return CANONICAL_STATUS_ALIASES[s] || s;
     }
 
     // Map a glowe_projects row to the view model renderProjectCard expects.
