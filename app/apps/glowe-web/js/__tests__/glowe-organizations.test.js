@@ -21,7 +21,8 @@ const {
     opportunitiesById,
     mapOwnedApplication,
     volunteerApplicationViews,
-    isDeleteAccountConfirmed
+    isDeleteAccountConfirmed,
+    shouldShowProfileSkeleton
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -428,5 +429,20 @@ describe('isDeleteAccountConfirmed', () => {
         expect(isDeleteAccountConfirmed('delete my account')).toBe(false);
         expect(isDeleteAccountConfirmed(undefined)).toBe(false);
         expect(isDeleteAccountConfirmed(null)).toBe(false);
+    });
+});
+
+describe('shouldShowProfileSkeleton', () => {
+    it('shows the skeleton only while loading with no cached profile', () => {
+        expect(shouldShowProfileSkeleton(true, false)).toBe(true);
+    });
+
+    it('hides the skeleton once a cached profile exists (stale-while-revalidate)', () => {
+        expect(shouldShowProfileSkeleton(true, true)).toBe(false);
+    });
+
+    it('hides the skeleton when not loading, regardless of cache', () => {
+        expect(shouldShowProfileSkeleton(false, false)).toBe(false);
+        expect(shouldShowProfileSkeleton(false, true)).toBe(false);
     });
 });

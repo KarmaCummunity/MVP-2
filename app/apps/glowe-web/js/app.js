@@ -183,6 +183,10 @@ let activeWishForSupport = null;
 // Assigned in initOpportunitiesPage; null on other pages.
 let reloadOpportunities = null;
 const PERSONAL_PROFILE_KEY = 'glowePersonalProfile';
+// FR-GLOWE-011 AC1 — true while the Personal Area's backend profile fetch is in
+// flight (set in initMyApplicationsPage, cleared when syncPersonalDataFromBackend
+// settles). Drives the profile-card loading skeleton.
+let personalProfileLoading = false;
 const PERSONAL_PROJECTS_KEY = 'glowePersonalProjects';
 const SAVED_ITEMS_KEY = 'gloweSavedItems';
 const POST_COMMENTS_KEY = 'glowePostComments';
@@ -508,6 +512,50 @@ function getPersonalProfile() {
 
 function savePersonalProfile(profile) {
     localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify({ ...getPersonalProfile(), ...profile }));
+}
+
+// FR-GLOWE-011 AC1 — whether a real profile snapshot has already been cached
+// (written by a prior fetchProfile). getPersonalProfile() always returns a
+// merged fallback object, so this checks the raw cache key to distinguish a
+// first-ever load (skeleton) from a returning user (render cached immediately).
+function hasCachedPersonalProfile() {
+    try {
+        const raw = localStorage.getItem(PERSONAL_PROFILE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        return Boolean(parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0);
+    } catch (_e) {
+        return false;
+    }
+}
+
+// FR-GLOWE-011 AC1 — profile-card loading skeleton (sidebar variant), shown
+// while the first backend profile fetch is in flight. Text-free (aria-busy),
+// so no user-visible strings to localize beyond the aria-label.
+function personalProfileSkeletonCard() {
+    return `
+        <div class="personal-profile-card is-loading" aria-busy="true" aria-label="Loading your profile…">
+            <div class="skeleton skeleton-avatar"></div>
+            <div class="skeleton skeleton-line skeleton-line-lg"></div>
+            <div class="skeleton skeleton-line skeleton-line-sm"></div>
+            <div class="skeleton skeleton-pill"></div>
+        </div>`;
+}
+
+// FR-GLOWE-011 AC1 — profile-card loading skeleton (hero variant).
+function personalProfileSkeletonHero() {
+    return `
+        <section class="social-profile-hero is-loading" id="personal-profile" aria-busy="true" aria-label="Loading your profile…">
+            <div class="social-cover"></div>
+            <div class="social-profile-row">
+                <div class="skeleton skeleton-avatar social-avatar"></div>
+                <div class="social-profile-copy">
+                    <div class="skeleton skeleton-line skeleton-line-sm"></div>
+                    <div class="skeleton skeleton-line skeleton-line-lg"></div>
+                    <div class="skeleton skeleton-line"></div>
+                </div>
+            </div>
+        </section>`;
 }
 
 function getPersonalProjects() {
@@ -5599,11 +5647,17 @@ function initMyApplicationsPage() {
         const savedPosts = getSavedCommunityPosts().slice(0, 3);
         const savedItems = getSavedItems();
         const savedPreview = savedItems.slice(0, 6);
+        // FR-GLOWE-011 AC1 — skeleton only on a first-ever load (fetch in flight,
+        // no cached profile yet); returning users see their cached profile.
+        const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+        const showProfileSkeleton = orgHelpers
+            ? orgHelpers.shouldShowProfileSkeleton(personalProfileLoading, hasCachedPersonalProfile())
+            : false;
 
         container.innerHTML = `
             <div class="personal-shell">
                 <aside class="personal-sidebar">
-                    <div class="personal-profile-card">
+                    ${showProfileSkeleton ? personalProfileSkeletonCard() : `<div class="personal-profile-card">
                         <div class="personal-avatar-wrap">
                             ${renderPersonalAvatar(profile, 'profile-avatar')}
                             <button type="button" onclick="openEditProfile()">Change</button>
@@ -5615,7 +5669,7 @@ function initMyApplicationsPage() {
                             ${(profile.interests || profile.skills || []).slice(0, 4).map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
                         </div>
                         <button class="btn btn-primary btn-block" type="button" onclick="openEditProfile()">Edit Profile</button>
-                    </div>
+                    </div>`}
                     <nav class="personal-nav" aria-label="Personal area sections">
                         <a href="#personal-profile">Overview</a>
                         <a href="#personal-projects">Projects</a>
@@ -5631,7 +5685,7 @@ function initMyApplicationsPage() {
                 </aside>
 
                 <div class="personal-main">
-                    <section class="social-profile-hero" id="personal-profile">
+                    ${showProfileSkeleton ? personalProfileSkeletonHero() : `<section class="social-profile-hero" id="personal-profile">
                         <div class="social-cover"></div>
                         <div class="social-profile-row">
                             ${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}
@@ -5652,7 +5706,7 @@ function initMyApplicationsPage() {
                                 <a class="btn btn-outline" href="settings.html">Settings</a>
                             </div>
                         </div>
-                    </section>
+                    </section>`}
 
                     <section class="personal-stats-grid">
                         <div><strong>${projects.length}</strong><span>Projects</span></div>
@@ -5810,6 +5864,10 @@ function initMyApplicationsPage() {
         `;
     }
 
+    // FR-GLOWE-011 AC1 — a backend profile fetch will run only when signed in
+    // against a configured backend; arm the skeleton for that first load.
+    const profileBackend = window.gloweBackend;
+    personalProfileLoading = Boolean(profileBackend && profileBackend.configured() && isLoggedIn());
     window.renderPersonalArea = renderPersonalArea;
     renderPersonalArea();
     loadMyEvents();
@@ -5819,10 +5877,15 @@ function initMyApplicationsPage() {
     loadMyOpportunities().then(() => renderPersonalArea());
     loadMyOffers().then(() => renderPersonalArea());
     loadMyApplications().then(() => renderPersonalArea());
-    syncPersonalDataFromBackend().then((updated) => {
-        if (updated) renderPersonalArea();
-        loadMyEvents();
-    });
+    // AC1 — clear the skeleton once the profile fetch settles (success or
+    // failure) and always re-render so the real profile (or fallback) shows.
+    syncPersonalDataFromBackend()
+        .catch(() => null)
+        .then(() => {
+            personalProfileLoading = false;
+            renderPersonalArea();
+            loadMyEvents();
+        });
 }
 
 // Populate the personal-area "My Events" list from the user's live event
@@ -6297,6 +6360,7 @@ const GLOWE_TRANSLATIONS = {
         "Live needs": "צרכים פעילים",
         "Loading...": "טוען...",
         "Loading…": "טוען…",
+        "Loading your profile…": "טוען את הפרופיל שלך…",
         "Local community circles": "מעגלי קהילה מקומיים",
         "Local organizations, initiatives, residents, volunteers, and partners bring the real context: what is needed, what already works, who should be involved, and what kind of support would actually help.": "ארגונים מקומיים, יוזמות, תושבים, מתנדבים ושותפים מביאים את ההקשר האמיתי: מה נדרש, מה כבר עובד, מי צריך להיות מעורב ואיזו תמיכה באמת תעזור.",
         "Local roots": "שורשים מקומיים",
