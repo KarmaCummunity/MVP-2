@@ -224,7 +224,7 @@ The Community page (`pages/community.html`) and Write Post page (`pages/write-po
 
 ## FR-GLOWE-009 — Forums & Discussions: live threads
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress — BE schema foundation landed (migration `0217`: `glowe_forum_groups` + `glowe_forum_threads` + `glowe_forum_replies` created with RLS, 4 groups seeded). Frontend wiring (AC1 live render, AC2–AC4 threads/replies, AC6/AC7) pending in later FE slices.
 
 The Forums page (`pages/forums.html`) lists discussion groups; each group links to `pages/discussion-group.html?group=<id>` with live threads. Currently hardcoded in `discussionGroups[]` in `data.js`.
 
@@ -244,7 +244,7 @@ glowe_forum_groups (id text pk, title text, description text, tags text[], icon 
 glowe_forum_threads (id uuid pk, group_id text fk→glowe_forum_groups, user_id uuid fk→auth.users, title text, body text, created_at timestamptz)
 glowe_forum_replies (id uuid pk, thread_id uuid fk→glowe_forum_threads, user_id uuid fk→auth.users, body text, created_at timestamptz)
 ```
-RLS: groups public read (no write for authenticated — admin only); threads and replies: public read, owner write.
+RLS: groups public read + admin-only write (via `has_admin_role` glowe_admin/super_admin); threads and replies: public read, owner write (`auth.uid() = user_id`). Delivered in migration `0217`; the 4 groups above are seeded (`on conflict do nothing`). Verified-member gating for thread/reply creation is enforced client-side by `canCreateContent()` (the RLS floor is owner-write, mirroring `glowe_posts`).
 
 ---
 

@@ -1072,6 +1072,100 @@ export type Database = {
         }
         Relationships: []
       }
+      glowe_forum_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id: string
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          tags?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      glowe_forum_replies: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          thread_id: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          thread_id: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          thread_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowe_forum_replies_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "glowe_forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glowe_forum_threads: {
+        Row: {
+          body: string | null
+          created_at: string
+          group_id: string
+          id: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowe_forum_threads_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "glowe_forum_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       glowe_offers: {
         Row: {
           availability: string | null
