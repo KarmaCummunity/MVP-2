@@ -224,14 +224,14 @@ The Community page (`pages/community.html`) and Write Post page (`pages/write-po
 
 ## FR-GLOWE-009 — Forums & Discussions: live threads
 
-**Status.** 🟡 In progress — BE schema foundation landed (migration `0217`: `glowe_forum_groups` + `glowe_forum_threads` + `glowe_forum_replies` created with RLS, 4 groups seeded). **AC1 done** — Forums page, discussion-group page, and the community topic-pills now render the live group catalog from `glowe_forum_groups`. AC2–AC4 threads/replies + AC6/AC7 pending in later FE slices.
+**Status.** 🟡 In progress — BE schema foundation landed (migration `0217`: `glowe_forum_groups` + `glowe_forum_threads` + `glowe_forum_replies` created with RLS, 4 groups seeded). **AC1–AC3 done** — live group catalog render (AC1); discussion-group + forums pages list threads live from `glowe_forum_threads` (AC2); verified members create threads persisted via `insertOwned('forum_threads', …)` (AC3). AC4 replies + AC6 empty-state polish + AC7 aggregates pending in later FE slices.
 
 The Forums page (`pages/forums.html`) lists discussion groups; each group links to `pages/discussion-group.html?group=<id>` with live threads. Currently hardcoded in `discussionGroups[]` in `data.js`.
 
 **Acceptance Criteria.**
 - AC1. **Group catalog.** ✅ `glowe_forum_groups` is an admin-managed catalog (seeded with the 4 groups: Education & Knowledge, Environment & Climate Action, Health & Community Care, Rights Safety & Civic Power). Forum groups are public-read; only glowe_admin/super_admin may insert/update. The Forums page, discussion-group page, and community topic-pills render live from this table via `loadForumGroups`→`listAll('forum_groups')` mapped by `GloweForums.mapForumGroups`; the hardcoded `discussionGroups[]` remains a demo/offline fallback (`getForumGroups()`).
-- AC2. **Thread listing.** `pages/discussion-group.html?group=<id>` loads all threads from `glowe_forum_threads` filtered by `group_id`, ordered by `created_at DESC`. Thread cards show title, author display_name, reply count, last-active timestamp.
-- AC3. **Create thread.** Verified members may create a new thread: title + body (text). `canCreateContent()` gate. Persists to `glowe_forum_threads (group_id, user_id, title, body)`.
+- AC2. **Thread listing.** ✅ `pages/discussion-group.html?group=<id>` loads all threads via `loadForumThreads`→`listAll('forum_threads')` (newest-first) mapped by `GloweForums.mapForumThreads`, filtered client-side by `group_id` (`GloweForums.threadsForGroup`); the forums page lists the same threads across all groups. Thread cards show title, body, last-active date, and a placeholder reply count (live aggregate is AC7). The localStorage `gloweForumThreads` mirror is the offline fallback (TD-134).
+- AC3. **Create thread.** ✅ Verified members create a thread (title + body) behind the `canCreateContent()` gate via shared `persistForumThread` → `insertOwned('forum_threads', {group_id, title, body})` (owner-write RLS sets `user_id`), then `reloadForumThreads()` + re-render. Both the discussion-group composer and the forums question form use this path; an optimistic localStorage mirror is written first for offline resilience.
 - AC4. **Replies.** Clicking a thread expands inline replies loaded from `glowe_forum_replies (thread_id, user_id, body, created_at)`. Verified members may reply. Reply count on thread card is a live aggregate.
 - AC5. **Like/react — deferred.** Not in Phase B; noted for Phase C.
 - AC6. **Empty state.** When a group has no threads yet, show "Start the first discussion" CTA.
