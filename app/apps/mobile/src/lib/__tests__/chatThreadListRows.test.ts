@@ -1,3 +1,9 @@
+// Day-row insertion keys off the *local* calendar day, so these UTC timestamps
+// would shift days on machines in high-offset timezones (e.g. 18:00Z is the next
+// day under UTC+10). Pin TZ=UTC here — Node re-reads process.env.TZ on assignment
+// — so the suite is deterministic for every developer and matches CI (UTC).
+process.env.TZ = 'UTC';
+
 import { describe, expect, it } from 'vitest';
 import { buildChatThreadRowsNewestFirst } from '../chatThreadListRows';
 import type { OptimisticMessage } from '../../store/chatStore';
