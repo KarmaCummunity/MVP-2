@@ -682,6 +682,47 @@ function renderMyOpportunitiesList(list) {
     }).join('');
 }
 
+// FR-GLOWE-011 AC9 — live "My Offers" list. Offers (glowe_offers) target other
+// users' wish posts, so each offer is enriched with the wish's title looked up
+// from the public posts list. `backendMyOffers` stays null until a load
+// completes; the getter returns [] until then (no local authored-offer cache).
+let backendMyOffers = null;
+
+async function loadMyOffers() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    const orgs = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    if (!orgs) return;
+    let rows = [];
+    let posts = [];
+    try { rows = await backend.listOwned('offers'); } catch (_e) { rows = []; }
+    try { posts = await backend.listAll('posts'); } catch (_e) { posts = []; }
+    backendMyOffers = orgs.mapOwnedOffers(rows || [], orgs.postTitlesById(posts || []));
+}
+
+function getMyOffersForView() {
+    return Array.isArray(backendMyOffers) ? backendMyOffers : [];
+}
+
+// Render the compact "My Offers" list for the Personal Area (offers the user
+// made on other people's wishes). Empty state points back to the wish board.
+function renderMyOffersList(list) {
+    if (!Array.isArray(list) || !list.length) {
+        return '<p class="muted-note">No offers yet. Help someone by responding to a wish.</p>';
+    }
+    return list.map(function (offer) {
+        const title = offer.wishTitle ? `<h3>${escapeHtml(offer.wishTitle)}</h3>` : '';
+        const avail = offer.availability ? `<span class="muted-note">${escapeHtml(offer.availability)}</span>` : '';
+        return `
+            <article class="personal-offer-card">
+                ${title}
+                <p>${escapeHtml(offer.offerText || '')}</p>
+                ${avail}
+            </article>
+        `;
+    }).join('');
+}
+
 function canUseBackend() {
     return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
@@ -5450,6 +5491,7 @@ function initMyApplicationsPage() {
         const myNeeds = getMyWishesForView();
         const myPosts = getMyPostsForView();
         const myOpportunities = getMyOpportunitiesForView();
+        const myOffers = getMyOffersForView();
         const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         const applications = getApplications();
         const userApplications = user ? applications.filter(app => app.userId === user.id) : [];
@@ -5480,6 +5522,7 @@ function initMyApplicationsPage() {
                         <a href="#personal-needs">My Needs</a>
                         <a href="#personal-posts">My Posts</a>
                         <a href="#personal-my-opportunities">My Opportunities</a>
+                        <a href="#personal-offers">My Offers</a>
                         <a href="#personal-events">My Events</a>
                         <a href="#personal-saved">Saved</a>
                         <a href="#personal-activity">Activity</a>
@@ -5596,9 +5639,22 @@ function initMyApplicationsPage() {
                             </div>
                         </article>
 
+                        <article class="profile-section-card" id="personal-offers">
+                            <div class="personal-card-header">
+                                <div class="profile-section-heading">
+                                    <span>07</span>
+                                    <h2>My Offers</h2>
+                                </div>
+                                <a class="btn btn-outline btn-small" href="wishing-well.html">Browse Wishes</a>
+                            </div>
+                            <div class="personal-list" id="my-offers-list" aria-live="polite">
+                                ${renderMyOffersList(myOffers)}
+                            </div>
+                        </article>
+
                         <article class="profile-section-card" id="personal-events">
                             <div class="profile-section-heading">
-                                <span>07</span>
+                                <span>08</span>
                                 <h2>My Events</h2>
                             </div>
                             <div class="personal-list" id="my-events-list" aria-live="polite">
@@ -5608,7 +5664,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-saved">
                             <div class="profile-section-heading">
-                                <span>08</span>
+                                <span>09</span>
                                 <h2>Saved</h2>
                             </div>
                             <div class="saved-mini-grid">
@@ -5634,7 +5690,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-activity">
                             <div class="profile-section-heading">
-                                <span>09</span>
+                                <span>10</span>
                                 <h2>Recent Activity</h2>
                             </div>
                             <div class="profile-post-list">
@@ -5660,6 +5716,7 @@ function initMyApplicationsPage() {
     loadMyWishes().then(() => renderPersonalArea());
     loadMyPosts().then(() => renderPersonalArea());
     loadMyOpportunities().then(() => renderPersonalArea());
+    loadMyOffers().then(() => renderPersonalArea());
     syncPersonalDataFromBackend().then((updated) => {
         if (updated) renderPersonalArea();
         loadMyEvents();
@@ -6266,6 +6323,9 @@ const GLOWE_TRANSLATIONS = {
         "No posts yet. Share an update with the community.": "אין עדיין פוסטים. שתפו עדכון עם הקהילה.",
         "My Opportunities": "ההזדמנויות שלי",
         "No opportunities yet. Publish one on the Volunteer Network.": "אין עדיין הזדמנויות. פרסמו הזדמנות ברשת המתנדבים.",
+        "My Offers": "ההצעות שלי",
+        "No offers yet. Help someone by responding to a wish.": "אין עדיין הצעות. עזרו למישהו על ידי מענה למשאלה.",
+        "Browse Wishes": "עיון במשאלות",
         "Public links": "קישורים ציבוריים",
         "Publish a volunteer role": "פרסמו תפקיד התנדבות",
         "Publish an opportunity": "פרסמו הזדמנות",

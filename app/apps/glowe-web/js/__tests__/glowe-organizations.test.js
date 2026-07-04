@@ -13,7 +13,10 @@ const {
     buildProjectPayload,
     myWishPosts,
     mapOwnedOpportunity,
-    mapOwnedOpportunities
+    mapOwnedOpportunities,
+    postTitlesById,
+    mapOwnedOffer,
+    mapOwnedOffers
 } = GloweOrganizations;
 
 describe('mapProjectRow', () => {
@@ -256,5 +259,62 @@ describe('mapOwnedOpportunities', () => {
     it('returns an empty array for non-array input', () => {
         expect(mapOwnedOpportunities(null)).toEqual([]);
         expect(mapOwnedOpportunities(undefined)).toEqual([]);
+    });
+});
+
+describe('postTitlesById', () => {
+    it('builds an id → title lookup, skipping rows without an id', () => {
+        const rows = [
+            { id: 'p1', title: 'Need a ride' },
+            { id: 'p2', title: 'Warm coats' },
+            { title: 'orphan' }
+        ];
+        expect(postTitlesById(rows)).toEqual({ p1: 'Need a ride', p2: 'Warm coats' });
+    });
+
+    it('maps a missing title to an empty string', () => {
+        expect(postTitlesById([{ id: 'p3' }])).toEqual({ p3: '' });
+    });
+
+    it('returns an empty object for non-array input', () => {
+        expect(postTitlesById(null)).toEqual({});
+        expect(postTitlesById(undefined)).toEqual({});
+    });
+});
+
+describe('mapOwnedOffer', () => {
+    it('maps a snake_case glowe_offers row and attaches the wish title', () => {
+        const row = {
+            id: 'of1', post_id: 'p1', offer_text: 'I can drive',
+            availability: 'Weekends', contact_preference: 'In-app message'
+        };
+        expect(mapOwnedOffer(row, { p1: 'Need a ride' })).toEqual({
+            id: 'of1', wishId: 'p1', wishTitle: 'Need a ride',
+            offerText: 'I can drive', availability: 'Weekends', contactPreference: 'In-app message'
+        });
+    });
+
+    it('leaves wishTitle empty when the post is not in the lookup', () => {
+        expect(mapOwnedOffer({ id: 'of2', post_id: 'pX' }, { p1: 'x' }).wishTitle).toBe('');
+    });
+
+    it('tolerates a missing lookup and missing fields', () => {
+        expect(mapOwnedOffer({ id: 'of3' })).toEqual({
+            id: 'of3', wishId: '', wishTitle: '', offerText: '', availability: '', contactPreference: ''
+        });
+    });
+});
+
+describe('mapOwnedOffers', () => {
+    it('maps a row list, attaching titles, preserving order', () => {
+        const rows = [{ id: 'a', post_id: 'p1' }, { id: 'b', post_id: 'p2' }];
+        const titles = { p1: 'First', p2: 'Second' };
+        expect(mapOwnedOffers(rows, titles).map(o => [o.id, o.wishTitle]))
+            .toEqual([['a', 'First'], ['b', 'Second']]);
+    });
+
+    it('returns an empty array for non-array input', () => {
+        expect(mapOwnedOffers(null, {})).toEqual([]);
+        expect(mapOwnedOffers(undefined, {})).toEqual([]);
     });
 });
