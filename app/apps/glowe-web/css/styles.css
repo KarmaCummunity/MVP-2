@@ -1900,6 +1900,64 @@ a.user-greeting:hover {
     margin-bottom: 16px;
 }
 
+/* FR-GLOWE-011 AC1 — profile-card loading skeleton (shown on first Personal
+   Area load while the backend profile fetch is in flight). */
+.skeleton {
+    position: relative;
+    overflow: hidden;
+    background: #e9edf2;
+    border-radius: 8px;
+}
+
+.skeleton::after {
+    content: '';
+    position: absolute;
+    inset: 0;
+    transform: translateX(-100%);
+    background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.65), transparent);
+    animation: glowe-skeleton-shimmer 1.3s infinite;
+}
+
+@keyframes glowe-skeleton-shimmer {
+    100% { transform: translateX(100%); }
+}
+
+.skeleton-avatar {
+    width: 96px;
+    height: 96px;
+    border-radius: 50%;
+    margin: 0 auto 16px;
+}
+
+.skeleton-avatar.social-avatar {
+    width: 120px;
+    height: 120px;
+}
+
+.skeleton-line {
+    height: 14px;
+    width: 80%;
+    margin: 10px auto;
+}
+
+.skeleton-line-lg { width: 60%; height: 20px; }
+.skeleton-line-sm { width: 40%; height: 12px; }
+
+.skeleton-pill {
+    height: 22px;
+    width: 50%;
+    margin: 12px auto;
+    border-radius: 999px;
+}
+
+.social-profile-hero.is-loading .social-profile-row {
+    padding: 24px;
+}
+
+@media (prefers-reduced-motion: reduce) {
+    .skeleton::after { animation: none; }
+}
+
 .personal-avatar-wrap {
     position: relative;
     width: fit-content;

@@ -232,6 +232,14 @@
         return Array.isArray(localList) ? localList : [];
     }
 
+    // FR-GLOWE-011 AC1 — decide whether the Personal Area profile card renders a
+    // loading skeleton. Only while a backend profile fetch is in flight AND no
+    // cached profile exists yet (first-ever load). Returning users with a cached
+    // profile see it immediately (stale-while-revalidate) — no skeleton flash.
+    function shouldShowProfileSkeleton(isLoading, hasCachedProfile) {
+        return Boolean(isLoading) && !hasCachedProfile;
+    }
+
     return {
         mapProjectRow: mapProjectRow,
         mapProjects: mapProjects,
@@ -252,6 +260,7 @@
         opportunitiesById: opportunitiesById,
         mapOwnedApplication: mapOwnedApplication,
         volunteerApplicationViews: volunteerApplicationViews,
-        isDeleteAccountConfirmed: isDeleteAccountConfirmed
+        isDeleteAccountConfirmed: isDeleteAccountConfirmed,
+        shouldShowProfileSkeleton: shouldShowProfileSkeleton
     };
 });
