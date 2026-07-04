@@ -97,6 +97,38 @@
         }, {});
     }
 
+    // Post count per group id (= number of threads in that group) → { [groupId]: count }.
+    function groupThreadCounts(threads) {
+        return (Array.isArray(threads) ? threads : []).reduce(function (acc, t) {
+            if (t && t.groupId) acc[t.groupId] = (acc[t.groupId] || 0) + 1;
+            return acc;
+        }, {});
+    }
+
+    // Distinct member count per group id: authors of a thread OR a reply in that
+    // group → { [groupId]: count }. Replies map to a group via their thread's
+    // groupId (built from `threads`). Empty author ids (offline mirror) are skipped.
+    function groupMemberCounts(threads, replies) {
+        const threadList = Array.isArray(threads) ? threads : [];
+        const threadGroup = threadList.reduce(function (acc, t) {
+            if (t && t.id) acc[t.id] = t.groupId || '';
+            return acc;
+        }, {});
+        const sets = {};
+        function add(groupId, authorId) {
+            if (!groupId || !authorId) return;
+            (sets[groupId] = sets[groupId] || new Set()).add(authorId);
+        }
+        threadList.forEach(function (t) { if (t) add(t.groupId, t.authorId); });
+        (Array.isArray(replies) ? replies : []).forEach(function (r) {
+            if (r) add(threadGroup[r.threadId], r.authorId);
+        });
+        return Object.keys(sets).reduce(function (acc, groupId) {
+            acc[groupId] = sets[groupId].size;
+            return acc;
+        }, {});
+    }
+
     return {
         mapForumGroupRow: mapForumGroupRow,
         mapForumGroups: mapForumGroups,
@@ -106,6 +138,8 @@
         mapForumReplyRow: mapForumReplyRow,
         mapForumReplies: mapForumReplies,
         repliesForThread: repliesForThread,
-        countRepliesByThread: countRepliesByThread
+        countRepliesByThread: countRepliesByThread,
+        groupThreadCounts: groupThreadCounts,
+        groupMemberCounts: groupMemberCounts
     };
 });

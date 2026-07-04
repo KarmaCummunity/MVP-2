@@ -205,3 +205,47 @@ describe('countRepliesByThread', () => {
         expect(GloweForums.countRepliesByThread(null)).toEqual({});
     });
 });
+
+describe('groupThreadCounts', () => {
+    it('counts threads per group id', () => {
+        const threads = [
+            { id: '1', groupId: 'education' },
+            { id: '2', groupId: 'education' },
+            { id: '3', groupId: 'health' }
+        ];
+        expect(GloweForums.groupThreadCounts(threads)).toEqual({ education: 2, health: 1 });
+    });
+
+    it('ignores threads without a groupId and tolerates non-arrays', () => {
+        expect(GloweForums.groupThreadCounts([{ id: '1' }, { id: '2', groupId: 'x' }])).toEqual({ x: 1 });
+        expect(GloweForums.groupThreadCounts(null)).toEqual({});
+    });
+});
+
+describe('groupMemberCounts', () => {
+    it('counts distinct authors of threads and replies per group', () => {
+        const threads = [
+            { id: 't1', groupId: 'education', authorId: 'u1' },
+            { id: 't2', groupId: 'education', authorId: 'u2' },
+            { id: 't3', groupId: 'health', authorId: 'u3' }
+        ];
+        const replies = [
+            { id: 'r1', threadId: 't1', authorId: 'u2' }, // already counted in education
+            { id: 'r2', threadId: 't1', authorId: 'u4' }, // new education member
+            { id: 'r3', threadId: 't3', authorId: 'u3' }  // already counted in health
+        ];
+        expect(GloweForums.groupMemberCounts(threads, replies)).toEqual({ education: 3, health: 1 });
+    });
+
+    it('skips empty author ids and tolerates non-arrays', () => {
+        const threads = [{ id: 't1', groupId: 'education', authorId: '' }];
+        expect(GloweForums.groupMemberCounts(threads, [])).toEqual({});
+        expect(GloweForums.groupMemberCounts(null, null)).toEqual({});
+    });
+
+    it('maps replies to their group via the thread lookup', () => {
+        const threads = [{ id: 't1', groupId: 'education', authorId: 'u1' }];
+        const replies = [{ id: 'r1', threadId: 't1', authorId: 'u9' }];
+        expect(GloweForums.groupMemberCounts(threads, replies)).toEqual({ education: 2 });
+    });
+});

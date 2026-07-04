@@ -2453,6 +2453,23 @@ async function reloadForumReplies() {
     await loadForumReplies();
 }
 
+// Overlay live per-group stats (FR-GLOWE-009 AC7) onto mapped groups: post count
+// = threads in the group, member count = distinct authors of a thread or reply in
+// the group. Falls back to any preset value (hardcoded discussionGroups demo).
+function withGroupStats(groups) {
+    if (typeof GloweForums === 'undefined') return groups;
+    const threads = getForumThreads();
+    const replies = getForumReplies();
+    const posts = GloweForums.groupThreadCounts(threads);
+    const members = GloweForums.groupMemberCounts(threads, replies);
+    return groups.map(function (g) {
+        return Object.assign({}, g, {
+            posts: posts[g.id] || g.posts || 0,
+            members: members[g.id] || g.members || 0
+        });
+    });
+}
+
 // Human-readable last-activity label for a thread's created_at.
 function formatThreadActivity(createdAt) {
     if (!createdAt) return 'Just now';
@@ -3930,11 +3947,14 @@ async function initCommunityPage() {
 
     if (groupsContainer) {
         if (backendForumGroups === null) await loadForumGroups();
-        groupsContainer.innerHTML = getForumGroups().map(group => `
-            <a class="filter-pill group-link-pill" href="discussion-group.html?group=${group.id}">
-                ${escapeHtml(group.title)}${group.members > 0 ? `<span>${group.members}</span>` : ''}
-            </a>
-        `).join('');
+        const pillGroups = getForumGroups();
+        groupsContainer.innerHTML = pillGroups.length > 0
+            ? pillGroups.map(group => `
+                <a class="filter-pill group-link-pill" href="discussion-group.html?group=${group.id}">
+                    ${escapeHtml(group.title)}${group.members > 0 ? `<span>${group.members}</span>` : ''}
+                </a>
+            `).join('')
+            : '<p class="muted-note">Discussion groups will appear here soon.</p>';
     }
 }
 
@@ -4172,7 +4192,7 @@ function initForumsPage() {
     refreshForumGroups(initForumsPage);
     refreshForumThreads(initForumsPage);
     refreshForumReplies(initForumsPage);
-    const forumGroups = getForumGroups();
+    const forumGroups = withGroupStats(getForumGroups());
     const replyCounts = GloweForums.countRepliesByThread(getForumReplies());
     const allThreads = getForumThreads().map(thread => ({
         ...thread,
@@ -4200,14 +4220,19 @@ function initForumsPage() {
             : '<p class="muted-note">Community members with active contributions will be featured here.</p>';
     }
     if (container) {
-        container.innerHTML = forumGroups.map(group => `
-            <a class="forum-group-card" href="discussion-group.html?group=${group.id}">
-                ${group.members > 0 ? `<span>${group.members} members</span>` : ''}
-                <h3>${escapeHtml(group.title)}</h3>
-                <p>${escapeHtml(group.description)}</p>
-                <div class="post-tag-row">${group.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
-            </a>
-        `).join('');
+        container.innerHTML = forumGroups.length > 0
+            ? forumGroups.map(group => `
+                <a class="forum-group-card" href="discussion-group.html?group=${group.id}">
+                    <div class="forum-group-stats">
+                        ${group.members > 0 ? `<span>${group.members} members</span>` : ''}
+                        ${group.posts > 0 ? `<span>${group.posts} posts</span>` : ''}
+                    </div>
+                    <h3>${escapeHtml(group.title)}</h3>
+                    <p>${escapeHtml(group.description)}</p>
+                    <div class="post-tag-row">${group.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
+                </a>
+            `).join('')
+            : '<p class="muted-note">Discussion groups will appear here once they are set up.</p>';
     }
     if (threadsContainer) {
         threadsContainer.innerHTML = allThreads.length > 0
@@ -4344,7 +4369,7 @@ function initDiscussionGroupPage() {
     refreshForumGroups(initDiscussionGroupPage);
     refreshForumThreads(initDiscussionGroupPage);
     refreshForumReplies(initDiscussionGroupPage);
-    const forumGroups = getForumGroups();
+    const forumGroups = withGroupStats(getForumGroups());
     const params = new URLSearchParams(window.location.search);
     const group = forumGroups.find(item => item.id === (params.get('group') || 'education')) || forumGroups[0];
     const groupThreads = (typeof GloweForums !== 'undefined')
@@ -5574,6 +5599,7 @@ const GLOWE_TRANSLATIONS = {
         'Read What\'s Next': 'קראו מה הלאה',
         'See How This Could Grow': 'ראו איך זה יכול לצמוח',
         // ===== Inner pages (FR-GLOWE-005 phase 2) =====
+        "Active threads will appear here once community members start discussions.": "שרשורים פעילים יופיעו כאן ברגע שחברי הקהילה יתחילו דיונים.",
         "Activity": "פעילות",
         "Add Project": "הוספת פרויקט",
         "Advocacy": "סנגור",
@@ -5635,6 +5661,7 @@ const GLOWE_TRANSLATIONS = {
         "Community integrity": "יושרה קהילתית",
         "Community interactions": "אינטראקציות קהילתיות",
         "Community managers": "מנהלי קהילה",
+        "Community members with active contributions will be featured here.": "חברי קהילה עם תרומות פעילות יוצגו כאן.",
         "Community reinvestment": "השקעה חוזרת בקהילה",
         "Community reports": "דיווחי קהילה",
         "Community reports will appear here.": "דיווחי הקהילה יופיעו כאן.",
@@ -5661,6 +5688,8 @@ const GLOWE_TRANSLATIONS = {
         "Discover organizations, initiatives, and partners sharing field knowledge and practical needs.": "גלו ארגונים, יוזמות ושותפים שחולקים ידע מהשטח וצרכים מעשיים.",
         "Discover People": "גלו אנשים",
         "Discussion group": "קבוצת דיון",
+        "Discussion groups will appear here once they are set up.": "קבוצות דיון יופיעו כאן ברגע שיוגדרו.",
+        "Discussion groups will appear here soon.": "קבוצות דיון יופיעו כאן בקרוב.",
         "Discussion Groups": "קבוצות דיון",
         "Dismiss": "סגירה",
         "Distribution": "הפצה",
@@ -5795,6 +5824,7 @@ const GLOWE_TRANSLATIONS = {
         "Mark Reviewed": "סימון כנבדק",
         "Measurement and learning": "מדידה ולמידה",
         "Members": "חברים",
+        "Members will appear here once they join this group.": "חברים יופיעו כאן ברגע שיצטרפו לקבוצה הזו.",
         "Message": "הודעה",
         "Message author": "שליחת הודעה למחבר/ת",
         "Message publisher": "שליחת הודעה למפרסם/ת",
@@ -5820,6 +5850,7 @@ const GLOWE_TRANSLATIONS = {
         "No reports yet": "אין עדיין דיווחים",
         "No results": "אין תוצאות",
         "No saved items yet": "אין עדיין פריטים שמורים",
+        "No threads yet": "אין עדיין שרשורים",
         "No wishes found": "לא נמצאו משאלות",
         "Notification Preferences": "העדפות התראות",
         "Offer skills, time, translation, mentoring, design, legal help, tech, research, or field knowledge.": "הציעו כישורים, זמן, תרגום, חונכות, עיצוב, סיוע משפטי, טכנולוגיה, מחקר או ידע מהשטח.",
@@ -5996,6 +6027,7 @@ const GLOWE_TRANSLATIONS = {
         "Start a practical consultation": "התחילו ייעוץ מעשי",
         "Start a thread": "פתיחת שרשור",
         "Start Conversation": "התחלת שיחה",
+        "Start the first conversation in this group.": "התחילו את השיחה הראשונה בקבוצה הזו.",
         "Start from one useful action": "התחילו מפעולה מועילה אחת",
         "Start with one useful post, one profile, one wish, or one opportunity.": "התחילו מפוסט מועיל אחד, פרופיל אחד, משאלה אחת או הזדמנות אחת.",
         "Structured offers": "הצעות מסודרות",
