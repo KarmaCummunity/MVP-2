@@ -566,6 +566,44 @@ function getPersonalProjectsForView() {
         : (Array.isArray(backendPersonalProjects) ? backendPersonalProjects : getPersonalProjects());
 }
 
+// FR-GLOWE-011 AC5 — live "My Needs" list. `backendMyWishes` stays null until a
+// load completes; the view getter returns it once loaded (there is no local
+// wish cache, so the fallback is simply an empty list).
+let backendMyWishes = null;
+
+async function loadMyWishes() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    const orgs = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const wishesApi = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    if (!orgs || !wishesApi) return;
+    let rows = [];
+    try { rows = await backend.listOwned('posts'); } catch (_e) { rows = []; }
+    backendMyWishes = orgs.myWishPosts(rows || []).map(wishesApi.mapWishRow);
+}
+
+function getMyWishesForView() {
+    return Array.isArray(backendMyWishes) ? backendMyWishes : [];
+}
+
+// Render the compact "My Needs" list for the Personal Area (mapped wish rows).
+function renderMyNeedsList(list) {
+    if (!Array.isArray(list) || !list.length) {
+        return '<p class="muted-note">No needs yet. Share what would help on the Wishing Well.</p>';
+    }
+    return list.map(function (wish) {
+        const time = wish.time ? `<span class="muted-note">${escapeHtml(wish.time)}</span>` : '';
+        return `
+            <article class="personal-need-card">
+                <span class="post-type-tag">${escapeHtml(wish.type || 'Open Call')}</span>
+                <h3>${escapeHtml(wish.title || '')}</h3>
+                <p>${escapeHtml(wish.description || '')}</p>
+                ${time}
+            </article>
+        `;
+    }).join('');
+}
+
 function canUseBackend() {
     return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
@@ -5331,6 +5369,7 @@ function initMyApplicationsPage() {
     function renderPersonalArea() {
         const profile = getPersonalProfile();
         const projects = getPersonalProjectsForView();
+        const myNeeds = getMyWishesForView();
         const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         const applications = getApplications();
         const userApplications = user ? applications.filter(app => app.userId === user.id) : [];
@@ -5358,6 +5397,7 @@ function initMyApplicationsPage() {
                         <a href="#personal-profile">Overview</a>
                         <a href="#personal-projects">Projects</a>
                         <a href="#personal-opportunities">Opportunities</a>
+                        <a href="#personal-needs">My Needs</a>
                         <a href="#personal-events">My Events</a>
                         <a href="#personal-saved">Saved</a>
                         <a href="#personal-activity">Activity</a>
@@ -5435,9 +5475,22 @@ function initMyApplicationsPage() {
                             </div>
                         </article>
 
+                        <article class="profile-section-card" id="personal-needs">
+                            <div class="personal-card-header">
+                                <div class="profile-section-heading">
+                                    <span>04</span>
+                                    <h2>My Needs</h2>
+                                </div>
+                                <a class="btn btn-outline btn-small" href="wishing-well.html">Post a Need</a>
+                            </div>
+                            <div class="personal-list" id="my-needs-list" aria-live="polite">
+                                ${renderMyNeedsList(myNeeds)}
+                            </div>
+                        </article>
+
                         <article class="profile-section-card" id="personal-events">
                             <div class="profile-section-heading">
-                                <span>04</span>
+                                <span>05</span>
                                 <h2>My Events</h2>
                             </div>
                             <div class="personal-list" id="my-events-list" aria-live="polite">
@@ -5447,7 +5500,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-saved">
                             <div class="profile-section-heading">
-                                <span>05</span>
+                                <span>06</span>
                                 <h2>Saved</h2>
                             </div>
                             <div class="saved-mini-grid">
@@ -5473,7 +5526,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-activity">
                             <div class="profile-section-heading">
-                                <span>06</span>
+                                <span>07</span>
                                 <h2>Recent Activity</h2>
                             </div>
                             <div class="profile-post-list">
@@ -5496,6 +5549,7 @@ function initMyApplicationsPage() {
     renderPersonalArea();
     loadMyEvents();
     loadPersonalProjects().then(() => renderPersonalArea());
+    loadMyWishes().then(() => renderPersonalArea());
     syncPersonalDataFromBackend().then((updated) => {
         if (updated) renderPersonalArea();
         loadMyEvents();
@@ -6096,6 +6150,8 @@ const GLOWE_TRANSLATIONS = {
         "Project-based": "מבוסס פרויקט",
         "Project-based Collaboration": "שיתוף פעולה מבוסס פרויקט",
         "Projects": "פרויקטים",
+        "My Needs": "הצרכים שלי",
+        "No needs yet. Share what would help on the Wishing Well.": "אין עדיין צרכים. שתפו מה יעזור לכם בבאר המשאלות.",
         "Public links": "קישורים ציבוריים",
         "Publish a volunteer role": "פרסמו תפקיד התנדבות",
         "Publish an opportunity": "פרסמו הזדמנות",

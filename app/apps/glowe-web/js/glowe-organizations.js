@@ -71,6 +71,16 @@
         };
     }
 
+    // FR-GLOWE-011 AC5 — from a listOwned('posts') result, keep only the
+    // caller's wish posts (post_type='wish', any status: open + fulfilled).
+    // Mapping to the render shape is delegated to GloweWishes.mapWishRow so the
+    // wish view model stays defined in one place.
+    function myWishPosts(rows) {
+        return (Array.isArray(rows) ? rows : []).filter(function (row) {
+            return Boolean(row) && field(row, 'post_type', 'postType') === 'wish';
+        });
+    }
+
     // FR-GLOWE-011 AC4 (write) — validate a personal-project draft before it is
     // persisted via insertOwned('projects', …). glowe_projects.title is NOT NULL.
     function validateProjectDraft(input) {
@@ -111,6 +121,7 @@
         buildOutreachPayload: buildOutreachPayload,
         personalProjectsView: personalProjectsView,
         validateProjectDraft: validateProjectDraft,
-        buildProjectPayload: buildProjectPayload
+        buildProjectPayload: buildProjectPayload,
+        myWishPosts: myWishPosts
     };
 });
