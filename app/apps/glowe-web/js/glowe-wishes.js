@@ -92,6 +92,28 @@
         return parts.filter(Boolean).join('\n\n');
     }
 
+    // True when `userId` published this wish (owner-only "mark as fulfilled").
+    function isWishOwner(wish, userId) {
+        return Boolean(wish && userId && wish.authorId === userId);
+    }
+
+    // Validate an "Offer Support" draft. Required: offer_text + availability.
+    function validateOfferDraft(draft) {
+        const d = draft || {};
+        if (!d.offer_text || !String(d.offer_text).trim()) return { valid: false, error: 'Please describe what you can offer.' };
+        if (!d.availability) return { valid: false, error: 'Please choose your availability.' };
+        return { valid: true, error: '' };
+    }
+
+    // Compose the offer body from the support type + free-text message.
+    function buildOfferText(draft) {
+        const d = draft || {};
+        const parts = [];
+        if (d.support_type) parts.push('Offering: ' + String(d.support_type).trim());
+        if (d.message) parts.push(String(d.message).trim());
+        return parts.filter(Boolean).join('\n\n');
+    }
+
     return {
         isOpenWish: isOpenWish,
         mapWishRow: mapWishRow,
@@ -99,6 +121,9 @@
         wishStats: wishStats,
         formatWishTime: formatWishTime,
         validateWishDraft: validateWishDraft,
-        buildWishText: buildWishText
+        buildWishText: buildWishText,
+        isWishOwner: isWishOwner,
+        validateOfferDraft: validateOfferDraft,
+        buildOfferText: buildOfferText
     };
 });
