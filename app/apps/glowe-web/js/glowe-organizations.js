@@ -71,12 +71,23 @@
         };
     }
 
+    // FR-GLOWE-011 AC4 — decide which project list the Personal Area renders.
+    // Once a backend load has completed we trust it (even when empty, so a user
+    // with no real projects sees an empty state rather than the demo/local
+    // fallback). While the backend list is still null (offline or pre-load),
+    // fall back to the local/offline cache.
+    function personalProjectsView(backendList, localList) {
+        if (Array.isArray(backendList)) return backendList;
+        return Array.isArray(localList) ? localList : [];
+    }
+
     return {
         mapProjectRow: mapProjectRow,
         mapProjects: mapProjects,
         isPublicProject: isPublicProject,
         publicProjectsForUser: publicProjectsForUser,
         validateOutreachDraft: validateOutreachDraft,
-        buildOutreachPayload: buildOutreachPayload
+        buildOutreachPayload: buildOutreachPayload,
+        personalProjectsView: personalProjectsView
     };
 });

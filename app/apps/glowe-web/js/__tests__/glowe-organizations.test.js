@@ -7,7 +7,8 @@ const {
     isPublicProject,
     publicProjectsForUser,
     validateOutreachDraft,
-    buildOutreachPayload
+    buildOutreachPayload,
+    personalProjectsView
 } = GloweOrganizations;
 
 describe('mapProjectRow', () => {
@@ -140,5 +141,26 @@ describe('buildOutreachPayload', () => {
         const payload = buildOutreachPayload();
         expect(payload.post_type).toBe('outreach');
         expect(payload.audience).toBe('');
+    });
+});
+
+describe('personalProjectsView', () => {
+    const backend = [{ id: 'b1' }];
+    const local = [{ id: 'l1' }, { id: 'l2' }];
+
+    it('prefers the backend list once it has loaded', () => {
+        expect(personalProjectsView(backend, local)).toBe(backend);
+    });
+
+    it('trusts an empty backend list over the local fallback (real empty state)', () => {
+        expect(personalProjectsView([], local)).toEqual([]);
+    });
+
+    it('falls back to the local list while the backend is still null', () => {
+        expect(personalProjectsView(null, local)).toBe(local);
+    });
+
+    it('returns an empty array when both are unavailable', () => {
+        expect(personalProjectsView(null, null)).toEqual([]);
     });
 });
