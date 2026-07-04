@@ -51,20 +51,27 @@ jobs:
         run: node scripts/wait-for-url.mjs "${DEV_WEB_URL%/}/" 12 15000
 
       # The dev deploy may be GLOWE-only: web-postbuild.mjs then gates the KC web
-      # app behind /glowe and overwrites the root index.html with a redirect shim
-      # to /glowe/ (see app/scripts/web-postbuild.mjs, DECISIONS D-61). When that
-      # is in effect, the KC P0 journeys (which navigate to /, /chat, /create)
-      # cannot run — the root serves GloWe, not the KC feed. Detect that state and
-      # skip the KC suite cleanly instead of failing. Self-healing: when KC web is
-      # restored to the dev root, the shim disappears and the journeys run again.
+      # app behind /glowe and gates the KC root behind a redirect to /glowe/ (see
+      # app/scripts/web-postbuild.mjs, DECISIONS D-61). That redirect ships two
+      # ways: a Cloudflare `_redirects` rule (`/ → /glowe/ 302`) AND a meta-refresh
+      # index.html shim (`url=/glowe/`). In practice Cloudflare applies the 302
+      # before serving the directory index, so the bare root returns an HTTP 302 —
+      # the meta-refresh body is never served. When GLOWE-only, the KC P0 journeys
+      # (which navigate to /, /chat, /create) cannot run — the root serves GloWe,
+      # not the KC feed. Detect BOTH the 302 (follow redirects, inspect the
+      # effective URL) and the legacy meta-refresh body, and skip the KC suite
+      # cleanly instead of failing. Self-healing: when KC web is restored to the
+      # dev root, "/" stops redirecting to /glowe/ and the journeys run again.
       - name: Detect whether dev serves the KC web app
         id: detect
         env:
           DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
         run: |
           set -euo pipefail
-          body="$(curl -fsSL --max-redirs 0 "${DEV_WEB_URL%/}/" 2>/dev/null || true)"
-          if printf '%s' "$body" | grep -q 'url=/glowe/'; then
+          # -L follows the _redirects 302 to /glowe/, so url_effective lands there;
+          # the appended marker also captures a legacy meta-refresh body (url=/glowe/).
+          resp="$(curl -fsSL "${DEV_WEB_URL%/}/" -w '\n__EFFECTIVE__%{url_effective}' 2>/dev/null || true)"
+          if printf '%s' "$resp" | grep -qE 'url=/glowe/|__EFFECTIVE__.*/glowe/'; then
             echo "kc_web=false" >> "$GITHUB_OUTPUT"
             echo "::notice::Dev is GLOWE-only (root redirects to /glowe/). Skipping KC P0 journeys until KC web returns to the dev root."
           else
