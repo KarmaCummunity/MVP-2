@@ -1,6 +1,7 @@
-// supabase/functions/translate/provider.ts
-// Pluggable translation-provider seam. Swapping providers (e.g. free Gemini
-// -> paid zero-retention/DPA Flash, D-63/D-65) is a TRANSLATION_PROVIDER env change.
+// supabase/functions/_shared/translation/provider.ts
+// Pluggable translation-provider seam shared by the KC `translate` and GLOWE
+// `glowe-translate` Edge Functions. Swapping providers (e.g. free Gemini ->
+// paid zero-retention/DPA Flash, D-63/D-65) is a TRANSLATION_PROVIDER env change.
 
 export interface ProviderInput {
   text: string;
@@ -15,7 +16,7 @@ export interface ProviderResult {
   detectedSourceLanguage: string | null;
   /** 0..1 self-rated confidence; null when the provider gives none. */
   confidence: number | null;
-  /** Model/provider id stored as provenance in content_translations.model. */
+  /** Model/provider id stored as provenance in *_content_translations.model. */
   model: string;
 }
 
