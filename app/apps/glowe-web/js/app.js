@@ -49,14 +49,14 @@ function gloweWriteGate() {
 
 // Guard for content-create handlers: returns true when the caller may publish,
 // otherwise shows the appropriate view-only notice and returns false.
-function canCreateContent() {
+function canCreateContent(actionKey) {
     const gate = gloweWriteGate();
     if (gate.allowed) return true;
     if (gate.reason === 'anon') {
-        showSuccessModal(
-            'Sign in to contribute',
-            'Browsing GloWe is open to everyone. To publish a need, post, event, or discussion, please sign in or create a free account first.'
-        );
+        // Guest → action-tailored join prompt (FR-GLOWE-023).
+        if (window.GloweGuest && typeof window.GloweGuest.showJoinPrompt === 'function') {
+            window.GloweGuest.showJoinPrompt(actionKey || 'create-post', {});
+        }
     } else {
         showSuccessModal(
             'Awaiting verification',
@@ -2556,6 +2556,11 @@ function openCrowdfundingModal() {
 }
 
 function openPrivateMessage(name = 'this member') {
+    // Guests → action-tailored join prompt (FR-GLOWE-023).
+    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+        window.GloweGuest.requireMemberForAction('send-message', { org: name }, function () {});
+        return;
+    }
     ensureGlobalUI();
     const modal = document.getElementById('message-modal');
     if (!modal) {
@@ -2697,6 +2702,47 @@ function removeSavedItem(type, id) {
     }
     if (typeof window.renderSavedItemsPage === 'function') window.renderSavedItemsPage();
     if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+}
+
+// FR-GLOWE-013 AC2 — render a Save/Saved toggle button that reflects whether the
+// item is already in the user's saved list. Raw values are escaped here (callers
+// pass unescaped title/meta/href). The saved-state label is "Saved"; the unsaved
+// label is card-specific (kept on data-save-label for the in-place flip).
+function savedToggleButtonHtml(type, id, title, meta, href, saveLabel, className) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    const cls = (className || 'btn btn-outline btn-small') + (saved ? ' is-saved' : '');
+    const label = saved ? 'Saved' : saveLabel;
+    return `<button class="${cls}" type="button" aria-pressed="${saved}" data-save-label="${escapeHtml(saveLabel)}" onclick="toggleSavedItem(this, '${jsString(type)}', '${jsString(String(id))}', '${jsString(String(title))}', '${jsString(String(meta))}', '${jsString(String(href))}')">${escapeHtml(label)}</button>`;
+}
+
+// Flip a rendered toggle button in place after a save/unsave (avoids a full list
+// re-render / scroll reset). Setting textContent replaces the text node, which the
+// i18n MutationObserver catches and localizes.
+function refreshSavedToggleButton(btn, type, id) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    btn.setAttribute('aria-pressed', String(saved));
+    btn.classList.toggle('is-saved', saved);
+    btn.textContent = saved ? 'Saved' : (btn.getAttribute('data-save-label') || 'Save');
+}
+
+// FR-GLOWE-013 AC2 — toggle a card's saved state: unsave when already saved, else
+// save. Login-gated (saved items sync per user). saveItem shows its own "Saved"
+// confirmation; the button flips in place either way.
+function toggleSavedItem(btn, type, id, title, meta, href) {
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        return;
+    }
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    if (saved) {
+        removeSavedItem(type, id);
+    } else {
+        saveItem(type, id, title, meta, href);
+    }
+    if (btn) refreshSavedToggleButton(btn, type, id);
 }
 
 function getPostComments() {
@@ -3367,7 +3413,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
             </div>
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
-                <button class="btn btn-outline btn-small" type="button" onclick="saveItem('opportunity', '${opportunity.id}', '${titleForMessage}', '${jsString(opportunity.organization)}', '${detailHref}')">Save Opportunity</button>
+                ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save Opportunity')}
             </div>
         </div>
     `;
@@ -5386,12 +5432,11 @@ async function initOpportunityDetailPage() {
     const applyBtn = document.getElementById('apply-btn');
     if (applyBtn && !isEvent && !ownerViewing) {
         applyBtn.addEventListener('click', function() {
-            if (!isLoggedIn()) {
-                sessionStorage.setItem('pendingOpportunityApplication', opportunityId);
-                openModal('login-modal');
-            } else {
-                openModal('apply-modal');
-            }
+            window.GloweGuest.requireMemberForAction(
+                'apply-opportunity',
+                { org: (opportunity && opportunity.organization) || '' },
+                function () { openModal('apply-modal'); }
+            );
         });
     } else if (applyBtn && ownerViewing) {
         applyBtn.hidden = true;
@@ -5581,7 +5626,11 @@ async function renderEventRegisterArea(opportunity, events) {
         return;
     }
     if (!isLoggedIn()) {
-        area.innerHTML = `<button class="btn btn-primary btn-block" type="button" onclick="openModal('login-modal')">Sign in to register</button>`;
+        area.innerHTML = `<button class="btn btn-primary btn-block" type="button" id="glowe-rsvp-join">Save your spot</button>`;
+        const rsvpBtn = area.querySelector('#glowe-rsvp-join');
+        if (rsvpBtn) rsvpBtn.addEventListener('click', function () {
+            window.GloweGuest.requireMemberForAction('rsvp-event', { title: (opportunity && opportunity.title) || '' }, function () {});
+        });
         return;
     }
     const registration = await findMyRegistration(opportunity.id, events);
@@ -7225,7 +7274,28 @@ const GLOWE_TRANSLATIONS = {
         "Funding / support sources": "מקורות מימון / תמיכה",
         "Annual budget / support context": "תקציב שנתי / הקשר תמיכה",
         "Profile status": "סטטוס הפרופיל",
-        "Personal area sections": "מקטעי האזור האישי"
+        "Personal area sections": "מקטעי האזור האישי",
+        // FR-GLOWE-023 — guest peek + contextual join
+        'Sign in to post a need': 'התחברו כדי לפרסם צורך',
+        'Browsing GloWe is open to everyone. Sign in with Google to post a need and reach people ready to help.': 'הגלישה ב-GloWe פתוחה לכולם. התחברו עם גוגל כדי לפרסם צורך ולהגיע לאנשים שמוכנים לעזור.',
+        'Sign in to post': 'התחברו כדי לפרסם',
+        'Sign in with Google to share a post with the GloWe community.': 'התחברו עם גוגל כדי לשתף פוסט עם קהילת GloWe.',
+        'Sign in to publish': 'התחברו כדי לפרסם',
+        'Sign in with Google to publish this opportunity and start receiving applications.': 'התחברו עם גוגל כדי לפרסם את ההזדמנות ולהתחיל לקבל מועמדויות.',
+        'Sign in to start a discussion': 'התחברו כדי לפתוח דיון',
+        'Sign in with Google to open a new discussion thread.': 'התחברו עם גוגל כדי לפתוח שרשור דיון חדש.',
+        'Sign in to reply': 'התחברו כדי להשיב',
+        'Sign in with Google to join this discussion.': 'התחברו עם גוגל כדי להצטרף לדיון.',
+        'Sign in to apply': 'התחברו כדי להגיש מועמדות',
+        'Save your spot': 'שמרו את מקומכם',
+        'Ready to lend a hand?': 'מוכנים לעזור?',
+        'Keep this for later': 'שמרו לאחר כך',
+        'Sign in with Google to save it to your list.': 'התחברו עם גוגל כדי לשמור לרשימה שלכם.',
+        'Sign in to continue': 'התחברו כדי להמשיך',
+        'Sign in with Google to open your personal area.': 'התחברו עם גוגל כדי לפתוח את האזור האישי שלכם.',
+        'Sign in with Google to do this on GloWe.': 'התחברו עם גוגל כדי לעשות זאת ב-GloWe.',
+        'Welcome to GloWe': 'ברוכים הבאים ל-GloWe',
+        "Welcome — you're browsing as a guest. Sign in with Google anytime to participate.": 'ברוכים הבאים — אתם גולשים כאורח. התחברו עם גוגל בכל רגע כדי להשתתף.'
     }
 };
 

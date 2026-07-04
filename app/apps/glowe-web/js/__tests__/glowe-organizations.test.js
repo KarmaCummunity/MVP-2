@@ -30,7 +30,8 @@ const {
     mapOfferForOwner,
     mapOffersForOwner,
     hasContactEmail,
-    buildSavedItemPayload
+    buildSavedItemPayload,
+    isItemSaved
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -622,5 +623,30 @@ describe('buildSavedItemPayload (FR-GLOWE-013 AC1)', () => {
             meta: '',
             href: ''
         });
+    });
+});
+
+describe('isItemSaved (FR-GLOWE-013 AC2)', () => {
+    const saved = [
+        { type: 'opportunity', id: 'op-1' },
+        { type: 'wish', id: '42' }
+    ];
+
+    it('is true when a matching type+id is present', () => {
+        expect(isItemSaved(saved, 'opportunity', 'op-1')).toBe(true);
+    });
+
+    it('compares id as text (numeric vs string id still matches)', () => {
+        expect(isItemSaved(saved, 'wish', 42)).toBe(true);
+    });
+
+    it('is false when the type differs even if the id matches', () => {
+        expect(isItemSaved(saved, 'post', 'op-1')).toBe(false);
+    });
+
+    it('is false for a missing item and for a non-array saved list', () => {
+        expect(isItemSaved(saved, 'opportunity', 'nope')).toBe(false);
+        expect(isItemSaved(null, 'opportunity', 'op-1')).toBe(false);
+        expect(isItemSaved(undefined, 'wish', '42')).toBe(false);
     });
 });

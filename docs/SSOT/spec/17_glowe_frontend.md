@@ -327,7 +327,7 @@ The Saved page (`pages/saved.html`) reads `glowe_saved_items` through `gloweBack
 
 **Acceptance Criteria.**
 - AC1. **Save CTA.** ✅ Every opportunity card, wish card, community post card, and org profile card carries a Save CTA that calls `saveItem(type, id, title, meta, href)` → `gloweBackend.insertOwned('saved_items', { item_type, item_id, title, meta, href })` (`js/app.js`; wish/opportunity/community/org render paths). The insert payload is built by the `GloweOrganizations.buildSavedItemPayload` pure helper (`js/glowe-organizations.js`, unit-tested — column shape in one place, `item_id` coerced to text to match the `0204` unique index), with an inline fallback for pages that don't load the helper. Duplicates (same `user_id + item_type + item_id`) are silently ignored by the `0204` unique constraint (and a client-side `exists` check). `saveItem` is now login-gated per the AC — a guest sees a "Sign in to save" prompt instead of a localStorage-only save; Hebrew keys added.
-- AC2. **Unsave.** A second click on the bookmark icon (active state) calls `removeOwned('saved_items', { item_type, item_id })`.
+- AC2. **Unsave.** 🟡 A second click on the bookmark icon (active state) calls `removeOwned('saved_items', { item_type, item_id })`. Backend unsave already exists (`removeSavedItem(type,id)` → `removeOwned('saved_items', {item_type,item_id})`, `js/app.js`; also wired to the Saved page "Remove" buttons). This slice adds the **card-level toggle** on the opportunity network card: the card-actions button now renders via `savedToggleButtonHtml(...)`, reflecting saved state (label `Saved`, `aria-pressed`, `.is-saved` style — via the tested `GloweOrganizations.isItemSaved` pure helper) and toggling on click through `toggleSavedItem(...)` (unsave when saved, else save; login-gated; flips in place via `refreshSavedToggleButton` so no list re-render / scroll reset). The wish / community-post / org cards + the opportunity detail trust panel still use the one-way `saveItem` CTA — converting them is the next slice (AC2 stays 🟡 until all card types toggle).
 - AC3. **Saved page.** `pages/saved.html` loads all `glowe_saved_items` for the signed-in user, grouped by `item_type` (Opportunities / Wishes / Posts / Organizations). Each item links back to its canonical page URL (from the `href` column).
 - AC4. **Optimistic UI.** The bookmark icon toggles instantly on click; the Supabase call is fire-and-forget. On error, the state is reverted and a toast is shown.
 - AC5. **Unauthenticated state.** The Saved page redirects to the sign-in prompt for unauthenticated visitors.
@@ -420,3 +420,41 @@ FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
   `public.chats`/`public.messages` (anchor `NULL` + a seeded first message carrying the need title).
 - AC7. **Modular type registry.** ⏳ Create types are a declarative data table (id, label,
   permittedAccountTypes, surface, requiredFields) + dispatch, so adding a type is one entry.
+
+---
+
+## FR-GLOWE-023 — Guest peek & contextual join
+
+**Status.** ✅ Done — action-tailored join prompts, Google auto-register, resume-after-join, guest welcome toast.
+
+Guests browse read-only (no entry gate — deep-link & SEO safe). Any identity-required
+action opens a single modal whose copy is tailored to the attempted action, with a
+single **Continue with Google** CTA (Google-only auth, FR-GLOWE-001 AC2a). On first
+sign-in a minimal `glowe_profiles` row is created from the Google identity, and the
+attempted action resumes. Refines the existing `gloweWriteGate()`/`canCreateContent()`
+gating (FR-GLOWE-003) rather than adding a login wall. Design:
+`docs/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md`.
+
+**Acceptance Criteria.**
+- AC1. **Single guard.** `requireMemberForAction(actionKey, ctx, proceed)` (`js/glowe-guest.js`)
+  runs the action for members and otherwise opens the contextual join modal. It replaces the
+  scattered guest gates: the `canCreateContent()` anon branch, the opportunity apply button,
+  the event RSVP panel, and the private-message opener (`openPrivateMessage`).
+- AC2. **Action registry + copy.** Modal copy is looked up from `GLOWE_JOIN_ACTIONS` and
+  interpolates `{org}`/`{title}`; unknown keys fall back to generic copy. Pure helpers
+  (`buildJoinCopy`, `setPendingIntent`/`takePendingIntent`) unit-tested in
+  `js/__tests__/glowe-guest.test.js`.
+- AC3. **Google-only CTA.** The modal's single primary CTA is **Continue with Google**
+  (reuses `handleGoogleSignIn`); a secondary "Maybe later" dismisses.
+- AC4. **Resume intent.** The attempted action (`{action, targetUrl}`) is persisted to
+  `sessionStorage` before the OAuth redirect and replayed by `resumeGuestIntent()` from
+  `syncSupabaseSession()` after sign-in (deep-links back to the item; re-opens the apply modal).
+- AC5. **Auto-register from Google.** `backend.ensureProfileFromGoogle(user)` upserts a minimal
+  profile (`id`, `email`, `display_name`, `avatar_url`) on first sign-in without setting
+  `account_type`/`onboarding_complete`, so FR-GLOWE-002 onboarding still enriches non-blockingly.
+  No schema change (columns exist from `0204`/`0205`); failures are non-fatal.
+- AC6. **Welcome toast.** A one-time `glowe-guest-welcomed` localStorage flag shows a welcome
+  toast to signed-out first-time visitors only; browsing is otherwise transparent (no banner).
+- AC7. **Mode B out of scope.** Progressive disclosure (let the guest fill the form, wall at
+  submit, preserve input) must **not** be built without an explicit PM instruction (see
+  `DECISIONS.md` D-68).
