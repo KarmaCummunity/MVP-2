@@ -228,6 +228,20 @@
         return true;
     }
 
+    // FR-GLOWE-011 AC10 — delete the caller's own glowe_profiles row. The row's
+    // primary key IS the auth user id (no separate user_id column), so this
+    // deletes by id; RLS ("glowe owner write profiles": auth.uid() = id) enforces
+    // that a member can only remove their own profile. auth.users is untouched
+    // (removing it requires KC super-admin), so the member can sign up again.
+    async function deleteProfile() {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const { error } = await supabaseClient.from(tbl('profiles')).delete().eq('id', user.id);
+        if (error) throw error;
+        return true;
+    }
+
     async function fetchProfile() {
         const supabaseClient = await getClient();
         const user = await currentUser();
@@ -562,6 +576,7 @@
         signIn,
         signInWithGoogle,
         signOut,
+        deleteProfile,
         fetchProfile,
         fetchProfileById,
         upsertProfile,

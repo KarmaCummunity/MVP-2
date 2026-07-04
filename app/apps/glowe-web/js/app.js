@@ -5925,6 +5925,11 @@ const GLOWE_TRANSLATIONS = {
         'Hebrew': 'עברית',
         'Session': 'התנתקות',
         'End your session on this device. You can sign back in any time with Google.': 'סיום ההתחברות במכשיר זה. תוכלו להתחבר מחדש בכל עת באמצעות Google.',
+        'Delete Account': 'מחיקת חשבון',
+        'Permanently delete your GloWe profile from this community. This removes your profile details; your Google sign-in itself is not deleted, so you can sign up again later.': 'מחיקה לצמיתות של פרופיל GloWe שלכם מהקהילה. פעולה זו מסירה את פרטי הפרופיל; חשבון ההתחברות של Google עצמו אינו נמחק, כך שתוכלו להירשם מחדש בעתיד.',
+        'Type DELETE to confirm': 'הקלידו DELETE לאישור',
+        'Could not delete account': 'לא ניתן למחוק את החשבון',
+        'Something went wrong deleting your profile. Please try again.': 'משהו השתבש במחיקת הפרופיל. אנא נסו שוב.',
         'Sign in to manage settings': 'התחברו כדי לנהל הגדרות',
         'Your account, language, and session options live here once you are signed in.': 'החשבון, השפה ואפשרויות ההתחברות יופיעו כאן לאחר הכניסה.',
         // Member home (FR-GLOWE-016)
@@ -6967,8 +6972,51 @@ function initSettingsPage() {
                 <p class="muted-note">End your session on this device. You can sign back in any time with Google.</p>
                 <button class="btn btn-primary" type="button" onclick="logout()">Log Out</button>
             </article>
+
+            <article class="profile-section-card">
+                <div class="profile-section-heading">
+                    <span>04</span>
+                    <h2>Delete Account</h2>
+                </div>
+                <p class="muted-note">Permanently delete your GloWe profile from this community. This removes your profile details; your Google sign-in itself is not deleted, so you can sign up again later.</p>
+                <div class="form-group">
+                    <label for="settings-delete-confirm">Type DELETE to confirm</label>
+                    <input id="settings-delete-confirm" type="text" autocomplete="off" oninput="onDeleteAccountInput()" />
+                </div>
+                <button id="settings-delete-btn" class="btn btn-outline" type="button" onclick="deleteAccount()" disabled>Delete Account</button>
+            </article>
         </div>
     `;
+}
+
+// FR-GLOWE-011 AC10 — enable the destructive delete button only once the user
+// has typed the confirmation word (validated by the pure helper).
+function onDeleteAccountInput() {
+    const input = document.getElementById('settings-delete-confirm');
+    const btn = document.getElementById('settings-delete-btn');
+    if (!input || !btn) return;
+    const orgs = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const confirmed = orgs ? orgs.isDeleteAccountConfirmed(input.value) : false;
+    btn.disabled = !confirmed;
+}
+
+// FR-GLOWE-011 AC10 — delete the caller's glowe_profiles row, then sign out
+// locally and return to the guest home (reusing logout for the session teardown).
+async function deleteAccount() {
+    const backend = window.gloweBackend;
+    const orgs = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const input = document.getElementById('settings-delete-confirm');
+    if (!orgs || !orgs.isDeleteAccountConfirmed(input && input.value)) return;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    try {
+        await backend.deleteProfile();
+    } catch (_e) {
+        if (typeof showSuccessModal === 'function') {
+            showSuccessModal('Could not delete account', 'Something went wrong deleting your profile. Please try again.');
+        }
+        return;
+    }
+    await logout();
 }
 
 // Messages page: inbox surface for direct conversations. Real-time chat is on
