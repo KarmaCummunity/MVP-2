@@ -1,7 +1,7 @@
--- 0221_glowe_translations_org_description — FR-TRANSLATE-005.
+-- 0223_glowe_translations_org_description — FR-TRANSLATE-005.
 --
 -- Organizations render their description from glowe_profiles.org_description
--- (falling back to about). 0220's field allowlist + profile purge trigger only
+-- (falling back to about). 0222's field allowlist + profile purge trigger only
 -- covered about/focus/needs, so org descriptions could neither be cached nor
 -- purged. This migration adds 'org_description' as a translatable glowe_profile
 -- field and extends the profile edit-purge trigger to cover it.

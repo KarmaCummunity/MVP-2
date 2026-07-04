@@ -1,4 +1,4 @@
--- 0220_glowe_content_translations — FR-TRANSLATE-005 (GLOWE UGC translation cache).
+-- 0222_glowe_content_translations — FR-TRANSLATE-005 (GLOWE UGC translation cache).
 --
 -- GLOWE-isolated mirror of public.content_translations. Differences from the KC
 -- cache (0208):
