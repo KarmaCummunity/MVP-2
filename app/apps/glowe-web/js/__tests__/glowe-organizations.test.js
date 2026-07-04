@@ -16,8 +16,13 @@ const {
     mapOwnedOpportunities,
     postTitlesById,
     mapOwnedOffer,
-    mapOwnedOffers
+    mapOwnedOffers,
+    opportunitiesById,
+    mapOwnedApplication,
+    volunteerApplicationViews
 } = GloweOrganizations;
+
+const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
 
 describe('mapProjectRow', () => {
     it('maps a snake_case glowe_projects row to the render shape', () => {
@@ -316,5 +321,71 @@ describe('mapOwnedOffers', () => {
     it('returns an empty array for non-array input', () => {
         expect(mapOwnedOffers(null, {})).toEqual([]);
         expect(mapOwnedOffers(undefined, {})).toEqual([]);
+    });
+});
+
+describe('opportunitiesById', () => {
+    it('builds an id → row lookup, skipping rows without an id', () => {
+        const rows = [{ id: 'op1', title: 'A' }, { id: 'op2', title: 'B' }, { title: 'orphan' }];
+        const map = opportunitiesById(rows);
+        expect(Object.keys(map)).toEqual(['op1', 'op2']);
+        expect(map.op1.title).toBe('A');
+    });
+
+    it('returns an empty object for non-array input', () => {
+        expect(opportunitiesById(null)).toEqual({});
+        expect(opportunitiesById(undefined)).toEqual({});
+    });
+});
+
+describe('mapOwnedApplication', () => {
+    it('maps a snake_case glowe_applications row and attaches opportunity title + org', () => {
+        const row = { id: 'ap1', opportunity_id: 'op1', status: 'Accepted', created_at: '2026-07-04T00:00:00Z' };
+        const byId = { op1: { id: 'op1', title: 'Beach cleanup', organization: 'Open Heart' } };
+        expect(mapOwnedApplication(row, byId)).toEqual({
+            id: 'ap1', opportunityId: 'op1', opportunityTitle: 'Beach cleanup',
+            organization: 'Open Heart', status: 'Accepted', appliedAt: '2026-07-04T00:00:00Z'
+        });
+    });
+
+    it('leaves title/org empty when the opportunity is not in the lookup', () => {
+        const out = mapOwnedApplication({ id: 'ap2', opportunity_id: 'opX' }, { op1: {} });
+        expect(out.opportunityTitle).toBe('');
+        expect(out.organization).toBe('');
+    });
+
+    it('defaults status to "Pending" and tolerates a missing lookup', () => {
+        expect(mapOwnedApplication({ id: 'ap3', opportunity_id: 'op1' })).toEqual({
+            id: 'ap3', opportunityId: 'op1', opportunityTitle: '', organization: '',
+            status: 'Pending', appliedAt: ''
+        });
+    });
+});
+
+describe('volunteerApplicationViews', () => {
+    const byId = {
+        vol: { id: 'vol', title: 'Weekly tutoring', organization: 'Org A' },
+        evt: { id: 'evt', title: 'Beach day', organization: 'Org B', start_at: '2026-08-01T09:00:00Z' }
+    };
+    const rows = [
+        { id: 'a', opportunity_id: 'vol', status: 'Pending' },
+        { id: 'b', opportunity_id: 'evt', status: 'Accepted' },
+        { id: 'c', opportunity_id: 'missing', status: 'Pending' }
+    ];
+
+    it('keeps only non-event applications with a known opportunity, enriched', () => {
+        const out = volunteerApplicationViews(rows, byId, isEvent);
+        expect(out.map(v => v.id)).toEqual(['a']);
+        expect(out[0].opportunityTitle).toBe('Weekly tutoring');
+    });
+
+    it('treats a missing isEvent predicate as never-an-event', () => {
+        const out = volunteerApplicationViews(rows, byId);
+        expect(out.map(v => v.id)).toEqual(['a', 'b']);
+    });
+
+    it('returns an empty array for non-array input', () => {
+        expect(volunteerApplicationViews(null, byId, isEvent)).toEqual([]);
+        expect(volunteerApplicationViews(undefined, byId, isEvent)).toEqual([]);
     });
 });

@@ -157,6 +157,54 @@
         });
     }
 
+    // FR-GLOWE-011 AC8 — build a { opportunityId: opportunityRow } lookup from a
+    // public opportunities list (listAll('opportunities')) so applications can be
+    // enriched with the opportunity they target. Rows without an id are skipped.
+    function opportunitiesById(rows) {
+        const out = {};
+        (Array.isArray(rows) ? rows : []).forEach(function (row) {
+            const id = field(row, 'id', 'id');
+            if (id === undefined || id === null || id === '') return;
+            out[String(id)] = row;
+        });
+        return out;
+    }
+
+    // FR-GLOWE-011 AC8 — map a glowe_applications row (volunteer application) to
+    // the compact shape the Personal Area "Applications" list renders, attaching
+    // the target opportunity's title + organization from `opportunityById`.
+    function mapOwnedApplication(row, opportunityById) {
+        const opps = opportunityById || {};
+        const oppId = field(row, 'opportunity_id', 'opportunityId');
+        const opp = (oppId !== undefined && oppId !== null) ? opps[String(oppId)] : undefined;
+        return {
+            id: field(row, 'id', 'id'),
+            opportunityId: oppId || '',
+            opportunityTitle: (opp && field(opp, 'title', 'title')) || '',
+            organization: (opp && field(opp, 'organization', 'organization')) || '',
+            status: field(row, 'status', 'status') || 'Pending',
+            appliedAt: field(row, 'created_at', 'createdAt') || ''
+        };
+    }
+
+    // FR-GLOWE-011 AC8 — from the caller's glowe_applications rows, keep only the
+    // volunteer applications (the linked opportunity exists and is NOT an event —
+    // event RSVPs live in the separate "My Events" section), enriched via
+    // mapOwnedApplication. `isEvent` is injected (GloweEvents.isEvent) so this
+    // helper stays DOM/module-free and unit-testable.
+    function volunteerApplicationViews(rows, opportunityById, isEvent) {
+        const opps = opportunityById || {};
+        const isEventFn = typeof isEvent === 'function' ? isEvent : function () { return false; };
+        const views = [];
+        (Array.isArray(rows) ? rows : []).forEach(function (row) {
+            const oppId = field(row, 'opportunity_id', 'opportunityId');
+            const opp = (oppId !== undefined && oppId !== null) ? opps[String(oppId)] : undefined;
+            if (!opp || isEventFn(opp)) return;
+            views.push(mapOwnedApplication(row, opps));
+        });
+        return views;
+    }
+
     // FR-GLOWE-011 AC4 — decide which project list the Personal Area renders.
     // Once a backend load has completed we trust it (even when empty, so a user
     // with no real projects sees an empty state rather than the demo/local
@@ -182,6 +230,9 @@
         mapOwnedOpportunities: mapOwnedOpportunities,
         postTitlesById: postTitlesById,
         mapOwnedOffer: mapOwnedOffer,
-        mapOwnedOffers: mapOwnedOffers
+        mapOwnedOffers: mapOwnedOffers,
+        opportunitiesById: opportunitiesById,
+        mapOwnedApplication: mapOwnedApplication,
+        volunteerApplicationViews: volunteerApplicationViews
     };
 });
