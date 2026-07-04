@@ -21,9 +21,13 @@ import {
   type AppLanguage,
 } from '../../src/i18n/language';
 
-// Language options are labelled in their own script — the convention for language
-// pickers so a user who cannot read the current UI still recognises their language.
-const NATIVE_LABEL: Record<AppLanguage, string> = { he: 'עברית', en: 'English' };
+// Language options are labelled in their own script (native names live in the i18n
+// bundles under identical keys, so the label is the same regardless of active UI
+// language) — a user who cannot read the current UI still recognises their language.
+const LABEL_KEY: Record<AppLanguage, string> = {
+  he: 'settings.languageScreen.optionHe',
+  en: 'settings.languageScreen.optionEn',
+};
 
 export default function AppLanguageScreen() {
   const detailStackScreenOptions = useDetailStackScreenOptions();
@@ -66,7 +70,7 @@ export default function AppLanguageScreen() {
           {SUPPORTED_APP_LANGUAGES.map((lang) => (
             <LanguageRow
               key={lang}
-              label={NATIVE_LABEL[lang]}
+              label={t(LABEL_KEY[lang])}
               selected={current === lang}
               disabled={switching}
               onSelect={() => onPick(lang)}

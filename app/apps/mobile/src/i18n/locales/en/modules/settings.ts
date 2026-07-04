@@ -161,6 +161,8 @@ export const settingsEn = {
   languageScreen: {
     title: 'App language',
     intro: 'Choose the interface language of the app.',
+    optionHe: 'עברית',
+    optionEn: 'English',
     restartNote: 'Changing the language will reload the app.',
     saveFailed: 'Changing the language failed. Please try again.',
   },

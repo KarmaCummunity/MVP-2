@@ -161,6 +161,8 @@ export const settingsHe = {
   languageScreen: {
     title: 'שפת האפליקציה',
     intro: 'בחרו את שפת הממשק של האפליקציה.',
+    optionHe: 'עברית',
+    optionEn: 'English',
     restartNote: 'שינוי השפה יטען מחדש את האפליקציה.',
     saveFailed: 'החלפת השפה נכשלה. נסו שוב.',
   },
