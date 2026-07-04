@@ -4476,7 +4476,7 @@ function _profileNotFound(container) {
 
 // Map a glowe_profiles DB row (fromProfileRow output) to the shape that
 // the profile-page rendering code expects (same as static sample profiles).
-function _adaptDbProfile(p) {
+function _adaptDbProfile(p, projects) {
     const isOrg = p.accountType === 'organization';
     return {
         id: p.id,
@@ -4495,9 +4495,24 @@ function _adaptDbProfile(p) {
         website: p.orgWebsite || '',
         volunteers: 0,
         opportunities: 0,
-        projects: [],
+        projects: Array.isArray(projects) ? projects : [],
         status: p.approvalStatus === 'approved' ? 'Verified organization' : 'Pending verification'
     };
+}
+
+// AC5 — load a profile's public projects (glowe_projects rows for this user,
+// excluding drafts). Public read via listAll('projects'); mapping/filtering is
+// delegated to the GloweOrganizations pure helpers. Best-effort: any failure
+// (offline, missing helper) yields an empty list so the profile still renders.
+async function _loadPublicProjects(backend, userId) {
+    if (typeof GloweOrganizations === 'undefined' || !backend || !backend.configured()) return [];
+    try {
+        const rows = await backend.listAll('projects');
+        const mapped = GloweOrganizations.mapProjects(rows || []);
+        return GloweOrganizations.publicProjectsForUser(mapped, userId);
+    } catch (_e) {
+        return [];
+    }
 }
 
 async function initProfilePage() {
@@ -4523,7 +4538,8 @@ async function initProfilePage() {
     try {
         const dbProfile = await backend.fetchProfileById(id);
         if (!dbProfile) { _profileNotFound(container); return; }
-        _renderProfileContent(_adaptDbProfile(dbProfile), container);
+        const projects = await _loadPublicProjects(backend, id);
+        _renderProfileContent(_adaptDbProfile(dbProfile, projects), container);
     } catch {
         _profileNotFound(container);
     }
