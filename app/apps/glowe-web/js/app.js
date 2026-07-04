@@ -179,7 +179,9 @@ async function handleGloweOnboarding(event) {
 }
 
 let activeWishForSupport = null;
-const OPPORTUNITY_STORAGE_KEY = 'gloweOpportunities';
+// Re-fetches the live opportunities board after a publish (FR-GLOWE-007 AC3).
+// Assigned in initOpportunitiesPage; null on other pages.
+let reloadOpportunities = null;
 const PERSONAL_PROFILE_KEY = 'glowePersonalProfile';
 const PERSONAL_PROJECTS_KEY = 'glowePersonalProjects';
 const SAVED_ITEMS_KEY = 'gloweSavedItems';
@@ -403,33 +405,10 @@ const registrationProfileFields = {
 
 window.registrationProfileFields = registrationProfileFields;
 
-function getSavedOpportunities() {
-    try {
-        return JSON.parse(localStorage.getItem(OPPORTUNITY_STORAGE_KEY) || '[]');
-    } catch (error) {
-        return [];
-    }
-}
-
-function saveOpportunityDraft(opportunity) {
-    const saved = getSavedOpportunities();
-    const enriched = {
-        id: `local-${Date.now()}`,
-        featured: true,
-        organization: opportunity.organization || 'GloWe Community Member',
-        orgIcon: getInitials(opportunity.organization || 'GloWe'),
-        ...opportunity
-    };
-    localStorage.setItem(OPPORTUNITY_STORAGE_KEY, JSON.stringify([enriched, ...saved]));
-    apiRequest('/api/opportunities', {
-        method: 'POST',
-        body: JSON.stringify(enriched)
-    });
-    return enriched;
-}
-
+// Opportunities are read live from glowe_opportunities (FR-GLOWE-007 AC1);
+// created ones appear after a server reload, so display is the live store.
 function getAllOpportunitiesForDisplay() {
-    return [...getSavedOpportunities(), ...opportunities];
+    return [...opportunities];
 }
 
 function readJsonStore(key, fallback) {
@@ -2298,12 +2277,8 @@ function getPostId(post, index = 0) {
     return post.id || `${post.authorId || 'post'}-${String(post.title || 'untitled').toLowerCase().replace(/[^a-z0-9]+/g, '-')}-${index}`;
 }
 
-function getAllOpportunitiesIncludingLocal() {
-    return [...getSavedOpportunities(), ...opportunities];
-}
-
 function getOpportunityByAnyId(id) {
-    return getAllOpportunitiesIncludingLocal().find(opp => String(opp.id) === String(id));
+    return opportunities.find(opp => String(opp.id) === String(id));
 }
 
 function getSavedCommunityPosts() {
@@ -3227,6 +3202,13 @@ async function initOpportunitiesPage() {
 
     window.renderOpportunitiesList = renderOpportunities;
 
+    // Re-fetch the live board after a publish so created opportunities appear
+    // with real server ids (working detail links), not a client-side copy.
+    reloadOpportunities = async function () {
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        renderOpportunities();
+    };
+
     // Add filter event listeners
     const locationFilter = document.getElementById('filter-location');
     const fieldFilter = document.getElementById('filter-field');
@@ -3354,37 +3336,35 @@ function closeOpportunityComposer() {
     composer.innerHTML = '';
 }
 
-function handleOpportunitySubmit(event) {
+async function handleOpportunitySubmit(event) {
     event.preventDefault();
     if (!canCreateContent()) return;
-    const title = document.getElementById('opportunity-title').value.trim();
-    const organization = document.getElementById('opportunity-organization').value.trim();
-    const commitment = document.getElementById('opportunity-type').value;
-    const field = document.getElementById('opportunity-field').value;
-    const location = document.getElementById('opportunity-location').value.trim();
-    const duration = document.getElementById('opportunity-duration').value.trim();
-    const description = document.getElementById('opportunity-description').value.trim();
-    const skills = commaList(document.getElementById('opportunity-skills').value);
-    const requirements = commaList(document.getElementById('opportunity-requirements').value);
-
-    saveOpportunityDraft({
-        title,
-        organization,
-        commitment,
-        field,
-        location,
-        duration,
-        description,
-        skills: skills.length ? skills : ['Community Support'],
-        requirements: requirements.length ? requirements : ['Clear communication'],
-        responsibilities: ['Coordinate next steps with interested community members']
-    });
-
-    closeOpportunityComposer();
-    if (typeof window.renderOpportunitiesList === 'function') {
-        window.renderOpportunitiesList();
+    const helpers = (typeof GloweOpportunities !== 'undefined') ? GloweOpportunities : null;
+    const draft = {
+        title: document.getElementById('opportunity-title').value,
+        organization: document.getElementById('opportunity-organization').value,
+        commitment: document.getElementById('opportunity-type').value,
+        field: document.getElementById('opportunity-field').value,
+        location: document.getElementById('opportunity-location').value,
+        duration: document.getElementById('opportunity-duration').value,
+        description: document.getElementById('opportunity-description').value,
+        skills: document.getElementById('opportunity-skills').value,
+        requirements: document.getElementById('opportunity-requirements').value
+    };
+    const check = helpers ? helpers.validateOpportunityDraft(draft) : { valid: Boolean(draft.title) };
+    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please complete the opportunity.'); return; }
+    const payload = helpers ? helpers.normalizeOpportunityDraft(draft) : draft;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    try {
+        await backend.insertOwned('opportunities', payload);
+        closeOpportunityComposer();
+        event.target.reset();
+        if (reloadOpportunities) await reloadOpportunities();
+        showSuccessModal('Opportunity published', `${payload.title} was added to the opportunities board.`);
+    } catch (_e) {
+        showSuccessModal('Could not publish', 'Something went wrong publishing your opportunity. Please try again.');
     }
-    showSuccessModal('Opportunity published', `${title} was added to the opportunities board.`);
 }
 
 // Initialize organizations page
