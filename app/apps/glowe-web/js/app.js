@@ -183,6 +183,10 @@ let activeWishForSupport = null;
 // Assigned in initOpportunitiesPage; null on other pages.
 let reloadOpportunities = null;
 const PERSONAL_PROFILE_KEY = 'glowePersonalProfile';
+// FR-GLOWE-011 AC1 — true while the Personal Area's backend profile fetch is in
+// flight (set in initMyApplicationsPage, cleared when syncPersonalDataFromBackend
+// settles). Drives the profile-card loading skeleton.
+let personalProfileLoading = false;
 const PERSONAL_PROJECTS_KEY = 'glowePersonalProjects';
 const SAVED_ITEMS_KEY = 'gloweSavedItems';
 const POST_COMMENTS_KEY = 'glowePostComments';
@@ -510,6 +514,50 @@ function savePersonalProfile(profile) {
     localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify({ ...getPersonalProfile(), ...profile }));
 }
 
+// FR-GLOWE-011 AC1 — whether a real profile snapshot has already been cached
+// (written by a prior fetchProfile). getPersonalProfile() always returns a
+// merged fallback object, so this checks the raw cache key to distinguish a
+// first-ever load (skeleton) from a returning user (render cached immediately).
+function hasCachedPersonalProfile() {
+    try {
+        const raw = localStorage.getItem(PERSONAL_PROFILE_KEY);
+        if (!raw) return false;
+        const parsed = JSON.parse(raw);
+        return Boolean(parsed && typeof parsed === 'object' && Object.keys(parsed).length > 0);
+    } catch (_e) {
+        return false;
+    }
+}
+
+// FR-GLOWE-011 AC1 — profile-card loading skeleton (sidebar variant), shown
+// while the first backend profile fetch is in flight. Text-free (aria-busy),
+// so no user-visible strings to localize beyond the aria-label.
+function personalProfileSkeletonCard() {
+    return `
+        <div class="personal-profile-card is-loading" aria-busy="true" aria-label="Loading your profile…">
+            <div class="skeleton skeleton-avatar"></div>
+            <div class="skeleton skeleton-line skeleton-line-lg"></div>
+            <div class="skeleton skeleton-line skeleton-line-sm"></div>
+            <div class="skeleton skeleton-pill"></div>
+        </div>`;
+}
+
+// FR-GLOWE-011 AC1 — profile-card loading skeleton (hero variant).
+function personalProfileSkeletonHero() {
+    return `
+        <section class="social-profile-hero is-loading" id="personal-profile" aria-busy="true" aria-label="Loading your profile…">
+            <div class="social-cover"></div>
+            <div class="social-profile-row">
+                <div class="skeleton skeleton-avatar social-avatar"></div>
+                <div class="social-profile-copy">
+                    <div class="skeleton skeleton-line skeleton-line-sm"></div>
+                    <div class="skeleton skeleton-line skeleton-line-lg"></div>
+                    <div class="skeleton skeleton-line"></div>
+                </div>
+            </div>
+        </section>`;
+}
+
 function getPersonalProjects() {
     const defaults = [
         {
@@ -798,12 +846,22 @@ async function syncPersonalDataFromBackend() {
     return Boolean(profile || projects || savedItems);
 }
 
+// FR-GLOWE-011 AC2 — persist the Edit-Profile draft. The whole draft (all
+// fields, not just onboarding) is optimistically cached, then upserted via
+// gloweBackend.upsertProfile (PUT /api/profile). On success the backend returns
+// the canonical persisted row (fromProfileRow — every raw_profile field spread
+// back); we refresh the cache from it so the Personal Area re-renders from
+// server truth rather than the optimistic draft. Returns the saved profile.
 async function persistPersonalProfile(profile) {
     savePersonalProfile(profile);
-    await apiRequest('/api/profile', {
+    const saved = await apiRequest('/api/profile', {
         method: 'PUT',
         body: JSON.stringify({ ...getPersonalProfile(), ...profile })
     });
+    if (saved && typeof saved === 'object') {
+        savePersonalProfile(saved);
+    }
+    return saved;
 }
 
 // FR-GLOWE-011 AC4 (write) — persist a new project. When signed in against a
@@ -886,6 +944,19 @@ async function uploadProfileImageToCloudinary(file) {
     if (!response.ok) throw new Error('Cloudinary upload failed.');
     const payload = await response.json();
     return payload.secure_url;
+}
+
+// FR-GLOWE-011 AC3 — resolve a profile-image upload to a URL. Prefers Supabase
+// Storage (`gloweBackend.uploadAvatar` → `glowe-avatars` bucket) when signed in
+// against a configured backend; falls back to Cloudinary otherwise (guest /
+// unconfigured). The caller validates type + size before calling this.
+async function uploadProfileImage(file) {
+    const backend = window.gloweBackend;
+    if (backend && backend.configured() && isLoggedIn()) {
+        const url = await backend.uploadAvatar(file);
+        if (url) return url;
+    }
+    return uploadProfileImageToCloudinary(file);
 }
 
 function renderPersonalAvatar(profile, className = 'profile-avatar') {
@@ -1717,7 +1788,7 @@ function ensureGlobalUI() {
                         <div class="form-group">
                             <label for="edit-profile-avatar">Profile image</label>
                             <input id="edit-profile-avatar" type="file" accept="image/*">
-                            <small id="edit-profile-upload-status">Optional. When Cloudinary keys are configured, this uploads to Cloudinary.</small>
+                            <small id="edit-profile-upload-status">Optional. JPG, PNG or WebP, up to 5 MB.</small>
                         </div>
                         <button class="btn btn-primary btn-block" type="submit">Save Profile Draft</button>
                     </form>
@@ -2167,12 +2238,19 @@ async function handleProfileEdit(event) {
     };
 
     if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+        const avatarFile = avatarInput.files[0];
+        const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+        const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarFile) : { valid: true };
+        if (!check.valid) {
+            if (status) status.textContent = check.error;
+            return;
+        }
         try {
             if (status) status.textContent = 'Uploading image...';
-            profileDraft.avatarUrl = await uploadProfileImageToCloudinary(avatarInput.files[0]);
+            profileDraft.avatarUrl = await uploadProfileImage(avatarFile);
         } catch (error) {
             if (status) status.textContent = error.message;
-            uploadWarning = ' Image upload needs Cloudinary keys configured on the backend.';
+            uploadWarning = ' Image upload could not be completed.';
         }
     }
 
@@ -5600,11 +5678,17 @@ function initMyApplicationsPage() {
         const savedPosts = getSavedCommunityPosts().slice(0, 3);
         const savedItems = getSavedItems();
         const savedPreview = savedItems.slice(0, 6);
+        // FR-GLOWE-011 AC1 — skeleton only on a first-ever load (fetch in flight,
+        // no cached profile yet); returning users see their cached profile.
+        const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+        const showProfileSkeleton = orgHelpers
+            ? orgHelpers.shouldShowProfileSkeleton(personalProfileLoading, hasCachedPersonalProfile())
+            : false;
 
         container.innerHTML = `
             <div class="personal-shell">
                 <aside class="personal-sidebar">
-                    <div class="personal-profile-card">
+                    ${showProfileSkeleton ? personalProfileSkeletonCard() : `<div class="personal-profile-card">
                         <div class="personal-avatar-wrap">
                             ${renderPersonalAvatar(profile, 'profile-avatar')}
                             <button type="button" onclick="openEditProfile()">Change</button>
@@ -5616,7 +5700,7 @@ function initMyApplicationsPage() {
                             ${(profile.interests || profile.skills || []).slice(0, 4).map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
                         </div>
                         <button class="btn btn-primary btn-block" type="button" onclick="openEditProfile()">Edit Profile</button>
-                    </div>
+                    </div>`}
                     <nav class="personal-nav" aria-label="Personal area sections">
                         <a href="#personal-profile">Overview</a>
                         <a href="#personal-projects">Projects</a>
@@ -5632,7 +5716,7 @@ function initMyApplicationsPage() {
                 </aside>
 
                 <div class="personal-main">
-                    <section class="social-profile-hero" id="personal-profile">
+                    ${showProfileSkeleton ? personalProfileSkeletonHero() : `<section class="social-profile-hero" id="personal-profile">
                         <div class="social-cover"></div>
                         <div class="social-profile-row">
                             ${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}
@@ -5653,7 +5737,7 @@ function initMyApplicationsPage() {
                                 <a class="btn btn-outline" href="settings.html">Settings</a>
                             </div>
                         </div>
-                    </section>
+                    </section>`}
 
                     <section class="personal-stats-grid">
                         <div><strong>${projects.length}</strong><span>Projects</span></div>
@@ -5811,6 +5895,10 @@ function initMyApplicationsPage() {
         `;
     }
 
+    // FR-GLOWE-011 AC1 — a backend profile fetch will run only when signed in
+    // against a configured backend; arm the skeleton for that first load.
+    const profileBackend = window.gloweBackend;
+    personalProfileLoading = Boolean(profileBackend && profileBackend.configured() && isLoggedIn());
     window.renderPersonalArea = renderPersonalArea;
     renderPersonalArea();
     loadMyEvents();
@@ -5820,10 +5908,15 @@ function initMyApplicationsPage() {
     loadMyOpportunities().then(() => renderPersonalArea());
     loadMyOffers().then(() => renderPersonalArea());
     loadMyApplications().then(() => renderPersonalArea());
-    syncPersonalDataFromBackend().then((updated) => {
-        if (updated) renderPersonalArea();
-        loadMyEvents();
-    });
+    // AC1 — clear the skeleton once the profile fetch settles (success or
+    // failure) and always re-render so the real profile (or fallback) shows.
+    syncPersonalDataFromBackend()
+        .catch(() => null)
+        .then(() => {
+            personalProfileLoading = false;
+            renderPersonalArea();
+            loadMyEvents();
+        });
 }
 
 // Populate the personal-area "My Events" list from the user's live event
@@ -6323,6 +6416,11 @@ const GLOWE_TRANSLATIONS = {
         "Live needs": "צרכים פעילים",
         "Loading...": "טוען...",
         "Loading…": "טוען…",
+        "Loading your profile…": "טוען את הפרופיל שלך…",
+        "Uploading image...": "מעלה תמונה...",
+        "Please choose an image file.": "נא לבחור קובץ תמונה.",
+        "Image must be under 5 MB.": "התמונה חייבת להיות עד 5 מגה-בייט.",
+        "Optional. JPG, PNG or WebP, up to 5 MB.": "לא חובה. JPG, ‏PNG או WebP, עד 5 מגה-בייט.",
         "Local community circles": "מעגלי קהילה מקומיים",
         "Local organizations, initiatives, residents, volunteers, and partners bring the real context: what is needed, what already works, who should be involved, and what kind of support would actually help.": "ארגונים מקומיים, יוזמות, תושבים, מתנדבים ושותפים מביאים את ההקשר האמיתי: מה נדרש, מה כבר עובד, מי צריך להיות מעורב ואיזו תמיכה באמת תעזור.",
         "Local roots": "שורשים מקומיים",
@@ -6802,6 +6900,19 @@ const GLOWE_TRANSLATIONS = {
         "Update Project": "עדכון פרויקט",
         "Project updated": "הפרויקט עודכן",
         "Your project changes were saved.": "השינויים בפרויקט נשמרו.",
+        "Project added": "הפרויקט נוסף",
+        "The project now appears in your personal area.": "הפרויקט מופיע כעת באזור האישי שלך.",
+        "My Events": "האירועים שלי",
+        "Loading your event registrations…": "טוען את ההרשמות שלך לאירועים…",
+        "No event registrations yet": "אין עדיין הרשמות לאירועים",
+        "Register for an event from the Volunteer Network and track it here.": "הירשמו לאירוע מרשת ההתנדבות ועקבו אחריו כאן.",
+        "Browse events": "עיון באירועים",
+        "Event cancelled": "האירוע בוטל",
+        "Registered": "רשום",
+        "Pending approval": "ממתין לאישור",
+        "Waitlisted": "ברשימת המתנה",
+        "Not accepted": "לא התקבל",
+        "Cancelled": "בוטל",
         "Report a concern": "דיווח על בעיה",
         "We review every report carefully and confidentially to keep GloWe safe and professional.": "אנחנו בודקים כל דיווח בקפידה ובסודיות כדי לשמור על GloWe בטוחה ומקצועית.",
         "Reporting": "דיווח",
