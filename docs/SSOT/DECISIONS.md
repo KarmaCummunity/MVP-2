@@ -1224,6 +1224,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-167 — English UI locale ships opt-in and machine-translated (delivers D-24 slice)
+
+**Date.** 2026-07-05
+
+**Decision.** The app ships a user-facing UI language switch (`FR-SETTINGS-018`, Hebrew ↔ English) as the first concrete delivery of `D-24` (bilingual MVP). The initial English bundle is **machine-translated** from the Hebrew source and marked for human polish (`TD-176`); Hebrew stays the default and `fallbackLng`. The preference is persisted **device-locally** (web `localStorage`, native `AsyncStorage`) with **no `users` column** for MVP, so it works for anonymous web visitors. Switching language **reloads the app** so module-load reading-direction constants (`rtlTextAlignStart`, `rowDirectionStart`, `webTextRtl`) and native `I18nManager` RTL re-resolve; those centralized helpers were made direction-aware (LTR for English) rather than hardcoded-RTL.
+
+**Rationale.** The PM requested this urgently for both `dev` and `main`. A full human-quality translation of ~3,500 strings plus a live-switch RTL/LTR refactor is multi-week; machine translation + reload-based direction switching delivers a complete, functional English experience now, with polish tracked as debt. Local persistence avoids a migration and an auth dependency on the critical path and matches how the Appearance/theme preference already works. Reloading sidesteps the fact that RN bakes layout direction at load and many style constants are evaluated once at import.
+
+**Alternatives rejected.** Human-quality translation first — not compatible with "urgent". Partial (settings-only) English — mixed-language UX. Live language switch without reload — requires converting ~250 module-load direction constants into reactive hooks across 120+ files; out of scope for the deadline. DB-backed preference — needs a migration and excludes signed-out web visitors; can be added later without breaking the local default.
+
+**Affected docs.** `docs/SSOT/spec/11_settings.md` FR-SETTINGS-018; `docs/SSOT/TECH_DEBT.md` (TD-176/177/178); `apps/mobile/src/i18n/**`, `apps/mobile/app/settings/language.tsx`, `apps/mobile/src/lib/{rtlLayout,rtlTextAlignStart,webRtlStyle}.ts`.
+
+---
+
 ## D-67 — GloWe community-post share keeps social buttons and adds copy-link
 
 **Date.** 2026-07-04
