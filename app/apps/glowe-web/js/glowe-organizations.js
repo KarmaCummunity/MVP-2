@@ -215,6 +215,31 @@
         return views;
     }
 
+    // FR-GLOWE-012 AC1 — map an applicant row returned by
+    // glowe_list_applications_for_opportunity (migration 0220) into the compact
+    // shape the opportunity owner's "Applicants" inbox renders. Distinct from
+    // mapOwnedApplication (the applicant-side view): this is the owner-side view,
+    // carrying the applicant's identity + volunteer answers + contact email (for
+    // the AC4 Connect CTA).
+    function mapApplicantRow(row) {
+        return {
+            id: field(row, 'id', 'id'),
+            applicantId: field(row, 'user_id', 'userId') || '',
+            name: field(row, 'applicant_name', 'applicantName') || '',
+            avatarUrl: field(row, 'applicant_avatar', 'applicantAvatar') || '',
+            email: field(row, 'applicant_email', 'applicantEmail') || '',
+            availability: field(row, 'availability', 'availability') || '',
+            skills: field(row, 'skills', 'skills') || '',
+            motivation: field(row, 'motivation', 'motivation') || '',
+            status: field(row, 'status', 'status') || 'Pending',
+            appliedAt: field(row, 'created_at', 'createdAt') || ''
+        };
+    }
+
+    function mapApplicantRows(rows) {
+        return (Array.isArray(rows) ? rows : []).map(mapApplicantRow);
+    }
+
     // FR-GLOWE-011 AC10 — guard the destructive "Delete Account" action: the
     // user must type the exact word DELETE (case-insensitive, trimmed) before the
     // profile-delete call is allowed to fire.
@@ -275,6 +300,8 @@
         mapOwnedOffers: mapOwnedOffers,
         opportunitiesById: opportunitiesById,
         mapOwnedApplication: mapOwnedApplication,
+        mapApplicantRow: mapApplicantRow,
+        mapApplicantRows: mapApplicantRows,
         volunteerApplicationViews: volunteerApplicationViews,
         isDeleteAccountConfirmed: isDeleteAccountConfirmed,
         shouldShowProfileSkeleton: shouldShowProfileSkeleton,

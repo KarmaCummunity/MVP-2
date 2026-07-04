@@ -516,6 +516,19 @@
         return Array.isArray(data) ? data : [];
     }
 
+    // FR-GLOWE-012 AC1 — opportunity owner's applicant inbox (migration 0220). The
+    // RPC is owner-scoped and returns each glowe_applications row enriched with the
+    // applicant's GloWe display name, avatar and email (for the Connect CTA).
+    async function listApplicationsForOpportunity(opportunityId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_list_applications_for_opportunity', {
+            p_opportunity_id: String(opportunityId)
+        });
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
     // Organizer accept/decline of a registration (migration 0213). Accept applies
     // capacity routing (→ Waitlisted when full); decline requires a reason.
     async function decideEventRegistration(registrationId, decision, note = '') {
@@ -618,6 +631,7 @@
         cancelRegistration,
         listMyRegistrations,
         listEventRegistrations,
+        listApplicationsForOpportunity,
         decideEventRegistration,
         getEventLink,
         cancelEvent,
