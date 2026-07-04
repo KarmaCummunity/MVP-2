@@ -2251,6 +2251,33 @@ function getPostComments() {
     }
 }
 
+// Backend comment cache (FR-GLOWE-008 AC4). Null until loaded / when the
+// backend is not configured, in which case cards fall back to localStorage.
+let backendPostComments = null;
+
+// Fetch all glowe_comments and group them by post_id for the feed render.
+async function loadPostComments() {
+    backendPostComments = null;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    let rows = [];
+    try { rows = await backend.listAll('comments'); } catch (_e) { rows = []; }
+    backendPostComments = (typeof GlowePosts !== 'undefined')
+        ? GlowePosts.groupCommentsByPost(rows || [])
+        : {};
+}
+
+// Comments to render for a post: backend rows (authoritative) merged with any
+// local-only comment just posted; localStorage-only when backend is offline.
+function getPostCommentsFor(postId) {
+    const local = getPostComments()[postId] || [];
+    if (!backendPostComments) return local;
+    const backend = backendPostComments[postId] || [];
+    return (typeof GlowePosts !== 'undefined')
+        ? GlowePosts.mergeCommentLists(backend, local)
+        : backend;
+}
+
 function savePostComment(postId, text) {
     const comments = getPostComments();
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
@@ -2729,7 +2756,7 @@ function renderPostCard(post) {
     const engagementSeed = String(postId).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
     const reactionCount = 12 + (engagementSeed % 48);
     const repostCount = 1 + (engagementSeed % 9);
-    const comments = getPostComments()[postId] || [];
+    const comments = getPostCommentsFor(postId);
     const defaultComments = comments.length ? comments : [
         { author: 'Community Manager', text: 'Useful direction. Who should join the next step?', createdAt: new Date().toISOString() }
     ];
@@ -3252,7 +3279,8 @@ async function initMemberHome() {
 
     await Promise.all([
         fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow),
-        loadCommunityPosts()
+        loadCommunityPosts(),
+        loadPostComments()
     ]);
 
     const profile = getPersonalProfile();
@@ -3693,10 +3721,10 @@ async function initCommunityPage() {
         });
     });
 
-    // Fetch real posts, then render
+    // Fetch real posts + comments, then render
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading posts…</p></div>';
-        await loadCommunityPosts();
+        await Promise.all([loadCommunityPosts(), loadPostComments()]);
         renderFeed();
     }
 
