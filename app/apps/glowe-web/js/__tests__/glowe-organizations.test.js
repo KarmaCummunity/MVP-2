@@ -23,7 +23,10 @@ const {
     volunteerApplicationViews,
     isDeleteAccountConfirmed,
     shouldShowProfileSkeleton,
-    validateAvatarFile
+    validateAvatarFile,
+    mapApplicantRow,
+    mapApplicantRows,
+    canDecideApplication
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -475,5 +478,64 @@ describe('validateAvatarFile', () => {
     it('honors a custom maxBytes option', () => {
         expect(validateAvatarFile({ type: 'image/png', size: 2048 }, { maxBytes: 1024 }).valid).toBe(false);
         expect(validateAvatarFile({ type: 'image/png', size: 512 }, { maxBytes: 1024 }).valid).toBe(true);
+    });
+});
+
+describe('mapApplicantRow (FR-GLOWE-012 AC1)', () => {
+    it('maps a snake_case RPC row to the owner-inbox shape', () => {
+        const v = mapApplicantRow({
+            id: 'app-1',
+            user_id: 'u-9',
+            status: 'Pending',
+            availability: 'Fridays',
+            skills: 'listening',
+            motivation: 'to help',
+            created_at: '2026-07-01T00:00:00Z',
+            applicant_name: 'Yael',
+            applicant_avatar: 'http://x/a.png',
+            applicant_email: 'yael@x.dev'
+        });
+        expect(v).toEqual({
+            id: 'app-1',
+            applicantId: 'u-9',
+            name: 'Yael',
+            avatarUrl: 'http://x/a.png',
+            email: 'yael@x.dev',
+            availability: 'Fridays',
+            skills: 'listening',
+            motivation: 'to help',
+            status: 'Pending',
+            appliedAt: '2026-07-01T00:00:00Z'
+        });
+    });
+
+    it('defaults status to Pending and blanks missing fields', () => {
+        const v = mapApplicantRow({ id: 'app-2', user_id: 'u-1' });
+        expect(v.status).toBe('Pending');
+        expect(v.name).toBe('');
+        expect(v.email).toBe('');
+        expect(v.motivation).toBe('');
+    });
+
+    it('mapApplicantRows maps an array and tolerates non-arrays', () => {
+        expect(mapApplicantRows([{ id: 'a', user_id: 'u' }])).toHaveLength(1);
+        expect(mapApplicantRows(null)).toEqual([]);
+        expect(mapApplicantRows(undefined)).toEqual([]);
+    });
+});
+
+describe('canDecideApplication (FR-GLOWE-012 AC2)', () => {
+    it('is true only for Pending applications', () => {
+        expect(canDecideApplication('Pending')).toBe(true);
+    });
+
+    it('is false for already-decided or missing statuses', () => {
+        expect(canDecideApplication('Accepted')).toBe(false);
+        expect(canDecideApplication('Declined')).toBe(false);
+        expect(canDecideApplication('Waitlisted')).toBe(false);
+        expect(canDecideApplication('Cancelled')).toBe(false);
+        expect(canDecideApplication('')).toBe(false);
+        expect(canDecideApplication(null)).toBe(false);
+        expect(canDecideApplication(undefined)).toBe(false);
     });
 });

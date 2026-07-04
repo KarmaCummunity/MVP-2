@@ -4336,6 +4336,21 @@ export type Database = {
         Args: { p_opportunity_id: string }
         Returns: string
       }
+      glowe_list_applications_for_opportunity: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          applicant_avatar: string
+          applicant_email: string
+          applicant_name: string
+          availability: string
+          created_at: string
+          id: string
+          motivation: string
+          skills: string
+          status: string
+          user_id: string
+        }[]
+      }
       glowe_list_event_registrations: {
         Args: { p_opportunity_id: string }
         Returns: {
@@ -4472,6 +4487,32 @@ export type Database = {
         SetofOptions: {
           from: "*"
           to: "glowe_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      glowe_update_application_status: {
+        Args: { p_application_id: string; p_decision: string }
+        Returns: {
+          availability: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          motivation: string | null
+          opportunity_id: string
+          rejection_note: string | null
+          skills: string | null
+          status: string
+          submitted_comment: string | null
+          submitted_email: string | null
+          submitted_phone: string | null
+          user_id: string
+          waitlist_position: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_applications"
           isOneToOne: true
           isSetofReturn: false
         }

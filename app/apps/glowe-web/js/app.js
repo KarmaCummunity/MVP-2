@@ -5316,9 +5316,12 @@ async function initOpportunityDetailPage() {
     const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
     const isEvent = events ? events.isEvent(opportunity) : false;
 
+    // The owner manages applicants instead of applying to their own opportunity.
+    const ownerViewing = !isEvent && isLoggedIn() && isOpportunityOwner(opportunity);
+
     // Events use the registration panel; plain opportunities keep the apply-modal.
     const applyBtn = document.getElementById('apply-btn');
-    if (applyBtn && !isEvent) {
+    if (applyBtn && !isEvent && !ownerViewing) {
         applyBtn.addEventListener('click', function() {
             if (!isLoggedIn()) {
                 sessionStorage.setItem('pendingOpportunityApplication', opportunityId);
@@ -5327,9 +5330,92 @@ async function initOpportunityDetailPage() {
                 openModal('apply-modal');
             }
         });
+    } else if (applyBtn && ownerViewing) {
+        applyBtn.hidden = true;
     }
 
     if (isEvent) setupEventRegistration(opportunity, events);
+    else if (ownerViewing) renderOpportunityApplicants(opportunity);
+}
+
+// FR-GLOWE-012 AC1 — true when the signed-in user published this opportunity.
+function isOpportunityOwner(opportunity) {
+    const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    return Boolean(user && opportunity && opportunity.ownerId && user.id === opportunity.ownerId);
+}
+
+// FR-GLOWE-012 AC1 — render the opportunity owner's "Applicants" inbox
+// (read-only for this slice). Fetches applications via the owner-scoped
+// glowe_list_applications_for_opportunity RPC (migration 0220) and lists each
+// applicant's name, volunteer answers, status and applied date.
+async function renderOpportunityApplicants(opportunity) {
+    const area = document.getElementById('opp-applicants');
+    if (!area) return;
+    area.hidden = false;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { area.hidden = true; return; }
+    area.innerHTML = '<h2>Applicants</h2><p class="muted-note">Loading applicants…</p>';
+    let rows = [];
+    try {
+        rows = await backend.listApplicationsForOpportunity(opportunity.id);
+    } catch (_e) {
+        area.innerHTML = '<h2>Applicants</h2><p class="event-register-error">Could not load applicants.</p>';
+        return;
+    }
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const views = orgHelpers ? orgHelpers.mapApplicantRows(rows) : [];
+    area.innerHTML = opportunityApplicantsHtml(views);
+    area.querySelectorAll('[data-app][data-decide]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            handleApplicationDecision(opportunity, btn.getAttribute('data-app'), btn.getAttribute('data-decide'));
+        });
+    });
+}
+
+// Build the applicants-inbox markup from mapped applicant views.
+function opportunityApplicantsHtml(views) {
+    const header = `<h2>Applicants <span class="applicant-count">(${views.length})</span></h2>`;
+    if (!views.length) {
+        return `${header}<p class="muted-note">No applications yet.</p>`;
+    }
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const rows = views.map(function (v) {
+        const date = v.appliedAt ? new Date(v.appliedAt).toLocaleDateString() : '';
+        const canDecide = orgHelpers ? orgHelpers.canDecideApplication(v.status) : v.status === 'Pending';
+        const actions = canDecide ? `
+            <div class="applicant-actions">
+                <button class="btn btn-primary btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Accepted">Accept</button>
+                <button class="btn btn-outline btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Declined">Decline</button>
+            </div>` : '';
+        return `
+        <li class="applicant-row">
+            <div class="applicant-head">
+                <strong>${escapeHtml(v.name || 'GloWe volunteer')}</strong>
+                <span class="applicant-status status-${escapeHtml(String(v.status).toLowerCase())}">${escapeHtml(v.status)}</span>
+            </div>
+            ${v.availability ? `<p class="applicant-field"><strong>Availability:</strong> ${escapeHtml(v.availability)}</p>` : ''}
+            ${v.skills ? `<p class="applicant-field"><strong>Skills:</strong> ${escapeHtml(v.skills)}</p>` : ''}
+            ${v.motivation ? `<p class="applicant-field"><strong>Motivation:</strong> ${escapeHtml(v.motivation)}</p>` : ''}
+            ${date ? `<p class="applicant-meta">Applied ${escapeHtml(date)}</p>` : ''}
+            ${actions}
+        </li>`;
+    }).join('');
+    return `${header}<ul class="applicant-list">${rows}</ul>`;
+}
+
+// FR-GLOWE-012 AC2 — owner accept/decline of an application. Fires the
+// owner-scoped RPC via the backend, then re-renders the inbox from server truth.
+async function handleApplicationDecision(opportunity, applicationId, decision) {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    try {
+        await backend.updateApplicationStatus(applicationId, decision);
+    } catch (_e) {
+        const area = document.getElementById('opp-applicants');
+        if (area) area.insertAdjacentHTML('afterbegin', '<p class="event-register-error">Could not update the application. Please try again.</p>');
+        return;
+    }
+    renderOpportunityApplicants(opportunity);
 }
 
 // Replace the apply card with an event summary + registration panel (FR-GLOWE-007-C).
@@ -6421,6 +6507,17 @@ const GLOWE_TRANSLATIONS = {
         "Please choose an image file.": "נא לבחור קובץ תמונה.",
         "Image must be under 5 MB.": "התמונה חייבת להיות עד 5 מגה-בייט.",
         "Optional. JPG, PNG or WebP, up to 5 MB.": "לא חובה. JPG, ‏PNG או WebP, עד 5 מגה-בייט.",
+        "Applicants": "מועמדים",
+        "Loading applicants…": "טוען מועמדים…",
+        "Could not load applicants.": "לא ניתן לטעון את המועמדים.",
+        "No applications yet.": "אין עדיין מועמדויות.",
+        "Accept": "אישור",
+        "Decline": "דחייה",
+        "Could not update the application. Please try again.": "לא ניתן לעדכן את המועמדות. נסו שוב.",
+        "GloWe volunteer": "מתנדב/ת GloWe",
+        "Availability:": "זמינות:",
+        "Skills:": "כישורים:",
+        "Motivation:": "מוטיבציה:",
         "Local community circles": "מעגלי קהילה מקומיים",
         "Local organizations, initiatives, residents, volunteers, and partners bring the real context: what is needed, what already works, who should be involved, and what kind of support would actually help.": "ארגונים מקומיים, יוזמות, תושבים, מתנדבים ושותפים מביאים את ההקשר האמיתי: מה נדרש, מה כבר עובד, מי צריך להיות מעורב ואיזו תמיכה באמת תעזור.",
         "Local roots": "שורשים מקומיים",
