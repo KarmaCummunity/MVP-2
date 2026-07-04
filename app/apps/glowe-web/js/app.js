@@ -7387,7 +7387,6 @@ const GLOWE_TRANSLATIONS = {
         "This event has ended.": "האירוע הסתיים.",
         "This event is cancelled.": "האירוע בוטל.",
         "This event is no longer open for registration.": "האירוע כבר אינו פתוח להרשמה.",
-        "Register for an event from the Volunteer Network and track it here.": "הירשמו לאירוע מרשת ההתנדבות ועקבו אחריו כאן.",
         "Registration:": "הרשמה:",
         "Status:": "סטטוס:",
         "Type:": "סוג:",
