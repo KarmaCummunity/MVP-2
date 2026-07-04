@@ -1072,6 +1072,45 @@ export type Database = {
         }
         Relationships: []
       }
+      glowe_content_translations: {
+        Row: {
+          confidence: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          field: string
+          id: string
+          model: string | null
+          source_language: string | null
+          target_language: string
+          translated_text: string
+        }
+        Insert: {
+          confidence?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          field: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language: string
+          translated_text: string
+        }
+        Update: {
+          confidence?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          field?: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language?: string
+          translated_text?: string
+        }
+        Relationships: []
+      }
       glowe_forum_groups: {
         Row: {
           created_at: string

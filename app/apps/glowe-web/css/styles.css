@@ -5921,3 +5921,21 @@ body.glowe-member-home main > section:not(#member-home) {
         flex: 1 1 100%;
     }
 }
+
+/* FR-TRANSLATE-005 — "Show original" toggle injected on translated UGC cards. */
+.tr-toggle {
+    display: inline-block;
+    margin-top: 8px;
+    padding: 2px 8px;
+    border: 1px solid var(--primary-light);
+    border-radius: 999px;
+    background: transparent;
+    color: var(--primary-color);
+    font-size: 0.78rem;
+    font-weight: 600;
+    cursor: pointer;
+}
+
+.tr-toggle:hover {
+    background: var(--primary-light);
+}

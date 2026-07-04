@@ -1,11 +1,14 @@
-// supabase/functions/translate/gemini.ts
+// supabase/functions/_shared/translation/gemini.ts
 // Free Gemini Flash tier (dev). NOTE: the free tier is NOT zero-retention/DPA;
 // upgrading to a paid DPA model (D-63/D-65) is a key + model-name change only.
+// Shared by the KC `translate` and GLOWE `glowe-translate` Edge Functions.
 
 import type { ProviderInput, ProviderResult, TranslationProvider } from './provider.ts';
 
 const API_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-1.5-flash';
+// Default to gemini-2.0-flash: Google retired the free tier for the 1.5 models
+// (free_tier_requests limit 0), so 1.5-flash is a dead default for free-tier use.
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash';
 const ENDPOINT = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
@@ -50,15 +53,29 @@ function parseResult(raw: string): ProviderResult {
   return { translatedText: obj.translatedText, detectedSourceLanguage: src, confidence: conf, model: MODEL };
 }
 
+// Transient Gemini statuses worth one quick retry (rate-limit + upstream blips).
+const RETRYABLE = new Set([429, 500, 503]);
+const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
+
 export class GeminiFlashProvider implements TranslationProvider {
   async translate(input: ProviderInput): Promise<ProviderResult> {
     if (!API_KEY) throw new Error('GEMINI_API_KEY missing');
-    const res = await fetch(`${ENDPOINT(MODEL)}?key=${API_KEY}`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify(buildBody(input)),
-    });
-    if (!res.ok) throw new Error(`gemini http ${res.status}`);
-    return parseResult(await res.text());
+    const body = JSON.stringify(buildBody(input));
+    // One retry on transient failures; the free tier rate-limits parallel bursts.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      const res = await fetch(`${ENDPOINT(MODEL)}?key=${API_KEY}`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body,
+      });
+      if (res.ok) return parseResult(await res.text());
+      const detail = (await res.text()).slice(0, 300);
+      if (RETRYABLE.has(res.status) && attempt === 0) {
+        await sleep(600);
+        continue;
+      }
+      throw new Error(`gemini http ${res.status} (${MODEL}): ${detail}`);
+    }
+    throw new Error(`gemini exhausted retries (${MODEL})`);
   }
 }
