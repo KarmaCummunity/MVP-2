@@ -9,6 +9,7 @@ import { useTranslation } from 'react-i18next';
 import { useTheme, spacing } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
 import type { IdentityRoleForViewedProfile } from '@kc/domain';
+import { TranslatableText, type TranslatableStatus } from './TranslatableText';
 import { PROFILE_GRID_COLUMNS, usePostGridCardWidth } from '../hooks/useShellContentWidth';
 import { postOwnerDisplayLabel } from '../lib/postOwnerDisplayLabel';
 import { getSupabasePublicImageUrl, getSupabaseImageThumbUrl } from '../lib/imageUrl';
@@ -33,6 +34,11 @@ interface PostCardGridProps {
   identityRole?: IdentityRoleForViewedProfile;
   /** Forwarded to post detail for D-31 identity projection on closed-posts grids. */
   closedPostsProfileUserId?: string;
+  /** FR-TRANSLATE-003 — reader-language translated fields (feed viewport-gated). */
+  translatedFields?: { title?: string; description?: string };
+  /** FR-TRANSLATE-003 — per-field translation status; defaults to 'source'. */
+  titleStatus?: TranslatableStatus;
+  descriptionStatus?: TranslatableStatus;
 }
 
 function PostCardGridInner({
@@ -43,6 +49,10 @@ function PostCardGridInner({
   gap = spacing.sm,
   identityRole,
   closedPostsProfileUserId,
+  translatedFields,
+  titleStatus,
+  // descriptionStatus is accepted for the card contract but the grid card
+  // renders only the title; description is translated for post-detail reuse.
 }: PostCardGridProps) {
   const router = useRouter();
   const { t } = useTranslation();
@@ -168,12 +178,16 @@ function PostCardGridInner({
         ) : null}
 
         <View style={styles.titleRow}>
-          <Text
-            style={[styles.title, isProfileGrid && styles.titleDense]}
-            numberOfLines={2}
-          >
-            {post.title}
-          </Text>
+          <View style={styles.titleCol}>
+            <TranslatableText
+              source={post.title}
+              translated={translatedFields?.title}
+              status={titleStatus ?? 'source'}
+              numberOfLines={2}
+              style={[styles.title, isProfileGrid && styles.titleDense]}
+              indicatorStyle={styles.translatingIndicator}
+            />
+          </View>
           <View style={[styles.categoryChip, isProfileGrid && styles.categoryChipDense]}>
             <Text
               style={[styles.categoryChipText, isProfileGrid && styles.categoryChipTextDense]}

@@ -8,8 +8,10 @@ import {
   TouchableOpacity,
   View,
 } from 'react-native';
+import type { ViewToken } from 'react-native';
 import { makeUseStyles, spacing, typography, useTheme } from '@kc/ui';
 import type { PostWithOwner } from '@kc/application';
+import type { useTranslatedPosts } from '../hooks/useTranslatedPosts';
 import { HOME_FEED_GRID_COLUMNS } from '../hooks/useShellContentWidth';
 import { useShellTabBarScrollInset } from '../navigation/useShellTabBarVisibility';
 import { PostCardGrid } from './PostCardGrid';
@@ -34,6 +36,11 @@ interface Props {
   ListHeaderComponent?: React.ReactNode;
   /** Forwarded to the underlying FlatList — used by the feed for scroll-to-top. */
   listRef?: React.Ref<FlatList<PostWithOwner>>;
+  /** FR-TRANSLATE-003 — viewport tracking for viewport-gated translation. */
+  onViewableItemsChanged?: (info: { viewableItems: ViewToken[]; changed: ViewToken[] }) => void;
+  viewabilityConfig?: { itemVisiblePercentThreshold?: number; minimumViewTime?: number };
+  /** FR-TRANSLATE-003 — translated fields/status accessor for visible posts. */
+  translations?: ReturnType<typeof useTranslatedPosts>;
 }
 
 export function PostFeedList({
@@ -49,6 +56,9 @@ export function PostFeedList({
   emptyComponent,
   ListHeaderComponent,
   listRef,
+  onViewableItemsChanged,
+  viewabilityConfig,
+  translations,
 }: Props) {
   const styles = usePostFeedListStyles();
   const { colors } = useTheme();
@@ -61,9 +71,15 @@ export function PostFeedList({
 
   const renderItem = useCallback(
     ({ item }: { item: PostWithOwner }) => (
-      <PostCardGrid post={item} onCardPress={onCardPress} />
+      <PostCardGrid
+        post={item}
+        onCardPress={onCardPress}
+        translatedFields={translations?.getTranslatedFields(item.postId)}
+        titleStatus={translations?.getStatus(item.postId, 'title')}
+        descriptionStatus={translations?.getStatus(item.postId, 'description')}
+      />
     ),
-    [onCardPress],
+    [onCardPress, translations],
   );
 
   const keyExtractor = useCallback((p: PostWithOwner) => p.postId, []);
@@ -119,6 +135,8 @@ export function PostFeedList({
           tintColor={colors.primary}
         />
       }
+      onViewableItemsChanged={onViewableItemsChanged}
+      viewabilityConfig={viewabilityConfig}
       onEndReached={onEndReached}
       onEndReachedThreshold={0.4}
       showsVerticalScrollIndicator={false}

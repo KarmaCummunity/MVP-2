@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, Text, TouchableOpacity, View } from 'react-native';
+import { AccessibilityInfo, ScrollView, Text, TouchableOpacity, View } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { useTranslation } from 'react-i18next';
@@ -12,6 +12,9 @@ import { PostDetailNotices } from '../../src/components/post-detail/PostDetailNo
 import { RecipientCallout } from '../../src/components/post-detail/RecipientCallout';
 import { RecipientUnmarkBar } from '../../src/components/post-detail/RecipientUnmarkBar';
 import { MotionEntry, ENTRY_DELAY } from '../../src/components/ui/MotionEntry';
+import { TranslatableText } from '../../src/components/TranslatableText';
+import { useReaderLanguage } from '../../src/hooks/useReaderLanguage';
+import { useTranslatedPosts } from '../../src/hooks/useTranslatedPosts';
 import { usePostDetailStyles } from './postDetailScreen.styles';
 
 export type PostDetailScrollContentProps = Readonly<{
@@ -40,6 +43,22 @@ export function PostDetailScrollContent({
   const styles = usePostDetailStyles();
   const isClosed = post.status === 'closed_delivered';
   const isOpen = post.status === 'open';
+
+  const readerLanguage = useReaderLanguage();
+  const translations = useTranslatedPosts([post], readerLanguage);
+  const [showOriginal, setShowOriginal] = React.useState(false);
+  const fields = translations.getTranslatedFields(post.postId);
+  const titleStatus = translations.getStatus(post.postId, 'title');
+  const descriptionStatus = translations.getStatus(post.postId, 'description');
+  const hasAnyTranslation = !!fields.title || !!fields.description;
+  const hasDescription = post.description != null && post.description !== '';
+
+  const onToggleOriginal = React.useCallback(() => {
+    setShowOriginal((v) => !v);
+    AccessibilityInfo.announceForAccessibility(
+      !showOriginal ? t('post.showOriginal') : t('post.showTranslation'),
+    );
+  }, [showOriginal, t]);
 
   return (
     <ScrollView
@@ -71,7 +90,29 @@ export function PostDetailScrollContent({
               <View style={styles.categoryChip}>
                 <Text style={styles.categoryChipText}>{t(`post.category.${post.category}`)}</Text>
               </View>
-              <Text style={styles.title}>{post.title}</Text>
+              <TranslatableText
+                source={post.title}
+                translated={fields.title}
+                status={showOriginal ? 'source' : titleStatus}
+                style={styles.title}
+              />
+              {hasAnyTranslation ? (
+                <View style={styles.translationBar}>
+                  <Text style={styles.autoTranslatedLabel}>{t('post.autoTranslated')}</Text>
+                  <TouchableOpacity
+                    accessibilityRole="button"
+                    accessibilityLabel={
+                      showOriginal ? t('post.showTranslation') : t('post.showOriginal')
+                    }
+                    hitSlop={{ top: 8, bottom: 8, left: 8, right: 8 }}
+                    onPress={onToggleOriginal}
+                  >
+                    <Text style={styles.showOriginalLink}>
+                      {showOriginal ? t('post.showTranslation') : t('post.showOriginal')}
+                    </Text>
+                  </TouchableOpacity>
+                </View>
+              ) : null}
             </View>
           </View>
 
@@ -81,8 +122,13 @@ export function PostDetailScrollContent({
 
           {isClosed ? <ClosedDeliveredExtras post={post} viewerId={viewerId} /> : null}
 
-          {post.description != null && post.description !== '' ? (
-            <Text style={styles.description}>{post.description}</Text>
+          {hasDescription ? (
+            <TranslatableText
+              source={post.description as string}
+              translated={fields.description}
+              status={showOriginal ? 'source' : descriptionStatus}
+              style={styles.description}
+            />
           ) : null}
 
           {isOpen ? (
