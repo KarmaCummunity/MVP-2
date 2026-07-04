@@ -3074,17 +3074,17 @@ function openWishDetail(wishId) {
     const content = document.getElementById('wish-detail-content');
     content.innerHTML = `
         <button class="close-modal" type="button" aria-label="Close wish details" onclick="closeModal('wish-detail-modal')">&times;</button>
-        <div class="wish-detail-scroll">
+        <div class="wish-detail-scroll" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <div class="wish-detail-hero" style="--tag-color: ${style.color}">
                 <span class="wish-type" style="background:${style.color}">${wish.type}</span>
-                <h2>${wish.title}</h2>
+                <h2 data-tr-field="title">${wish.title}</h2>
                 <a class="wish-author" href="profile.html?id=${wish.authorId}">
                     ${renderEntityMark(wish.author)}
                     <span>${wish.author}</span>
                     <small>${wish.time}</small>
                 </a>
             </div>
-            <p class="wish-detail-description">${wish.description}</p>
+            <p class="wish-detail-description" data-tr-field="text">${wish.description}</p>
             <div class="opportunity-details">
                 <span class="opportunity-detail">${wish.location}</span>
                 <span class="opportunity-detail">${wish.areas.join(', ')}</span>
@@ -5252,6 +5252,24 @@ function _renderProfileContent(profile, container) {
 }
 
 // Initialize opportunity detail page
+// FR-TRANSLATE-005 AC7 — tag the opportunity detail page's scalar prose (title +
+// description) as a translatable card, then nudge the GloweTranslate driver.
+// `.opportunity-main` wraps both fields; only the two tagged elements are read.
+function markOpportunityDetailForTranslation(opportunityId) {
+    const card = document.querySelector('.opportunity-main');
+    if (!card || !opportunityId) return;
+    card.setAttribute('data-tr-card', '');
+    card.setAttribute('data-tr-type', 'glowe_opportunity');
+    card.setAttribute('data-tr-id', opportunityId);
+    const title = document.getElementById('opp-title');
+    if (title) title.setAttribute('data-tr-field', 'title');
+    const description = document.getElementById('opp-description');
+    if (description) description.setAttribute('data-tr-field', 'description');
+    if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
+        window.GloweTranslate.scan();
+    }
+}
+
 async function initOpportunityDetailPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const opportunityId = urlParams.get('id');
@@ -5281,6 +5299,11 @@ async function initOpportunityDetailPage() {
     document.getElementById('opp-duration').textContent = opportunity.duration;
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
     document.getElementById('opp-description').textContent = opportunity.description;
+
+    // FR-TRANSLATE-005 AC7 — mark the detail prose for demand-driven translation
+    // (title + description are verbatim scalar columns). Arrays (skills,
+    // requirements, responsibilities) stay untranslated (TD-135).
+    markOpportunityDetailForTranslation(opportunity.id);
     
     const requirementsList = document.getElementById('opp-requirements');
     requirementsList.innerHTML = (opportunity.requirements || []).map(req => `<li>${escapeHtml(req)}</li>`).join('');
