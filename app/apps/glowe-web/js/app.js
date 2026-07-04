@@ -3141,6 +3141,7 @@ async function renderWishOffers(wish) {
     const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
     const views = orgHelpers ? orgHelpers.mapOffersForOwner(rows) : [];
     area.innerHTML = wishOffersHtml(views);
+    wireConnectButtons(area);
 }
 
 // Build the offers-inbox markup from mapped offer views.
@@ -3160,6 +3161,7 @@ function wishOffersHtml(views) {
             ${v.availability ? `<p class="applicant-field"><strong>Availability:</strong> ${escapeHtml(v.availability)}</p>` : ''}
             ${v.contactPreference ? `<p class="applicant-field"><strong>Preferred contact:</strong> ${escapeHtml(v.contactPreference)}</p>` : ''}
             ${date ? `<p class="applicant-meta">Offered ${escapeHtml(date)}</p>` : ''}
+            ${connectButtonHtml(v) ? `<div class="applicant-actions">${connectButtonHtml(v)}</div>` : ''}
         </li>`;
     }).join('');
     return `${header}<ul class="applicant-list">${rows}</ul>`;
@@ -5428,6 +5430,28 @@ async function renderOpportunityApplicants(opportunity) {
             handleApplicationDecision(opportunity, btn.getAttribute('data-app'), btn.getAttribute('data-decide'));
         });
     });
+    wireConnectButtons(area);
+}
+
+// FR-GLOWE-012 AC4 — wire the delegated "Connect" CTA handlers within a rendered
+// inbox (shared by the applicants and offers lists). Each button carries the
+// contact email in data-connect.
+function wireConnectButtons(area) {
+    if (!area) return;
+    area.querySelectorAll('[data-connect]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            handleConnectEmail(btn.getAttribute('data-connect'));
+        });
+    });
+}
+
+// FR-GLOWE-012 AC4 — the "Connect" CTA button markup, rendered only when the
+// view carries a contact email.
+function connectButtonHtml(view) {
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const hasEmail = orgHelpers ? orgHelpers.hasContactEmail(view) : Boolean(view && view.email);
+    if (!hasEmail) return '';
+    return `<button class="btn btn-outline btn-sm" type="button" data-connect="${escapeHtml(String(view.email))}">Connect</button>`;
 }
 
 // Build the applicants-inbox markup from mapped applicant views.
@@ -5440,11 +5464,12 @@ function opportunityApplicantsHtml(views) {
     const rows = views.map(function (v) {
         const date = v.appliedAt ? new Date(v.appliedAt).toLocaleDateString() : '';
         const canDecide = orgHelpers ? orgHelpers.canDecideApplication(v.status) : v.status === 'Pending';
-        const actions = canDecide ? `
-            <div class="applicant-actions">
+        const decideButtons = canDecide ? `
                 <button class="btn btn-primary btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Accepted">Accept</button>
-                <button class="btn btn-outline btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Declined">Decline</button>
-            </div>` : '';
+                <button class="btn btn-outline btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Declined">Decline</button>` : '';
+        const connectButton = connectButtonHtml(v);
+        const actions = (decideButtons || connectButton) ? `
+            <div class="applicant-actions">${decideButtons}${connectButton}</div>` : '';
         return `
         <li class="applicant-row">
             <div class="applicant-head">
@@ -5459,6 +5484,42 @@ function opportunityApplicantsHtml(views) {
         </li>`;
     }).join('');
     return `${header}<ul class="applicant-list">${rows}</ul>`;
+}
+
+// FR-GLOWE-012 AC4 — copy text (a contact email) to the clipboard for the
+// "Connect" CTA. Prefers the async Clipboard API, falling back to a temporary
+// textarea + document.execCommand('copy') where it is unavailable (older
+// browsers, insecure contexts). Returns true on success.
+async function copyTextToClipboard(text) {
+    const value = String(text || '');
+    if (!value) return false;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(value);
+            return true;
+        }
+    } catch (_e) { /* fall through to the legacy path */ }
+    try {
+        const ta = document.createElement('textarea');
+        ta.value = value;
+        ta.setAttribute('readonly', '');
+        ta.style.position = 'absolute';
+        ta.style.left = '-9999px';
+        document.body.appendChild(ta);
+        ta.select();
+        const ok = document.execCommand('copy');
+        document.body.removeChild(ta);
+        return ok;
+    } catch (_e) {
+        return false;
+    }
+}
+
+// FR-GLOWE-012 AC4 — the "Connect" CTA copies the applicant/offerer contact
+// email to the clipboard and confirms (Phase B). Phase C will route to KC DMs.
+async function handleConnectEmail(email) {
+    const ok = await copyTextToClipboard(email);
+    showSuccessModal('Connect', ok ? 'Email copied to clipboard' : 'Could not copy the email.');
 }
 
 // FR-GLOWE-012 AC2 — owner accept/decline of an application. Fires the
@@ -6577,6 +6638,9 @@ const GLOWE_TRANSLATIONS = {
         "Could not load offers.": "לא ניתן לטעון את ההצעות.",
         "No offers yet.": "אין עדיין הצעות.",
         "Preferred contact:": "אופן יצירת קשר מועדף:",
+        "Connect": "יצירת קשר",
+        "Email copied to clipboard": "האימייל הועתק ללוח",
+        "Could not copy the email.": "לא ניתן היה להעתיק את האימייל.",
         "GloWe volunteer": "מתנדב/ת GloWe",
         "Availability:": "זמינות:",
         "Skills:": "כישורים:",

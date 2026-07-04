@@ -269,6 +269,12 @@
         return String(status || '') === 'Pending';
     }
 
+    // FR-GLOWE-012 AC4 — the "Connect" CTA (copy contact email) only renders when
+    // the applicant/offer view actually carries a non-empty email address.
+    function hasContactEmail(view) {
+        return Boolean(view && String(view.email || '').trim());
+    }
+
     // FR-GLOWE-011 AC10 — guard the destructive "Delete Account" action: the
     // user must type the exact word DELETE (case-insensitive, trimmed) before the
     // profile-delete call is allowed to fire.
@@ -332,6 +338,7 @@
         mapApplicantRow: mapApplicantRow,
         mapApplicantRows: mapApplicantRows,
         canDecideApplication: canDecideApplication,
+        hasContactEmail: hasContactEmail,
         mapOfferForOwner: mapOfferForOwner,
         mapOffersForOwner: mapOffersForOwner,
         volunteerApplicationViews: volunteerApplicationViews,

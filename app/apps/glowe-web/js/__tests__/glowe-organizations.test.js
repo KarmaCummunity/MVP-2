@@ -28,7 +28,8 @@ const {
     mapApplicantRows,
     canDecideApplication,
     mapOfferForOwner,
-    mapOffersForOwner
+    mapOffersForOwner,
+    hasContactEmail
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -580,5 +581,19 @@ describe('mapOfferForOwner (FR-GLOWE-012 AC3)', () => {
         expect(mapOffersForOwner([{ id: 'o', user_id: 'u' }])).toHaveLength(1);
         expect(mapOffersForOwner(null)).toEqual([]);
         expect(mapOffersForOwner(undefined)).toEqual([]);
+    });
+});
+
+describe('hasContactEmail (FR-GLOWE-012 AC4)', () => {
+    it('is true when the view carries a non-empty email', () => {
+        expect(hasContactEmail({ email: 'a@b.dev' })).toBe(true);
+    });
+
+    it('is false for blank / missing emails and non-objects', () => {
+        expect(hasContactEmail({ email: '' })).toBe(false);
+        expect(hasContactEmail({ email: '   ' })).toBe(false);
+        expect(hasContactEmail({})).toBe(false);
+        expect(hasContactEmail(null)).toBe(false);
+        expect(hasContactEmail(undefined)).toBe(false);
     });
 });
