@@ -19,7 +19,8 @@ const {
     mapOwnedOffers,
     opportunitiesById,
     mapOwnedApplication,
-    volunteerApplicationViews
+    volunteerApplicationViews,
+    isDeleteAccountConfirmed
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -387,5 +388,21 @@ describe('volunteerApplicationViews', () => {
     it('returns an empty array for non-array input', () => {
         expect(volunteerApplicationViews(null, byId, isEvent)).toEqual([]);
         expect(volunteerApplicationViews(undefined, byId, isEvent)).toEqual([]);
+    });
+});
+
+describe('isDeleteAccountConfirmed', () => {
+    it('accepts the exact word DELETE, case-insensitive and trimmed', () => {
+        expect(isDeleteAccountConfirmed('DELETE')).toBe(true);
+        expect(isDeleteAccountConfirmed('  delete  ')).toBe(true);
+        expect(isDeleteAccountConfirmed('Delete')).toBe(true);
+    });
+
+    it('rejects anything else', () => {
+        expect(isDeleteAccountConfirmed('')).toBe(false);
+        expect(isDeleteAccountConfirmed('DELET')).toBe(false);
+        expect(isDeleteAccountConfirmed('delete my account')).toBe(false);
+        expect(isDeleteAccountConfirmed(undefined)).toBe(false);
+        expect(isDeleteAccountConfirmed(null)).toBe(false);
     });
 });

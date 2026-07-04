@@ -205,6 +205,13 @@
         return views;
     }
 
+    // FR-GLOWE-011 AC10 — guard the destructive "Delete Account" action: the
+    // user must type the exact word DELETE (case-insensitive, trimmed) before the
+    // profile-delete call is allowed to fire.
+    function isDeleteAccountConfirmed(input) {
+        return String(input || '').trim().toUpperCase() === 'DELETE';
+    }
+
     // FR-GLOWE-011 AC4 — decide which project list the Personal Area renders.
     // Once a backend load has completed we trust it (even when empty, so a user
     // with no real projects sees an empty state rather than the demo/local
@@ -233,6 +240,7 @@
         mapOwnedOffers: mapOwnedOffers,
         opportunitiesById: opportunitiesById,
         mapOwnedApplication: mapOwnedApplication,
-        volunteerApplicationViews: volunteerApplicationViews
+        volunteerApplicationViews: volunteerApplicationViews,
+        isDeleteAccountConfirmed: isDeleteAccountConfirmed
     };
 });
