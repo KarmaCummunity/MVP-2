@@ -846,12 +846,22 @@ async function syncPersonalDataFromBackend() {
     return Boolean(profile || projects || savedItems);
 }
 
+// FR-GLOWE-011 AC2 — persist the Edit-Profile draft. The whole draft (all
+// fields, not just onboarding) is optimistically cached, then upserted via
+// gloweBackend.upsertProfile (PUT /api/profile). On success the backend returns
+// the canonical persisted row (fromProfileRow — every raw_profile field spread
+// back); we refresh the cache from it so the Personal Area re-renders from
+// server truth rather than the optimistic draft. Returns the saved profile.
 async function persistPersonalProfile(profile) {
     savePersonalProfile(profile);
-    await apiRequest('/api/profile', {
+    const saved = await apiRequest('/api/profile', {
         method: 'PUT',
         body: JSON.stringify({ ...getPersonalProfile(), ...profile })
     });
+    if (saved && typeof saved === 'object') {
+        savePersonalProfile(saved);
+    }
+    return saved;
 }
 
 // FR-GLOWE-011 AC4 (write) — persist a new project. When signed in against a
