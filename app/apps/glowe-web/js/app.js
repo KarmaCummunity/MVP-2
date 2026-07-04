@@ -5919,6 +5919,28 @@ const GLOWE_TRANSLATIONS = {
         // UGC translation toggle (FR-TRANSLATE-005)
         'Show original': 'הצג מקור',
         'Show translation': 'הצג תרגום',
+        // Personal-area nav + labels (were rendering in English on the Hebrew UI)
+        'Opportunities': 'הזדמנויות',
+        'My Events': 'האירועים שלי',
+        'Focus not added yet': 'תחום מיקוד טרם נוסף',
+        'Saved from the GloWe community': 'נשמר מקהילת GloWe',
+        'Loading your event registrations…': 'טוען את ההרשמות שלך לאירועים…',
+        // Discussion / topic groups (fixed taxonomy shown on Community + Forums)
+        'Education & Knowledge': 'חינוך וידע',
+        'Environment & Climate Action': 'סביבה ופעולה אקלימית',
+        'Health & Community Care': 'בריאות וטיפול קהילתי',
+        'Rights, Safety & Civic Power': 'זכויות, בטיחות וכוח אזרחי',
+        'A focused group for learning spaces, youth programs, multilingual knowledge sharing, and practical education tools.': 'קבוצה ממוקדת למרחבי למידה, תוכניות נוער, שיתוף ידע רב-לשוני וכלים חינוכיים מעשיים.',
+        'For climate, food systems, waste, restoration, repair, and local environmental action.': 'לאקלים, מערכות מזון, פסולת, שיקום, תיקון ופעולה סביבתית מקומית.',
+        'A moderated space for wellbeing, preventive health, emergency response, and community care methods.': 'מרחב מנוהל לרווחה, בריאות מונעת, מענה לחירום ושיטות טיפול קהילתי.',
+        'For rights-based action, civic participation, safe moderation, and community trust.': 'לפעולה מבוססת זכויות, השתתפות אזרחית, ניהול שיח בטוח ואמון קהילתי.',
+        'Youth': 'נוער',
+        'Repair': 'תיקון',
+        'Wellbeing': 'רווחה',
+        'Crisis Response': 'מענה לחירום',
+        'Justice': 'צדק',
+        'Safety': 'בטיחות',
+        'Civic Action': 'פעולה אזרחית',
         // Header / navigation
         'Home': 'בית',
         'Personal Area': 'האזור האישי',

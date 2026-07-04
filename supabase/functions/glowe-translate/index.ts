@@ -128,10 +128,14 @@ Deno.serve(async (req) => {
       text: sourceText,
       targetLanguage: body.targetLanguage,
     });
-  } catch (_e) {
+  } catch (e) {
+    // Full upstream detail (e.g. Gemini quota/429 body) goes to the server log
+    // only; the client response stays generic so quota internals aren't exposed.
+    const detail = e instanceof Error ? e.message : String(e);
     console.warn('[glowe-translate] provider failed', {
       contentType: body.contentType,
       field: body.field,
+      detail,
     });
     return json({ error: 'provider_failed' }, 502, hdrs);
   }
