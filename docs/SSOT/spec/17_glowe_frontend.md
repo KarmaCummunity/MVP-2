@@ -289,12 +289,12 @@ Personal Area (`pages/my-applications.html`) currently shows a mix of live profi
 
 ## FR-GLOWE-012 — Applications & Offers: volunteer matching
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress (AC1, AC7 ✅)
 
 Opportunity owners need to see who applied; wish owners need to see who offered support. Phase B adds a lightweight "My Inbox" view for managing inbound interest on content the user owns.
 
 **Acceptance Criteria.**
-- AC1. **Opportunity owner inbox.** On `pages/opportunity.html`, when the viewer is the opportunity owner, an "Applicants" section renders below the opportunity body, listing all `glowe_applications` for that opportunity (applicant name via `glowe_profiles`, availability, skills, motivation, status, applied-at).
+- AC1. **Opportunity owner inbox.** On `pages/opportunity.html`, when the viewer is the opportunity owner, an "Applicants" section renders below the opportunity body, listing all `glowe_applications` for that opportunity (applicant name via `glowe_profiles`, availability, skills, motivation, status, applied-at). ✅ — owner-scoped `SECURITY DEFINER` read RPC `glowe_list_applications_for_opportunity(p_opportunity_id)` (migration `0220`, gated to `glowe_opportunities.user_id = auth.uid()`, mirrors the event-portal `glowe_list_event_registrations` pattern of `0213`) enriches each row with the applicant's GloWe display name, avatar and email; `backend.js` `listApplicationsForOpportunity` calls it; `initOpportunityDetailPage` renders the read-only "Applicants" inbox (`#opp-applicants`) to the owner (`isOpportunityOwner`), replacing the Apply button. Pure mapper `mapApplicantRow`/`mapApplicantRows` unit-tested (vitest); Hebrew locale keys added. Accept/decline writes are AC2 (next slice).
 - AC2. **Accept/decline application.** Opportunity owner can update `glowe_applications.status` to `'Accepted'` or `'Declined'` (via a dedicated `SECURITY DEFINER` RPC `glowe_update_application_status(p_application_id, p_decision)` gated to the opportunity owner). The RPC validates `p_decision ∈ {'Accepted','Declined'}`.
 - AC3. **Wish owner offer inbox.** On the wish detail view (expanded card or a dedicated URL), the wish owner sees all `glowe_offers` for that wish (offerer name, offer text, availability, contact preference, submitted-at).
 - AC4. **Contact link.** Each application/offer row has a "Connect" CTA; for Phase B this copies the applicant's contact info (email from `glowe_profiles`) to clipboard. Phase C: routes to KC direct messages.

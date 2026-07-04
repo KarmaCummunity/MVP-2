@@ -4297,6 +4297,21 @@ export type Database = {
         Args: { p_opportunity_id: string }
         Returns: string
       }
+      glowe_list_applications_for_opportunity: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          applicant_avatar: string
+          applicant_email: string
+          applicant_name: string
+          availability: string
+          created_at: string
+          id: string
+          motivation: string
+          skills: string
+          status: string
+          user_id: string
+        }[]
+      }
       glowe_list_event_registrations: {
         Args: { p_opportunity_id: string }
         Returns: {
