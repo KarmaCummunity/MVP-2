@@ -71,6 +71,27 @@
         };
     }
 
+    // FR-GLOWE-011 AC4 (write) — validate a personal-project draft before it is
+    // persisted via insertOwned('projects', …). glowe_projects.title is NOT NULL.
+    function validateProjectDraft(input) {
+        const draft = input || {};
+        const title = String(draft.title || '').trim();
+        if (title.length < 2) return { valid: false, error: 'Please add a project title.' };
+        return { valid: true };
+    }
+
+    // FR-GLOWE-011 AC4 (write) — normalize a draft into the glowe_projects insert
+    // shape. `status` defaults to 'Draft' (mirrors the column default); trimming
+    // keeps stray whitespace out of persisted rows.
+    function buildProjectPayload(input) {
+        const draft = input || {};
+        return {
+            title: String(draft.title || '').trim(),
+            status: String(draft.status || '').trim() || 'Draft',
+            description: String(draft.description || '').trim()
+        };
+    }
+
     // FR-GLOWE-011 AC4 — decide which project list the Personal Area renders.
     // Once a backend load has completed we trust it (even when empty, so a user
     // with no real projects sees an empty state rather than the demo/local
@@ -88,6 +109,8 @@
         publicProjectsForUser: publicProjectsForUser,
         validateOutreachDraft: validateOutreachDraft,
         buildOutreachPayload: buildOutreachPayload,
-        personalProjectsView: personalProjectsView
+        personalProjectsView: personalProjectsView,
+        validateProjectDraft: validateProjectDraft,
+        buildProjectPayload: buildProjectPayload
     };
 });

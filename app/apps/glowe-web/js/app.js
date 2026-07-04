@@ -533,6 +533,12 @@ function savePersonalProject(project) {
     localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify([{ id: `project-${Date.now()}`, ...project }, ...projects]));
 }
 
+// Offline/guest delete: drop a project from the localStorage cache by id.
+function removePersonalProjectLocal(id) {
+    const remaining = getPersonalProjects().filter(item => String(item.id) !== String(id));
+    localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify(remaining));
+}
+
 // FR-GLOWE-011 AC4 — live Personal Area projects. `backendPersonalProjects`
 // stays null until a load completes; the view getter then prefers it (even when
 // empty) over the localStorage/demo fallback (see personalProjectsView).
@@ -617,12 +623,38 @@ async function persistPersonalProfile(profile) {
     });
 }
 
+// FR-GLOWE-011 AC4 (write) — persist a new project. When signed in against a
+// live backend, insert via insertOwned('projects', …) and refresh the live
+// list; otherwise fall back to the localStorage/demo cache (guest/offline).
 async function persistPersonalProject(project) {
-    savePersonalProject(project);
-    await apiRequest('/api/projects', {
-        method: 'POST',
-        body: JSON.stringify(project)
-    });
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const backend = window.gloweBackend;
+    if (backend && backend.configured() && isLoggedIn()) {
+        try {
+            await backend.insertOwned('projects', payload);
+            await loadPersonalProjects();
+            return;
+        } catch (_e) { /* fall through to the offline cache */ }
+    }
+    savePersonalProject(payload);
+}
+
+// FR-GLOWE-011 AC4 (write) — delete an owned project. Backend delete is
+// user-scoped (removeOwned enforces user_id + RLS); offline path prunes the
+// cache. Re-renders the Personal Area after either path.
+async function deletePersonalProject(id) {
+    if (!id) return;
+    const backend = window.gloweBackend;
+    if (backend && backend.configured() && isLoggedIn()) {
+        try {
+            await backend.removeOwned('projects', { id });
+            await loadPersonalProjects();
+        } catch (_e) { removePersonalProjectLocal(id); }
+    } else {
+        removePersonalProjectLocal(id);
+    }
+    if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
 }
 
 async function uploadProfileImageToCloudinary(file) {
@@ -1953,11 +1985,15 @@ function openPersonalProjectModal() {
 async function handlePersonalProjectSubmit(event) {
     event.preventDefault();
     if (!canCreateContent()) return;
-    await persistPersonalProject({
+    const draft = {
         title: document.getElementById('personal-project-title').value,
         status: document.getElementById('personal-project-status').value,
         description: document.getElementById('personal-project-description').value
-    });
+    };
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const check = helpers ? helpers.validateProjectDraft(draft) : { valid: true };
+    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please add a project title.'); return; }
+    await persistPersonalProject(draft);
     closeModal('add-project-modal');
     if (typeof window.renderPersonalArea === 'function') {
         window.renderPersonalArea();
@@ -3031,12 +3067,20 @@ function renderWishCard(wish) {
     `;
 }
 
-function renderProjectCard(project) {
+function renderProjectCard(project, options) {
+    // `options.deletable` is only passed from the owner's Personal Area. On the
+    // public profile the map callback passes the numeric index here, whose
+    // `.deletable` is undefined — so the control stays hidden for viewers.
+    const deletable = Boolean(options && options.deletable);
+    const deleteButton = deletable
+        ? `<button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>`
+        : '';
     return `
         <div class="project-card">
             <span class="opportunity-badge">${escapeHtml(project.status)}</span>
             <h3>${escapeHtml(project.title)}</h3>
             <p>${escapeHtml(project.description)}</p>
+            ${deleteButton}
         </div>
     `;
 }
@@ -5372,7 +5416,7 @@ function initMyApplicationsPage() {
                                 </div>
                                 <button class="btn btn-outline btn-small" type="button" onclick="openPersonalProjectModal()">Add Project</button>
                             </div>
-                            <div class="projects-grid">${projects.map(renderProjectCard).join('') || '<p class="muted-note">No projects yet. Add your first project.</p>'}</div>
+                            <div class="projects-grid">${projects.map(p => renderProjectCard(p, { deletable: true })).join('') || '<p class="muted-note">No projects yet. Add your first project.</p>'}</div>
                         </article>
 
                         <article class="profile-section-card" id="personal-opportunities">
@@ -6098,6 +6142,7 @@ const GLOWE_TRANSLATIONS = {
         "Save opportunity": "שמירת הזדמנות",
         "Save Opportunity": "שמירת הזדמנות",
         "Delete post": "מחיקת פוסט",
+        "Delete": "מחיקה",
         "Post deleted": "הפוסט נמחק",
         "Your post was removed from the community feed.": "הפוסט שלכם הוסר מפיד הקהילה.",
         "Could not delete": "לא ניתן למחוק",
