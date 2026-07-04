@@ -1300,6 +1300,28 @@ function ensureGlobalUI() {
         `);
     }
 
+    if (!document.getElementById('reach-out-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="reach-out-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal('reach-out-modal')">&times;</span>
+                    <h2>Reach Out</h2>
+                    <p class="modal-intro" id="reach-out-context">Send a short message to start a conversation with this organization.</p>
+                    <form onsubmit="handleReachOutSubmit(event)">
+                        <div class="form-group">
+                            <label for="reach-out-message">Message</label>
+                            <textarea id="reach-out-message" rows="4" required placeholder="Introduce yourself and explain how you would like to collaborate."></textarea>
+                        </div>
+                        <div class="modal-actions">
+                            <button type="submit" class="btn btn-primary">Send Message</button>
+                            <button type="button" class="btn btn-outline" onclick="closeModal('reach-out-modal')">Cancel</button>
+                        </div>
+                    </form>
+                </div>
+            </div>
+        `);
+    }
+
     if (!document.getElementById('onboarding-modal')) {
         document.body.insertAdjacentHTML('beforeend', `
             <div id="onboarding-modal" class="modal">
@@ -2039,6 +2061,51 @@ async function handleConnectSubmit(event) {
 function handleQuickConnect() {
     closeModal('connect-modal');
     showSuccessModal('Draft saved', 'Your offer draft is saved in this workspace so you can return to it later.');
+}
+
+// FR-GLOWE-010 AC6 — "Reach out" contact flow. Opens a lightweight modal that,
+// on submit, persists a private outreach post (post_type='outreach') addressed
+// to the organization. Phase B stub for direct messaging (routes to KC DMs in C).
+let activeReachOutRecipient = null;
+
+function openReachOutModal(recipientId, recipientName) {
+    ensureGlobalUI();
+    activeReachOutRecipient = { id: recipientId, name: recipientName || 'this organization' };
+    const context = document.getElementById('reach-out-context');
+    const message = document.getElementById('reach-out-message');
+    if (context) context.textContent = `Send a short message to ${activeReachOutRecipient.name} to start a conversation.`;
+    if (message) message.value = '';
+    openModal('reach-out-modal');
+}
+
+async function handleReachOutSubmit(event) {
+    event.preventDefault();
+    if (!isLoggedIn()) {
+        showSuccessModal('Sign in to reach out', 'Please sign in or create a free account to message this organization.');
+        return;
+    }
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    if (!helpers || !activeReachOutRecipient) return;
+    const draft = {
+        recipientId: activeReachOutRecipient.id,
+        orgName: activeReachOutRecipient.name,
+        message: (document.getElementById('reach-out-message') || {}).value || ''
+    };
+    const check = helpers.validateOutreachDraft(draft);
+    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please write a short message.'); return; }
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) {
+        showSuccessModal('Backend unavailable', 'Messaging needs a live connection right now. Please try again shortly.');
+        return;
+    }
+    try {
+        await backend.insertOwned('posts', helpers.buildOutreachPayload(draft));
+        closeModal('reach-out-modal');
+        event.target.reset();
+        showSuccessModal('Message sent', 'Your message was delivered. The organization can follow up with you.');
+    } catch (_e) {
+        showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
+    }
 }
 
 function openConnectionWorkspace() {
@@ -2888,6 +2955,7 @@ function renderOrganizationCard(organization, basePath = '') {
             </div>
             <div class="card-actions">
                 <a href="${profileHref}" class="btn btn-outline btn-small">View Profile</a>
+                <button class="btn btn-primary btn-small" type="button" onclick="openReachOutModal('${organization.id}', '${jsString(organization.name)}')">Reach Out</button>
                 <button class="btn btn-outline btn-small" type="button" onclick="saveItem('profile', '${organization.id}', '${jsString(organization.name)}', '${jsString(organization.type || 'Organization')}', '${profileHref}')">Save Profile</button>
             </div>
         </div>
@@ -5844,6 +5912,19 @@ const GLOWE_TRANSLATIONS = {
         "Message": "הודעה",
         "Message author": "שליחת הודעה למחבר/ת",
         "Message publisher": "שליחת הודעה למפרסם/ת",
+        "Message sent": "ההודעה נשלחה",
+        "Your message was delivered. The organization can follow up with you.": "ההודעה נמסרה. הארגון יוכל לחזור אליכם.",
+        "Could not send message": "לא ניתן היה לשלוח את ההודעה",
+        "Something went wrong sending your message. Please try again.": "משהו השתבש בשליחת ההודעה. אנא נסו שוב.",
+        "Reach Out": "יצירת קשר",
+        "Send Message": "שליחת הודעה",
+        "Send a short message to start a conversation with this organization.": "שלחו הודעה קצרה כדי לפתוח שיחה עם הארגון הזה.",
+        "Introduce yourself and explain how you would like to collaborate.": "הציגו את עצמכם והסבירו כיצד תרצו לשתף פעולה.",
+        "Sign in to reach out": "התחברו כדי ליצור קשר",
+        "Please sign in or create a free account to message this organization.": "אנא התחברו או פתחו חשבון חינמי כדי לשלוח הודעה לארגון הזה.",
+        "Messaging needs a live connection right now. Please try again shortly.": "שליחת הודעות דורשת חיבור פעיל כרגע. אנא נסו שוב בקרוב.",
+        "Missing details": "חסרים פרטים",
+        "Backend unavailable": "השירות אינו זמין כרגע",
         "Messages": "הודעות",
         "Methods / approaches": "שיטות / גישות",
         "Moderate discussions in order to keep the space constructive, safe, and impact-driven.": "נהלו דיונים כדי לשמור על מרחב בונה, בטוח ומונע השפעה.",

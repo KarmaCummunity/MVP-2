@@ -45,10 +45,38 @@
         });
     }
 
+    // AC6 — validate a "Reach out" contact draft before it is persisted.
+    function validateOutreachDraft(input) {
+        const draft = input || {};
+        if (!draft.recipientId) return { valid: false, error: 'Missing recipient.' };
+        const message = String(draft.message || '').trim();
+        if (message.length < 2) return { valid: false, error: 'Please write a short message.' };
+        return { valid: true };
+    }
+
+    // AC6 — build the glowe_posts row for a Phase-B outreach post. The recipient
+    // is encoded in `audience` so a later Phase-C DM migration can resolve the
+    // conversation; visibility scoping (sender + recipient) is deferred to RLS.
+    function buildOutreachPayload(input) {
+        const draft = input || {};
+        const orgName = String(draft.orgName || '').trim();
+        return {
+            post_type: 'outreach',
+            category: 'outreach',
+            title: orgName ? ('Reach-out to ' + orgName) : 'Reach-out',
+            text: String(draft.message || '').trim(),
+            audience: String(draft.recipientId || ''),
+            status: 'sent',
+            tags: []
+        };
+    }
+
     return {
         mapProjectRow: mapProjectRow,
         mapProjects: mapProjects,
         isPublicProject: isPublicProject,
-        publicProjectsForUser: publicProjectsForUser
+        publicProjectsForUser: publicProjectsForUser,
+        validateOutreachDraft: validateOutreachDraft,
+        buildOutreachPayload: buildOutreachPayload
     };
 });
