@@ -2699,6 +2699,47 @@ function removeSavedItem(type, id) {
     if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
 }
 
+// FR-GLOWE-013 AC2 — render a Save/Saved toggle button that reflects whether the
+// item is already in the user's saved list. Raw values are escaped here (callers
+// pass unescaped title/meta/href). The saved-state label is "Saved"; the unsaved
+// label is card-specific (kept on data-save-label for the in-place flip).
+function savedToggleButtonHtml(type, id, title, meta, href, saveLabel, className) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    const cls = (className || 'btn btn-outline btn-small') + (saved ? ' is-saved' : '');
+    const label = saved ? 'Saved' : saveLabel;
+    return `<button class="${cls}" type="button" aria-pressed="${saved}" data-save-label="${escapeHtml(saveLabel)}" onclick="toggleSavedItem(this, '${jsString(type)}', '${jsString(String(id))}', '${jsString(String(title))}', '${jsString(String(meta))}', '${jsString(String(href))}')">${escapeHtml(label)}</button>`;
+}
+
+// Flip a rendered toggle button in place after a save/unsave (avoids a full list
+// re-render / scroll reset). Setting textContent replaces the text node, which the
+// i18n MutationObserver catches and localizes.
+function refreshSavedToggleButton(btn, type, id) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    btn.setAttribute('aria-pressed', String(saved));
+    btn.classList.toggle('is-saved', saved);
+    btn.textContent = saved ? 'Saved' : (btn.getAttribute('data-save-label') || 'Save');
+}
+
+// FR-GLOWE-013 AC2 — toggle a card's saved state: unsave when already saved, else
+// save. Login-gated (saved items sync per user). saveItem shows its own "Saved"
+// confirmation; the button flips in place either way.
+function toggleSavedItem(btn, type, id, title, meta, href) {
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        return;
+    }
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const saved = helpers ? helpers.isItemSaved(getSavedItems(), type, id) : false;
+    if (saved) {
+        removeSavedItem(type, id);
+    } else {
+        saveItem(type, id, title, meta, href);
+    }
+    if (btn) refreshSavedToggleButton(btn, type, id);
+}
+
 function getPostComments() {
     try {
         return JSON.parse(localStorage.getItem(POST_COMMENTS_KEY) || '{}');
@@ -3367,7 +3408,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
             </div>
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
-                <button class="btn btn-outline btn-small" type="button" onclick="saveItem('opportunity', '${opportunity.id}', '${titleForMessage}', '${jsString(opportunity.organization)}', '${detailHref}')">Save Opportunity</button>
+                ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save Opportunity')}
             </div>
         </div>
     `;
