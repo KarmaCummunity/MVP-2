@@ -22,7 +22,8 @@ const {
     mapOwnedApplication,
     volunteerApplicationViews,
     isDeleteAccountConfirmed,
-    shouldShowProfileSkeleton
+    shouldShowProfileSkeleton,
+    validateAvatarFile
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -444,5 +445,35 @@ describe('shouldShowProfileSkeleton', () => {
     it('hides the skeleton when not loading, regardless of cache', () => {
         expect(shouldShowProfileSkeleton(false, false)).toBe(false);
         expect(shouldShowProfileSkeleton(false, true)).toBe(false);
+    });
+});
+
+describe('validateAvatarFile', () => {
+    it('accepts an image file under the size cap', () => {
+        expect(validateAvatarFile({ type: 'image/png', size: 1024 })).toEqual({ valid: true });
+        expect(validateAvatarFile({ type: 'image/jpeg', size: 5 * 1024 * 1024 })).toEqual({ valid: true });
+    });
+
+    it('rejects a missing file', () => {
+        const r = validateAvatarFile(null);
+        expect(r.valid).toBe(false);
+        expect(r.error).toMatch(/image file/i);
+    });
+
+    it('rejects a non-image file', () => {
+        const r = validateAvatarFile({ type: 'application/pdf', size: 100 });
+        expect(r.valid).toBe(false);
+        expect(r.error).toMatch(/image file/i);
+    });
+
+    it('rejects a file over the 5 MB cap', () => {
+        const r = validateAvatarFile({ type: 'image/png', size: 5 * 1024 * 1024 + 1 });
+        expect(r.valid).toBe(false);
+        expect(r.error).toMatch(/5 MB/);
+    });
+
+    it('honors a custom maxBytes option', () => {
+        expect(validateAvatarFile({ type: 'image/png', size: 2048 }, { maxBytes: 1024 }).valid).toBe(false);
+        expect(validateAvatarFile({ type: 'image/png', size: 512 }, { maxBytes: 1024 }).valid).toBe(true);
     });
 });

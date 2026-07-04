@@ -240,6 +240,22 @@
         return Boolean(isLoading) && !hasCachedProfile;
     }
 
+    // FR-GLOWE-011 AC3 — client-side guard for the Edit-Profile avatar upload:
+    // the file must be an image (`image/*`) and at most `maxBytes` (default 5 MB,
+    // matching the `glowe-avatars` bucket cap in migration 0219). Returns
+    // { valid, error } so the modal can show an inline message before uploading.
+    function validateAvatarFile(file, options) {
+        const maxBytes = (options && options.maxBytes) || 5 * 1024 * 1024;
+        if (!file) return { valid: false, error: 'Please choose an image file.' };
+        if (!String(file.type || '').startsWith('image/')) {
+            return { valid: false, error: 'Please choose an image file.' };
+        }
+        if (Number(file.size) > maxBytes) {
+            return { valid: false, error: 'Image must be under 5 MB.' };
+        }
+        return { valid: true };
+    }
+
     return {
         mapProjectRow: mapProjectRow,
         mapProjects: mapProjects,
@@ -261,6 +277,7 @@
         mapOwnedApplication: mapOwnedApplication,
         volunteerApplicationViews: volunteerApplicationViews,
         isDeleteAccountConfirmed: isDeleteAccountConfirmed,
-        shouldShowProfileSkeleton: shouldShowProfileSkeleton
+        shouldShowProfileSkeleton: shouldShowProfileSkeleton,
+        validateAvatarFile: validateAvatarFile
     };
 });

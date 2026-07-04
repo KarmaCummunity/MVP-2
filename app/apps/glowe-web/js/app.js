@@ -946,6 +946,19 @@ async function uploadProfileImageToCloudinary(file) {
     return payload.secure_url;
 }
 
+// FR-GLOWE-011 AC3 — resolve a profile-image upload to a URL. Prefers Supabase
+// Storage (`gloweBackend.uploadAvatar` → `glowe-avatars` bucket) when signed in
+// against a configured backend; falls back to Cloudinary otherwise (guest /
+// unconfigured). The caller validates type + size before calling this.
+async function uploadProfileImage(file) {
+    const backend = window.gloweBackend;
+    if (backend && backend.configured() && isLoggedIn()) {
+        const url = await backend.uploadAvatar(file);
+        if (url) return url;
+    }
+    return uploadProfileImageToCloudinary(file);
+}
+
 function renderPersonalAvatar(profile, className = 'profile-avatar') {
     if (profile.avatarUrl) {
         return `<img class="${className} profile-avatar-img" src="${profile.avatarUrl}" alt="${profile.name}">`;
@@ -1775,7 +1788,7 @@ function ensureGlobalUI() {
                         <div class="form-group">
                             <label for="edit-profile-avatar">Profile image</label>
                             <input id="edit-profile-avatar" type="file" accept="image/*">
-                            <small id="edit-profile-upload-status">Optional. When Cloudinary keys are configured, this uploads to Cloudinary.</small>
+                            <small id="edit-profile-upload-status">Optional. JPG, PNG or WebP, up to 5 MB.</small>
                         </div>
                         <button class="btn btn-primary btn-block" type="submit">Save Profile Draft</button>
                     </form>
@@ -2225,12 +2238,19 @@ async function handleProfileEdit(event) {
     };
 
     if (avatarInput && avatarInput.files && avatarInput.files[0]) {
+        const avatarFile = avatarInput.files[0];
+        const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+        const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarFile) : { valid: true };
+        if (!check.valid) {
+            if (status) status.textContent = check.error;
+            return;
+        }
         try {
             if (status) status.textContent = 'Uploading image...';
-            profileDraft.avatarUrl = await uploadProfileImageToCloudinary(avatarInput.files[0]);
+            profileDraft.avatarUrl = await uploadProfileImage(avatarFile);
         } catch (error) {
             if (status) status.textContent = error.message;
-            uploadWarning = ' Image upload needs Cloudinary keys configured on the backend.';
+            uploadWarning = ' Image upload could not be completed.';
         }
     }
 
@@ -6371,6 +6391,10 @@ const GLOWE_TRANSLATIONS = {
         "Loading...": "טוען...",
         "Loading…": "טוען…",
         "Loading your profile…": "טוען את הפרופיל שלך…",
+        "Uploading image...": "מעלה תמונה...",
+        "Please choose an image file.": "נא לבחור קובץ תמונה.",
+        "Image must be under 5 MB.": "התמונה חייבת להיות עד 5 מגה-בייט.",
+        "Optional. JPG, PNG or WebP, up to 5 MB.": "לא חובה. JPG, ‏PNG או WebP, עד 5 מגה-בייט.",
         "Local community circles": "מעגלי קהילה מקומיים",
         "Local organizations, initiatives, residents, volunteers, and partners bring the real context: what is needed, what already works, who should be involved, and what kind of support would actually help.": "ארגונים מקומיים, יוזמות, תושבים, מתנדבים ושותפים מביאים את ההקשר האמיתי: מה נדרש, מה כבר עובד, מי צריך להיות מעורב ואיזו תמיכה באמת תעזור.",
         "Local roots": "שורשים מקומיים",
