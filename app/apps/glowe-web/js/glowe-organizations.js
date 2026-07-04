@@ -15,6 +15,24 @@
         return row[snake] !== undefined ? row[snake] : row[camel];
     }
 
+    // Project status is a controlled enum persisted in canonical English. Rows
+    // saved while the UI was localized (before the <option value> fix) could
+    // store a translated literal (e.g. "מגייסים שותפים"); map those back so the
+    // badge/visibility logic always sees a clean English baseline that the
+    // chrome i18n layer can then re-localize for display. Unknown values pass
+    // through unchanged.
+    const PROJECT_STATUS_ALIASES = {
+        'טיוטה': 'Draft',
+        'פעיל': 'Active',
+        'מגייסים שותפים': 'Recruiting partners',
+        'דרושים מתנדבים': 'Needs volunteers',
+        'מוכן לשיתוף': 'Ready to share'
+    };
+    function canonicalStatus(status) {
+        const s = String(status == null ? '' : status).trim();
+        return PROJECT_STATUS_ALIASES[s] || s;
+    }
+
     // Map a glowe_projects row to the view model renderProjectCard expects.
     function mapProjectRow(row) {
         return {
@@ -22,7 +40,7 @@
             userId: field(row, 'user_id', 'userId') || '',
             title: field(row, 'title', 'title') || '',
             description: field(row, 'description', 'description') || '',
-            status: field(row, 'status', 'status') || 'Active'
+            status: canonicalStatus(field(row, 'status', 'status') || 'Active')
         };
     }
 
@@ -107,7 +125,7 @@
         const draft = input || {};
         return {
             title: String(draft.title || '').trim(),
-            status: String(draft.status || '').trim() || 'Draft',
+            status: canonicalStatus(String(draft.status || '').trim() || 'Draft'),
             description: String(draft.description || '').trim()
         };
     }
@@ -291,6 +309,7 @@
     return {
         mapProjectRow: mapProjectRow,
         mapProjects: mapProjects,
+        canonicalStatus: canonicalStatus,
         isPublicProject: isPublicProject,
         publicProjectsForUser: publicProjectsForUser,
         validateOutreachDraft: validateOutreachDraft,

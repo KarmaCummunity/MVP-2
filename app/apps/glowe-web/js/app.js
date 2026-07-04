@@ -1912,11 +1912,11 @@ function ensureGlobalUI() {
                             <div class="form-group">
                                 <label for="personal-project-status">Status</label>
                                 <select id="personal-project-status" required>
-                                    <option>Draft</option>
-                                    <option>Active</option>
-                                    <option>Recruiting partners</option>
-                                    <option>Needs volunteers</option>
-                                    <option>Ready to share</option>
+                                    <option value="Draft">Draft</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Recruiting partners">Recruiting partners</option>
+                                    <option value="Needs volunteers">Needs volunteers</option>
+                                    <option value="Ready to share">Ready to share</option>
                                 </select>
                             </div>
                         </div>
@@ -2292,7 +2292,8 @@ function openEditPersonalProjectModal(id) {
     if (!project) return;
     document.getElementById('personal-project-id').value = project.id;
     document.getElementById('personal-project-title').value = project.title || '';
-    document.getElementById('personal-project-status').value = project.status || 'Draft';
+    const statusValue = helpers ? helpers.canonicalStatus(project.status) : project.status;
+    document.getElementById('personal-project-status').value = statusValue || 'Draft';
     document.getElementById('personal-project-description').value = project.description || '';
     setProjectModalMode('Edit project', 'Update Project');
     openModal('add-project-modal');
@@ -6987,6 +6988,7 @@ const GLOWE_TRANSLATIONS = {
         "Project title": "כותרת הפרויקט",
         "Status": "סטטוס",
         "Draft": "טיוטה",
+        "Active": "פעיל",
         "Recruiting partners": "מגייסים שותפים",
         "Needs volunteers": "דרושים מתנדבים",
         "Ready to share": "מוכן לשיתוף",
