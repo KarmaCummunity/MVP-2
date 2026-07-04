@@ -71,12 +71,21 @@
         };
     }
 
+    // True when `userId` authored `post` (owner-only delete CTA, FR-GLOWE-008
+    // AC7). A blank/absent viewer id never matches, so guests and non-owners
+    // never see the control.
+    function isPostOwner(post, userId) {
+        if (!post || userId === undefined || userId === null || userId === '') return false;
+        return String(post.authorId) === String(userId);
+    }
+
     return {
         isCommunityPost: isCommunityPost,
         mapPostRow: mapPostRow,
         mapCommunityRows: mapCommunityRows,
         commaList: commaList,
         validatePostDraft: validatePostDraft,
-        normalizePostDraft: normalizePostDraft
+        normalizePostDraft: normalizePostDraft,
+        isPostOwner: isPostOwner
     };
 });
