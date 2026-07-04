@@ -1,4 +1,4 @@
--- 0222_glowe_list_offers_for_post — wish owner offer inbox.
+-- 0225_glowe_list_offers_for_post — wish owner offer inbox.
 --
 -- FR-GLOWE-012 AC3 (Phase B "My Inbox"). A SECURITY DEFINER read RPC that lets
 -- the owner of a wish (glowe_posts row) see everyone who offered support on it,

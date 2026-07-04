@@ -241,7 +241,7 @@
     }
 
     // FR-GLOWE-012 AC3 — normalize a row from glowe_list_offers_for_post (the
-    // owner-scoped RPC, migration 0222) into the shape the wish owner's "Offers"
+    // owner-scoped RPC, migration 0225) into the shape the wish owner's "Offers"
     // inbox renders: the offerer's identity + offer answers + contact email (for
     // the AC4 Connect CTA). Owner-side view, distinct from the offerer-side card.
     function mapOfferForOwner(row) {

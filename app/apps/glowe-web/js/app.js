@@ -3121,7 +3121,7 @@ function isWishOwnerViewing(wish) {
 
 // FR-GLOWE-012 AC3 — render the wish owner's "Offers" inbox inside the wish
 // detail modal (read-only for this slice). Fetches offers via the owner-scoped
-// glowe_list_offers_for_post RPC (migration 0222) and lists each offerer's name,
+// glowe_list_offers_for_post RPC (migration 0225) and lists each offerer's name,
 // offer text, availability, contact preference and submitted date.
 async function renderWishOffers(wish) {
     const area = document.getElementById('wish-offers');

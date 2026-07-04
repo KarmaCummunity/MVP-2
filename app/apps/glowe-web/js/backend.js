@@ -543,7 +543,7 @@
         return data;
     }
 
-    // FR-GLOWE-012 AC3 — wish owner's offer inbox (migration 0222). The RPC is
+    // FR-GLOWE-012 AC3 — wish owner's offer inbox (migration 0225). The RPC is
     // owner-scoped (gated to the glowe_posts owner) and returns each glowe_offers
     // row enriched with the offerer's GloWe display name, avatar and email.
     async function listOffersForPost(postId) {
