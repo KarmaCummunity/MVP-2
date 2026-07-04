@@ -2337,6 +2337,22 @@ function shareContent(platform, title, path = '') {
     window.open(buildShareUrl(platform, title, url), '_blank', 'noopener,noreferrer');
 }
 
+// Copy a community post's canonical URL to the clipboard (FR-GLOWE-008 AC5).
+async function copyPostLink(postId) {
+    const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : '';
+    const url = (typeof GlowePosts !== 'undefined')
+        ? GlowePosts.postCanonicalUrl(postId, origin)
+        : `${origin}/glowe/pages/community.html?post=${encodeURIComponent(postId)}`;
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(url);
+        }
+        showSuccessModal('Link copied', 'The post link is on your clipboard — share it anywhere.');
+    } catch (error) {
+        showSuccessModal('Copy this link', url);
+    }
+}
+
 function renderShareButtons(title, path = '') {
     const safeTitle = escapeHtml(title);
     const titleArg = jsString(title);
@@ -2776,7 +2792,10 @@ function renderPostCard(post) {
                     <button type="submit">Post</button>
                 </form>
             </div>
-            ${renderShareButtons(post.title, `community.html?post=${encodeURIComponent(post.title)}`)}
+            <div class="post-share-row">
+                ${renderShareButtons(post.title, `community.html?post=${encodeURIComponent(postId)}`)}
+                <button type="button" class="post-copy-link" onclick="copyPostLink('${postId}')">Copy link</button>
+            </div>
         </article>
     `;
 }
@@ -5671,6 +5690,10 @@ const GLOWE_TRANSLATIONS = {
         "Your post was removed from the community feed.": "הפוסט שלכם הוסר מפיד הקהילה.",
         "Could not delete": "לא ניתן למחוק",
         "Something went wrong deleting your post. Please try again.": "משהו השתבש במחיקת הפוסט. נסו שוב.",
+        "Copy link": "העתקת קישור",
+        "Link copied": "הקישור הועתק",
+        "The post link is on your clipboard — share it anywhere.": "קישור הפוסט נמצא בלוח שלכם — שתפו אותו בכל מקום.",
+        "Copy this link": "העתיקו את הקישור",
         "Save post": "שמירת פוסט",
         "Save posts, profiles, and opportunities to return to them from this screen.": "שמרו פוסטים, פרופילים והזדמנויות כדי לחזור אליהם מהמסך הזה.",
         "Save posts, profiles, wishes, and opportunities to return to them from here.": "שמרו פוסטים, פרופילים, משאלות והזדמנויות כדי לחזור אליהם מכאן.",

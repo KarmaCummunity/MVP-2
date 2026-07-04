@@ -79,6 +79,15 @@
         return String(post.authorId) === String(userId);
     }
 
+    // Build the canonical, shareable URL for a community post (FR-GLOWE-008
+    // AC5). `origin` is a scheme+host (e.g. window.location.origin); a trailing
+    // slash is trimmed so we never emit a double slash.
+    function postCanonicalUrl(postId, origin) {
+        const base = String(origin || '').replace(/\/+$/, '');
+        const id = encodeURIComponent(String(postId == null ? '' : postId));
+        return base + '/glowe/pages/community.html?post=' + id;
+    }
+
     return {
         isCommunityPost: isCommunityPost,
         mapPostRow: mapPostRow,
@@ -86,6 +95,7 @@
         commaList: commaList,
         validatePostDraft: validatePostDraft,
         normalizePostDraft: normalizePostDraft,
-        isPostOwner: isPostOwner
+        isPostOwner: isPostOwner,
+        postCanonicalUrl: postCanonicalUrl
     };
 });

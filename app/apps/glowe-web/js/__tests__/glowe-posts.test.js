@@ -87,6 +87,25 @@ describe('isPostOwner', () => {
     });
 });
 
+describe('postCanonicalUrl', () => {
+    it('builds a canonical community post URL under the given origin', () => {
+        expect(GlowePosts.postCanonicalUrl('p1', 'https://glowe.app'))
+            .toBe('https://glowe.app/glowe/pages/community.html?post=p1');
+    });
+
+    it('trims a trailing slash from the origin', () => {
+        expect(GlowePosts.postCanonicalUrl('p1', 'https://glowe.app/'))
+            .toBe('https://glowe.app/glowe/pages/community.html?post=p1');
+    });
+
+    it('encodes the post id and tolerates blank origin/id', () => {
+        expect(GlowePosts.postCanonicalUrl('a b&c', 'https://x.io'))
+            .toBe('https://x.io/glowe/pages/community.html?post=a%20b%26c');
+        expect(GlowePosts.postCanonicalUrl('', '')).toBe('/glowe/pages/community.html?post=');
+        expect(GlowePosts.postCanonicalUrl(null, null)).toBe('/glowe/pages/community.html?post=');
+    });
+});
+
 describe('normalizePostDraft', () => {
     it('builds a community insert payload with array tags and trimmed fields', () => {
         expect(GlowePosts.normalizePostDraft({
