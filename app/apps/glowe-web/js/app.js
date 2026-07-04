@@ -3102,9 +3102,67 @@ function openWishDetail(wishId) {
                 <button class="btn btn-outline" type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 <button class="btn btn-outline" type="button" onclick="closeModal('wish-detail-modal')">Back to wishes</button>
             </div>
+            <div id="wish-offers" class="wish-offers" aria-live="polite" hidden></div>
         </div>
     `;
     openModal('wish-detail-modal');
+    renderWishOffers(wish);
+}
+
+// FR-GLOWE-012 AC3 — resolve whether the current viewer owns this wish, so the
+// "Offers" inbox only renders to the wish author. Mirrors isOpportunityOwner.
+function isWishOwnerViewing(wish) {
+    const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    if (!user || !wish) return false;
+    const wishesApi = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    if (wishesApi) return wishesApi.isWishOwner(wish, user.id);
+    return Boolean(wish.authorId && wish.authorId === user.id);
+}
+
+// FR-GLOWE-012 AC3 — render the wish owner's "Offers" inbox inside the wish
+// detail modal (read-only for this slice). Fetches offers via the owner-scoped
+// glowe_list_offers_for_post RPC (migration 0222) and lists each offerer's name,
+// offer text, availability, contact preference and submitted date.
+async function renderWishOffers(wish) {
+    const area = document.getElementById('wish-offers');
+    if (!area) return;
+    if (!isWishOwnerViewing(wish)) { area.hidden = true; return; }
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { area.hidden = true; return; }
+    area.hidden = false;
+    area.innerHTML = '<h3>Offers</h3><p class="muted-note">Loading offers…</p>';
+    let rows = [];
+    try {
+        rows = await backend.listOffersForPost(wish.id);
+    } catch (_e) {
+        area.innerHTML = '<h3>Offers</h3><p class="event-register-error">Could not load offers.</p>';
+        return;
+    }
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const views = orgHelpers ? orgHelpers.mapOffersForOwner(rows) : [];
+    area.innerHTML = wishOffersHtml(views);
+}
+
+// Build the offers-inbox markup from mapped offer views.
+function wishOffersHtml(views) {
+    const header = `<h3>Offers <span class="applicant-count">(${views.length})</span></h3>`;
+    if (!views.length) {
+        return `${header}<p class="muted-note">No offers yet.</p>`;
+    }
+    const rows = views.map(function (v) {
+        const date = v.createdAt ? new Date(v.createdAt).toLocaleDateString() : '';
+        return `
+        <li class="applicant-row">
+            <div class="applicant-head">
+                <strong>${escapeHtml(v.name || 'GloWe volunteer')}</strong>
+            </div>
+            ${v.offerText ? `<p class="applicant-field">${escapeHtml(v.offerText)}</p>` : ''}
+            ${v.availability ? `<p class="applicant-field"><strong>Availability:</strong> ${escapeHtml(v.availability)}</p>` : ''}
+            ${v.contactPreference ? `<p class="applicant-field"><strong>Preferred contact:</strong> ${escapeHtml(v.contactPreference)}</p>` : ''}
+            ${date ? `<p class="applicant-meta">Offered ${escapeHtml(date)}</p>` : ''}
+        </li>`;
+    }).join('');
+    return `${header}<ul class="applicant-list">${rows}</ul>`;
 }
 
 // Close modal when clicking outside
@@ -6488,6 +6546,11 @@ const GLOWE_TRANSLATIONS = {
         "Accept": "אישור",
         "Decline": "דחייה",
         "Could not update the application. Please try again.": "לא ניתן לעדכן את המועמדות. נסו שוב.",
+        "Offers": "הצעות עזרה",
+        "Loading offers…": "טוען הצעות…",
+        "Could not load offers.": "לא ניתן לטעון את ההצעות.",
+        "No offers yet.": "אין עדיין הצעות.",
+        "Preferred contact:": "אופן יצירת קשר מועדף:",
         "GloWe volunteer": "מתנדב/ת GloWe",
         "Availability:": "זמינות:",
         "Skills:": "כישורים:",

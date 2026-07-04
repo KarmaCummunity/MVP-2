@@ -543,6 +543,19 @@
         return data;
     }
 
+    // FR-GLOWE-012 AC3 — wish owner's offer inbox (migration 0222). The RPC is
+    // owner-scoped (gated to the glowe_posts owner) and returns each glowe_offers
+    // row enriched with the offerer's GloWe display name, avatar and email.
+    async function listOffersForPost(postId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_list_offers_for_post', {
+            p_post_id: String(postId)
+        });
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
     // Organizer accept/decline of a registration (migration 0213). Accept applies
     // capacity routing (→ Waitlisted when full); decline requires a reason.
     async function decideEventRegistration(registrationId, decision, note = '') {
@@ -647,6 +660,7 @@
         listEventRegistrations,
         listApplicationsForOpportunity,
         updateApplicationStatus,
+        listOffersForPost,
         decideEventRegistration,
         getEventLink,
         cancelEvent,

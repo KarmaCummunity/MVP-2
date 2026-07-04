@@ -4329,6 +4329,20 @@ export type Database = {
           waitlist_position: number
         }[]
       }
+      glowe_list_offers_for_post: {
+        Args: { p_post_id: string }
+        Returns: {
+          availability: string
+          contact_preference: string
+          created_at: string
+          id: string
+          offer_text: string
+          offerer_avatar: string
+          offerer_email: string
+          offerer_name: string
+          user_id: string
+        }[]
+      }
       glowe_list_pending_orgs: {
         Args: never
         Returns: {
