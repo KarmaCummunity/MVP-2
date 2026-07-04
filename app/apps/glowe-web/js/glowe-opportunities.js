@@ -44,9 +44,27 @@
         };
     }
 
+    // True when `userId` already has an application for `opportunityId` in the
+    // given list (FR-GLOWE-007 AC5 "Already applied" guard). Accepts both the
+    // snake_case server shape (opportunity_id/user_id) and the camelCase local
+    // cache shape (opportunityId/userId). Server rows are already user-scoped,
+    // so a row without a user field counts as a match on opportunity alone.
+    function isDuplicateApplication(list, opportunityId, userId) {
+        if (!opportunityId) return false;
+        return (list || []).some(function (app) {
+            if (!app) return false;
+            const oid = app.opportunity_id !== undefined ? app.opportunity_id : app.opportunityId;
+            if (String(oid) !== String(opportunityId)) return false;
+            const uid = app.user_id !== undefined ? app.user_id : app.userId;
+            if (uid === undefined || uid === null || uid === '') return true;
+            return String(uid) === String(userId);
+        });
+    }
+
     return {
         commaList: commaList,
         validateOpportunityDraft: validateOpportunityDraft,
-        normalizeOpportunityDraft: normalizeOpportunityDraft
+        normalizeOpportunityDraft: normalizeOpportunityDraft,
+        isDuplicateApplication: isDuplicateApplication
     };
 });

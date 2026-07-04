@@ -4728,43 +4728,63 @@ async function handleCancelEvent(opportunity, events) {
 }
 
 // Handle application submission
-function handleApplicationSubmit(event) {
+async function handleApplicationSubmit(event) {
     event.preventDefault();
-    
-    const urlParams = new URLSearchParams(window.location.search);
-    const opportunityId = urlParams.get('id');
-    
+    if (!isLoggedIn()) {
+        showSuccessModal('Sign in to apply', 'Please sign in or create a free account to apply to this opportunity.');
+        return;
+    }
+    const opportunityId = new URLSearchParams(window.location.search).get('id');
+    const user = getCurrentUser();
+    const helpers = (typeof GloweOpportunities !== 'undefined') ? GloweOpportunities : null;
+    const backend = window.gloweBackend;
+
+    // Guard against duplicate applications (AC5). Prefer the authoritative
+    // server list; fall back to the local cache when the backend is offline.
+    let existing = getApplications();
+    if (backend && backend.configured()) {
+        try { existing = await backend.listOwned('applications') || []; } catch (_e) { existing = getApplications(); }
+    }
+    if (helpers && helpers.isDuplicateApplication(existing, opportunityId, user && user.id)) {
+        closeModal('apply-modal');
+        showSuccessModal('Already applied', 'You have already applied to this opportunity. Track its status in your personal area.');
+        return;
+    }
+
     const availability = document.getElementById('apply-availability').value;
     const skills = document.getElementById('apply-skills').value;
     const motivation = document.getElementById('apply-motivation').value;
-    
-    // Save application
+
+    if (backend && backend.configured()) {
+        try {
+            await backend.insertOwned('applications', {
+                opportunity_id: String(opportunityId),
+                availability,
+                skills,
+                motivation,
+                status: 'Pending'
+            });
+        } catch (_e) {
+            showSuccessModal('Could not apply', 'Something went wrong submitting your application. Please try again.');
+            return;
+        }
+    }
+
+    // Local cache keeps the Personal Area "Applications" list responsive until
+    // it is migrated to a live Supabase read (GLOWE.B6).
     const applications = getApplications();
-    const user = getCurrentUser();
-    
-    const newApplication = {
+    applications.push({
         id: Date.now(),
-        opportunityId: opportunityId,
+        opportunityId,
         userId: user.id,
         availability,
         skills,
         motivation,
         status: 'Pending',
         appliedAt: new Date().toISOString()
-    };
-    
-    applications.push(newApplication);
+    });
     saveApplications(applications);
-    if (window.gloweBackend && window.gloweBackend.configured()) {
-        window.gloweBackend.insertOwned('applications', {
-            opportunity_id: String(opportunityId),
-            availability,
-            skills,
-            motivation,
-            status: 'Pending'
-        }).catch(() => {});
-    }
-    
+
     closeModal('apply-modal');
     showSuccessModal(
         'Application Submitted!',
