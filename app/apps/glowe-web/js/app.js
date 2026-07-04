@@ -2278,6 +2278,39 @@ function getPostCommentsFor(postId) {
         : backend;
 }
 
+// Live forum group catalog (glowe_forum_groups). null before the first load
+// attempt; an array afterwards (possibly empty when the backend is offline or
+// unseeded, in which case the hardcoded discussionGroups is the demo fallback).
+// FR-GLOWE-009 AC1.
+let backendForumGroups = null;
+
+async function loadForumGroups() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { backendForumGroups = []; return; }
+    let rows = [];
+    try { rows = await backend.listAll('forum_groups', { orderBy: 'created_at', ascending: true }); } catch (_e) { rows = []; }
+    backendForumGroups = (typeof GloweForums !== 'undefined')
+        ? GloweForums.mapForumGroups(rows || [])
+        : [];
+}
+
+// The forum groups to render: live catalog when loaded and non-empty, else the
+// hardcoded discussionGroups demo fallback.
+function getForumGroups() {
+    return (backendForumGroups && backendForumGroups.length) ? backendForumGroups : discussionGroups;
+}
+
+// Kick off a one-shot live load then re-render, guarded so it fires at most once
+// per page and never loops when the backend returns no rows.
+function refreshForumGroups(rerender) {
+    if (backendForumGroups !== null) return;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { backendForumGroups = []; return; }
+    loadForumGroups().then(function () {
+        if (backendForumGroups && backendForumGroups.length) rerender();
+    });
+}
+
 function savePostComment(postId, text) {
     const comments = getPostComments();
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
@@ -3747,9 +3780,10 @@ async function initCommunityPage() {
     }
 
     if (groupsContainer) {
-        groupsContainer.innerHTML = discussionGroups.map(group => `
+        if (backendForumGroups === null) await loadForumGroups();
+        groupsContainer.innerHTML = getForumGroups().map(group => `
             <a class="filter-pill group-link-pill" href="discussion-group.html?group=${group.id}">
-                ${group.title}${group.members > 0 ? `<span>${group.members}</span>` : ''}
+                ${escapeHtml(group.title)}${group.members > 0 ? `<span>${group.members}</span>` : ''}
             </a>
         `).join('');
     }
@@ -3986,13 +4020,15 @@ function initForumsPage() {
     const leadersContainer = document.getElementById('forum-leaders');
     const groupSelect = document.getElementById('forum-question-group');
     const stats = document.querySelectorAll('[data-forum-stat]');
+    refreshForumGroups(initForumsPage);
+    const forumGroups = getForumGroups();
     const storedThreads = JSON.parse(localStorage.getItem('gloweForumThreads') || '[]');
     const allThreads = [
         ...storedThreads,
-        ...discussionGroups.flatMap(group => group.threads.map(thread => ({ ...thread, group })))
+        ...forumGroups.flatMap(group => group.threads.map(thread => ({ ...thread, group })))
     ];
     if (groupSelect) {
-        groupSelect.innerHTML = discussionGroups.map(group => `<option value="${group.id}">${group.title}</option>`).join('');
+        groupSelect.innerHTML = forumGroups.map(group => `<option value="${group.id}">${group.title}</option>`).join('');
     }
     if (leadersContainer) {
         leadersContainer.innerHTML = people.length > 0
@@ -4012,12 +4048,12 @@ function initForumsPage() {
             : '<p class="muted-note">Community members with active contributions will be featured here.</p>';
     }
     if (container) {
-        container.innerHTML = discussionGroups.map(group => `
+        container.innerHTML = forumGroups.map(group => `
             <a class="forum-group-card" href="discussion-group.html?group=${group.id}">
                 ${group.members > 0 ? `<span>${group.members} members</span>` : ''}
-                <h3>${group.title}</h3>
-                <p>${group.description}</p>
-                <div class="post-tag-row">${group.tags.map(tag => `<span>${tag}</span>`).join('')}</div>
+                <h3>${escapeHtml(group.title)}</h3>
+                <p>${escapeHtml(group.description)}</p>
+                <div class="post-tag-row">${group.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
             </a>
         `).join('');
     }
@@ -4037,9 +4073,9 @@ function initForumsPage() {
     }
     if (stats.length) {
         const totals = {
-            groups: discussionGroups.length,
+            groups: forumGroups.length,
             threads: allThreads.length,
-            members: discussionGroups.reduce((sum, group) => sum + group.members, 0)
+            members: forumGroups.reduce((sum, group) => sum + group.members, 0)
         };
         stats.forEach(stat => {
             stat.textContent = totals[stat.dataset.forumStat] || '0';
@@ -4052,7 +4088,8 @@ function handleForumQuestionSubmit(event) {
     if (!canCreateContent()) return;
     const form = event.target;
     const groupId = form.querySelector('#forum-question-group').value;
-    const group = discussionGroups.find(item => item.id === groupId) || discussionGroups[0];
+    const forumGroups = getForumGroups();
+    const group = forumGroups.find(item => item.id === groupId) || forumGroups[0];
     const fileInput = form.querySelector('#forum-question-file');
     const thread = {
         title: form.querySelector('#forum-question-title').value.trim(),
@@ -4127,8 +4164,10 @@ function initSavedPage() {
 }
 
 function initDiscussionGroupPage() {
+    refreshForumGroups(initDiscussionGroupPage);
+    const forumGroups = getForumGroups();
     const params = new URLSearchParams(window.location.search);
-    const group = discussionGroups.find(item => item.id === (params.get('group') || 'education')) || discussionGroups[0];
+    const group = forumGroups.find(item => item.id === (params.get('group') || 'education')) || forumGroups[0];
     const header = document.getElementById('discussion-group-header');
     const members = document.getElementById('discussion-member-list');
     const threads = document.getElementById('discussion-thread-list');
@@ -4137,9 +4176,9 @@ function initDiscussionGroupPage() {
 
     header.innerHTML = `
         <span class="hero-kicker">Discussion group</span>
-        <h1>${group.title}</h1>
-        <p>${group.description}</p>
-        <div class="post-tag-row">${group.tags.map(tag => `<span>${tag}</span>`).join('')}</div>
+        <h1>${escapeHtml(group.title)}</h1>
+        <p>${escapeHtml(group.description)}</p>
+        <div class="post-tag-row">${group.tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>
         ${group.members > 0 || group.posts > 0 || group.threads.length > 0 ? `
         <div class="group-stats-row">
             ${group.members > 0 ? `<span>${group.members} members</span>` : ''}
@@ -4193,7 +4232,8 @@ function focusGroupReply() {
 function handleDiscussionSubmit(event, groupId) {
     event.preventDefault();
     if (!canCreateContent()) return;
-    const group = discussionGroups.find(item => item.id === groupId) || discussionGroups[0];
+    const forumGroups = getForumGroups();
+    const group = forumGroups.find(item => item.id === groupId) || forumGroups[0];
     saveCommunityPost({
         authorId: 'sample-user-6',
         title: document.getElementById('discussion-title').value,

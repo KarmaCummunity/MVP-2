@@ -224,12 +224,12 @@ The Community page (`pages/community.html`) and Write Post page (`pages/write-po
 
 ## FR-GLOWE-009 — Forums & Discussions: live threads
 
-**Status.** 🟡 In progress — BE schema foundation landed (migration `0217`: `glowe_forum_groups` + `glowe_forum_threads` + `glowe_forum_replies` created with RLS, 4 groups seeded). Frontend wiring (AC1 live render, AC2–AC4 threads/replies, AC6/AC7) pending in later FE slices.
+**Status.** 🟡 In progress — BE schema foundation landed (migration `0217`: `glowe_forum_groups` + `glowe_forum_threads` + `glowe_forum_replies` created with RLS, 4 groups seeded). **AC1 done** — Forums page, discussion-group page, and the community topic-pills now render the live group catalog from `glowe_forum_groups`. AC2–AC4 threads/replies + AC6/AC7 pending in later FE slices.
 
 The Forums page (`pages/forums.html`) lists discussion groups; each group links to `pages/discussion-group.html?group=<id>` with live threads. Currently hardcoded in `discussionGroups[]` in `data.js`.
 
 **Acceptance Criteria.**
-- AC1. **Group catalog.** `glowe_forum_groups` is an admin-managed catalog (initially seeded with the 4 existing groups: Education & Knowledge, Environment & Climate Action, Health & Community Care, Rights Safety & Civic Power). Forum groups are public-read; only super_admin may insert/update. The Forums page renders live from this table.
+- AC1. **Group catalog.** ✅ `glowe_forum_groups` is an admin-managed catalog (seeded with the 4 groups: Education & Knowledge, Environment & Climate Action, Health & Community Care, Rights Safety & Civic Power). Forum groups are public-read; only glowe_admin/super_admin may insert/update. The Forums page, discussion-group page, and community topic-pills render live from this table via `loadForumGroups`→`listAll('forum_groups')` mapped by `GloweForums.mapForumGroups`; the hardcoded `discussionGroups[]` remains a demo/offline fallback (`getForumGroups()`).
 - AC2. **Thread listing.** `pages/discussion-group.html?group=<id>` loads all threads from `glowe_forum_threads` filtered by `group_id`, ordered by `created_at DESC`. Thread cards show title, author display_name, reply count, last-active timestamp.
 - AC3. **Create thread.** Verified members may create a new thread: title + body (text). `canCreateContent()` gate. Persists to `glowe_forum_threads (group_id, user_id, title, body)`.
 - AC4. **Replies.** Clicking a thread expands inline replies loaded from `glowe_forum_replies (thread_id, user_id, body, created_at)`. Verified members may reply. Reply count on thread card is a live aggregate.
