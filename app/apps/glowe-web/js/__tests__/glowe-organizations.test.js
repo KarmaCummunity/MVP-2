@@ -8,7 +8,9 @@ const {
     publicProjectsForUser,
     validateOutreachDraft,
     buildOutreachPayload,
-    personalProjectsView
+    personalProjectsView,
+    validateProjectDraft,
+    buildProjectPayload
 } = GloweOrganizations;
 
 describe('mapProjectRow', () => {
@@ -141,6 +143,36 @@ describe('buildOutreachPayload', () => {
         const payload = buildOutreachPayload();
         expect(payload.post_type).toBe('outreach');
         expect(payload.audience).toBe('');
+    });
+});
+
+describe('validateProjectDraft', () => {
+    it('accepts a draft with a title', () => {
+        expect(validateProjectDraft({ title: 'Clean Water' })).toEqual({ valid: true });
+    });
+
+    it('rejects an empty or whitespace-only title', () => {
+        expect(validateProjectDraft({ title: '   ' })).toMatchObject({ valid: false });
+        expect(validateProjectDraft({ description: 'no title' })).toMatchObject({ valid: false });
+    });
+
+    it('is safe with no input', () => {
+        expect(validateProjectDraft()).toMatchObject({ valid: false });
+    });
+});
+
+describe('buildProjectPayload', () => {
+    it('trims fields and keeps the given status', () => {
+        expect(buildProjectPayload({ title: '  Wells  ', status: 'Active', description: '  D  ' }))
+            .toEqual({ title: 'Wells', status: 'Active', description: 'D' });
+    });
+
+    it('defaults status to Draft and description to empty', () => {
+        expect(buildProjectPayload({ title: 'T' })).toEqual({ title: 'T', status: 'Draft', description: '' });
+    });
+
+    it('is safe with no input', () => {
+        expect(buildProjectPayload()).toEqual({ title: '', status: 'Draft', description: '' });
     });
 });
 
