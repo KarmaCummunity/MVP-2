@@ -146,4 +146,13 @@ export const settingsHe = {
   // FR-TRANSLATE-003 — translation language preference
   translationLanguage: 'שפת תרגום',
   translationLanguageDeviceDefault: 'ברירת מחדל של המכשיר',
+  translationLanguageIntro:
+    'פוסטים שנכתבו בשפה אחרת יתורגמו אוטומטית לשפה שתבחרו. תמיד אפשר להציג את המקור.',
+  translationLanguageSaveFailed: 'שמירת שפת התרגום נכשלה. נסו שוב.',
+  translationLanguageNames: {
+    he: 'עברית',
+    en: 'אנגלית',
+    ar: 'ערבית',
+    ru: 'רוסית',
+  },
 } as const;
