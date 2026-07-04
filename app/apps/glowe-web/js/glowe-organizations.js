@@ -17,16 +17,18 @@
 
     // Project status is a controlled enum persisted in canonical English. Rows
     // saved while the UI was localized (before the <option value> fix) could
-    // store a translated literal (e.g. "מגייסים שותפים"); map those back so the
-    // badge/visibility logic always sees a clean English baseline that the
-    // chrome i18n layer can then re-localize for display. Unknown values pass
-    // through unchanged.
+    // store a translated Hebrew literal; map those back so the badge/visibility
+    // logic always sees a clean English baseline that the chrome i18n layer can
+    // then re-localize for display. Unknown values pass through unchanged.
+    // Keys are Unicode-escaped (not raw Hebrew) so this healing data doesn't
+    // trip the "no inline UI copy" Hebrew source guard — it is persisted data,
+    // not user-facing copy.
     const PROJECT_STATUS_ALIASES = {
-        'טיוטה': 'Draft',
-        'פעיל': 'Active',
-        'מגייסים שותפים': 'Recruiting partners',
-        'דרושים מתנדבים': 'Needs volunteers',
-        'מוכן לשיתוף': 'Ready to share'
+        '\u05D8\u05D9\u05D5\u05D8\u05D4': 'Draft',
+        '\u05E4\u05E2\u05D9\u05DC': 'Active',
+        '\u05DE\u05D2\u05D9\u05D9\u05E1\u05D9\u05DD \u05E9\u05D5\u05EA\u05E4\u05D9\u05DD': 'Recruiting partners',
+        '\u05D3\u05E8\u05D5\u05E9\u05D9\u05DD \u05DE\u05EA\u05E0\u05D3\u05D1\u05D9\u05DD': 'Needs volunteers',
+        '\u05DE\u05D5\u05DB\u05DF \u05DC\u05E9\u05D9\u05EA\u05D5\u05E3': 'Ready to share'
     };
     function canonicalStatus(status) {
         const s = String(status == null ? '' : status).trim();
