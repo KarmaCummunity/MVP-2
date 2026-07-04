@@ -206,7 +206,7 @@ The Volunteer Network page (`pages/volunteer-network.html`) and opportunity deta
 
 ## FR-GLOWE-008 — Community Feed: live posts
 
-**Status.** 🟡 In progress — AC1/AC2/AC3/AC5/AC6/AC7 done; AC4 (comment read) residual.
+**Status.** ✅ Done — all ACs delivered (live read, search/filter, create, comment read+create, share, author attribution, delete-own, translations).
 
 The Community page (`pages/community.html`) and Write Post page (`pages/write-post.html`) currently display mock content. Phase B connects them to `glowe_posts` where `post_type = 'community'`.
 
@@ -214,11 +214,11 @@ The Community page (`pages/community.html`) and Write Post page (`pages/write-po
 - AC1. ✅ **Read.** Community page loads all posts with `post_type = 'community'`, ordered by `created_at DESC`. Anonymous visitors can read all posts. `loadCommunityPosts()` filters out wishes (`post_type='wish'`) via `GlowePosts.mapCommunityRows`.
 - AC2. ✅ **Search/filter.** The existing keyword search and tag/category filters apply client-side to the fetched post list.
 - AC3. ✅ **Create.** The Write Post page form and the inline composer persist to `glowe_posts` via `insertOwned('posts', payload)` with `post_type = 'community'` (shared `submitCommunityPost`). Required: `title`, `text`. Optional: `category`, `tags[]`, `audience`, `language`, `link`. `canCreateContent()` gate enforced.
-- AC4. 🟡 **Comments.** Comment **create** persists via `insertOwned('comments', { post_id, text, author_name })`, but the comment **display** still reads from `localStorage` rather than an on-demand `glowe_comments` read filtered by `post_id`. Residual: wire the backend comment read.
+- AC4. ✅ **Comments.** Comment **create** persists via `insertOwned('comments', { post_id, text, author_name })`; comment **display** now reads from `glowe_comments` — `loadPostComments()` (in `initCommunityPage`/`initMemberHome`) fetches via `listAll('comments')` and `GlowePosts.groupCommentsByPost` groups by `post_id`. `getPostCommentsFor(postId)` prefers backend rows and merges any local-only comment just posted (`GlowePosts.mergeCommentLists`, deduped by author+text) for instant feedback; localStorage is the offline/demo fallback when the backend is unconfigured.
 - AC5. ✅ **Share.** Post cards render the social-share buttons (Facebook/LinkedIn/X/WhatsApp) **and** a "Copy link" control that writes the post's canonical URL — `GlowePosts.postCanonicalUrl(postId, origin)` → `<origin>/glowe/pages/community.html?post=<id>` — to the clipboard via `navigator.clipboard.writeText` and confirms with a success toast (`copyPostLink`). Canonical URL keyed on `postId` (not the mutable title). Per `D-67`, both share paths are retained.
 - AC6. ✅ **Author attribution.** Post cards display `author_name` (mapped from the row). Pre-Phase-B / anonymous rows fall back to "Community Member". (Join to `glowe_profiles.display_name` deferred; `author_name` is stamped at create from the signed-in profile.)
 - AC7. ✅ **Delete own post.** The post author sees a "Delete post" CTA in the post more-menu (owner-only via `GlowePosts.isPostOwner`); `deleteCommunityPost` calls `removeOwned('posts', { id })` (RLS owner-scoped, hard-delete) then reloads the feed.
-- AC8. 🟡 **Translations.** Delete-flow and share/copy-link strings localized to Hebrew; residual comment-read strings land with AC4.
+- AC8. ✅ **Translations.** All Phase-B community-feed strings (create, delete-flow, share/copy-link) are in `GLOWE_TRANSLATIONS.he`. The comment-read path adds no new user-facing copy (comment text is user content; the "N comments" chrome was already localized).
 
 ---
 

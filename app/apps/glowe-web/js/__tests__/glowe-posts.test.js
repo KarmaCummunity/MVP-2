@@ -106,6 +106,51 @@ describe('postCanonicalUrl', () => {
     });
 });
 
+describe('mapCommentRow', () => {
+    it('maps a glowe_comments row to the card shape', () => {
+        expect(GlowePosts.mapCommentRow({
+            id: 'c1', post_id: 'p1', text: 'Nice', author_name: 'Dana', created_at: '2026-01-02'
+        })).toEqual({ id: 'c1', postId: 'p1', author: 'Dana', text: 'Nice', createdAt: '2026-01-02' });
+    });
+
+    it('applies friendly defaults for missing fields', () => {
+        expect(GlowePosts.mapCommentRow({ id: 'c2', post_id: 'p2' }))
+            .toEqual({ id: 'c2', postId: 'p2', author: 'Community Member', text: '', createdAt: '' });
+    });
+});
+
+describe('groupCommentsByPost', () => {
+    it('groups rows by post_id preserving order', () => {
+        const rows = [
+            { id: 'c1', post_id: 'p1', text: 'A', author_name: 'Ann' },
+            { id: 'c2', post_id: 'p2', text: 'B', author_name: 'Ben' },
+            { id: 'c3', post_id: 'p1', text: 'C', author_name: 'Cid' }
+        ];
+        const grouped = GlowePosts.groupCommentsByPost(rows);
+        expect(grouped.p1.map(c => c.text)).toEqual(['A', 'C']);
+        expect(grouped.p2.map(c => c.text)).toEqual(['B']);
+    });
+
+    it('handles empty and null input', () => {
+        expect(GlowePosts.groupCommentsByPost([])).toEqual({});
+        expect(GlowePosts.groupCommentsByPost(null)).toEqual({});
+    });
+});
+
+describe('mergeCommentLists', () => {
+    it('prepends local-only comments and drops backend duplicates', () => {
+        const backend = [{ author: 'Ann', text: 'A' }, { author: 'Ben', text: 'B' }];
+        const local = [{ author: 'Cid', text: 'C' }, { author: 'Ann', text: 'A' }];
+        expect(GlowePosts.mergeCommentLists(backend, local).map(c => c.text))
+            .toEqual(['C', 'A', 'B']);
+    });
+
+    it('tolerates empty or non-array input', () => {
+        expect(GlowePosts.mergeCommentLists(null, null)).toEqual([]);
+        expect(GlowePosts.mergeCommentLists([{ author: 'x', text: 'y' }], null).map(c => c.text)).toEqual(['y']);
+    });
+});
+
 describe('normalizePostDraft', () => {
     it('builds a community insert payload with array tags and trimmed fields', () => {
         expect(GlowePosts.normalizePostDraft({
