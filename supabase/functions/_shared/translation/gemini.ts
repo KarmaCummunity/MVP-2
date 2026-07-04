@@ -1,6 +1,7 @@
-// supabase/functions/translate/gemini.ts
+// supabase/functions/_shared/translation/gemini.ts
 // Free Gemini Flash tier (dev). NOTE: the free tier is NOT zero-retention/DPA;
 // upgrading to a paid DPA model (D-63/D-65) is a key + model-name change only.
+// Shared by the KC `translate` and GLOWE `glowe-translate` Edge Functions.
 
 import type { ProviderInput, ProviderResult, TranslationProvider } from './provider.ts';
 

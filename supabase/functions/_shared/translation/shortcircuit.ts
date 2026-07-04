@@ -1,7 +1,8 @@
-// supabase/functions/translate/shortcircuit.ts
+// supabase/functions/_shared/translation/shortcircuit.ts
 // Server-side guards: skip work that should never be translated, and skip
 // when source and target are the same base language. Mirrors @kc/domain
 // (re-implemented because Deno cannot import the workspace package here).
+// Shared by the KC `translate` and GLOWE `glowe-translate` Edge Functions.
 
 const EMOJI_OR_SPACE = /^[\p{Extended_Pictographic}\p{Emoji_Component}\s]+$/u;
 const URL_ONLY = /^\s*https?:\/\/\S+\s*$/u;

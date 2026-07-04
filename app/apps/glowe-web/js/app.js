@@ -3162,6 +3162,7 @@ function mapProfileToOrg(profile) {
         name: profile.orgName || profile.name || 'Organization',
         type: profile.orgField || profile.type || 'Organization',
         mission: profile.orgDescription || profile.about || '',
+        missionField: profile.orgDescription ? 'org_description' : 'about',
         location: profile.orgCountry || profile.location || '',
         scope: profile.country || '',
         volunteers: 0,
@@ -3197,7 +3198,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
         : '';
 
     return `
-        <div class="opportunity-card">
+        <div class="opportunity-card" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${opportunity.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More opportunity actions">...</summary>
                 <div class="post-more-panel">
@@ -3213,8 +3214,8 @@ function renderOpportunityCard(opportunity, basePath = '') {
                 </div>
                 <span class="opportunity-badge">${escapeHtml(badge)}</span>
             </div>
-            <h3 class="opportunity-title">${escapeHtml(opportunity.title)}</h3>
-            <p class="opportunity-description">${escapeHtml(opportunity.description)}</p>
+            <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
+            <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
             <div class="opportunity-details">
                 ${eventMeta}
                 <span class="opportunity-detail">${escapeHtml(opportunity.location)}</span>
@@ -3235,7 +3236,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
 function renderOrganizationCard(organization, basePath = '') {
     const profileHref = `${basePath}pages/profile.html?id=${organization.id}`;
     return `
-        <div class="opportunity-card">
+        <div class="opportunity-card" data-tr-card data-tr-type="glowe_profile" data-tr-id="${organization.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More profile actions">...</summary>
                 <div class="post-more-panel">
@@ -3251,14 +3252,14 @@ function renderOrganizationCard(organization, basePath = '') {
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
             <h3 class="opportunity-title">${escapeHtml(organization.name)}</h3>
-            <p class="opportunity-description">${escapeHtml(organization.mission)}</p>
+            <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
             <div class="opportunity-details">
                 <span class="opportunity-detail">${escapeHtml(organization.location)}</span>
                 <span class="opportunity-detail">${escapeHtml(organization.scope || 'Global')}</span>
                 <span class="opportunity-detail">${escapeHtml(organization.volunteers)} volunteers</span>
             </div>
             <div class="opportunity-skills">
-                <span class="skill-tag">${escapeHtml(organization.type || 'Organization')}</span>
+                <span class="skill-tag" data-tr-field="org_field">${escapeHtml(organization.type || 'Organization')}</span>
                 <span class="skill-tag">${escapeHtml(organization.impactArea || 'Impact')}</span>
             </div>
             <div class="card-actions">
@@ -3274,7 +3275,7 @@ function renderWishCard(wish) {
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
     const areas = Array.isArray(wish.areas) ? wish.areas : [];
     return `
-        <article class="wish-card" style="--tag-color: ${style.color}">
+        <article class="wish-card" style="--tag-color: ${style.color}" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More wish actions">...</summary>
                 <div class="post-more-panel">
@@ -3291,13 +3292,13 @@ function renderWishCard(wish) {
                 ${renderEntityMark(wish.author, 'wish-image')}
                 <span class="sr-only">Open wish details</span>
             </button>
-            <h3><button type="button" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
+            <h3><button type="button" data-tr-field="title" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
             <a class="wish-author" href="profile.html?id=${wish.authorId}">
                 ${renderEntityMark(wish.author)}
                 <span>${escapeHtml(wish.author)}</span>
                 <small>${escapeHtml(wish.time)}</small>
             </a>
-            <p>${escapeHtml(wish.description)}</p>
+            <p data-tr-field="text">${escapeHtml(wish.description)}</p>
             <div class="opportunity-details">
                 <span class="opportunity-detail">${escapeHtml(wish.location)}</span>
                 <span class="opportunity-detail">${escapeHtml(areas.join(', '))}</span>
@@ -3324,10 +3325,10 @@ function renderProjectCard(project, options) {
         </div>`
         : '';
     return `
-        <div class="project-card">
+        <div class="project-card" data-tr-card data-tr-type="glowe_project" data-tr-id="${project.id}">
             <span class="opportunity-badge">${escapeHtml(project.status)}</span>
-            <h3>${escapeHtml(project.title)}</h3>
-            <p>${escapeHtml(project.description)}</p>
+            <h3 data-tr-field="title">${escapeHtml(project.title)}</h3>
+            <p data-tr-field="description">${escapeHtml(project.description)}</p>
             ${ownerActions}
         </div>
     `;
@@ -3354,7 +3355,7 @@ function renderPostCard(post) {
         ? `<button type="button" class="post-delete-action" onclick="deleteCommunityPost('${postId}')">Delete post</button>`
         : '';
     return `
-        <article class="post-card" id="post-${postId}">
+        <article class="post-card" id="post-${postId}" data-tr-card data-tr-type="glowe_post" data-tr-id="${postId}">
             <details class="post-more-menu">
                 <summary aria-label="More post actions">...</summary>
                 <div class="post-more-panel">
@@ -3375,8 +3376,8 @@ function renderPostCard(post) {
                 </a>
                 <span class="post-type-tag">Post | ${escapeHtml(post.category)}</span>
             </div>
-            <h3>${escapeHtml(post.title)}</h3>
-            <p>${escapeHtml(post.text)}</p>
+            <h3 data-tr-field="title">${escapeHtml(post.title)}</h3>
+            <p data-tr-field="text">${escapeHtml(post.text)}</p>
             ${tags.length ? `<div class="post-tag-row">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             <div class="post-engagement-row">
                 <span>${reactionCount} reactions</span>
@@ -5915,6 +5916,9 @@ function getGloweLanguage() {
 // English text nodes / attribute values produced by the page or by app.js.
 const GLOWE_TRANSLATIONS = {
     he: {
+        // UGC translation toggle (FR-TRANSLATE-005)
+        'Show original': 'הצג מקור',
+        'Show translation': 'הצג תרגום',
         // Header / navigation
         'Home': 'בית',
         'Personal Area': 'האזור האישי',
