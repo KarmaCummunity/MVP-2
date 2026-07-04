@@ -643,6 +643,45 @@ function renderMyPostsList(list) {
     }).join('');
 }
 
+// FR-GLOWE-011 AC7 — live "My Opportunities" list. `backendMyOpportunities`
+// stays null until a load completes; the getter returns it once loaded. There
+// is no local authored-opportunity cache, so the fallback is an empty list.
+let backendMyOpportunities = null;
+
+async function loadMyOpportunities() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    const orgs = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    if (!orgs) return;
+    let rows = [];
+    try { rows = await backend.listOwned('opportunities'); } catch (_e) { rows = []; }
+    backendMyOpportunities = orgs.mapOwnedOpportunities(rows || []);
+}
+
+function getMyOpportunitiesForView() {
+    return Array.isArray(backendMyOpportunities) ? backendMyOpportunities : [];
+}
+
+// Render the compact "My Opportunities" list for the Personal Area (authored
+// opportunities). Mirrors renderMyPostsList; empty state prompts a first post.
+function renderMyOpportunitiesList(list) {
+    if (!Array.isArray(list) || !list.length) {
+        return '<p class="muted-note">No opportunities yet. Publish one on the Volunteer Network.</p>';
+    }
+    return list.map(function (opp) {
+        const tag = opp.field || opp.commitment;
+        const tagHtml = tag ? `<span class="post-type-tag">${escapeHtml(tag)}</span>` : '';
+        const location = opp.location ? `<span class="muted-note">${escapeHtml(opp.location)}</span>` : '';
+        return `
+            <article class="personal-opportunity-card">
+                ${tagHtml}
+                <h3>${escapeHtml(opp.title || '')}</h3>
+                ${location}
+            </article>
+        `;
+    }).join('');
+}
+
 function canUseBackend() {
     return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
@@ -5410,6 +5449,7 @@ function initMyApplicationsPage() {
         const projects = getPersonalProjectsForView();
         const myNeeds = getMyWishesForView();
         const myPosts = getMyPostsForView();
+        const myOpportunities = getMyOpportunitiesForView();
         const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         const applications = getApplications();
         const userApplications = user ? applications.filter(app => app.userId === user.id) : [];
@@ -5439,6 +5479,7 @@ function initMyApplicationsPage() {
                         <a href="#personal-opportunities">Opportunities</a>
                         <a href="#personal-needs">My Needs</a>
                         <a href="#personal-posts">My Posts</a>
+                        <a href="#personal-my-opportunities">My Opportunities</a>
                         <a href="#personal-events">My Events</a>
                         <a href="#personal-saved">Saved</a>
                         <a href="#personal-activity">Activity</a>
@@ -5542,9 +5583,22 @@ function initMyApplicationsPage() {
                             </div>
                         </article>
 
+                        <article class="profile-section-card" id="personal-my-opportunities">
+                            <div class="personal-card-header">
+                                <div class="profile-section-heading">
+                                    <span>06</span>
+                                    <h2>My Opportunities</h2>
+                                </div>
+                                <a class="btn btn-outline btn-small" href="volunteer-network.html">Post Opportunity</a>
+                            </div>
+                            <div class="personal-list" id="my-opportunities-list" aria-live="polite">
+                                ${renderMyOpportunitiesList(myOpportunities)}
+                            </div>
+                        </article>
+
                         <article class="profile-section-card" id="personal-events">
                             <div class="profile-section-heading">
-                                <span>06</span>
+                                <span>07</span>
                                 <h2>My Events</h2>
                             </div>
                             <div class="personal-list" id="my-events-list" aria-live="polite">
@@ -5554,7 +5608,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-saved">
                             <div class="profile-section-heading">
-                                <span>07</span>
+                                <span>08</span>
                                 <h2>Saved</h2>
                             </div>
                             <div class="saved-mini-grid">
@@ -5580,7 +5634,7 @@ function initMyApplicationsPage() {
 
                         <article class="profile-section-card" id="personal-activity">
                             <div class="profile-section-heading">
-                                <span>08</span>
+                                <span>09</span>
                                 <h2>Recent Activity</h2>
                             </div>
                             <div class="profile-post-list">
@@ -5605,6 +5659,7 @@ function initMyApplicationsPage() {
     loadPersonalProjects().then(() => renderPersonalArea());
     loadMyWishes().then(() => renderPersonalArea());
     loadMyPosts().then(() => renderPersonalArea());
+    loadMyOpportunities().then(() => renderPersonalArea());
     syncPersonalDataFromBackend().then((updated) => {
         if (updated) renderPersonalArea();
         loadMyEvents();
@@ -6209,6 +6264,8 @@ const GLOWE_TRANSLATIONS = {
         "No needs yet. Share what would help on the Wishing Well.": "אין עדיין צרכים. שתפו מה יעזור לכם בבאר המשאלות.",
         "My Posts": "הפוסטים שלי",
         "No posts yet. Share an update with the community.": "אין עדיין פוסטים. שתפו עדכון עם הקהילה.",
+        "My Opportunities": "ההזדמנויות שלי",
+        "No opportunities yet. Publish one on the Volunteer Network.": "אין עדיין הזדמנויות. פרסמו הזדמנות ברשת המתנדבים.",
         "Public links": "קישורים ציבוריים",
         "Publish a volunteer role": "פרסמו תפקיד התנדבות",
         "Publish an opportunity": "פרסמו הזדמנות",
