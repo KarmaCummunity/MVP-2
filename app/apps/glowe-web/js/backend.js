@@ -269,6 +269,32 @@
         return fromProfileRow(data);
     }
 
+    // FR-GLOWE-023 — register the member from the Google identity on first sign-in
+    // so they are a real profile immediately. Writes only id/email/display_name/
+    // avatar_url; account_type/onboarding_complete keep their DB defaults, so the
+    // FR-GLOWE-002 onboarding step still enriches non-blockingly. No-op if a
+    // profile already exists. Failures are non-fatal (the caller keeps browsing).
+    async function ensureProfileFromGoogle(user) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient || !user) return null;
+        const existing = await fetchProfile().catch(() => null);
+        if (existing) return existing;
+        const meta = user.user_metadata || {};
+        const payload = {
+            id: user.id,
+            email: user.email || meta.email || '',
+            display_name: meta.name || meta.full_name || (user.email ? user.email.split('@')[0] : 'GloWe member'),
+            avatar_url: meta.avatar_url || meta.picture || '',
+        };
+        const { data, error } = await supabaseClient
+            .from(tbl('profiles'))
+            .upsert(payload)
+            .select()
+            .maybeSingle();
+        if (error) { console.warn('ensureProfileFromGoogle failed (non-fatal):', error.message); return null; }
+        return fromProfileRow(data);
+    }
+
     // FR-GLOWE-011 AC3 — upload a profile image to the `glowe-avatars` Storage
     // bucket (migration 0219) and return its public URL. The object is written to
     // an owner-scoped folder (`<user_id>/…`) so the bucket's insert/update RLS
@@ -641,6 +667,7 @@
         fetchProfile,
         fetchProfileById,
         upsertProfile,
+        ensureProfileFromGoogle,
         uploadAvatar,
         completeOnboarding,
         listPendingOrgs,

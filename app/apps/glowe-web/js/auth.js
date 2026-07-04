@@ -141,6 +141,12 @@ async function syncSupabaseSession() {
         return;
     }
 
+    // FR-GLOWE-023 — register the member from Google on first sign-in (no-op if a
+    // profile already exists). Non-fatal on failure; onboarding remains the fallback.
+    if (typeof window.gloweBackend.ensureProfileFromGoogle === 'function') {
+        try { await window.gloweBackend.ensureProfileFromGoogle(supabaseUser); } catch (error) { /* non-fatal */ }
+    }
+
     let profile = null;
     try {
         profile = await window.gloweBackend.fetchProfile();
@@ -158,6 +164,11 @@ async function syncSupabaseSession() {
     // session. (FR-GLOWE-002)
     if (typeof window.maybeShowGloweOnboarding === 'function') {
         window.maybeShowGloweOnboarding(profile);
+    }
+
+    // FR-GLOWE-023 — finish the action the guest attempted before signing in.
+    if (window.GloweGuest && typeof window.GloweGuest.resumeGuestIntent === 'function') {
+        window.GloweGuest.resumeGuestIntent();
     }
 }
 
@@ -532,9 +543,25 @@ function updateAuthUI() {
     }
 }
 
+// FR-GLOWE-023 — greet first-time guests once, then never again. Browsing stays
+// otherwise transparent (no persistent guest banner).
+const GLOWE_GUEST_WELCOMED_KEY = 'glowe-guest-welcomed';
+function maybeShowGuestWelcome() {
+    if (isLoggedIn()) return;
+    if (localStorage.getItem(GLOWE_GUEST_WELCOMED_KEY) === '1') return;
+    localStorage.setItem(GLOWE_GUEST_WELCOMED_KEY, '1');
+    if (typeof window.showSuccessModal === 'function') {
+        window.showSuccessModal(
+            'Welcome to GloWe',
+            "Welcome — you're browsing as a guest. Sign in with Google anytime to participate."
+        );
+    }
+}
+
 // Initialize auth state on page load
 document.addEventListener('DOMContentLoaded', function() {
     updateAuthUI();
+    maybeShowGuestWelcome();
     // Bridge any live Supabase session (e.g. after a Google OAuth redirect)
     // into the local gloweUser store. The listener fires INITIAL_SESSION on
     // subscribe, which performs the first sync.

@@ -1238,10 +1238,25 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-68 — GloWe guest conversion ships Mode A (instant contextual prompt); Mode B is PM-gated
+
+**Date.** 2026-07-04
+
+**Decision.** Guest → member conversion (FR-GLOWE-023) ships **Mode A**: the moment a guest triggers an identity-required action, an action-tailored join modal opens immediately (single **Continue with Google** CTA), the intent is remembered, and the action resumes after sign-in. **Mode B** — progressive disclosure, where the guest may open and fill the action's form and is only walled at the final submit (with their typed input preserved and auto-submitted after sign-in) — is a deferred optimization that must **not** be implemented without an explicit PM instruction.
+
+**Rationale.** Mode A is the lower-risk baseline: it is simple, consistent across every action, and does not require preserving/replaying arbitrary form state across an OAuth redirect. Mode B typically converts better (sunk-cost + the guest sees the value before the wall) but is a measured optimization best run once we can compare conversion data — and it is materially more work per action. PM (2026-07-04) explicitly chose "A now, B later, only on my explicit instruction."
+
+**Alternatives rejected.** Ship Mode B directly — more surface area and per-action input-preservation complexity for an unproven conversion delta. A blocking login wall on entry — rejected earlier in the brainstorm: kills deep-link/SEO discovery for a global NGO-discovery product (web has no entry gate; guest is the default).
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-023); `docs/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md`; `app/apps/glowe-web/js/glowe-guest.js`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |
 | 4.6 | 2026-07-04 | Added `D-67` (GloWe community-post share keeps social buttons and adds a copy-link control writing `postCanonicalUrl` to the clipboard; canonical URL keyed on `postId`; `FR-GLOWE-008` AC5). |
 | 4.5 | 2026-06-29 | Added `D-66` (GloWe Events are opportunities-with-a-date and RSVPs are applications — additive columns + status guard in migration `0211`, no `glowe_events`/`glowe_event_registrations` tables; reconciles the rich event brainstorm with the convergence model; `FR-GLOWE-007` AC9, `FR-GLOWE-012` AC7). |
 | 4.4 | 2026-06-29 | Added `D-65` (UGC translation Phase 1b: free Gemini Flash now + pluggable provider seam → paid DPA Flash before public launch is env-only; `TranslateAndCache`/`ITranslationProvider` realized server-side in the `translate` Edge Function; app depends on new `ITranslationService` port). Recorded alongside `D-63`/`D-64` (translation epic). |
