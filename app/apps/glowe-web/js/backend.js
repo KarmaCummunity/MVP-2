@@ -529,6 +529,20 @@
         return Array.isArray(data) ? data : [];
     }
 
+    // FR-GLOWE-012 AC2 — opportunity owner accepts/declines an application
+    // (migration 0221). Owner-scoped SECURITY DEFINER RPC; decision must be
+    // 'Accepted' or 'Declined'. Returns the updated glowe_applications row.
+    async function updateApplicationStatus(applicationId, decision) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_update_application_status', {
+            p_application_id: String(applicationId),
+            p_decision: String(decision)
+        });
+        if (error) throw error;
+        return data;
+    }
+
     // Organizer accept/decline of a registration (migration 0213). Accept applies
     // capacity routing (→ Waitlisted when full); decline requires a reason.
     async function decideEventRegistration(registrationId, decision, note = '') {
@@ -632,6 +646,7 @@
         listMyRegistrations,
         listEventRegistrations,
         listApplicationsForOpportunity,
+        updateApplicationStatus,
         decideEventRegistration,
         getEventLink,
         cancelEvent,

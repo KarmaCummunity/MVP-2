@@ -5364,6 +5364,11 @@ async function renderOpportunityApplicants(opportunity) {
     const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
     const views = orgHelpers ? orgHelpers.mapApplicantRows(rows) : [];
     area.innerHTML = opportunityApplicantsHtml(views);
+    area.querySelectorAll('[data-app][data-decide]').forEach(function (btn) {
+        btn.addEventListener('click', function () {
+            handleApplicationDecision(opportunity, btn.getAttribute('data-app'), btn.getAttribute('data-decide'));
+        });
+    });
 }
 
 // Build the applicants-inbox markup from mapped applicant views.
@@ -5372,8 +5377,15 @@ function opportunityApplicantsHtml(views) {
     if (!views.length) {
         return `${header}<p class="muted-note">No applications yet.</p>`;
     }
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
     const rows = views.map(function (v) {
         const date = v.appliedAt ? new Date(v.appliedAt).toLocaleDateString() : '';
+        const canDecide = orgHelpers ? orgHelpers.canDecideApplication(v.status) : v.status === 'Pending';
+        const actions = canDecide ? `
+            <div class="applicant-actions">
+                <button class="btn btn-primary btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Accepted">Accept</button>
+                <button class="btn btn-outline btn-sm" type="button" data-app="${escapeHtml(String(v.id))}" data-decide="Declined">Decline</button>
+            </div>` : '';
         return `
         <li class="applicant-row">
             <div class="applicant-head">
@@ -5384,9 +5396,25 @@ function opportunityApplicantsHtml(views) {
             ${v.skills ? `<p class="applicant-field"><strong>Skills:</strong> ${escapeHtml(v.skills)}</p>` : ''}
             ${v.motivation ? `<p class="applicant-field"><strong>Motivation:</strong> ${escapeHtml(v.motivation)}</p>` : ''}
             ${date ? `<p class="applicant-meta">Applied ${escapeHtml(date)}</p>` : ''}
+            ${actions}
         </li>`;
     }).join('');
     return `${header}<ul class="applicant-list">${rows}</ul>`;
+}
+
+// FR-GLOWE-012 AC2 — owner accept/decline of an application. Fires the
+// owner-scoped RPC via the backend, then re-renders the inbox from server truth.
+async function handleApplicationDecision(opportunity, applicationId, decision) {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    try {
+        await backend.updateApplicationStatus(applicationId, decision);
+    } catch (_e) {
+        const area = document.getElementById('opp-applicants');
+        if (area) area.insertAdjacentHTML('afterbegin', '<p class="event-register-error">Could not update the application. Please try again.</p>');
+        return;
+    }
+    renderOpportunityApplicants(opportunity);
 }
 
 // Replace the apply card with an event summary + registration panel (FR-GLOWE-007-C).
@@ -6457,6 +6485,9 @@ const GLOWE_TRANSLATIONS = {
         "Loading applicants…": "טוען מועמדים…",
         "Could not load applicants.": "לא ניתן לטעון את המועמדים.",
         "No applications yet.": "אין עדיין מועמדויות.",
+        "Accept": "אישור",
+        "Decline": "דחייה",
+        "Could not update the application. Please try again.": "לא ניתן לעדכן את המועמדות. נסו שוב.",
         "GloWe volunteer": "מתנדב/ת GloWe",
         "Availability:": "זמינות:",
         "Skills:": "כישורים:",

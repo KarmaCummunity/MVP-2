@@ -240,6 +240,13 @@
         return (Array.isArray(rows) ? rows : []).map(mapApplicantRow);
     }
 
+    // FR-GLOWE-012 AC2 — an application can be accepted/declined by the owner
+    // only while it is still awaiting a decision (Pending). Already-decided rows
+    // (Accepted / Declined / Waitlisted / Cancelled) show no action buttons.
+    function canDecideApplication(status) {
+        return String(status || '') === 'Pending';
+    }
+
     // FR-GLOWE-011 AC10 — guard the destructive "Delete Account" action: the
     // user must type the exact word DELETE (case-insensitive, trimmed) before the
     // profile-delete call is allowed to fire.
@@ -302,6 +309,7 @@
         mapOwnedApplication: mapOwnedApplication,
         mapApplicantRow: mapApplicantRow,
         mapApplicantRows: mapApplicantRows,
+        canDecideApplication: canDecideApplication,
         volunteerApplicationViews: volunteerApplicationViews,
         isDeleteAccountConfirmed: isDeleteAccountConfirmed,
         shouldShowProfileSkeleton: shouldShowProfileSkeleton,

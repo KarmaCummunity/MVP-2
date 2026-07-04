@@ -25,7 +25,8 @@ const {
     shouldShowProfileSkeleton,
     validateAvatarFile,
     mapApplicantRow,
-    mapApplicantRows
+    mapApplicantRows,
+    canDecideApplication
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -520,5 +521,21 @@ describe('mapApplicantRow (FR-GLOWE-012 AC1)', () => {
         expect(mapApplicantRows([{ id: 'a', user_id: 'u' }])).toHaveLength(1);
         expect(mapApplicantRows(null)).toEqual([]);
         expect(mapApplicantRows(undefined)).toEqual([]);
+    });
+});
+
+describe('canDecideApplication (FR-GLOWE-012 AC2)', () => {
+    it('is true only for Pending applications', () => {
+        expect(canDecideApplication('Pending')).toBe(true);
+    });
+
+    it('is false for already-decided or missing statuses', () => {
+        expect(canDecideApplication('Accepted')).toBe(false);
+        expect(canDecideApplication('Declined')).toBe(false);
+        expect(canDecideApplication('Waitlisted')).toBe(false);
+        expect(canDecideApplication('Cancelled')).toBe(false);
+        expect(canDecideApplication('')).toBe(false);
+        expect(canDecideApplication(null)).toBe(false);
+        expect(canDecideApplication(undefined)).toBe(false);
     });
 });
