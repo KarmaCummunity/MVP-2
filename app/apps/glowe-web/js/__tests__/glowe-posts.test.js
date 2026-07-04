@@ -47,3 +47,46 @@ describe('mapCommunityRows', () => {
         expect(GlowePosts.mapCommunityRows(null)).toEqual([]);
     });
 });
+
+describe('commaList', () => {
+    it('splits comma strings, passes arrays, handles empty', () => {
+        expect(GlowePosts.commaList('Education, Climate , Health')).toEqual(['Education', 'Climate', 'Health']);
+        expect(GlowePosts.commaList([' a ', 'b'])).toEqual(['a', 'b']);
+        expect(GlowePosts.commaList('')).toEqual([]);
+        expect(GlowePosts.commaList(null)).toEqual([]);
+    });
+});
+
+describe('validatePostDraft', () => {
+    it('requires title and body/text', () => {
+        expect(GlowePosts.validatePostDraft({ title: 'T', text: 'Body' }).valid).toBe(true);
+        expect(GlowePosts.validatePostDraft({ title: 'T', body: 'Body' }).valid).toBe(true);
+        expect(GlowePosts.validatePostDraft({ title: '  ', text: 'Body' }).valid).toBe(false);
+        expect(GlowePosts.validatePostDraft({ title: 'T', text: '  ' }).valid).toBe(false);
+        expect(GlowePosts.validatePostDraft(null).valid).toBe(false);
+    });
+
+    it('returns a helpful error for the first missing field', () => {
+        expect(GlowePosts.validatePostDraft({}).error).toMatch(/title/i);
+        expect(GlowePosts.validatePostDraft({ title: 'T' }).error).toMatch(/share/i);
+    });
+});
+
+describe('normalizePostDraft', () => {
+    it('builds a community insert payload with array tags and trimmed fields', () => {
+        expect(GlowePosts.normalizePostDraft({
+            title: '  Hello  ', category: ' Knowledge ', body: ' Body ',
+            tags: 'Education, Climate', audience: ' Everyone ', language: ' English ',
+            link: ' https://x.io ', authorName: ' Dana '
+        })).toEqual({
+            post_type: 'community', title: 'Hello', category: 'Knowledge', text: 'Body',
+            tags: ['Education', 'Climate'], audience: 'Everyone', language: 'English',
+            link: 'https://x.io', author_name: 'Dana'
+        });
+    });
+
+    it('collapses blank optional fields and prefers text over body', () => {
+        const payload = GlowePosts.normalizePostDraft({ title: 'T', text: 'Real', body: 'Ignored' });
+        expect(payload).toMatchObject({ post_type: 'community', title: 'T', text: 'Real', tags: [], category: '', audience: '', language: '', link: '', author_name: '' });
+    });
+});

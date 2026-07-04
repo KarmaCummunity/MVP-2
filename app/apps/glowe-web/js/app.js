@@ -2487,6 +2487,40 @@ async function loadCommunityPosts() {
     communityPosts.push(...mapped);
 }
 
+// Publish a community post to glowe_posts (post_type='community'). Shared by the
+// inline composer and the write-post form (FR-GLOWE-008). Returns true on a
+// persisted insert, false when gated/invalid/failed (with a user-facing modal).
+async function submitCommunityPost(draft) {
+    if (!canCreateContent()) return false;
+    const helpers = (typeof GlowePosts !== 'undefined') ? GlowePosts : null;
+    const check = helpers ? helpers.validatePostDraft(draft) : { valid: Boolean(draft && draft.title) };
+    if (!check.valid) {
+        showSuccessModal('Missing details', check.error || 'Please complete the post before publishing.');
+        return false;
+    }
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) {
+        showSuccessModal('Backend unavailable', 'Posts need a live connection right now. Please try again shortly.');
+        return false;
+    }
+    const payload = helpers ? helpers.normalizePostDraft(draft) : draft;
+    try {
+        await backend.insertOwned('posts', payload);
+        return true;
+    } catch (_e) {
+        showSuccessModal('Could not publish', 'Something went wrong publishing your post. Please try again.');
+        return false;
+    }
+}
+
+// Display name for the signed-in author, falling back to their saved profile.
+function currentAuthorName() {
+    const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    if (user && user.name) return user.name;
+    const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : null;
+    return (profile && profile.name) || 'Community Member';
+}
+
 function mapProfileToOrg(profile) {
     return {
         id: profile.id,
@@ -2915,20 +2949,20 @@ function closeInlineComposer() {
     }
 }
 
-function handleInlinePostSubmit(event) {
+async function handleInlinePostSubmit(event) {
     event.preventDefault();
-    if (!canCreateContent()) return;
     const topic = postTopics.find(item => item.id === document.getElementById('inline-post-topic').value) || postTopics[0];
-    saveCommunityPost({
-        authorId: 'sample-user-6',
+    const published = await submitCommunityPost({
         title: document.getElementById('inline-post-title').value,
         category: topic.label,
         text: document.getElementById('inline-post-body').value,
-        tags: document.getElementById('inline-post-tags').value.split(',').map(tag => tag.trim()).filter(Boolean),
-        audience: 'Everyone'
+        tags: document.getElementById('inline-post-tags').value,
+        audience: 'Everyone',
+        author_name: currentAuthorName()
     });
+    if (!published) return;
     closeInlineComposer();
-    initCommunityPage();
+    await initCommunityPage();
     showSuccessModal('Post published to feed', 'The new post appears at the top of the community feed.');
 }
 
@@ -2989,20 +3023,20 @@ function initWritePostPage() {
         input.addEventListener('input', updatePreview);
         input.addEventListener('change', updatePreview);
     });
-    form.addEventListener('submit', event => {
+    form.addEventListener('submit', async event => {
         event.preventDefault();
-        if (!canCreateContent()) return;
         const topic = selectedTopic();
-        saveCommunityPost({
-            authorId: 'sample-user-6',
+        const published = await submitCommunityPost({
             title: document.getElementById('post-title').value,
             category: topic.label,
             text: document.getElementById('post-body').value,
-            tags: document.getElementById('post-tags').value.split(',').map(tag => tag.trim()).filter(Boolean),
+            tags: document.getElementById('post-tags').value,
             audience: document.getElementById('post-audience').value,
             language: document.getElementById('post-language').value,
-            link: document.getElementById('post-link').value
+            link: document.getElementById('post-link').value,
+            author_name: currentAuthorName()
         });
+        if (!published) return;
         showSuccessModal('Post connected to feed', 'Your post was saved and will appear at the top of the community feed.');
         setTimeout(() => {
             window.location.href = 'community.html';
