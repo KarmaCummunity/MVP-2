@@ -159,7 +159,7 @@ GloWe shipped English-only (FR-GLOWE-001 AC1, "design byte-for-byte the original
 
 ## FR-GLOWE-006 — Wishing Well: live needs board
 
-**Status.** 🟡 In progress — DB foundation delivered (migration `0215`: `post_type`/`wish_type`/`impact_area`/`status` columns on `glowe_posts` + owner-only `glowe_offers` table + SQL regression). Frontend slices (live read+filters+stats, Post-a-Need, Offer-Support/close) pending.
+**Status.** ✅ Done — DB foundation (migration `0215`: `post_type`/`wish_type`/`impact_area`/`status` columns on `glowe_posts` + owner-only `glowe_offers` table + SQL regression) plus all frontend slices: B1b live read+filters+stats+empty (`js/glowe-wishes.js`), B1c Post-a-Need (`insertOwned('posts', {post_type:'wish',status:'open'})`), B1d Offer-Support persist (login-gated → `insertOwned('offers', …)`) and owner-only close/fulfil (`updateOwned('posts', id, {status:'fulfilled'})`). Pure helpers unit-tested in `js/__tests__/glowe-wishes.test.js`.
 
 The Wishing Well page (`pages/wishing-well.html`) shows community needs posted by members. Phase B replaces the mock data with live reads from `glowe_posts` (type discriminator `post_type = 'wish'`) and connects the "Post a Need" form to persist.
 

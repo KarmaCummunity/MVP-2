@@ -155,10 +155,20 @@
         };
     }
 
+    function toOfferRow(payload = {}) {
+        return {
+            post_id: payload.post_id || payload.postId || '',
+            offer_text: payload.offer_text || payload.offerText || '',
+            availability: payload.availability || '',
+            contact_preference: payload.contact_preference || payload.contactPreference || ''
+        };
+    }
+
     function prepareTablePayload(table, payload = {}) {
         if (table === 'projects') return toProjectRow(payload);
         if (table === 'opportunities') return toOpportunityRow(payload);
         if (table === 'posts') return toPostRow(payload);
+        if (table === 'offers') return toOfferRow(payload);
         return payload;
     }
 
@@ -390,6 +400,22 @@
         return true;
     }
 
+    // Patch a row the caller owns (RLS owner-write enforces ownership too).
+    async function updateOwned(table, id, patch) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl(table))
+            .update(patch)
+            .eq('id', id)
+            .eq('user_id', user.id)
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
     async function apiRequest(path, options = {}) {
         if (!configured()) return null;
         const method = (options.method || 'GET').toUpperCase();
@@ -550,6 +576,7 @@
         listOwned,
         insertOwned,
         removeOwned,
+        updateOwned,
         registerForEvent,
         cancelRegistration,
         listMyRegistrations,

@@ -1303,6 +1303,14 @@ function ensureGlobalUI() {
                             <label for="connect-message">Message</label>
                             <textarea id="connect-message" rows="4" required placeholder="Briefly explain your relevant experience, what you can offer, and what you need to know next."></textarea>
                         </div>
+                        <div class="form-group">
+                            <label for="connect-contact">Preferred contact</label>
+                            <select id="connect-contact">
+                                <option>In-app message</option>
+                                <option>Email</option>
+                                <option>Phone</option>
+                            </select>
+                        </div>
                         <div class="modal-actions">
                             <button type="submit" class="btn btn-primary">Send Offer</button>
                             <button type="button" class="btn btn-outline" onclick="handleQuickConnect()">Save Draft</button>
@@ -2015,10 +2023,38 @@ function showSupportModal(wishId = null) {
     openModal('connect-modal');
 }
 
-function handleConnectSubmit(event) {
+async function handleConnectSubmit(event) {
     event.preventDefault();
-    closeModal('connect-modal');
-    openConnectionWorkspace();
+    if (!isLoggedIn()) {
+        showSuccessModal('Sign in to offer support', 'Please sign in or create a free account to send an offer to this need.');
+        return;
+    }
+    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    const draft = {
+        support_type: document.getElementById('support-type').value,
+        availability: document.getElementById('support-availability').value,
+        message: document.getElementById('connect-message').value,
+        contact_preference: (document.getElementById('connect-contact') || {}).value || 'In-app message'
+    };
+    draft.offer_text = helpers ? helpers.buildOfferText(draft) : (draft.message || '');
+    const check = helpers ? helpers.validateOfferDraft(draft)
+        : { valid: Boolean(draft.offer_text && draft.availability) };
+    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please complete the offer.'); return; }
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !activeWishForSupport) return;
+    try {
+        await backend.insertOwned('offers', {
+            post_id: activeWishForSupport.id,
+            offer_text: draft.offer_text,
+            availability: draft.availability,
+            contact_preference: draft.contact_preference
+        });
+        closeModal('connect-modal');
+        event.target.reset();
+        showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
+    } catch (_e) {
+        showSuccessModal('Could not send offer', 'Something went wrong sending your offer. Please try again.');
+    }
 }
 
 function handleQuickConnect() {
@@ -2607,6 +2643,7 @@ function renderWishCard(wish) {
         <div class="card-actions">
             <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail('${wish.id}')">Learn More</button>
             <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
+            ${wishOwnerControls(wish)}
         </div>
         ${renderShareButtons(wish.title, `wishing-well.html?wish=${wish.id}`)}
     </article>
@@ -3481,6 +3518,29 @@ function emptyWishFilteredHtml() {
 
 function emptyWishBoardHtml() {
     return '<div class="empty-state"><h3>No wishes yet</h3><p>The Wishing Well fills up as community members post support requests, calls for volunteers, and collaboration opportunities. Be the first to share what your project needs.</p><button class="btn btn-primary btn-small" type="button" onclick="openWishComposer()">Post a wish</button></div>';
+}
+
+// Owner-only "Mark as fulfilled" control on a wish card.
+function wishOwnerControls(wish) {
+    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+    const user = (typeof getCurrentUser === 'function') ? getCurrentUser() : null;
+    const isOwner = helpers ? helpers.isWishOwner(wish, user && user.id) : false;
+    if (!isOwner) return '';
+    return `<button class="btn btn-outline btn-small" type="button" onclick="markWishFulfilled('${wish.id}')">Mark as fulfilled</button>`;
+}
+
+// The wish owner marks their need fulfilled → status='fulfilled' drops it from
+// the open board (FR-GLOWE-006 AC5).
+async function markWishFulfilled(wishId) {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    if (!window.confirm('Mark this wish as fulfilled? It will be removed from the open board.')) return;
+    try {
+        await backend.updateOwned('posts', wishId, { status: 'fulfilled' });
+    } catch (_e) {
+        /* reload reflects the server's authoritative state */
+    }
+    if (reloadWishBoard) await reloadWishBoard();
 }
 
 // Load open wishes from glowe_posts (post_type='wish', status='open') into the

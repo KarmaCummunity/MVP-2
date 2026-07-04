@@ -103,3 +103,45 @@ describe('buildWishText', () => {
         expect(GloweWishes.buildWishText({})).toBe('');
     });
 });
+
+describe('isWishOwner', () => {
+    it('is true only when the viewer published the wish', () => {
+        const wish = GloweWishes.mapWishRow(wishRow({ user_id: 'u1' }));
+        expect(GloweWishes.isWishOwner(wish, 'u1')).toBe(true);
+        expect(GloweWishes.isWishOwner(wish, 'u2')).toBe(false);
+    });
+
+    it('is false for guests or missing data', () => {
+        const wish = GloweWishes.mapWishRow(wishRow({ user_id: 'u1' }));
+        expect(GloweWishes.isWishOwner(wish, '')).toBe(false);
+        expect(GloweWishes.isWishOwner(wish, null)).toBe(false);
+        expect(GloweWishes.isWishOwner(null, 'u1')).toBe(false);
+    });
+});
+
+describe('validateOfferDraft', () => {
+    it('requires offer_text and availability', () => {
+        expect(GloweWishes.validateOfferDraft({ offer_text: 'I can mentor', availability: 'Weekends' }).valid).toBe(true);
+        expect(GloweWishes.validateOfferDraft({ offer_text: '  ', availability: 'Weekends' }).valid).toBe(false);
+        expect(GloweWishes.validateOfferDraft({ offer_text: 'X', availability: '' }).valid).toBe(false);
+        expect(GloweWishes.validateOfferDraft(null).valid).toBe(false);
+    });
+
+    it('returns a helpful error for the first missing field', () => {
+        expect(GloweWishes.validateOfferDraft({}).error).toMatch(/what you can offer/i);
+        expect(GloweWishes.validateOfferDraft({ offer_text: 'X' }).error).toMatch(/availability/i);
+    });
+});
+
+describe('buildOfferText', () => {
+    it('composes support type and message into a body', () => {
+        const text = GloweWishes.buildOfferText({ support_type: 'Mentoring', message: 'Available evenings' });
+        expect(text).toContain('Offering: Mentoring');
+        expect(text).toContain('Available evenings');
+    });
+
+    it('omits empty optional parts', () => {
+        expect(GloweWishes.buildOfferText({ message: 'Only this' })).toBe('Only this');
+        expect(GloweWishes.buildOfferText({})).toBe('');
+    });
+});
