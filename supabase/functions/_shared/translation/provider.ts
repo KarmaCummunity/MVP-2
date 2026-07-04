@@ -25,10 +25,18 @@ export interface TranslationProvider {
 }
 
 import { GeminiFlashProvider } from './gemini.ts';
+import { GoogleFreeProvider } from './googlefree.ts';
 
+// Default to the keyless free provider: the free Gemini tier is not universally
+// available (some projects/regions return `limit: 0`, TD-75) and the PM
+// directive is "free models only, no billing". Gemini stays opt-in via
+// TRANSLATION_PROVIDER=gemini for when a DPA/paid key lands (D-63/D-65).
 export function selectProvider(): TranslationProvider {
-  const kind = (Deno.env.get('TRANSLATION_PROVIDER') ?? 'gemini').toLowerCase();
+  const kind = (Deno.env.get('TRANSLATION_PROVIDER') ?? 'googlefree').toLowerCase();
   switch (kind) {
+    case 'googlefree':
+    case 'google':
+      return new GoogleFreeProvider();
     case 'gemini':
       return new GeminiFlashProvider();
     default:

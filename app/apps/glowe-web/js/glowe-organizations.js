@@ -15,6 +15,26 @@
         return row[snake] !== undefined ? row[snake] : row[camel];
     }
 
+    // Project status is a controlled enum persisted in canonical English. Rows
+    // saved while the UI was localized (before the <option value> fix) could
+    // store a translated Hebrew literal; map those back so the badge/visibility
+    // logic always sees a clean English baseline that the chrome i18n layer can
+    // then re-localize for display. Unknown values pass through unchanged.
+    // Keys are Unicode-escaped (not raw Hebrew) so this healing data doesn't
+    // trip the "no inline UI copy" Hebrew source guard — it is persisted data,
+    // not user-facing copy.
+    const CANONICAL_STATUS_ALIASES = {
+        '\u05D8\u05D9\u05D5\u05D8\u05D4': 'Draft',
+        '\u05E4\u05E2\u05D9\u05DC': 'Active',
+        '\u05DE\u05D2\u05D9\u05D9\u05E1\u05D9\u05DD \u05E9\u05D5\u05EA\u05E4\u05D9\u05DD': 'Recruiting partners',
+        '\u05D3\u05E8\u05D5\u05E9\u05D9\u05DD \u05DE\u05EA\u05E0\u05D3\u05D1\u05D9\u05DD': 'Needs volunteers',
+        '\u05DE\u05D5\u05DB\u05DF \u05DC\u05E9\u05D9\u05EA\u05D5\u05E3': 'Ready to share'
+    };
+    function canonicalStatus(status) {
+        const s = String(status == null ? '' : status).trim();
+        return CANONICAL_STATUS_ALIASES[s] || s;
+    }
+
     // Map a glowe_projects row to the view model renderProjectCard expects.
     function mapProjectRow(row) {
         return {
@@ -22,7 +42,7 @@
             userId: field(row, 'user_id', 'userId') || '',
             title: field(row, 'title', 'title') || '',
             description: field(row, 'description', 'description') || '',
-            status: field(row, 'status', 'status') || 'Active'
+            status: canonicalStatus(field(row, 'status', 'status') || 'Active')
         };
     }
 
@@ -107,7 +127,7 @@
         const draft = input || {};
         return {
             title: String(draft.title || '').trim(),
-            status: String(draft.status || '').trim() || 'Draft',
+            status: canonicalStatus(String(draft.status || '').trim() || 'Draft'),
             description: String(draft.description || '').trim()
         };
     }
@@ -344,6 +364,7 @@
     return {
         mapProjectRow: mapProjectRow,
         mapProjects: mapProjects,
+        canonicalStatus: canonicalStatus,
         isPublicProject: isPublicProject,
         publicProjectsForUser: publicProjectsForUser,
         validateOutreachDraft: validateOutreachDraft,

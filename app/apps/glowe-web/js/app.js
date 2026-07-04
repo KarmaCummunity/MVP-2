@@ -1937,11 +1937,11 @@ function ensureGlobalUI() {
                             <div class="form-group">
                                 <label for="personal-project-status">Status</label>
                                 <select id="personal-project-status" required>
-                                    <option>Draft</option>
-                                    <option>Active</option>
-                                    <option>Recruiting partners</option>
-                                    <option>Needs volunteers</option>
-                                    <option>Ready to share</option>
+                                    <option value="Draft">Draft</option>
+                                    <option value="Active">Active</option>
+                                    <option value="Recruiting partners">Recruiting partners</option>
+                                    <option value="Needs volunteers">Needs volunteers</option>
+                                    <option value="Ready to share">Ready to share</option>
                                 </select>
                             </div>
                         </div>
@@ -2317,7 +2317,8 @@ function openEditPersonalProjectModal(id) {
     if (!project) return;
     document.getElementById('personal-project-id').value = project.id;
     document.getElementById('personal-project-title').value = project.title || '';
-    document.getElementById('personal-project-status').value = project.status || 'Draft';
+    const statusValue = helpers ? helpers.canonicalStatus(project.status) : project.status;
+    document.getElementById('personal-project-status').value = statusValue || 'Draft';
     document.getElementById('personal-project-description').value = project.description || '';
     setProjectModalMode('Edit project', 'Update Project');
     openModal('add-project-modal');
@@ -3148,17 +3149,17 @@ function openWishDetail(wishId) {
     const content = document.getElementById('wish-detail-content');
     content.innerHTML = `
         <button class="close-modal" type="button" aria-label="Close wish details" onclick="closeModal('wish-detail-modal')">&times;</button>
-        <div class="wish-detail-scroll">
+        <div class="wish-detail-scroll" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <div class="wish-detail-hero" style="--tag-color: ${style.color}">
                 <span class="wish-type" style="background:${style.color}">${wish.type}</span>
-                <h2>${wish.title}</h2>
+                <h2 data-tr-field="title">${wish.title}</h2>
                 <a class="wish-author" href="profile.html?id=${wish.authorId}">
                     ${renderEntityMark(wish.author)}
                     <span>${wish.author}</span>
                     <small>${wish.time}</small>
                 </a>
             </div>
-            <p class="wish-detail-description">${wish.description}</p>
+            <p class="wish-detail-description" data-tr-field="text">${wish.description}</p>
             <div class="opportunity-details">
                 <span class="opportunity-detail">${wish.location}</span>
                 <span class="opportunity-detail">${wish.areas.join(', ')}</span>
@@ -5386,6 +5387,24 @@ function _renderProfileContent(profile, container) {
 }
 
 // Initialize opportunity detail page
+// FR-TRANSLATE-005 AC7 — tag the opportunity detail page's scalar prose (title +
+// description) as a translatable card, then nudge the GloweTranslate driver.
+// `.opportunity-main` wraps both fields; only the two tagged elements are read.
+function markOpportunityDetailForTranslation(opportunityId) {
+    const card = document.querySelector('.opportunity-main');
+    if (!card || !opportunityId) return;
+    card.setAttribute('data-tr-card', '');
+    card.setAttribute('data-tr-type', 'glowe_opportunity');
+    card.setAttribute('data-tr-id', opportunityId);
+    const title = document.getElementById('opp-title');
+    if (title) title.setAttribute('data-tr-field', 'title');
+    const description = document.getElementById('opp-description');
+    if (description) description.setAttribute('data-tr-field', 'description');
+    if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
+        window.GloweTranslate.scan();
+    }
+}
+
 async function initOpportunityDetailPage() {
     const urlParams = new URLSearchParams(window.location.search);
     const opportunityId = urlParams.get('id');
@@ -5415,6 +5434,11 @@ async function initOpportunityDetailPage() {
     document.getElementById('opp-duration').textContent = opportunity.duration;
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
     document.getElementById('opp-description').textContent = opportunity.description;
+
+    // FR-TRANSLATE-005 AC7 — mark the detail prose for demand-driven translation
+    // (title + description are verbatim scalar columns). Arrays (skills,
+    // requirements, responsibilities) stay untranslated (TD-135).
+    markOpportunityDetailForTranslation(opportunity.id);
     
     const requirementsList = document.getElementById('opp-requirements');
     requirementsList.innerHTML = (opportunity.requirements || []).map(req => `<li>${escapeHtml(req)}</li>`).join('');
@@ -7194,6 +7218,7 @@ const GLOWE_TRANSLATIONS = {
         "Project title": "כותרת הפרויקט",
         "Status": "סטטוס",
         "Draft": "טיוטה",
+        "Active": "פעיל",
         "Recruiting partners": "מגייסים שותפים",
         "Needs volunteers": "דרושים מתנדבים",
         "Ready to share": "מוכן לשיתוף",
@@ -7321,7 +7346,129 @@ const GLOWE_TRANSLATIONS = {
         'Sign in with Google to open your personal area.': 'התחברו עם גוגל כדי לפתוח את האזור האישי שלכם.',
         'Sign in with Google to do this on GloWe.': 'התחברו עם גוגל כדי לעשות זאת ב-GloWe.',
         'Welcome to GloWe': 'ברוכים הבאים ל-GloWe',
-        "Welcome — you're browsing as a guest. Sign in with Google anytime to participate.": 'ברוכים הבאים — אתם גולשים כאורח. התחברו עם גוגל בכל רגע כדי להשתתף.'
+        "Welcome — you're browsing as a guest. Sign in with Google anytime to participate.": 'ברוכים הבאים — אתם גולשים כאורח. התחברו עם גוגל בכל רגע כדי להשתתף.',
+        "Mark as fulfilled": "סמנו כמומש",
+        "No wishes yet": "עדיין אין משאלות",
+        "Post a wish": "פרסמו משאלה",
+        "The Wishing Well fills up as community members post support requests, calls for volunteers, and collaboration opportunities. Be the first to share what your project needs.": "באר המשאלות מתמלאת כשחברי הקהילה מפרסמים בקשות תמיכה, קריאות למתנדבים והזדמנויות לשיתוף פעולה. היו הראשונים לשתף מה הפרויקט שלכם צריך.",
+        "Back to wishes": "חזרה למשאלות",
+        "No opportunities posted yet": "עדיין לא פורסמו הזדמנויות",
+        "No organizations yet": "עדיין אין ארגונים",
+        "No matching profiles": "אין פרופילים תואמים",
+        "No posts yet — share knowledge, ask for support, or open a discussion to get things going.": "עדיין אין פוסטים — שתפו ידע, בקשו תמיכה, או פתחו דיון כדי להניע דברים.",
+        "No registrations yet.": "עדיין אין הרשמות.",
+        "Could not load registrations.": "לא ניתן לטעון הרשמות.",
+        "Be the first to share a volunteer role or collaboration request with the GloWe community.": "היו הראשונים לשתף תפקיד התנדבות או בקשת שיתוף פעולה עם קהילת GloWe.",
+        "Be the first to share a volunteer role or collaboration request with the community.": "היו הראשונים לשתף תפקיד התנדבות או בקשת שיתוף פעולה עם הקהילה.",
+        "Members will appear here once they join the community.": "חברים יופיעו כאן ברגע שיצטרפו לקהילה.",
+        "Organizations join GloWe by creating a profile and completing verification. The first approved profiles will appear here.": "ארגונים מצטרפים ל-GloWe על ידי יצירת פרופיל והשלמת אימות. הפרופילים הראשונים שיאושרו יופיעו כאן.",
+        "The community is just getting started. Post a wish, share what you know, or reach out to someone who is working on what you care about.": "הקהילה רק מתחילה. פרסמו משאלה, שתפו את מה שאתם יודעים, או פנו למישהו שעובד על מה שחשוב לכם.",
+        "This section will come alive as the community grows.": "החלק הזה יתעורר לחיים ככל שהקהילה תגדל.",
+        "Try a broader keyword or clear a filter.": "נסו מילת מפתח רחבה יותר או נקו סינון.",
+        "Write the first post": "כתבו את הפוסט הראשון",
+        "Write a message": "כתבו הודעה",
+        "Loading opportunities…": "טוען הזדמנויות…",
+        "Loading organizations…": "טוען ארגונים…",
+        "Loading posts…": "טוען פוסטים…",
+        "Loading profile…": "טוען פרופיל…",
+        "Loading registrations…": "טוען הרשמות…",
+        "Loading wishes…": "טוען משאלות…",
+        "Fetching from the community directory.": "מביא מספריית הקהילה.",
+        "Back": "חזרה",
+        "Next": "הבא",
+        "Register for event": "הרשמה לאירוע",
+        "Sign in to register": "התחברו כדי להירשם",
+        "Cancel registration": "ביטול הרשמה",
+        "Cancel event": "ביטול אירוע",
+        "Manage registrations": "ניהול הרשמות",
+        "Event registration": "הרשמה לאירוע",
+        "Message to the organizer (optional)": "הודעה למארגן (אופציונלי)",
+        "This event has been cancelled by the organizer.": "האירוע בוטל על ידי המארגן.",
+        "This event has ended.": "האירוע הסתיים.",
+        "This event is cancelled.": "האירוע בוטל.",
+        "This event is no longer open for registration.": "האירוע כבר אינו פתוח להרשמה.",
+        "Registration:": "הרשמה:",
+        "Status:": "סטטוס:",
+        "Type:": "סוג:",
+        "When:": "מתי:",
+        "Join link:": "קישור הצטרפות:",
+        "Offer sent": "ההצעה נשלחה",
+        "Structured support offer submitted.": "הצעת תמיכה מובנית נשלחה.",
+        "Save as draft": "שמירה כטיוטה",
+        "Submit for review": "שליחה לסקירה",
+        "Send code": "שליחת קוד",
+        "Select an area": "בחרו תחום",
+        "Choose if relevant": "בחרו אם רלוונטי",
+        "Preferred contact": "אמצעי קשר מועדף",
+        "In-app message": "הודעה באפליקציה",
+        "Location (optional)": "מיקום (אופציונלי)",
+        "Phone": "טלפון",
+        "Phone (optional)": "טלפון (אופציונלי)",
+        "WhatsApp": "וואטסאפ",
+        "Public": "ציבורי",
+        "Public actions": "פעולות ציבוריות",
+        "Public profile and media": "פרופיל ציבורי ומדיה",
+        "Basic account": "חשבון בסיסי",
+        "Looking for": "מחפש",
+        "Impact": "השפעה",
+        "Impact update": "עדכון השפעה",
+        "Draft impact update": "טיוטת עדכון השפעה",
+        "Draft Update": "טיוטת עדכון",
+        "Impact, interests and methods": "השפעה, תחומי עניין ושיטות",
+        "Mentoring": "מנטורינג",
+        "Trust": "אמון",
+        "Trust, contact and review": "אמון, קשר וסקירה",
+        "Story": "סיפור",
+        "Story and purpose": "סיפור ומטרה",
+        "The dream": "החלום",
+        "The conversation starts here": "השיחה מתחילה כאן",
+        "Connection workspace": "מרחב עבודה לחיבורים",
+        "Profile onboarding": "הקמת פרופיל",
+        "Organization review": "סקירת ארגון",
+        "Review note": "הערת סקירה",
+        "Relevant SDGs": "יעדי פיתוח בר-קיימא רלוונטיים",
+        "Size / team": "גודל / צוות",
+        "Annual budget": "תקציב שנתי",
+        "First coordination call": "שיחת תיאום ראשונה",
+        "Both sides confirm scope, timeline, and ownership.": "שני הצדדים מאשרים היקף, לוח זמנים ובעלות.",
+        "A short outcome note documents what changed.": "פתק תוצאה קצר מתעד מה השתנה.",
+        "When work is complete, this becomes a short public note: what was needed, who helped, what happened, and what is still needed.": "כשהעבודה מסתיימת, זה הופך לפתק ציבורי קצר: מה נדרש, מי עזר, מה קרה, ומה עדיין נדרש.",
+        "To turn a local need into a shared action that others can join, support, or learn from.": "להפוך צורך מקומי לפעולה משותפת שאחרים יכולים להצטרף אליה, לתמוך בה, או ללמוד ממנה.",
+        "Build a useful profile step by step. You can save a draft now and complete more details later.": "בנו פרופיל שימושי שלב אחר שלב. אפשר לשמור טיוטה עכשיו ולהשלים פרטים נוספים מאוחר יותר.",
+        "Choose the profile that best describes you. This changes the questions and future profile layout.": "בחרו את הפרופיל שמתאר אתכם בצורה הטובה ביותר. זה משנה את השאלות ואת מבנה הפרופיל העתידי.",
+        "For this MVP, the code is shown on screen and stored locally.": "בגרסת ה-MVP הזו, הקוד מוצג על המסך ונשמר מקומית.",
+        "I agree to keep GloWe professional, respectful, transparent, and aligned with human rights.": "אני מסכים לשמור על GloWe מקצועי, מכבד, שקוף ותואם לזכויות אדם.",
+        "Logo or profile image": "לוגו או תמונת פרופיל",
+        "Website / LinkedIn / Facebook": "אתר / LinkedIn / Facebook",
+        "1 person": "אדם אחד",
+        "2-5 people": "2-5 אנשים",
+        "6-20 people": "6-20 אנשים",
+        "20+ people": "20+ אנשים",
+        "(required for rejection)": "(נדרש לדחייה)",
+        "First name *": "שם פרטי *",
+        "Last name *": "שם משפחה *",
+        "Email *": "אימייל *",
+        "Password *": "סיסמה *",
+        "Confirm password *": "אימות סיסמה *",
+        "Email verification code *": "קוד אימות אימייל *",
+        "Country *": "מדינה *",
+        "Community / audience *": "קהילה / קהל *",
+        "Geographic activity *": "פעילות גיאוגרפית *",
+        "Main interest areas *": "תחומי עניין עיקריים *",
+        "Organization mission *": "משימת הארגון *",
+        "Problem you address *": "הבעיה שאתם מטפלים בה *",
+        "Solution or method *": "פתרון או שיטה *",
+        "Values and goals *": "ערכים ומטרות *",
+        "Short public line *": "שורה ציבורית קצרה *",
+        "Title / role *": "כותרת / תפקיד *",
+        "All listings": "כל הרשומות",
+        "Events only": "אירועים בלבד",
+        "Events:": "אירועים:",
+        "In-person events": "אירועים פיזיים",
+        "Online events": "אירועים מקוונים",
+        "Upcoming events": "אירועים קרובים",
+        "Registered members": "חברים רשומים",
+        "Registered organizations": "ארגונים רשומים"
     }
 };
 
