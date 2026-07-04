@@ -34,9 +34,20 @@
       .trim();
   }
 
+  // Localize the template (tokens still present) before interpolation, so the
+  // Hebrew dict — keyed on the tokened English string — can match. Identity
+  // fallback keeps English when no translator is loaded (e.g. unit tests).
+  function localizeTemplate(text) {
+    const t = window.gloweTranslateString;
+    return (typeof t === 'function') ? t(text) : text;
+  }
+
   function buildJoinCopy(actionKey, ctx) {
     const tpl = GLOWE_JOIN_ACTIONS[actionKey] || GENERIC_COPY;
-    return { title: interpolate(tpl.title, ctx), body: interpolate(tpl.body, ctx) };
+    return {
+      title: interpolate(localizeTemplate(tpl.title), ctx),
+      body: interpolate(localizeTemplate(tpl.body), ctx),
+    };
   }
 
   function setPendingIntent(intent) {

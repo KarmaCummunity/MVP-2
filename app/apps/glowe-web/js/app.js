@@ -1,37 +1,24 @@
 // Main application logic
 
-// Default intro for the sign-in / registration modal. A gated action can swap in
-// a tailored message via promptGuestSignIn(); openModal restores this default so a
-// later plain sign-in never shows stale, action-specific copy.
-const LOGIN_MODAL_DEFAULT_INTRO = 'Sign in with your Google account to continue.';
-
 // Modal handling
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        if (modalId === 'login-modal') {
-            const intro = modal.querySelector('.modal-intro');
-            if (intro) intro.textContent = LOGIN_MODAL_DEFAULT_INTRO;
-        }
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
     }
 }
 
-// Guests can browse but not save (or perform other gated actions). Instead of a
-// dead-end notice, open the real sign-in / registration screen with a tailored
-// intro so a guest can create a free account and complete the action.
-function promptGuestSignIn(message) {
-    ensureGlobalUI();
-    if (!document.getElementById('login-modal')) {
-        showSuccessModal('Sign in', message || LOGIN_MODAL_DEFAULT_INTRO);
+// Guests can browse but not act. Route every identity-required gate through the
+// canonical contextual join prompt (FR-GLOWE-023, js/glowe-guest.js): tailored
+// per-action copy, Google sign-in, and resume-after-OAuth. Falls back to a plain
+// notice only if the guest module failed to load.
+function promptGuestJoin(actionKey, ctx) {
+    if (window.GloweGuest && typeof window.GloweGuest.showJoinPrompt === 'function') {
+        window.GloweGuest.showJoinPrompt(actionKey, ctx || {});
         return;
     }
-    openModal('login-modal');
-    if (message) {
-        const intro = document.querySelector('#login-modal .modal-intro');
-        if (intro) intro.textContent = message;
-    }
+    showSuccessModal('Sign in to continue', 'Please sign in or create a free account to do this on GloWe.');
 }
 
 function closeModal(modalId) {
@@ -2438,7 +2425,8 @@ function showSupportModal(wishId = null) {
 async function handleConnectSubmit(event) {
     event.preventDefault();
     if (!isLoggedIn()) {
-        showSuccessModal('Sign in to offer support', 'Please sign in or create a free account to send an offer to this need.');
+        closeModal('connect-modal');
+        promptGuestJoin('offer-help', { org: activeWishForSupport && activeWishForSupport.author });
         return;
     }
     const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
@@ -2492,7 +2480,8 @@ function openReachOutModal(recipientId, recipientName) {
 async function handleReachOutSubmit(event) {
     event.preventDefault();
     if (!isLoggedIn()) {
-        showSuccessModal('Sign in to reach out', 'Please sign in or create a free account to message this organization.');
+        closeModal('reach-out-modal');
+        promptGuestJoin('send-message', { org: activeReachOutRecipient && activeReachOutRecipient.name });
         return;
     }
     const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
@@ -2696,9 +2685,9 @@ function setSavedItems(items) {
 
 function saveItem(type, id, title, meta = '', href = '') {
     // FR-GLOWE-013 AC1 — saving requires login (saved items sync per user). Guests
-    // get the sign-in / registration screen with save-specific copy, not a notice.
+    // get the contextual join prompt (save-specific copy), not a dead-end notice.
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
-        promptGuestSignIn('Sign in or create a free account to save items to your area.');
+        promptGuestJoin('save-item', { title });
         return;
     }
     const items = getSavedItems();
@@ -2758,7 +2747,7 @@ function refreshSavedToggleButton(btn, type, id) {
 // confirmation; the button flips in place either way.
 function toggleSavedItem(btn, type, id, title, meta, href) {
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
-        promptGuestSignIn('Sign in or create a free account to save items to your area.');
+        promptGuestJoin('save-item', { title });
         return;
     }
     const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
@@ -6922,8 +6911,29 @@ const GLOWE_TRANSLATIONS = {
         "Save the opportunity if you want to compare it later.": "שמרו את ההזדמנות אם תרצו להשוות אותה מאוחר יותר.",
         "Save wish": "שמירת משאלה",
         "Saved": "נשמר",
-        "Sign in with your Google account to continue.": "התחברו עם חשבון Google כדי להמשיך.",
-        "Sign in or create a free account to save items to your area.": "התחברו או צרו חשבון חינם כדי לשמור פריטים לאזור שלכם.",
+        "Sign in to post a need": "התחברו כדי לפרסם צורך",
+        "Browsing GloWe is open to everyone. Sign in with Google to post a need and reach people ready to help.": "הגלישה ב-GloWe פתוחה לכולם. התחברו עם Google כדי לפרסם צורך ולהגיע לאנשים שמוכנים לעזור.",
+        "Sign in to post": "התחברו כדי לפרסם",
+        "Sign in with Google to share a post with the GloWe community.": "התחברו עם Google כדי לשתף פוסט עם קהילת GloWe.",
+        "Sign in to publish": "התחברו כדי לפרסם",
+        "Sign in with Google to publish this opportunity and start receiving applications.": "התחברו עם Google כדי לפרסם את ההזדמנות הזו ולהתחיל לקבל פניות.",
+        "Sign in to start a discussion": "התחברו כדי לפתוח דיון",
+        "Sign in with Google to open a new discussion thread.": "התחברו עם Google כדי לפתוח דיון חדש.",
+        "Sign in to reply": "התחברו כדי להגיב",
+        "Sign in with Google to join this discussion.": "התחברו עם Google כדי להצטרף לדיון הזה.",
+        "Sign in to apply": "התחברו כדי להגיש מועמדות",
+        "Sign in with Google to apply to {org} and track your application.": "התחברו עם Google כדי להגיש מועמדות אל {org} ולעקוב אחר הפנייה שלכם.",
+        "Save your spot": "שריינו את מקומכם",
+        "Sign in with Google to register for {title}.": "התחברו עם Google כדי להירשם אל {title}.",
+        "Sign in with Google to open your personal area.": "התחברו עם Google כדי לפתוח את האזור האישי שלכם.",
+        "Ready to lend a hand?": "מוכנים להושיט יד?",
+        "Sign in with Google to reach {org} and offer your help.": "התחברו עם Google כדי לפנות אל {org} ולהציע את עזרתכם.",
+        "Keep this for later": "שמרו את זה למועד מאוחר יותר",
+        "Sign in with Google to save it to your list.": "התחברו עם Google כדי לשמור את זה לרשימה שלכם.",
+        "Start the conversation": "התחילו את השיחה",
+        "Sign in with Google to message {org}.": "התחברו עם Google כדי לשלוח הודעה אל {org}.",
+        "Sign in to continue": "התחברו כדי להמשיך",
+        "Sign in with Google to do this on GloWe.": "התחברו עם Google כדי לעשות זאת ב-GloWe.",
         "Saved items": "פריטים שמורים",
         "Saved Items": "פריטים שמורים",
         "Scope": "היקף",
@@ -7328,6 +7338,17 @@ const GLOWE_TRANSLATIONS = {
 function gloweDict() {
     return GLOWE_TRANSLATIONS[getGloweLanguage()] || null;
 }
+
+// String-level lookup for copy that is templated then interpolated (e.g. the
+// contextual join prompts in js/glowe-guest.js). Callers translate the template —
+// which still holds {org}/{title} tokens matching the dict key — before filling
+// tokens, since the interpolated result can never exact-match a keyed string.
+function gloweTranslateString(str) {
+    const dict = gloweDict();
+    if (!dict || !str) return str;
+    return dict[String(str).trim()] || str;
+}
+window.gloweTranslateString = gloweTranslateString;
 
 const GLOWE_I18N_ATTRS = ['placeholder', 'title', 'aria-label', 'alt'];
 
