@@ -2384,6 +2384,75 @@ async function reloadForumThreads() {
     await loadForumThreads();
 }
 
+// Live forum replies (glowe_forum_replies). null before the first load attempt;
+// an array afterwards (empty when offline / no replies, in which case the
+// localStorage 'gloweForumReplies' mirror is the offline fallback). Loaded
+// ascending by created_at so replies read oldest-first. FR-GLOWE-009 AC4/AC7.
+let backendForumReplies = null;
+
+async function loadForumReplies() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { backendForumReplies = []; return; }
+    let rows = [];
+    try { rows = await backend.listAll('forum_replies', { orderBy: 'created_at', ascending: true }); }
+    catch (_e) { rows = []; }
+    backendForumReplies = (typeof GloweForums !== 'undefined')
+        ? GloweForums.mapForumReplies(rows || [])
+        : [];
+}
+
+// localStorage reply mirror normalized to the mapped render shape.
+function localForumReplies() {
+    const stored = JSON.parse(localStorage.getItem('gloweForumReplies') || '[]');
+    return stored.map(function (r) {
+        return {
+            id: r.id || '',
+            threadId: r.threadId || '',
+            authorId: '',
+            body: r.body || '',
+            createdAt: r.createdAt || ''
+        };
+    });
+}
+
+// Replies to render: live table when loaded and non-empty, else localStorage.
+function getForumReplies() {
+    return (backendForumReplies && backendForumReplies.length) ? backendForumReplies : localForumReplies();
+}
+
+function refreshForumReplies(rerender) {
+    if (backendForumReplies !== null) return;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) { backendForumReplies = []; return; }
+    loadForumReplies().then(function () {
+        if (backendForumReplies && backendForumReplies.length) rerender();
+    });
+}
+
+// Persist a new reply: optimistic localStorage mirror (offline fallback, TD-134)
+// plus a backend insert when configured.
+async function persistForumReply(threadId, body) {
+    const local = JSON.parse(localStorage.getItem('gloweForumReplies') || '[]');
+    local.push({
+        id: `local-reply-${Date.now()}`,
+        threadId: threadId,
+        body: body,
+        createdAt: new Date().toISOString()
+    });
+    localStorage.setItem('gloweForumReplies', JSON.stringify(local));
+    const backend = window.gloweBackend;
+    if (backend && backend.configured()) {
+        try { await backend.insertOwned('forum_replies', { thread_id: threadId, body: body }); }
+        catch (_e) { /* offline mirror already saved */ }
+    }
+}
+
+// Force a fresh backend reply reload (after a create).
+async function reloadForumReplies() {
+    backendForumReplies = null;
+    await loadForumReplies();
+}
+
 // Human-readable last-activity label for a thread's created_at.
 function formatThreadActivity(createdAt) {
     if (!createdAt) return 'Just now';
@@ -4102,9 +4171,12 @@ function initForumsPage() {
     const stats = document.querySelectorAll('[data-forum-stat]');
     refreshForumGroups(initForumsPage);
     refreshForumThreads(initForumsPage);
+    refreshForumReplies(initForumsPage);
     const forumGroups = getForumGroups();
+    const replyCounts = GloweForums.countRepliesByThread(getForumReplies());
     const allThreads = getForumThreads().map(thread => ({
         ...thread,
+        replies: replyCounts[thread.id] || 0,
         group: forumGroups.find(g => g.id === thread.groupId) || { id: thread.groupId, title: '' }
     }));
     if (groupSelect) {
@@ -4239,15 +4311,46 @@ function initSavedPage() {
     renderSavedItemsPage();
 }
 
+// Render one discussion thread card with its inline replies + reply composer.
+// Shared so the thread-row markup lives in one place (SonarCloud duplication).
+function renderDiscussionThread(thread, group, allReplies) {
+    const replies = GloweForums.repliesForThread(allReplies, thread.id);
+    const replyItems = replies.length > 0
+        ? replies.map(reply => `
+            <li class="thread-reply">
+                <p>${escapeHtml(reply.body)}</p>
+                <small>${escapeHtml(formatThreadActivity(reply.createdAt))}</small>
+            </li>
+        `).join('')
+        : '<li class="thread-reply muted-note">No replies yet. Be the first to respond.</li>';
+    return `
+        <article class="thread-row">
+            <div>
+                <span class="post-type-tag">${escapeHtml(formatThreadActivity(thread.createdAt))}</span>
+                <h3>${escapeHtml(thread.title)}</h3>
+                <p>${thread.body ? escapeHtml(thread.body) : `Discussion from members of ${escapeHtml(group.title)}.`}</p>
+                <p class="thread-reply-count">${replies.length} replies</p>
+                <ul class="thread-reply-list">${replyItems}</ul>
+                <form class="inline-reply-form" onsubmit="handleReplySubmit(event, '${jsString(thread.id)}')">
+                    <input class="reply-input" required placeholder="Write a reply">
+                    <button class="btn btn-outline btn-small" type="submit">Reply</button>
+                </form>
+            </div>
+        </article>
+    `;
+}
+
 function initDiscussionGroupPage() {
     refreshForumGroups(initDiscussionGroupPage);
     refreshForumThreads(initDiscussionGroupPage);
+    refreshForumReplies(initDiscussionGroupPage);
     const forumGroups = getForumGroups();
     const params = new URLSearchParams(window.location.search);
     const group = forumGroups.find(item => item.id === (params.get('group') || 'education')) || forumGroups[0];
     const groupThreads = (typeof GloweForums !== 'undefined')
         ? GloweForums.threadsForGroup(getForumThreads(), group.id)
         : [];
+    const allReplies = getForumReplies();
     const header = document.getElementById('discussion-group-header');
     const members = document.getElementById('discussion-member-list');
     const threads = document.getElementById('discussion-thread-list');
@@ -4278,16 +4381,7 @@ function initDiscussionGroupPage() {
         `).join('')
         : '<p class="muted-note">Members will appear here once they join this group.</p>';
     threads.innerHTML = groupThreads.length > 0
-        ? groupThreads.map(thread => `
-            <article class="thread-row">
-                <div>
-                    <span class="post-type-tag">${escapeHtml(formatThreadActivity(thread.createdAt))}</span>
-                    <h3>${escapeHtml(thread.title)}</h3>
-                    <p>${thread.body ? escapeHtml(thread.body) : `${thread.replies || 0} replies from members of ${escapeHtml(group.title)}.`}</p>
-                </div>
-                <button class="btn btn-outline btn-small" type="button" onclick="focusGroupReply()">Reply</button>
-            </article>
-        `).join('')
+        ? groupThreads.map(thread => renderDiscussionThread(thread, group, allReplies)).join('')
         : '<div class="empty-state"><h3>No threads yet</h3><p>Start the first conversation in this group.</p></div>';
     composer.innerHTML = `
         <form class="inline-post-form" onsubmit="handleDiscussionSubmit(event, '${group.id}')">
@@ -4304,9 +4398,16 @@ function initDiscussionGroupPage() {
     `;
 }
 
-function focusGroupReply() {
-    const input = document.getElementById('discussion-title');
-    if (input) input.focus();
+async function handleReplySubmit(event, threadId) {
+    event.preventDefault();
+    if (!canCreateContent()) return;
+    const input = event.target.querySelector('.reply-input');
+    const body = input ? input.value.trim() : '';
+    if (!body) return;
+    await persistForumReply(threadId, body);
+    event.target.reset();
+    await reloadForumReplies();
+    initDiscussionGroupPage();
 }
 
 async function handleDiscussionSubmit(event, groupId) {
@@ -5715,6 +5816,7 @@ const GLOWE_TRANSLATIONS = {
         "No pending profiles": "אין פרופילים ממתינים",
         "No posts match this view yet": "אין עדיין פוסטים שמתאימים לתצוגה הזו",
         "No projects listed yet.": "אין עדיין פרויקטים רשומים.",
+        "No replies yet. Be the first to respond.": "אין עדיין תגובות. היו הראשונים להגיב.",
         "No reports yet": "אין עדיין דיווחים",
         "No results": "אין תוצאות",
         "No saved items yet": "אין עדיין פריטים שמורים",
@@ -5986,6 +6088,7 @@ const GLOWE_TRANSLATIONS = {
         "Why GloWe exists": "למה GloWe קיימת",
         "Wish Type": "סוג משאלה",
         "Write a Community Post": "כתיבת פוסט קהילתי",
+        "Write a reply": "כתבו תגובה",
         "Write Post": "כתיבת פוסט",
         "Write posts, ask questions, share field knowledge, publish updates, and join topic-based discussions.": "כתבו פוסטים, שאלו שאלות, שתפו ידע מהשטח, פרסמו עדכונים והצטרפו לדיונים לפי נושא.",
         "Write the story, request, guide, event details, or question you want the community to see.": "כתבו את הסיפור, הבקשה, המדריך, פרטי האירוע או השאלה שתרצו שהקהילה תראה.",

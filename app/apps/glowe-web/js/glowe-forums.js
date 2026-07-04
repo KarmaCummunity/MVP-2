@@ -62,11 +62,50 @@
             .filter(function (t) { return t && t.groupId === groupId; });
     }
 
+    // Map a glowe_forum_replies row to the shape the reply renderer consumes.
+    function mapForumReplyRow(row) {
+        const r = row || {};
+        return {
+            id: r.id == null ? '' : String(r.id),
+            threadId: r.thread_id || '',
+            authorId: r.user_id || '',
+            body: r.body || '',
+            createdAt: r.created_at || ''
+        };
+    }
+
+    // Map a list of reply rows, dropping any without an id. listAll is called
+    // with ascending created_at so replies read oldest-first (conversation flow).
+    function mapForumReplies(rows) {
+        return (Array.isArray(rows) ? rows : [])
+            .map(mapForumReplyRow)
+            .filter(function (r) { return r.id !== ''; });
+    }
+
+    // Replies belonging to one thread, order preserved.
+    function repliesForThread(replies, threadId) {
+        return (Array.isArray(replies) ? replies : [])
+            .filter(function (r) { return r && r.threadId === threadId; });
+    }
+
+    // Count replies per thread id → { [threadId]: count }. Used for the live
+    // AC7 reply-count aggregate on each thread card.
+    function countRepliesByThread(replies) {
+        return (Array.isArray(replies) ? replies : []).reduce(function (acc, r) {
+            if (r && r.threadId) acc[r.threadId] = (acc[r.threadId] || 0) + 1;
+            return acc;
+        }, {});
+    }
+
     return {
         mapForumGroupRow: mapForumGroupRow,
         mapForumGroups: mapForumGroups,
         mapForumThreadRow: mapForumThreadRow,
         mapForumThreads: mapForumThreads,
-        threadsForGroup: threadsForGroup
+        threadsForGroup: threadsForGroup,
+        mapForumReplyRow: mapForumReplyRow,
+        mapForumReplies: mapForumReplies,
+        repliesForThread: repliesForThread,
+        countRepliesByThread: countRepliesByThread
     };
 });

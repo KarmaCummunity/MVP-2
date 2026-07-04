@@ -124,3 +124,84 @@ describe('threadsForGroup', () => {
         expect(GloweForums.threadsForGroup(null, 'education')).toEqual([]);
     });
 });
+
+describe('mapForumReplyRow', () => {
+    it('maps a reply row to the render shape', () => {
+        const r = GloweForums.mapForumReplyRow({
+            id: 'reply-1',
+            thread_id: 'thread-9',
+            user_id: 'user-3',
+            body: 'Great idea, count me in.',
+            created_at: '2026-07-04T06:00:00Z'
+        });
+        expect(r).toEqual({
+            id: 'reply-1',
+            threadId: 'thread-9',
+            authorId: 'user-3',
+            body: 'Great idea, count me in.',
+            createdAt: '2026-07-04T06:00:00Z'
+        });
+    });
+
+    it('coerces missing fields to safe defaults', () => {
+        const r = GloweForums.mapForumReplyRow({ id: 5 });
+        expect(r.id).toBe('5');
+        expect(r.threadId).toBe('');
+        expect(r.authorId).toBe('');
+        expect(r.body).toBe('');
+        expect(r.createdAt).toBe('');
+    });
+
+    it('tolerates null / undefined input', () => {
+        expect(GloweForums.mapForumReplyRow(null).id).toBe('');
+        expect(GloweForums.mapForumReplyRow(undefined).threadId).toBe('');
+    });
+});
+
+describe('mapForumReplies', () => {
+    it('maps a list preserving order and drops id-less rows', () => {
+        const rows = [
+            { id: 'r-a', thread_id: 't1', body: 'A' },
+            { thread_id: 't1', body: 'no id' },
+            { id: 'r-b', thread_id: 't2', body: 'B' }
+        ];
+        expect(GloweForums.mapForumReplies(rows).map(r => r.id)).toEqual(['r-a', 'r-b']);
+    });
+
+    it('tolerates non-arrays', () => {
+        expect(GloweForums.mapForumReplies(null)).toEqual([]);
+        expect(GloweForums.mapForumReplies(undefined)).toEqual([]);
+    });
+});
+
+describe('repliesForThread', () => {
+    it('filters replies by threadId preserving order', () => {
+        const replies = [
+            { id: '1', threadId: 't1' },
+            { id: '2', threadId: 't2' },
+            { id: '3', threadId: 't1' }
+        ];
+        expect(GloweForums.repliesForThread(replies, 't1').map(r => r.id)).toEqual(['1', '3']);
+    });
+
+    it('returns empty for unknown thread and tolerates non-arrays', () => {
+        expect(GloweForums.repliesForThread([{ id: '1', threadId: 'x' }], 'y')).toEqual([]);
+        expect(GloweForums.repliesForThread(null, 't1')).toEqual([]);
+    });
+});
+
+describe('countRepliesByThread', () => {
+    it('counts replies per thread id', () => {
+        const replies = [
+            { id: '1', threadId: 't1' },
+            { id: '2', threadId: 't1' },
+            { id: '3', threadId: 't2' }
+        ];
+        expect(GloweForums.countRepliesByThread(replies)).toEqual({ t1: 2, t2: 1 });
+    });
+
+    it('ignores replies without a threadId and tolerates non-arrays', () => {
+        expect(GloweForums.countRepliesByThread([{ id: '1' }, { id: '2', threadId: 't1' }])).toEqual({ t1: 1 });
+        expect(GloweForums.countRepliesByThread(null)).toEqual({});
+    });
+});
