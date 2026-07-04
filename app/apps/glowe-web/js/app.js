@@ -49,14 +49,14 @@ function gloweWriteGate() {
 
 // Guard for content-create handlers: returns true when the caller may publish,
 // otherwise shows the appropriate view-only notice and returns false.
-function canCreateContent() {
+function canCreateContent(actionKey) {
     const gate = gloweWriteGate();
     if (gate.allowed) return true;
     if (gate.reason === 'anon') {
-        showSuccessModal(
-            'Sign in to contribute',
-            'Browsing GloWe is open to everyone. To publish a need, post, event, or discussion, please sign in or create a free account first.'
-        );
+        // Guest → action-tailored join prompt (FR-GLOWE-023).
+        if (window.GloweGuest && typeof window.GloweGuest.showJoinPrompt === 'function') {
+            window.GloweGuest.showJoinPrompt(actionKey || 'create-post', {});
+        }
     } else {
         showSuccessModal(
             'Awaiting verification',
@@ -2556,6 +2556,11 @@ function openCrowdfundingModal() {
 }
 
 function openPrivateMessage(name = 'this member') {
+    // Guests → action-tailored join prompt (FR-GLOWE-023).
+    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+        window.GloweGuest.requireMemberForAction('send-message', { org: name }, function () {});
+        return;
+    }
     ensureGlobalUI();
     const modal = document.getElementById('message-modal');
     if (!modal) {
@@ -5322,12 +5327,11 @@ async function initOpportunityDetailPage() {
     const applyBtn = document.getElementById('apply-btn');
     if (applyBtn && !isEvent && !ownerViewing) {
         applyBtn.addEventListener('click', function() {
-            if (!isLoggedIn()) {
-                sessionStorage.setItem('pendingOpportunityApplication', opportunityId);
-                openModal('login-modal');
-            } else {
-                openModal('apply-modal');
-            }
+            window.GloweGuest.requireMemberForAction(
+                'apply-opportunity',
+                { org: (opportunity && opportunity.organization) || '' },
+                function () { openModal('apply-modal'); }
+            );
         });
     } else if (applyBtn && ownerViewing) {
         applyBtn.hidden = true;
@@ -5458,7 +5462,11 @@ async function renderEventRegisterArea(opportunity, events) {
         return;
     }
     if (!isLoggedIn()) {
-        area.innerHTML = `<button class="btn btn-primary btn-block" type="button" onclick="openModal('login-modal')">Sign in to register</button>`;
+        area.innerHTML = `<button class="btn btn-primary btn-block" type="button" id="glowe-rsvp-join">Save your spot</button>`;
+        const rsvpBtn = area.querySelector('#glowe-rsvp-join');
+        if (rsvpBtn) rsvpBtn.addEventListener('click', function () {
+            window.GloweGuest.requireMemberForAction('rsvp-event', { title: (opportunity && opportunity.title) || '' }, function () {});
+        });
         return;
     }
     const registration = await findMyRegistration(opportunity.id, events);
@@ -7065,7 +7073,28 @@ const GLOWE_TRANSLATIONS = {
         "Funding / support sources": "מקורות מימון / תמיכה",
         "Annual budget / support context": "תקציב שנתי / הקשר תמיכה",
         "Profile status": "סטטוס הפרופיל",
-        "Personal area sections": "מקטעי האזור האישי"
+        "Personal area sections": "מקטעי האזור האישי",
+        // FR-GLOWE-023 — guest peek + contextual join
+        'Sign in to post a need': 'התחברו כדי לפרסם צורך',
+        'Browsing GloWe is open to everyone. Sign in with Google to post a need and reach people ready to help.': 'הגלישה ב-GloWe פתוחה לכולם. התחברו עם גוגל כדי לפרסם צורך ולהגיע לאנשים שמוכנים לעזור.',
+        'Sign in to post': 'התחברו כדי לפרסם',
+        'Sign in with Google to share a post with the GloWe community.': 'התחברו עם גוגל כדי לשתף פוסט עם קהילת GloWe.',
+        'Sign in to publish': 'התחברו כדי לפרסם',
+        'Sign in with Google to publish this opportunity and start receiving applications.': 'התחברו עם גוגל כדי לפרסם את ההזדמנות ולהתחיל לקבל מועמדויות.',
+        'Sign in to start a discussion': 'התחברו כדי לפתוח דיון',
+        'Sign in with Google to open a new discussion thread.': 'התחברו עם גוגל כדי לפתוח שרשור דיון חדש.',
+        'Sign in to reply': 'התחברו כדי להשיב',
+        'Sign in with Google to join this discussion.': 'התחברו עם גוגל כדי להצטרף לדיון.',
+        'Sign in to apply': 'התחברו כדי להגיש מועמדות',
+        'Save your spot': 'שמרו את מקומכם',
+        'Ready to lend a hand?': 'מוכנים לעזור?',
+        'Keep this for later': 'שמרו לאחר כך',
+        'Sign in with Google to save it to your list.': 'התחברו עם גוגל כדי לשמור לרשימה שלכם.',
+        'Sign in to continue': 'התחברו כדי להמשיך',
+        'Sign in with Google to open your personal area.': 'התחברו עם גוגל כדי לפתוח את האזור האישי שלכם.',
+        'Sign in with Google to do this on GloWe.': 'התחברו עם גוגל כדי לעשות זאת ב-GloWe.',
+        'Welcome to GloWe': 'ברוכים הבאים ל-GloWe',
+        "Welcome — you're browsing as a guest. Sign in with Google anytime to participate.": 'ברוכים הבאים — אתם גולשים כאורח. התחברו עם גוגל בכל רגע כדי להשתתף.'
     }
 };
 
