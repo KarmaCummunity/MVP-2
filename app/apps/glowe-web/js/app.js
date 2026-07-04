@@ -1,11 +1,36 @@
 // Main application logic
 
+// Default intro for the sign-in / registration modal. A gated action can swap in
+// a tailored message via promptGuestSignIn(); openModal restores this default so a
+// later plain sign-in never shows stale, action-specific copy.
+const LOGIN_MODAL_DEFAULT_INTRO = 'Sign in with your Google account to continue.';
+
 // Modal handling
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
+        if (modalId === 'login-modal') {
+            const intro = modal.querySelector('.modal-intro');
+            if (intro) intro.textContent = LOGIN_MODAL_DEFAULT_INTRO;
+        }
         modal.classList.add('active');
         document.body.style.overflow = 'hidden';
+    }
+}
+
+// Guests can browse but not save (or perform other gated actions). Instead of a
+// dead-end notice, open the real sign-in / registration screen with a tailored
+// intro so a guest can create a free account and complete the action.
+function promptGuestSignIn(message) {
+    ensureGlobalUI();
+    if (!document.getElementById('login-modal')) {
+        showSuccessModal('Sign in', message || LOGIN_MODAL_DEFAULT_INTRO);
+        return;
+    }
+    openModal('login-modal');
+    if (message) {
+        const intro = document.querySelector('#login-modal .modal-intro');
+        if (intro) intro.textContent = message;
     }
 }
 
@@ -2670,9 +2695,10 @@ function setSavedItems(items) {
 }
 
 function saveItem(type, id, title, meta = '', href = '') {
-    // FR-GLOWE-013 AC1 — saving requires login (saved items sync per user).
+    // FR-GLOWE-013 AC1 — saving requires login (saved items sync per user). Guests
+    // get the sign-in / registration screen with save-specific copy, not a notice.
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
-        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        promptGuestSignIn('Sign in or create a free account to save items to your area.');
         return;
     }
     const items = getSavedItems();
@@ -2732,7 +2758,7 @@ function refreshSavedToggleButton(btn, type, id) {
 // confirmation; the button flips in place either way.
 function toggleSavedItem(btn, type, id, title, meta, href) {
     if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
-        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        promptGuestSignIn('Sign in or create a free account to save items to your area.');
         return;
     }
     const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
@@ -6896,8 +6922,8 @@ const GLOWE_TRANSLATIONS = {
         "Save the opportunity if you want to compare it later.": "שמרו את ההזדמנות אם תרצו להשוות אותה מאוחר יותר.",
         "Save wish": "שמירת משאלה",
         "Saved": "נשמר",
-        "Sign in to save": "התחברו כדי לשמור",
-        "Please sign in or create a free account to save items to your area.": "התחברו או צרו חשבון חינם כדי לשמור פריטים לאזור שלכם.",
+        "Sign in with your Google account to continue.": "התחברו עם חשבון Google כדי להמשיך.",
+        "Sign in or create a free account to save items to your area.": "התחברו או צרו חשבון חינם כדי לשמור פריטים לאזור שלכם.",
         "Saved items": "פריטים שמורים",
         "Saved Items": "פריטים שמורים",
         "Scope": "היקף",
