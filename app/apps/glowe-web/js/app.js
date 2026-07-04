@@ -723,6 +723,32 @@ function renderMyOffersList(list) {
     }).join('');
 }
 
+// FR-GLOWE-011 AC8 — live "My Applications" list. Applications the user sent to
+// volunteer opportunities load from glowe_applications and are enriched with the
+// target opportunity's title/organization. Event RSVPs (whose opportunity has a
+// start time) are excluded here — they render in the separate "My Events"
+// section. `backendMyApplications` stays null until a load completes; the getter
+// returns null until then so the render can fall back to the localStorage cache.
+let backendMyApplications = null;
+
+async function loadMyApplications() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    const orgs = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
+    if (!orgs) return;
+    let rows = [];
+    let opps = [];
+    try { rows = await backend.listOwned('applications'); } catch (_e) { rows = []; }
+    try { opps = await backend.listAll('opportunities'); } catch (_e) { opps = []; }
+    const byId = orgs.opportunitiesById(opps || []);
+    backendMyApplications = orgs.volunteerApplicationViews(rows || [], byId, events && events.isEvent);
+}
+
+function getMyApplicationsForView() {
+    return Array.isArray(backendMyApplications) ? backendMyApplications : null;
+}
+
 function canUseBackend() {
     return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
@@ -3614,16 +3640,22 @@ function initWritePostPage() {
 
 // Render application card
 function renderApplicationCard(application) {
+    // Prefer the pre-enriched fields from a live glowe_applications view
+    // (FR-GLOWE-011 AC8); fall back to the local opportunity lookup for the
+    // legacy localStorage application shape.
     const opportunity = getOpportunityByAnyId(application.opportunityId);
-    const statusClass = `status-${application.status.toLowerCase()}`;
-    
+    const title = application.opportunityTitle || (opportunity ? opportunity.title : 'Unknown Opportunity');
+    const org = application.organization || (opportunity ? opportunity.organization : '');
+    const appliedAt = application.appliedAt || application.createdAt;
+    const statusClass = `status-${String(application.status || '').toLowerCase()}`;
+
     return `
         <div class="application-card">
             <div class="application-info">
-                <h3>${opportunity ? opportunity.title : 'Unknown Opportunity'}</h3>
-                <p>${opportunity ? opportunity.organization : ''} • Applied on ${new Date(application.appliedAt).toLocaleDateString()}</p>
+                <h3>${escapeHtml(title)}</h3>
+                <p>${escapeHtml(org)}${appliedAt ? ` • Applied on ${new Date(appliedAt).toLocaleDateString()}` : ''}</p>
             </div>
-            <span class="application-status ${statusClass}">${application.status}</span>
+            <span class="application-status ${statusClass}">${escapeHtml(application.status || '')}</span>
         </div>
     `;
 }
@@ -5494,7 +5526,11 @@ function initMyApplicationsPage() {
         const myOffers = getMyOffersForView();
         const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         const applications = getApplications();
-        const userApplications = user ? applications.filter(app => app.userId === user.id) : [];
+        const localApplications = user ? applications.filter(app => app.userId === user.id) : [];
+        // Prefer the live glowe_applications view once loaded (AC8); the local
+        // cache is the offline/pre-load fallback.
+        const liveApplications = getMyApplicationsForView();
+        const userApplications = liveApplications || localApplications;
         const savedPosts = getSavedCommunityPosts().slice(0, 3);
         const savedItems = getSavedItems();
         const savedPreview = savedItems.slice(0, 6);
@@ -5717,6 +5753,7 @@ function initMyApplicationsPage() {
     loadMyPosts().then(() => renderPersonalArea());
     loadMyOpportunities().then(() => renderPersonalArea());
     loadMyOffers().then(() => renderPersonalArea());
+    loadMyApplications().then(() => renderPersonalArea());
     syncPersonalDataFromBackend().then((updated) => {
         if (updated) renderPersonalArea();
         loadMyEvents();
