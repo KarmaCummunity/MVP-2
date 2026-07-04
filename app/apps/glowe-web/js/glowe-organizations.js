@@ -275,6 +275,17 @@
         return Boolean(view && String(view.email || '').trim());
     }
 
+    // FR-GLOWE-013 AC2 — is this item already in the user's saved list? Matches
+    // the local saved-items cache shape ({ type, id, … }) used by getSavedItems();
+    // id is compared as text so a numeric vs string id can't cause a false miss.
+    function isItemSaved(savedItems, type, id) {
+        if (!Array.isArray(savedItems)) return false;
+        const wantId = String(id == null ? '' : id);
+        return savedItems.some(function (item) {
+            return item && item.type === type && String(item.id) === wantId;
+        });
+    }
+
     // FR-GLOWE-013 AC1 — build the glowe_saved_items insert payload from a card's
     // save descriptor. Keeps the column shape (item_type/item_id/title/meta/href)
     // in one tested place so the Save CTA and the DB row can't drift. item_id is
@@ -353,6 +364,7 @@
         mapApplicantRows: mapApplicantRows,
         canDecideApplication: canDecideApplication,
         hasContactEmail: hasContactEmail,
+        isItemSaved: isItemSaved,
         buildSavedItemPayload: buildSavedItemPayload,
         mapOfferForOwner: mapOfferForOwner,
         mapOffersForOwner: mapOffersForOwner,

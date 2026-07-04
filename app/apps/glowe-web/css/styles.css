@@ -122,6 +122,13 @@ ul {
     color: var(--white);
 }
 
+/* FR-GLOWE-013 AC2 — active state for a Save/Saved toggle button. */
+.btn.is-saved {
+    background-color: var(--primary-color);
+    border-color: var(--primary-color);
+    color: var(--white);
+}
+
 .btn-secondary {
     background-color: var(--secondary-color);
     color: var(--white);
