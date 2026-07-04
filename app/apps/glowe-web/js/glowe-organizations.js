@@ -102,6 +102,26 @@
         };
     }
 
+    // FR-GLOWE-011 AC7 — map a glowe_opportunities row (from listOwned, already
+    // scoped to the caller) to the compact shape the Personal Area "My
+    // Opportunities" list renders. Deliberately a small, purpose-built subset
+    // (not the full volunteer-network card model) so the personal-area list
+    // stays lean and this helper is unit-testable without app.js globals.
+    function mapOwnedOpportunity(row) {
+        return {
+            id: field(row, 'id', 'id'),
+            title: field(row, 'title', 'title') || '',
+            field: field(row, 'field', 'field') || '',
+            commitment: field(row, 'commitment', 'commitment') || '',
+            location: field(row, 'location', 'location') || '',
+            status: field(row, 'status', 'status') || 'active'
+        };
+    }
+
+    function mapOwnedOpportunities(rows) {
+        return (Array.isArray(rows) ? rows : []).map(mapOwnedOpportunity);
+    }
+
     // FR-GLOWE-011 AC4 — decide which project list the Personal Area renders.
     // Once a backend load has completed we trust it (even when empty, so a user
     // with no real projects sees an empty state rather than the demo/local
@@ -122,6 +142,8 @@
         personalProjectsView: personalProjectsView,
         validateProjectDraft: validateProjectDraft,
         buildProjectPayload: buildProjectPayload,
-        myWishPosts: myWishPosts
+        myWishPosts: myWishPosts,
+        mapOwnedOpportunity: mapOwnedOpportunity,
+        mapOwnedOpportunities: mapOwnedOpportunities
     };
 });

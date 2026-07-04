@@ -11,7 +11,9 @@ const {
     personalProjectsView,
     validateProjectDraft,
     buildProjectPayload,
-    myWishPosts
+    myWishPosts,
+    mapOwnedOpportunity,
+    mapOwnedOpportunities
 } = GloweOrganizations;
 
 describe('mapProjectRow', () => {
@@ -223,5 +225,36 @@ describe('personalProjectsView', () => {
 
     it('returns an empty array when both are unavailable', () => {
         expect(personalProjectsView(null, null)).toEqual([]);
+    });
+});
+
+describe('mapOwnedOpportunity', () => {
+    it('maps a snake_case glowe_opportunities row to the compact shape', () => {
+        const row = {
+            id: 'op1', title: 'Beach cleanup', field: 'Environment',
+            commitment: 'One-time', location: 'Haifa', status: 'active'
+        };
+        expect(mapOwnedOpportunity(row)).toEqual({
+            id: 'op1', title: 'Beach cleanup', field: 'Environment',
+            commitment: 'One-time', location: 'Haifa', status: 'active'
+        });
+    });
+
+    it('defaults status to "active" and missing strings to empty', () => {
+        expect(mapOwnedOpportunity({ id: 'op2' })).toEqual({
+            id: 'op2', title: '', field: '', commitment: '', location: '', status: 'active'
+        });
+    });
+});
+
+describe('mapOwnedOpportunities', () => {
+    it('maps a row list, preserving order', () => {
+        const rows = [{ id: 'a', title: 'A' }, { id: 'b', title: 'B' }];
+        expect(mapOwnedOpportunities(rows).map(o => o.id)).toEqual(['a', 'b']);
+    });
+
+    it('returns an empty array for non-array input', () => {
+        expect(mapOwnedOpportunities(null)).toEqual([]);
+        expect(mapOwnedOpportunities(undefined)).toEqual([]);
     });
 });
