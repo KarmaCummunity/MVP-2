@@ -269,6 +269,27 @@
         return fromProfileRow(data);
     }
 
+    // FR-GLOWE-011 AC3 — upload a profile image to the `glowe-avatars` Storage
+    // bucket (migration 0219) and return its public URL. The object is written to
+    // an owner-scoped folder (`<user_id>/…`) so the bucket's insert/update RLS
+    // policy (`storage.foldername(name)[1] = auth.uid()`) permits the write.
+    // Returns null when unauthenticated/unconfigured (the caller keeps the
+    // Cloudinary fallback). Client-side type/size validation is done before this.
+    async function uploadAvatar(file) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user || !file) return null;
+        const extByMime = { 'image/jpeg': 'jpg', 'image/png': 'png', 'image/webp': 'webp' };
+        const ext = extByMime[file.type] || 'jpg';
+        const path = `${user.id}/avatar-${Date.now()}.${ext}`;
+        const { error } = await supabaseClient.storage
+            .from('glowe-avatars')
+            .upload(path, file, { contentType: file.type || 'image/jpeg', upsert: true });
+        if (error) throw error;
+        const { data } = supabaseClient.storage.from('glowe-avatars').getPublicUrl(path);
+        return data ? data.publicUrl : null;
+    }
+
     // Post-sign-in onboarding (FR-GLOWE-002). Writes only the onboarding-related
     // columns via upsert so a partial pre-existing profile row is preserved.
     // Individuals are approved implicitly ('not_required'); organizations are
@@ -580,6 +601,7 @@
         fetchProfile,
         fetchProfileById,
         upsertProfile,
+        uploadAvatar,
         completeOnboarding,
         listPendingOrgs,
         setOrgApproval,
