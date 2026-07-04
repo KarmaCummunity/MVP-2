@@ -321,12 +321,12 @@ RLS: owner-read for post owner (`glowe_posts.user_id = auth.uid()`) and offer au
 
 ## FR-GLOWE-013 — Saved Items: live bookmarks
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress (AC1 ✅)
 
-The Saved page (`pages/saved.html`) currently reads `glowe_saved_items` through `gloweBackend.listOwned('saved_items')` but save/unsave calls are not wired from the opportunity, wishing well, and community pages. Phase B closes the loop.
+The Saved page (`pages/saved.html`) reads `glowe_saved_items` through `gloweBackend.listOwned('saved_items')`; save/unsave is wired from the opportunity, wishing well, community and organization cards. Phase B closes the remaining gaps (card-level toggle + optimistic active state).
 
 **Acceptance Criteria.**
-- AC1. **Save CTA.** Every opportunity card, wish card, community post card, and org profile card has a bookmark icon. Clicking it (requires login) calls `insertOwned('saved_items', { item_type, item_id, title, meta, href })`. Duplicate (same `user_id + item_type + item_id`) is silently ignored (unique constraint in 0204).
+- AC1. **Save CTA.** ✅ Every opportunity card, wish card, community post card, and org profile card carries a Save CTA that calls `saveItem(type, id, title, meta, href)` → `gloweBackend.insertOwned('saved_items', { item_type, item_id, title, meta, href })` (`js/app.js`; wish/opportunity/community/org render paths). The insert payload is built by the `GloweOrganizations.buildSavedItemPayload` pure helper (`js/glowe-organizations.js`, unit-tested — column shape in one place, `item_id` coerced to text to match the `0204` unique index), with an inline fallback for pages that don't load the helper. Duplicates (same `user_id + item_type + item_id`) are silently ignored by the `0204` unique constraint (and a client-side `exists` check). `saveItem` is now login-gated per the AC — a guest sees a "Sign in to save" prompt instead of a localStorage-only save; Hebrew keys added.
 - AC2. **Unsave.** A second click on the bookmark icon (active state) calls `removeOwned('saved_items', { item_type, item_id })`.
 - AC3. **Saved page.** `pages/saved.html` loads all `glowe_saved_items` for the signed-in user, grouped by `item_type` (Opportunities / Wishes / Posts / Organizations). Each item links back to its canonical page URL (from the `href` column).
 - AC4. **Optimistic UI.** The bookmark icon toggles instantly on click; the Supabase call is fire-and-forget. On error, the state is reverted and a toast is shown.

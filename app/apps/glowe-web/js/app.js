@@ -2665,6 +2665,11 @@ function setSavedItems(items) {
 }
 
 function saveItem(type, id, title, meta = '', href = '') {
+    // FR-GLOWE-013 AC1 — saving requires login (saved items sync per user).
+    if (typeof isLoggedIn === 'function' && !isLoggedIn()) {
+        showSuccessModal('Sign in to save', 'Please sign in or create a free account to save items to your area.');
+        return;
+    }
     const items = getSavedItems();
     const itemId = String(id);
     const exists = items.some(item => item.type === type && String(item.id) === itemId);
@@ -2672,13 +2677,11 @@ function saveItem(type, id, title, meta = '', href = '') {
         const savedItem = { type, id: itemId, title, meta, href, savedAt: new Date().toISOString() };
         setSavedItems([savedItem, ...items]);
         if (window.gloweBackend && window.gloweBackend.configured()) {
-            window.gloweBackend.insertOwned('saved_items', {
-                item_type: type,
-                item_id: itemId,
-                title,
-                meta,
-                href
-            }).catch(() => {});
+            const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+            const payload = helpers
+                ? helpers.buildSavedItemPayload(type, itemId, title, meta, href)
+                : { item_type: type, item_id: itemId, title, meta, href };
+            window.gloweBackend.insertOwned('saved_items', payload).catch(() => {});
         }
     }
     showSuccessModal('Saved', `${title} was added to your saved area.`);
@@ -6844,6 +6847,8 @@ const GLOWE_TRANSLATIONS = {
         "Save the opportunity if you want to compare it later.": "שמרו את ההזדמנות אם תרצו להשוות אותה מאוחר יותר.",
         "Save wish": "שמירת משאלה",
         "Saved": "נשמר",
+        "Sign in to save": "התחברו כדי לשמור",
+        "Please sign in or create a free account to save items to your area.": "התחברו או צרו חשבון חינם כדי לשמור פריטים לאזור שלכם.",
         "Saved items": "פריטים שמורים",
         "Saved Items": "פריטים שמורים",
         "Scope": "היקף",

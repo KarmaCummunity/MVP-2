@@ -29,7 +29,8 @@ const {
     canDecideApplication,
     mapOfferForOwner,
     mapOffersForOwner,
-    hasContactEmail
+    hasContactEmail,
+    buildSavedItemPayload
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -595,5 +596,31 @@ describe('hasContactEmail (FR-GLOWE-012 AC4)', () => {
         expect(hasContactEmail({})).toBe(false);
         expect(hasContactEmail(null)).toBe(false);
         expect(hasContactEmail(undefined)).toBe(false);
+    });
+});
+
+describe('buildSavedItemPayload (FR-GLOWE-013 AC1)', () => {
+    it('maps a card descriptor to the glowe_saved_items column shape', () => {
+        expect(buildSavedItemPayload('opportunity', 'op-1', 'Beach cleanup', 'GreenOrg', 'opportunity.html?id=op-1')).toEqual({
+            item_type: 'opportunity',
+            item_id: 'op-1',
+            title: 'Beach cleanup',
+            meta: 'GreenOrg',
+            href: 'opportunity.html?id=op-1'
+        });
+    });
+
+    it('coerces a numeric id to a string (matches the text column + 0204 unique index)', () => {
+        expect(buildSavedItemPayload('post', 42, 'Hi', '', '').item_id).toBe('42');
+    });
+
+    it('defaults missing meta/href/title to empty strings', () => {
+        expect(buildSavedItemPayload('wish', 'w-9')).toEqual({
+            item_type: 'wish',
+            item_id: 'w-9',
+            title: '',
+            meta: '',
+            href: ''
+        });
     });
 });

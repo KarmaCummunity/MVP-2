@@ -275,6 +275,20 @@
         return Boolean(view && String(view.email || '').trim());
     }
 
+    // FR-GLOWE-013 AC1 — build the glowe_saved_items insert payload from a card's
+    // save descriptor. Keeps the column shape (item_type/item_id/title/meta/href)
+    // in one tested place so the Save CTA and the DB row can't drift. item_id is
+    // coerced to a string to match the text column + the 0204 unique constraint.
+    function buildSavedItemPayload(type, id, title, meta, href) {
+        return {
+            item_type: String(type || ''),
+            item_id: String(id == null ? '' : id),
+            title: String(title || ''),
+            meta: String(meta || ''),
+            href: String(href || '')
+        };
+    }
+
     // FR-GLOWE-011 AC10 — guard the destructive "Delete Account" action: the
     // user must type the exact word DELETE (case-insensitive, trimmed) before the
     // profile-delete call is allowed to fire.
@@ -339,6 +353,7 @@
         mapApplicantRows: mapApplicantRows,
         canDecideApplication: canDecideApplication,
         hasContactEmail: hasContactEmail,
+        buildSavedItemPayload: buildSavedItemPayload,
         mapOfferForOwner: mapOfferForOwner,
         mapOffersForOwner: mapOffersForOwner,
         volunteerApplicationViews: volunteerApplicationViews,
