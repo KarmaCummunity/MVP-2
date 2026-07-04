@@ -1,4 +1,4 @@
--- 0221_glowe_translations_org_field — FR-TRANSLATE-005.
+-- 0222_glowe_translations_org_field — FR-TRANSLATE-005.
 --
 -- Organization cards render a category tag from glowe_profiles.org_field (the
 -- free-text "Cause / field", e.g. "Education"). Add it as a translatable

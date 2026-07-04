@@ -6,7 +6,9 @@
 import type { ProviderInput, ProviderResult, TranslationProvider } from './provider.ts';
 
 const API_KEY = Deno.env.get('GEMINI_API_KEY') ?? '';
-const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-1.5-flash';
+// Default to gemini-2.0-flash: Google retired the free tier for the 1.5 models
+// (free_tier_requests limit 0), so 1.5-flash is a dead default for free-tier use.
+const MODEL = Deno.env.get('GEMINI_MODEL') ?? 'gemini-2.0-flash';
 const ENDPOINT = (model: string) =>
   `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent`;
 
