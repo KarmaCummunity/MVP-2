@@ -1,7 +1,14 @@
 import { describe, it, expect } from 'vitest';
 import GloweOrganizations from '../glowe-organizations.js';
 
-const { mapProjectRow, mapProjects, isPublicProject, publicProjectsForUser } = GloweOrganizations;
+const {
+    mapProjectRow,
+    mapProjects,
+    isPublicProject,
+    publicProjectsForUser,
+    validateOutreachDraft,
+    buildOutreachPayload
+} = GloweOrganizations;
 
 describe('mapProjectRow', () => {
     it('maps a snake_case glowe_projects row to the render shape', () => {
@@ -84,5 +91,54 @@ describe('publicProjectsForUser', () => {
 
     it('returns an empty array for non-array input', () => {
         expect(publicProjectsForUser(null, 'u1')).toEqual([]);
+    });
+});
+
+describe('validateOutreachDraft', () => {
+    it('accepts a draft with a recipient and a message', () => {
+        expect(validateOutreachDraft({ recipientId: 'u1', message: 'Hello there' }))
+            .toEqual({ valid: true });
+    });
+
+    it('rejects a draft without a recipient', () => {
+        expect(validateOutreachDraft({ message: 'Hello' })).toMatchObject({ valid: false });
+    });
+
+    it('rejects an empty or whitespace-only message', () => {
+        expect(validateOutreachDraft({ recipientId: 'u1', message: '   ' })).toMatchObject({ valid: false });
+        expect(validateOutreachDraft({ recipientId: 'u1' })).toMatchObject({ valid: false });
+    });
+
+    it('is safe with no input', () => {
+        expect(validateOutreachDraft()).toMatchObject({ valid: false });
+    });
+});
+
+describe('buildOutreachPayload', () => {
+    it('builds a glowe_posts outreach row with the recipient in audience', () => {
+        const payload = buildOutreachPayload({
+            recipientId: 'org-1',
+            orgName: 'Open Heart',
+            message: '  We would love to collaborate.  '
+        });
+        expect(payload).toEqual({
+            post_type: 'outreach',
+            category: 'outreach',
+            title: 'Reach-out to Open Heart',
+            text: 'We would love to collaborate.',
+            audience: 'org-1',
+            status: 'sent',
+            tags: []
+        });
+    });
+
+    it('falls back to a generic title when orgName is missing', () => {
+        expect(buildOutreachPayload({ recipientId: 'org-2', message: 'Hi' }).title).toBe('Reach-out');
+    });
+
+    it('is safe with no input', () => {
+        const payload = buildOutreachPayload();
+        expect(payload.post_type).toBe('outreach');
+        expect(payload.audience).toBe('');
     });
 });
