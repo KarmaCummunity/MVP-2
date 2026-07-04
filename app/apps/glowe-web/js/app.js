@@ -7212,6 +7212,8 @@ const GLOWE_TRANSLATIONS = {
         "Organization name": "שם הארגון",
         "Email verified": "דוא\"ל מאומת",
         "Pending": "ממתין",
+        "Accepted": "התקבל",
+        "Declined": "נדחה",
         "Public link": "קישור ציבורי",
         "Public line": "משפט ציבורי",
         "Open to volunteers, donations, or partnerships?": "פתוחים למתנדבים, לתרומות או לשותפויות?",
