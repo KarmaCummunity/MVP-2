@@ -11,6 +11,7 @@ const {
     personalProjectsView,
     validateProjectDraft,
     buildProjectPayload,
+    findProjectById,
     myWishPosts,
     mapOwnedOpportunity,
     mapOwnedOpportunities,
@@ -185,6 +186,29 @@ describe('buildProjectPayload', () => {
 
     it('is safe with no input', () => {
         expect(buildProjectPayload()).toEqual({ title: '', status: 'Draft', description: '' });
+    });
+});
+
+describe('findProjectById', () => {
+    const projects = [
+        { id: 'p1', title: 'Alpha' },
+        { id: 2, title: 'Beta' },
+        { id: 'p3', title: 'Gamma' }
+    ];
+
+    it('finds a project by string id', () => {
+        expect(findProjectById(projects, 'p3')).toEqual({ id: 'p3', title: 'Gamma' });
+    });
+
+    it('matches ids across number/string types', () => {
+        expect(findProjectById(projects, '2')).toEqual({ id: 2, title: 'Beta' });
+    });
+
+    it('returns undefined for a missing id, empty id, or non-array', () => {
+        expect(findProjectById(projects, 'nope')).toBeUndefined();
+        expect(findProjectById(projects, '')).toBeUndefined();
+        expect(findProjectById(projects, null)).toBeUndefined();
+        expect(findProjectById(null, 'p1')).toBeUndefined();
     });
 });
 

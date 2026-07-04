@@ -90,6 +90,16 @@
         return { valid: true };
     }
 
+    // FR-GLOWE-011 AC4 (edit) — locate an already-mapped project by id (string-safe)
+    // so the Personal Area can pre-fill the edit modal. Returns undefined when the
+    // id is missing or no project matches.
+    function findProjectById(projects, id) {
+        if (id === undefined || id === null || id === '') return undefined;
+        return (Array.isArray(projects) ? projects : []).find(function (p) {
+            return p && String(p.id) === String(id);
+        });
+    }
+
     // FR-GLOWE-011 AC4 (write) — normalize a draft into the glowe_projects insert
     // shape. `status` defaults to 'Draft' (mirrors the column default); trimming
     // keeps stray whitespace out of persisted rows.
@@ -232,6 +242,7 @@
         personalProjectsView: personalProjectsView,
         validateProjectDraft: validateProjectDraft,
         buildProjectPayload: buildProjectPayload,
+        findProjectById: findProjectById,
         myWishPosts: myWishPosts,
         mapOwnedOpportunity: mapOwnedOpportunity,
         mapOwnedOpportunities: mapOwnedOpportunities,

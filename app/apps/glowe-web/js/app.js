@@ -840,6 +840,32 @@ async function deletePersonalProject(id) {
     if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
 }
 
+// FR-GLOWE-011 AC4 (edit) — in-place update of an owned project. Backend update
+// is user-scoped (updateOwned enforces id + user_id + RLS); offline path patches
+// the localStorage cache. Mirrors persistPersonalProject's signed-in/offline split.
+async function updatePersonalProject(id, project) {
+    if (!id) return;
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const backend = window.gloweBackend;
+    if (backend && backend.configured() && isLoggedIn()) {
+        try {
+            await backend.updateOwned('projects', id, payload);
+            await loadPersonalProjects();
+            return;
+        } catch (_e) { /* fall through to the offline cache */ }
+    }
+    updatePersonalProjectLocal(id, payload);
+}
+
+// Offline/guest edit: replace a project's fields in the localStorage cache by id.
+function updatePersonalProjectLocal(id, patch) {
+    const projects = getPersonalProjects().map(item => (
+        String(item.id) === String(id) ? { ...item, ...patch, id: item.id } : item
+    ));
+    localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify(projects));
+}
+
 async function uploadProfileImageToCloudinary(file) {
     const signature = await apiRequest('/api/cloudinary/signature', { method: 'POST', body: JSON.stringify({}) });
     if (!signature || !signature.configured) {
@@ -1803,9 +1829,10 @@ function ensureGlobalUI() {
             <div id="add-project-modal" class="modal">
                 <div class="modal-content modal-wide">
                     <span class="close-modal" onclick="closeModal('add-project-modal')">&times;</span>
-                    <h2>Add project</h2>
+                    <h2 id="personal-project-modal-title">Add project</h2>
                     <p class="modal-intro">Add a project that can appear in your personal area and help others understand what you are building.</p>
                     <form onsubmit="handlePersonalProjectSubmit(event)">
+                        <input type="hidden" id="personal-project-id" value="">
                         <div class="form-grid-2">
                             <div class="form-group">
                                 <label for="personal-project-title">Project title</label>
@@ -1826,7 +1853,7 @@ function ensureGlobalUI() {
                             <label for="personal-project-description">Description</label>
                             <textarea id="personal-project-description" rows="4" required placeholder="What is the project, who does it support, and what kind of help would move it forward?"></textarea>
                         </div>
-                        <button class="btn btn-primary btn-block" type="submit">Save Project</button>
+                        <button id="personal-project-submit-btn" class="btn btn-primary btn-block" type="submit">Save Project</button>
                     </form>
                 </div>
             </div>
@@ -2157,17 +2184,46 @@ async function handleProfileEdit(event) {
     showSuccessModal('Profile saved', `Your personal profile was saved through the backend when available.${uploadWarning}`);
 }
 
+function setProjectModalMode(title, submitLabel) {
+    const heading = document.getElementById('personal-project-modal-title');
+    const button = document.getElementById('personal-project-submit-btn');
+    if (heading) heading.textContent = title;
+    if (button) button.textContent = submitLabel;
+}
+
 function openPersonalProjectModal() {
     ensureGlobalUI();
+    document.getElementById('personal-project-id').value = '';
     document.getElementById('personal-project-title').value = '';
     document.getElementById('personal-project-status').value = 'Draft';
     document.getElementById('personal-project-description').value = '';
+    setProjectModalMode('Add project', 'Save Project');
+    openModal('add-project-modal');
+}
+
+// FR-GLOWE-011 AC4 (edit) — open the shared project modal in edit mode, pre-filled
+// from the current view list (backend-preferred, localStorage fallback). The
+// hidden id routes handlePersonalProjectSubmit down the update path.
+function openEditPersonalProjectModal(id) {
+    ensureGlobalUI();
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const projects = getPersonalProjectsForView();
+    const project = helpers
+        ? helpers.findProjectById(projects, id)
+        : projects.find(p => String(p.id) === String(id));
+    if (!project) return;
+    document.getElementById('personal-project-id').value = project.id;
+    document.getElementById('personal-project-title').value = project.title || '';
+    document.getElementById('personal-project-status').value = project.status || 'Draft';
+    document.getElementById('personal-project-description').value = project.description || '';
+    setProjectModalMode('Edit project', 'Update Project');
     openModal('add-project-modal');
 }
 
 async function handlePersonalProjectSubmit(event) {
     event.preventDefault();
     if (!canCreateContent()) return;
+    const id = document.getElementById('personal-project-id').value;
     const draft = {
         title: document.getElementById('personal-project-title').value,
         status: document.getElementById('personal-project-status').value,
@@ -2176,12 +2232,18 @@ async function handlePersonalProjectSubmit(event) {
     const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
     const check = helpers ? helpers.validateProjectDraft(draft) : { valid: true };
     if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please add a project title.'); return; }
-    await persistPersonalProject(draft);
+    if (id) {
+        await updatePersonalProject(id, draft);
+    } else {
+        await persistPersonalProject(draft);
+    }
     closeModal('add-project-modal');
     if (typeof window.renderPersonalArea === 'function') {
         window.renderPersonalArea();
     }
-    showSuccessModal('Project added', 'The project now appears in your personal area.');
+    showSuccessModal(id ? 'Project updated' : 'Project added', id
+        ? 'Your project changes were saved.'
+        : 'The project now appears in your personal area.');
 }
 
 function choosePath(path) {
@@ -3255,15 +3317,18 @@ function renderProjectCard(project, options) {
     // public profile the map callback passes the numeric index here, whose
     // `.deletable` is undefined — so the control stays hidden for viewers.
     const deletable = Boolean(options && options.deletable);
-    const deleteButton = deletable
-        ? `<button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>`
+    const ownerActions = deletable
+        ? `<div class="project-card-actions">
+            <button type="button" class="project-edit-action" onclick="openEditPersonalProjectModal('${jsString(project.id)}')">Edit</button>
+            <button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>
+        </div>`
         : '';
     return `
         <div class="project-card">
             <span class="opportunity-badge">${escapeHtml(project.status)}</span>
             <h3>${escapeHtml(project.title)}</h3>
             <p>${escapeHtml(project.description)}</p>
-            ${deleteButton}
+            ${ownerActions}
         </div>
     `;
 }
@@ -6706,6 +6771,11 @@ const GLOWE_TRANSLATIONS = {
         "Ready to share": "מוכן לשיתוף",
         "Description": "תיאור",
         "Save Project": "שמירת פרויקט",
+        "Edit": "עריכה",
+        "Edit project": "עריכת פרויקט",
+        "Update Project": "עדכון פרויקט",
+        "Project updated": "הפרויקט עודכן",
+        "Your project changes were saved.": "השינויים בפרויקט נשמרו.",
         "Report a concern": "דיווח על בעיה",
         "We review every report carefully and confidentially to keep GloWe safe and professional.": "אנחנו בודקים כל דיווח בקפידה ובסודיות כדי לשמור על GloWe בטוחה ומקצועית.",
         "Reporting": "דיווח",
