@@ -38,9 +38,45 @@
         return (rows || []).filter(isCommunityPost).map(mapPostRow);
     }
 
+    // Split a comma string into trimmed, non-empty tokens (arrays pass through).
+    function commaList(value) {
+        if (Array.isArray(value)) return value.map(function (v) { return String(v).trim(); }).filter(Boolean);
+        if (value === undefined || value === null) return [];
+        return String(value).split(',').map(function (v) { return v.trim(); }).filter(Boolean);
+    }
+
+    // Validate a "Write a post" draft. Required: title + text/body.
+    function validatePostDraft(draft) {
+        const d = draft || {};
+        if (!d.title || !String(d.title).trim()) return { valid: false, error: 'Please add a post title.' };
+        const body = d.text !== undefined ? d.text : d.body;
+        if (!body || !String(body).trim()) return { valid: false, error: 'Please write something to share.' };
+        return { valid: true, error: '' };
+    }
+
+    // Normalize a draft into a glowe_posts insert payload (post_type='community').
+    // Free-text tags become an array; blank optional fields collapse to ''.
+    function normalizePostDraft(draft) {
+        const d = draft || {};
+        return {
+            post_type: 'community',
+            title: String(d.title || '').trim(),
+            category: String(d.category || '').trim(),
+            text: String((d.text !== undefined ? d.text : d.body) || '').trim(),
+            tags: commaList(d.tags),
+            audience: String(d.audience || '').trim(),
+            language: String(d.language || '').trim(),
+            link: String(d.link || '').trim(),
+            author_name: String(d.author_name || d.authorName || '').trim()
+        };
+    }
+
     return {
         isCommunityPost: isCommunityPost,
         mapPostRow: mapPostRow,
-        mapCommunityRows: mapCommunityRows
+        mapCommunityRows: mapCommunityRows,
+        commaList: commaList,
+        validatePostDraft: validatePostDraft,
+        normalizePostDraft: normalizePostDraft
     };
 });
