@@ -31,7 +31,8 @@ const {
     mapOffersForOwner,
     hasContactEmail,
     buildSavedItemPayload,
-    isItemSaved
+    isItemSaved,
+    canonicalStatus
 } = GloweOrganizations;
 
 const isEvent = (opp) => Boolean(opp && (opp.start_at || opp.startAt));
@@ -67,6 +68,30 @@ describe('mapProjectRow', () => {
             description: '',
             status: 'Active'
         });
+    });
+
+    it('normalises a Hebrew-localized status literal back to canonical English', () => {
+        // Rows saved before the <option value> fix stored the translated label.
+        expect(mapProjectRow({ id: 'p4', user_id: 'u4', status: 'מגייסים שותפים' }))
+            .toMatchObject({ status: 'Recruiting partners' });
+    });
+});
+
+describe('canonicalStatus', () => {
+    it('maps each known localized status back to its English enum value', () => {
+        expect(canonicalStatus('טיוטה')).toBe('Draft');
+        expect(canonicalStatus('פעיל')).toBe('Active');
+        expect(canonicalStatus('מגייסים שותפים')).toBe('Recruiting partners');
+        expect(canonicalStatus('דרושים מתנדבים')).toBe('Needs volunteers');
+        expect(canonicalStatus('מוכן לשיתוף')).toBe('Ready to share');
+    });
+
+    it('passes canonical English and unknown values through unchanged', () => {
+        expect(canonicalStatus('Active')).toBe('Active');
+        expect(canonicalStatus('  Draft  ')).toBe('Draft');
+        expect(canonicalStatus('Something else')).toBe('Something else');
+        expect(canonicalStatus(null)).toBe('');
+        expect(canonicalStatus(undefined)).toBe('');
     });
 });
 
