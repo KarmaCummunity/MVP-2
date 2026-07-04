@@ -1,6 +1,6 @@
 # 2.18 Cross-language UGC Translation
 
-> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. ✅ Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter. ✅ Phase 1b (provider + pipeline) landed: `translate` Edge Function (free Gemini Flash behind a pluggable provider seam, D-65) + `ITranslationService` port/adapter; inert — nothing auto-invokes it yet. ✅ Phase 1c (posts read substrate) landed: narrow `content_translations` SELECT policy + `get_post_translations` SECURITY INVOKER read RPC (migration `0210`, closes TD-58) + `IPostTranslationReader` port/adapter + `GetTranslatedPosts`/`MaterializePostTranslations` use cases. Mobile rendering is Phase 2. Phases 2–4 ⏳ Planned.
+> **Status:** ✅ Phase 0 (Foundations) done — language primitives + schema plumbing landed. ✅ Phase 1a (cache core) landed: `content_translations` table + domain primitives + cache port/adapter. ✅ Phase 1b (provider + pipeline) landed: `translate` Edge Function (free Gemini Flash behind a pluggable provider seam, D-65) + `ITranslationService` port/adapter; inert — nothing auto-invokes it yet. ✅ Phase 1c (posts read substrate) landed: narrow `content_translations` SELECT policy + `get_post_translations` SECURITY INVOKER read RPC (migration `0210`, closes TD-58) + `IPostTranslationReader` port/adapter + `GetTranslatedPosts`/`MaterializePostTranslations` use cases. ✅ Phase 2 (reader UX) landed: Settings language picker + viewport-gated feed translation + translated post detail with show-original toggle (migration `0216` purges cached translations on post edit). Phases 3–4 ⏳ Planned.
 
 Prefix: `FR-TRANSLATE-*`
 
@@ -78,9 +78,24 @@ Demand-driven materialization for posts. Phase 1a delivers the inert cache subst
 
 **Related.** Migrations `0208_content_translations.sql` (Phase 1a) + `0210_content_translations_read.sql` (Phase 1c; Phase 1b adds no migration). Edge Function `supabase/functions/translate`. Phase 1c consumes `ITranslationService` on a cache miss via `MaterializePostTranslationsUseCase`. SQL regression: `supabase/tests/0210_content_translations_read.sql`.
 
-## FR-TRANSLATE-003 — Reader UX (Phase 2, ⏳ Planned)
+## FR-TRANSLATE-003 — Reader UX (Phase 2, ✅ Done)
 
-Settings language picker (persists `preferred_language`); translated-field rendering with a "show original" toggle; accessibility + low-bandwidth handling. To be detailed before implementation.
+> **Status:** ✅ Landed. Settings language picker + viewport-gated feed translation + translated post detail with show-original toggle. Design: `docs/superpowers/specs/2026-07-01-ugc-translation-phase-2-reader-ux-design.md`; plan: `docs/superpowers/plans/2026-07-01-ugc-translation-phase-2-reader-ux.md`.
+
+Demand-driven reader UX over the Phase 1 substrate: a Settings picker sets the reader's target language; the feed translates only the visible window on-demand (source-then-swap); the full post renders translated with a per-post show-original toggle. All failures degrade silently to source text.
+
+- AC1. Settings exposes a translation-language picker listing the supported target languages (`he`/`en`/`ar`/`ru`, mirroring the Edge allow-list) plus a "device default" option; selecting persists `users.preferred_language` (or `null` for device default) via `setPreferredLanguage`, and invalidates the current-user + `['post-translations', …]` queries so the reader language and rendered translations refresh.
+- AC2. `useReaderLanguage()` resolves the effective language from the persisted preference, else device locale, else `he` (reusing `resolveReaderLanguage`, FR-TRANSLATE-001 AC6).
+- AC3. The feed renders a post's translatable fields translated when a cache hit exists for the reader language; posts already in the reader language render unchanged. The feed translates only the fields it renders (title) to bound cost.
+- AC4. On a feed cache miss for an eligible field, the card shows the source text with a discreet "translating…" indicator and swaps to the translation once background materialization caches it (no manual action).
+- AC5. The full post renders translated fields by default with a discreet "auto-translated" indicator, plus a per-post (non-persisted) "show original / show translation" toggle that is hidden when the post's source language equals the reader language.
+- AC6. Any translation failure, skip, or offline miss degrades silently to the source text — no error UI on the read path; the feed remains usable in the source language (session skip-map prevents re-firing resolved skips/failures).
+- AC7. Accessibility: translated text carries an auto-translated `accessibilityLabel`; the show-original toggle is a labeled button whose state change is announced to screen readers.
+- AC8. `PostWithOwner` exposes `sourceLanguage` and the current-user read exposes `preferredLanguage` (contract change); `toTranslatableFields` derives eligible fields purely and is unit-tested.
+- AC9. Feed materialization is driven by `onViewableItemsChanged` with a dwell gate (`itemVisiblePercentThreshold: 60`, `minimumViewTime: 400`); it materializes the settled visible window and never re-requests a `(post, field, lang)` that previously resolved to skip/failure within the session.
+- AC10. Editing a post's `title`/`description` purges its cached translations (DB trigger, migration `0216`); the next reader re-materializes the current text.
+- AC11. The `translate` Edge Function translates the SELECT-verified source-row field (never client-supplied text) and rejects unsupported target languages server-side.
+- AC12. Feed cards render RTL-safe; the source→translation swap causes no scroll shift (the "translating…" indicator is a non-clamped sibling of the clamped text), and per-string base direction is resolved at render time.
 
 ## FR-TRANSLATE-004 — Chat translation (Phase 3, ⏳ Planned, last)
 

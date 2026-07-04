@@ -7,7 +7,7 @@
 // counter; tapping the pill refetches + scrolls to top.
 
 import React, { useCallback, useMemo, useRef, useState } from 'react';
-import { FlatList, View } from 'react-native';
+import { FlatList, View, type ViewToken } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useInfiniteQuery, useQueryClient } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
@@ -27,10 +27,16 @@ import { useFilterStore } from '../../src/store/filterStore';
 import { useFeedSessionStore } from '../../src/store/feedSessionStore';
 import { useFeedRealtime } from '../../src/hooks/useFeedRealtime';
 import { useFirstPostNudge } from '../../src/hooks/useFirstPostNudge';
+import { useReaderLanguage } from '../../src/hooks/useReaderLanguage';
+import { useTranslatedPosts } from '../../src/hooks/useTranslatedPosts';
 import { getFeedUseCase } from '../../src/services/postsComposition';
 import { startMark } from '../../src/lib/observability/perfMarks';
 import { useScreenAside } from '../../src/components/aside/useScreenAside';
 import { GivingWorldsAside } from '../../src/components/aside/GivingWorldsAside';
+
+// Feed grid shows only the title, so only translate that field here (post
+// detail translates the description on open). FR-TRANSLATE-003.
+const FEED_TRANSLATABLE_FIELDS = ['title'] as const;
 
 // Module-scope guard: fires once per JS context (cold home-tab mount).
 let feedFirstRenderStarted = false;
@@ -122,6 +128,25 @@ export default function HomeFeedScreen() {
     [feedQuery.data?.pages],
   );
 
+  // FR-TRANSLATE-003 — viewport-gated read-time translation. Track post ids that
+  // dwell in view (60% for 400ms), then materialize only their fields.
+  const readerLanguage = useReaderLanguage();
+  const [visibleIds, setVisibleIds] = useState<string[]>([]);
+  const onViewableItemsChanged = useRef(
+    (info: { viewableItems: ViewToken[]; changed: ViewToken[] }) => {
+      setVisibleIds(info.viewableItems.map((v) => String(v.key)));
+    },
+  ).current;
+  const viewabilityConfig = useRef({
+    itemVisiblePercentThreshold: 60,
+    minimumViewTime: 400,
+  }).current;
+  const visiblePosts = useMemo(
+    () => feedPosts.filter((p) => visibleIds.includes(p.postId)),
+    [feedPosts, visibleIds],
+  );
+  const translations = useTranslatedPosts(visiblePosts, readerLanguage, FEED_TRANSLATABLE_FIELDS);
+
   const refetchAndReset = useCallback(() => {
     resetNewPosts();
     void feedQuery.refetch();
@@ -208,6 +233,9 @@ export default function HomeFeedScreen() {
           }
         }}
         ListHeaderComponent={header}
+        onViewableItemsChanged={onViewableItemsChanged}
+        viewabilityConfig={viewabilityConfig}
+        translations={translations}
         emptyComponent={
           <FeedEmptyState
             hasActiveFilters={activeCount > 0}
