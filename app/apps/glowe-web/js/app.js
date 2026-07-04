@@ -2513,6 +2513,24 @@ async function submitCommunityPost(draft) {
     }
 }
 
+// Delete a community post the signed-in viewer owns (FR-GLOWE-008 AC7). RLS
+// scopes removeOwned to auth.uid(), so a non-owner call is a no-op server-side;
+// the CTA is only rendered for owners. Reloads the feed after a successful delete.
+async function deleteCommunityPost(postId) {
+    if (!postId) return;
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured()) return;
+    if (typeof window.confirm === 'function' && !window.confirm('Delete this post? This cannot be undone.')) return;
+    try {
+        await backend.removeOwned('posts', { id: postId });
+    } catch (_e) {
+        showSuccessModal('Could not delete', 'Something went wrong deleting your post. Please try again.');
+        return;
+    }
+    await initCommunityPage();
+    showSuccessModal('Post deleted', 'Your post was removed from the community feed.');
+}
+
 // Display name for the signed-in author, falling back to their saved profile.
 function currentAuthorName() {
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
@@ -2699,6 +2717,13 @@ function renderPostCard(post) {
     const defaultComments = comments.length ? comments : [
         { author: 'Community Manager', text: 'Useful direction. Who should join the next step?', createdAt: new Date().toISOString() }
     ];
+    const viewer = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+    const ownsPost = (typeof GlowePosts !== 'undefined')
+        ? GlowePosts.isPostOwner(post, viewer && viewer.id)
+        : Boolean(viewer && viewer.id && String(post.authorId) === String(viewer.id));
+    const deleteButton = ownsPost
+        ? `<button type="button" class="post-delete-action" onclick="deleteCommunityPost('${postId}')">Delete post</button>`
+        : '';
     return `
         <article class="post-card" id="post-${postId}">
             <details class="post-more-menu">
@@ -2708,6 +2733,7 @@ function renderPostCard(post) {
                     <button type="button" onclick="saveItem('profile', '${post.authorId || authorName}', '${jsString(authorName)}', 'Community profile', '${profileHref}')">Save profile</button>
                     <button type="button" onclick="openPrivateMessage('${jsString(authorName)}')">Message</button>
                     <button type="button" onclick="openReportModal('post', '${postId}', '${jsString(post.title)}')">Report</button>
+                    ${deleteButton}
                 </div>
             </details>
             <div class="post-author-row">
@@ -5640,6 +5666,11 @@ const GLOWE_TRANSLATIONS = {
         "Save Draft": "שמירת טיוטה",
         "Save opportunity": "שמירת הזדמנות",
         "Save Opportunity": "שמירת הזדמנות",
+        "Delete post": "מחיקת פוסט",
+        "Post deleted": "הפוסט נמחק",
+        "Your post was removed from the community feed.": "הפוסט שלכם הוסר מפיד הקהילה.",
+        "Could not delete": "לא ניתן למחוק",
+        "Something went wrong deleting your post. Please try again.": "משהו השתבש במחיקת הפוסט. נסו שוב.",
         "Save post": "שמירת פוסט",
         "Save posts, profiles, and opportunities to return to them from this screen.": "שמרו פוסטים, פרופילים והזדמנויות כדי לחזור אליהם מהמסך הזה.",
         "Save posts, profiles, wishes, and opportunities to return to them from here.": "שמרו פוסטים, פרופילים, משאלות והזדמנויות כדי לחזור אליהם מכאן.",

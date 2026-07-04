@@ -72,6 +72,21 @@ describe('validatePostDraft', () => {
     });
 });
 
+describe('isPostOwner', () => {
+    it('matches the author and rejects strangers, guests, and blank ids', () => {
+        expect(GlowePosts.isPostOwner({ authorId: 'u1' }, 'u1')).toBe(true);
+        expect(GlowePosts.isPostOwner({ authorId: 'u1' }, 'u2')).toBe(false);
+        expect(GlowePosts.isPostOwner({ authorId: 'u1' }, '')).toBe(false);
+        expect(GlowePosts.isPostOwner({ authorId: 'u1' }, null)).toBe(false);
+        expect(GlowePosts.isPostOwner({ authorId: 'u1' }, undefined)).toBe(false);
+        expect(GlowePosts.isPostOwner(null, 'u1')).toBe(false);
+    });
+
+    it('compares ids as strings', () => {
+        expect(GlowePosts.isPostOwner({ authorId: 7 }, '7')).toBe(true);
+    });
+});
+
 describe('normalizePostDraft', () => {
     it('builds a community insert payload with array tags and trimmed fields', () => {
         expect(GlowePosts.normalizePostDraft({
