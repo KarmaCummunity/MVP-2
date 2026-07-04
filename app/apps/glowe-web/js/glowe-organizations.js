@@ -240,6 +240,28 @@
         return (Array.isArray(rows) ? rows : []).map(mapApplicantRow);
     }
 
+    // FR-GLOWE-012 AC3 — normalize a row from glowe_list_offers_for_post (the
+    // owner-scoped RPC, migration 0225) into the shape the wish owner's "Offers"
+    // inbox renders: the offerer's identity + offer answers + contact email (for
+    // the AC4 Connect CTA). Owner-side view, distinct from the offerer-side card.
+    function mapOfferForOwner(row) {
+        return {
+            id: field(row, 'id', 'id'),
+            offererId: field(row, 'user_id', 'userId') || '',
+            name: field(row, 'offerer_name', 'offererName') || '',
+            avatarUrl: field(row, 'offerer_avatar', 'offererAvatar') || '',
+            email: field(row, 'offerer_email', 'offererEmail') || '',
+            offerText: field(row, 'offer_text', 'offerText') || '',
+            availability: field(row, 'availability', 'availability') || '',
+            contactPreference: field(row, 'contact_preference', 'contactPreference') || '',
+            createdAt: field(row, 'created_at', 'createdAt') || ''
+        };
+    }
+
+    function mapOffersForOwner(rows) {
+        return (Array.isArray(rows) ? rows : []).map(mapOfferForOwner);
+    }
+
     // FR-GLOWE-012 AC2 — an application can be accepted/declined by the owner
     // only while it is still awaiting a decision (Pending). Already-decided rows
     // (Accepted / Declined / Waitlisted / Cancelled) show no action buttons.
@@ -310,6 +332,8 @@
         mapApplicantRow: mapApplicantRow,
         mapApplicantRows: mapApplicantRows,
         canDecideApplication: canDecideApplication,
+        mapOfferForOwner: mapOfferForOwner,
+        mapOffersForOwner: mapOffersForOwner,
         volunteerApplicationViews: volunteerApplicationViews,
         isDeleteAccountConfirmed: isDeleteAccountConfirmed,
         shouldShowProfileSkeleton: shouldShowProfileSkeleton,
