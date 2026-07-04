@@ -250,7 +250,7 @@ RLS: groups public read + admin-only write (via `has_admin_role` glowe_admin/sup
 
 ## FR-GLOWE-010 — Organizations Directory: live profiles
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress — AC1/AC2/AC3/AC4/AC5/AC7 ✅; AC6 (reach-out → outreach post) + AC8 (full translations audit) pending.
 
 The Organizations page (`pages/organizations.html`) currently renders from `organizations[]` in `data.js`. Phase B replaces it with live reads from `glowe_profiles` where `account_type = 'organization' AND approval_status = 'approved'`.
 
@@ -259,7 +259,7 @@ The Organizations page (`pages/organizations.html`) currently renders from `orga
 - AC2. **Filter.** The existing filter controls (field/focus, country, size) filter client-side on the fetched list.
 - AC3. **Profile cards.** Each card shows: `org_name`, `org_field`, `org_country`, `org_description` (truncated), `avatar_url` (if set). Links to `pages/profile.html?id=<id>`.
 - AC4. **Public profile page.** `pages/profile.html?id=<id>` fetches `glowe_profiles` by `id`. Displays all public fields (name, about, focus, country, languages, skills, public_link, projects). For orgs also shows: `org_name`, `org_field`, `org_website`, `org_description`, `org_size`.
-- AC5. **Projects list.** Public profile page loads `glowe_projects` filtered by `user_id` where `status != 'Draft'`, displaying title + description.
+- AC5. **Projects list.** ✅ Public profile page loads `glowe_projects` filtered by `user_id` where `status != 'Draft'`, displaying title + description. `_loadPublicProjects` (app.js) reads `listAll('projects')` and delegates mapping/filtering to `GloweOrganizations.mapProjects`/`publicProjectsForUser` (js/glowe-organizations.js, unit-tested); results flow into `_adaptDbProfile` → `_renderProfileContent`'s existing projects grid, which already carries a localized empty state ("No projects listed yet.").
 - AC6. **Contact CTA.** "Reach out" button on the org card opens a contact modal (name, message). Phase B: persists to `glowe_posts` as a private outreach post (`post_type = 'outreach'`, visible only to sender + recipient). Phase C: routes to KC direct messages.
 - AC7. **Empty state.** When no approved organizations are listed, show an invitation to register.
 - AC8. **Translations.** New UI strings added to Hebrew locale.
