@@ -268,7 +268,7 @@ The Organizations page (`pages/organizations.html`) currently renders from `orga
 
 ## FR-GLOWE-011 — Profile Management: Phase B completion
 
-**Status.** ⏳ Planned
+**Status.** 🟡 In progress
 
 Personal Area (`pages/my-applications.html`) currently shows a mix of live profile data (from `glowe_profiles` via Phase A onboarding) and mock/localStorage project data. Phase B completes the loop: all CRUD persists to Supabase, localStorage is used only as a cache/optimistic-update layer.
 
@@ -276,7 +276,7 @@ Personal Area (`pages/my-applications.html`) currently shows a mix of live profi
 - AC1. **Profile read.** On Personal Area load, `gloweBackend.fetchProfile()` is awaited and its result is written to localStorage (so re-renders use the cache). A loading skeleton is shown while the request is in flight.
 - AC2. **Edit profile.** The "Edit Profile" modal saves via `gloweBackend.upsertProfile(payload)`. All profile fields are persisted, not just onboarding fields. On success, cache is invalidated and the Personal Area re-renders.
 - AC3. **Avatar upload.** Profile image upload via `<input type="file">` → Supabase Storage bucket `glowe-avatars` → signed URL written to `glowe_profiles.avatar_url`. Validates file type (image/*) and size (max 5 MB) client-side.
-- AC4. **Projects CRUD.** Add/edit/delete personal projects via `insertOwned / removeOwned('projects', …)`. Projects list refreshes after each operation.
+- AC4. **Projects CRUD.** 🟡 Read wired: the Personal Area projects list now loads live from `gloweBackend.listOwned('projects')` (`loadPersonalProjects` caches to localStorage; `getPersonalProjectsForView` prefers the backend list once loaded, trusting an empty backend as a real empty state via the `personalProjectsView` pure helper in `js/glowe-organizations.js`, unit-tested). Add/edit/delete still persist to localStorage — the `insertOwned / removeOwned('projects', …)` write path is a follow-up slice.
 - AC5. **My wishes.** "My Needs" tab on Personal Area shows the user's own Wishing Well posts (open + fulfilled), loaded from `glowe_posts` where `user_id = me AND post_type = 'wish'`.
 - AC6. **My posts.** "My Posts" tab shows the user's community posts from `glowe_posts` where `user_id = me AND post_type = 'community'`.
 - AC7. **My opportunities.** "My Opportunities" tab shows opportunities posted by the user, loaded from `glowe_opportunities` where `user_id = me`.

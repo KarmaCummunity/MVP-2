@@ -533,6 +533,33 @@ function savePersonalProject(project) {
     localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify([{ id: `project-${Date.now()}`, ...project }, ...projects]));
 }
 
+// FR-GLOWE-011 AC4 — live Personal Area projects. `backendPersonalProjects`
+// stays null until a load completes; the view getter then prefers it (even when
+// empty) over the localStorage/demo fallback (see personalProjectsView).
+let backendPersonalProjects = null;
+
+async function loadPersonalProjects() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    let rows = [];
+    try { rows = await backend.listOwned('projects'); } catch (_e) { rows = []; }
+    backendPersonalProjects = helpers ? helpers.mapProjects(rows || []) : (rows || []);
+    // Mirror to the offline cache (TD-134) so a later offline render still works.
+    try {
+        if (backendPersonalProjects.length) {
+            localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify(backendPersonalProjects));
+        }
+    } catch (_e) { /* storage full or unavailable — cache is best-effort */ }
+}
+
+function getPersonalProjectsForView() {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    return helpers
+        ? helpers.personalProjectsView(backendPersonalProjects, getPersonalProjects())
+        : (Array.isArray(backendPersonalProjects) ? backendPersonalProjects : getPersonalProjects());
+}
+
 function canUseBackend() {
     return window.location.protocol === 'http:' || window.location.protocol === 'https:';
 }
@@ -5259,7 +5286,7 @@ function initMyApplicationsPage() {
 
     function renderPersonalArea() {
         const profile = getPersonalProfile();
-        const projects = getPersonalProjects();
+        const projects = getPersonalProjectsForView();
         const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         const applications = getApplications();
         const userApplications = user ? applications.filter(app => app.userId === user.id) : [];
@@ -5345,7 +5372,7 @@ function initMyApplicationsPage() {
                                 </div>
                                 <button class="btn btn-outline btn-small" type="button" onclick="openPersonalProjectModal()">Add Project</button>
                             </div>
-                            <div class="projects-grid">${projects.map(renderProjectCard).join('')}</div>
+                            <div class="projects-grid">${projects.map(renderProjectCard).join('') || '<p class="muted-note">No projects yet. Add your first project.</p>'}</div>
                         </article>
 
                         <article class="profile-section-card" id="personal-opportunities">
@@ -5424,6 +5451,7 @@ function initMyApplicationsPage() {
     window.renderPersonalArea = renderPersonalArea;
     renderPersonalArea();
     loadMyEvents();
+    loadPersonalProjects().then(() => renderPersonalArea());
     syncPersonalDataFromBackend().then((updated) => {
         if (updated) renderPersonalArea();
         loadMyEvents();
@@ -5943,6 +5971,7 @@ const GLOWE_TRANSLATIONS = {
         "No pending profiles": "אין פרופילים ממתינים",
         "No posts match this view yet": "אין עדיין פוסטים שמתאימים לתצוגה הזו",
         "No projects listed yet.": "אין עדיין פרויקטים רשומים.",
+        "No projects yet. Add your first project.": "אין עדיין פרויקטים. הוסיפו את הפרויקט הראשון שלכם.",
         "No replies yet. Be the first to respond.": "אין עדיין תגובות. היו הראשונים להגיב.",
         "No reports yet": "אין עדיין דיווחים",
         "No results": "אין תוצאות",
