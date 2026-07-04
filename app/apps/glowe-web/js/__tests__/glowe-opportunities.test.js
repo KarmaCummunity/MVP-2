@@ -50,3 +50,24 @@ describe('normalizeOpportunityDraft', () => {
         expect(payload.requirements).toEqual(['Clear communication']);
     });
 });
+
+describe('isDuplicateApplication', () => {
+    it('matches local cache rows on opportunityId + userId', () => {
+        const list = [{ opportunityId: 'opp-1', userId: 'u1' }, { opportunityId: 'opp-2', userId: 'u1' }];
+        expect(GloweOpportunities.isDuplicateApplication(list, 'opp-1', 'u1')).toBe(true);
+        expect(GloweOpportunities.isDuplicateApplication(list, 'opp-3', 'u1')).toBe(false);
+        expect(GloweOpportunities.isDuplicateApplication(list, 'opp-1', 'u2')).toBe(false);
+    });
+
+    it('matches server rows (snake_case) and treats user-scoped rows without a user field as a match', () => {
+        expect(GloweOpportunities.isDuplicateApplication([{ opportunity_id: 'opp-1', user_id: 'u1' }], 'opp-1', 'u1')).toBe(true);
+        expect(GloweOpportunities.isDuplicateApplication([{ opportunity_id: 'opp-1' }], 'opp-1', 'u1')).toBe(true);
+        expect(GloweOpportunities.isDuplicateApplication([{ opportunity_id: 'opp-2' }], 'opp-1', 'u1')).toBe(false);
+    });
+
+    it('is false for empty input or a missing opportunity id', () => {
+        expect(GloweOpportunities.isDuplicateApplication([], 'opp-1', 'u1')).toBe(false);
+        expect(GloweOpportunities.isDuplicateApplication(null, 'opp-1', 'u1')).toBe(false);
+        expect(GloweOpportunities.isDuplicateApplication([{ opportunityId: 'opp-1', userId: 'u1' }], '', 'u1')).toBe(false);
+    });
+});
