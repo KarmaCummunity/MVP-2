@@ -33,8 +33,40 @@
             .filter(function (g) { return g.id !== ''; });
     }
 
+    // Map a glowe_forum_threads row to the shape the thread renderers consume.
+    // replies is a live aggregate delivered in a later slice; default 0 here.
+    function mapForumThreadRow(row) {
+        const r = row || {};
+        return {
+            id: r.id == null ? '' : String(r.id),
+            groupId: r.group_id || '',
+            authorId: r.user_id || '',
+            title: r.title || '',
+            body: r.body || '',
+            createdAt: r.created_at || '',
+            replies: 0
+        };
+    }
+
+    // Map a list of thread rows, dropping any without an id. listAll already
+    // orders newest-first (created_at DESC), so order is preserved as-is.
+    function mapForumThreads(rows) {
+        return (Array.isArray(rows) ? rows : [])
+            .map(mapForumThreadRow)
+            .filter(function (t) { return t.id !== ''; });
+    }
+
+    // Threads belonging to one group, order preserved.
+    function threadsForGroup(threads, groupId) {
+        return (Array.isArray(threads) ? threads : [])
+            .filter(function (t) { return t && t.groupId === groupId; });
+    }
+
     return {
         mapForumGroupRow: mapForumGroupRow,
-        mapForumGroups: mapForumGroups
+        mapForumGroups: mapForumGroups,
+        mapForumThreadRow: mapForumThreadRow,
+        mapForumThreads: mapForumThreads,
+        threadsForGroup: threadsForGroup
     };
 });
