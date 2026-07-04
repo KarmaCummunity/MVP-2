@@ -155,4 +155,15 @@ export const settingsHe = {
     ar: 'ערבית',
     ru: 'רוסית',
   },
+
+  // FR-SETTINGS-018 — app interface language (Hebrew ↔ English)
+  language: 'שפת האפליקציה',
+  languageScreen: {
+    title: 'שפת האפליקציה',
+    intro: 'בחרו את שפת הממשק של האפליקציה.',
+    optionHe: 'עברית',
+    optionEn: 'English',
+    restartNote: 'שינוי השפה יטען מחדש את האפליקציה.',
+    saveFailed: 'החלפת השפה נכשלה. נסו שוב.',
+  },
 } as const;

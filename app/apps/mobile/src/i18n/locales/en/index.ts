@@ -1,0 +1,147 @@
+// ─────────────────────────────────────────────
+// English (en) translation bundle — Karma Community
+// Mapped to: FR-SETTINGS-018 (opt-in English UI locale). Machine-translated from
+// the Hebrew bundle; pending human polish (see TECH_DEBT TD-176).
+// Composed from `modules/*.ts`, `donations.ts`, and `stats.ts`, mirroring the
+// Hebrew `../he/index.ts` structure key-for-key.
+// Default export: full English resource tree for `react-i18next` (`src/i18n/index.ts`).
+// ─────────────────────────────────────────────
+
+import { donations, search } from './donations';
+import { authEn } from './modules/auth';
+import { onboardingEn } from './modules/onboarding';
+import { errorsEn } from './modules/errors';
+import { chatEn } from './modules/chat';
+import { notificationsEn } from './modules/notifications';
+import { moderationEn, auditEn, accountBlockedEn } from './modules/moderation';
+import { postEn } from './modules/post';
+import { settingsEn } from './modules/settings';
+import { stats } from './stats';
+import { aboutContentMerged } from './modules/aboutContentBundle';
+import { tabsEn } from './modules/tabs';
+import { errorBoundaryEn, devBannerEn, optionsMenuEn } from './modules/ui';
+import { feedEn } from './modules/feed';
+import { profileEn } from './modules/profile';
+import { closureEn } from './modules/closure';
+import { filtersEn } from './modules/filters';
+import { commonEn } from './modules/common';
+import { legalEn } from './modules/legal';
+import { surveyDemoEn } from './modules/surveyDemo';
+import { surveyEn } from './modules/survey';
+import { researchEn } from './modules/research';
+import { adminEn } from './modules/admin';
+import { karmaEn } from './modules/karma';
+import { asideEn } from './modules/aside';
+
+const en = {
+  // App
+  appName: 'KC - Karma Community',
+
+  // Auth (FR-AUTH-001..014) — see modules/auth.ts
+  auth: authEn,
+
+  // Onboarding (FR-AUTH-010..012, FR-AUTH-018) — see modules/onboarding.ts
+  onboarding: onboardingEn,
+
+  // Feed — see modules/feed.ts
+  feed: feedEn,
+
+  // Karma points (FR-KARMA-004/007) — see modules/karma.ts
+  karma: karmaEn,
+
+  // Post — see modules/post.ts
+  post: postEn,
+
+  // Profile — see modules/profile.ts
+  profile: profileEn,
+
+  // Closure (FR-CLOSURE-001..005) — see modules/closure.ts
+  closure: closureEn,
+
+  // Filters (FR-FEED-004/005/006/018/020) — see modules/filters.ts
+  filters: filtersEn,
+
+  // Chat — see modules/chat.ts (FR-CHAT-016)
+  chat: chatEn,
+
+  // Notifications (FR-NOTIF-001..015) — see modules/notifications.ts
+  notifications: notificationsEn,
+
+  // Moderation (FR-MOD-007/010 + FR-ADMIN-002..007) — see modules/moderation.ts
+  moderation: moderationEn,
+  audit: auditEn,
+  accountBlocked: accountBlockedEn,
+
+  // Admin portal (FR-ADMIN-010/011) — see modules/admin.ts
+  admin: adminEn,
+
+  // Settings — see modules/settings.ts
+  settings: settingsEn,
+
+  // Stats (FR-STATS-001..004) — see stats.ts
+  stats,
+
+  // Desktop aside panels (FR-RESP-003) — see modules/aside.ts
+  aside: asideEn,
+
+  // Legal (FR-SETTINGS-010) — see modules/legal.ts; bodies are server-driven Markdown.
+  legal: legalEn,
+
+  // Survey UX demo (internal preview) — see modules/surveyDemo.ts.
+  surveyDemo: surveyDemoEn,
+
+  // Production surveys + free feedback (FR-SETTINGS-015..017) — see modules/survey.ts.
+  survey: surveyEn,
+
+  // Public market research — Survey B (FR-RESEARCH-001..003) — see modules/research.ts.
+  research: researchEn,
+
+  // About — see modules/aboutContentBundle.ts (FR-SETTINGS About narrative)
+  aboutContent: aboutContentMerged,
+
+  // Donations (D-16, FR-DONATE-001..005) — see donations.ts
+  donations,
+
+  // Search (D-16, FR-FEED-016) — see donations.ts
+  search,
+
+  // Tab labels — see modules/tabs.ts
+  tabs: tabsEn,
+
+  // Error messages (auth/post/profile/media/createPost) — see modules/errors.ts
+  errors: errorsEn,
+
+  // Misc chrome — see modules/ui.ts
+  errorBoundary: errorBoundaryEn,
+  devBanner: devBannerEn,
+  optionsMenu: optionsMenuEn,
+
+  // Cross-cutting placeholders — see modules/common.ts
+  common: commonEn,
+
+  // General
+  general: {
+    loading: 'Loading…',
+    error: 'Something went wrong',
+    errorTitle: 'Error',
+    retry: 'Try again',
+    cancel: 'Cancel',
+    confirm: 'Confirm',
+    save: 'Save',
+    delete: 'Delete',
+    yes: 'Yes',
+    no: 'No',
+    back: 'Back',
+    close: 'Close',
+    gotIt: 'Got it',
+    now: 'Now',
+    today: 'Today',
+    yesterday: 'Yesterday',
+    minutesAgo: '{{count}} minutes ago',
+    hoursAgo: '{{count}} hours ago',
+    daysAgo: '{{count}} days ago',
+    unknownError: 'Unknown error',
+  },
+} as const;
+
+export default en;

@@ -1,4 +1,5 @@
 import { Platform, type TextStyle, type ViewStyle } from 'react-native';
+import { isLayoutRtl } from './rtlLayout';
 
 function isWebPlatform(): boolean {
   try {
@@ -18,4 +19,11 @@ function isWebPlatform(): boolean {
  */
 export const webViewRtl: ViewStyle = {};
 
-export const webTextRtl: TextStyle = isWebPlatform() ? { writingDirection: 'rtl' } : {};
+/**
+ * Web-only text `writingDirection` for the active locale (FR-SETTINGS-018).
+ * RTL (Hebrew) → `rtl`; LTR (English) → `ltr`. Re-resolves after a language
+ * switch because the app reloads. Native omits it (I18nManager handles bidi).
+ */
+export const webTextRtl: TextStyle = isWebPlatform()
+  ? { writingDirection: isLayoutRtl() ? 'rtl' : 'ltr' }
+  : {};
