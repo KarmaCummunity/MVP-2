@@ -122,6 +122,41 @@
         return (Array.isArray(rows) ? rows : []).map(mapOwnedOpportunity);
     }
 
+    // FR-GLOWE-011 AC9 — build a { postId: title } lookup from a public posts
+    // list (listAll('posts')) so offers can be enriched with the wish they
+    // target. Rows missing an id are skipped; a missing title becomes ''.
+    function postTitlesById(rows) {
+        const out = {};
+        (Array.isArray(rows) ? rows : []).forEach(function (row) {
+            const id = field(row, 'id', 'id');
+            if (id === undefined || id === null || id === '') return;
+            out[String(id)] = field(row, 'title', 'title') || '';
+        });
+        return out;
+    }
+
+    // FR-GLOWE-011 AC9 — map glowe_offers rows (from listOwned('offers'), already
+    // scoped to the caller) to the compact shape the Personal Area "My Offers"
+    // list renders, attaching the target wish's title from `titleById` when known.
+    function mapOwnedOffer(row, titleById) {
+        const wishId = field(row, 'post_id', 'postId');
+        const titles = titleById || {};
+        return {
+            id: field(row, 'id', 'id'),
+            wishId: wishId || '',
+            wishTitle: (wishId !== undefined && wishId !== null && titles[String(wishId)]) || '',
+            offerText: field(row, 'offer_text', 'offerText') || '',
+            availability: field(row, 'availability', 'availability') || '',
+            contactPreference: field(row, 'contact_preference', 'contactPreference') || ''
+        };
+    }
+
+    function mapOwnedOffers(rows, titleById) {
+        return (Array.isArray(rows) ? rows : []).map(function (row) {
+            return mapOwnedOffer(row, titleById);
+        });
+    }
+
     // FR-GLOWE-011 AC4 — decide which project list the Personal Area renders.
     // Once a backend load has completed we trust it (even when empty, so a user
     // with no real projects sees an empty state rather than the demo/local
@@ -144,6 +179,9 @@
         buildProjectPayload: buildProjectPayload,
         myWishPosts: myWishPosts,
         mapOwnedOpportunity: mapOwnedOpportunity,
-        mapOwnedOpportunities: mapOwnedOpportunities
+        mapOwnedOpportunities: mapOwnedOpportunities,
+        postTitlesById: postTitlesById,
+        mapOwnedOffer: mapOwnedOffer,
+        mapOwnedOffers: mapOwnedOffers
     };
 });
