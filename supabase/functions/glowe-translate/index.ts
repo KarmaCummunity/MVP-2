@@ -26,11 +26,23 @@ const MAX_INPUT = 5000;
 // content_type → source table + PK column + { field: db column }. The text we
 // translate is READ FROM THIS ROW (not client-supplied). Names (author_name,
 // organization, display_name) are deliberately absent — never translated.
-const SOURCE: Record<string, { table: string; pk: string; fields: Record<string, string> }> = {
+// `arrayFields` names columns stored as text[]; those accept a per-element
+// request field ("requirements.0") so each chip caches independently (AC4).
+interface SourceEntry {
+  table: string;
+  pk: string;
+  fields: Record<string, string>;
+  arrayFields?: Set<string>;
+}
+const SOURCE: Record<string, SourceEntry> = {
   glowe_post: { table: 'glowe_posts', pk: 'id', fields: { title: 'title', text: 'text' } },
   glowe_opportunity: {
     table: 'glowe_opportunities', pk: 'id',
-    fields: { title: 'title', description: 'description' },
+    fields: {
+      title: 'title', description: 'description',
+      requirements: 'requirements', responsibilities: 'responsibilities',
+    },
+    arrayFields: new Set(['requirements', 'responsibilities']),
   },
   glowe_project: {
     table: 'glowe_projects', pk: 'id',
@@ -44,6 +56,22 @@ const SOURCE: Record<string, { table: string; pk: string; fields: Record<string,
     },
   },
 };
+
+// Resolve a request field to its source column + optional array index. A scalar
+// field ("title") → { column, index: null }. An array element ("requirements.3")
+// → { column: 'requirements', index: 3 } iff the base is a declared arrayField.
+// Returns null for anything not in the allow-list (→ 400 invalid_body).
+function resolveField(src: SourceEntry, field: string): { column: string; index: number | null } | null {
+  const dot = field.lastIndexOf('.');
+  if (dot === -1) {
+    return src.fields[field] ? { column: src.fields[field], index: null } : null;
+  }
+  const base = field.slice(0, dot);
+  const idx = field.slice(dot + 1);
+  if (!/^\d+$/.test(idx)) return null;
+  if (!src.arrayFields?.has(base) || !src.fields[base]) return null;
+  return { column: src.fields[base], index: Number(idx) };
+}
 
 function json(body: unknown, status: number, h: Record<string, string> = {}): Response {
   return new Response(JSON.stringify(body), {
@@ -65,7 +93,7 @@ function isValid(b: unknown): b is Body {
   const src = typeof o.contentType === 'string' ? SOURCE[o.contentType] : undefined;
   if (!src) return false;
   if (typeof o.contentId !== 'string' || !o.contentId) return false;
-  if (typeof o.field !== 'string' || !src.fields[o.field]) return false;
+  if (typeof o.field !== 'string' || !resolveField(src, o.field)) return false;
   if (typeof o.targetLanguage !== 'string' || !o.targetLanguage) return false;
   return true;
 }
@@ -94,7 +122,8 @@ Deno.serve(async (req) => {
 
   const svc = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
   const src = SOURCE[body.contentType];
-  const column = src.fields[body.field];
+  const resolved = resolveField(src, body.field)!; // validated in isValid
+  const column = resolved.column;
 
   // Anti-poisoning: read the source text from the row, never from the client.
   const { data: srcRow, error: readErr } = await svc
@@ -104,7 +133,11 @@ Deno.serve(async (req) => {
     .maybeSingle();
   if (readErr) return json({ error: 'internal' }, 500, hdrs);
   if (!srcRow) return json({ status: 'skipped' }, 200, hdrs);
-  const sourceText = (srcRow as Record<string, unknown>)[column];
+  const raw = (srcRow as unknown as Record<string, unknown>)[column];
+  // Scalar column → the value itself; array column → the requested element.
+  const sourceText = resolved.index === null
+    ? raw
+    : (Array.isArray(raw) ? raw[resolved.index] : undefined);
   if (typeof sourceText !== 'string' || sourceText.trim().length === 0) {
     return json({ status: 'skipped' }, 200, hdrs);
   }
