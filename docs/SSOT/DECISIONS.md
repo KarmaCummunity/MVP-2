@@ -1238,6 +1238,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-168 — GLOWE partnership links in KC are environment-gated (dev on, prod off)
+
+**Date.** 2026-07-05
+
+**Decision.** The two GLOWE deep-link entry points inside the KC app — the Settings → Support "GLOWE" row and the Donations-hub GLOWE partnership banner — are gated by `areGloweLinksEnabled()` (`apps/mobile/src/config/environment.ts`). They render in the development build and are **hidden in production**. The gate follows the existing per-environment `EXPO_PUBLIC_ENVIRONMENT` (fail-safe to production when unset/unknown), so no new per-environment deploy config is needed; an explicit `EXPO_PUBLIC_GLOWE_LINKS` override ('1'/'0') exists for local testing.
+
+**Rationale.** GLOWE is still a development-only product surface (dev.karma-community.pages.dev/glowe). KC production should not promote or redirect users to an unlaunched product. Reusing `EXPO_PUBLIC_ENVIRONMENT` keeps the condition automatic across the `cloudflare-dev` and `cloudflare-prod` builds (the value already differs) and prod-safe by default (fail-safe hides the links). When GLOWE launches, flip the gate (or point it at a launch flag) rather than editing each call site.
+
+**Alternatives rejected.** A dedicated required env var configured in both GitHub environments — more moving parts, and a missing value would fail open (show GLOWE on prod). Hardcoding removal on `main` — diverges the branches and breaks the single-codebase promotion flow.
+
+**Affected docs.** `apps/mobile/src/config/environment.ts`; `apps/mobile/app/settings.tsx`; `apps/mobile/app/(tabs)/donations/index.tsx`; `docs/SSOT/spec/17_glowe_frontend.md`.
+
+---
+
 ## D-67 — GloWe community-post share keeps social buttons and adds copy-link
 
 **Date.** 2026-07-04
