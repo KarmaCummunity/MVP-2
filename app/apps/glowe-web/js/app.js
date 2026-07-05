@@ -91,6 +91,286 @@ function canCreateContent(actionKey) {
     return false;
 }
 
+// ── Adaptive create system (FR-GLOWE-016 AC3/AC4/AC7) ───────────────────────
+// One "+ Create" entry point (header button + mobile FAB) opening a menu that
+// shows only the create types the viewer's account may publish, computed from
+// the declarative GloweCreate registry.
+function openCreateMenu() {
+    const state = resolveCreateMenuState();
+    if (!state || !handleGatedCreateMenu(state)) return;
+    renderCreateMenu(state.types);
+}
+
+function resolveCreateMenuState() {
+    if (typeof GloweCreate === 'undefined') return null;
+    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
+    const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
+    return GloweCreate.createMenuState(loggedIn, profile);
+}
+
+// Gate handling: anon → contextual join, unverified org → notice. Returns
+// true when the viewer may see the menu.
+function handleGatedCreateMenu(state) {
+    if (state.state === 'anon') {
+        window.GloweGuest.showJoinPrompt('create-post', {});
+        return false;
+    }
+    if (state.state === 'unverified') {
+        showSuccessModal(
+            'Awaiting verification',
+            'Your organization is under review. Until it is approved you can explore everything, but publishing needs, posts, and events is paused — we only publish verified organizations.'
+        );
+        return false;
+    }
+    return true;
+}
+
+function renderCreateMenu(types) {
+    ensureGlobalUI();
+    if (!document.getElementById('glowe-create-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="glowe-create-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal('glowe-create-modal')">&times;</span>
+                    <h2>What would you like to create?</h2>
+                    <div id="glowe-create-options" class="create-menu-options"></div>
+                </div>
+            </div>
+        `);
+    }
+    document.getElementById('glowe-create-options').innerHTML = types.map(t => `
+        <button type="button" class="create-menu-option" onclick="dispatchCreateType('${t.id}')">
+            <strong>${escapeHtml(t.label)}</strong>
+            <span>${escapeHtml(t.description)}</span>
+        </button>
+    `).join('');
+    if (typeof window.translateGloweTree === 'function') {
+        window.translateGloweTree(document.getElementById('glowe-create-modal'));
+    }
+    openModal('glowe-create-modal');
+}
+
+// AC7 — dispatch a chosen create type to its Phase-B surface (one entry per
+// registry type; navigation targets are relative-path aware).
+const GLOWE_CREATE_DISPATCH = {
+    post: () => { window.location.href = `${gloweePagePrefix()}write-post.html`; },
+    need: () => openWishComposer(),
+    offer: () => openOfferComposer(),
+    event: () => openEventComposer(),
+    opportunity: () => { window.location.href = `${gloweePagePrefix()}volunteer-network.html?compose=1`; }
+};
+
+function gloweePagePrefix() {
+    return window.location.pathname.includes('/pages/') ? '' : 'pages/';
+}
+
+function dispatchCreateType(typeId) {
+    closeModal('glowe-create-modal');
+    const handler = GLOWE_CREATE_DISPATCH[typeId];
+    if (handler) handler();
+}
+
+// AC4 — tailored Event form (an event is an opportunity with a start date,
+// migration 0211). Runtime-injected like the other global modals.
+function openEventComposer() {
+    if (!canCreateContent('create-opportunity')) return;
+    ensureGlobalUI();
+    if (!document.getElementById('glowe-event-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="glowe-event-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal('glowe-event-modal')">&times;</span>
+                    <h2>Publish an event</h2>
+                    <p class="modal-intro">Events appear on the Volunteer Network with a date and registration.</p>
+                    <form onsubmit="handleEventSubmit(event)">
+                        <div class="form-group">
+                            <label for="event-title">Event title</label>
+                            <input id="event-title" required maxlength="140" placeholder="e.g. Community beach cleanup">
+                        </div>
+                        <div class="form-group">
+                            <label for="event-description">Description</label>
+                            <textarea id="event-description" rows="3" placeholder="What happens at the event, and who should come?"></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="event-start">Starts</label>
+                            <input id="event-start" type="datetime-local" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="event-end">Ends (optional)</label>
+                            <input id="event-end" type="datetime-local">
+                        </div>
+                        <div class="form-group">
+                            <label for="event-type">Format</label>
+                            <select id="event-type">
+                                <option value="physical">In person</option>
+                                <option value="digital">Online</option>
+                            </select>
+                        </div>
+                        <div class="form-group">
+                            <label for="event-location">Location / link</label>
+                            <input id="event-location" placeholder="Address, city, or meeting link">
+                        </div>
+                        <div class="form-group">
+                            <label for="event-capacity">Capacity (optional)</label>
+                            <input id="event-capacity" type="number" min="1" placeholder="Leave empty for unlimited">
+                        </div>
+                        <div class="form-group">
+                            <label for="event-registration">Registration</label>
+                            <select id="event-registration">
+                                <option value="gated">Organizer approves each registration</option>
+                                <option value="open">Open — instant confirmation</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-block" type="submit">Publish Event</button>
+                    </form>
+                </div>
+            </div>
+        `);
+        if (typeof window.translateGloweTree === 'function') {
+            window.translateGloweTree(document.getElementById('glowe-event-modal'));
+        }
+    }
+    openModal('glowe-event-modal');
+}
+
+function backendReady() {
+    return Boolean(window.gloweBackend && window.gloweBackend.configured());
+}
+
+function gloweIsLoggedIn() {
+    return typeof isLoggedIn === 'function' && isLoggedIn();
+}
+
+// The signed-in author's display name for authored content (orgs publish
+// under their organization name).
+function gloweCurrentAuthorName() {
+    const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
+    return profile.orgName || profile.name || 'GloWe Member';
+}
+
+// Shared submit path for the tailored create forms (FR-GLOWE-016 AC4):
+// validate → insert → close + reset + confirm. Failures keep the user's
+// input in place and explain what happened.
+async function submitCreateDraft(form, options) {
+    if (!options.check.valid) {
+        showSuccessModal('Missing details', options.check.error);
+        return;
+    }
+    if (!backendReady()) {
+        showSuccessModal('Backend unavailable', options.offlineBody);
+        return;
+    }
+    try {
+        await window.gloweBackend.insertOwned(options.table, options.payload);
+        closeModal(options.modalId);
+        form.reset();
+        showSuccessModal(options.successTitle, options.successBody);
+    } catch (_e) {
+        showSuccessModal('Could not publish', options.failBody);
+    }
+}
+
+function readEventDraft() {
+    const isDigital = fieldValue('event-type') === 'digital';
+    const locationValue = fieldValue('event-location');
+    return {
+        title: fieldValue('event-title'),
+        description: fieldValue('event-description'),
+        start_at: fieldValue('event-start'),
+        end_at: fieldValue('event-end'),
+        event_type: isDigital ? 'digital' : 'physical',
+        event_link: isDigital ? locationValue : '',
+        location: isDigital ? 'Online' : locationValue,
+        capacity: fieldValue('event-capacity'),
+        registration_mode: fieldValue('event-registration'),
+        organization: gloweCurrentAuthorName()
+    };
+}
+
+async function handleEventSubmit(event) {
+    event.preventDefault();
+    if (!canCreateContent('create-opportunity')) return;
+    const draft = readEventDraft();
+    await submitCreateDraft(event.target, {
+        check: GloweCreate.validateEventDraft(draft),
+        table: 'opportunities',
+        payload: GloweCreate.normalizeEventDraft(draft),
+        modalId: 'glowe-event-modal',
+        successTitle: 'Event published',
+        successBody: 'Your event is now live on the Volunteer Network.',
+        offlineBody: 'Events need a live connection right now. Please try again shortly.',
+        failBody: 'Something went wrong publishing your event. Please try again.'
+    });
+}
+
+// AC4 — tailored Volunteer-offer form (post_type='offer', migration 0227).
+function openOfferComposer() {
+    if (!canCreateContent('create-post')) return;
+    ensureGlobalUI();
+    if (!document.getElementById('glowe-offer-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="glowe-offer-modal" class="modal">
+                <div class="modal-content">
+                    <span class="close-modal" onclick="closeModal('glowe-offer-modal')">&times;</span>
+                    <h2>Offer your help</h2>
+                    <p class="modal-intro">Your offer appears on the Wishing Well so organizations and members can find you.</p>
+                    <form onsubmit="handleOfferPostSubmit(event)">
+                        <div class="form-group">
+                            <label for="offer-title">Headline</label>
+                            <input id="offer-title" required maxlength="140" placeholder="e.g. Graphic designer offering 3 hours a week">
+                        </div>
+                        <div class="form-group">
+                            <label for="offer-text">What can you offer?</label>
+                            <textarea id="offer-text" rows="4" required placeholder="Skills, time, equipment — anything that could help."></textarea>
+                        </div>
+                        <div class="form-group">
+                            <label for="offer-impact-area">Impact area (optional)</label>
+                            <select id="offer-impact-area">
+                                <option value="">Select an area</option>
+                                <option>Education</option>
+                                <option>Climate</option>
+                                <option>Social Justice</option>
+                                <option>Tech for Good</option>
+                                <option>Community Building</option>
+                                <option>Health</option>
+                                <option>Food Security</option>
+                                <option>Knowledge Sharing</option>
+                                <option>Civic Innovation</option>
+                            </select>
+                        </div>
+                        <button class="btn btn-primary btn-block" type="submit">Publish Offer</button>
+                    </form>
+                </div>
+            </div>
+        `);
+        if (typeof window.translateGloweTree === 'function') {
+            window.translateGloweTree(document.getElementById('glowe-offer-modal'));
+        }
+    }
+    openModal('glowe-offer-modal');
+}
+
+async function handleOfferPostSubmit(event) {
+    event.preventDefault();
+    if (!canCreateContent('create-post')) return;
+    const draft = {
+        title: fieldValue('offer-title'),
+        text: fieldValue('offer-text'),
+        impact_area: fieldValue('offer-impact-area'),
+        author_name: gloweCurrentAuthorName()
+    };
+    await submitCreateDraft(event.target, {
+        check: GloweCreate.validateOfferPostDraft(draft),
+        table: 'posts',
+        payload: GloweCreate.normalizeOfferPostDraft(draft),
+        modalId: 'glowe-offer-modal',
+        successTitle: 'Offer published',
+        successBody: 'Your offer is now live on the Wishing Well.',
+        offlineBody: 'Offers need a live connection right now. Please try again shortly.',
+        failBody: 'Something went wrong publishing your offer. Please try again.'
+    });
+}
+
 // ── Post-sign-in onboarding (FR-GLOWE-002) ──────────────────────────────────
 const GLOWE_ONBOARDING_DISMISSED_KEY = 'glowe-onboarding-dismissed';
 
@@ -1354,8 +1634,9 @@ function normalizeHeaderUserMenu() {
     const gearIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
     userMenu.innerHTML = `
         <a class="user-greeting" href="${prefix}my-applications.html">Hi, <span id="user-name">there</span></a>
+        <button class="btn btn-primary btn-small header-create-btn" type="button" onclick="openCreateMenu()">+ Create</button>
         <a class="header-icon-btn" href="${prefix}messages.html" aria-label="Messages" title="Messages">${chatIcon}</a>
-        <a class="btn btn-primary btn-small header-settings-btn" href="${prefix}settings.html" aria-label="Settings" title="Settings"><span class="header-settings-icon">${gearIcon}</span><span class="header-settings-label">Settings</span></a>
+        <a class="btn btn-outline btn-small header-settings-btn" href="${prefix}settings.html" aria-label="Settings" title="Settings"><span class="header-settings-icon">${gearIcon}</span><span class="header-settings-label">Settings</span></a>
     `;
 }
 
@@ -1446,6 +1727,15 @@ function ensureGlobalFooter() {
     footer.innerHTML = footerHtml;
 }
 
+// A bottom-nav tab also lights up for its sibling pages (community covers the
+// forums cluster; wishes covers the volunteering cluster).
+function bottomNavActive(page, match) {
+    if (page === match) return true;
+    if (match === 'community') return ['forums', 'discussion-group', 'organizations'].includes(page);
+    if (match === 'wishing-well') return ['volunteer-network', 'opportunities', 'opportunity'].includes(page);
+    return false;
+}
+
 function ensureBottomNavigation() {
     if (document.querySelector('.mobile-bottom-nav')) return;
     
@@ -1484,18 +1774,24 @@ function ensureBottomNavigation() {
         }
     ];
 
-    nav.innerHTML = links.map(link => {
-        const active = page === link.match
-            || (link.match === 'community' && (page === 'forums' || page === 'discussion-group' || page === 'organizations'))
-            || (link.match === 'wishing-well' && (page === 'volunteer-network' || page === 'opportunities' || page === 'opportunity'));
-
+    const linkHtml = (link) => {
+        const active = bottomNavActive(page, link.match);
         return `
             <a href="${link.href}" class="bottom-nav-link${active ? ' active' : ''}">
                 <span class="nav-icon">${link.icon}</span>
                 <span class="nav-label">${link.label}</span>
             </a>
         `;
-    }).join('');
+    };
+
+    // FR-GLOWE-016 AC3 — the "+" create FAB sits at the center of the bottom
+    // nav; the menu it opens adapts to the viewer's account type.
+    const createFab = `
+        <button type="button" class="bottom-nav-create" aria-label="Create" onclick="openCreateMenu()">
+            <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+        </button>
+    `;
+    nav.innerHTML = links.slice(0, 2).map(linkHtml).join('') + createFab + links.slice(2).map(linkHtml).join('');
 
     document.body.appendChild(nav);
 }
@@ -1983,11 +2279,12 @@ function ensureGlobalUI() {
                             <label for="report-reason">What should we look at?</label>
                             <select id="report-reason" required>
                                 <option value="">Choose a reason</option>
-                                <option>Inaccurate information</option>
-                                <option>Disrespectful or discriminatory content</option>
-                                <option>Misleading promotion</option>
-                                <option>Human rights concern</option>
-                                <option>Other</option>
+                                <option value="spam">Spam or misleading promotion</option>
+                                <option value="harassment">Harassment or hate</option>
+                                <option value="misinformation">False or misleading information</option>
+                                <option value="inappropriate_content">Inappropriate content</option>
+                                <option value="fake_profile">Fake profile or impersonation</option>
+                                <option value="other">Other</option>
                             </select>
                         </div>
                         <div class="form-group">
@@ -2436,38 +2733,61 @@ function showSupportModal(wishId = null) {
     openModal('connect-modal');
 }
 
-async function handleConnectSubmit(event) {
-    event.preventDefault();
-    if (!isLoggedIn()) {
-        showSuccessModal('Sign in to offer support', 'Please sign in or create a free account to send an offer to this need.');
-        return;
-    }
-    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+function readSupportOfferDraft() {
     const draft = {
-        support_type: document.getElementById('support-type').value,
-        availability: document.getElementById('support-availability').value,
-        message: document.getElementById('connect-message').value,
-        contact_preference: (document.getElementById('connect-contact') || {}).value || 'In-app message'
+        support_type: fieldValue('support-type'),
+        availability: fieldValue('support-availability'),
+        message: fieldValue('connect-message'),
+        contact_preference: fieldValue('connect-contact') || 'In-app message'
     };
-    draft.offer_text = helpers ? helpers.buildOfferText(draft) : (draft.message || '');
-    const check = helpers ? helpers.validateOfferDraft(draft)
-        : { valid: Boolean(draft.offer_text && draft.availability) };
-    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please complete the offer.'); return; }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured() || !activeWishForSupport) return;
+    draft.offer_text = GloweWishes.buildOfferText(draft);
+    return draft;
+}
+
+// FR-GLOWE-016 AC6 — helping on a need also opens the real 1:1 KC chat with
+// the need's owner, seeded with the need title + offer text.
+async function openChatForActiveWish(offerText) {
+    if (!activeWishForSupport.authorId) return null;
+    const firstMessage = GloweMessages.buildFirstMessage('need', activeWishForSupport.title, offerText);
+    return startDirectChat(activeWishForSupport.authorId, firstMessage).catch(() => null);
+}
+
+async function submitSupportOffer(form, draft) {
     try {
-        await backend.insertOwned('offers', {
+        await window.gloweBackend.insertOwned('offers', {
             post_id: activeWishForSupport.id,
             offer_text: draft.offer_text,
             availability: draft.availability,
             contact_preference: draft.contact_preference
         });
-        closeModal('connect-modal');
-        event.target.reset();
-        showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
     } catch (_e) {
         showSuccessModal('Could not send offer', 'Something went wrong sending your offer. Please try again.');
+        return;
     }
+    closeModal('connect-modal');
+    form.reset();
+    const chatId = await openChatForActiveWish(draft.offer_text);
+    if (chatId) {
+        redirectToChatThread(chatId);
+        return;
+    }
+    showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
+}
+
+async function handleConnectSubmit(event) {
+    event.preventDefault();
+    if (!gloweIsLoggedIn()) {
+        showSuccessModal('Sign in to offer support', 'Please sign in or create a free account to send an offer to this need.');
+        return;
+    }
+    const draft = readSupportOfferDraft();
+    const check = GloweWishes.validateOfferDraft(draft);
+    if (!check.valid) {
+        showSuccessModal('Missing details', check.error);
+        return;
+    }
+    if (!backendReady() || !activeWishForSupport) return;
+    await submitSupportOffer(event.target, draft);
 }
 
 function handleQuickConnect() {
@@ -2490,34 +2810,27 @@ function openReachOutModal(recipientId, recipientName) {
     openModal('reach-out-modal');
 }
 
+// FR-GLOWE-016 AC6 — "Reach out" opens a real 1:1 KC chat with the
+// organization (supersedes the FR-GLOWE-014 outreach-post stub).
 async function handleReachOutSubmit(event) {
     event.preventDefault();
-    if (!isLoggedIn()) {
+    if (!gloweIsLoggedIn()) {
         showSuccessModal('Sign in to reach out', 'Please sign in or create a free account to message this organization.');
         return;
     }
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    if (!helpers || !activeReachOutRecipient) return;
-    const draft = {
-        recipientId: activeReachOutRecipient.id,
-        orgName: activeReachOutRecipient.name,
-        message: (document.getElementById('reach-out-message') || {}).value || ''
-    };
-    const check = helpers.validateOutreachDraft(draft);
-    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please write a short message.'); return; }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
-        showSuccessModal('Backend unavailable', 'Messaging needs a live connection right now. Please try again shortly.');
+    const message = fieldValue('reach-out-message');
+    if (!activeReachOutRecipient || message.length < 2) {
+        showSuccessModal('Missing details', 'Please write a short message.');
         return;
     }
-    try {
-        await backend.insertOwned('posts', helpers.buildOutreachPayload(draft));
-        closeModal('reach-out-modal');
-        event.target.reset();
-        showSuccessModal('Message sent', 'Your message was delivered. The organization can follow up with you.');
-    } catch (_e) {
-        showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
+    const chatId = await startDirectChat(activeReachOutRecipient.id, message).catch(() => null);
+    closeModal('reach-out-modal');
+    event.target.reset();
+    if (chatId) {
+        redirectToChatThread(chatId);
+        return;
     }
+    showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
 }
 
 function openConnectionWorkspace() {
@@ -2549,6 +2862,11 @@ function openConnectionWorkspace() {
 }
 
 function openReportModal(type = 'general', id = 'site', title = 'General concern') {
+    // FR-GLOWE-015 AC1 — reporting requires login (reports are per-reporter).
+    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+        window.GloweGuest.requireMemberForAction('report-content', { title }, function () {});
+        return;
+    }
     ensureGlobalUI();
     activeReportTarget = { type, id: String(id), title };
     const targetType = document.getElementById('report-target-type');
@@ -2581,13 +2899,23 @@ function openCrowdfundingModal() {
     showSuccessModal('Future community support flow', 'For the MVP, urgent funding appears as wishes, posts, and direct collaboration requests rather than a separate funding pool.');
 }
 
-function openPrivateMessage(name = 'this member') {
+// FR-GLOWE-016 AC6 — private message entry point. Opens a compose modal and,
+// on send, creates (or reuses) the real 1:1 KC chat with the recipient and
+// jumps into the thread. Cards pass the recipient's user id where known.
+let activeMessageRecipient = null;
+
+function openPrivateMessage(name = 'this member', recipientId = '') {
     // Guests → action-tailored join prompt (FR-GLOWE-023).
-    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+    if (!gloweIsLoggedIn()) {
         window.GloweGuest.requireMemberForAction('send-message', { org: name }, function () {});
         return;
     }
+    if (!recipientId) {
+        showSuccessModal('Messaging unavailable', 'This member cannot receive direct messages yet.');
+        return;
+    }
     ensureGlobalUI();
+    activeMessageRecipient = { id: recipientId, name };
     const modal = document.getElementById('message-modal');
     if (!modal) {
         document.body.insertAdjacentHTML('beforeend', `
@@ -2608,14 +2936,22 @@ function openPrivateMessage(name = 'this member') {
         `);
     }
     document.getElementById('message-context').textContent = `To: ${name}`;
-    document.getElementById('message-body').value = `Hi ${name}, I saw your profile on GloWe and would like to connect. `;
+    document.getElementById('message-body').value = '';
     openModal('message-modal');
 }
 
-function handleMessageSubmit(event) {
+async function handleMessageSubmit(event) {
     event.preventDefault();
+    const body = fieldValue('message-body');
+    const check = GloweMessages.validateMessageDraft(body);
+    if (!check.valid || !activeMessageRecipient) return;
+    const chatId = await startDirectChat(activeMessageRecipient.id, body).catch(() => null);
     closeModal('message-modal');
-    showSuccessModal('Message saved', 'This opens a private conversation thread in the GloWe workspace.');
+    if (chatId) {
+        redirectToChatThread(chatId);
+        return;
+    }
+    showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
 }
 
 function addProjectFeedback() {
@@ -2662,6 +2998,24 @@ function escapeHtml(value = '') {
 
 function jsString(value = '') {
     return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+// Read a form field's trimmed value; '' when the element is absent.
+function fieldValue(id) {
+    const el = document.getElementById(id);
+    return el ? String(el.value).trim() : '';
+}
+
+// Navigate into a chat thread with the correct relative path from any page.
+function redirectToChatThread(chatId) {
+    const inPages = window.location.pathname.includes('/pages/');
+    window.location.href = `${inPages ? '' : 'pages/'}messages.html?chat=${encodeURIComponent(chatId)}`;
+}
+
+// A PostgREST 42501 (admin assert / RLS) → "reviewers only" style handling.
+function isForbiddenError(error) {
+    if (!error) return false;
+    return error.code === '42501' || /forbidden|permission/i.test(error.message || '');
 }
 
 function getSavedItems() {
@@ -3122,23 +3476,47 @@ function renderShareButtons(title, path = '') {
     `;
 }
 
-function handleReportSubmit(event) {
-    event.preventDefault();
-    const report = {
-        id: `report-${Date.now()}`,
-        targetType: document.getElementById('report-target-type')?.value || activeReportTarget.type,
-        targetId: document.getElementById('report-target-id')?.value || activeReportTarget.id,
-        targetTitle: document.getElementById('report-target-title')?.value || activeReportTarget.title,
-        reason: document.getElementById('report-reason')?.value || 'Other',
-        details: document.getElementById('report-details')?.value.trim() || '',
-        reporter: typeof getCurrentUser === 'function' && getCurrentUser() ? getCurrentUser().email : 'anonymous',
-        status: 'Open',
-        createdAt: new Date().toISOString()
+// FR-GLOWE-015 AC1 — persist a report to glowe_reports. Duplicate reports on
+// the same target by the same reporter surface as "already reported" (AC3).
+function readReportDraft() {
+    return {
+        targetType: fieldValue('report-target-type') || activeReportTarget.type,
+        targetId: fieldValue('report-target-id') || activeReportTarget.id,
+        reason: fieldValue('report-reason'),
+        note: fieldValue('report-details')
     };
-    saveModerationReports([report, ...getModerationReports()]);
-    event.target.reset();
-    closeModal('report-modal');
-    showSuccessModal('Report received', 'Thank you. We will review this with care and confidentiality.');
+}
+
+// Duplicate reports on the same target dedupe server-side (AC3).
+function showReportSubmitError(error) {
+    if (GloweModeration.isDuplicateReportError(error)) {
+        showSuccessModal('Already reported', 'You already reported this. Our team will review it.');
+        return;
+    }
+    showSuccessModal('Could not send report', 'Something went wrong sending your report. Please try again.');
+}
+
+async function handleReportSubmit(event) {
+    event.preventDefault();
+    const draft = readReportDraft();
+    const check = GloweModeration.validateReportDraft(draft);
+    if (!check.valid) {
+        showSuccessModal('Missing details', check.error);
+        return;
+    }
+    if (!backendReady()) {
+        showSuccessModal('Could not send report', 'Reporting needs a live connection right now. Please try again shortly.');
+        return;
+    }
+    try {
+        await window.gloweBackend.submitReport(GloweModeration.buildReportPayload(draft));
+        event.target.reset();
+        closeModal('report-modal');
+        showSuccessModal('Report received', 'Thank you. We will review this with care and confidentiality.');
+    } catch (error) {
+        closeModal('report-modal');
+        showReportSubmitError(error);
+    }
 }
 
 function openWishDetail(wishId) {
@@ -3174,7 +3552,7 @@ function openWishDetail(wishId) {
             </div>
             <div class="card-actions wish-detail-actions">
                 <button class="btn btn-primary" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
-                <button class="btn btn-outline" type="button" onclick="saveItem('wish', '${wish.id}', '${jsString(wish.title)}', '${jsString(wish.author)}', 'wishing-well.html?wish=${wish.id}')">Save</button>
+                ${savedToggleButtonHtml('wish', wish.id, wish.title, wish.author, `wishing-well.html?wish=${wish.id}`, 'Save', 'btn btn-outline')}
                 <button class="btn btn-outline" type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 <button class="btn btn-outline" type="button" onclick="closeModal('wish-detail-modal')">Back to wishes</button>
             </div>
@@ -3392,7 +3770,9 @@ async function fetchAndPopulate(backendFn, targetArray, mapper) {
         if (typeof gloweBackend === 'undefined' || !gloweBackend.configured()) return;
         const rows = await backendFn();
         if (!rows) return;
-        targetArray.splice(0, targetArray.length, ...rows.map(mapper));
+        // FR-GLOWE-015 AC5 — admin-removed content never surfaces publicly.
+        const visible = rows.filter(row => !row || row.status !== 'removed');
+        targetArray.splice(0, targetArray.length, ...visible.map(mapper));
     } catch (_e) {
         // leave array empty; page shows empty state
     }
@@ -3416,8 +3796,8 @@ function renderOpportunityCard(opportunity, basePath = '') {
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More opportunity actions">...</summary>
                 <div class="post-more-panel">
-                    <button type="button" onclick="saveItem('opportunity', '${opportunity.id}', '${titleForMessage}', '${jsString(opportunity.organization)}', '${detailHref}')">Save opportunity</button>
-                    <button type="button" onclick="openPrivateMessage('${jsString(opportunity.organization)}')">Message publisher</button>
+                    ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save opportunity', 'post-menu-action')}
+                    <button type="button" onclick="openPrivateMessage('${jsString(opportunity.organization)}', '${jsString(opportunity.ownerId || '')}')">Message publisher</button>
                     <button type="button" onclick="openReportModal('opportunity', '${opportunity.id}', '${titleForMessage}')">Report</button>
                 </div>
             </details>
@@ -3454,8 +3834,8 @@ function renderOrganizationCard(organization, basePath = '') {
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More profile actions">...</summary>
                 <div class="post-more-panel">
-                    <button type="button" onclick="saveItem('profile', '${organization.id}', '${jsString(organization.name)}', '${jsString(organization.type || 'Organization')}', '${profileHref}')">Save profile</button>
-                    <button type="button" onclick="openPrivateMessage('${jsString(organization.name)}')">Message</button>
+                    ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, 'Save profile', 'post-menu-action')}
+                    <button type="button" onclick="openPrivateMessage('${jsString(organization.name)}', '${jsString(organization.id)}')">Message</button>
                     <button type="button" onclick="openReportModal('profile', '${organization.id}', '${jsString(organization.name)}')">Report</button>
                 </div>
             </details>
@@ -3479,7 +3859,7 @@ function renderOrganizationCard(organization, basePath = '') {
             <div class="card-actions">
                 <a href="${profileHref}" class="btn btn-outline btn-small">View Profile</a>
                 <button class="btn btn-primary btn-small" type="button" onclick="openReachOutModal('${organization.id}', '${jsString(organization.name)}')">Reach Out</button>
-                <button class="btn btn-outline btn-small" type="button" onclick="saveItem('profile', '${organization.id}', '${jsString(organization.name)}', '${jsString(organization.type || 'Organization')}', '${profileHref}')">Save Profile</button>
+                ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, 'Save Profile')}
             </div>
         </div>
     `;
@@ -3493,14 +3873,14 @@ function renderWishCard(wish) {
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More wish actions">...</summary>
                 <div class="post-more-panel">
-                    <button type="button" onclick="saveItem('wish', '${wish.id}', '${jsString(wish.title)}', '${jsString(wish.author)}', 'wishing-well.html?wish=${wish.id}')">Save wish</button>
-                    <button type="button" onclick="openPrivateMessage('${jsString(wish.author)}')">Message author</button>
+                    ${savedToggleButtonHtml('wish', wish.id, wish.title, wish.author, `wishing-well.html?wish=${wish.id}`, 'Save wish', 'post-menu-action')}
+                    <button type="button" onclick="openPrivateMessage('${jsString(wish.author)}', '${jsString(wish.authorId || '')}')">Message author</button>
                     <button type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 </div>
             </details>
             <div class="wish-card-top">
                 <span class="wish-type" style="background:${style.color}">${escapeHtml(wish.type)}</span>
-                <button class="heart-button" type="button" aria-label="Save wish" onclick="saveItem('wish', '${wish.id}', '${jsString(wish.title)}', '${jsString(wish.author)}', 'wishing-well.html?wish=${wish.id}')">Save</button>
+                ${savedToggleButtonHtml('wish', wish.id, wish.title, wish.author, `wishing-well.html?wish=${wish.id}`, 'Save', 'heart-button')}
             </div>
             <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
                 ${renderEntityMark(wish.author, 'wish-image')}
@@ -3549,18 +3929,11 @@ function renderProjectCard(project, options) {
 }
 
 function renderPostCard(post) {
-    const author = getAuthorById(post.authorId);
-    const authorName = post.authorName || (author ? author.name : 'Community Member');
-    const profileHref = author ? `profile.html?id=${post.authorId}` : '#';
+    const authorName = post.authorName || 'Community Member';
+    const profileHref = post.authorId ? `profile.html?id=${post.authorId}` : '#';
     const tags = Array.isArray(post.tags) ? post.tags : [];
     const postId = post.id || getPostId(post);
-    const engagementSeed = String(postId).split('').reduce((sum, char) => sum + char.charCodeAt(0), 0);
-    const reactionCount = 12 + (engagementSeed % 48);
-    const repostCount = 1 + (engagementSeed % 9);
     const comments = getPostCommentsFor(postId);
-    const defaultComments = comments.length ? comments : [
-        { author: 'Community Manager', text: 'Useful direction. Who should join the next step?', createdAt: new Date().toISOString() }
-    ];
     const viewer = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
     const ownsPost = (typeof GlowePosts !== 'undefined')
         ? GlowePosts.isPostOwner(post, viewer && viewer.id)
@@ -3573,9 +3946,9 @@ function renderPostCard(post) {
             <details class="post-more-menu">
                 <summary aria-label="More post actions">...</summary>
                 <div class="post-more-panel">
-                    <button type="button" onclick="saveItem('post', '${postId}', '${jsString(post.title)}', '${jsString(post.category)}', 'community.html#post-${postId}')">Save post</button>
-                    <button type="button" onclick="saveItem('profile', '${post.authorId || authorName}', '${jsString(authorName)}', 'Community profile', '${profileHref}')">Save profile</button>
-                    <button type="button" onclick="openPrivateMessage('${jsString(authorName)}')">Message</button>
+                    ${savedToggleButtonHtml('post', postId, post.title, post.category, `community.html#post-${postId}`, 'Save post', 'post-menu-action')}
+                    ${savedToggleButtonHtml('profile', post.authorId || authorName, authorName, 'Community profile', profileHref, 'Save profile', 'post-menu-action')}
+                    <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(post.authorId || '')}')">Message</button>
                     <button type="button" onclick="openReportModal('post', '${postId}', '${jsString(post.title)}')">Report</button>
                     ${deleteButton}
                 </div>
@@ -3593,20 +3966,13 @@ function renderPostCard(post) {
             <h3 data-tr-field="title">${escapeHtml(post.title)}</h3>
             <p data-tr-field="text">${escapeHtml(post.text)}</p>
             ${tags.length ? `<div class="post-tag-row">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
-            <div class="post-engagement-row">
-                <span>${reactionCount} reactions</span>
-                <span>${defaultComments.length} comments</span>
-                <span>${repostCount} reposts</span>
-            </div>
             <div class="post-actions">
-                <button type="button" onclick="showSuccessModal('Reaction saved', 'Your reaction was added to this post.')">Like</button>
                 <button type="button" onclick="focusCommentBox('${postId}')">Comment</button>
-                <button type="button" onclick="showSuccessModal('Repost drafted', 'You can add your own context before sharing this with the community.')">Repost</button>
-                <button type="button" onclick="openPrivateMessage('${jsString(authorName)}')">Send</button>
+                <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(post.authorId || '')}')">Send</button>
             </div>
             <div class="post-comments" id="comments-${postId}">
-                <div class="comment-summary">${defaultComments.length} comment${defaultComments.length === 1 ? '' : 's'}</div>
-                ${defaultComments.slice(0, 3).map(comment => `
+                <div class="comment-summary">${comments.length} comment${comments.length === 1 ? '' : 's'}</div>
+                ${comments.slice(0, 3).map(comment => `
                     <article class="comment-row">
                         ${renderEntityMark(comment.author, 'comment-avatar')}
                         <div>
@@ -4192,6 +4558,14 @@ async function initOpportunitiesPage() {
     if (composer && !composer.dataset.ready) {
         composer.dataset.ready = 'true';
     }
+
+    // FR-GLOWE-016 AC7 — the create menu deep-links here with ?compose=1 to
+    // open the publish form directly.
+    if (new URLSearchParams(window.location.search).get('compose') === '1') {
+        openOpportunityComposer();
+        const composerEl = document.getElementById('opportunity-composer');
+        if (composerEl) composerEl.scrollIntoView({ behavior: 'smooth', block: 'start' });
+    }
 }
 
 function openOpportunityComposer() {
@@ -4463,7 +4837,14 @@ async function loadLiveWishes() {
     if (!backend || !backend.configured() || !helpers) { updateWellSummary(0); return; }
     let rows = [];
     try { rows = await backend.listAll('posts'); } catch (_e) { rows = []; }
-    wishes.push(...(rows || []).filter(helpers.isOpenWish).map(helpers.mapWishRow));
+    // The board carries open needs (wishes) plus standing volunteer offers
+    // (post_type='offer', FR-GLOWE-016), newest first as returned by listAll.
+    const create = (typeof GloweCreate !== 'undefined') ? GloweCreate : null;
+    wishes.push(...(rows || []).reduce((acc, row) => {
+        if (helpers.isOpenWish(row)) acc.push(helpers.mapWishRow(row));
+        else if (create && create.isOpenOffer(row)) acc.push({ ...helpers.mapWishRow(row), type: 'Volunteer Offer' });
+        return acc;
+    }, []));
     let projectCount = 0;
     try { projectCount = ((await backend.listAll('projects')) || []).length; } catch (_e) { projectCount = 0; }
     updateWellSummary(projectCount);
@@ -4614,6 +4995,7 @@ function initAdminPage() {
     if (!requestsContainer && !reportsContainer && !hiddenContainer && !orgContainer) return;
 
     if (orgContainer) loadPendingOrgs();
+    if (reportsContainer) loadModerationReports();
 
     const backend = window.gloweBackend;
     if (backend && backend.configured()) {
@@ -4626,7 +5008,6 @@ function initAdminPage() {
     }
 
     const requests = getAdminReviewUsers();
-    const reports = getModerationReports();
     const hidden = getHiddenModerationItems();
 
     if (requestsContainer) {
@@ -4645,23 +5026,6 @@ function initAdminPage() {
         `).join('') : '<div class="empty-state"><h3>No pending profiles</h3><p>New submitted profiles will appear here for review.</p></div>';
     }
 
-    if (reportsContainer) {
-        reportsContainer.innerHTML = reports.length ? reports.map(report => `
-            <article class="admin-card">
-                <span class="post-type-tag">${escapeHtml(report.status || 'Open')}</span>
-                <h3>${escapeHtml(report.targetTitle || 'Reported item')}</h3>
-                <p><strong>${escapeHtml(report.targetType)}</strong> | ${escapeHtml(report.reason)}</p>
-                <p>${escapeHtml(report.details || 'No additional details were provided.')}</p>
-                <small>Reporter: ${escapeHtml(report.reporter || 'anonymous')} | ${new Date(report.createdAt).toLocaleString()}</small>
-                <div class="card-actions">
-                    <button class="btn btn-primary btn-small" type="button" onclick="hideReportedItem('${report.targetType}', '${report.targetId}', '${report.id}')">Hide Item</button>
-                    <button class="btn btn-outline btn-small" type="button" onclick="updateReportStatus('${report.id}', 'Reviewed')">Mark Reviewed</button>
-                    <button class="btn btn-outline btn-small" type="button" onclick="updateReportStatus('${report.id}', 'Dismissed')">Dismiss</button>
-                </div>
-            </article>
-        `).join('') : '<div class="empty-state"><h3>No reports yet</h3><p>Community reports will appear here.</p></div>';
-    }
-
     if (hiddenContainer) {
         hiddenContainer.innerHTML = hidden.length ? hidden.map(key => {
             const [type, id] = key.split(':');
@@ -4678,9 +5042,104 @@ function initAdminPage() {
     stats.forEach(stat => {
         const type = stat.dataset.adminStat;
         if (type === 'requests') stat.textContent = requests.length;
-        if (type === 'reports') stat.textContent = reports.filter(report => report.status === 'Open').length;
         if (type === 'hidden') stat.textContent = hidden.length;
     });
+}
+
+// FR-GLOWE-015 AC4 — live moderation report queue, backed by the admin-gated
+// glowe_admin_list_reports RPC (migration 0227). Non-admins get a 42501 from
+// the RPC, surfaced as a "locked" empty state rather than a crash.
+function moderationQueueErrorHtml(error) {
+    if (isForbiddenError(error)) {
+        return '<div class="empty-state"><h3>Reviewers only</h3><p>This queue is visible to GloWe reviewers. Ask an administrator for access.</p></div>';
+    }
+    return '<div class="empty-state"><h3>Could not load reports</h3><p>Please refresh and try again.</p></div>';
+}
+
+async function loadModerationReports() {
+    const container = document.getElementById('admin-reports');
+    if (!container) return;
+    if (!backendReady()) {
+        container.innerHTML = '<div class="empty-state"><h3>Backend not configured</h3><p>Moderation is available once the shared backend is connected.</p></div>';
+        return;
+    }
+    container.innerHTML = '<div class="empty-state"><h3>Loading…</h3><p>Fetching community reports.</p></div>';
+    let rows;
+    try {
+        rows = await window.gloweBackend.adminListReports();
+    } catch (error) {
+        container.innerHTML = moderationQueueErrorHtml(error);
+        return;
+    }
+    renderModerationReports(GloweModeration.mapAdminReportRows(rows));
+}
+
+function renderModerationReports(reports) {
+    const container = document.getElementById('admin-reports');
+    if (!container) return;
+    const reportStat = document.querySelector('[data-admin-stat="reports"]');
+    if (reportStat) reportStat.textContent = GloweModeration.openReports(reports).length;
+    if (!reports.length) {
+        container.innerHTML = '<div class="empty-state"><h3>No reports yet</h3><p>Community reports will appear here.</p></div>';
+        return;
+    }
+    const reasonLabel = (value) => {
+        const match = GloweModeration.REPORT_REASONS.find(r => r.value === value);
+        return match ? match.label : value;
+    };
+    container.innerHTML = reports.map(report => {
+        const isOpen = report.status === 'open';
+        const targetHref = GloweModeration.reportTargetHref(report, '');
+        const actions = isOpen ? `
+                <div class="card-actions">
+                    ${GloweModeration.canRemoveTarget(report.targetType)
+                        ? `<button class="btn btn-primary btn-small" type="button" onclick="decideGloweReport('${report.id}', 'remove', '${jsString(report.targetType)}', '${jsString(report.targetId)}')">Remove content</button>`
+                        : ''}
+                    <button class="btn btn-outline btn-small" type="button" onclick="decideGloweReport('${report.id}', 'dismiss')">Dismiss</button>
+                </div>` : '';
+        return `
+            <article class="admin-card">
+                <span class="post-type-tag">${escapeHtml(report.status)}</span>
+                <h3>${escapeHtml(reasonLabel(report.reason))}</h3>
+                <p><strong>${escapeHtml(report.targetType)}</strong> | ${escapeHtml(report.targetId)}</p>
+                <p>${escapeHtml(report.note || 'No additional details were provided.')}</p>
+                <small>Reporter: ${escapeHtml(report.reporterName)} | ${report.createdAt ? new Date(report.createdAt).toLocaleString() : ''}</small>
+                ${targetHref ? `<p><a href="${targetHref}" target="_blank" rel="noopener">Open reported item</a></p>` : ''}
+                ${actions}
+            </article>
+        `;
+    }).join('');
+}
+
+// FR-GLOWE-015 AC4+AC5 — admin decision on a report: dismiss, or remove the
+// reported content (posts/opportunities) and action the report atomically.
+async function applyGloweReportDecision(reportId, action, targetType, targetId) {
+    if (action === 'remove') {
+        await window.gloweBackend.adminRemoveContent(GloweModeration.canonicalTargetType(targetType), targetId, reportId);
+        showSuccessModal('Content removed', 'The reported content is no longer publicly visible.');
+        return;
+    }
+    await window.gloweBackend.adminDismissReport(reportId);
+    showSuccessModal('Report dismissed', 'The report was closed with no action.');
+}
+
+function showModerationDecisionError(error) {
+    if (isForbiddenError(error)) {
+        showSuccessModal('Reviewers only', 'Only GloWe reviewers can act on reports.');
+        return;
+    }
+    showSuccessModal('Could not save decision', 'Something went wrong while saving the decision. Please try again.');
+}
+
+async function decideGloweReport(reportId, action, targetType = '', targetId = '') {
+    if (!backendReady()) return;
+    try {
+        await applyGloweReportDecision(reportId, action, targetType, targetId);
+    } catch (error) {
+        showModerationDecisionError(error);
+        return;
+    }
+    loadModerationReports();
 }
 
 // FR-GLOWE-003 AC4: live pending-organization review queue, backed by the
@@ -5496,7 +5955,7 @@ async function initOpportunityDetailPage() {
                 <li>Apply with your availability and relevant skills.</li>
                 <li>The organization receives your message and can continue in GloWe messages.</li>
             </ol>
-            <button class="btn btn-outline btn-block" type="button" onclick="saveItem('opportunity', '${opportunity.id}', '${jsString(opportunity.title)}', '${jsString(opportunity.organization)}', 'opportunity.html?id=${encodeURIComponent(opportunity.id)}')">Save Opportunity</button>
+            ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, `opportunity.html?id=${encodeURIComponent(opportunity.id)}`, 'Save Opportunity', 'btn btn-outline btn-block')}
         `;
     }
     
@@ -7496,7 +7955,84 @@ const GLOWE_TRANSLATIONS = {
         "Online events": "אירועים מקוונים",
         "Upcoming events": "אירועים קרובים",
         "Registered members": "חברים רשומים",
-        "Registered organizations": "ארגונים רשומים"
+        "Registered organizations": "ארגונים רשומים",
+        "+ Create": "+ יצירה",
+        "Create": "יצירה",
+        "What would you like to create?": "מה תרצו ליצור?",
+        "Share an update, a story, or knowledge with the community.": "שתפו עדכון, סיפור או ידע עם הקהילה.",
+        "Publish a volunteering event with a date and registration.": "פרסמו אירוע התנדבות עם תאריך והרשמה.",
+        "Recruit volunteers for an ongoing role or project.": "גייסו מתנדבים לתפקיד מתמשך או לפרויקט.",
+        "Ask the community for help, resources, or partners.": "בקשו מהקהילה עזרה, משאבים או שותפים.",
+        "Offer your time and skills so organizations can find you.": "הציעו את הזמן והכישורים שלכם כדי שארגונים ימצאו אתכם.",
+        "Event": "אירוע",
+        "Need": "בקשת עזרה",
+        "Volunteer Offer": "הצעת התנדבות",
+        "Publish an event": "פרסום אירוע",
+        "Events appear on the Volunteer Network with a date and registration.": "אירועים מופיעים ברשת ההתנדבות עם תאריך והרשמה.",
+        "Event title": "כותרת האירוע",
+        "e.g. Community beach cleanup": "לדוגמה: ניקיון חוף קהילתי",
+        "What happens at the event, and who should come?": "מה קורה באירוע ולמי הוא מתאים?",
+        "Starts": "מתחיל",
+        "Ends (optional)": "מסתיים (לא חובה)",
+        "Format": "פורמט",
+        "Location / link": "מיקום / קישור",
+        "Address, city, or meeting link": "כתובת, עיר או קישור למפגש",
+        "Capacity (optional)": "מכסת משתתפים (לא חובה)",
+        "Leave empty for unlimited": "השאירו ריק ללא הגבלה",
+        "Registration": "הרשמה",
+        "Organizer approves each registration": "המארגן מאשר כל הרשמה",
+        "Open — instant confirmation": "פתוח — אישור מיידי",
+        "Publish Event": "פרסום אירוע",
+        "Event published": "האירוע פורסם",
+        "Your event is now live on the Volunteer Network.": "האירוע שלכם עלה לרשת ההתנדבות.",
+        "Offer your help": "הציעו עזרה",
+        "Your offer appears on the Wishing Well so organizations and members can find you.": "ההצעה שלכם מופיעה בבאר המשאלות כדי שארגונים וחברים ימצאו אתכם.",
+        "Headline": "כותרת",
+        "e.g. Graphic designer offering 3 hours a week": "לדוגמה: מעצב גרפי מציע 3 שעות בשבוע",
+        "What can you offer?": "מה תוכלו להציע?",
+        "Skills, time, equipment — anything that could help.": "כישורים, זמן, ציוד — כל דבר שיכול לעזור.",
+        "Impact area (optional)": "תחום השפעה (לא חובה)",
+        "Publish Offer": "פרסום הצעה",
+        "Offer published": "ההצעה פורסמה",
+        "Your offer is now live on the Wishing Well.": "ההצעה שלכם עלתה לבאר המשאלות.",
+        "Fetching your conversations.": "טוענים את השיחות שלכם.",
+        "No conversations yet": "אין שיחות עדיין",
+        "Reach out to an organization, offer help on a need, or message a community member — conversations will appear here.": "פנו לארגון, הציעו עזרה לבקשה או שלחו הודעה לחבר קהילה — השיחות יופיעו כאן.",
+        "Open the Wishing Well": "לבאר המשאלות",
+        "Opening the conversation.": "פותחים את השיחה.",
+        "Conversation unavailable": "השיחה אינה זמינה",
+        "This conversation could not be opened.": "לא הצלחנו לפתוח את השיחה הזו.",
+        "Back to messages": "חזרה להודעות",
+        "Back": "חזרה",
+        "No messages yet. Say hello!": "אין הודעות עדיין. אמרו שלום!",
+        "Write a message...": "כתבו הודעה...",
+        "Send": "שליחה",
+        "Could not send": "השליחה נכשלה",
+        "Messaging unavailable": "שליחת הודעות אינה זמינה",
+        "This member cannot receive direct messages yet.": "החבר הזה עדיין לא יכול לקבל הודעות ישירות.",
+        "Messages are unavailable": "ההודעות אינן זמינות",
+        "Start the conversation": "התחילו את השיחה",
+        "Spam or misleading promotion": "ספאם או קידום מטעה",
+        "Harassment or hate": "הטרדה או שנאה",
+        "False or misleading information": "מידע כוזב או מטעה",
+        "Inappropriate content": "תוכן לא הולם",
+        "Fake profile or impersonation": "פרופיל מזויף או התחזות",
+        "Already reported": "כבר דיווחתם",
+        "You already reported this. Our team will review it.": "כבר דיווחתם על הפריט הזה. הצוות שלנו יבדוק אותו.",
+        "Could not send report": "שליחת הדיווח נכשלה",
+        "Something went wrong sending your report. Please try again.": "משהו השתבש בשליחת הדיווח. נסו שוב.",
+        "Reporting needs a live connection right now. Please try again shortly.": "הדיווח דורש חיבור פעיל כרגע. נסו שוב בעוד רגע.",
+        "Sign in to report": "התחברו כדי לדווח",
+        "Sign in with Google to report this content so our team can review it.": "התחברו עם Google כדי לדווח על התוכן כדי שהצוות שלנו יבדוק אותו.",
+        "Fetching community reports.": "טוענים דיווחים מהקהילה.",
+        "Could not load reports": "טעינת הדיווחים נכשלה",
+        "Remove content": "הסרת תוכן",
+        "Content removed": "התוכן הוסר",
+        "The reported content is no longer publicly visible.": "התוכן שדווח כבר אינו גלוי לציבור.",
+        "Report dismissed": "הדיווח נדחה",
+        "The report was closed with no action.": "הדיווח נסגר ללא פעולה.",
+        "Only GloWe reviewers can act on reports.": "רק בודקים של GloWe יכולים לטפל בדיווחים.",
+        "Open reported item": "פתיחת הפריט שדווח"
     }
 };
 
@@ -7728,15 +8264,12 @@ async function deleteAccount() {
     await logout();
 }
 
-// Messages page: inbox surface for direct conversations. Real-time chat is on
-// the roadmap (shared KC messaging backend); for now this is a signed-in
-// placeholder so the header chat icon has a destination.
-function initMessagesPage() {
-    const container = document.getElementById('messages-content');
-    if (!container) return;
-
-    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
-    if (!loggedIn) {
+// Messages page (FR-GLOWE-016 AC6) — a real inbox + thread view riding on
+// KC's shared public.chats / public.messages. ?chat=<id> opens a thread.
+// Gate the messages surface: guests get a sign-in prompt, an unconfigured
+// backend gets an explanation. Returns true when the inbox may render.
+function messagesPageReady(container) {
+    if (!gloweIsLoggedIn()) {
         container.innerHTML = `
             <div class="empty-state">
                 <h3>Sign in to see your messages</h3>
@@ -7744,19 +8277,201 @@ function initMessagesPage() {
                 <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
             </div>
         `;
+        return false;
+    }
+    if (!backendReady()) {
+        container.innerHTML = '<div class="empty-state"><h3>Messages are unavailable</h3><p>Messaging needs a live connection right now. Please try again shortly.</p></div>';
+        return false;
+    }
+    return true;
+}
+
+function initMessagesPage() {
+    const container = document.getElementById('messages-content');
+    if (!container || !messagesPageReady(container)) return;
+    const chatId = new URLSearchParams(window.location.search).get('chat');
+    if (chatId) {
+        renderChatThread(container, chatId);
         return;
     }
+    renderChatInbox(container);
+}
 
+function chatLoadingState(container, body) {
+    container.innerHTML = `<div class="empty-state"><h3>Loading…</h3><p>${body}</p></div>`;
+}
+
+function chatEmptyInboxState(container) {
     container.innerHTML = `
         <div class="empty-state">
-            <h3>Direct messaging is coming soon</h3>
-            <p>Private conversations between volunteers, organizations, and partners are on the way. In the meantime, you can reach an organization from its profile.</p>
+            <h3>No conversations yet</h3>
+            <p>Reach out to an organization, offer help on a need, or message a community member — conversations will appear here.</p>
             <div class="modal-actions">
                 <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
-                <a class="btn btn-outline" href="community.html">Back to Community</a>
+                <a class="btn btn-outline" href="wishing-well.html">Open the Wishing Well</a>
             </div>
         </div>
     `;
+}
+
+function chatCounterpartName(chat, profiles) {
+    const who = profiles[chat.otherId] || {};
+    return who.name || 'GloWe member';
+}
+
+function chatUnreadBadgeHtml(unread) {
+    return unread ? `<span class="chat-unread-badge">${unread}</span>` : '';
+}
+
+function renderChatInboxRow(chat, profiles) {
+    const name = chatCounterpartName(chat, profiles);
+    const rowClass = chat.unread ? ' has-unread' : '';
+    const preview = String(chat.previewText || '').slice(0, 90);
+    const time = GloweMessages.formatChatTime(chat.previewAt || chat.lastMessageAt);
+    return `
+        <a class="chat-inbox-row${rowClass}" href="messages.html?chat=${encodeURIComponent(chat.chatId)}">
+            ${renderEntityMark(name, 'avatar')}
+            <span class="chat-inbox-main">
+                <strong>${escapeHtml(name)}</strong>
+                <small>${escapeHtml(preview)}</small>
+            </span>
+            <span class="chat-inbox-side">
+                <small>${escapeHtml(time)}</small>
+                ${chatUnreadBadgeHtml(chat.unread)}
+            </span>
+        </a>
+    `;
+}
+
+async function renderChatInbox(container) {
+    chatLoadingState(container, 'Fetching your conversations.');
+    const backend = window.gloweBackend;
+    const me = await backend.currentUser().catch(() => null);
+    if (!me) return;
+    const rows = await backend.kcListMyChats().catch(() => []);
+    let chats = GloweMessages.inboxRows(rows, me.id);
+    if (!chats.length) {
+        chatEmptyInboxState(container);
+        return;
+    }
+    const chatIds = chats.map(c => c.chatId);
+    const [previews, unread, profiles] = await Promise.all([
+        backend.kcLastMessages(chatIds).catch(() => []),
+        backend.kcUnreadCounts(chatIds).catch(() => []),
+        backend.kcCounterpartProfiles(chats.map(c => c.otherId)).catch(() => ({}))
+    ]);
+    chats = GloweMessages.attachUnread(GloweMessages.attachPreviews(chats, previews), unread);
+    container.innerHTML = `<div class="chat-inbox-list">${chats.map(chat => renderChatInboxRow(chat, profiles)).join('')}</div>`;
+}
+
+// Resolve the counterpart's display identity for the thread header. Falls
+// back to a generic label when the chat row or profile is unavailable.
+async function resolveChatCounterpartName(backend, chatId, meId) {
+    const myChats = await backend.kcListMyChats(50).catch(() => []);
+    const chatRow = myChats.find(c => String(c.chat_id) === String(chatId));
+    if (!chatRow) return 'GloWe member';
+    const counterpartId = GloweMessages.mapChatRow(chatRow, meId).otherId;
+    const profiles = await backend.kcCounterpartProfiles([counterpartId]).catch(() => ({}));
+    return (profiles[counterpartId] || {}).name || 'GloWe member';
+}
+
+function renderChatBubbles(messages) {
+    if (!messages.length) return '<p class="muted-note">No messages yet. Say hello!</p>';
+    return messages.map(m => `
+        <div class="chat-bubble${m.mine ? ' mine' : ''}${m.isSystem ? ' system' : ''}">
+            <p>${escapeHtml(m.text)}</p>
+            <small>${escapeHtml(GloweMessages.formatChatTime(m.createdAt))}</small>
+        </div>
+    `).join('');
+}
+
+async function renderChatThread(container, chatId) {
+    chatLoadingState(container, 'Opening the conversation.');
+    const backend = window.gloweBackend;
+    const me = await backend.currentUser().catch(() => null);
+    if (!me) return;
+    let rows;
+    try {
+        rows = await backend.kcGetMessages(chatId, 100);
+    } catch (_e) {
+        container.innerHTML = '<div class="empty-state"><h3>Conversation unavailable</h3><p>This conversation could not be opened.</p><a class="btn btn-outline" href="messages.html">Back to messages</a></div>';
+        return;
+    }
+    const counterpartName = await resolveChatCounterpartName(backend, chatId, me.id);
+    const messages = GloweMessages.mapMessageRows(rows, me.id);
+    container.innerHTML = `
+        <div class="chat-thread">
+            <div class="chat-thread-header">
+                <a class="btn btn-outline btn-small" href="messages.html">Back</a>
+                <strong>${escapeHtml(counterpartName)}</strong>
+            </div>
+            <div class="chat-thread-messages" id="chat-thread-messages">
+                ${renderChatBubbles(messages)}
+            </div>
+            <form class="chat-send-form" onsubmit="handleChatSend(event, '${jsString(chatId)}')">
+                <input id="chat-send-input" autocomplete="off" maxlength="2000" placeholder="Write a message...">
+                <button class="btn btn-primary" type="submit">Send</button>
+            </form>
+        </div>
+    `;
+    const scroller = document.getElementById('chat-thread-messages');
+    if (scroller) scroller.scrollTop = scroller.scrollHeight;
+    backend.kcMarkChatRead(chatId).catch(() => {});
+}
+
+async function handleChatSend(event, chatId) {
+    event.preventDefault();
+    const text = fieldValue('chat-send-input');
+    const check = GloweMessages.validateMessageDraft(text);
+    if (!check.valid) return;
+    const sent = await window.gloweBackend.kcSendMessage(chatId, text).catch(() => null);
+    if (!sent) {
+        showSuccessModal('Could not send', 'Something went wrong sending your message. Please try again.');
+        return;
+    }
+    renderChatThread(document.getElementById('messages-content'), chatId);
+}
+
+// Seed the opening message of a fresh conversation; the chat still opens if
+// the seed fails (the member can type it again).
+async function kcSeedFirstMessage(chatId, text) {
+    if (!text) return;
+    await window.gloweBackend.kcSendMessage(chatId, text).catch(() => {});
+}
+
+// Open (or create) the 1:1 conversation with another member and jump straight
+// into the thread. `firstMessage` (optional) seeds the conversation context.
+async function startDirectChat(otherUserId, firstMessage) {
+    const backend = window.gloweBackend;
+    const me = await backend.currentUser();
+    if (!me || String(me.id) === String(otherUserId)) return null;
+    const chat = await backend.kcGetOrCreateDmChat(otherUserId);
+    if (!chat) return null;
+    await kcSeedFirstMessage(chat.chat_id, firstMessage);
+    return chat.chat_id;
+}
+
+function messagesBadgeCount(total) {
+    return total > 99 ? '99+' : String(total);
+}
+
+function applyMessagesBadge(total) {
+    const anchor = document.querySelector('.user-menu .header-icon-btn[href$="messages.html"]');
+    if (!anchor) return;
+    const existing = anchor.querySelector('.chat-unread-badge');
+    if (existing) existing.remove();
+    if (!total) return;
+    const badge = document.createElement('span');
+    badge.className = 'chat-unread-badge';
+    badge.textContent = messagesBadgeCount(total);
+    anchor.appendChild(badge);
+}
+
+// Header unread badge (FR-GLOWE-016) — total unread messages across chats.
+async function refreshMessagesBadge() {
+    if (!backendReady() || !gloweIsLoggedIn()) return;
+    const total = await window.gloweBackend.kcUnreadTotal().catch(() => 0);
+    applyMessagesBadge(total);
 }
 
 // Derive the logical page key from a pathname, tolerant of both
@@ -7778,6 +8493,7 @@ document.addEventListener('DOMContentLoaded', function() {
     applyGloweDirection();
     ensureGlobalUI();
     normalizeMainNavigation();
+    refreshMessagesBadge();
     if (localStorage.getItem('gloweLowDataMode') === 'true') {
         document.body.classList.add('low-data-mode');
     }

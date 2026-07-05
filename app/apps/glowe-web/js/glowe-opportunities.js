@@ -61,10 +61,20 @@
         });
     }
 
+    // FR-GLOWE-015 AC5 — admin-removed opportunities (status='removed') are
+    // excluded from every public listing. Other statuses (active / cancelled /
+    // closed) keep their existing surface-specific handling.
+    function isListedOpportunity(row) {
+        if (!row) return false;
+        const status = row.status !== undefined ? row.status : 'active';
+        return status !== 'removed';
+    }
+
     return {
         commaList: commaList,
         validateOpportunityDraft: validateOpportunityDraft,
         normalizeOpportunityDraft: normalizeOpportunityDraft,
-        isDuplicateApplication: isDuplicateApplication
+        isDuplicateApplication: isDuplicateApplication,
+        isListedOpportunity: isListedOpportunity
     };
 });

@@ -119,21 +119,53 @@
         };
     }
 
-    function toOpportunityRow(payload = {}) {
+    // First argument that is non-empty (0 counts as a value); the LAST
+    // argument is the fallback.
+    function firstOf(...vals) {
+        for (let i = 0; i < vals.length - 1; i += 1) {
+            const v = vals[i];
+            if (v || v === 0) return v;
+        }
+        return vals[vals.length - 1];
+    }
+
+    function toCapacity(value) {
+        if (value === undefined || value === null || value === '') return null;
+        return Number(value);
+    }
+
+    // Event fields (additive model, migration 0211) — only forwarded when an
+    // event is being created (FR-GLOWE-016 AC4), so plain opportunity inserts
+    // keep their previous column set.
+    function toEventColumns(payload, startAt) {
         return {
-            title: payload.title || '',
-            organization: payload.organization || '',
-            org_icon: payload.orgIcon || payload.org_icon || '',
-            location: payload.location || '',
-            commitment: payload.commitment || '',
-            duration: payload.duration || '',
-            field: payload.field || '',
-            description: payload.description || '',
+            start_at: startAt,
+            end_at: firstOf(payload.end_at, payload.endAt, null),
+            event_type: firstOf(payload.event_type, payload.eventType, 'physical'),
+            event_link: firstOf(payload.event_link, payload.eventLink, ''),
+            capacity: toCapacity(firstOf(payload.capacity, '')),
+            registration_mode: firstOf(payload.registration_mode, payload.registrationMode, 'gated')
+        };
+    }
+
+    function toOpportunityRow(payload = {}) {
+        const row = {
+            title: firstOf(payload.title, ''),
+            organization: firstOf(payload.organization, ''),
+            org_icon: firstOf(payload.orgIcon, payload.org_icon, ''),
+            location: firstOf(payload.location, ''),
+            commitment: firstOf(payload.commitment, ''),
+            duration: firstOf(payload.duration, ''),
+            field: firstOf(payload.field, ''),
+            description: firstOf(payload.description, ''),
             skills: Array.isArray(payload.skills) ? payload.skills : [],
-            requirements: payload.requirements || '',
-            responsibilities: payload.responsibilities || '',
+            requirements: firstOf(payload.requirements, ''),
+            responsibilities: firstOf(payload.responsibilities, ''),
             featured: Boolean(payload.featured)
         };
+        const startAt = firstOf(payload.start_at, payload.startAt, null);
+        if (startAt) Object.assign(row, toEventColumns(payload, startAt));
+        return row;
     }
 
     function toPostRow(payload = {}) {
@@ -619,6 +651,198 @@
         return data;
     }
 
+    // ── Moderation & reporting (FR-GLOWE-015, migration 0227) ───────────────
+    // File a report on a content item. The payload shape is built by the tested
+    // GloweModeration.buildReportPayload helper; reporter_id is stamped here.
+    // A duplicate report surfaces as a 23505 error — callers show "already
+    // reported" via GloweModeration.isDuplicateReportError.
+    async function submitReport(payload) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl('reports'))
+            .insert({ ...payload, reporter_id: user.id })
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    // Admin review queue — GLOWE admins only (server-gated, 42501 otherwise).
+    async function adminListReports() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_admin_list_reports');
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
+    async function adminDismissReport(reportId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_admin_dismiss_report', {
+            p_report_id: String(reportId)
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminRemoveContent(targetType, targetId, reportId = null) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { error } = await supabaseClient.rpc('glowe_admin_remove_content', {
+            p_type: String(targetType),
+            p_id: String(targetId),
+            p_report_id: reportId ? String(reportId) : null
+        });
+        if (error) throw error;
+        return true;
+    }
+
+    // ── Direct messaging on KC's shared chat backend (FR-GLOWE-016 AC6) ──────
+    // GloWe reuses KC's public.chats / public.messages directly (D-61): these
+    // tables are NOT glowe_-prefixed. RLS scopes everything to the signed-in
+    // participant; a fresh Google user is account_status='active' and may
+    // create chats and messages immediately.
+
+    // Client + signed-in user resolved together; null when either is missing.
+    async function kcContext() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const user = await currentUser();
+        return user ? { supabaseClient, user } : null;
+    }
+
+    // Unwrap a PostgREST result: throw on error, fall back when data is empty.
+    function kcUnwrap(result, fallback) {
+        if (result.error) throw result.error;
+        return result.data == null ? fallback : result.data;
+    }
+
+    // KC chats store participants in canonical order (participant_a < participant_b).
+    function kcCanonicalPair(me, other) {
+        return me < other ? [me, other] : [other, me];
+    }
+
+    const CHAT_COLUMNS = 'chat_id, participant_a, participant_b, last_message_at';
+
+    // Find (or create) the 1:1 DM chat with another user; existing non-support
+    // rows are reused (newest first — a hidden chat resurfaces on new activity).
+    async function kcGetOrCreateDmChat(otherUserId) {
+        const ctx = await kcContext();
+        if (!ctx || !otherUserId) return null;
+        const [a, b] = kcCanonicalPair(ctx.user.id, otherUserId);
+        const existing = kcUnwrap(await ctx.supabaseClient
+            .from('chats')
+            .select(CHAT_COLUMNS)
+            .eq('participant_a', a)
+            .eq('participant_b', b)
+            .eq('is_support_thread', false)
+            .order('last_message_at', { ascending: false })
+            .limit(1), []);
+        if (existing.length) return existing[0];
+        return kcUnwrap(await ctx.supabaseClient
+            .from('chats')
+            .insert({ participant_a: a, participant_b: b })
+            .select(CHAT_COLUMNS)
+            .single(), null);
+    }
+
+    // The caller's chat inbox, newest activity first.
+    async function kcListMyChats(limit = 50) {
+        const ctx = await kcContext();
+        if (!ctx) return [];
+        return kcUnwrap(await ctx.supabaseClient
+            .from('chats')
+            .select(`${CHAT_COLUMNS}, is_support_thread, inbox_hidden_at_a, inbox_hidden_at_b`)
+            .or(`participant_a.eq.${ctx.user.id},participant_b.eq.${ctx.user.id}`)
+            .order('last_message_at', { ascending: false })
+            .limit(limit), []);
+    }
+
+    // Last message per chat, for inbox previews.
+    async function kcLastMessages(chatIds) {
+        const ctx = await kcContext();
+        if (!ctx || !chatIds.length) return [];
+        return kcUnwrap(await ctx.supabaseClient
+            .from('messages')
+            .select('chat_id, sender_id, kind, body, created_at')
+            .in('chat_id', chatIds)
+            .order('created_at', { ascending: false })
+            .limit(chatIds.length * 8), []);
+    }
+
+    // Per-chat unread counts (viewer is auth.uid() server-side).
+    async function kcUnreadCounts(chatIds) {
+        const ctx = await kcContext();
+        if (!ctx || !chatIds.length) return [];
+        return kcUnwrap(await ctx.supabaseClient.rpc('rpc_unread_counts_for_chats', {
+            p_viewer_id: ctx.user.id,
+            p_chat_ids: chatIds
+        }), []);
+    }
+
+    // Global unread total for the header badge (excludes hidden chats).
+    async function kcUnreadTotal() {
+        const ctx = await kcContext();
+        if (!ctx) return 0;
+        const { data, error } = await ctx.supabaseClient.rpc('rpc_chat_unread_total');
+        return error ? 0 : Number(data) || 0;
+    }
+
+    async function kcGetMessages(chatId, limit = 50) {
+        const ctx = await kcContext();
+        if (!ctx || !chatId) return [];
+        return kcUnwrap(await ctx.supabaseClient
+            .from('messages')
+            .select('message_id, chat_id, sender_id, kind, body, created_at, status')
+            .eq('chat_id', chatId)
+            .order('created_at', { ascending: true })
+            .limit(limit), []);
+    }
+
+    async function kcSendMessage(chatId, body) {
+        const ctx = await kcContext();
+        const trimmed = String(body ?? '').trim().slice(0, 2000);
+        if (!ctx || !trimmed) return null;
+        return kcUnwrap(await ctx.supabaseClient
+            .from('messages')
+            .insert({ chat_id: chatId, sender_id: ctx.user.id, body: trimmed, kind: 'user', status: 'pending' })
+            .select('message_id, chat_id, sender_id, body, created_at')
+            .single(), null);
+    }
+
+    async function kcMarkChatRead(chatId) {
+        const ctx = await kcContext();
+        if (!ctx || !chatId) return null;
+        kcUnwrap(await ctx.supabaseClient.rpc('rpc_chat_mark_read', { p_chat_id: chatId }), null);
+        return true;
+    }
+
+    // Compact identity for a chat counterpart (orgs show their org name).
+    function kcProfileSummary(row) {
+        return {
+            name: firstOf(row.org_name, row.display_name, 'GloWe member'),
+            avatarUrl: firstOf(row.avatar_url, ''),
+            accountType: firstOf(row.account_type, null)
+        };
+    }
+
+    // Display names/avatars for chat counterparts, from GloWe profiles
+    // (public-read). Returns { userId: {name, avatarUrl, accountType} }.
+    async function kcCounterpartProfiles(userIds) {
+        const ctx = await kcContext();
+        if (!ctx || !userIds.length) return {};
+        const result = await ctx.supabaseClient
+            .from(tbl('profiles'))
+            .select('id, display_name, avatar_url, account_type, org_name')
+            .in('id', userIds);
+        const out = {};
+        (result.data || []).forEach((row) => { out[row.id] = kcProfileSummary(row); });
+        return out;
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -691,6 +915,19 @@
         decideEventRegistration,
         getEventLink,
         cancelEvent,
+        submitReport,
+        adminListReports,
+        adminDismissReport,
+        adminRemoveContent,
+        kcGetOrCreateDmChat,
+        kcListMyChats,
+        kcLastMessages,
+        kcUnreadCounts,
+        kcUnreadTotal,
+        kcGetMessages,
+        kcSendMessage,
+        kcMarkChatRead,
+        kcCounterpartProfiles,
         apiRequest
     };
 })();

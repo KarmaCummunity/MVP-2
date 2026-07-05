@@ -1522,6 +1522,45 @@ export type Database = {
         }
         Relationships: []
       }
+      glowe_reports: {
+        Row: {
+          created_at: string
+          id: string
+          note: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_id: string
+          target_type: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id: string
+          target_type: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          note?: string | null
+          reason?: string
+          reporter_id?: string
+          reviewed_at?: string | null
+          reviewed_by?: string | null
+          status?: string
+          target_id?: string
+          target_type?: string
+        }
+        Relationships: []
+      }
       glowe_saved_items: {
         Row: {
           created_at: string
@@ -4271,6 +4310,46 @@ export type Database = {
       }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      glowe_admin_dismiss_report: {
+        Args: { p_report_id: string }
+        Returns: {
+          created_at: string
+          id: string
+          note: string | null
+          reason: string
+          reporter_id: string
+          reviewed_at: string | null
+          reviewed_by: string | null
+          status: string
+          target_id: string
+          target_type: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_reports"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      glowe_admin_list_reports: {
+        Args: never
+        Returns: {
+          created_at: string
+          id: string
+          note: string
+          reason: string
+          reporter_id: string
+          reporter_name: string
+          reviewed_at: string
+          status: string
+          target_id: string
+          target_type: string
+        }[]
+      }
+      glowe_admin_remove_content: {
+        Args: { p_id: string; p_report_id?: string; p_type: string }
+        Returns: undefined
+      }
       glowe_cancel_event: {
         Args: { p_opportunity_id: string }
         Returns: {
