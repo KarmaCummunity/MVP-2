@@ -75,52 +75,83 @@
         return GLOWE_CREATE_TYPES.find(function (t) { return t.id === id; }) || null;
     }
 
+    function str(value) {
+        return String(value == null ? '' : value).trim();
+    }
+
+    function withDefault(value, fallback) {
+        return value || fallback;
+    }
+
+    function toIso(value) {
+        return value ? new Date(value).toISOString() : null;
+    }
+
+    function isBlankCapacity(value) {
+        return value === undefined || value === null || String(value) === '';
+    }
+
+    function toCapacity(value) {
+        return isBlankCapacity(value) ? null : Number(value);
+    }
+
+    function capacityError(value) {
+        if (isBlankCapacity(value)) return '';
+        const cap = Number(value);
+        if (!Number.isInteger(cap) || cap <= 0) return 'Capacity must be a positive number.';
+        return '';
+    }
+
+    function endTimeError(endAt, startMs) {
+        const end = Date.parse(endAt);
+        if (Number.isNaN(end) || end < startMs) return 'The end time must be after the start.';
+        return '';
+    }
+
+    function eventScheduleError(d) {
+        if (!d.start_at) return 'Please choose a start date and time.';
+        const start = Date.parse(d.start_at);
+        if (Number.isNaN(start)) return 'Please choose a valid start date.';
+        return d.end_at ? endTimeError(d.end_at, start) : '';
+    }
+
+    function eventDraftError(d) {
+        if (!str(d.title)) return 'Please add an event title.';
+        return eventScheduleError(d) || capacityError(d.capacity);
+    }
+
     // AC4 — event draft validation (an event is an opportunity + start date,
     // migration 0211). Required: title, start date; the date must parse and a
     // provided end must not precede the start.
     function validateEventDraft(draft) {
-        const d = draft || {};
-        if (!d.title || !String(d.title).trim()) return { valid: false, error: 'Please add an event title.' };
-        if (!d.start_at) return { valid: false, error: 'Please choose a start date and time.' };
-        const start = Date.parse(d.start_at);
-        if (Number.isNaN(start)) return { valid: false, error: 'Please choose a valid start date.' };
-        if (d.end_at) {
-            const end = Date.parse(d.end_at);
-            if (Number.isNaN(end) || end < start) return { valid: false, error: 'The end time must be after the start.' };
-        }
-        if (d.capacity !== undefined && d.capacity !== null && String(d.capacity) !== '') {
-            const cap = Number(d.capacity);
-            if (!Number.isInteger(cap) || cap <= 0) return { valid: false, error: 'Capacity must be a positive number.' };
-        }
-        return { valid: true, error: '' };
+        const error = eventDraftError(draft || {});
+        return error ? { valid: false, error: error } : { valid: true, error: '' };
     }
 
     // AC4 — normalize an event draft into the glowe_opportunities insert shape.
     function normalizeEventDraft(draft) {
         const d = draft || {};
-        const capacity = (d.capacity === undefined || d.capacity === null || String(d.capacity) === '')
-            ? null : Number(d.capacity);
         return {
-            title: String(d.title || '').trim(),
-            organization: String(d.organization || '').trim(),
-            field: d.field || 'Community',
+            title: str(d.title),
+            organization: str(d.organization),
+            field: withDefault(d.field, 'Community'),
             commitment: 'Event',
-            location: String(d.location || '').trim(),
-            duration: String(d.duration || '').trim(),
-            description: String(d.description || '').trim(),
+            location: str(d.location),
+            duration: str(d.duration),
+            description: str(d.description),
             skills: [],
             requirements: [],
-            start_at: d.start_at ? new Date(d.start_at).toISOString() : null,
-            end_at: d.end_at ? new Date(d.end_at).toISOString() : null,
+            start_at: toIso(d.start_at),
+            end_at: toIso(d.end_at),
             event_type: d.event_type === 'digital' ? 'digital' : 'physical',
-            event_link: String(d.event_link || '').trim(),
-            capacity: capacity,
+            event_link: str(d.event_link),
+            capacity: toCapacity(d.capacity),
             registration_mode: d.registration_mode === 'open' ? 'open' : 'gated'
         };
     }
 
     // AC4 — volunteer-offer draft validation (a standing offer of help,
-    // post_type='offer', migration 0226). Required: title + description.
+    // post_type='offer', migration 0227). Required: title + description.
     function validateOfferPostDraft(draft) {
         const d = draft || {};
         if (!d.title || !String(d.title).trim()) return { valid: false, error: 'Please add a short headline for your offer.' };

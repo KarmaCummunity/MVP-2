@@ -1,4 +1,4 @@
--- 0226_glowe_reports — GloWe moderation & reporting (FR-GLOWE-015).
+-- 0227_glowe_reports — GloWe moderation & reporting (FR-GLOWE-015).
 --
 -- Lightweight content moderation for the GloWe frontend: any signed-in member
 -- can flag a post / opportunity / profile / comment / thread / reply once; KC

@@ -96,22 +96,36 @@ function canCreateContent(actionKey) {
 // shows only the create types the viewer's account may publish, computed from
 // the declarative GloweCreate registry.
 function openCreateMenu() {
-    const registry = (typeof GloweCreate !== 'undefined') ? GloweCreate : null;
-    if (!registry) return;
+    const state = resolveCreateMenuState();
+    if (!state || !handleGatedCreateMenu(state)) return;
+    renderCreateMenu(state.types);
+}
+
+function resolveCreateMenuState() {
+    if (typeof GloweCreate === 'undefined') return null;
     const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
     const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
-    const state = registry.createMenuState(loggedIn, profile);
+    return GloweCreate.createMenuState(loggedIn, profile);
+}
+
+// Gate handling: anon → contextual join, unverified org → notice. Returns
+// true when the viewer may see the menu.
+function handleGatedCreateMenu(state) {
     if (state.state === 'anon') {
-        if (window.GloweGuest) window.GloweGuest.showJoinPrompt('create-post', {});
-        return;
+        window.GloweGuest.showJoinPrompt('create-post', {});
+        return false;
     }
     if (state.state === 'unverified') {
         showSuccessModal(
             'Awaiting verification',
             'Your organization is under review. Until it is approved you can explore everything, but publishing needs, posts, and events is paused — we only publish verified organizations.'
         );
-        return;
+        return false;
     }
+    return true;
+}
+
+function renderCreateMenu(types) {
     ensureGlobalUI();
     if (!document.getElementById('glowe-create-modal')) {
         document.body.insertAdjacentHTML('beforeend', `
@@ -124,8 +138,7 @@ function openCreateMenu() {
             </div>
         `);
     }
-    const list = document.getElementById('glowe-create-options');
-    list.innerHTML = state.types.map(t => `
+    document.getElementById('glowe-create-options').innerHTML = types.map(t => `
         <button type="button" class="create-menu-option" onclick="dispatchCreateType('${t.id}')">
             <strong>${escapeHtml(t.label)}</strong>
             <span>${escapeHtml(t.description)}</span>
@@ -137,30 +150,24 @@ function openCreateMenu() {
     openModal('glowe-create-modal');
 }
 
-// AC7 — dispatch a chosen create type to its Phase-B surface.
+// AC7 — dispatch a chosen create type to its Phase-B surface (one entry per
+// registry type; navigation targets are relative-path aware).
+const GLOWE_CREATE_DISPATCH = {
+    post: () => { window.location.href = `${gloweePagePrefix()}write-post.html`; },
+    need: () => openWishComposer(),
+    offer: () => openOfferComposer(),
+    event: () => openEventComposer(),
+    opportunity: () => { window.location.href = `${gloweePagePrefix()}volunteer-network.html?compose=1`; }
+};
+
+function gloweePagePrefix() {
+    return window.location.pathname.includes('/pages/') ? '' : 'pages/';
+}
+
 function dispatchCreateType(typeId) {
     closeModal('glowe-create-modal');
-    const inPages = window.location.pathname.includes('/pages/');
-    const prefix = inPages ? '' : 'pages/';
-    if (typeId === 'post') {
-        window.location.href = `${prefix}write-post.html`;
-        return;
-    }
-    if (typeId === 'need') {
-        openWishComposer();
-        return;
-    }
-    if (typeId === 'offer') {
-        openOfferComposer();
-        return;
-    }
-    if (typeId === 'event') {
-        openEventComposer();
-        return;
-    }
-    if (typeId === 'opportunity') {
-        window.location.href = `${prefix}volunteer-network.html?compose=1`;
-    }
+    const handler = GLOWE_CREATE_DISPATCH[typeId];
+    if (handler) handler();
 }
 
 // AC4 — tailored Event form (an event is an opportunity with a start date,
@@ -226,46 +233,77 @@ function openEventComposer() {
     openModal('glowe-event-modal');
 }
 
-async function handleEventSubmit(event) {
-    event.preventDefault();
-    if (!canCreateContent('create-opportunity')) return;
-    const registry = (typeof GloweCreate !== 'undefined') ? GloweCreate : null;
+function backendReady() {
+    return Boolean(window.gloweBackend && window.gloweBackend.configured());
+}
+
+function gloweIsLoggedIn() {
+    return typeof isLoggedIn === 'function' && isLoggedIn();
+}
+
+// The signed-in author's display name for authored content (orgs publish
+// under their organization name).
+function gloweCurrentAuthorName() {
     const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
-    const isDigital = (document.getElementById('event-type') || {}).value === 'digital';
-    const locationValue = (document.getElementById('event-location') || {}).value || '';
-    const draft = {
-        title: (document.getElementById('event-title') || {}).value || '',
-        description: (document.getElementById('event-description') || {}).value || '',
-        start_at: (document.getElementById('event-start') || {}).value || '',
-        end_at: (document.getElementById('event-end') || {}).value || '',
-        event_type: isDigital ? 'digital' : 'physical',
-        event_link: isDigital ? locationValue : '',
-        location: isDigital ? 'Online' : locationValue,
-        capacity: (document.getElementById('event-capacity') || {}).value || '',
-        registration_mode: (document.getElementById('event-registration') || {}).value || 'gated',
-        organization: profile.orgName || profile.name || 'GloWe Member'
-    };
-    const check = registry ? registry.validateEventDraft(draft) : { valid: Boolean(draft.title && draft.start_at) };
-    if (!check.valid) {
-        showSuccessModal('Missing details', check.error || 'Please complete the event details.');
+    return profile.orgName || profile.name || 'GloWe Member';
+}
+
+// Shared submit path for the tailored create forms (FR-GLOWE-016 AC4):
+// validate → insert → close + reset + confirm. Failures keep the user's
+// input in place and explain what happened.
+async function submitCreateDraft(form, options) {
+    if (!options.check.valid) {
+        showSuccessModal('Missing details', options.check.error);
         return;
     }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
-        showSuccessModal('Backend unavailable', 'Events need a live connection right now. Please try again shortly.');
+    if (!backendReady()) {
+        showSuccessModal('Backend unavailable', options.offlineBody);
         return;
     }
     try {
-        await backend.insertOwned('opportunities', registry ? registry.normalizeEventDraft(draft) : draft);
-        closeModal('glowe-event-modal');
-        event.target.reset();
-        showSuccessModal('Event published', 'Your event is now live on the Volunteer Network.');
+        await window.gloweBackend.insertOwned(options.table, options.payload);
+        closeModal(options.modalId);
+        form.reset();
+        showSuccessModal(options.successTitle, options.successBody);
     } catch (_e) {
-        showSuccessModal('Could not publish', 'Something went wrong publishing your event. Please try again.');
+        showSuccessModal('Could not publish', options.failBody);
     }
 }
 
-// AC4 — tailored Volunteer-offer form (post_type='offer', migration 0226).
+function readEventDraft() {
+    const isDigital = fieldValue('event-type') === 'digital';
+    const locationValue = fieldValue('event-location');
+    return {
+        title: fieldValue('event-title'),
+        description: fieldValue('event-description'),
+        start_at: fieldValue('event-start'),
+        end_at: fieldValue('event-end'),
+        event_type: isDigital ? 'digital' : 'physical',
+        event_link: isDigital ? locationValue : '',
+        location: isDigital ? 'Online' : locationValue,
+        capacity: fieldValue('event-capacity'),
+        registration_mode: fieldValue('event-registration'),
+        organization: gloweCurrentAuthorName()
+    };
+}
+
+async function handleEventSubmit(event) {
+    event.preventDefault();
+    if (!canCreateContent('create-opportunity')) return;
+    const draft = readEventDraft();
+    await submitCreateDraft(event.target, {
+        check: GloweCreate.validateEventDraft(draft),
+        table: 'opportunities',
+        payload: GloweCreate.normalizeEventDraft(draft),
+        modalId: 'glowe-event-modal',
+        successTitle: 'Event published',
+        successBody: 'Your event is now live on the Volunteer Network.',
+        offlineBody: 'Events need a live connection right now. Please try again shortly.',
+        failBody: 'Something went wrong publishing your event. Please try again.'
+    });
+}
+
+// AC4 — tailored Volunteer-offer form (post_type='offer', migration 0227).
 function openOfferComposer() {
     if (!canCreateContent('create-post')) return;
     ensureGlobalUI();
@@ -315,32 +353,22 @@ function openOfferComposer() {
 async function handleOfferPostSubmit(event) {
     event.preventDefault();
     if (!canCreateContent('create-post')) return;
-    const registry = (typeof GloweCreate !== 'undefined') ? GloweCreate : null;
-    const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
     const draft = {
-        title: (document.getElementById('offer-title') || {}).value || '',
-        text: (document.getElementById('offer-text') || {}).value || '',
-        impact_area: (document.getElementById('offer-impact-area') || {}).value || '',
-        author_name: profile.name || 'GloWe Member'
+        title: fieldValue('offer-title'),
+        text: fieldValue('offer-text'),
+        impact_area: fieldValue('offer-impact-area'),
+        author_name: gloweCurrentAuthorName()
     };
-    const check = registry ? registry.validateOfferPostDraft(draft) : { valid: Boolean(draft.title && draft.text) };
-    if (!check.valid) {
-        showSuccessModal('Missing details', check.error || 'Please complete your offer.');
-        return;
-    }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
-        showSuccessModal('Backend unavailable', 'Offers need a live connection right now. Please try again shortly.');
-        return;
-    }
-    try {
-        await backend.insertOwned('posts', registry ? registry.normalizeOfferPostDraft(draft) : draft);
-        closeModal('glowe-offer-modal');
-        event.target.reset();
-        showSuccessModal('Offer published', 'Your offer is now live on the Wishing Well.');
-    } catch (_e) {
-        showSuccessModal('Could not publish', 'Something went wrong publishing your offer. Please try again.');
-    }
+    await submitCreateDraft(event.target, {
+        check: GloweCreate.validateOfferPostDraft(draft),
+        table: 'posts',
+        payload: GloweCreate.normalizeOfferPostDraft(draft),
+        modalId: 'glowe-offer-modal',
+        successTitle: 'Offer published',
+        successBody: 'Your offer is now live on the Wishing Well.',
+        offlineBody: 'Offers need a live connection right now. Please try again shortly.',
+        failBody: 'Something went wrong publishing your offer. Please try again.'
+    });
 }
 
 // ── Post-sign-in onboarding (FR-GLOWE-002) ──────────────────────────────────
@@ -1699,6 +1727,15 @@ function ensureGlobalFooter() {
     footer.innerHTML = footerHtml;
 }
 
+// A bottom-nav tab also lights up for its sibling pages (community covers the
+// forums cluster; wishes covers the volunteering cluster).
+function bottomNavActive(page, match) {
+    if (page === match) return true;
+    if (match === 'community') return ['forums', 'discussion-group', 'organizations'].includes(page);
+    if (match === 'wishing-well') return ['volunteer-network', 'opportunities', 'opportunity'].includes(page);
+    return false;
+}
+
 function ensureBottomNavigation() {
     if (document.querySelector('.mobile-bottom-nav')) return;
     
@@ -1738,10 +1775,7 @@ function ensureBottomNavigation() {
     ];
 
     const linkHtml = (link) => {
-        const active = page === link.match
-            || (link.match === 'community' && (page === 'forums' || page === 'discussion-group' || page === 'organizations'))
-            || (link.match === 'wishing-well' && (page === 'volunteer-network' || page === 'opportunities' || page === 'opportunity'));
-
+        const active = bottomNavActive(page, link.match);
         return `
             <a href="${link.href}" class="bottom-nav-link${active ? ' active' : ''}">
                 <span class="nav-icon">${link.icon}</span>
@@ -2699,50 +2733,61 @@ function showSupportModal(wishId = null) {
     openModal('connect-modal');
 }
 
-async function handleConnectSubmit(event) {
-    event.preventDefault();
-    if (!isLoggedIn()) {
-        showSuccessModal('Sign in to offer support', 'Please sign in or create a free account to send an offer to this need.');
-        return;
-    }
-    const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
+function readSupportOfferDraft() {
     const draft = {
-        support_type: document.getElementById('support-type').value,
-        availability: document.getElementById('support-availability').value,
-        message: document.getElementById('connect-message').value,
-        contact_preference: (document.getElementById('connect-contact') || {}).value || 'In-app message'
+        support_type: fieldValue('support-type'),
+        availability: fieldValue('support-availability'),
+        message: fieldValue('connect-message'),
+        contact_preference: fieldValue('connect-contact') || 'In-app message'
     };
-    draft.offer_text = helpers ? helpers.buildOfferText(draft) : (draft.message || '');
-    const check = helpers ? helpers.validateOfferDraft(draft)
-        : { valid: Boolean(draft.offer_text && draft.availability) };
-    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please complete the offer.'); return; }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured() || !activeWishForSupport) return;
+    draft.offer_text = GloweWishes.buildOfferText(draft);
+    return draft;
+}
+
+// FR-GLOWE-016 AC6 — helping on a need also opens the real 1:1 KC chat with
+// the need's owner, seeded with the need title + offer text.
+async function openChatForActiveWish(offerText) {
+    if (!activeWishForSupport.authorId) return null;
+    const firstMessage = GloweMessages.buildFirstMessage('need', activeWishForSupport.title, offerText);
+    return startDirectChat(activeWishForSupport.authorId, firstMessage).catch(() => null);
+}
+
+async function submitSupportOffer(form, draft) {
     try {
-        await backend.insertOwned('offers', {
+        await window.gloweBackend.insertOwned('offers', {
             post_id: activeWishForSupport.id,
             offer_text: draft.offer_text,
             availability: draft.availability,
             contact_preference: draft.contact_preference
         });
-        closeModal('connect-modal');
-        event.target.reset();
-        // FR-GLOWE-016 AC6 — helping on a need also opens the real 1:1 KC chat
-        // with the need's owner, seeded with the need title + offer text.
-        let chatId = null;
-        if (activeWishForSupport.authorId) {
-            const firstMessage = GloweMessages.buildFirstMessage('need', activeWishForSupport.title, draft.offer_text);
-            chatId = await startDirectChat(activeWishForSupport.authorId, firstMessage).catch(() => null);
-        }
-        if (chatId) {
-            const inPages = window.location.pathname.includes('/pages/');
-            window.location.href = `${inPages ? '' : 'pages/'}messages.html?chat=${encodeURIComponent(chatId)}`;
-            return;
-        }
-        showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
     } catch (_e) {
         showSuccessModal('Could not send offer', 'Something went wrong sending your offer. Please try again.');
+        return;
     }
+    closeModal('connect-modal');
+    form.reset();
+    const chatId = await openChatForActiveWish(draft.offer_text);
+    if (chatId) {
+        redirectToChatThread(chatId);
+        return;
+    }
+    showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
+}
+
+async function handleConnectSubmit(event) {
+    event.preventDefault();
+    if (!gloweIsLoggedIn()) {
+        showSuccessModal('Sign in to offer support', 'Please sign in or create a free account to send an offer to this need.');
+        return;
+    }
+    const draft = readSupportOfferDraft();
+    const check = GloweWishes.validateOfferDraft(draft);
+    if (!check.valid) {
+        showSuccessModal('Missing details', check.error);
+        return;
+    }
+    if (!backendReady() || !activeWishForSupport) return;
+    await submitSupportOffer(event.target, draft);
 }
 
 function handleQuickConnect() {
@@ -2765,41 +2810,27 @@ function openReachOutModal(recipientId, recipientName) {
     openModal('reach-out-modal');
 }
 
+// FR-GLOWE-016 AC6 — "Reach out" opens a real 1:1 KC chat with the
+// organization (supersedes the FR-GLOWE-014 outreach-post stub).
 async function handleReachOutSubmit(event) {
     event.preventDefault();
-    if (!isLoggedIn()) {
+    if (!gloweIsLoggedIn()) {
         showSuccessModal('Sign in to reach out', 'Please sign in or create a free account to message this organization.');
         return;
     }
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    if (!helpers || !activeReachOutRecipient) return;
-    const draft = {
-        recipientId: activeReachOutRecipient.id,
-        orgName: activeReachOutRecipient.name,
-        message: (document.getElementById('reach-out-message') || {}).value || ''
-    };
-    const check = helpers.validateOutreachDraft(draft);
-    if (!check.valid) { showSuccessModal('Missing details', check.error || 'Please write a short message.'); return; }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
-        showSuccessModal('Backend unavailable', 'Messaging needs a live connection right now. Please try again shortly.');
+    const message = fieldValue('reach-out-message');
+    if (!activeReachOutRecipient || message.length < 2) {
+        showSuccessModal('Missing details', 'Please write a short message.');
         return;
     }
-    // FR-GLOWE-016 AC6 — "Reach out" opens a real 1:1 KC chat with the
-    // organization (supersedes the FR-GLOWE-014 outreach-post stub).
-    try {
-        const chatId = await startDirectChat(draft.recipientId, String(draft.message || '').trim());
-        closeModal('reach-out-modal');
-        event.target.reset();
-        if (chatId) {
-            const inPages = window.location.pathname.includes('/pages/');
-            window.location.href = `${inPages ? '' : 'pages/'}messages.html?chat=${encodeURIComponent(chatId)}`;
-            return;
-        }
-        showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
-    } catch (_e) {
-        showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
+    const chatId = await startDirectChat(activeReachOutRecipient.id, message).catch(() => null);
+    closeModal('reach-out-modal');
+    event.target.reset();
+    if (chatId) {
+        redirectToChatThread(chatId);
+        return;
     }
+    showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
 }
 
 function openConnectionWorkspace() {
@@ -2875,7 +2906,7 @@ let activeMessageRecipient = null;
 
 function openPrivateMessage(name = 'this member', recipientId = '') {
     // Guests → action-tailored join prompt (FR-GLOWE-023).
-    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+    if (!gloweIsLoggedIn()) {
         window.GloweGuest.requireMemberForAction('send-message', { org: name }, function () {});
         return;
     }
@@ -2911,22 +2942,16 @@ function openPrivateMessage(name = 'this member', recipientId = '') {
 
 async function handleMessageSubmit(event) {
     event.preventDefault();
-    const body = (document.getElementById('message-body') || {}).value || '';
+    const body = fieldValue('message-body');
     const check = GloweMessages.validateMessageDraft(body);
     if (!check.valid || !activeMessageRecipient) return;
-    try {
-        const chatId = await startDirectChat(activeMessageRecipient.id, body.trim());
-        closeModal('message-modal');
-        if (chatId) {
-            const inPages = window.location.pathname.includes('/pages/');
-            window.location.href = `${inPages ? '' : 'pages/'}messages.html?chat=${encodeURIComponent(chatId)}`;
-            return;
-        }
-        showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
-    } catch (_e) {
-        closeModal('message-modal');
-        showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
+    const chatId = await startDirectChat(activeMessageRecipient.id, body).catch(() => null);
+    closeModal('message-modal');
+    if (chatId) {
+        redirectToChatThread(chatId);
+        return;
     }
+    showSuccessModal('Could not send message', 'Something went wrong sending your message. Please try again.');
 }
 
 function addProjectFeedback() {
@@ -2973,6 +2998,24 @@ function escapeHtml(value = '') {
 
 function jsString(value = '') {
     return String(value).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+}
+
+// Read a form field's trimmed value; '' when the element is absent.
+function fieldValue(id) {
+    const el = document.getElementById(id);
+    return el ? String(el.value).trim() : '';
+}
+
+// Navigate into a chat thread with the correct relative path from any page.
+function redirectToChatThread(chatId) {
+    const inPages = window.location.pathname.includes('/pages/');
+    window.location.href = `${inPages ? '' : 'pages/'}messages.html?chat=${encodeURIComponent(chatId)}`;
+}
+
+// A PostgREST 42501 (admin assert / RLS) → "reviewers only" style handling.
+function isForbiddenError(error) {
+    if (!error) return false;
+    return error.code === '42501' || /forbidden|permission/i.test(error.message || '');
 }
 
 function getSavedItems() {
@@ -3435,37 +3478,44 @@ function renderShareButtons(title, path = '') {
 
 // FR-GLOWE-015 AC1 — persist a report to glowe_reports. Duplicate reports on
 // the same target by the same reporter surface as "already reported" (AC3).
-async function handleReportSubmit(event) {
-    event.preventDefault();
-    const helpers = (typeof GloweModeration !== 'undefined') ? GloweModeration : null;
-    const draft = {
-        targetType: document.getElementById('report-target-type')?.value || activeReportTarget.type,
-        targetId: document.getElementById('report-target-id')?.value || activeReportTarget.id,
-        reason: document.getElementById('report-reason')?.value || '',
-        note: document.getElementById('report-details')?.value || ''
+function readReportDraft() {
+    return {
+        targetType: fieldValue('report-target-type') || activeReportTarget.type,
+        targetId: fieldValue('report-target-id') || activeReportTarget.id,
+        reason: fieldValue('report-reason'),
+        note: fieldValue('report-details')
     };
-    const check = helpers ? helpers.validateReportDraft(draft) : { valid: Boolean(draft.reason) };
-    if (!check.valid) {
-        showSuccessModal('Missing details', check.error || 'Please choose a reason.');
+}
+
+// Duplicate reports on the same target dedupe server-side (AC3).
+function showReportSubmitError(error) {
+    if (GloweModeration.isDuplicateReportError(error)) {
+        showSuccessModal('Already reported', 'You already reported this. Our team will review it.');
         return;
     }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
+    showSuccessModal('Could not send report', 'Something went wrong sending your report. Please try again.');
+}
+
+async function handleReportSubmit(event) {
+    event.preventDefault();
+    const draft = readReportDraft();
+    const check = GloweModeration.validateReportDraft(draft);
+    if (!check.valid) {
+        showSuccessModal('Missing details', check.error);
+        return;
+    }
+    if (!backendReady()) {
         showSuccessModal('Could not send report', 'Reporting needs a live connection right now. Please try again shortly.');
         return;
     }
     try {
-        await backend.submitReport(helpers ? helpers.buildReportPayload(draft) : draft);
+        await window.gloweBackend.submitReport(GloweModeration.buildReportPayload(draft));
         event.target.reset();
         closeModal('report-modal');
         showSuccessModal('Report received', 'Thank you. We will review this with care and confidentiality.');
     } catch (error) {
         closeModal('report-modal');
-        if (helpers && helpers.isDuplicateReportError(error)) {
-            showSuccessModal('Already reported', 'You already reported this. Our team will review it.');
-        } else {
-            showSuccessModal('Could not send report', 'Something went wrong sending your report. Please try again.');
-        }
+        showReportSubmitError(error);
     }
 }
 
@@ -4997,28 +5047,31 @@ function initAdminPage() {
 }
 
 // FR-GLOWE-015 AC4 — live moderation report queue, backed by the admin-gated
-// glowe_admin_list_reports RPC (migration 0226). Non-admins get a 42501 from
+// glowe_admin_list_reports RPC (migration 0227). Non-admins get a 42501 from
 // the RPC, surfaced as a "locked" empty state rather than a crash.
+function moderationQueueErrorHtml(error) {
+    if (isForbiddenError(error)) {
+        return '<div class="empty-state"><h3>Reviewers only</h3><p>This queue is visible to GloWe reviewers. Ask an administrator for access.</p></div>';
+    }
+    return '<div class="empty-state"><h3>Could not load reports</h3><p>Please refresh and try again.</p></div>';
+}
+
 async function loadModerationReports() {
     const container = document.getElementById('admin-reports');
     if (!container) return;
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
+    if (!backendReady()) {
         container.innerHTML = '<div class="empty-state"><h3>Backend not configured</h3><p>Moderation is available once the shared backend is connected.</p></div>';
         return;
     }
     container.innerHTML = '<div class="empty-state"><h3>Loading…</h3><p>Fetching community reports.</p></div>';
     let rows;
     try {
-        rows = await backend.adminListReports();
+        rows = await window.gloweBackend.adminListReports();
     } catch (error) {
-        const forbidden = error && (error.code === '42501' || /forbidden|permission/i.test(error.message || ''));
-        container.innerHTML = forbidden
-            ? '<div class="empty-state"><h3>Reviewers only</h3><p>This queue is visible to GloWe reviewers. Ask an administrator for access.</p></div>'
-            : '<div class="empty-state"><h3>Could not load reports</h3><p>Please refresh and try again.</p></div>';
+        container.innerHTML = moderationQueueErrorHtml(error);
         return;
     }
-    renderModerationReports(GloweModeration.mapAdminReportRows(rows || []));
+    renderModerationReports(GloweModeration.mapAdminReportRows(rows));
 }
 
 function renderModerationReports(reports) {
@@ -5060,25 +5113,30 @@ function renderModerationReports(reports) {
 
 // FR-GLOWE-015 AC4+AC5 — admin decision on a report: dismiss, or remove the
 // reported content (posts/opportunities) and action the report atomically.
+async function applyGloweReportDecision(reportId, action, targetType, targetId) {
+    if (action === 'remove') {
+        await window.gloweBackend.adminRemoveContent(GloweModeration.canonicalTargetType(targetType), targetId, reportId);
+        showSuccessModal('Content removed', 'The reported content is no longer publicly visible.');
+        return;
+    }
+    await window.gloweBackend.adminDismissReport(reportId);
+    showSuccessModal('Report dismissed', 'The report was closed with no action.');
+}
+
+function showModerationDecisionError(error) {
+    if (isForbiddenError(error)) {
+        showSuccessModal('Reviewers only', 'Only GloWe reviewers can act on reports.');
+        return;
+    }
+    showSuccessModal('Could not save decision', 'Something went wrong while saving the decision. Please try again.');
+}
+
 async function decideGloweReport(reportId, action, targetType = '', targetId = '') {
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) return;
+    if (!backendReady()) return;
     try {
-        if (action === 'remove') {
-            await backend.adminRemoveContent(GloweModeration.canonicalTargetType(targetType), targetId, reportId);
-            showSuccessModal('Content removed', 'The reported content is no longer publicly visible.');
-        } else {
-            await backend.adminDismissReport(reportId);
-            showSuccessModal('Report dismissed', 'The report was closed with no action.');
-        }
+        await applyGloweReportDecision(reportId, action, targetType, targetId);
     } catch (error) {
-        const forbidden = error && (error.code === '42501' || /forbidden|permission/i.test(error.message || ''));
-        showSuccessModal(
-            forbidden ? 'Reviewers only' : 'Could not save decision',
-            forbidden
-                ? 'Only GloWe reviewers can act on reports.'
-                : 'Something went wrong while saving the decision. Please try again.'
-        );
+        showModerationDecisionError(error);
         return;
     }
     loadModerationReports();
@@ -8208,12 +8266,10 @@ async function deleteAccount() {
 
 // Messages page (FR-GLOWE-016 AC6) — a real inbox + thread view riding on
 // KC's shared public.chats / public.messages. ?chat=<id> opens a thread.
-function initMessagesPage() {
-    const container = document.getElementById('messages-content');
-    if (!container) return;
-
-    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
-    if (!loggedIn) {
+// Gate the messages surface: guests get a sign-in prompt, an unconfigured
+// backend gets an explanation. Returns true when the inbox may render.
+function messagesPageReady(container) {
+    if (!gloweIsLoggedIn()) {
         container.innerHTML = `
             <div class="empty-state">
                 <h3>Sign in to see your messages</h3>
@@ -8221,42 +8277,81 @@ function initMessagesPage() {
                 <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
             </div>
         `;
-        return;
+        return false;
     }
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) {
+    if (!backendReady()) {
         container.innerHTML = '<div class="empty-state"><h3>Messages are unavailable</h3><p>Messaging needs a live connection right now. Please try again shortly.</p></div>';
-        return;
+        return false;
     }
+    return true;
+}
+
+function initMessagesPage() {
+    const container = document.getElementById('messages-content');
+    if (!container || !messagesPageReady(container)) return;
     const chatId = new URLSearchParams(window.location.search).get('chat');
     if (chatId) {
         renderChatThread(container, chatId);
-    } else {
-        renderChatInbox(container);
+        return;
     }
+    renderChatInbox(container);
+}
+
+function chatLoadingState(container, body) {
+    container.innerHTML = `<div class="empty-state"><h3>Loading…</h3><p>${body}</p></div>`;
+}
+
+function chatEmptyInboxState(container) {
+    container.innerHTML = `
+        <div class="empty-state">
+            <h3>No conversations yet</h3>
+            <p>Reach out to an organization, offer help on a need, or message a community member — conversations will appear here.</p>
+            <div class="modal-actions">
+                <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
+                <a class="btn btn-outline" href="wishing-well.html">Open the Wishing Well</a>
+            </div>
+        </div>
+    `;
+}
+
+function chatCounterpartName(chat, profiles) {
+    const who = profiles[chat.otherId] || {};
+    return who.name || 'GloWe member';
+}
+
+function chatUnreadBadgeHtml(unread) {
+    return unread ? `<span class="chat-unread-badge">${unread}</span>` : '';
+}
+
+function renderChatInboxRow(chat, profiles) {
+    const name = chatCounterpartName(chat, profiles);
+    const rowClass = chat.unread ? ' has-unread' : '';
+    const preview = String(chat.previewText || '').slice(0, 90);
+    const time = GloweMessages.formatChatTime(chat.previewAt || chat.lastMessageAt);
+    return `
+        <a class="chat-inbox-row${rowClass}" href="messages.html?chat=${encodeURIComponent(chat.chatId)}">
+            ${renderEntityMark(name, 'avatar')}
+            <span class="chat-inbox-main">
+                <strong>${escapeHtml(name)}</strong>
+                <small>${escapeHtml(preview)}</small>
+            </span>
+            <span class="chat-inbox-side">
+                <small>${escapeHtml(time)}</small>
+                ${chatUnreadBadgeHtml(chat.unread)}
+            </span>
+        </a>
+    `;
 }
 
 async function renderChatInbox(container) {
-    container.innerHTML = '<div class="empty-state"><h3>Loading…</h3><p>Fetching your conversations.</p></div>';
+    chatLoadingState(container, 'Fetching your conversations.');
     const backend = window.gloweBackend;
-    const helpers = GloweMessages;
-    let me = null;
-    try { me = await backend.currentUser(); } catch (_e) { me = null; }
+    const me = await backend.currentUser().catch(() => null);
     if (!me) return;
-    let rows = [];
-    try { rows = await backend.kcListMyChats(); } catch (_e) { rows = []; }
-    let chats = helpers.inboxRows(rows, me.id);
+    const rows = await backend.kcListMyChats().catch(() => []);
+    let chats = GloweMessages.inboxRows(rows, me.id);
     if (!chats.length) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <h3>No conversations yet</h3>
-                <p>Reach out to an organization, offer help on a need, or message a community member — conversations will appear here.</p>
-                <div class="modal-actions">
-                    <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
-                    <a class="btn btn-outline" href="wishing-well.html">Open the Wishing Well</a>
-                </div>
-            </div>
-        `;
+        chatEmptyInboxState(container);
         return;
     }
     const chatIds = chats.map(c => c.chatId);
@@ -8265,54 +8360,45 @@ async function renderChatInbox(container) {
         backend.kcUnreadCounts(chatIds).catch(() => []),
         backend.kcCounterpartProfiles(chats.map(c => c.otherId)).catch(() => ({}))
     ]);
-    chats = helpers.attachUnread(helpers.attachPreviews(chats, previews), unread);
-    container.innerHTML = `<div class="chat-inbox-list">${chats.map(chat => {
-        const who = profiles[chat.otherId] || {};
-        const name = who.name || 'GloWe member';
-        const unreadBadge = chat.unread ? `<span class="chat-unread-badge">${chat.unread}</span>` : '';
-        return `
-            <a class="chat-inbox-row${chat.unread ? ' has-unread' : ''}" href="messages.html?chat=${encodeURIComponent(chat.chatId)}">
-                ${renderEntityMark(name, 'avatar')}
-                <span class="chat-inbox-main">
-                    <strong>${escapeHtml(name)}</strong>
-                    <small>${escapeHtml((chat.previewText || '').slice(0, 90))}</small>
-                </span>
-                <span class="chat-inbox-side">
-                    <small>${escapeHtml(helpers.formatChatTime(chat.previewAt || chat.lastMessageAt))}</small>
-                    ${unreadBadge}
-                </span>
-            </a>
-        `;
-    }).join('')}</div>`;
+    chats = GloweMessages.attachUnread(GloweMessages.attachPreviews(chats, previews), unread);
+    container.innerHTML = `<div class="chat-inbox-list">${chats.map(chat => renderChatInboxRow(chat, profiles)).join('')}</div>`;
+}
+
+// Resolve the counterpart's display identity for the thread header. Falls
+// back to a generic label when the chat row or profile is unavailable.
+async function resolveChatCounterpartName(backend, chatId, meId) {
+    const myChats = await backend.kcListMyChats(50).catch(() => []);
+    const chatRow = myChats.find(c => String(c.chat_id) === String(chatId));
+    if (!chatRow) return 'GloWe member';
+    const counterpartId = GloweMessages.mapChatRow(chatRow, meId).otherId;
+    const profiles = await backend.kcCounterpartProfiles([counterpartId]).catch(() => ({}));
+    return (profiles[counterpartId] || {}).name || 'GloWe member';
+}
+
+function renderChatBubbles(messages) {
+    if (!messages.length) return '<p class="muted-note">No messages yet. Say hello!</p>';
+    return messages.map(m => `
+        <div class="chat-bubble${m.mine ? ' mine' : ''}${m.isSystem ? ' system' : ''}">
+            <p>${escapeHtml(m.text)}</p>
+            <small>${escapeHtml(GloweMessages.formatChatTime(m.createdAt))}</small>
+        </div>
+    `).join('');
 }
 
 async function renderChatThread(container, chatId) {
-    container.innerHTML = '<div class="empty-state"><h3>Loading…</h3><p>Opening the conversation.</p></div>';
+    chatLoadingState(container, 'Opening the conversation.');
     const backend = window.gloweBackend;
-    const helpers = GloweMessages;
-    let me = null;
-    try { me = await backend.currentUser(); } catch (_e) { me = null; }
+    const me = await backend.currentUser().catch(() => null);
     if (!me) return;
-    let rows = [];
+    let rows;
     try {
         rows = await backend.kcGetMessages(chatId, 100);
     } catch (_e) {
         container.innerHTML = '<div class="empty-state"><h3>Conversation unavailable</h3><p>This conversation could not be opened.</p><a class="btn btn-outline" href="messages.html">Back to messages</a></div>';
         return;
     }
-    // Resolve the counterpart from the chat row for the thread header.
-    let counterpartName = 'GloWe member';
-    let counterpartId = '';
-    try {
-        const myChats = await backend.kcListMyChats(50);
-        const chatRow = (myChats || []).find(c => String(c.chat_id) === String(chatId));
-        if (chatRow) {
-            counterpartId = helpers.mapChatRow(chatRow, me.id).otherId;
-            const profiles = await backend.kcCounterpartProfiles([counterpartId]);
-            if (profiles[counterpartId]) counterpartName = profiles[counterpartId].name;
-        }
-    } catch (_e) { /* keep fallback name */ }
-    const messages = helpers.mapMessageRows(rows, me.id);
+    const counterpartName = await resolveChatCounterpartName(backend, chatId, me.id);
+    const messages = GloweMessages.mapMessageRows(rows, me.id);
     container.innerHTML = `
         <div class="chat-thread">
             <div class="chat-thread-header">
@@ -8320,12 +8406,7 @@ async function renderChatThread(container, chatId) {
                 <strong>${escapeHtml(counterpartName)}</strong>
             </div>
             <div class="chat-thread-messages" id="chat-thread-messages">
-                ${messages.length ? messages.map(m => `
-                    <div class="chat-bubble${m.mine ? ' mine' : ''}${m.isSystem ? ' system' : ''}">
-                        <p>${escapeHtml(m.text)}</p>
-                        <small>${escapeHtml(helpers.formatChatTime(m.createdAt))}</small>
-                    </div>
-                `).join('') : '<p class="muted-note">No messages yet. Say hello!</p>'}
+                ${renderChatBubbles(messages)}
             </div>
             <form class="chat-send-form" onsubmit="handleChatSend(event, '${jsString(chatId)}')">
                 <input id="chat-send-input" autocomplete="off" maxlength="2000" placeholder="Write a message...">
@@ -8340,53 +8421,57 @@ async function renderChatThread(container, chatId) {
 
 async function handleChatSend(event, chatId) {
     event.preventDefault();
-    const input = document.getElementById('chat-send-input');
-    const check = GloweMessages.validateMessageDraft(input && input.value);
+    const text = fieldValue('chat-send-input');
+    const check = GloweMessages.validateMessageDraft(text);
     if (!check.valid) return;
-    const backend = window.gloweBackend;
-    try {
-        await backend.kcSendMessage(chatId, input.value);
-    } catch (_e) {
+    const sent = await window.gloweBackend.kcSendMessage(chatId, text).catch(() => null);
+    if (!sent) {
         showSuccessModal('Could not send', 'Something went wrong sending your message. Please try again.');
         return;
     }
-    input.value = '';
-    const container = document.getElementById('messages-content');
-    if (container) renderChatThread(container, chatId);
+    renderChatThread(document.getElementById('messages-content'), chatId);
+}
+
+// Seed the opening message of a fresh conversation; the chat still opens if
+// the seed fails (the member can type it again).
+async function kcSeedFirstMessage(chatId, text) {
+    if (!text) return;
+    await window.gloweBackend.kcSendMessage(chatId, text).catch(() => {});
 }
 
 // Open (or create) the 1:1 conversation with another member and jump straight
 // into the thread. `firstMessage` (optional) seeds the conversation context.
 async function startDirectChat(otherUserId, firstMessage) {
     const backend = window.gloweBackend;
-    if (!backend || !backend.configured() || !otherUserId) return null;
     const me = await backend.currentUser();
     if (!me || String(me.id) === String(otherUserId)) return null;
     const chat = await backend.kcGetOrCreateDmChat(otherUserId);
     if (!chat) return null;
-    if (firstMessage) {
-        try { await backend.kcSendMessage(chat.chat_id, firstMessage); } catch (_e) { /* chat still opens */ }
-    }
+    await kcSeedFirstMessage(chat.chat_id, firstMessage);
     return chat.chat_id;
+}
+
+function messagesBadgeCount(total) {
+    return total > 99 ? '99+' : String(total);
+}
+
+function applyMessagesBadge(total) {
+    const anchor = document.querySelector('.user-menu .header-icon-btn[href$="messages.html"]');
+    if (!anchor) return;
+    const existing = anchor.querySelector('.chat-unread-badge');
+    if (existing) existing.remove();
+    if (!total) return;
+    const badge = document.createElement('span');
+    badge.className = 'chat-unread-badge';
+    badge.textContent = messagesBadgeCount(total);
+    anchor.appendChild(badge);
 }
 
 // Header unread badge (FR-GLOWE-016) — total unread messages across chats.
 async function refreshMessagesBadge() {
-    const backend = window.gloweBackend;
-    if (!backend || !backend.configured()) return;
-    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) return;
-    let total = 0;
-    try { total = await backend.kcUnreadTotal(); } catch (_e) { total = 0; }
-    const anchor = document.querySelector('.user-menu .header-icon-btn[href$="messages.html"]');
-    if (!anchor) return;
-    let badge = anchor.querySelector('.chat-unread-badge');
-    if (!total) { if (badge) badge.remove(); return; }
-    if (!badge) {
-        badge = document.createElement('span');
-        badge.className = 'chat-unread-badge';
-        anchor.appendChild(badge);
-    }
-    badge.textContent = total > 99 ? '99+' : String(total);
+    if (!backendReady() || !gloweIsLoggedIn()) return;
+    const total = await window.gloweBackend.kcUnreadTotal().catch(() => 0);
+    applyMessagesBadge(total);
 }
 
 // Derive the logical page key from a pathname, tolerant of both

@@ -9,12 +9,14 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     root.GloweModeration = api;
 })(typeof self !== 'undefined' ? self : this, function () {
-    function field(row, snake, camel) {
-        if (!row) return undefined;
-        return row[snake] !== undefined ? row[snake] : row[camel];
+    // Row values arrive snake_case from PostgREST/RPC; empty values collapse
+    // to a display fallback.
+    function textOr(row, key, fallback) {
+        const value = (row || {})[key];
+        return value || fallback;
     }
 
-    // Report reasons — DB enum values (0226 CHECK) with user-facing labels.
+    // Report reasons — DB enum values (0227 CHECK) with user-facing labels.
     const REPORT_REASONS = [
         { value: 'spam', label: 'Spam or misleading promotion' },
         { value: 'harassment', label: 'Harassment or hate' },
@@ -75,14 +77,14 @@
     // Map a glowe_admin_list_reports row to the admin-queue view model.
     function mapAdminReportRow(row) {
         return {
-            id: field(row, 'id', 'id'),
-            reporterName: field(row, 'reporter_name', 'reporterName') || 'GloWe member',
-            targetType: field(row, 'target_type', 'targetType') || 'general',
-            targetId: field(row, 'target_id', 'targetId') || '',
-            reason: field(row, 'reason', 'reason') || 'other',
-            note: field(row, 'note', 'note') || '',
-            status: field(row, 'status', 'status') || 'open',
-            createdAt: field(row, 'created_at', 'createdAt') || ''
+            id: (row || {}).id,
+            reporterName: textOr(row, 'reporter_name', 'GloWe member'),
+            targetType: textOr(row, 'target_type', 'general'),
+            targetId: textOr(row, 'target_id', ''),
+            reason: textOr(row, 'reason', 'other'),
+            note: textOr(row, 'note', ''),
+            status: textOr(row, 'status', 'open'),
+            createdAt: textOr(row, 'created_at', '')
         };
     }
 
@@ -97,7 +99,7 @@
         });
     }
 
-    // Only posts and opportunities are removable in MVP (0226 RPC contract).
+    // Only posts and opportunities are removable in MVP (0227 RPC contract).
     function canRemoveTarget(targetType) {
         const t = canonicalTargetType(targetType);
         return t === 'post' || t === 'opportunity';
@@ -106,7 +108,7 @@
     // Soft-removed content (status='removed') is excluded from all public
     // listings. Works for glowe_posts and glowe_opportunities rows alike.
     function isRemovedContent(row) {
-        return Boolean(row) && field(row, 'status', 'status') === 'removed';
+        return Boolean(row) && row.status === 'removed';
     }
 
     // Best-effort deep link from a report target to its public page, so the

@@ -1,5 +1,5 @@
--- supabase/tests/0226_glowe_reports.sql
--- Regression for migration 0226 (FR-GLOWE-015).
+-- supabase/tests/0227_glowe_reports.sql
+-- Regression for migration 0227 (FR-GLOWE-015).
 --
 -- Verifies:
 --   • a member can file a report on a post; review columns are server-managed
@@ -163,10 +163,10 @@ select pg_temp.expect_blocked(
 
 do $$
 begin
-  raise notice '✓ 0226: glowe reports RLS + admin moderation RPCs behave';
+  raise notice '✓ 0227: glowe reports RLS + admin moderation RPCs behave';
 end $$;
 
 reset role;
 rollback;
 
-\echo '✓ 0226 glowe reports regression test passed'
+\echo '✓ 0227 glowe reports regression test passed'
