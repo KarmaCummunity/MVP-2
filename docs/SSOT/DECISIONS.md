@@ -1224,6 +1224,20 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-169 — KC-root-behind-/glowe redirect is dev-only, not shipped to prod (revises the 2026-07-04 GLOWE-only directive for `main`)
+
+**Date.** 2026-07-05
+
+**Decision.** `app/scripts/web-postbuild.mjs` previously wrote an **unconditional** Cloudflare `_redirects` rule (`/ → /glowe/ 302`) plus an `index.html` meta-refresh shim, gating the entire KC web root behind GLOWE in every environment. This is now environment-gated: the root-redirect-to-`/glowe` behavior applies **only** when `EXPO_PUBLIC_ENVIRONMENT === 'development'` (the `dev` / `cloudflare-dev` deploy). On every other value — including missing/unknown, fail-safe-closed, same convention as `isDevEnvironment()` — the KC root serves the real KC web app. GLOWE itself is unaffected: it is copied to `dist/glowe/` and reachable at `/glowe` in **every** environment regardless of this gate.
+
+**Rationale.** PM (2026-07-05): dev may keep redirecting straight to GLOWE while building/testing it, but KC production (`main`, the public `karma-community-kc.com` domain) must serve the actual KC app at its root, not force every visitor into GLOWE. This revises the standing 2026-07-04 "GLOWE-only frontend" directive for the `main` branch specifically — that directive still governs day-to-day *development* priority (GLOWE-only work continues on `dev`), but no longer means KC prod's root URL redirects away from KC.
+
+**Alternatives rejected.** Reverting the redirect entirely (undoing D-61-era GLOWE-only work) — throws away the dev-mode gate the team is still using. A separate script/flag disconnected from `EXPO_PUBLIC_ENVIRONMENT` — the env var already differs per Cloudflare Pages environment (`cloudflare-dev` vs `cloudflare-prod`), so reusing it needs zero new deploy config, consistent with `areGloweLinksEnabled()` (D-168) the same day.
+
+**Affected docs.** `app/scripts/web-postbuild.mjs`; `docs/SSOT/spec/17_glowe_frontend.md`.
+
+---
+
 ## D-167 — English UI locale ships opt-in and machine-translated (delivers D-24 slice)
 
 **Date.** 2026-07-05

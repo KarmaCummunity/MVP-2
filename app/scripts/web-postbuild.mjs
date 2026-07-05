@@ -3,17 +3,19 @@
 // - Copies the GloWe static frontend into `dist/glowe/` so it is served at the
 //   `/glowe` sub-path of the main domain, alongside the KC web app (one domain,
 //   two frontends, shared Supabase backend). See FR-GLOWE-001 / DECISIONS D-61.
-// - Writes a `_redirects` file that gates the root KC app behind /glowe/. All
-//   traffic to non-/glowe paths is redirected to /glowe/ (302). Traffic within
-//   /glowe/* falls back to /glowe/index.html so deep-links and refreshes work.
-//   Cloudflare Pages serves existing static files before applying _redirects, so
-//   GloWe's real files (pages/, assets/, css/, js/) are served directly.
-// - Replaces dist/index.html with a redirect shim so that Cloudflare's directory
-//   index for "/" (which skips _redirects) also redirects to /glowe/.
+//   This mount happens in EVERY environment — GloWe stays reachable at /glowe.
+// - D-169 (2026-07-05): whether the KC root ALSO redirects to /glowe/ is now
+//   environment-gated, not unconditional. On `development`
+//   (`EXPO_PUBLIC_ENVIRONMENT=development`, the `dev` deploy) the KC root is
+//   still gated behind a 302 to /glowe/ — dev is where GLOWE-only mode is being
+//   built/tested. On every other value (including missing/unknown —
+//   fail-safe-closed, same convention as `isDevEnvironment()` in
+//   `apps/mobile/src/config/environment.ts`) the KC root serves the real KC web
+//   app; GLOWE remains available at /glowe for anyone who navigates there.
 // See: https://developers.cloudflare.com/pages/configuration/redirects/
 //
-// TO RESTORE KC ACCESS: revert this file to the previous _redirects content and
-// remove the index.html replacement block.
+// TO GATE KC BEHIND /glowe AGAIN ON PROD: set EXPO_PUBLIC_ENVIRONMENT=development
+// for the `cloudflare-prod` GitHub environment (or force GATE_ROOT below).
 
 import { writeFileSync, existsSync, cpSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
@@ -22,6 +24,10 @@ import { fileURLToPath } from 'node:url';
 const here = dirname(fileURLToPath(import.meta.url));
 const distDir = resolve(here, '..', 'apps', 'mobile', 'dist');
 const redirectsPath = resolve(distDir, '_redirects');
+
+// Same semantics as `isDevEnvironment()`: only the literal 'development' value
+// opts in; anything else (unset, 'production', a typo) fails safe to "serve KC".
+const GATE_ROOT_TO_GLOWE = process.env.EXPO_PUBLIC_ENVIRONMENT === 'development';
 
 if (!existsSync(distDir)) {
   console.error(`[web-postbuild] dist not found at ${distDir} — did expo export run?`);
@@ -51,23 +57,27 @@ if (existsSync(gloweSrc)) {
 // individual KC named routes), never with a catch-all that matches /glowe/*.
 // GloWe's own static files (/glowe/index.html, /glowe/pages/*, assets…) are
 // served directly because they have no matching redirect rule.
-// The KC SPA fallback (/* → index.html 200) is replaced by the shim below.
-const redirectsContent = [
+const redirectsLines = [
   // GloWe root: serve index.html for the bare /glowe path (no trailing slash)
   '/glowe    /glowe/index.html  200',
-  // Redirect the KC root to GloWe
-  '/         /glowe/            302',
-].join('\n') + '\n';
-writeFileSync(redirectsPath, redirectsContent, 'utf8');
-console.log(`[web-postbuild] wrote ${redirectsPath}`);
+];
+if (GATE_ROOT_TO_GLOWE) {
+  // Redirect the KC root to GloWe (dev-only "GLOWE-only" mode, D-169).
+  redirectsLines.push('/         /glowe/            302');
+}
+writeFileSync(redirectsPath, redirectsLines.join('\n') + '\n', 'utf8');
+console.log(
+  `[web-postbuild] wrote ${redirectsPath} (root gated to /glowe: ${GATE_ROOT_TO_GLOWE})`,
+);
 
-// Replace dist/index.html with a redirect shim.
-// "/" serves dist/index.html as a directory-index before _redirects fires,
-// so we overwrite it with a page that immediately sends the browser to /glowe/.
-const rootIndexPath = resolve(distDir, 'index.html');
-writeFileSync(
-  rootIndexPath,
-  `<!DOCTYPE html>
+if (GATE_ROOT_TO_GLOWE) {
+  // Replace dist/index.html with a redirect shim.
+  // "/" serves dist/index.html as a directory-index before _redirects fires,
+  // so we overwrite it with a page that immediately sends the browser to /glowe/.
+  const rootIndexPath = resolve(distDir, 'index.html');
+  writeFileSync(
+    rootIndexPath,
+    `<!DOCTYPE html>
 <html>
 <head>
 <meta charset="utf-8">
@@ -78,6 +88,9 @@ writeFileSync(
 <body><a href="/glowe/">Click here if not redirected automatically</a></body>
 </html>
 `,
-  'utf8',
-);
-console.log(`[web-postbuild] replaced ${rootIndexPath} with /glowe/ redirect shim`);
+    'utf8',
+  );
+  console.log(`[web-postbuild] replaced ${rootIndexPath} with /glowe/ redirect shim`);
+} else {
+  console.log('[web-postbuild] KC root left untouched — serving the real KC web app at /');
+}

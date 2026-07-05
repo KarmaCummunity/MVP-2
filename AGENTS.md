@@ -23,3 +23,12 @@ If you landed in [`docs/`](./docs/) first, [`docs/AGENTS.md`](./docs/AGENTS.md) 
   the GLOWE frontend (e.g. the FR-TRANSLATE-003 translation engine → GLOWE).
 - GLOWE's own interface i18n (FR-GLOWE-004, chrome-only, `localStorage`) is
   SEPARATE from user-generated-content translation (FR-TRANSLATE-003).
+
+### Revision (2026-07-05): production root serves KC, not GLOWE
+
+The above is a *development-priority* directive, not an instruction to redirect
+KC production traffic away from the KC app. `app/scripts/web-postbuild.mjs`'s
+Cloudflare root-redirect-to-`/glowe` gate is now environment-gated
+(`EXPO_PUBLIC_ENVIRONMENT === 'development'`, `DECISIONS.md` D-169): the `dev`
+deploy still redirects its root to GLOWE; `main`/production serves the real KC
+web app at its root. GLOWE stays reachable at `/glowe` in every environment.
