@@ -1,6 +1,6 @@
 # 2.16 GloWe Frontend (shared KC backend)
 
-> **Status:** 🟡 Phase A complete (shared-auth) + onboarding (FR-GLOWE-002) + org approval & view-only gating (FR-GLOWE-003) + interface language switch & RTL (FR-GLOWE-005, Phase 1) + **session isolation fix** — The GloWe static frontend (`app/apps/glowe-web`) is added *alongside* the KC mobile app and wired to the **same** Supabase project, so a single Supabase Auth identity (`auth.users`) is shared across both frontends. Long-term intent: GloWe becomes the primary frontend riding on KC's infrastructure, with GloWe-owned data migrated entity-by-entity onto KC's native tables. See `DECISIONS.md` D-61.
+> **Status:** ✅ Phase B complete (2026-07-05) — all FR-GLOWE-001..016 + 023 delivered: shared auth, onboarding & org approval, HE/EN + RTL, live content on every surface (wishes, opportunities/events, community, forums, organizations, profiles, applications & offers), saved-item toggles (FR-GLOWE-013), direct messaging on KC chats (FR-GLOWE-014/016 AC6), moderation & reporting (FR-GLOWE-015), and the adaptive create system (FR-GLOWE-016). Remaining: Phase C convergence. Original Phase A summary follows. — The GloWe static frontend (`app/apps/glowe-web`) is added *alongside* the KC mobile app and wired to the **same** Supabase project, so a single Supabase Auth identity (`auth.users`) is shared across both frontends. Long-term intent: GloWe becomes the primary frontend riding on KC's infrastructure, with GloWe-owned data migrated entity-by-entity onto KC's native tables. See `DECISIONS.md` D-61.
 > **Phase A delivered:** GloWe vendored into the monorepo unchanged (design 1:1); `backend-config.js` → KC Supabase URL + publishable key; GloWe data namespaced with the `glowe_` table prefix (migration `0204_glowe_schema.sql`) to avoid colliding with KC's native tables. Auth is **Google-only** (email/password hidden). Hosted at the **`/glowe` sub-path** of the main domain (copied into the Cloudflare Pages build by `web-postbuild.mjs`), so OAuth returns to GloWe via KC's already-allowlisted origins. Verified live on dev: Supabase client init, Auth endpoint reachable, `glowe_*` RLS read OK, zero console errors.
 > **Session isolation fix (2026-06-29):** GloWe's Supabase client now uses `storageKey: 'glowe-auth-v1'` (separate from KC's default `sb-<ref>-auth-token`), and `signOut()` uses `scope: 'local'` so GloWe sign-out does not revoke KC's server-side token. `logout()` now calls `refreshPersonalAreaIfVisible()` immediately so the profile card disappears without waiting for the async Supabase auth-state event.
 
@@ -321,9 +321,9 @@ RLS: owner-read for post owner (`glowe_posts.user_id = auth.uid()`) and offer au
 
 ## FR-GLOWE-013 — Saved Items: live bookmarks
 
-**Status.** 🟡 In progress (AC1 ✅)
+**Status.** ✅ Done — AC2 completed 2026-07-05: every card type now renders the save/unsave toggle (`savedToggleButtonHtml`): wish card (heart + more-menu + detail modal), community post card (more-menu, post + author profile), organization card (card action + more-menu), opportunity card (card action + more-menu) and the opportunity detail trust panel.
 
-The Saved page (`pages/saved.html`) reads `glowe_saved_items` through `gloweBackend.listOwned('saved_items')`; save/unsave is wired from the opportunity, wishing well, community and organization cards. Phase B closes the remaining gaps (card-level toggle + optimistic active state).
+The Saved page (`pages/saved.html`) reads `glowe_saved_items` through `gloweBackend.listOwned('saved_items')`; save/unsave is wired from the opportunity, wishing well, community and organization cards.
 
 **Acceptance Criteria.**
 - AC1. **Save CTA.** ✅ Every opportunity card, wish card, community post card, and org profile card carries a Save CTA that calls `saveItem(type, id, title, meta, href)` → `gloweBackend.insertOwned('saved_items', { item_type, item_id, title, meta, href })` (`js/app.js`; wish/opportunity/community/org render paths). The insert payload is built by the `GloweOrganizations.buildSavedItemPayload` pure helper (`js/glowe-organizations.js`, unit-tested — column shape in one place, `item_id` coerced to text to match the `0204` unique index), with an inline fallback for pages that don't load the helper. Duplicates (same `user_id + item_type + item_id`) are silently ignored by the `0204` unique constraint (and a client-side `exists` check). `saveItem` (and the AC2 toggle) is login-gated per the AC — a guest can browse but never saves; instead of a dead-end notice, the gate opens the real sign-in / registration screen (`login-modal`) via `promptGuestSignIn(message)` with save-specific intro copy. `openModal` resets the login-modal intro to its default so a later plain sign-in never shows stale action copy; Hebrew keys added for the default and tailored intros.
@@ -337,7 +337,7 @@ The Saved page (`pages/saved.html`) reads `glowe_saved_items` through `gloweBack
 
 ## FR-GLOWE-014 — Direct Messaging: Phase B routing
 
-**Status.** ⏳ Planned
+**Status.** ✅ Done — **superseded by the FR-GLOWE-016 AC6 implementation (2026-07-05):** instead of the outreach-post stub below, GloWe messaging rides KC's real `public.chats`/`public.messages` directly (D-69). `pages/messages.html` is a live inbox (chat list + last-message preview + unread counts via `rpc_unread_counts_for_chats`) and thread view (send via `messages` INSERT, mark-read via `rpc_chat_mark_read`); the header chat icon carries a live unread badge (`rpc_chat_unread_total`). Entry points: org card "Reach Out", wish "Offer Support" (seeds the chat with the need title + offer text), card "Message" actions, and community-post "Send". The AC1–AC4 outreach-post model below was **not** built and is retained for historical context only.
 
 Full real-time messaging is deferred to Phase C (KC chat integration). Phase B replaces the placeholder `pages/messages.html` with a functional stub that covers the most urgent use case: connecting an offerer/applicant with a content owner.
 
@@ -353,7 +353,7 @@ Full real-time messaging is deferred to Phase C (KC chat integration). Phase B r
 
 ## FR-GLOWE-015 — Moderation & Reporting
 
-**Status.** ⏳ Planned
+**Status.** ✅ Done (2026-07-05) — migration `0226_glowe_reports.sql` (table + RLS + client-write guard + `glowe_admin_list_reports` / `glowe_admin_dismiss_report` / `glowe_admin_remove_content` RPCs gated by `is_glowe_admin`; `glowe_posts`/`glowe_opportunities` status CHECKs widened with `'removed'`); the pre-existing report modal now persists to `glowe_reports` with the AC2 reason enum and duplicate guard (23505 → "Already reported"); the Admin page Reports panel is server-backed with Dismiss / Remove-content actions; removed content is excluded from all public listings (`fetchAndPopulate` filter + `isCommunityPost` + `isListedOpportunity`). Reporting is login-gated via the contextual join prompt (`report-content` action). SQL regression: `supabase/tests/0226_glowe_reports.sql`; unit tests: `js/__tests__/glowe-moderation.test.js`. Note: `target_type` additionally allows `'general'` (site-level concern from the footer entry point).
 
 GloWe needs a lightweight content moderation path so that harmful or inappropriate posts, wishes, opportunities, and profiles can be flagged and reviewed.
 
@@ -385,7 +385,7 @@ RLS: reporter can read own reports; admin RPCs gate moderation actions.
 
 ## FR-GLOWE-016 — Member experience shell & adaptive create system
 
-**Status.** 🟡 In progress — Part A (session integrity) and Part B (adaptive home) done; Parts C/D planned.
+**Status.** ✅ Done — Parts A/B previously delivered; Parts C/D delivered 2026-07-05: AC3 (account-type-aware create menu — center `+` FAB in the mobile bottom nav + header "+ Create" button, anon → contextual join prompt, unverified org → awaiting-verification notice), AC4 (tailored Event + Volunteer-offer forms with client-side validation; Post/Need/Opportunity route to their Phase-B surfaces; events persist the 0211 event columns via `insertOwned('opportunities')`), AC6 (need "Offer Support" also opens the real 1:1 KC chat seeded with the need title + offer text; see FR-GLOWE-014 supersession note), AC7 (declarative `GLOWE_CREATE_TYPES` registry in `js/glowe-create.js`, unit-tested — adding a create type is one entry). Volunteer offers persist as `glowe_posts.post_type='offer'` (CHECK widened in `0226`) and surface on the Wishing Well board with a "Volunteer Offer" tag (D-69).
 
 The logged-in member layer that ties the Phase-B surfaces together: a clean sign-out, an
 adaptive home, and a single account-type-aware "create" entry point. This FR **composes** the

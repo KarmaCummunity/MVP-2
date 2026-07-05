@@ -54,6 +54,10 @@ const SKIP_HEBREW_SCAN_EXACT_RELS = new Set([
   // `app/apps/mobile/src/i18n/**` and `web-server/i18n/**` exclusions). The rest
   // of the GloWe tree (HTML/CSS/other JS) stays under scan.
   "app/apps/glowe-web/js/app.js",
+  // Dev-only seed dataset: realistic Hebrew content (org names, posts, chats)
+  // persisted to the dev DB — data fixtures, not UI copy (same rationale as
+  // the supabase/seed.sql exclusion).
+  "scripts/seed-glowe-dev.mjs",
 ]);
 
 function parseArgs(argv) {

@@ -120,7 +120,7 @@
     }
 
     function toOpportunityRow(payload = {}) {
-        return {
+        const row = {
             title: payload.title || '',
             organization: payload.organization || '',
             org_icon: payload.orgIcon || payload.org_icon || '',
@@ -134,6 +134,19 @@
             responsibilities: payload.responsibilities || '',
             featured: Boolean(payload.featured)
         };
+        // Event fields (additive model, migration 0211) — only forwarded when an
+        // event is being created (FR-GLOWE-016 AC4), so plain opportunity inserts
+        // keep their previous column set.
+        if (payload.start_at || payload.startAt) {
+            row.start_at = payload.start_at || payload.startAt;
+            row.end_at = payload.end_at || payload.endAt || null;
+            row.event_type = payload.event_type || payload.eventType || 'physical';
+            row.event_link = payload.event_link || payload.eventLink || '';
+            row.capacity = (payload.capacity === undefined || payload.capacity === null || payload.capacity === '')
+                ? null : Number(payload.capacity);
+            row.registration_mode = payload.registration_mode || payload.registrationMode || 'gated';
+        }
+        return row;
     }
 
     function toPostRow(payload = {}) {
@@ -619,6 +632,197 @@
         return data;
     }
 
+    // ── Moderation & reporting (FR-GLOWE-015, migration 0226) ───────────────
+    // File a report on a content item. The payload shape is built by the tested
+    // GloweModeration.buildReportPayload helper; reporter_id is stamped here.
+    // A duplicate report surfaces as a 23505 error — callers show "already
+    // reported" via GloweModeration.isDuplicateReportError.
+    async function submitReport(payload) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const { data, error } = await supabaseClient
+            .from(tbl('reports'))
+            .insert({ ...payload, reporter_id: user.id })
+            .select()
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    // Admin review queue — GLOWE admins only (server-gated, 42501 otherwise).
+    async function adminListReports() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_admin_list_reports');
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
+    async function adminDismissReport(reportId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { data, error } = await supabaseClient.rpc('glowe_admin_dismiss_report', {
+            p_report_id: String(reportId)
+        });
+        if (error) throw error;
+        return data;
+    }
+
+    async function adminRemoveContent(targetType, targetId, reportId = null) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return null;
+        const { error } = await supabaseClient.rpc('glowe_admin_remove_content', {
+            p_type: String(targetType),
+            p_id: String(targetId),
+            p_report_id: reportId ? String(reportId) : null
+        });
+        if (error) throw error;
+        return true;
+    }
+
+    // ── Direct messaging on KC's shared chat backend (FR-GLOWE-016 AC6) ──────
+    // GloWe reuses KC's public.chats / public.messages directly (D-61): these
+    // tables are NOT glowe_-prefixed. RLS scopes everything to the signed-in
+    // participant; a fresh Google user is account_status='active' and may
+    // create chats and messages immediately.
+
+    // Find (or create) the 1:1 DM chat with another user. Participants are
+    // stored in canonical order (a < b); existing non-support rows are reused.
+    async function kcGetOrCreateDmChat(otherUserId) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user || !otherUserId) return null;
+        const me = user.id;
+        const [a, b] = me < otherUserId ? [me, otherUserId] : [otherUserId, me];
+        const { data: existing, error: findError } = await supabaseClient
+            .from('chats')
+            .select('chat_id, participant_a, participant_b, last_message_at')
+            .eq('participant_a', a)
+            .eq('participant_b', b)
+            .eq('is_support_thread', false)
+            .order('last_message_at', { ascending: false })
+            .limit(1);
+        if (findError) throw findError;
+        if (existing && existing.length) return existing[0];
+        const { data: created, error: insertError } = await supabaseClient
+            .from('chats')
+            .insert({ participant_a: a, participant_b: b })
+            .select('chat_id, participant_a, participant_b, last_message_at')
+            .single();
+        if (insertError) throw insertError;
+        return created;
+    }
+
+    // The caller's chat inbox, newest activity first.
+    async function kcListMyChats(limit = 50) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return [];
+        const { data, error } = await supabaseClient
+            .from('chats')
+            .select('chat_id, participant_a, participant_b, last_message_at, is_support_thread, inbox_hidden_at_a, inbox_hidden_at_b')
+            .or(`participant_a.eq.${user.id},participant_b.eq.${user.id}`)
+            .order('last_message_at', { ascending: false })
+            .limit(limit);
+        if (error) throw error;
+        return data || [];
+    }
+
+    // Last message per chat, for inbox previews.
+    async function kcLastMessages(chatIds) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient || !chatIds || !chatIds.length) return [];
+        const { data, error } = await supabaseClient
+            .from('messages')
+            .select('chat_id, sender_id, kind, body, created_at')
+            .in('chat_id', chatIds)
+            .order('created_at', { ascending: false })
+            .limit(chatIds.length * 8);
+        if (error) throw error;
+        return data || [];
+    }
+
+    // Per-chat unread counts (viewer is auth.uid() server-side).
+    async function kcUnreadCounts(chatIds) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user || !chatIds || !chatIds.length) return [];
+        const { data, error } = await supabaseClient.rpc('rpc_unread_counts_for_chats', {
+            p_viewer_id: user.id,
+            p_chat_ids: chatIds
+        });
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
+    // Global unread total for the header badge (excludes hidden chats).
+    async function kcUnreadTotal() {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return 0;
+        const { data, error } = await supabaseClient.rpc('rpc_chat_unread_total');
+        if (error) return 0;
+        return Number(data) || 0;
+    }
+
+    async function kcGetMessages(chatId, limit = 50) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient || !chatId) return [];
+        const { data, error } = await supabaseClient
+            .from('messages')
+            .select('message_id, chat_id, sender_id, kind, body, created_at, status')
+            .eq('chat_id', chatId)
+            .order('created_at', { ascending: true })
+            .limit(limit);
+        if (error) throw error;
+        return data || [];
+    }
+
+    async function kcSendMessage(chatId, body) {
+        const supabaseClient = await getClient();
+        const user = await currentUser();
+        if (!supabaseClient || !user) return null;
+        const trimmed = String(body || '').trim().slice(0, 2000);
+        if (!trimmed) return null;
+        const { data, error } = await supabaseClient
+            .from('messages')
+            .insert({ chat_id: chatId, sender_id: user.id, body: trimmed, kind: 'user', status: 'pending' })
+            .select('message_id, chat_id, sender_id, body, created_at')
+            .single();
+        if (error) throw error;
+        return data;
+    }
+
+    async function kcMarkChatRead(chatId) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient || !chatId) return null;
+        const { error } = await supabaseClient.rpc('rpc_chat_mark_read', { p_chat_id: chatId });
+        if (error) throw error;
+        return true;
+    }
+
+    // Display names/avatars for chat counterparts, from GloWe profiles
+    // (public-read). Returns { userId: {name, avatarUrl} }.
+    async function kcCounterpartProfiles(userIds) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient || !userIds || !userIds.length) return {};
+        const { data, error } = await supabaseClient
+            .from(tbl('profiles'))
+            .select('id, display_name, avatar_url, account_type, org_name')
+            .in('id', userIds);
+        if (error) return {};
+        const out = {};
+        (data || []).forEach((row) => {
+            out[row.id] = {
+                name: row.org_name || row.display_name || 'GloWe member',
+                avatarUrl: row.avatar_url || '',
+                accountType: row.account_type || null
+            };
+        });
+        return out;
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -691,6 +895,19 @@
         decideEventRegistration,
         getEventLink,
         cancelEvent,
+        submitReport,
+        adminListReports,
+        adminDismissReport,
+        adminRemoveContent,
+        kcGetOrCreateDmChat,
+        kcListMyChats,
+        kcLastMessages,
+        kcUnreadCounts,
+        kcUnreadTotal,
+        kcGetMessages,
+        kcSendMessage,
+        kcMarkChatRead,
+        kcCounterpartProfiles,
         apiRequest
     };
 })();
