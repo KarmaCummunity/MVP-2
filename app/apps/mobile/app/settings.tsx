@@ -23,6 +23,7 @@ import { ConfirmActionModal } from '../src/components/post/ConfirmActionModal';
 import { usePrivateProfileToggle } from '../src/hooks/usePrivateProfileToggle';
 import { useSettingsScreenStyles } from './settings.styles';
 import { getUserRepo } from '../src/services/userComposition';
+import { areGloweLinksEnabled } from '../src/config/environment';
 
 /** Metro `__DEV__` is false in release; set `EXPO_PUBLIC_DEV_SETTINGS_TOOLS=1` for internal builds only. */
 const SHOW_SETTINGS_DEBUG_TOOLS =
@@ -179,11 +180,13 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
-          <SettingsScreenRow
-            label={t('settings.glowe')}
-            icon="school-outline"
-            onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
-          />
+          {areGloweLinksEnabled() ? (
+            <SettingsScreenRow
+              label={t('settings.glowe')}
+              icon="school-outline"
+              onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
+            />
+          ) : null}
           <SettingsScreenRow
             label={t('settings.reportIssue')}
             icon="alert-circle-outline"
