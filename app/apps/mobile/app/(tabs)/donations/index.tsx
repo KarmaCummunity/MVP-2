@@ -21,6 +21,7 @@ import { Screen } from '../../../src/components/ui/Screen';
 import { Card } from '../../../src/components/ui/Card';
 import { IconTile } from '../../../src/components/ui/IconTile';
 import { MotionEntry, ENTRY_DELAY } from '../../../src/components/ui/MotionEntry';
+import { areGloweLinksEnabled } from '../../../src/config/environment';
 import { useShellTabBarScrollInset } from '../../../src/navigation/useShellTabBarVisibility';
 import { useScreenAside } from '../../../src/components/aside/useScreenAside';
 import { CommunityStatsAside } from '../../../src/components/aside/CommunityStatsAside';
@@ -228,7 +229,8 @@ export default function DonationsHubScreen() {
           </PressableScale>
         </MotionEntry>
 
-        {/* ── GLOWE partnership banner ─────── */}
+        {/* ── GLOWE partnership banner (dev-only; hidden in production) ─────── */}
+        {areGloweLinksEnabled() ? (
         <MotionEntry variant="bottom" delay={ENTRY_DELAY.section + 40} style={styles.blockStretch}>
           <PressableScale
             onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
@@ -248,6 +250,7 @@ export default function DonationsHubScreen() {
             </Card>
           </PressableScale>
         </MotionEntry>
+        ) : null}
 
         {/* ── Category grid ────────────────── */}
         <View style={styles.categoriesSection}>

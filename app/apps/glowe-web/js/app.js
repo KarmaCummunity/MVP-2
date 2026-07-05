@@ -5086,7 +5086,13 @@ function _profileNotFound(container) {
 // the profile-page rendering code expects (same as static sample profiles).
 function _adaptDbProfile(p, projects) {
     const isOrg = p.accountType === 'organization';
+    // FR-TRANSLATE-005 AC7 — resolve which real source column backs the mission
+    // prose so the reader driver can translate it (org: org_description else
+    // about; member: about). Only DB profiles carry this; static profiles omit
+    // `_tr`, so they get no (unmatchable) translation markup. See TD-135.
+    const missionField = isOrg ? (p.orgDescription ? 'org_description' : 'about') : 'about';
     return {
+        _tr: { type: 'glowe_profile', id: p.id, missionField: missionField },
         id: p.id,
         name: isOrg ? (p.orgName || p.name || 'Unnamed organization') : (p.name || 'Anonymous'),
         type: isOrg ? (p.orgField || 'Organization') : 'Community Member',
@@ -5185,6 +5191,10 @@ function _renderProfileContent(profile, container) {
     const trustStatus = profile.status || profile.profileStatus || (isOrg ? 'Approved profile' : 'Community profile');
     const safeContact = profile.email || 'Contact through GloWe messages';
 
+    // FR-TRANSLATE-005 AC7 — DB profiles carry `_tr`; tag the mission prose so the
+    // reader driver translates it. Static profiles have no source row, so no attr.
+    const missionFieldAttr = profile._tr ? ` data-tr-field="${profile._tr.missionField}"` : '';
+
     container.innerHTML = `
         <section class="profile-cover profile-story-cover">
             <div class="profile-cover-band"></div>
@@ -5193,7 +5203,7 @@ function _renderProfileContent(profile, container) {
                 <div class="profile-summary">
                     <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
                     <h1>${escapeHtml(profile.name)}</h1>
-                    <p>${escapeHtml(missionText)}</p>
+                    <p${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="opportunity-skills">${tags.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}</div>
                 </div>
                 <div class="profile-actions">
@@ -5224,7 +5234,7 @@ function _renderProfileContent(profile, container) {
                         <span>01</span>
                         <h2>${escapeHtml(typeConfig.storyLabel || (isOrg ? 'Organization story' : 'Profile story'))}</h2>
                     </div>
-                    <p class="profile-lead-text">${escapeHtml(missionText)}</p>
+                    <p class="profile-lead-text"${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="profile-narrative-grid">
                         <p><strong>${escapeHtml(typeConfig.valuesLabel || 'Values')}</strong><span>${escapeHtml(valuesText)}</span></p>
                         <p><strong>${escapeHtml(typeConfig.communityLabel || 'Community')}</strong><span>${escapeHtml(communityText)}</span></p>
@@ -5384,12 +5394,25 @@ function _renderProfileContent(profile, container) {
             </aside>
         </section>
     `;
+
+    // FR-TRANSLATE-005 AC7 — for DB profiles, mark the container as a translatable
+    // glowe_profile card (the nesting guard in glowe-translate.js keeps the inner
+    // project cards translating under their own type), then nudge the driver.
+    if (profile._tr) {
+        container.setAttribute('data-tr-card', '');
+        container.setAttribute('data-tr-type', profile._tr.type);
+        container.setAttribute('data-tr-id', profile._tr.id);
+        if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
+            window.GloweTranslate.scan();
+        }
+    }
 }
 
 // Initialize opportunity detail page
-// FR-TRANSLATE-005 AC7 — tag the opportunity detail page's scalar prose (title +
-// description) as a translatable card, then nudge the GloweTranslate driver.
-// `.opportunity-main` wraps both fields; only the two tagged elements are read.
+// FR-TRANSLATE-005 AC7 — mark the opportunity detail page's `.opportunity-main`
+// as a translatable card, then nudge the GloweTranslate driver. Title +
+// description carry scalar `data-tr-field`s here; the requirements/
+// responsibilities chips are tagged per-element by the caller before this runs.
 function markOpportunityDetailForTranslation(opportunityId) {
     const card = document.querySelector('.opportunity-main');
     if (!card || !opportunityId) return;
@@ -5435,16 +5458,21 @@ async function initOpportunityDetailPage() {
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
     document.getElementById('opp-description').textContent = opportunity.description;
 
-    // FR-TRANSLATE-005 AC7 — mark the detail prose for demand-driven translation
-    // (title + description are verbatim scalar columns). Arrays (skills,
-    // requirements, responsibilities) stay untranslated (TD-135).
-    markOpportunityDetailForTranslation(opportunity.id);
-    
+    // FR-TRANSLATE-005 AC7 — requirements/responsibilities are text[] columns;
+    // tag each chip with a per-element field ("requirements.<i>") so the reader
+    // driver translates and caches every item independently. `skills` stays
+    // untranslated (short tech/label tags, excluded from the registry by AC4).
     const requirementsList = document.getElementById('opp-requirements');
-    requirementsList.innerHTML = (opportunity.requirements || []).map(req => `<li>${escapeHtml(req)}</li>`).join('');
-    
+    requirementsList.innerHTML = (opportunity.requirements || [])
+        .map((req, i) => `<li data-tr-field="requirements.${i}">${escapeHtml(req)}</li>`).join('');
+
     const responsibilitiesList = document.getElementById('opp-responsibilities');
-    responsibilitiesList.innerHTML = (opportunity.responsibilities || []).map(resp => `<li>${escapeHtml(resp)}</li>`).join('');
+    responsibilitiesList.innerHTML = (opportunity.responsibilities || [])
+        .map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('');
+
+    // Mark the card + scan AFTER the chips exist so title, description and every
+    // array element are collected in a single pass (the card gets data-tr-done).
+    markOpportunityDetailForTranslation(opportunity.id);
     
     const skillsContainer = document.getElementById('opp-skills');
     skillsContainer.innerHTML = (opportunity.skills || []).map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('');
