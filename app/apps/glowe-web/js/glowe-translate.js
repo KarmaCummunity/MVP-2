@@ -90,6 +90,11 @@ if (typeof window !== 'undefined') {
                 if (!type || !id) return;
                 const fields = [];
                 card.querySelectorAll('[data-tr-field]').forEach(function (el) {
+                    // Nesting guard: a field belongs to the *nearest* enclosing
+                    // card. Without this, a profile card (which nests project
+                    // cards) would also collect the project fields and request
+                    // them under the wrong content type.
+                    if (el.closest('[data-tr-card]') !== card) return;
                     const field = el.getAttribute('data-tr-field');
                     const source = (el.textContent || '').trim();
                     if (field && source) fields.push({ field: field, el: el });
