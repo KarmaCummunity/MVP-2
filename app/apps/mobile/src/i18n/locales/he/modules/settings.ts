@@ -139,4 +139,31 @@ export const settingsHe = {
 
   // Report-issue notify-modal title (FR-MOD-002 / FR-CHAT-007 AC3)
   reportIssueErrorTitle: 'שגיאה',
+
+  // GLOWE partnership link
+  glowe: 'GLOWE – ידע מקצועי',
+
+  // FR-TRANSLATE-003 — translation language preference
+  translationLanguage: 'שפת תרגום',
+  translationLanguageDeviceDefault: 'ברירת מחדל של המכשיר',
+  translationLanguageIntro:
+    'פוסטים שנכתבו בשפה אחרת יתורגמו אוטומטית לשפה שתבחרו. תמיד אפשר להציג את המקור.',
+  translationLanguageSaveFailed: 'שמירת שפת התרגום נכשלה. נסו שוב.',
+  translationLanguageNames: {
+    he: 'עברית',
+    en: 'אנגלית',
+    ar: 'ערבית',
+    ru: 'רוסית',
+  },
+
+  // FR-SETTINGS-018 — app interface language (Hebrew ↔ English)
+  language: 'שפת האפליקציה',
+  languageScreen: {
+    title: 'שפת האפליקציה',
+    intro: 'בחרו את שפת הממשק של האפליקציה.',
+    optionHe: 'עברית',
+    optionEn: 'English',
+    restartNote: 'שינוי השפה יטען מחדש את האפליקציה.',
+    saveFailed: 'החלפת השפה נכשלה. נסו שוב.',
+  },
 } as const;

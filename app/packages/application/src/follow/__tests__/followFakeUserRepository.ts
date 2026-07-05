@@ -135,6 +135,7 @@ export class FollowFakeUserRepository implements IUserRepository {
   setOnboardingState = N('setOnboardingState') as IUserRepository['setOnboardingState'];
   setAvatar = N('setAvatar') as IUserRepository['setAvatar'];
   setBiography = N('setBiography') as IUserRepository['setBiography'];
+  setPreferredLanguage = N('setPreferredLanguage') as IUserRepository['setPreferredLanguage'];
   setProfileAddressLines = N('setProfileAddressLines') as IUserRepository['setProfileAddressLines'];
   setContactPhone = N('setContactPhone') as IUserRepository['setContactPhone'];
   updateEditableProfile = N('updateEditableProfile') as IUserRepository['updateEditableProfile'];
@@ -180,6 +181,7 @@ export function makeUser(overrides: Partial<User> = {}): User {
     karmaPoints: 0,
     createdAt: '2026-01-01T00:00:00Z',
     updatedAt: '2026-01-01T00:00:00Z',
+    preferredLanguage: null,
     ...overrides,
   };
 }

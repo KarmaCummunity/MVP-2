@@ -65,9 +65,12 @@ export function textAlignStart(): NonNullable<TextStyle['textAlign']> {
  * If you actually want a physically reversed row (LTR-style on an RTL app),
  * write `'row-reverse'` directly and add a comment explaining why.
  */
+// FR-SETTINGS-018: direction-aware on web. RTL (Hebrew) reads right-to-left via
+// `row-reverse`; LTR (English) uses a plain `row`. Native auto-mirrors `row`, so
+// it stays `row` regardless. Re-resolves after a language switch (the app reloads).
 export const rowDirectionStart: FlexStyle['flexDirection'] =
-  Platform.OS === 'web' ? 'row-reverse' : 'row';
+  Platform.OS === 'web' ? (isLayoutRtl() ? 'row-reverse' : 'row') : 'row';
 
 /** Counterpart of {@link rowDirectionStart} for rows that should run end-to-start. */
 export const rowDirectionEnd: FlexStyle['flexDirection'] =
-  Platform.OS === 'web' ? 'row' : 'row-reverse';
+  Platform.OS === 'web' ? (isLayoutRtl() ? 'row' : 'row-reverse') : 'row-reverse';

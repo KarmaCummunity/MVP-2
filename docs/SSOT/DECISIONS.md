@@ -1094,6 +1094,108 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-60 — Org hierarchy uses a per-grant direct-manager edge (2026-06-16)
+
+**Date.** 2026-06-16
+
+**Decision.** The direct-manager link for the admin org hierarchy (FR-ADMIN-025) is a per-**grant** edge: `admin_role_grants.manager_grant_id` references another `grant_id`, not a per-user `manager_user_id`. A person who holds grants in several orgs can therefore sit under a different manager in each org, and the tree is built from the grant adjacency (`admin_org_tree` → `buildOrgForest`). Level = depth from the root; `super_admin` (platform root) = 0. Same-org rule: a grant may report to a grant in its own org or to a platform-scoped grant (e.g. `super_admin`); cycles are rejected server-side via `is_ancestor`.
+
+**Rationale.** Roles are already per-grant and org-scoped (`scope_org_id`, migration 0173). A per-user manager could not express "Dana manages me in Org A, but Yossi manages me in Org B," which the multi-org model (D-40) requires. Anchoring the edge on the grant keeps the hierarchy consistent with the authority model (`can_grant_role`) and lets the same recursive helpers power both the tree and Phase 3 field-level privacy (`is_ancestor`).
+
+**Alternatives rejected.** Per-user `manager_user_id` — simpler but cannot model multi-org membership and conflicts with org-scoped authority. Inferring hierarchy from role rank alone — ambiguous (many peers at a level) and cannot represent an explicit reporting line.
+
+**Affected docs.** `docs/SSOT/spec/12_super_admin.md` (FR-ADMIN-024/025), migration `0203_admin_org_hierarchy.sql`, `docs/SSOT/BACKLOG.md` (P3.A-Tree.2).
+
+---
+
+## D-61 — GloWe frontend shares KC's Supabase backend; data namespaced `glowe_` (2026-06-25)
+
+**Date.** 2026-06-25
+
+**Decision.** The GloWe static frontend is added as an **additional** frontend (`app/apps/glowe-web`, design 1:1, not a replacement for the KC mobile app) wired to the **same** Supabase project as KC. Phase A shares **identity only**: a single Supabase Auth user (`auth.users`) backs both frontends ("log in once, same account in both"). GloWe-owned data lives in `public` under the `glowe_` table prefix (migration `0204`), kept deliberately isolated so it can later be migrated entity-by-entity onto KC's native tables and dropped as the products converge. Long-term intent (per PM): GloWe becomes the primary frontend riding on KC's infrastructure.
+
+**Rationale.** GloWe was already a Supabase-aware static app with a backend adapter + local fallback, so the design ports for almost no work — the real cost is data wiring. Sharing identity first delivers the headline goal immediately with minimal, reversible change and zero risk to KC's native schema. The `glowe_` prefix avoids collision with `public.posts` / `public.users` without a PostgREST exposed-schema config change on the shared project, keeping the blast radius to the GloWe app + one additive migration.
+
+**Alternatives rejected.** (a) Dedicated `glowe` Postgres schema — cleaner namespacing but needs the project's exposed-schemas list changed (shared-config blast radius) for no Phase-A benefit. (b) Rewriting GloWe in React Native inside the KC app — discards the 1:1 design and is weeks of work for the same identity outcome. (c) Mapping GloWe onto KC's native tables now — that is Phase B (shared content); entity models don't map 1:1, so it would block the quick win.
+
+**Phase A follow-ons (2026-06-25, PM calls).**
+- **Auth is Google-only.** Email/password sign-up and sign-in are hidden from the GloWe UI — both modals show a single "Continue with Google" CTA. The static email/password markup in GloWe's original page templates is overwritten at runtime (`upgradeLoginModal()` / `renderRegistrationWizard()` in `js/app.js`) so every page is consistently Google-only. The legacy email/password handlers and multi-step profile wizard remain in code but unrendered; profile completion moves to a post-sign-in step (Phase B).
+- **Hosting: `/glowe` sub-path of the main domain** (not a separate domain). `app/scripts/web-postbuild.mjs` copies `app/apps/glowe-web/**` into `dist/glowe/` during `pnpm build:web`, so the Cloudflare Pages deploy serves GloWe at `<main-domain>/glowe` alongside the KC web app. GloWe uses relative paths, so it works unchanged; Cloudflare serves the real `/glowe/*` static files before the KC SPA catch-all. Same-domain hosting means OAuth `redirectTo` reuses KC's already-allowlisted origins. A dedicated GloWe domain remains possible later.
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-001), migration `0204_glowe_schema.sql`, `docs/SSOT/BACKLOG.md` (GLOWE.A/B/C), `app/apps/glowe-web/**`, `app/scripts/web-postbuild.mjs`.
+
+---
+
+## D-62 — GloWe session isolation from KC via dedicated Supabase storageKey + local signOut scope (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** GloWe's Supabase client (`app/apps/glowe-web/js/backend.js`) now initialises with `auth.storageKey: 'glowe-auth-v1'` instead of the Supabase default `sb-<project-ref>-auth-token`. Sign-out uses `scope: 'local'` (clears only GloWe's own localStorage token without revoking the server-side refresh token). `logout()` in `auth.js` immediately calls `refreshPersonalAreaIfVisible()` so the Personal Area card disappears without waiting for the async `onAuthStateChange` cycle.
+
+**Rationale.** GloWe and KC are both served under `karma-community.pages.dev` and connect to the same Supabase project. Without a distinct storage key they share `sb-<ref>-auth-token` in localStorage, meaning (a) a KC sign-in silently signs GloWe in, (b) a GloWe sign-out revokes the server-side token and also logs KC out, and (c) GloWe's Personal Area still displayed the cached profile after logout because the `onAuthStateChange` callback only refreshed it when `gloweUser` was still set at the time it fired (it wasn't, since `logout()` removed it synchronously first). Using `scope:'local'` is correct here: KC retains a fully working session because its refresh token is untouched; GloWe gets a clean sign-out.
+
+**Alternatives rejected.** Global `signOut()` — the current default; revokes the shared Supabase session and silently kills KC. Separate Supabase project for GloWe — overkill for Phase A; sharing identity is intentional (D-61).
+
+**Affected docs.** `app/apps/glowe-web/js/backend.js`, `app/apps/glowe-web/js/auth.js`, `docs/SSOT/spec/17_glowe_frontend.md`.
+
+---
+
+## D-63 — Cross-language UGC translation: demand-driven cache + zero-retention/DPA LLM-flash provider (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** User-generated content is translated by an **LLM-flash** provider (Gemini Flash / GPT-4o-mini tier) called only from a Supabase Edge Function that holds the API key. The provider chosen for production **must be zero-retention and operate under a DPA** (no training on, or retention of, user content). Translations are **demand-driven (lazy)**: we materialize a `(content, field, target_language)` translation only when a real reader requests that language, then cache it in Postgres and serve all subsequent readers from cache. The LLM never runs on the read path (translate-ahead-of-read; cache hits are served inline as ordinary fields). Unlimited target languages are supported, but only the few actually demanded per item are paid for and stored.
+
+**Rationale.** Eagerly translating every item into every language would bloat the database and the budget without bound. Lazy materialization makes cost scale with real demand (~2–5 languages per popular item), not with the language catalog. Caching turns repeat reads into ordinary field reads — fast and zero marginal cost. LLM-flash is ~100× cheaper than classic NMT at comparable quality for short UGC. Zero-retention/DPA is a hard privacy precondition for sending user content to a third party.
+
+**Alternatives rejected.** Eager translate-all (cost + storage blowup); classic NMT API (lower quality on idiomatic short UGC, higher per-char cost); on-device translation (inconsistent quality, large model download, no shared cache).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`, `docs/SSOT/spec/18_translation.md`, `docs/SSOT/BACKLOG.md` (TRANSLATE epic).
+
+---
+
+## D-64 — Posts auto-translate; chat translation opt-in with a sender-consent gate (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** Public posts are **auto-translated** into the reader's preferred language on demand. **Chat translation is opt-in and default off.** When chat translation ships (last phase), a message is sent to the translation provider **only if its sender opted in** (sender-consent gate) — the reader's preference alone never causes a non-consenting sender's private message to be transmitted to a third party.
+
+**Rationale.** Posts are public content authored for broad audiences, so translating them carries no additional privacy expectation. Private messages are different: sending a private message to an external provider without the author's consent would breach the sender's reasonable privacy expectation. Gating on the sender (not the reader) keeps control with the person whose words are being transmitted. Default-off avoids surprising users and keeps chat costs (the only component that scales linearly) opt-in.
+
+**Alternatives rejected.** Auto-translate chat for everyone (privacy breach + unbounded cost); gate on reader consent (sends the sender's words without their consent); no chat translation at all (fails the full-accessibility goal).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`, `docs/SSOT/spec/18_translation.md`.
+
+---
+
+## D-65 — UGC translation: free Gemini Flash now, paid DPA Flash before public launch; orchestration realized server-side (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** Phase 1b ships translation on the **free** Gemini Flash tier so dev/testing costs nothing while the architecture proves out. The provider sits behind a one-method Deno seam (`TranslationProvider` + `selectProvider()` keyed on `TRANSLATION_PROVIDER`/`GEMINI_MODEL`), so the **D-63** requirement (zero-retention / no-training tier under a signed DPA) is satisfied later by an env/key change — **no code change** — and **must** be done before exposing translation to real users (tracked in `TECH_DEBT.md`). Because the cache table is **service-role-write-only** (Phase 1a) and the provider needs a secret key, the design's `TranslateAndCache` use case and `ITranslationProvider` port are **realized inside the `translate` Edge Function** (server-side), not as client-side application code; the app depends only on the new `ITranslationService` port.
+
+**Rationale.** Translation orchestration cannot run client-side: persisting to the cache requires the service role, and the provider key must never reach the bundle. Keeping the orchestration in the Edge Function avoids introducing a Deno↔workspace bundling pattern while preserving Clean Architecture's inward dependency rule (the app depends on a port, not on infrastructure). Starting on the free tier removes all cost during the inert (pre-read-path) phases; the pluggable seam makes the privacy upgrade trivial.
+
+**Alternatives rejected.** Client-side `TranslateAndCache` (impossible — can't hold the service role or the API key); LibreTranslate self-hosted from day one (privacy-clean but lower quality and ops overhead before it's even wired in); committing to the paid DPA tier immediately (needless cost while the feature is inert).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`, `docs/SSOT/spec/18_translation.md`, `docs/SSOT/TECH_DEBT.md`.
+
+---
+
+## D-66 — GloWe Events are opportunities-with-a-date; RSVPs are applications (additive, no new tables) (2026-06-29)
+
+**Date.** 2026-06-29
+
+**Decision.** The GloWe event-publishing & RSVP feature is built as an **additive extension** of `glowe_opportunities` (FR-GLOWE-007) and `glowe_applications` (FR-GLOWE-012), not as a parallel `glowe_events` / `glowe_event_registrations` schema. An **Event** is an opportunity that carries `start_at` plus event metadata (`event_type`, `event_link`/`link_visibility`/`link_reveal_hours`, `capacity`, `registration_mode`, `status`); an **RSVP** is a `glowe_applications` row with registration columns (`submitted_email`/`phone`/`comment`, `waitlist_position`, `rejection_note`, `decided_at`/`decided_by`). A `BEFORE INSERT/UPDATE` status guard (`glowe_applications_guard_status`) prevents applicants from self-deciding their status; privileged organizer decisions go through `SECURITY DEFINER` RPCs that bypass the guard (mirrors the posts guard, migration `0199`). Schema foundation lands in migration `0211`.
+
+**Rationale.** This honors the convergence direction (D-61): events ride the existing read/write/RLS/translation paths, so home and cards render an event as an opportunity with zero new plumbing, and entity-by-entity migration onto KC-native tables stays simple. It also resolves the conflict between the richer PM brainstorm (gated/open approval, capacity/waitlist, organizer mini-portal) and the member-experience design's thin "Event = validation profile over an opportunity": the rich features are delivered **incrementally as additive columns + RPCs**, never as a separate table.
+
+**Alternatives rejected.** Separate `glowe_events` + `glowe_event_registrations` tables (duplicates the opportunity/application read, RLS, translation, and moderation paths; fights the convergence goal); keeping events a pure client-side validation profile with no schema (cannot express gated approval, capacity, link-reveal timing, or organizer decisions safely).
+
+**Affected docs.** `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md`, `docs/superpowers/specs/2026-06-29-glowe-member-experience-and-create-system-design.md`, `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-007 AC9, FR-GLOWE-012 AC7).
+
+---
+
 ## D-155 — Karma economy: self-only visibility, server-authoritative single-anchor, status-anchored closure
 
 **Date.** 2026-06-08
@@ -1122,10 +1224,58 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-167 — English UI locale ships opt-in and machine-translated (delivers D-24 slice)
+
+**Date.** 2026-07-05
+
+**Decision.** The app ships a user-facing UI language switch (`FR-SETTINGS-018`, Hebrew ↔ English) as the first concrete delivery of `D-24` (bilingual MVP). The initial English bundle is **machine-translated** from the Hebrew source and marked for human polish (`TD-176`); Hebrew stays the default and `fallbackLng`. The preference is persisted **device-locally** (web `localStorage`, native `AsyncStorage`) with **no `users` column** for MVP, so it works for anonymous web visitors. Switching language **reloads the app** so module-load reading-direction constants (`rtlTextAlignStart`, `rowDirectionStart`, `webTextRtl`) and native `I18nManager` RTL re-resolve; those centralized helpers were made direction-aware (LTR for English) rather than hardcoded-RTL.
+
+**Rationale.** The PM requested this urgently for both `dev` and `main`. A full human-quality translation of ~3,500 strings plus a live-switch RTL/LTR refactor is multi-week; machine translation + reload-based direction switching delivers a complete, functional English experience now, with polish tracked as debt. Local persistence avoids a migration and an auth dependency on the critical path and matches how the Appearance/theme preference already works. Reloading sidesteps the fact that RN bakes layout direction at load and many style constants are evaluated once at import.
+
+**Alternatives rejected.** Human-quality translation first — not compatible with "urgent". Partial (settings-only) English — mixed-language UX. Live language switch without reload — requires converting ~250 module-load direction constants into reactive hooks across 120+ files; out of scope for the deadline. DB-backed preference — needs a migration and excludes signed-out web visitors; can be added later without breaking the local default.
+
+**Affected docs.** `docs/SSOT/spec/11_settings.md` FR-SETTINGS-018; `docs/SSOT/TECH_DEBT.md` (TD-176/177/178); `apps/mobile/src/i18n/**`, `apps/mobile/app/settings/language.tsx`, `apps/mobile/src/lib/{rtlLayout,rtlTextAlignStart,webRtlStyle}.ts`.
+
+---
+
+## D-67 — GloWe community-post share keeps social buttons and adds copy-link
+
+**Date.** 2026-07-04
+
+**Decision.** FR-GLOWE-008 AC5 ("share a community post") is satisfied by **both** the existing social-network share buttons (Facebook / LinkedIn / X / WhatsApp) **and** a new "Copy link" control that writes the post's canonical URL to the clipboard via `navigator.clipboard.writeText` and confirms with a success toast. The canonical URL is derived by a pure helper `GlowePosts.postCanonicalUrl(postId, origin)` → `<origin>/glowe/pages/community.html?post=<id>`, so the shared link is stable, keyed on the post id (not the mutable title), and testable in isolation.
+
+**Rationale.** Social buttons open a share dialog on a third-party network, which is friction when the user just wants the link to paste into a DM, WhatsApp status, or their own notes. Copy-link is the lowest-friction, platform-agnostic share and is what most users reach for. Keeping both costs one small button and satisfies AC5's intent (make a post shareable) without removing a working path. Keying the URL on `postId` (previously the share path used `encodeURIComponent(post.title)`) fixes a latent bug where two posts with the same title collided and edited titles broke old links.
+
+**Alternatives rejected.** Replace social buttons with copy-link only — drops a working feature some users prefer and is a scope regression. Copy-link only via the native Web Share API (`navigator.share`) — unavailable on desktop browsers where GloWe is primarily used; clipboard copy works everywhere with a graceful `showSuccessModal` fallback when the Clipboard API is blocked.
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-008 AC5); `app/apps/glowe-web/js/glowe-posts.js`, `app/apps/glowe-web/js/app.js`.
+
+---
+
+## D-68 — GloWe guest conversion ships Mode A (instant contextual prompt); Mode B is PM-gated
+
+**Date.** 2026-07-04
+
+**Decision.** Guest → member conversion (FR-GLOWE-023) ships **Mode A**: the moment a guest triggers an identity-required action, an action-tailored join modal opens immediately (single **Continue with Google** CTA), the intent is remembered, and the action resumes after sign-in. **Mode B** — progressive disclosure, where the guest may open and fill the action's form and is only walled at the final submit (with their typed input preserved and auto-submitted after sign-in) — is a deferred optimization that must **not** be implemented without an explicit PM instruction.
+
+**Rationale.** Mode A is the lower-risk baseline: it is simple, consistent across every action, and does not require preserving/replaying arbitrary form state across an OAuth redirect. Mode B typically converts better (sunk-cost + the guest sees the value before the wall) but is a measured optimization best run once we can compare conversion data — and it is materially more work per action. PM (2026-07-04) explicitly chose "A now, B later, only on my explicit instruction."
+
+**Alternatives rejected.** Ship Mode B directly — more surface area and per-action input-preservation complexity for an unproven conversion delta. A blocking login wall on entry — rejected earlier in the brainstorm: kills deep-link/SEO discovery for a global NGO-discovery product (web has no entry gate; guest is the default).
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-023); `docs/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md`; `app/apps/glowe-web/js/glowe-guest.js`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |
+| 4.6 | 2026-07-04 | Added `D-67` (GloWe community-post share keeps social buttons and adds a copy-link control writing `postCanonicalUrl` to the clipboard; canonical URL keyed on `postId`; `FR-GLOWE-008` AC5). |
+| 4.5 | 2026-06-29 | Added `D-66` (GloWe Events are opportunities-with-a-date and RSVPs are applications — additive columns + status guard in migration `0211`, no `glowe_events`/`glowe_event_registrations` tables; reconciles the rich event brainstorm with the convergence model; `FR-GLOWE-007` AC9, `FR-GLOWE-012` AC7). |
+| 4.4 | 2026-06-29 | Added `D-65` (UGC translation Phase 1b: free Gemini Flash now + pluggable provider seam → paid DPA Flash before public launch is env-only; `TranslateAndCache`/`ITranslationProvider` realized server-side in the `translate` Edge Function; app depends on new `ITranslationService` port). Recorded alongside `D-63`/`D-64` (translation epic). |
+| 4.3 | 2026-06-29 | Added `D-62` (GloWe session isolation: `storageKey:'glowe-auth-v1'` + `scope:'local'` signOut + immediate Personal Area refresh on logout; fixes profile-still-visible-after-logout bug). |
+| 4.2 | 2026-06-25 | Added `D-61` (GloWe added as an additional frontend on KC's shared Supabase backend; Phase A shares Auth identity only; GloWe data namespaced `glowe_`, migration `0204`; `FR-GLOWE-001`, `spec/17_glowe_frontend.md`). |
 | 4.1 | 2026-06-08 | Added `D-155` (karma economy: self-only at MVP, single-anchor awards, status-anchored closure, own-row Realtime). Added `D-156` (anti-collusion caps as hard precondition for karma public flip; `FR-KARMA-008`). |
 | 4.0 | 2026-06-04 | Added `D-58` (native Sign in with Apple via `signInWithIdToken` + raw nonce; `FR-AUTH-004` implemented; mirrors `D-33`; Apple portion of `TD-24` closed in code; live flow pends Supabase Apple provider config). |
 | 3.9 | 2026-06-01 | Added `D-57` (reports require an active account — `reports_insert_self` gated on `is_active_member`; migration `0183`; closes `TD-88`). |

@@ -7,6 +7,14 @@ import i18n from '../src/i18n';
 import React, { useEffect } from 'react';
 import { Stack, usePathname } from 'expo-router';
 import { I18nManager, Platform } from 'react-native';
+import {
+  getInitialLanguage,
+  isRtlLanguage,
+  applyLayoutDirection,
+  loadStoredLanguageAsync,
+  reloadApp,
+  type AppLanguage,
+} from '../src/i18n/language';
 // Web parity for `I18nManager.forceRTL`: native flips the layout, but on RN-Web
 // nothing reaches the DOM unless we set `dir`/`lang` on the html element. We do
 // this at module load (not inside an effect) so the first paint is already RTL.
@@ -21,8 +29,12 @@ if (Platform.OS === 'web' && typeof navigator !== 'undefined' && 'serviceWorker'
 }
 
 if (Platform.OS === 'web' && typeof document !== 'undefined') {
-  document.documentElement.dir = 'rtl';
-  document.documentElement.lang = 'he';
+  // FR-SETTINGS-018: direction + lang follow the persisted UI language so the
+  // first paint is already correct (RTL for Hebrew, LTR for English). Set at
+  // module load, before any screen style module reads `isLayoutRtl()`.
+  const initialLang = getInitialLanguage();
+  document.documentElement.dir = isRtlLanguage(initialLang) ? 'rtl' : 'ltr';
+  document.documentElement.lang = initialLang;
   document.title = i18n.t('appName');
   // Expo's prod export injects `<link rel="icon" href="/favicon.ico" />` from
   // `web.favicon`, but the dev server doesn't — inject it here so the tab icon
@@ -227,13 +239,27 @@ function ThemedRootShell() {
 
 export default function RootLayout() {
   useEffect(() => {
-    if (!I18nManager.isRTL) {
-      I18nManager.forceRTL(true);
-      if (Platform.OS === 'android') {
-        const { DevSettings } = require('react-native') as typeof import('react-native');
-        DevSettings?.reload?.();
-      }
+    // FR-SETTINGS-018: keep layout direction aligned with the active UI language.
+    // Web resolved its direction at module load from localStorage; here we align
+    // I18nManager. Native reconciles the async-persisted preference and reloads
+    // once if the reading direction has to flip (RN bakes RTL at load time).
+    if (Platform.OS === 'web') {
+      applyLayoutDirection(i18n.language === 'en' ? 'en' : 'he');
+      return;
     }
+    let cancelled = false;
+    void (async () => {
+      const stored = await loadStoredLanguageAsync();
+      if (cancelled) return;
+      const desired: AppLanguage = stored ?? (i18n.language === 'en' ? 'en' : 'he');
+      const needsReload = I18nManager.isRTL !== isRtlLanguage(desired);
+      if (desired !== i18n.language) await i18n.changeLanguage(desired);
+      applyLayoutDirection(desired);
+      if (needsReload) reloadApp();
+    })();
+    return () => {
+      cancelled = true;
+    };
   }, []);
 
   return (

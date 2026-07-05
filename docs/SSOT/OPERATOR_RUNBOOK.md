@@ -16,6 +16,32 @@ supabase gen types typescript --project-id <ref> \
 
 ---
 
+## Migration application rules (READ FIRST) {#application-rules}
+
+The repo uses **sequential** migration files (`supabase/migrations/NNNN_snake.sql`, e.g. `0212_glowe_event_registration.sql`). The `schema_migrations` ledger on each Supabase project must match those file versions exactly.
+
+**Rule:** apply schema changes to the dev DB ONLY as committed sequential files, via **`supabase db push`** / **`supabase migration up`** — or let the `DB deploy` workflow apply them on push to `dev`.
+
+**Never** apply a dev schema change with the Supabase MCP **`apply_migration`** tool. It records a **TIMESTAMP** version (e.g. `20260701130827`) that has no local file. `supabase db push` then refuses to run — *"Remote migration versions not found in local migrations directory"* — and the next `DB deploy` on `dev` fails until the ledger is repaired. (The MCP **`execute_sql`** tool is fine for read-only inspection; it does not touch the ledger.)
+
+**Guardrail:** the [`.github/workflows/ci-migration-drift.yml`](../../.github/workflows/ci-migration-drift.yml) workflow (`CI — migration drift`) scans the dev ledger on a 6-hour schedule, on push to `dev`, and on manual dispatch. It fails loudly the moment a remote version has no local file — instead of waiting for the next deploy. It is **not** a required merge check (needs live secrets, never runs on `pull_request`).
+
+**Reconcile drift** (rewrites only the history table — the DDL was already applied, so the schema is untouched):
+
+```bash
+source ~/.kc-dev-secrets.env
+supabase link --project-ref "$SUPABASE_PROJECT_REF"
+node scripts/reconcile-migration-drift.mjs        # prints the exact repair commands
+# review, then run each printed command, e.g.:
+#   supabase migration repair --status reverted 20260701130827
+#   supabase migration repair --status applied  0213
+supabase db push --dry-run --include-all --linked --yes   # → "Remote database is up to date."
+```
+
+`node scripts/check-migration-drift.mjs` is the same detector the CI guard runs (pipe `supabase migration list --linked` into it).
+
+---
+
 ## 0001 — Foundation & Identity {#0001}
 
 Verify: sign in with Google → confirm row appears in `public.users` with Google name + avatar → re-sign-in must not create a duplicate row.

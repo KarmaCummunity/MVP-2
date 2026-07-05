@@ -53,6 +53,7 @@ export type Database = {
           grant_id: string
           granted_at: string
           granted_by: string | null
+          manager_grant_id: string | null
           revoked_at: string | null
           revoked_by: string | null
           role: string
@@ -63,6 +64,7 @@ export type Database = {
           grant_id?: string
           granted_at?: string
           granted_by?: string | null
+          manager_grant_id?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           role: string
@@ -73,6 +75,7 @@ export type Database = {
           grant_id?: string
           granted_at?: string
           granted_by?: string | null
+          manager_grant_id?: string | null
           revoked_at?: string | null
           revoked_by?: string | null
           role?: string
@@ -95,6 +98,13 @@ export type Database = {
             referencedColumns: ["user_id"]
           },
           {
+            foreignKeyName: "admin_role_grants_manager_grant_id_fkey"
+            columns: ["manager_grant_id"]
+            isOneToOne: false
+            referencedRelation: "admin_role_grants"
+            referencedColumns: ["grant_id"]
+          },
+          {
             foreignKeyName: "admin_role_grants_revoked_by_fkey"
             columns: ["revoked_by"]
             isOneToOne: false
@@ -107,6 +117,13 @@ export type Database = {
             isOneToOne: false
             referencedRelation: "users_public"
             referencedColumns: ["user_id"]
+          },
+          {
+            foreignKeyName: "admin_role_grants_scope_org_fk"
+            columns: ["scope_org_id"]
+            isOneToOne: false
+            referencedRelation: "organizations"
+            referencedColumns: ["org_id"]
           },
           {
             foreignKeyName: "admin_role_grants_user_id_fkey"
@@ -502,6 +519,45 @@ export type Database = {
         Update: {
           deleted_count?: number
           run_at?: string
+        }
+        Relationships: []
+      }
+      content_translations: {
+        Row: {
+          confidence: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          field: string
+          id: string
+          model: string | null
+          source_language: string | null
+          target_language: string
+          translated_text: string
+        }
+        Insert: {
+          confidence?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          field: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language: string
+          translated_text: string
+        }
+        Update: {
+          confidence?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          field?: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language?: string
+          translated_text?: string
         }
         Relationships: []
       }
@@ -935,6 +991,570 @@ export type Database = {
           },
         ]
       }
+      glowe_applications: {
+        Row: {
+          availability: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          motivation: string | null
+          opportunity_id: string
+          rejection_note: string | null
+          skills: string | null
+          status: string
+          submitted_comment: string | null
+          submitted_email: string | null
+          submitted_phone: string | null
+          user_id: string
+          waitlist_position: number | null
+        }
+        Insert: {
+          availability?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          motivation?: string | null
+          opportunity_id: string
+          rejection_note?: string | null
+          skills?: string | null
+          status?: string
+          submitted_comment?: string | null
+          submitted_email?: string | null
+          submitted_phone?: string | null
+          user_id: string
+          waitlist_position?: number | null
+        }
+        Update: {
+          availability?: string | null
+          created_at?: string
+          decided_at?: string | null
+          decided_by?: string | null
+          id?: string
+          motivation?: string | null
+          opportunity_id?: string
+          rejection_note?: string | null
+          skills?: string | null
+          status?: string
+          submitted_comment?: string | null
+          submitted_email?: string | null
+          submitted_phone?: string | null
+          user_id?: string
+          waitlist_position?: number | null
+        }
+        Relationships: []
+      }
+      glowe_comments: {
+        Row: {
+          author_name: string | null
+          created_at: string
+          id: string
+          post_id: string
+          text: string
+          user_id: string | null
+        }
+        Insert: {
+          author_name?: string | null
+          created_at?: string
+          id?: string
+          post_id: string
+          text: string
+          user_id?: string | null
+        }
+        Update: {
+          author_name?: string | null
+          created_at?: string
+          id?: string
+          post_id?: string
+          text?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      glowe_content_translations: {
+        Row: {
+          confidence: number | null
+          content_id: string
+          content_type: string
+          created_at: string
+          field: string
+          id: string
+          model: string | null
+          source_language: string | null
+          target_language: string
+          translated_text: string
+        }
+        Insert: {
+          confidence?: number | null
+          content_id: string
+          content_type: string
+          created_at?: string
+          field: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language: string
+          translated_text: string
+        }
+        Update: {
+          confidence?: number | null
+          content_id?: string
+          content_type?: string
+          created_at?: string
+          field?: string
+          id?: string
+          model?: string | null
+          source_language?: string | null
+          target_language?: string
+          translated_text?: string
+        }
+        Relationships: []
+      }
+      glowe_forum_groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          icon: string | null
+          id: string
+          tags: string[]
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id: string
+          tags?: string[]
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          icon?: string | null
+          id?: string
+          tags?: string[]
+          title?: string
+        }
+        Relationships: []
+      }
+      glowe_forum_replies: {
+        Row: {
+          body: string
+          created_at: string
+          id: string
+          thread_id: string
+          user_id: string | null
+        }
+        Insert: {
+          body: string
+          created_at?: string
+          id?: string
+          thread_id: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string
+          created_at?: string
+          id?: string
+          thread_id?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowe_forum_replies_thread_id_fkey"
+            columns: ["thread_id"]
+            isOneToOne: false
+            referencedRelation: "glowe_forum_threads"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glowe_forum_threads: {
+        Row: {
+          body: string | null
+          created_at: string
+          group_id: string
+          id: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowe_forum_threads_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "glowe_forum_groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glowe_offers: {
+        Row: {
+          availability: string | null
+          contact_preference: string | null
+          created_at: string
+          id: string
+          offer_text: string | null
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          availability?: string | null
+          contact_preference?: string | null
+          created_at?: string
+          id?: string
+          offer_text?: string | null
+          post_id: string
+          user_id?: string
+        }
+        Update: {
+          availability?: string | null
+          contact_preference?: string | null
+          created_at?: string
+          id?: string
+          offer_text?: string | null
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "glowe_offers_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "glowe_posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      glowe_opportunities: {
+        Row: {
+          capacity: number | null
+          commitment: string | null
+          created_at: string
+          description: string | null
+          duration: string | null
+          end_at: string | null
+          event_link: string | null
+          event_type: string | null
+          featured: boolean
+          field: string | null
+          id: string
+          link_reveal_hours: number | null
+          link_visibility: string
+          location: string | null
+          org_icon: string | null
+          organization: string
+          registration_mode: string
+          requirements: string[]
+          responsibilities: string[]
+          skills: string[]
+          start_at: string | null
+          status: string
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          capacity?: number | null
+          commitment?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          end_at?: string | null
+          event_link?: string | null
+          event_type?: string | null
+          featured?: boolean
+          field?: string | null
+          id?: string
+          link_reveal_hours?: number | null
+          link_visibility?: string
+          location?: string | null
+          org_icon?: string | null
+          organization: string
+          registration_mode?: string
+          requirements?: string[]
+          responsibilities?: string[]
+          skills?: string[]
+          start_at?: string | null
+          status?: string
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          capacity?: number | null
+          commitment?: string | null
+          created_at?: string
+          description?: string | null
+          duration?: string | null
+          end_at?: string | null
+          event_link?: string | null
+          event_type?: string | null
+          featured?: boolean
+          field?: string | null
+          id?: string
+          link_reveal_hours?: number | null
+          link_visibility?: string
+          location?: string | null
+          org_icon?: string | null
+          organization?: string
+          registration_mode?: string
+          requirements?: string[]
+          responsibilities?: string[]
+          skills?: string[]
+          start_at?: string | null
+          status?: string
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
+      glowe_posts: {
+        Row: {
+          audience: string | null
+          author_id: string | null
+          author_name: string | null
+          category: string | null
+          created_at: string
+          id: string
+          impact_area: string | null
+          language: string | null
+          link: string | null
+          post_type: string
+          status: string
+          tags: string[]
+          text: string | null
+          title: string
+          user_id: string | null
+          wish_type: string | null
+        }
+        Insert: {
+          audience?: string | null
+          author_id?: string | null
+          author_name?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          impact_area?: string | null
+          language?: string | null
+          link?: string | null
+          post_type?: string
+          status?: string
+          tags?: string[]
+          text?: string | null
+          title: string
+          user_id?: string | null
+          wish_type?: string | null
+        }
+        Update: {
+          audience?: string | null
+          author_id?: string | null
+          author_name?: string | null
+          category?: string | null
+          created_at?: string
+          id?: string
+          impact_area?: string | null
+          language?: string | null
+          link?: string | null
+          post_type?: string
+          status?: string
+          tags?: string[]
+          text?: string | null
+          title?: string
+          user_id?: string | null
+          wish_type?: string | null
+        }
+        Relationships: []
+      }
+      glowe_profiles: {
+        Row: {
+          about: string | null
+          account_type: string | null
+          approval_status: string
+          availability: string | null
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          focus: string | null
+          id: string
+          languages: string[]
+          location: string | null
+          needs: string | null
+          onboarding_complete: boolean
+          org_contact_email: string | null
+          org_contact_name: string | null
+          org_contact_phone: string | null
+          org_country: string | null
+          org_description: string | null
+          org_field: string | null
+          org_name: string | null
+          org_registration_number: string | null
+          org_review_note: string | null
+          org_reviewed_at: string | null
+          org_reviewed_by: string | null
+          org_size: string | null
+          org_submitted_at: string | null
+          org_website: string | null
+          profile_status: string
+          profile_type: string | null
+          public_link: string | null
+          raw_profile: Json
+          skills: string[]
+          updated_at: string
+        }
+        Insert: {
+          about?: string | null
+          account_type?: string | null
+          approval_status?: string
+          availability?: string | null
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          focus?: string | null
+          id: string
+          languages?: string[]
+          location?: string | null
+          needs?: string | null
+          onboarding_complete?: boolean
+          org_contact_email?: string | null
+          org_contact_name?: string | null
+          org_contact_phone?: string | null
+          org_country?: string | null
+          org_description?: string | null
+          org_field?: string | null
+          org_name?: string | null
+          org_registration_number?: string | null
+          org_review_note?: string | null
+          org_reviewed_at?: string | null
+          org_reviewed_by?: string | null
+          org_size?: string | null
+          org_submitted_at?: string | null
+          org_website?: string | null
+          profile_status?: string
+          profile_type?: string | null
+          public_link?: string | null
+          raw_profile?: Json
+          skills?: string[]
+          updated_at?: string
+        }
+        Update: {
+          about?: string | null
+          account_type?: string | null
+          approval_status?: string
+          availability?: string | null
+          avatar_url?: string | null
+          country?: string | null
+          created_at?: string
+          display_name?: string
+          email?: string | null
+          focus?: string | null
+          id?: string
+          languages?: string[]
+          location?: string | null
+          needs?: string | null
+          onboarding_complete?: boolean
+          org_contact_email?: string | null
+          org_contact_name?: string | null
+          org_contact_phone?: string | null
+          org_country?: string | null
+          org_description?: string | null
+          org_field?: string | null
+          org_name?: string | null
+          org_registration_number?: string | null
+          org_review_note?: string | null
+          org_reviewed_at?: string | null
+          org_reviewed_by?: string | null
+          org_size?: string | null
+          org_submitted_at?: string | null
+          org_website?: string | null
+          profile_status?: string
+          profile_type?: string | null
+          public_link?: string | null
+          raw_profile?: Json
+          skills?: string[]
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      glowe_projects: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          status: string
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          status?: string
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      glowe_saved_items: {
+        Row: {
+          created_at: string
+          href: string | null
+          id: string
+          item_id: string
+          item_type: string
+          meta: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          href?: string | null
+          id?: string
+          item_id: string
+          item_type: string
+          meta?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          href?: string | null
+          id?: string
+          item_id?: string
+          item_type?: string
+          meta?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       karma_drift_events: {
         Row: {
           detected_at: string
@@ -1173,6 +1793,8 @@ export type Database = {
           message_id: string
           read_at: string | null
           sender_id: string | null
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           system_payload: Json | null
         }
@@ -1185,6 +1807,8 @@ export type Database = {
           message_id?: string
           read_at?: string | null
           sender_id?: string | null
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           system_payload?: Json | null
         }
@@ -1197,6 +1821,8 @@ export type Database = {
           message_id?: string
           read_at?: string | null
           sender_id?: string | null
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           system_payload?: Json | null
         }
@@ -1415,6 +2041,30 @@ export type Database = {
           },
         ]
       }
+      organizations: {
+        Row: {
+          created_at: string
+          is_platform: boolean
+          name: string
+          org_id: string
+          slug: string
+        }
+        Insert: {
+          created_at?: string
+          is_platform?: boolean
+          name: string
+          org_id?: string
+          slug: string
+        }
+        Update: {
+          created_at?: string
+          is_platform?: boolean
+          name?: string
+          org_id?: string
+          slug?: string
+        }
+        Relationships: []
+      }
       post_actor_identity: {
         Row: {
           hide_from_counterparty: boolean
@@ -1478,6 +2128,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -1501,6 +2153,8 @@ export type Database = {
           post_id?: string
           reopen_count?: number
           search_vector?: unknown
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           status_before_admin_removal?: string | null
           street: string
@@ -1524,6 +2178,8 @@ export type Database = {
           post_id?: string
           reopen_count?: number
           search_vector?: unknown
+          source_language?: string | null
+          source_language_confidence?: number | null
           status?: string
           status_before_admin_removal?: string | null
           street?: string
@@ -2840,6 +3496,7 @@ export type Database = {
           notification_preferences: Json
           onboarding_state: string
           posts_created_total: number
+          preferred_language: string | null
           privacy_changed_at: string | null
           privacy_mode: string
           profile_street: string | null
@@ -2877,6 +3534,7 @@ export type Database = {
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
+          preferred_language?: string | null
           privacy_changed_at?: string | null
           privacy_mode?: string
           profile_street?: string | null
@@ -2914,6 +3572,7 @@ export type Database = {
           notification_preferences?: Json
           onboarding_state?: string
           posts_created_total?: number
+          preferred_language?: string | null
           privacy_changed_at?: string | null
           privacy_mode?: string
           profile_street?: string | null
@@ -3226,6 +3885,22 @@ export type Database = {
         Args: { p_application_id: string; p_note?: string }
         Returns: undefined
       }
+      admin_org_tree: {
+        Args: { p_org_id?: string }
+        Returns: {
+          avatar_url: string
+          display_name: string
+          effective_org_id: string
+          grant_id: string
+          is_platform: boolean
+          last_seen_at: string
+          manager_grant_id: string
+          org_name: string
+          role: string
+          scope_org_id: string
+          user_id: string
+        }[]
+      }
       admin_remove_post: { Args: { p_post_id: string }; Returns: undefined }
       admin_restore_target: {
         Args: { p_target_id: string; p_target_type: string }
@@ -3270,6 +3945,12 @@ export type Database = {
           user_id: string
         }[]
       }
+      admin_set_manager: {
+        Args: { p_grant_id: string; p_manager_grant_id?: string }
+        Returns: undefined
+      }
+      admin_survey_overview: { Args: never; Returns: Json }
+      admin_survey_results: { Args: { p_slug: string }; Returns: Json }
       admin_task_add_comment: {
         Args: { p_body: string; p_task_id: string }
         Returns: string
@@ -3374,6 +4055,10 @@ export type Database = {
         }
         Returns: undefined
       }
+      admin_user_feedback_list: {
+        Args: { p_limit?: number; p_offset?: number }
+        Returns: Json
+      }
       auth_check_account_gate: {
         Args: { p_user_id: string }
         Returns: {
@@ -3405,6 +4090,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -3572,8 +4259,278 @@ export type Database = {
         Returns: string
       }
       get_my_admin_roles: { Args: never; Returns: string[] }
+      get_post_translations: {
+        Args: { p_post_ids: string[]; p_target_language: string }
+        Returns: {
+          confidence: number
+          field: string
+          post_id: string
+          source_language: string
+          translated_text: string
+        }[]
+      }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      glowe_cancel_event: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          capacity: number | null
+          commitment: string | null
+          created_at: string
+          description: string | null
+          duration: string | null
+          end_at: string | null
+          event_link: string | null
+          event_type: string | null
+          featured: boolean
+          field: string | null
+          id: string
+          link_reveal_hours: number | null
+          link_visibility: string
+          location: string | null
+          org_icon: string | null
+          organization: string
+          registration_mode: string
+          requirements: string[]
+          responsibilities: string[]
+          skills: string[]
+          start_at: string | null
+          status: string
+          title: string
+          user_id: string | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_opportunities"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      glowe_decide_event_registration: {
+        Args: { p_decision: string; p_note?: string; p_registration_id: string }
+        Returns: {
+          availability: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          motivation: string | null
+          opportunity_id: string
+          rejection_note: string | null
+          skills: string | null
+          status: string
+          submitted_comment: string | null
+          submitted_email: string | null
+          submitted_phone: string | null
+          user_id: string
+          waitlist_position: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      glowe_get_event_link: {
+        Args: { p_opportunity_id: string }
+        Returns: string
+      }
+      glowe_list_applications_for_opportunity: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          applicant_avatar: string
+          applicant_email: string
+          applicant_name: string
+          availability: string
+          created_at: string
+          id: string
+          motivation: string
+          skills: string
+          status: string
+          user_id: string
+        }[]
+      }
+      glowe_list_event_registrations: {
+        Args: { p_opportunity_id: string }
+        Returns: {
+          created_at: string
+          decided_at: string
+          id: string
+          registrant_avatar: string
+          registrant_name: string
+          rejection_note: string
+          status: string
+          submitted_comment: string
+          submitted_email: string
+          submitted_phone: string
+          user_id: string
+          waitlist_position: number
+        }[]
+      }
+      glowe_list_offers_for_post: {
+        Args: { p_post_id: string }
+        Returns: {
+          availability: string
+          contact_preference: string
+          created_at: string
+          id: string
+          offer_text: string
+          offerer_avatar: string
+          offerer_email: string
+          offerer_name: string
+          user_id: string
+        }[]
+      }
+      glowe_list_pending_orgs: {
+        Args: never
+        Returns: {
+          about: string | null
+          account_type: string | null
+          approval_status: string
+          availability: string | null
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          focus: string | null
+          id: string
+          languages: string[]
+          location: string | null
+          needs: string | null
+          onboarding_complete: boolean
+          org_contact_email: string | null
+          org_contact_name: string | null
+          org_contact_phone: string | null
+          org_country: string | null
+          org_description: string | null
+          org_field: string | null
+          org_name: string | null
+          org_registration_number: string | null
+          org_review_note: string | null
+          org_reviewed_at: string | null
+          org_reviewed_by: string | null
+          org_size: string | null
+          org_submitted_at: string | null
+          org_website: string | null
+          profile_status: string
+          profile_type: string | null
+          public_link: string | null
+          raw_profile: Json
+          skills: string[]
+          updated_at: string
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "glowe_profiles"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
+      glowe_register_for_event: {
+        Args: {
+          p_comment?: string
+          p_email?: string
+          p_opportunity_id: string
+          p_phone?: string
+        }
+        Returns: {
+          availability: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          motivation: string | null
+          opportunity_id: string
+          rejection_note: string | null
+          skills: string | null
+          status: string
+          submitted_comment: string | null
+          submitted_email: string | null
+          submitted_phone: string | null
+          user_id: string
+          waitlist_position: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      glowe_set_org_approval: {
+        Args: { p_decision: string; p_note?: string; p_profile_id: string }
+        Returns: {
+          about: string | null
+          account_type: string | null
+          approval_status: string
+          availability: string | null
+          avatar_url: string | null
+          country: string | null
+          created_at: string
+          display_name: string
+          email: string | null
+          focus: string | null
+          id: string
+          languages: string[]
+          location: string | null
+          needs: string | null
+          onboarding_complete: boolean
+          org_contact_email: string | null
+          org_contact_name: string | null
+          org_contact_phone: string | null
+          org_country: string | null
+          org_description: string | null
+          org_field: string | null
+          org_name: string | null
+          org_registration_number: string | null
+          org_review_note: string | null
+          org_reviewed_at: string | null
+          org_reviewed_by: string | null
+          org_size: string | null
+          org_submitted_at: string | null
+          org_website: string | null
+          profile_status: string
+          profile_type: string | null
+          public_link: string | null
+          raw_profile: Json
+          skills: string[]
+          updated_at: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
+      glowe_update_application_status: {
+        Args: { p_application_id: string; p_decision: string }
+        Returns: {
+          availability: string | null
+          created_at: string
+          decided_at: string | null
+          decided_by: string | null
+          id: string
+          motivation: string | null
+          opportunity_id: string
+          rejection_note: string | null
+          skills: string | null
+          status: string
+          submitted_comment: string | null
+          submitted_email: string | null
+          submitted_phone: string | null
+          user_id: string
+          waitlist_position: number | null
+        }
+        SetofOptions: {
+          from: "*"
+          to: "glowe_applications"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
       has_admin_role:
         | { Args: { role_name: string; uid: string }; Returns: boolean }
         | {
@@ -3594,6 +4551,10 @@ export type Database = {
       }
       is_active_member: { Args: { uid: string }; Returns: boolean }
       is_admin: { Args: { uid: string }; Returns: boolean }
+      is_ancestor: {
+        Args: { p_ancestor: string; p_node: string }
+        Returns: boolean
+      }
       is_blocked: { Args: { a: string; b: string }; Returns: boolean }
       is_chat_visible_to: {
         Args: {
@@ -3606,6 +4567,7 @@ export type Database = {
         Args: { followed: string; follower: string }
         Returns: boolean
       }
+      is_glowe_admin: { Args: { uid: string }; Returns: boolean }
       is_post_visible_to: {
         Args: {
           p_post: Database["public"]["Tables"]["posts"]["Row"]
@@ -3727,6 +4689,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string
@@ -3759,6 +4723,8 @@ export type Database = {
           post_id: string
           reopen_count: number
           search_vector: unknown
+          source_language: string | null
+          source_language_confidence: number | null
           status: string
           status_before_admin_removal: string | null
           street: string

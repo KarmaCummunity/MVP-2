@@ -3,6 +3,19 @@
   "version": "0.1.0",
   "private": true,
   "main": "expo-router/entry",
+  "expo": {
+    "install": {
+      "exclude": [
+        "@react-native-community/slider",
+        "@sentry/react-native",
+        "expo-device",
+        "expo-file-system",
+        "expo-font",
+        "expo-localization",
+        "expo-router"
+      ]
+    }
+  },
   "scripts": {
     "test": "vitest run",
     "test:coverage": "vitest run --coverage",
@@ -14,7 +27,7 @@
     "android": "JAVA_HOME=/Library/Java/JavaVirtualMachines/temurin-17.jdk/Contents/Home expo run:android",
     "web": "node ../../../scripts/generate-web-manifest.mjs && expo start --web",
     "build:web": "node ../../../scripts/generate-web-manifest.mjs && expo export --platform web",
-    "typecheck": "tsc --noEmit"
+    "typecheck": "node ../../../scripts/generate-typed-routes.mjs && tsc --noEmit"
   },
   "dependencies": {
     "@babel/runtime": "^7.29.0",
@@ -40,8 +53,8 @@
     "expo-crypto": "~15.0.9",
     "expo-dev-client": "~6.0.21",
     "expo-device": "~7.0",
-    "expo-file-system": "~19.0.22",
-    "expo-font": "~14.0.11",
+    "expo-file-system": "~19.0.23",
+    "expo-font": "~14.0.12",
     "expo-haptics": "~15.0.8",
     "expo-image": "~3.0.11",
     "expo-image-manipulator": "~14.0.0",

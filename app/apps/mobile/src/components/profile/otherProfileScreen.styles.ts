@@ -34,4 +34,16 @@ export const useOtherProfileScreenStyles = makeUseStyles(({ colors, isDark }) =>
     gap: S.xs,
   },
   msgBtnText: { ...typography.button, color: colors.textPrimary },
+  adminLink: {
+    flexDirection: 'row' as const,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+    gap: S.xs,
+    height: 38,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: colors.primary,
+    backgroundColor: colors.primarySurface,
+  },
+  adminLinkText: { ...typography.button, color: colors.primary },
 }));

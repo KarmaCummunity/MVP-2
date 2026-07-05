@@ -41,6 +41,7 @@ export interface UserRow {
   karma_points: number;
   created_at: string;
   updated_at: string;
+  preferred_language?: string | null;
 }
 
 export function mapUserRow(row: UserRow): User {
@@ -72,5 +73,6 @@ export function mapUserRow(row: UserRow): User {
     karmaPoints: row.karma_points,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    preferredLanguage: row.preferred_language ?? null,
   };
 }

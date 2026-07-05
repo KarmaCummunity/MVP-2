@@ -1,6 +1,6 @@
 // Settings screen stub — SRS §3.5, FR-AUTH-017 (logout)
 import React from 'react';
-import { View, Text, ScrollView } from 'react-native';
+import { View, Text, ScrollView, Linking } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useRouter } from 'expo-router';
 import { useTranslation } from 'react-i18next';
@@ -110,6 +110,24 @@ export default function SettingsScreen() {
           />
         </View>
 
+        <Text style={styles.sectionTitle}>{t('settings.language')}</Text>
+        <View style={styles.section}>
+          <SettingsScreenRow
+            label={t('settings.language')}
+            icon="globe-outline"
+            onPress={() => router.push('/settings/language' as never)}
+          />
+        </View>
+
+        <Text style={styles.sectionTitle}>{t('settings.translationLanguage')}</Text>
+        <View style={styles.section}>
+          <SettingsScreenRow
+            label={t('settings.translationLanguage')}
+            icon="language-outline"
+            onPress={() => router.push('/settings/translation-language' as never)}
+          />
+        </View>
+
         <Text style={styles.sectionTitle}>{t('settings.notifications')}</Text>
         <View style={styles.section}>
           <SettingsScreenRow
@@ -161,6 +179,11 @@ export default function SettingsScreen() {
 
         <Text style={styles.sectionTitle}>{t('settings.support')}</Text>
         <View style={styles.section}>
+          <SettingsScreenRow
+            label={t('settings.glowe')}
+            icon="school-outline"
+            onPress={() => Linking.openURL('https://dev.karma-community.pages.dev/glowe')}
+          />
           <SettingsScreenRow
             label={t('settings.reportIssue')}
             icon="alert-circle-outline"

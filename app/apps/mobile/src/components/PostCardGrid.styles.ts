@@ -185,6 +185,17 @@ export const usePostCardGridStyles = makeUseStyles(({ colors, isDark }) => ({
     letterSpacing: -0.2,
     flex: 1,
   },
+  /** Title column — holds the (translatable) title + optional indicator; takes
+   * the remaining row space beside the category chip. */
+  titleCol: { flex: 1 },
+  /** FR-TRANSLATE-003 — discreet "translating…" hint under the source title. */
+  translatingIndicator: {
+    ...typography.caption,
+    fontSize: 10,
+    color: colors.textDisabled,
+    textAlign: alignStart,
+    marginTop: 1,
+  },
   /** Profile 3-up grid — smaller title beside compact category pill. */
   titleDense: {
     fontSize: 12,

@@ -29,6 +29,7 @@ export * from './admin/SupabaseTimesheetsRepository';
 export * from './admin/SupabaseFinanceLedgerRepository';
 export * from './admin/SupabaseCrmContactsRepository';
 export * from './admin/SupabaseOrgApplicationsRepository';
+export * from './admin/SupabaseOrgHierarchyRepository';
 export * from './reports/SupabaseReportsRepository';
 export { SupabaseRideListingRepository } from './rides/SupabaseRideListingRepository';
 export { SupabaseRideParticipantRepository } from './rides/SupabaseRideParticipantRepository';
@@ -39,4 +40,8 @@ export { SupabaseRideRatingRepository } from './rides/SupabaseRideRatingReposito
 export { SupabaseDriverDeclarationRepository } from './rides/SupabaseDriverDeclarationRepository';
 export { SupabaseRidesRealtime } from './rides/SupabaseRidesRealtime';
 export { SupabaseSurveyRepository } from './survey/SupabaseSurveyRepository';
+export { SupabaseSurveyAdminRepository } from './survey/SupabaseSurveyAdminRepository';
 export { SupabasePublicResearchRepository } from './research/SupabasePublicResearchRepository';
+export { SupabaseTranslationCacheRepository } from './translations/SupabaseTranslationCacheRepository';
+export { EdgeFnTranslationService } from './translations/EdgeFnTranslationService';
+export { SupabasePostTranslationReader } from './translations/SupabasePostTranslationReader';

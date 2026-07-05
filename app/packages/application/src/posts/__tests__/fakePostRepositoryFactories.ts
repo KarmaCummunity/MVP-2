@@ -20,6 +20,7 @@ export function makePostWithOwner(overrides: Partial<PostWithOwner> = {}): PostW
     itemCondition: 'Good',
     urgency: null,
     estimatedValue: null,
+    sourceLanguage: null,
     mediaAssets: [],
     recipient: null,
     recipientUser: null,

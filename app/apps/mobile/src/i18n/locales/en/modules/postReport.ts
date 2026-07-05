@@ -1,0 +1,19 @@
+// FR-MOD-001 — ReportPostModal strings (split from post.ts for LOC cap).
+export const postReportEn = {
+  reportTitle: 'Report the post',
+  reportReasonSpam: 'Spam',
+  reportReasonOffensive: 'Offensive content',
+  reportReasonMisleading: 'Misleading',
+  reportReasonIllegal: 'Illegal',
+  reportReasonOther: 'Other',
+  reportNotePlaceholder: 'Note (optional)',
+  reportSubmit: 'Submit report',
+  reportSubmitting: 'Sending...',
+  reportSuccessTitle: 'Report sent',
+  reportSuccessBody: 'Thank you, we\'ll review the report.',
+  reportDuplicateTitle: 'Already reported',
+  reportDuplicateBody: 'You reported this post in the last 24 hours.',
+  reportAlreadyModeratedTitle: 'Already handled',
+  reportAlreadyModeratedBody: 'This item has already been handled by the moderators. Thanks for the help.',
+  reportErrorBody: 'Please try again later.',
+} as const;

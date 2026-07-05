@@ -279,6 +279,7 @@ When two agents are running concurrently:
 - **Shared contract** (`packages/{domain,application}/**`): FE leads domain types, BE leads port signatures. Contract changes ship as their own commit with `(contract)` scope (e.g. `feat(contract): add IPostRepository.list`).
 - Branch naming: `<type>/<FR-id-or-scope>-<be|fe>-<slug>` (e.g. `feat/FR-POST-001-fe-feed-ui`).
 - New tech-debt IDs: BE uses `TD-50..99`, FE uses `TD-100..149`.
+- **Applying dev migrations (BE lane).** Schema changes reach the dev DB ONLY as committed sequential files (`supabase/migrations/NNNN_snake.sql`) applied via `supabase db push` / `supabase migration up` (or the `DB deploy` workflow on push to `dev`). **Never** apply schema changes to dev with the Supabase MCP `apply_migration` tool — it records a TIMESTAMP version (e.g. `20260701130827`) that has no local file, which breaks the next `DB deploy` run ("Remote migration versions not found …"). The MCP `execute_sql` tool is fine for read-only inspection. Drift is caught by the `CI — migration drift` workflow; reconcile with `node scripts/reconcile-migration-drift.mjs`. Full runbook: [`docs/SSOT/OPERATOR_RUNBOOK.md`](docs/SSOT/OPERATOR_RUNBOOK.md) → "Migration application rules".
 
 ## 10. How to pick the next task
 

@@ -1,11 +1,13 @@
 import { describe, expect, it, vi } from 'vitest';
-import { AdminRoleError, type GrantableAdminRole } from '@kc/domain';
+import { AdminRoleError, type AdminRole, type GrantableAdminRole } from '@kc/domain';
 import { GrantAdminRoleUseCase } from '../GrantAdminRoleUseCase';
 import type { IAdminRoleRepository } from '../IAdminRoleRepository';
 
-function fakeRepo(opts: { grantId?: string; grantRoleError?: Error } = {}): IAdminRoleRepository {
+function fakeRepo(
+  opts: { grantId?: string; grantRoleError?: Error; roles?: readonly AdminRole[] } = {},
+): IAdminRoleRepository {
   return {
-    getMyRoles: vi.fn(),
+    getMyRoles: vi.fn(async (): Promise<readonly AdminRole[]> => opts.roles ?? ['super_admin']),
     listAdmins: vi.fn(),
     grantRole: vi.fn(async () => {
       if (opts.grantRoleError) throw opts.grantRoleError;
@@ -41,6 +43,24 @@ describe('GrantAdminRoleUseCase', () => {
     await expect(
       uc.execute({ targetUserId: 'u', role: 'super_admin' as unknown as GrantableAdminRole }),
     ).rejects.toMatchObject({ code: 'invalid_role' });
+  });
+
+  it('throws forbidden and does NOT grant when caller lacks super_admin', async () => {
+    const repo = fakeRepo({ roles: ['moderator'] });
+    const uc = new GrantAdminRoleUseCase(repo);
+    await expect(
+      uc.execute({ targetUserId: 'user-1', role: 'moderator' }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    expect(repo.grantRole).not.toHaveBeenCalled();
+  });
+
+  it('throws forbidden when caller has no admin roles', async () => {
+    const repo = fakeRepo({ roles: [] });
+    const uc = new GrantAdminRoleUseCase(repo);
+    await expect(
+      uc.execute({ targetUserId: 'user-1', role: 'support' }),
+    ).rejects.toMatchObject({ code: 'forbidden' });
+    expect(repo.grantRole).not.toHaveBeenCalled();
   });
 
   it('propagates repository AdminRoleError unchanged', async () => {
