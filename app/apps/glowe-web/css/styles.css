@@ -1182,6 +1182,14 @@ a.user-greeting:hover {
     margin: 4px 0 20px;
     border-color: rgba(12, 73, 76, 0.22);
     background: var(--white);
+    color: var(--primary-dark);
+}
+
+.google-auth-btn:hover {
+    background: #f2f8f7;
+    border-color: rgba(12, 73, 76, 0.34);
+    color: var(--primary-dark);
+    box-shadow: var(--shadow-md);
 }
 
 .google-auth-btn span {
