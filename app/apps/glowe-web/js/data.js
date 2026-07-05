@@ -37,7 +37,8 @@ const wishTypeStyles = {
     "Equipment / Space": { label: "Equipment / Space", color: "#FFE6BB" },
     "Visibility / Media": { label: "Media & Visibility", color: "#DECFE2" },
     "Project Spotlight": { label: "Project Spotlight", color: "#9BB4C7" },
-    "We're Hiring": { label: "We're Hiring", color: "#FFE6BB" }
+    "We're Hiring": { label: "We're Hiring", color: "#FFE6BB" },
+    "Volunteer Offer": { label: "Volunteer Offer", color: "#C4E3C1" }
 };
 
 const impactSignals = [

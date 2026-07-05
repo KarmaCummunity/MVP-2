@@ -1280,10 +1280,27 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-69 — GloWe messaging rides KC chats directly; offers surface on the Wishing Well; dev seeded with persona fixtures
+
+**Date.** 2026-07-05
+
+**Decision.** Three launch-hardening calls made under autonomous CTO authority:
+
+1. **Messaging (FR-GLOWE-014 supersession).** GloWe direct messaging is implemented straight on KC's shared `public.chats` / `public.messages` from the static web client (canonical-pair insert + RLS; `rpc_chat_mark_read`, `rpc_unread_counts_for_chats`, `rpc_chat_unread_total`), skipping the planned outreach-post stub entirely. A fresh Google user is `account_status='active'`, so no schema or RLS change was needed. Realtime push into an open thread is deferred (thread refreshes on send/open).
+2. **Volunteer offers (FR-GLOWE-016).** An individual's standing "Volunteer Offer" persists as `glowe_posts.post_type='offer'` (CHECK widened in migration `0226`) and surfaces on the Wishing Well board alongside needs with a "Volunteer Offer" tag — no new surface, one discriminator (`GloweCreate.isOpenOffer`).
+3. **Dev seed personas.** The dev DB is populated by `scripts/seed-glowe-dev.mjs` (dev-only, idempotent, prod-ref-guarded) via a manual `Seed GloWe dev data` workflow: 6 realistic Israeli orgs (incl. a permanently-pending review fixture that reseeds back to pending) + 12 volunteers with a **committed default fixture password** (overridable via the `GLOWE_SEED_PASSWORD` secret). These are regular, non-privileged accounts on a non-production project; the E2E suite signs in as them by password grant.
+
+**Rationale.** (1) The stub would have produced throwaway UX and a second messaging model to migrate off; riding KC chats now means Phase C convergence is already done for messaging, and recipients get KC push notifications for free. (2) A dedicated offers surface is speculative (YAGNI) — the needs board is where helpers and askers already meet. (3) Deterministic personas make the full-flow E2E reproducible and give the PM a realistic demo environment; a committed default password for throwaway dev fixtures is the standard trade-off (same class as the local `seed.sql` fixtures), while the CI super-admin credential stays a secret.
+
+**Affected docs.** `spec/17_glowe_frontend.md` (FR-GLOWE-013/014/015/016 statuses); `docs/SSOT/TESTING.md` (GloWe suite); migration `0226_glowe_reports.sql`; `scripts/seed-glowe-dev.mjs`; `.github/workflows/seed-glowe-dev.yml`, `.github/workflows/ci-e2e-dev.yml`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.8 | 2026-07-05 | Added `D-69` (GloWe messaging on KC chats supersedes outreach stub; volunteer offers as `post_type='offer'` on the Wishing Well; dev persona seed + workflow; `FR-GLOWE-013..016`). |
 | 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |
 | 4.6 | 2026-07-04 | Added `D-67` (GloWe community-post share keeps social buttons and adds a copy-link control writing `postCanonicalUrl` to the clipboard; canonical URL keyed on `postId`; `FR-GLOWE-008` AC5). |
 | 4.5 | 2026-06-29 | Added `D-66` (GloWe Events are opportunities-with-a-date and RSVPs are applications — additive columns + status guard in migration `0211`, no `glowe_events`/`glowe_event_registrations` tables; reconciles the rich event brainstorm with the convergence model; `FR-GLOWE-007` AC9, `FR-GLOWE-012` AC7). |

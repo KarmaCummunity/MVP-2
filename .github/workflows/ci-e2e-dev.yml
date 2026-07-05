@@ -119,3 +119,59 @@ jobs:
           path: |
             tests/e2e/playwright-report/
             tests/e2e/test-results/
+
+  glowe-journeys:
+    name: GloWe journeys
+    if: github.event_name != 'pull_request' || github.event.pull_request.draft != true
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Require DEV_WEB_URL
+        env:
+          DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
+        run: |
+          set -euo pipefail
+          if [ -z "${DEV_WEB_URL}" ]; then
+            echo "::error::Repository variable DEV_WEB_URL is not set."
+            exit 1
+          fi
+          echo "Target: ${DEV_WEB_URL%/}/glowe/"
+
+      - name: Wait for GloWe on dev
+        env:
+          DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
+        run: node scripts/wait-for-url.mjs "${DEV_WEB_URL%/}/glowe/" 12 15000
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      # Signed-in GloWe specs need the seeded personas (workflow: "Seed GloWe
+      # dev data"); when the seed has not run they skip and only the guest
+      # journeys assert. The admin specs use the CI E2E super-admin.
+      - name: Run GloWe journeys
+        working-directory: tests/e2e
+        env:
+          DEV_WEB_URL: ${{ vars.DEV_WEB_URL }}
+          E2E_TEST_EMAIL: ${{ secrets.E2E_TEST_EMAIL }}
+          E2E_TEST_PASSWORD: ${{ secrets.E2E_TEST_PASSWORD }}
+          E2E_SUPABASE_ANON_KEY: ${{ secrets.E2E_SUPABASE_ANON_KEY_DEV }}
+          GLOWE_SEED_PASSWORD: ${{ secrets.GLOWE_SEED_PASSWORD }}
+        run: npx playwright test --project=glowe
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: playwright-report-glowe
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/
