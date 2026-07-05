@@ -49,7 +49,7 @@ Watch **Actions** on `main` (in order, as applicable):
 2. **DB deploy** — when migration paths changed: **dry-run then apply** to `supabase-prod` (no human gate).
 3. **Supabase Functions deploy** — runs when `supabase/functions/**` changed.
 4. **Prod smoke** — polls `PROD_WEB_URL` after app, Dockerfile, migration, or function changes on `main`.
-5. **Sync main → dev** — must succeed; if it fails (merge conflict), fix before any further `dev` work.
+5. **Sync main → dev** — must succeed; keeps `dev` from drifting behind `main` (else the *next* release PR is blocked by main's up-to-date rule). It pushes to protected `dev` using repo secret **`SYNC_TOKEN`** (admin-owned PAT). If it fails: merge conflict → resolve manually; `GH006` / missing-token → see [`ENVIRONMENTS.md` → Runbook: sync workflow fails with `GH006`](./ENVIRONMENTS.md#runbook-sync-workflow-fails-with-gh006-dev-drifts-behind-main). Fix before any further `dev` work.
 
 Watch **Railway → prod** — new deployment from `main` reaches **Success**.
 
@@ -91,6 +91,7 @@ Feature PRs merge into `dev` first. One-time setup: Settings → Branches → `d
 | --- | --- | --- |
 | Branch protection on `dev` | Settings → Branches → `dev` | PR required; status checks per ENVIRONMENTS dev table (`D-54`) |
 | Branch protection on `main` | Settings → Branches → `main` | Block direct pushes; require status checks (table above) — **no required human reviewers** (`D-53`) |
+| `SYNC_TOKEN` (main → dev sync) | Settings → Secrets and variables → Actions → **Secrets** | Admin-owned PAT, **Contents: Read & write** on this repo. Lets `Sync main → dev` push to protected `dev` (`D-169`). Rotate before expiry; if missing/expired the sync fails with `GH006`. |
 | Required status checks | Same (`main`) | Include **CI — main release guard** and **CI — E2E dev / user journeys (P0)** on `dev` → `main` PRs |
 | Dev web URL for E2E | Settings → Secrets and variables → Actions → **Variables** | `DEV_WEB_URL` = `https://mvp-2-dev.up.railway.app` |
 | E2E credentials | Settings → Secrets and variables → Actions → **Secrets** | `E2E_TEST_EMAIL`, `E2E_TEST_PASSWORD`, `E2E_SUPABASE_ANON_KEY_DEV` (dev publishable anon) |

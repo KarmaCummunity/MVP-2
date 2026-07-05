@@ -1,9 +1,27 @@
 # Keeps the `dev` branch always >= `main` by merging main into dev on every
 # push to main. Fast-forwards when possible; creates a merge commit otherwise.
 #
-# Why this matters: dev is our working branch — every PR targets dev — so any
-# hotfix that lands directly on main (rare but allowed for docs/CI typos) MUST
-# also reach dev, otherwise dev silently drifts behind production.
+# Why this matters: dev is our working branch — every PR targets dev — so every
+# push that lands on main (the squash-merge of each `dev → main` release, plus
+# the rare direct doc/CI hotfix) MUST also reach dev. Otherwise dev silently
+# drifts behind production and the NEXT release PR (`dev → main`) is blocked by
+# main's strict "branch must be up to date" rule, because dev no longer contains
+# main's HEAD. See docs/SSOT/ENVIRONMENTS.md ("dev is never behind main").
+#
+# ── Authentication: why NOT the default GITHUB_TOKEN ────────────────────────
+# `dev` is a protected branch: it requires a pull request AND 5 status checks,
+# and the built-in GITHUB_TOKEN (github-actions[bot]) is NOT exempt. Its push is
+# rejected with `GH006: Protected branch update failed`, which is what silently
+# broke this sync for every release after mid-2026 (dev then drifted behind
+# main). The repo is squash-merge-only, so a PR-based main → dev sync can't fix
+# this either: a squash commit does not bring main's commit into dev's ancestry,
+# so dev would still fail main's up-to-date check. The only way to keep
+# `dev >= main` is to push the reconciling merge commit directly to dev with an
+# identity that bypasses dev protection. `dev` has enforce_admins=false, so a
+# token owned by a repo ADMIN bypasses both rules. Provide it as the repo secret
+# `SYNC_TOKEN` (a fine-grained PAT with Contents: Read & Write on this repo,
+# owned by an admin account). Without it the job falls back to GITHUB_TOKEN and
+# fails loudly at the Push step — see the runbook in ENVIRONMENTS.md.
 #
 # If the merge has conflicts the workflow fails loudly and an operator must
 # resolve manually. That's the right failure mode — silent conflict resolution
@@ -33,7 +51,20 @@ jobs:
         with:
           ref: dev
           fetch-depth: 0
-          token: ${{ secrets.GITHUB_TOKEN }}
+          # SYNC_TOKEN (admin-owned PAT) bypasses dev branch protection so the
+          # merge commit can be pushed. GITHUB_TOKEN cannot and is rejected with
+          # GH006 at the Push step. The `||` fallback keeps the job runnable
+          # (and self-diagnosing) when the secret is missing rather than erroring
+          # on an unresolved secret reference.
+          token: ${{ secrets.SYNC_TOKEN || secrets.GITHUB_TOKEN }}
+
+      - name: Warn if SYNC_TOKEN is missing
+        env:
+          SYNC_TOKEN: ${{ secrets.SYNC_TOKEN }}
+        run: |
+          if [ -z "$SYNC_TOKEN" ]; then
+            echo "::warning title=SYNC_TOKEN not set::Falling back to GITHUB_TOKEN, which is NOT exempt from dev branch protection. The push will be rejected (GH006) and dev will keep drifting behind main. Add a repo secret SYNC_TOKEN — an admin-owned PAT with Contents: Read & Write. See docs/SSOT/ENVIRONMENTS.md → 'Runbook: sync workflow fails with GH006'."
+          fi
 
       - name: Configure git identity
         run: |
@@ -48,4 +79,8 @@ jobs:
           git merge --no-edit origin/main
 
       - name: Push
-        run: git push origin dev
+        run: |
+          if ! git push origin dev; then
+            echo "::error title=Push to dev rejected::The push to dev failed. If the log above shows 'GH006: Protected branch update failed', the token in use is not exempt from dev branch protection. Set the repo secret SYNC_TOKEN to an admin-owned PAT (Contents: Read & Write) so the push bypasses protection (dev has enforce_admins=false). See docs/SSOT/ENVIRONMENTS.md → 'Runbook: sync workflow fails with GH006'."
+            exit 1
+          fi

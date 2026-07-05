@@ -17,8 +17,8 @@
 ## Branching rules
 
 1. **`dev` is the working branch.** All feature/fix/refactor PRs target `dev`, not `main`.
-2. **`dev` is never behind `main`.** Every push to `main` triggers `.github/workflows/sync-main-to-dev.yml`, which merges `main` into `dev`. If that workflow fails (merge conflict), resolving it is the operator's first priority.
-3. **`main` is fast-forward only from `dev`.** Production releases happen by opening a PR from `dev` → `main` and squash-merging.
+2. **`dev` is never behind `main`.** Every push to `main` triggers `.github/workflows/sync-main-to-dev.yml`, which merges `main` into `dev`. That push targets a **protected** branch, so the workflow authenticates with an **admin-owned token** (repo secret `SYNC_TOKEN`) that bypasses dev protection — the default `GITHUB_TOKEN` is rejected with `GH006` (see "Sync workflow internals" and the GH006 runbook below). If the workflow fails (merge conflict, or a missing/expired `SYNC_TOKEN`), resolving it is the operator's first priority.
+3. **`main` advances only via squash-merged `dev → main` release PRs** (plus the rare direct doc/CI hotfix). Because the repo is **squash-merge-only**, each release writes a *new* squash commit to `main` that is **not** in `dev`'s ancestry — which is exactly why rule 2 exists. The sync workflow must merge that commit back into `dev`, otherwise `dev` falls behind and the next release PR is blocked by main's strict "branch must be up to date" rule.
 4. **Direct pushes to `main` are reserved for trivial doc/CI hotfixes** (see `CLAUDE.md` §6 "Change classes"). Whenever they happen, the sync workflow brings them into `dev` automatically.
 5. **Never force-push to `main` or `dev`.** Never delete either branch. Branch-protection rules in GitHub enforce both.
 
@@ -68,7 +68,38 @@ Checklist in order:
 - Triggers: every push to `main`, plus manual `workflow_dispatch`.
 - Concurrency: `sync-main-to-dev` group with `cancel-in-progress: false` — back-to-back pushes queue rather than skip.
 - Strategy: `git merge --no-edit origin/main` on `dev`. Fast-forward when possible; merge commit otherwise.
+- **Authentication (`SYNC_TOKEN`):** the push targets protected `dev`, which requires a PR + status checks. The built-in `GITHUB_TOKEN` is **not** exempt, so the job authenticates with repo secret **`SYNC_TOKEN`** — an admin-owned PAT (Contents: Read & Write). Because `dev` has `enforce_admins=false`, an admin identity's push bypasses both rules. The job falls back to `GITHUB_TOKEN` when the secret is absent and then fails loudly at the Push step. Rationale in [`DECISIONS.md`](./DECISIONS.md) **`D-169`**.
 - Failure mode: merge conflict → workflow fails, operator resolves manually. Do not auto-resolve.
+
+### Runbook: sync workflow fails with `GH006` (dev drifts behind main)
+
+**Symptom.** `Sync main → dev` run fails at the Push step with:
+
+```
+remote: error: GH006: Protected branch update failed for refs/heads/dev.
+remote: - Changes must be made through a pull request.
+remote: - 5 of 5 required status checks are expected.
+ ! [remote rejected]   dev -> dev (protected branch hook declined)
+```
+
+**Cause.** The push used a token that is not exempt from dev branch protection — almost always because repo secret **`SYNC_TOKEN`** is missing, expired, or its owner lost admin. A PR-based sync cannot substitute: the repo is squash-merge-only, so a squash of `main → dev` never puts main's commit into dev's ancestry (dev stays "behind" for main's up-to-date gate).
+
+**Fix — (re)provision `SYNC_TOKEN`:**
+
+1. As a **repo admin**, create a **fine-grained PAT** scoped to `KarmaCummunity/MVP-2` with **Repository permissions → Contents: Read and write** (a classic PAT with `repo` scope also works). Set a calendar reminder to rotate before expiry.
+2. GitHub → repo **Settings → Secrets and variables → Actions → New repository secret**: name `SYNC_TOKEN`, value = the PAT. (Or: `gh secret set SYNC_TOKEN --repo KarmaCummunity/MVP-2`.)
+3. Re-run the sync: **Actions → Sync main → dev → Run workflow** (or `gh workflow run sync-main-to-dev.yml`). Confirm it merges main into dev and pushes green.
+
+**One-off manual repair (until the token is fixed).** Any repo **admin** can reconcile dev directly, because `dev` has `enforce_admins=false` (this is the mechanism `SYNC_TOKEN` automates):
+
+```bash
+git fetch origin main dev
+git switch dev && git pull --ff-only origin dev
+git merge --no-edit origin/main
+git push origin dev        # succeeds for an admin; GH006 for anyone else
+```
+
+> `main` has `enforce_admins=true`, so this admin-bypass trick works **only** on `dev`. Never attempt the equivalent on `main`.
 
 ## DB deploy automation
 

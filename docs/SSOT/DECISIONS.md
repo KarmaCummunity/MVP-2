@@ -1280,10 +1280,32 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-169 — `main → dev` sync pushes a merge commit via an admin token (`SYNC_TOKEN`); PR-based sync can't reconcile squash ancestry
+
+**Date.** 2026-07-05
+
+**Context.** `dev` is the working branch and must stay `>= main` ([`ENVIRONMENTS.md`](./ENVIRONMENTS.md) rule 2) so each `dev → main` release PR passes main's strict "branch must be up to date" gate. `.github/workflows/sync-main-to-dev.yml` merges `main` into `dev` after every push to `main`. It had **silently failed on every release since mid-2026**: it pushed with the built-in `GITHUB_TOKEN`, which is **not** exempt from dev branch protection, so the push was rejected with `GH006` ("Changes must be made through a pull request" + "5 of 5 required status checks are expected"). `dev` then drifted behind `main`; on 2026-07-04 a release PR (`dev → main`) was blocked because `dev` was 1 commit behind, and an admin repaired it by hand.
+
+**Decision.** Keep the **direct merge-commit push**, but authenticate the sync with an **admin-owned token** stored as repo secret **`SYNC_TOKEN`** (fine-grained PAT, Contents: Read & Write). `dev` has `enforce_admins=false`, so an admin identity's push bypasses both protection rules. The workflow falls back to `GITHUB_TOKEN` when the secret is absent and then fails loudly with a runbook pointer. Branch/merge topology is unchanged (squash-only releases to `main`).
+
+**Alternatives rejected.**
+- **Open a PR `main → dev` and auto-merge it.** The repo is **squash-merge-only**. A squash of `main → dev` writes a *new* commit on `dev` whose only parent is dev's prior HEAD — it does **not** put main's release commit into dev's ancestry. `dev` would still fail main's up-to-date check, so this does not restore the invariant.
+- **Add the `github-actions` app to a dev branch-protection bypass, keep `GITHUB_TOKEN`.** Classic branch protection can waive the *pull-request* requirement for a bypass actor but has **no** per-actor exemption from *required status checks* — only `enforce_admins` waives those, and only for admins. The `GH006` rejection cites **both** rules, so app-bypass alone stays blocked. A GitHub App **installation token** has the same limitation (an app is not an admin) and would additionally require migrating `dev` to **Rulesets** to grant a status-check bypass — a larger, riskier change on a live shared branch.
+- **Change the topology so `dev` never diverges.** Fast-forwarding `main` from `dev`, or allowing merge-commits for releases, would touch `main` (which has `enforce_admins=true`) and change the team's squash-release ritual. Higher risk, larger footprint; not warranted to fix a token-scope bug.
+
+**Invariant preserved.** `dev >= main` in true ancestry (a real merge commit, not a squash), so release PRs keep passing main's strict up-to-date gate.
+
+**Follow-up.** `SYNC_TOKEN` is a personal-admin PAT with a rotation/ownership cost (`TD-179`). A dedicated bot/service account — or Rulesets + a GitHub App — would remove the personal-account dependency later.
+
+**Affected docs.** `.github/workflows/sync-main-to-dev.yml`; `docs/SSOT/ENVIRONMENTS.md` (branching rules 2–3, "Sync workflow internals" + GH006 runbook); `docs/SSOT/RELEASE_CHECKLIST.md` (post-merge sync step + one-time secrets). Operator-provisioned repo secret `SYNC_TOKEN`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.8 | 2026-07-05 | Added `D-169` (main → dev sync authenticates with an admin `SYNC_TOKEN` and keeps the direct merge-commit push; fixes the silent `GH006` drift; PR-based / app-token sync can't reconcile squash-only ancestry). Registered `TD-179` (SYNC_TOKEN rotation/ownership watch). |
 | 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |
 | 4.6 | 2026-07-04 | Added `D-67` (GloWe community-post share keeps social buttons and adds a copy-link control writing `postCanonicalUrl` to the clipboard; canonical URL keyed on `postId`; `FR-GLOWE-008` AC5). |
 | 4.5 | 2026-06-29 | Added `D-66` (GloWe Events are opportunities-with-a-date and RSVPs are applications — additive columns + status guard in migration `0211`, no `glowe_events`/`glowe_event_registrations` tables; reconciles the rich event brainstorm with the convergence model; `FR-GLOWE-007` AC9, `FR-GLOWE-012` AC7). |
