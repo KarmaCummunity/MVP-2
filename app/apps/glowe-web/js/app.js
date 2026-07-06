@@ -489,9 +489,22 @@ let activeWishForSupport = null;
 let reloadOpportunities = null;
 const PERSONAL_PROFILE_KEY = 'glowePersonalProfile';
 const QUESTIONNAIRE_BADGE_DISMISSED_KEY = 'glowe-questionnaire-badge-dismissed';
+// The questionnaire detail list is long; default it collapsed and let the user
+// expand on demand (session-scoped, mirrors the badge-dismiss pattern).
+const QUESTIONNAIRE_COLLAPSED_KEY = 'glowe-questionnaire-collapsed';
 
 function dismissQuestionnaireBadge() {
     sessionStorage.setItem(QUESTIONNAIRE_BADGE_DISMISSED_KEY, '1');
+    if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+}
+
+function isQuestionnaireCollapsed() {
+    // Default collapsed unless the user has explicitly expanded it this session.
+    return sessionStorage.getItem(QUESTIONNAIRE_COLLAPSED_KEY) !== '0';
+}
+
+function toggleQuestionnaireProfile() {
+    sessionStorage.setItem(QUESTIONNAIRE_COLLAPSED_KEY, isQuestionnaireCollapsed() ? '0' : '1');
     if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
 }
 // FR-GLOWE-011 AC1 — true while the Personal Area's backend profile fetch is in
@@ -840,30 +853,21 @@ function hasCachedPersonalProfile() {
     }
 }
 
-// FR-GLOWE-011 AC1 — profile-card loading skeleton (sidebar variant), shown
-// while the first backend profile fetch is in flight. Text-free (aria-busy),
-// so no user-visible strings to localize beyond the aria-label.
-function personalProfileSkeletonCard() {
-    return `
-        <div class="personal-profile-card is-loading" aria-busy="true" aria-label="Loading your profile…">
-            <div class="skeleton skeleton-avatar"></div>
-            <div class="skeleton skeleton-line skeleton-line-lg"></div>
-            <div class="skeleton skeleton-line skeleton-line-sm"></div>
-            <div class="skeleton skeleton-pill"></div>
-        </div>`;
-}
-
-// FR-GLOWE-011 AC1 — profile-card loading skeleton (hero variant).
+// FR-GLOWE-011 AC1 — profile loading skeleton (hero variant), shown while the
+// first backend profile fetch is in flight. Text-free (aria-busy), so no
+// user-visible strings to localize beyond the aria-label.
 function personalProfileSkeletonHero() {
     return `
         <section class="social-profile-hero is-loading" id="personal-profile" aria-busy="true" aria-label="Loading your profile…">
             <div class="social-cover"></div>
-            <div class="social-profile-row">
-                <div class="skeleton skeleton-avatar social-avatar"></div>
-                <div class="social-profile-copy">
-                    <div class="skeleton skeleton-line skeleton-line-sm"></div>
-                    <div class="skeleton skeleton-line skeleton-line-lg"></div>
-                    <div class="skeleton skeleton-line"></div>
+            <div class="social-profile-body">
+                <div class="social-profile-head">
+                    <div class="skeleton skeleton-avatar social-avatar"></div>
+                    <div class="social-profile-copy">
+                        <div class="skeleton skeleton-line skeleton-line-sm"></div>
+                        <div class="skeleton skeleton-line skeleton-line-lg"></div>
+                        <div class="skeleton skeleton-line"></div>
+                    </div>
                 </div>
             </div>
         </section>`;
@@ -6504,17 +6508,6 @@ function initMyApplicationsPage() {
         container.innerHTML = `
             <div class="personal-shell">
                 <aside class="personal-sidebar">
-                    ${showProfileSkeleton ? personalProfileSkeletonCard() : `<div class="personal-profile-card">
-                        <div class="personal-avatar-wrap">
-                            ${renderPersonalAvatar(profile, 'profile-avatar')}
-                            <button type="button" onclick="openEditProfile()">Change</button>
-                        </div>
-                        <span class="profile-status-pill">${profile.profileStatus || 'Community profile'}</span>
-                        <div class="opportunity-skills">
-                            ${(profile.interests || profile.skills || []).slice(0, 4).map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
-                        </div>
-                        <button class="btn btn-primary btn-block" type="button" onclick="openEditProfile()">Edit Profile</button>
-                    </div>`}
                     <nav class="personal-nav" aria-label="Personal area sections">
                         <a href="#personal-profile">Overview</a>
                         <a href="#personal-projects">Projects</a>
@@ -6532,17 +6525,25 @@ function initMyApplicationsPage() {
                 <div class="personal-main">
                     ${showProfileSkeleton ? personalProfileSkeletonHero() : `<section class="social-profile-hero" id="personal-profile">
                         <div class="social-cover"></div>
-                        <div class="social-profile-row">
-                            ${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}
-                            <div class="social-profile-copy">
-                                <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
-                                <h2>${profile.name}</h2>
-                                <p>${escapeHtml(profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.')}</p>
-                                <div class="profile-meta-row">
-                                    <span>${escapeHtml(profile.focus || 'Focus not added yet')}</span>
-                                    <span>${escapeHtml(profile.location || profile.country || 'Location not added yet')}</span>
-                                    <span>${escapeHtml(profile.availability || 'Team size not added yet')}</span>
+                        <div class="social-profile-body">
+                            <div class="social-profile-head">
+                                <div class="social-avatar-wrap">
+                                    ${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}
+                                    <button type="button" class="social-avatar-change" onclick="openEditProfile()">Change</button>
                                 </div>
+                                <div class="social-profile-copy">
+                                    <div class="social-profile-tags">
+                                        <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
+                                        <span class="profile-status-pill">${escapeHtml(profile.profileStatus || 'Community profile')}</span>
+                                    </div>
+                                    <h2>${profile.name}</h2>
+                                    <p>${escapeHtml(profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.')}</p>
+                                </div>
+                            </div>
+                            <div class="profile-meta-row">
+                                <span>${escapeHtml(profile.focus || 'Focus not added yet')}</span>
+                                <span>${escapeHtml(profile.location || profile.country || 'Location not added yet')}</span>
+                                <span>${escapeHtml(profile.availability || 'Team size not added yet')}</span>
                             </div>
                             <div class="personal-actions">
                                 <button class="btn btn-primary" type="button" onclick="openEditProfile()">Edit Profile</button>
@@ -6563,7 +6564,7 @@ function initMyApplicationsPage() {
                     </section>
 
                     <section class="personal-grid">
-                        <article class="profile-section-card">
+                        <article class="profile-section-card${isQuestionnaireCollapsed() ? ' is-collapsed' : ''}">
                             <div class="profile-section-heading">
                                 <span>01</span>
                                 <h2>Profile From Questionnaire</h2>
@@ -6573,8 +6574,12 @@ function initMyApplicationsPage() {
                                         <button type="button" class="questionnaire-badge-close" onclick="dismissQuestionnaireBadge()" aria-label="Dismiss">&times;</button>
                                     </span>
                                 `}
+                                <button type="button" class="section-collapse-toggle" onclick="toggleQuestionnaireProfile()" aria-expanded="${!isQuestionnaireCollapsed()}">
+                                    ${isQuestionnaireCollapsed() ? 'Show details' : 'Hide details'}
+                                    <span class="collapse-chevron" aria-hidden="true">▾</span>
+                                </button>
                             </div>
-                            <div class="profile-info-list">
+                            <div class="profile-info-list section-collapsible">
                                 ${renderQuestionnaireProfile(profile)}
                                 <p><strong>Social links</strong><span>${renderProfileLinkList(profile.socials)}</span></p>
                                 <p><strong>Articles / media</strong><span>${renderProfileLinkList(profile.media)}</span></p>
