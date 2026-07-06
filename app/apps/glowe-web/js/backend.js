@@ -843,6 +843,23 @@
         return out;
     }
 
+    // GloWe and KC share the same auth.users identity, and every signup gets a
+    // public.users row via the handle_new_user trigger — so the KC follow graph
+    // (followers_count/following_count on users_public) applies to GloWe members
+    // too, with no separate GloWe follow system needed. Returns null when signed
+    // out or the row is missing (e.g. account_status not active).
+    async function kcFollowCounts() {
+        const ctx = await kcContext();
+        if (!ctx) return null;
+        const { data, error } = await ctx.supabaseClient
+            .from('users_public')
+            .select('followers_count, following_count')
+            .eq('user_id', ctx.user.id)
+            .maybeSingle();
+        if (error || !data) return null;
+        return { followers: data.followers_count || 0, following: data.following_count || 0 };
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -928,6 +945,7 @@
         kcSendMessage,
         kcMarkChatRead,
         kcCounterpartProfiles,
+        kcFollowCounts,
         apiRequest
     };
 })();
