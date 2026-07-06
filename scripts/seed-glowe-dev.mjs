@@ -19,7 +19,9 @@
 const PROD_REF = 'slxijdfvinbjmrsfgbzx';
 const url = (process.env.SUPABASE_URL ?? 'https://roeefqpdbftlndzsvhfj.supabase.co').replace(/\/$/, '');
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const password = process.env.GLOWE_SEED_PASSWORD ?? 'GloweSeed!2026';
+// `||` (not `??`): in CI an unset GLOWE_SEED_PASSWORD secret arrives as an
+// EMPTY env var, which must still fall back to the dev fixture password.
+const password = process.env.GLOWE_SEED_PASSWORD || 'GloweSeed!2026';
 
 if (!service) {
   console.error('::error::Set SUPABASE_SERVICE_ROLE_KEY (dev service role).');
@@ -160,7 +162,16 @@ async function ensureUser(persona) {
   const body = await res.json().catch(() => ({}));
   if (res.status === 422 && /already|exists/i.test(JSON.stringify(body))) {
     const existing = await adminFindUserByEmail(persona.email);
-    if (existing) return existing.id;
+    if (existing) {
+      // Re-align the password on every run so an earlier run with a different
+      // (or empty) password cannot lock the persona out.
+      await fetch(`${url}/auth/v1/admin/users/${existing.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ password, email_confirm: true }),
+      });
+      return existing.id;
+    }
   }
   throw new Error(`create user ${persona.email} -> ${res.status}: ${JSON.stringify(body).slice(0, 300)}`);
 }
