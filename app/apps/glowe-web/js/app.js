@@ -488,6 +488,12 @@ let activeWishForSupport = null;
 // Assigned in initOpportunitiesPage; null on other pages.
 let reloadOpportunities = null;
 const PERSONAL_PROFILE_KEY = 'glowePersonalProfile';
+const QUESTIONNAIRE_BADGE_DISMISSED_KEY = 'glowe-questionnaire-badge-dismissed';
+
+function dismissQuestionnaireBadge() {
+    sessionStorage.setItem(QUESTIONNAIRE_BADGE_DISMISSED_KEY, '1');
+    if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+}
 // FR-GLOWE-011 AC1 — true while the Personal Area's backend profile fetch is in
 // flight (set in initMyApplicationsPage, cleared when syncPersonalDataFromBackend
 // settles). Drives the profile-card loading skeleton.
@@ -1055,6 +1061,21 @@ async function loadMyOffers() {
 
 function getMyOffersForView() {
     return Array.isArray(backendMyOffers) ? backendMyOffers : [];
+}
+
+// GloWe shares KC's follow graph (see backend.js kcFollowCounts) — no separate
+// GloWe follow system. null until the load completes; the getter falls back to
+// zeros so the stats grid never shows "undefined".
+let personalFollowCounts = null;
+
+async function loadFollowCounts() {
+    const backend = window.gloweBackend;
+    if (!backend || !backend.configured() || !isLoggedIn()) return;
+    try { personalFollowCounts = await backend.kcFollowCounts(); } catch (_e) { personalFollowCounts = null; }
+}
+
+function getFollowCountsForView() {
+    return personalFollowCounts || { followers: 0, following: 0 };
 }
 
 // Render the compact "My Offers" list for the Personal Area (offers the user
@@ -6462,6 +6483,7 @@ function initMyApplicationsPage() {
         const myPosts = getMyPostsForView();
         const myOpportunities = getMyOpportunitiesForView();
         const myOffers = getMyOffersForView();
+        const followCounts = getFollowCountsForView();
         const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
         const applications = getApplications();
         const localApplications = user ? applications.filter(app => app.userId === user.id) : [];
@@ -6487,8 +6509,6 @@ function initMyApplicationsPage() {
                             ${renderPersonalAvatar(profile, 'profile-avatar')}
                             <button type="button" onclick="openEditProfile()">Change</button>
                         </div>
-                        <h2>${profile.name}</h2>
-                        <p>${profile.type}</p>
                         <span class="profile-status-pill">${profile.profileStatus || 'Community profile'}</span>
                         <div class="opportunity-skills">
                             ${(profile.interests || profile.skills || []).slice(0, 4).map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
@@ -6534,6 +6554,8 @@ function initMyApplicationsPage() {
                     </section>`}
 
                     <section class="personal-stats-grid">
+                        <div><strong>${followCounts.followers}</strong><span>Followers</span></div>
+                        <div><strong>${followCounts.following}</strong><span>Following</span></div>
                         <div><strong>${projects.length}</strong><span>Projects</span></div>
                         <div><strong>${userApplications.length}</strong><span>Applications</span></div>
                         <div><strong>${savedItems.length}</strong><span>Saved</span></div>
@@ -6545,6 +6567,12 @@ function initMyApplicationsPage() {
                             <div class="profile-section-heading">
                                 <span>01</span>
                                 <h2>Profile From Questionnaire</h2>
+                                ${sessionStorage.getItem(QUESTIONNAIRE_BADGE_DISMISSED_KEY) === '1' ? '' : `
+                                    <span class="questionnaire-type-badge">
+                                        ${escapeHtml(profile.accountType === 'organization' ? 'Organization' : 'Individual')}
+                                        <button type="button" class="questionnaire-badge-close" onclick="dismissQuestionnaireBadge()" aria-label="Dismiss">&times;</button>
+                                    </span>
+                                `}
                             </div>
                             <div class="profile-info-list">
                                 ${renderQuestionnaireProfile(profile)}
@@ -6702,6 +6730,7 @@ function initMyApplicationsPage() {
     loadMyOpportunities().then(() => renderPersonalArea());
     loadMyOffers().then(() => renderPersonalArea());
     loadMyApplications().then(() => renderPersonalArea());
+    loadFollowCounts().then(() => renderPersonalArea());
     // AC1 — clear the skeleton once the profile fetch settles (success or
     // failure) and always re-render so the real profile (or fallback) shows.
     syncPersonalDataFromBackend()
