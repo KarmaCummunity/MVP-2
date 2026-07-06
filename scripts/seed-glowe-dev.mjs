@@ -19,7 +19,9 @@
 const PROD_REF = 'slxijdfvinbjmrsfgbzx';
 const url = (process.env.SUPABASE_URL ?? 'https://roeefqpdbftlndzsvhfj.supabase.co').replace(/\/$/, '');
 const service = process.env.SUPABASE_SERVICE_ROLE_KEY;
-const password = process.env.GLOWE_SEED_PASSWORD ?? 'GloweSeed!2026';
+// `||` (not `??`): in CI an unset GLOWE_SEED_PASSWORD secret arrives as an
+// EMPTY env var, which must still fall back to the dev fixture password.
+const password = process.env.GLOWE_SEED_PASSWORD || 'GloweSeed!2026';
 
 if (!service) {
   console.error('::error::Set SUPABASE_SERVICE_ROLE_KEY (dev service role).');
@@ -160,7 +162,16 @@ async function ensureUser(persona) {
   const body = await res.json().catch(() => ({}));
   if (res.status === 422 && /already|exists/i.test(JSON.stringify(body))) {
     const existing = await adminFindUserByEmail(persona.email);
-    if (existing) return existing.id;
+    if (existing) {
+      // Re-align the password on every run so an earlier run with a different
+      // (or empty) password cannot lock the persona out.
+      await fetch(`${url}/auth/v1/admin/users/${existing.id}`, {
+        method: 'PUT',
+        headers,
+        body: JSON.stringify({ password, email_confirm: true }),
+      });
+      return existing.id;
+    }
   }
   throw new Error(`create user ${persona.email} -> ${res.status}: ${JSON.stringify(body).slice(0, 300)}`);
 }
@@ -222,7 +233,11 @@ const peopleProfiles = PEOPLE.map((p) => ({
   skills: p.skills,
   profile_status: 'Approved',
 }));
-await upsert('glowe_profiles', [...orgProfiles, ...peopleProfiles], 'id');
+// PostgREST bulk upserts require every row in a batch to carry the SAME key
+// set (PGRST102) — orgs and individuals have different columns, so they go in
+// two batches.
+await upsert('glowe_profiles', orgProfiles, 'id');
+await upsert('glowe_profiles', peopleProfiles, 'id');
 console.log(`profiles upserted: ${orgProfiles.length + peopleProfiles.length}`);
 
 // ── 4. Opportunities (incl. events) ──────────────────────────────────────────
@@ -254,13 +269,13 @@ await upsert('glowe_opportunities', OPPS.map((o) => ({
   responsibilities: [],
   featured: ['seed-opp-mentoring', 'seed-event-beach-cleanup'].includes(o.id),
   created_at: daysAgo(o.created),
-  ...(o.start ? {
-    start_at: daysAhead(o.start),
-    end_at: o.end ? daysAhead(o.end) : null,
-    event_type: o.eventType,
-    registration_mode: o.regMode,
-    capacity: o.capacity,
-  } : {}),
+  // Event columns are always present so every row in the batch carries the
+  // same key set (PGRST102); plain opportunities keep them null.
+  start_at: o.start ? daysAhead(o.start) : null,
+  end_at: o.end ? daysAhead(o.end) : null,
+  event_type: o.eventType ?? null,
+  registration_mode: o.regMode ?? 'gated',
+  capacity: o.capacity ?? null,
 })), 'id');
 console.log(`opportunities upserted: ${OPPS.length}`);
 
@@ -405,7 +420,7 @@ await upsert('glowe_reports', [
     reporter_id: ids.tamar,
     target_type: 'post', target_id: 'seed-post-photo-tips',
     reason: 'other', note: 'נראה לי שהפוסט הזה שייך יותר לפורום מאשר לפיד — לשיקולכם.',
-    status: 'open',
+    status: 'open', reviewed_at: null,
   },
   {
     id: '5eedd002-0000-4000-8000-000000000002',
