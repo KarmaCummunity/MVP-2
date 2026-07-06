@@ -10,7 +10,7 @@ import { useIsSuperAdmin } from '../../src/hooks/useIsSuperAdmin';
 import { container } from '../../src/lib/container';
 import { getUniversalSearchUseCase } from '../../src/services/searchComposition';
 import { useAuthStore } from '../../src/store/authStore';
-import he from '../../src/i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
 
@@ -22,7 +22,7 @@ export default function AuditScreen() {
   const viewerId = useAuthStore((s) => s.session?.userId ?? null);
   const styles = useAuditScreenStyles();
   const { colors } = useTheme();
-  const t = he.audit;
+  const { t } = useTranslation();
   const [query, setQuery] = useState('');
   const [hits, setHits] = useState<UserHit[]>([]);
   const [searching, setSearching] = useState(false);
@@ -75,11 +75,11 @@ export default function AuditScreen() {
 
   return (
     <SafeAreaView style={styles.root} edges={['bottom']}>
-      <Stack.Screen options={{ ...detailStackScreenOptions, headerTitle: t.title }} />
+      <Stack.Screen options={{ ...detailStackScreenOptions, headerTitle: t('audit.title') }} />
       <TextInput
         value={query}
         onChangeText={onSearchChange}
-        placeholder={t.searchPlaceholder}
+        placeholder={t('audit.searchPlaceholder')}
         style={styles.search}
         placeholderTextColor={colors.textSecondary}
       />
@@ -100,7 +100,7 @@ export default function AuditScreen() {
         keyExtractor={(e) => e.eventId}
         ListEmptyComponent={
           !loadingEvents && pickedUserName
-            ? <Text style={styles.empty}>{t.noResults}</Text>
+            ? <Text style={styles.empty}>{t('audit.noResults')}</Text>
             : null
         }
         renderItem={({ item }) => (
@@ -116,9 +116,9 @@ export default function AuditScreen() {
 }
 
 function AuditRow({ event, expanded, onToggle }: { event: AuditEvent; expanded: boolean; onToggle: () => void }) {
-  const t = he.audit;
+  const { t } = useTranslation();
   const styles = useAuditScreenStyles();
-  const actionLabel = (t.rowAction as Record<string, string>)[event.action] ?? event.action;
+  const actionLabel = t(`audit.rowAction.${event.action}`, { defaultValue: event.action });
   const subject = event.targetType
     ? `${event.targetType}#${(event.targetId ?? '').slice(0, 8)}`
     : '-';

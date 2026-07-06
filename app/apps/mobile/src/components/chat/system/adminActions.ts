@@ -3,9 +3,7 @@
 // and the confirm/toast UX is consistent.
 import { Alert, ToastAndroid, Platform } from 'react-native';
 import { ModerationError } from '@kc/application';
-import he from '../../../i18n/locales/he';
-
-const t = he.moderation.actions;
+import i18n from '../../../i18n';
 
 export type AdminActionKey =
   | 'restore'
@@ -24,7 +22,9 @@ export interface ConfirmAndRunOpts {
 
 export function confirmAndRun({ action, onConfirm, onSuccess, onError }: ConfirmAndRunOpts): void {
   if (Platform.OS === 'web') {
-    const ok = globalThis.window?.confirm(`${t[action]}\n\n${t.confirmModal[action]}`);
+    const ok = globalThis.window?.confirm(
+      `${i18n.t(`moderation.actions.${action}`)}\n\n${i18n.t(`moderation.actions.confirmModal.${action}`)}`,
+    );
     if (ok) {
       onConfirm()
         .then(onSuccess)
@@ -33,12 +33,12 @@ export function confirmAndRun({ action, onConfirm, onSuccess, onError }: Confirm
     return;
   }
   Alert.alert(
-    t[action] as string,
-    t.confirmModal[action],
+    i18n.t(`moderation.actions.${action}`),
+    i18n.t(`moderation.actions.confirmModal.${action}`),
     [
-      { text: t.cancel, style: 'cancel' },
+      { text: i18n.t('moderation.actions.cancel'), style: 'cancel' },
       {
-        text: t.proceed,
+        text: i18n.t('moderation.actions.proceed'),
         style: 'destructive',
         onPress: async () => {
           try {
@@ -66,8 +66,8 @@ export function showAdminToast(msg: string): void {
 
 function errorMessage(e: unknown): string {
   if (e instanceof ModerationError) {
-    if (e.code === 'forbidden') return t.errors.forbidden;
-    if (e.code === 'invalid_restore_state') return t.errors.invalidRestoreState;
+    if (e.code === 'forbidden') return i18n.t('moderation.actions.errors.forbidden');
+    if (e.code === 'invalid_restore_state') return i18n.t('moderation.actions.errors.invalidRestoreState');
   }
-  return t.errors.networkError;
+  return i18n.t('moderation.actions.errors.networkError');
 }

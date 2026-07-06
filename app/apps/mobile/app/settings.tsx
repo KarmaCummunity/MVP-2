@@ -11,7 +11,6 @@ import { useIsSuperAdmin } from '../src/hooks/useIsSuperAdmin';
 import { useAdminRoles } from '../src/hooks/useAdminRoles';
 import { useSettingsAccountActions } from '../src/hooks/useSettingsAccountActions';
 import { container } from '../src/lib/container';
-import he from '../src/i18n/locales/he';
 import { useAuthStore } from '../src/store/authStore';
 import { useChatStore } from '../src/store/chatStore';
 import { DeleteAccountConfirmModal } from '../src/components/DeleteAccountConfirmModal';
@@ -194,14 +193,14 @@ export default function SettingsScreen() {
           />
           {isSuperAdmin ? (
             <SettingsScreenRow
-              label={he.audit.title}
+              label={t('audit.title')}
               icon="document-text-outline"
               onPress={() => router.push('/settings/audit' as never)}
             />
           ) : null}
           {adminRoles.length > 0 ? (
             <SettingsScreenRow
-              label={he.admin.settingsRow}
+              label={t('admin.settingsRow')}
               icon="shield-checkmark-outline"
               onPress={() => router.push('/(admin)')}
             />

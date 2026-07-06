@@ -10,19 +10,17 @@ import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { confirmAndRun, showAdminToast } from '../chat/system/adminActions';
 import { makeUseStyles, useTheme } from '@kc/ui';
-import he from '../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 
 type BanReason = 'spam' | 'harassment' | 'policy_violation' | 'other';
 
-const t = he.moderation;
-
-const REASONS: Array<{ value: BanReason; label: string }> = [
-  { value: 'spam', label: t.ban.reasons.spam },
-  { value: 'harassment', label: t.ban.reasons.harassment },
-  { value: 'policy_violation', label: t.ban.reasons.policy_violation },
-  { value: 'other', label: t.ban.reasons.other },
+const REASONS: Array<{ value: BanReason; labelKey: string }> = [
+  { value: 'spam', labelKey: 'moderation.ban.reasons.spam' },
+  { value: 'harassment', labelKey: 'moderation.ban.reasons.harassment' },
+  { value: 'policy_violation', labelKey: 'moderation.ban.reasons.policy_violation' },
+  { value: 'other', labelKey: 'moderation.ban.reasons.other' },
 ];
 
 interface Props {
@@ -34,6 +32,7 @@ interface Props {
 export function BanUserModal({ targetUserId, visible, onClose }: Props) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const adminId = useAuthStore((s) => s.session?.userId);
   const [reason, setReason] = useState<BanReason>('spam');
   const [note, setNote] = useState('');
@@ -63,7 +62,7 @@ export function BanUserModal({ targetUserId, visible, onClose }: Props) {
       onSuccess: () => {
         setSubmitting(false);
         onClose();
-        showAdminToast(t.actions.success.ban);
+        showAdminToast(t('moderation.actions.success.ban'));
       },
       onError: (msg) => {
         setSubmitting(false);
@@ -81,8 +80,8 @@ export function BanUserModal({ targetUserId, visible, onClose }: Props) {
         <View style={styles.backdrop}>
           <View style={styles.sheet}>
             <ScrollView keyboardShouldPersistTaps="handled" contentContainerStyle={styles.scrollContent}>
-              <Text style={styles.title}>{t.ban.title}</Text>
-              <Text style={styles.label}>{t.ban.reasonLabel}</Text>
+              <Text style={styles.title}>{t('moderation.ban.title')}</Text>
+              <Text style={styles.label}>{t('moderation.ban.reasonLabel')}</Text>
               {REASONS.map((r) => (
                 <Pressable
                   key={r.value}
@@ -91,10 +90,10 @@ export function BanUserModal({ targetUserId, visible, onClose }: Props) {
                   accessibilityRole="radio"
                   accessibilityState={{ selected: reason === r.value }}
                 >
-                  <Text style={styles.reasonText}>{r.label}</Text>
+                  <Text style={styles.reasonText}>{t(r.labelKey)}</Text>
                 </Pressable>
               ))}
-              <Text style={styles.label}>{t.ban.noteLabel}</Text>
+              <Text style={styles.label}>{t('moderation.ban.noteLabel')}</Text>
               <TextInput
                 style={styles.note}
                 value={note}
@@ -110,7 +109,7 @@ export function BanUserModal({ targetUserId, visible, onClose }: Props) {
                   onPress={onClose}
                   disabled={submitting}
                 >
-                  <Text style={styles.btnGhostText}>{t.actions.cancel}</Text>
+                  <Text style={styles.btnGhostText}>{t('moderation.actions.cancel')}</Text>
                 </Pressable>
                 <Pressable
                   style={[styles.btn, styles.btnDanger, submitting && styles.btnDisabled]}
@@ -119,7 +118,7 @@ export function BanUserModal({ targetUserId, visible, onClose }: Props) {
                   accessibilityState={{ disabled: submitting }}
                 >
                   <Text style={styles.btnDangerText}>
-                    {submitting ? '...' : t.ban.submit}
+                    {submitting ? '...' : t('moderation.ban.submit')}
                   </Text>
                 </Pressable>
               </View>

@@ -8,7 +8,7 @@ import { makeUseStyles, useTheme } from '@kc/ui';
 import { hasPermission, type AdminRole } from '@kc/domain';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { openExternalUrl } from '../../../utils/openExternalUrl';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 export function DonationLinkReportedBubble({
@@ -19,7 +19,7 @@ export function DonationLinkReportedBubble({
   const canViewReports = hasPermission(roles as readonly AdminRole[], 'reports.view');
   const styles = useDonationLinkReportedBubbleStyles();
   const { colors } = useTheme();
-  const t = he.moderation.bubble;
+  const { t } = useTranslation();
   const url = typeof payload?.url === 'string' ? payload.url : null;
   const displayName = typeof payload?.display_name === 'string' ? payload.display_name : null;
   const categorySlug = typeof payload?.category_slug === 'string' ? payload.category_slug : null;
@@ -27,12 +27,12 @@ export function DonationLinkReportedBubble({
 
   return (
     <View style={[styles.bubble, handledByLaterAction && styles.dimmed]}>
-      <Text style={styles.title}>{t.donationLinkReported.title}</Text>
+      <Text style={styles.title}>{t('moderation.bubble.donationLinkReported.title')}</Text>
       {showCard && url ? (
         <Pressable
           onPress={() => openExternalUrl(url)}
           accessibilityRole="button"
-          accessibilityLabel={t.donationLinkReported.a11yOpen.replace('{name}', displayName ?? url)}
+          accessibilityLabel={t('moderation.bubble.donationLinkReported.a11yOpen').replace('{name}', displayName ?? url)}
           style={styles.card}
         >
           {displayName ? <Text style={styles.handle}>{displayName}</Text> : null}
@@ -40,7 +40,7 @@ export function DonationLinkReportedBubble({
           {categorySlug ? <Text style={styles.snippet}>{`#${categorySlug}`}</Text> : null}
           <View style={styles.openRow}>
             <Ionicons name="open-outline" size={16} color={colors.secondary} />
-            <Text style={styles.openText}>{t.targetPreview.open}</Text>
+            <Text style={styles.openText}>{t('moderation.bubble.targetPreview.open')}</Text>
           </View>
         </Pressable>
       ) : null}

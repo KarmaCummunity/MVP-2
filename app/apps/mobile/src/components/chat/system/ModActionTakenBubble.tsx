@@ -4,7 +4,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { makeUseStyles, typography } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 const useStyles = makeUseStyles(({ colors }) => ({
@@ -14,12 +14,12 @@ const useStyles = makeUseStyles(({ colors }) => ({
 
 export function ModActionTakenBubble({ body, createdAt }: SystemMessageBubbleProps) {
   const styles = useStyles();
-  const t = he.moderation;
+  const { t } = useTranslation();
   const time = new Date(createdAt).toLocaleTimeString('he-IL', {
     hour: '2-digit',
     minute: '2-digit',
   });
-  const fallback = t.bubble.modActionTaken.body
+  const fallback = t('moderation.bubble.modActionTaken.body')
     .replace('{time}', time)
     .replace('{action}', '');
   const text = body.length > 0 ? body : fallback;
