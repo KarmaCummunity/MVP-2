@@ -127,12 +127,14 @@ jobs:
 
   web-build:
     name: web export (production bundle)
-    # Not a required check. Builds the production web bundle and headless-smokes
-    # it — catches runtime route-enumeration / missing-module crashes that
-    # typecheck/test/lint miss. Gated on frontend changes so backend/docs-only
-    # PRs skip the ~2-min build.
+    # REQUIRED status check on `main` (dev→main promotion PRs). Must always
+    # report so the context isn't stuck "Expected" on a promotion whose tree
+    # already matches `main` under app/** (e.g. a pure infra/migration fix) —
+    # same failure mode and fix as the `quality` job above. Heavy steps
+    # (build + Playwright smoke) are gated on frontend changes; a non-frontend
+    # PR runs only the skip-notice step and concludes success.
     needs: changes
-    if: github.event.pull_request.draft != true && needs.changes.outputs.frontend == 'true'
+    if: github.event.pull_request.draft != true
     runs-on: ubuntu-latest
     timeout-minutes: 25
     defaults:
@@ -151,13 +153,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v6
 
+      - name: No frontend changes — web export not required
+        if: needs.changes.outputs.frontend != 'true'
+        run: echo "No app/** or build-input changes in this PR — skipping web export."
+
       - name: Setup pnpm
+        if: needs.changes.outputs.frontend == 'true'
         uses: pnpm/action-setup@v4
         with:
           package_json_file: app/package.json
           run_install: false
 
       - name: Setup Node.js
+        if: needs.changes.outputs.frontend == 'true'
         uses: actions/setup-node@v4
         with:
           node-version-file: .nvmrc
@@ -165,15 +173,19 @@ jobs:
           cache-dependency-path: app/pnpm-lock.yaml
 
       - name: Install dependencies
+        if: needs.changes.outputs.frontend == 'true'
         run: pnpm install --frozen-lockfile
 
       - name: Build web bundle (same env wiring as Dockerfile)
+        if: needs.changes.outputs.frontend == 'true'
         run: pnpm build:web
 
       - name: Verify dist output
+        if: needs.changes.outputs.frontend == 'true'
         run: test -f apps/mobile/dist/index.html
 
       - name: Cache Playwright browsers
+        if: needs.changes.outputs.frontend == 'true'
         id: playwright-cache
         uses: actions/cache@v4
         with:
@@ -181,6 +193,7 @@ jobs:
           key: playwright-chromium-${{ env.PLAYWRIGHT_VERSION }}
 
       - name: Install Playwright (Chromium only)
+        if: needs.changes.outputs.frontend == 'true'
         working-directory: ${{ github.workspace }}
         run: |
           npm init -y --silent
@@ -193,6 +206,7 @@ jobs:
           fi
 
       - name: Smoke-load web bundle (headless Chromium)
+        if: needs.changes.outputs.frontend == 'true'
         working-directory: ${{ github.workspace }}
         run: node scripts/smoke-web-bundle.mjs --dist app/apps/mobile/dist
 
