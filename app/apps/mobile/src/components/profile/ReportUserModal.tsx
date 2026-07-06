@@ -6,20 +6,18 @@ import type { ReportReason } from '@kc/domain';
 import { container } from '../../lib/container';
 import { useAuthStore } from '../../store/authStore';
 import { makeUseStyles, useTheme } from '@kc/ui';
-import he from '../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { rowDirectionStart } from '../../lib/rtlLayout';
 import { rtlTextAlignStart } from '../../lib/rtlTextAlignStart';
 import { NotifyModal } from '../NotifyModal';
 import { useReportForm } from '../report/useReportForm';
 
-const t = he.moderation;
-
-const REASONS: Array<{ value: ReportReason; label: string }> = [
-  { value: 'Spam', label: t.reasons.spam },
-  { value: 'Offensive', label: t.reasons.offensive },
-  { value: 'Misleading', label: t.reasons.misleading },
-  { value: 'Illegal', label: t.reasons.illegal },
-  { value: 'Other', label: t.reasons.other },
+const REASONS: Array<{ value: ReportReason; labelKey: string }> = [
+  { value: 'Spam', labelKey: 'moderation.reasons.spam' },
+  { value: 'Offensive', labelKey: 'moderation.reasons.offensive' },
+  { value: 'Misleading', labelKey: 'moderation.reasons.misleading' },
+  { value: 'Illegal', labelKey: 'moderation.reasons.illegal' },
+  { value: 'Other', labelKey: 'moderation.reasons.other' },
 ];
 
 interface Props {
@@ -31,6 +29,7 @@ interface Props {
 export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const userId = useAuthStore((s) => s.session?.userId);
   const { reason, setReason, note, setNote, submitting, notify, setNotify, runSubmit } =
     useReportForm(visible);
@@ -41,10 +40,10 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
       (r, n) => container.reportUser.execute({ reporterId: userId, targetUserId, reason: r, note: n || undefined }),
       onClose,
       {
-        success: { title: t.report.user.successTitle, message: t.report.user.successToast },
-        duplicate: { title: t.report.user.duplicateTitle, message: t.report.user.duplicateError },
-        alreadyModerated: { title: t.report.user.alreadyModeratedTitle, message: t.report.user.alreadyModeratedError },
-        error: { title: t.report.user.errorTitle, message: t.actions.errors.networkError },
+        success: { title: t('moderation.report.user.successTitle'), message: t('moderation.report.user.successToast') },
+        duplicate: { title: t('moderation.report.user.duplicateTitle'), message: t('moderation.report.user.duplicateError') },
+        alreadyModerated: { title: t('moderation.report.user.alreadyModeratedTitle'), message: t('moderation.report.user.alreadyModeratedError') },
+        error: { title: t('moderation.report.user.errorTitle'), message: t('moderation.actions.errors.networkError') },
       },
     );
   };
@@ -54,8 +53,8 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
     <Modal visible={visible} animationType="slide" onRequestClose={onClose} transparent>
       <View style={styles.backdrop}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>{t.report.user.title}</Text>
-          <Text style={styles.label}>{t.report.user.reasonLabel}</Text>
+          <Text style={styles.title}>{t('moderation.report.user.title')}</Text>
+          <Text style={styles.label}>{t('moderation.report.user.reasonLabel')}</Text>
           {REASONS.map((r) => (
             <TouchableOpacity
               key={r.value}
@@ -64,12 +63,12 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
               accessibilityRole="radio"
               accessibilityState={{ selected: reason === r.value }}
             >
-              <Text style={styles.reasonText}>{r.label}</Text>
+              <Text style={styles.reasonText}>{t(r.labelKey)}</Text>
             </TouchableOpacity>
           ))}
           <TextInput
             style={styles.note}
-            placeholder={t.report.user.noteLabel}
+            placeholder={t('moderation.report.user.noteLabel')}
             placeholderTextColor={colors.textSecondary}
             value={note}
             onChangeText={setNote}
@@ -83,7 +82,7 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
               onPress={onClose}
               disabled={submitting}
             >
-              <Text style={styles.btnGhostText}>{t.actions.cancel}</Text>
+              <Text style={styles.btnGhostText}>{t('moderation.actions.cancel')}</Text>
             </TouchableOpacity>
             <TouchableOpacity
               style={[styles.btn, styles.btnPrimary, submitting && styles.btnDisabled]}
@@ -92,7 +91,7 @@ export function ReportUserModal({ targetUserId, visible, onClose }: Props) {
               accessibilityState={{ disabled: submitting }}
             >
               <Text style={styles.btnPrimaryText}>
-                {submitting ? '...' : t.report.user.submit}
+                {submitting ? '...' : t('moderation.report.user.submit')}
               </Text>
             </TouchableOpacity>
           </View>

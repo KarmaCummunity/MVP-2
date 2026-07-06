@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useTheme } from '@kc/ui';
 import { ALL_CATEGORIES, DONATION_CATEGORY_SLUGS, RADIUS_OPTIONS_KM } from '@kc/domain';
 import type { Category, DonationCategorySlug, PostType, SearchSortBy } from '@kc/domain';
-import { search as t } from '../i18n/locales/he/donations';
+import { useTranslation } from 'react-i18next';
 import { useShallow } from 'zustand/react/shallow';
 import { useSearchStore } from '../store/searchStore';
 import { CityPicker } from './CityPicker';
@@ -23,6 +23,7 @@ interface Props {
 export function SearchFilterSheet({ visible, onClose }: Props) {
   const styles = useSearchFilterSheetStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const store = useSearchStore(
     useShallow((s) => ({
       postType: s.postType,
@@ -84,9 +85,9 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
   };
 
   const sortLabels: Record<string, string> = {
-    relevance: t.sortRelevance,
-    newest: t.sortNewest,
-    followers: t.sortFollowers,
+    relevance: t('search.sortRelevance'),
+    newest: t('search.sortNewest'),
+    followers: t('search.sortFollowers'),
   };
 
   return (
@@ -98,54 +99,54 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
             <Pressable onPress={onClose} hitSlop={12}>
               <Ionicons name="close" size={24} color={colors.textPrimary} />
             </Pressable>
-            <Text style={styles.headerTitle}>{t.filters}</Text>
+            <Text style={styles.headerTitle}>{t('search.filters')}</Text>
             <Pressable onPress={handleClear}>
-              <Text style={styles.clearText}>{t.clearFilters}</Text>
+              <Text style={styles.clearText}>{t('search.clearFilters')}</Text>
             </Pressable>
           </View>
 
           <ScrollView style={styles.body} contentContainerStyle={styles.bodyContent}>
-            <Text style={styles.sectionTitle}>{t.sortBy}</Text>
+            <Text style={styles.sectionTitle}>{t('search.sortBy')}</Text>
             <View style={styles.chipRow}>
               {(['relevance', 'newest', 'followers'] as SearchSortBy[]).map((s) => (
                 <SearchChip key={s} label={sortLabels[s] ?? s} active={sortBy === s} onPress={() => setSortBy(s)} />
               ))}
             </View>
 
-            <Text style={styles.sectionTitle}>{t.filterPostType}</Text>
+            <Text style={styles.sectionTitle}>{t('search.filterPostType')}</Text>
             <View style={styles.chipRow}>
-              <SearchChip label={t.all} active={!postType} onPress={() => setPostType(null)} />
-              <SearchChip label={t.give} active={postType === 'Give'} onPress={() => setPostType(postType === 'Give' ? null : 'Give')} />
-              <SearchChip label={t.request} active={postType === 'Request'} onPress={() => setPostType(postType === 'Request' ? null : 'Request')} />
+              <SearchChip label={t('search.all')} active={!postType} onPress={() => setPostType(null)} />
+              <SearchChip label={t('search.give')} active={postType === 'Give'} onPress={() => setPostType(postType === 'Give' ? null : 'Give')} />
+              <SearchChip label={t('search.request')} active={postType === 'Request'} onPress={() => setPostType(postType === 'Request' ? null : 'Request')} />
             </View>
 
-            <Text style={styles.sectionTitle}>{t.filterCategory}</Text>
+            <Text style={styles.sectionTitle}>{t('search.filterCategory')}</Text>
             <View style={styles.chipRow}>
-              <SearchChip label={t.all} active={!category} onPress={() => setCategory(null)} />
+              <SearchChip label={t('search.all')} active={!category} onPress={() => setCategory(null)} />
               {ALL_CATEGORIES.map((c) => (
                 <SearchChip
                   key={c}
-                  label={(t.categories as Record<string, string>)[c] ?? c}
+                  label={t(`search.categories.${c}`)}
                   active={category === c}
                   onPress={() => setCategory(category === c ? null : c)}
                 />
               ))}
             </View>
 
-            <Text style={styles.sectionTitle}>{t.filterDonationCategory}</Text>
+            <Text style={styles.sectionTitle}>{t('search.filterDonationCategory')}</Text>
             <View style={styles.chipRow}>
-              <SearchChip label={t.all} active={!donationCategory} onPress={() => setDonationCategory(null)} />
+              <SearchChip label={t('search.all')} active={!donationCategory} onPress={() => setDonationCategory(null)} />
               {DONATION_CATEGORY_SLUGS.map((slug) => (
                 <SearchChip
                   key={slug}
-                  label={(t.donationCategories as Record<string, string>)[slug] ?? slug}
+                  label={t(`search.donationCategories.${slug}`)}
                   active={donationCategory === slug}
                   onPress={() => setDonationCategory(donationCategory === slug ? null : slug)}
                 />
               ))}
             </View>
 
-            <Text style={styles.sectionTitle}>{t.filterCity}</Text>
+            <Text style={styles.sectionTitle}>{t('search.filterCity')}</Text>
             <CityPicker
               value={city}
               onChange={(sel: { id: string; name: string }) => handleCityChange(sel)}
@@ -155,12 +156,12 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
                 the PostFilterSheet pattern (FR-FEED-006). */}
             {city && (
               <>
-                <Text style={styles.sectionTitle}>{t.filterRadius}</Text>
+                <Text style={styles.sectionTitle}>{t('search.filterRadius')}</Text>
                 <View style={styles.chipRow}>
                   {RADIUS_OPTIONS_KM.map((km) => (
                     <SearchChip
                       key={km}
-                      label={t.radiusKm.replace('{km}', String(km))}
+                      label={t('search.radiusKm').replace('{km}', String(km))}
                       active={radiusKm === km}
                       onPress={() => setRadiusKm(km)}
                     />
@@ -175,7 +176,7 @@ export function SearchFilterSheet({ visible, onClose }: Props) {
               style={({ pressed }) => [styles.applyBtn, pressed && styles.applyBtnPressed]}
               onPress={handleApply}
             >
-              <Text style={styles.applyBtnText}>{t.applyFilters}</Text>
+              <Text style={styles.applyBtnText}>{t('search.applyFilters')}</Text>
             </Pressable>
           </View>
         </View>

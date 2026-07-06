@@ -12,7 +12,7 @@ import { container } from '../lib/container';
 import { confirmAndRun, showAdminToast } from './chat/system/adminActions';
 import { formatMessageBubbleTime } from '../lib/chatMessageDisplayTime';
 import { rtlTextAlignStart } from '../lib/rtlTextAlignStart';
-import he from '../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 
 const KNOWN_MOD_KINDS = [
   'report_received',
@@ -33,6 +33,7 @@ function MessageBubbleInner({
   handledByLaterAction?: boolean;
 }) {
   const [showTime, setShowTime] = useState(false);
+  const { t } = useTranslation();
   const { roles } = useAdminRoles();
   const canDeleteMessage = hasPermission(roles as readonly AdminRole[], 'chat.delete_message');
   const styles = useMessageBubbleStyles();
@@ -72,7 +73,7 @@ function MessageBubbleInner({
         confirmAndRun({
           action: 'deleteMessage',
           onConfirm: () => container.deleteMessage.execute({ messageId }),
-          onSuccess: () => showAdminToast(he.moderation.actions.success.deleteMessage),
+          onSuccess: () => showAdminToast(t('moderation.actions.success.deleteMessage')),
           onError: showAdminToast,
         });
       }
