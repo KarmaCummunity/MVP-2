@@ -3,7 +3,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import { ADMIN_TASK_CATEGORIES, type AdminTaskCategory } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TaskCategoryPickerProps {
   readonly value: AdminTaskCategory;
@@ -13,6 +13,7 @@ export interface TaskCategoryPickerProps {
 
 export function TaskCategoryPicker({ value, onChange, disabled = false }: TaskCategoryPickerProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   return (
     <View style={styles.row} accessibilityRole="radiogroup">
       {ADMIN_TASK_CATEGORIES.map((c) => {
@@ -27,7 +28,7 @@ export function TaskCategoryPicker({ value, onChange, disabled = false }: TaskCa
             accessibilityState={{ selected: active, disabled }}
           >
             <Text style={[styles.chipText, active && styles.chipTextActive]}>
-              {he.admin.tasks.category[c]}
+              {L.admin.tasks.category[c]}
             </Text>
           </Pressable>
         );

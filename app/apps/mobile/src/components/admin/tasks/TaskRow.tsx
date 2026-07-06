@@ -7,7 +7,7 @@ import { makeUseStyles } from '@kc/ui';
 import { TaskStatusChip } from './TaskStatusChip';
 import { TaskPriorityChip } from './TaskPriorityChip';
 import { TaskCategoryChip } from './TaskCategoryChip';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TaskRowProps {
   readonly task: AdminTask;
@@ -19,6 +19,7 @@ function fmtDue(d: Date): string {
 
 export function TaskRow({ task }: TaskRowProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const overdue = isOverdue(task);
   return (
     <Pressable
@@ -33,7 +34,7 @@ export function TaskRow({ task }: TaskRowProps) {
         <TaskCategoryChip category={task.category} />
         {overdue && (
           <View style={styles.overdueChip}>
-            <Text style={styles.overdueText}>{he.admin.tasks.overdueBadge}</Text>
+            <Text style={styles.overdueText}>{L.admin.tasks.overdueBadge}</Text>
           </View>
         )}
       </View>
@@ -41,16 +42,16 @@ export function TaskRow({ task }: TaskRowProps) {
       <View style={styles.meta}>
         <Text style={styles.metaText} numberOfLines={1}>
           {task.assigneeDisplayName
-            ? he.admin.tasks.row.assignedTo(task.assigneeDisplayName)
-            : he.admin.tasks.row.unassigned}
+            ? L.admin.tasks.row.assignedTo(task.assigneeDisplayName)
+            : L.admin.tasks.row.unassigned}
         </Text>
         {task.dueAt && (
           <Text style={[styles.metaText, overdue && styles.overdueLabel]}>
-            {he.admin.tasks.row.dueOn(fmtDue(task.dueAt))}
+            {L.admin.tasks.row.dueOn(fmtDue(task.dueAt))}
           </Text>
         )}
         {task.commentCount > 0 && (
-          <Text style={styles.metaText}>{he.admin.tasks.row.comments(task.commentCount)}</Text>
+          <Text style={styles.metaText}>{L.admin.tasks.row.comments(task.commentCount)}</Text>
         )}
       </View>
     </Pressable>

@@ -2,7 +2,7 @@
 // FR-ADMIN-025 — depth-from-root badge shown on every org-tree node.
 import { Text, View } from 'react-native';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface LevelBadgeProps {
   readonly level: number;
@@ -10,9 +10,10 @@ export interface LevelBadgeProps {
 
 export function LevelBadge({ level }: LevelBadgeProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   return (
     <View style={styles.badge}>
-      <Text style={styles.text}>{he.admin.admins.tree.levelBadge(level)}</Text>
+      <Text style={styles.text}>{L.admin.admins.tree.levelBadge(level)}</Text>
     </View>
   );
 }

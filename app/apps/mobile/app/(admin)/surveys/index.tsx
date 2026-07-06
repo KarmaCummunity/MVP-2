@@ -18,14 +18,15 @@ import { SurveyOverviewCard } from '../../../src/components/admin/surveys/Survey
 import { SurveyResultsView } from '../../../src/components/admin/surveys/SurveyResultsView';
 import { FeedbackCard } from '../../../src/components/admin/surveys/FeedbackCard';
 import { rowDirectionStart } from '../../../src/lib/rtlLayout';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 type Tab = 'surveys' | 'feedback';
 
 export default function AdminSurveysScreen() {
   const styles = useStyles();
   const { colors } = useTheme();
-  const t = he.admin.surveys;
+  const L = useLocaleBundle();
+  const t = L.admin.surveys;
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [tab, setTab] = useState<Tab>('surveys');
   const [selectedSlug, setSelectedSlug] = useState<string | null>(null);
@@ -103,7 +104,7 @@ function SurveysList({
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const t = he.admin.surveys.overview;
+  const t = useLocaleBundle().admin.surveys.overview;
   if (loading) return <View style={styles.loadingBox}><ActivityIndicator color={colors.primary} /></View>;
   if (isEmpty) return <AdminListEmpty title={t.emptyTitle} hint={t.emptyHint} />;
   return (
@@ -123,7 +124,7 @@ function FeedbackList({
 }) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const t = he.admin.surveys.feedback;
+  const t = useLocaleBundle().admin.surveys.feedback;
   if (loading) return <View style={styles.loadingBox}><ActivityIndicator color={colors.primary} /></View>;
   if (entries.length === 0) return <AdminListEmpty title={t.emptyTitle} hint={t.emptyHint} />;
   return (

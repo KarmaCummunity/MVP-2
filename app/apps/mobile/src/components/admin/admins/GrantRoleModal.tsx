@@ -11,7 +11,7 @@ import { GRANTABLE_ADMIN_ROLES, isAdminRoleError } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { supabase } from '../../../lib/container';
 import { useGrantAdminRole } from '../../../hooks/useAdminRoleMutations';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface GrantRoleModalProps {
   readonly visible: boolean;
@@ -39,6 +39,7 @@ async function lookupUsers(q: string): Promise<readonly UserMatch[]> {
 
 export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const [query, setQuery] = useState('');
   const [matches, setMatches] = useState<readonly UserMatch[]>([]);
   const [loadingMatches, setLoadingMatches] = useState(false);
@@ -87,16 +88,16 @@ export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <View style={styles.overlay}>
         <View style={styles.sheet}>
-          <Text style={styles.title}>{he.admin.admins.grantModal.title}</Text>
+          <Text style={styles.title}>{L.admin.admins.grantModal.title}</Text>
 
-          <Text style={styles.label}>{he.admin.admins.grantModal.searchLabel}</Text>
+          <Text style={styles.label}>{L.admin.admins.grantModal.searchLabel}</Text>
           {selected ? (
             <View style={styles.selectedRow}>
               <Text style={styles.selectedName} numberOfLines={1}>
-                {selected.display_name ?? he.admin.admins.row.unnamed}
+                {selected.display_name ?? L.admin.admins.row.unnamed}
               </Text>
               <Pressable onPress={() => { setSelected(null); setQuery(''); }}>
-                <Text style={styles.changeLink}>{he.admin.admins.grantModal.changeUser}</Text>
+                <Text style={styles.changeLink}>{L.admin.admins.grantModal.changeUser}</Text>
               </Pressable>
             </View>
           ) : (
@@ -105,13 +106,13 @@ export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
                 style={styles.input}
                 value={query}
                 onChangeText={setQuery}
-                placeholder={he.admin.admins.grantModal.searchPlaceholder}
+                placeholder={L.admin.admins.grantModal.searchPlaceholder}
                 autoCapitalize="none"
                 autoCorrect={false}
               />
               {loadingMatches && <ActivityIndicator style={{ marginTop: 8 }} />}
               {!loadingMatches && query.trim().length >= 2 && matches.length === 0 && (
-                <Text style={styles.hint}>{he.admin.admins.grantModal.noMatches}</Text>
+                <Text style={styles.hint}>{L.admin.admins.grantModal.noMatches}</Text>
               )}
               {matches.map((m) => (
                 <Pressable
@@ -120,7 +121,7 @@ export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
                   onPress={() => setSelected(m)}
                 >
                   <Text style={styles.matchName} numberOfLines={1}>
-                    {m.display_name ?? he.admin.admins.row.unnamed}
+                    {m.display_name ?? L.admin.admins.row.unnamed}
                   </Text>
                 </Pressable>
               ))}
@@ -128,7 +129,7 @@ export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
           )}
 
           <Text style={[styles.label, { marginTop: 12 }]}>
-            {he.admin.admins.grantModal.roleLabel}
+            {L.admin.admins.grantModal.roleLabel}
           </Text>
           <View style={styles.roleRow}>
             {GRANTABLE_ADMIN_ROLES.map((r) => (
@@ -138,7 +139,7 @@ export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
                 style={[styles.roleChip, role === r && styles.roleChipActive]}
               >
                 <Text style={[styles.roleChipText, role === r && styles.roleChipTextActive]}>
-                  {he.admin.roles[r]}
+                  {L.admin.roles[r]}
                 </Text>
               </Pressable>
             ))}
@@ -146,21 +147,21 @@ export function GrantRoleModal({ visible, onClose }: GrantRoleModalProps) {
 
           {errorCode !== null && (
             <Text style={styles.errorText}>
-              {he.admin.admins.grantModal.errors[errorCode as keyof typeof he.admin.admins.grantModal.errors]
-                ?? he.admin.admins.grantModal.errors.unknown}
+              {L.admin.admins.grantModal.errors[errorCode as keyof LocaleBundle['admin']['admins']['grantModal']['errors']]
+                ?? L.admin.admins.grantModal.errors.unknown}
             </Text>
           )}
 
           <View style={styles.actions}>
             <Pressable style={styles.cancelBtn} onPress={onClose}>
-              <Text style={styles.cancelBtnText}>{he.admin.admins.grantModal.cancel}</Text>
+              <Text style={styles.cancelBtnText}>{L.admin.admins.grantModal.cancel}</Text>
             </Pressable>
             <Pressable
               style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
               disabled={!canSubmit}
               onPress={() => { void submit(); }}
             >
-              <Text style={styles.submitBtnText}>{he.admin.admins.grantModal.submit}</Text>
+              <Text style={styles.submitBtnText}>{L.admin.admins.grantModal.submit}</Text>
             </Pressable>
           </View>
         </View>

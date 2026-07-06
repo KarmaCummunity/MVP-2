@@ -13,7 +13,7 @@ import { CaseReporterList } from '../../../../src/components/admin/reports/CaseR
 import { CaseAuditTimeline } from '../../../../src/components/admin/reports/CaseAuditTimeline';
 import { CaseActions } from '../../../../src/components/admin/reports/CaseActions';
 import { CaseTargetCard } from '../../../../src/components/admin/reports/CaseTargetCard';
-import he from '../../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../../src/i18n/useLocaleBundle';
 
 function parseCaseId(
   raw: string | undefined,
@@ -39,11 +39,12 @@ export default function CaseDetail() {
   );
   const queryClient = useQueryClient();
   const styles = useStyles();
+  const L = useLocaleBundle();
 
   if (!parsed) {
     return (
       <View style={styles.center}>
-        <Text>{he.admin.caseDetail.notFound}</Text>
+        <Text>{L.admin.caseDetail.notFound}</Text>
       </View>
     );
   }
@@ -51,17 +52,17 @@ export default function CaseDetail() {
     return (
       <View style={styles.center}>
         <ActivityIndicator />
-        <Text>{he.admin.caseDetail.loading}</Text>
+        <Text>{L.admin.caseDetail.loading}</Text>
       </View>
     );
   }
 
   return (
     <ScrollView contentContainerStyle={styles.root}>
-      <Text style={styles.title}>{he.admin.caseDetail.title}</Text>
+      <Text style={styles.title}>{L.admin.caseDetail.title}</Text>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{he.admin.caseDetail.targetSection}</Text>
+        <Text style={styles.sectionTitle}>{L.admin.caseDetail.targetSection}</Text>
         <CaseTargetCard
           targetType={data.targetType}
           targetId={data.targetId}
@@ -70,7 +71,7 @@ export default function CaseDetail() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{he.admin.caseDetail.actions}</Text>
+        <Text style={styles.sectionTitle}>{L.admin.caseDetail.actions}</Text>
         <CaseActions
           detail={data}
           onActed={() => {
@@ -86,12 +87,12 @@ export default function CaseDetail() {
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{he.admin.caseDetail.reporters}</Text>
+        <Text style={styles.sectionTitle}>{L.admin.caseDetail.reporters}</Text>
         <CaseReporterList reporters={data.reporters} />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{he.admin.caseDetail.timeline}</Text>
+        <Text style={styles.sectionTitle}>{L.admin.caseDetail.timeline}</Text>
         <CaseAuditTimeline entries={data.timeline} />
       </View>
     </ScrollView>

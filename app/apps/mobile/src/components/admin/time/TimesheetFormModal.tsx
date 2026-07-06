@@ -5,7 +5,7 @@ import { useMutation } from '@tanstack/react-query';
 import { isTimesheetError, type TimesheetEntry } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TimesheetFormModalProps {
   readonly initial: TimesheetEntry | null;
@@ -15,7 +15,8 @@ export interface TimesheetFormModalProps {
 
 export function TimesheetFormModal({ initial, onClose, onSaved }: TimesheetFormModalProps) {
   const styles = useStyles();
-  const t = he.admin.time;
+  const L = useLocaleBundle();
+  const t = L.admin.time;
   const isEdit = initial !== null;
   const today = new Date().toISOString().slice(0, 10);
   const [workDate,    setWorkDate]    = useState(initial?.workDate ?? today);

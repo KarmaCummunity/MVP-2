@@ -17,10 +17,11 @@ import { AvatarInitials } from '../../../src/components/AvatarInitials';
 import { AdminRow } from '../../../src/components/admin/admins/AdminRow';
 import { AdminManagerSections } from '../../../src/components/admin/admins/AdminManagerSections';
 import { rowDirectionStart, textAlignStart } from '../../../src/lib/rtlLayout';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 export default function AdminDetailScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const { colors } = useTheme();
   const router = useRouter();
   const { userId } = useLocalSearchParams<{ userId: string }>();
@@ -42,21 +43,21 @@ export default function AdminDetailScreen() {
     return <View style={styles.center}><ActivityIndicator color={colors.primary} /></View>;
   }
   if (!can('admins.view')) {
-    return <View style={styles.center}><Text style={styles.title}>{he.admin.admins.forbiddenTitle}</Text></View>;
+    return <View style={styles.center}><Text style={styles.title}>{L.admin.admins.forbiddenTitle}</Text></View>;
   }
   if (!person) {
     return (
       <View style={styles.center}>
-        <Stack.Screen options={{ headerTitle: he.admin.admins.detail.title }} />
-        <Text style={styles.title}>{he.admin.admins.detail.notFound}</Text>
+        <Stack.Screen options={{ headerTitle: L.admin.admins.detail.title }} />
+        <Text style={styles.title}>{L.admin.admins.detail.notFound}</Text>
       </View>
     );
   }
 
-  const name = person.displayName ?? he.admin.admins.row.unnamed;
+  const name = person.displayName ?? L.admin.admins.row.unnamed;
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Stack.Screen options={{ headerTitle: he.admin.admins.detail.title }} />
+      <Stack.Screen options={{ headerTitle: L.admin.admins.detail.title }} />
 
       <View style={styles.hero}>
         <AvatarInitials name={name} avatarUrl={person.avatarUrl} size={64} />
@@ -67,20 +68,20 @@ export default function AdminDetailScreen() {
           style={styles.profileBtn}
         >
           <Ionicons name="person-circle-outline" size={18} color={colors.primary} />
-          <Text style={styles.profileBtnText}>{he.admin.admins.detail.viewProfile}</Text>
+          <Text style={styles.profileBtnText}>{L.admin.admins.detail.viewProfile}</Text>
         </Pressable>
       </View>
 
       {revokeErr !== null && (
         <Text style={styles.errorBanner}>
-          {he.admin.admins.revokeErrors[revokeErr as keyof typeof he.admin.admins.revokeErrors]
-            ?? he.admin.admins.revokeErrors.unknown}
+          {L.admin.admins.revokeErrors[revokeErr as keyof typeof L.admin.admins.revokeErrors]
+            ?? L.admin.admins.revokeErrors.unknown}
         </Text>
       )}
 
-      <Text style={styles.sectionTitle}>{he.admin.admins.detail.rolesSection}</Text>
+      <Text style={styles.sectionTitle}>{L.admin.admins.detail.rolesSection}</Text>
       {person.activeRoles.length === 0 && (
-        <Text style={styles.hint}>{he.admin.admins.detail.noActiveRoles}</Text>
+        <Text style={styles.hint}>{L.admin.admins.detail.noActiveRoles}</Text>
       )}
       <View style={styles.card}>
         {person.grants.map((g) => (

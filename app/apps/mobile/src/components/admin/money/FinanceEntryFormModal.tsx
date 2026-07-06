@@ -10,7 +10,7 @@ import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
 import { AdminFormField } from '../AdminFormField';
 import { AdminFormActions } from '../AdminFormActions';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface FinanceEntryFormModalProps {
   readonly initial: FinanceEntry | null;
@@ -30,7 +30,8 @@ function fmtIsoDate(d: Date): string {
 
 export function FinanceEntryFormModal({ initial, onClose, onSaved }: FinanceEntryFormModalProps) {
   const styles = useStyles();
-  const t = he.admin.money;
+  const L = useLocaleBundle();
+  const t = L.admin.money;
   const isEdit = initial !== null;
   const [kind, setKind]           = useState<FinanceEntryKind>(initial?.kind ?? 'donation_in');
   const [amountText, setAmount]   = useState(initial ? (initial.amountCents / 100).toString() : '');

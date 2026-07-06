@@ -3,7 +3,7 @@
 import { Alert, Platform, Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AdminGrant } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface AdminRowProps {
   readonly grant: AdminGrant;
@@ -12,38 +12,39 @@ export interface AdminRowProps {
   readonly busy?: boolean;
 }
 
-function fmtLastSeen(d: Date | null): string {
-  if (d === null) return he.admin.admins.row.neverSeen;
+function fmtLastSeen(L: LocaleBundle, d: Date | null): string {
+  if (d === null) return L.admin.admins.row.neverSeen;
   const ms = Date.now() - d.getTime();
-  if (ms < 60 * 60 * 1000) return he.admin.admins.row.seenMinutesAgo(Math.max(1, Math.floor(ms / 60_000)));
-  if (ms < 24 * 60 * 60 * 1000) return he.admin.admins.row.seenHoursAgo(Math.floor(ms / 3_600_000));
-  return he.admin.admins.row.seenDaysAgo(Math.floor(ms / 86_400_000));
+  if (ms < 60 * 60 * 1000) return L.admin.admins.row.seenMinutesAgo(Math.max(1, Math.floor(ms / 60_000)));
+  if (ms < 24 * 60 * 60 * 1000) return L.admin.admins.row.seenHoursAgo(Math.floor(ms / 3_600_000));
+  return L.admin.admins.row.seenDaysAgo(Math.floor(ms / 86_400_000));
 }
 
 function fmtDate(d: Date): string {
   return d.toLocaleDateString('he-IL', { year: 'numeric', month: '2-digit', day: '2-digit' });
 }
 
-async function confirmRevoke(name: string): Promise<boolean> {
-  const msg = he.admin.admins.row.revokeConfirm(name);
+async function confirmRevoke(L: LocaleBundle, name: string): Promise<boolean> {
+  const msg = L.admin.admins.row.revokeConfirm(name);
   if (Platform.OS === 'web') {
     return typeof window !== 'undefined' && window.confirm(msg);
   }
   return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.admins.row.revokeTitle, msg, [
-      { text: he.admin.admins.row.revokeCancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.admins.row.revokeConfirmAction, style: 'destructive', onPress: () => resolve(true) },
+    Alert.alert(L.admin.admins.row.revokeTitle, msg, [
+      { text: L.admin.admins.row.revokeCancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: L.admin.admins.row.revokeConfirmAction, style: 'destructive', onPress: () => resolve(true) },
     ]);
   });
 }
 
 export function AdminRow({ grant, canRevoke, onRevoke, busy }: AdminRowProps) {
   const styles = useStyles();
-  const name = grant.displayName ?? he.admin.admins.row.unnamed;
+  const L = useLocaleBundle();
+  const name = grant.displayName ?? L.admin.admins.row.unnamed;
   const revoked = grant.revokedAt !== null;
 
   const onRevokePress = async () => {
-    const ok = await confirmRevoke(name);
+    const ok = await confirmRevoke(L, name);
     if (ok) onRevoke(grant.grantId);
   };
 
@@ -53,12 +54,12 @@ export function AdminRow({ grant, canRevoke, onRevoke, busy }: AdminRowProps) {
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
         <Text style={styles.meta}>
           {revoked
-            ? he.admin.admins.row.revokedAt(fmtDate(grant.revokedAt!))
-            : fmtLastSeen(grant.lastSeenAt)}
+            ? L.admin.admins.row.revokedAt(fmtDate(grant.revokedAt!))
+            : fmtLastSeen(L, grant.lastSeenAt)}
         </Text>
         <Text style={styles.metaSmall}>
-          {he.admin.admins.row.grantedAt(fmtDate(grant.grantedAt))}
-          {grant.grantedByDisplayName ? ` · ${he.admin.admins.row.grantedBy(grant.grantedByDisplayName)}` : ''}
+          {L.admin.admins.row.grantedAt(fmtDate(grant.grantedAt))}
+          {grant.grantedByDisplayName ? ` · ${L.admin.admins.row.grantedBy(grant.grantedByDisplayName)}` : ''}
         </Text>
       </View>
       {canRevoke && !revoked && (
@@ -68,7 +69,7 @@ export function AdminRow({ grant, canRevoke, onRevoke, busy }: AdminRowProps) {
           onPress={() => { void onRevokePress(); }}
           style={[styles.revokeBtn, busy && styles.revokeBtnDisabled]}
         >
-          <Text style={styles.revokeBtnText}>{he.admin.admins.row.revokeShort}</Text>
+          <Text style={styles.revokeBtnText}>{L.admin.admins.row.revokeShort}</Text>
         </Pressable>
       )}
     </View>

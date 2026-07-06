@@ -21,12 +21,12 @@ import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { AdminScreenGuard } from '../../../src/components/admin/AdminScreenGuard';
 import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 type Tab = 'mine' | 'pending' | 'all';
 
-function confirmDelete(message: string): Promise<boolean> {
-  const t = he.admin.time.confirm;
+function confirmDelete(message: string, L: LocaleBundle): Promise<boolean> {
+  const t = L.admin.time.confirm;
   return platformConfirm(t.deleteTitle, message, {
     confirmLabel: t.deleteOk,
     cancelLabel:  t.deleteCancel,
@@ -36,7 +36,8 @@ function confirmDelete(message: string): Promise<boolean> {
 
 export default function TimeScreen() {
   const styles = useStyles();
-  const t = he.admin.time;
+  const L = useLocaleBundle();
+  const t = L.admin.time;
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const queryClient = useQueryClient();
@@ -102,7 +103,7 @@ export default function TimeScreen() {
               onEdit={() => setEditing(item)}
               onSubmit={() => { void submit.mutateAsync(item.entryId).catch(() => {/* swallowed */}); }}
               onDelete={async () => {
-                const ok = await confirmDelete(t.confirm.delete);
+                const ok = await confirmDelete(t.confirm.delete, L);
                 if (!ok) return;
                 try { await remove.mutateAsync(item.entryId); }
                 catch (err) {

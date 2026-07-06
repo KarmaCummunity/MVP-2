@@ -6,7 +6,7 @@ import { router } from 'expo-router';
 import { Pressable, Text, View } from 'react-native';
 import type { ReportCaseReporter } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface CaseReporterListProps {
   readonly reporters: readonly ReportCaseReporter[];
@@ -14,6 +14,7 @@ export interface CaseReporterListProps {
 
 export function CaseReporterList({ reporters }: CaseReporterListProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   if (reporters.length === 0) {
     return (
       <View style={styles.empty}>
@@ -30,7 +31,7 @@ export function CaseReporterList({ reporters }: CaseReporterListProps) {
           <Pressable
             key={r.reportId}
             accessibilityRole="button"
-            accessibilityLabel={he.admin.caseDetail.openReporter(label)}
+            accessibilityLabel={L.admin.caseDetail.openReporter(label)}
             onPress={() => router.push(`/user/${r.reporterId}` as never)}
             style={styles.item}
           >

@@ -16,7 +16,7 @@ import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { useAuthStore } from '../../../store/authStore';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface CaseActionsProps {
   readonly detail: ReportCaseDetail;
@@ -27,14 +27,14 @@ type ActionId =
   | 'confirm' | 'dismiss' | 'restore'
   | 'permanentBan' | 'manualRemove' | 'openSupport';
 
-async function confirmDialog(question: string): Promise<boolean> {
+async function confirmDialog(L: LocaleBundle, question: string): Promise<boolean> {
   if (Platform.OS === 'web') {
     return typeof window !== 'undefined' && window.confirm(question);
   }
   return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.caseDetail.confirmDialog.title, question, [
-      { text: he.admin.caseDetail.confirmDialog.cancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.caseDetail.confirmDialog.ok, onPress: () => resolve(true) },
+    Alert.alert(L.admin.caseDetail.confirmDialog.title, question, [
+      { text: L.admin.caseDetail.confirmDialog.cancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: L.admin.caseDetail.confirmDialog.ok, onPress: () => resolve(true) },
     ]);
   });
 }
@@ -45,9 +45,10 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
   const [busy, setBusy] = useState(false);
   const queryClient = useQueryClient();
   const styles = useStyles();
+  const L = useLocaleBundle();
 
   async function run(action: ActionId): Promise<void> {
-    const ok = await confirmDialog(he.admin.caseDetail.confirmDialog.message);
+    const ok = await confirmDialog(L, L.admin.caseDetail.confirmDialog.message);
     if (!ok) return;
     setBusy(true);
     try {
@@ -106,35 +107,35 @@ export function CaseActions({ detail, onActed }: CaseActionsProps) {
     <View style={styles.row}>
       {show('reports.confirm_or_dismiss') && (
         <ActionButton
-          label={he.admin.caseDetail.actionLabels.confirm}
+          label={L.admin.caseDetail.actionLabels.confirm}
           disabled={busy}
           onPress={() => { void run('confirm'); }}
         />
       )}
       {show('reports.confirm_or_dismiss') && (
         <ActionButton
-          label={he.admin.caseDetail.actionLabels.dismiss}
+          label={L.admin.caseDetail.actionLabels.dismiss}
           disabled={busy}
           onPress={() => { void run('dismiss'); }}
         />
       )}
       {show('reports.restore_target') && (
         <ActionButton
-          label={he.admin.caseDetail.actionLabels.restore}
+          label={L.admin.caseDetail.actionLabels.restore}
           disabled={busy}
           onPress={() => { void run('restore'); }}
         />
       )}
       {show('reports.manual_remove_post') && detail.targetType === 'post' && (
         <ActionButton
-          label={he.admin.caseDetail.actionLabels.manualRemove}
+          label={L.admin.caseDetail.actionLabels.manualRemove}
           disabled={busy}
           onPress={() => { void run('manualRemove'); }}
         />
       )}
       {show('reports.permanent_ban') && detail.targetType === 'user' && (
         <ActionButton
-          label={he.admin.caseDetail.actionLabels.permanentBan}
+          label={L.admin.caseDetail.actionLabels.permanentBan}
           disabled={busy}
           onPress={() => { void run('permanentBan'); }}
           variant="danger"

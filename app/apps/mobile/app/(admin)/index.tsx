@@ -16,10 +16,9 @@ import { useAdminsList } from '../../src/hooks/useAdminsList';
 import { useAdminTasksList } from '../../src/hooks/useAdminTasks';
 import { useReportsInbox } from '../../src/hooks/useReportsInbox';
 import { getCommunityStatsSnapshotUseCase } from '../../src/services/postsComposition';
-import he from '../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../src/i18n/useLocaleBundle';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
-const ROLE_LABELS: Readonly<Record<AdminRole, string>> = he.admin.roles;
 
 interface Card {
   key: string;
@@ -33,7 +32,9 @@ interface Card {
 
 export default function AdminDashboard(): ReactElement {
   const { roles, isLoading: rolesLoading } = useAdminRoles();
-  const t = he.admin.dashboard;
+  const L = useLocaleBundle();
+  const ROLE_LABELS: Readonly<Record<AdminRole, string>> = L.admin.roles;
+  const t = L.admin.dashboard;
   const router = useRouter();
   const styles = useStyles();
   const { colors } = useTheme();
@@ -96,7 +97,7 @@ export default function AdminDashboard(): ReactElement {
   return (
     <ScrollView style={styles.screen} contentContainerStyle={styles.root}>
       <View style={styles.hero}>
-        <Text style={styles.heroEyebrow}>{he.admin.portalTitle}</Text>
+        <Text style={styles.heroEyebrow}>{L.admin.portalTitle}</Text>
         <Text style={styles.heroTitle}>{t.welcome}</Text>
         <View style={styles.badges}>
           {roles.map((role) => (

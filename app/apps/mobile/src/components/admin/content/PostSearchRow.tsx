@@ -12,7 +12,7 @@ import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { container } from '../../../lib/container';
 import { confirmAction as platformConfirm } from '../../../services/platformConfirm';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface PostSearchRowProps {
   readonly row: AdminPostSearchResult;
@@ -25,15 +25,16 @@ function statusTone(status: string): 'good' | 'warn' | 'bad' | 'muted' {
   return 'warn';
 }
 
-function confirmAction(message: string): Promise<boolean> {
-  return platformConfirm(he.admin.tasks.detail.confirmTitle, message, {
-    confirmLabel: he.admin.tasks.detail.confirmOk,
-    cancelLabel:  he.admin.tasks.detail.cancel,
+function confirmAction(message: string, L: LocaleBundle): Promise<boolean> {
+  return platformConfirm(L.admin.tasks.detail.confirmTitle, message, {
+    confirmLabel: L.admin.tasks.detail.confirmOk,
+    cancelLabel:  L.admin.tasks.detail.cancel,
   });
 }
 
 export function PostSearchRow({ row }: PostSearchRowProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const tone = statusTone(row.status);
   const { roles } = useAdminRoles();
   const queryClient = useQueryClient();
@@ -44,7 +45,7 @@ export function PostSearchRow({ row }: PostSearchRowProps) {
   const canRestore = can('reports.restore_target')    && row.status === 'removed_admin';
 
   async function doRemove() {
-    const ok = await confirmAction(he.admin.content.postInline.confirmRemove);
+    const ok = await confirmAction(L.admin.content.postInline.confirmRemove, L);
     if (!ok) return;
     setBusy(true);
     try {
@@ -56,7 +57,7 @@ export function PostSearchRow({ row }: PostSearchRowProps) {
   }
 
   async function doRestore() {
-    const ok = await confirmAction(he.admin.content.postInline.confirmRestore);
+    const ok = await confirmAction(L.admin.content.postInline.confirmRestore, L);
     if (!ok) return;
     setBusy(true);
     try {
@@ -74,17 +75,17 @@ export function PostSearchRow({ row }: PostSearchRowProps) {
     >
       <View style={styles.main}>
         <Text style={styles.title} numberOfLines={2}>
-          {row.title ?? he.admin.content.untitled}
+          {row.title ?? L.admin.content.untitled}
         </Text>
         <View style={styles.metaRow}>
           {row.ownerDisplayName && (
             <Text style={styles.meta} numberOfLines={1}>
-              {he.admin.content.byOwner(row.ownerDisplayName)}
+              {L.admin.content.byOwner(row.ownerDisplayName)}
             </Text>
           )}
           <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
             <Text style={styles.chipText}>
-              {he.admin.content.postStatus[row.status as keyof typeof he.admin.content.postStatus]
+              {L.admin.content.postStatus[row.status as keyof LocaleBundle['admin']['content']['postStatus']]
                 ?? row.status}
             </Text>
           </View>
@@ -97,7 +98,7 @@ export function PostSearchRow({ row }: PostSearchRowProps) {
           onPress={(e) => { e.stopPropagation(); void doRemove(); }}
           style={[styles.actionBtnRemove, busy && styles.actionBtnDisabled]}
         >
-          <Text style={styles.actionTextRemove}>{he.admin.content.postInline.remove}</Text>
+          <Text style={styles.actionTextRemove}>{L.admin.content.postInline.remove}</Text>
         </Pressable>
       )}
       {canRestore && (
@@ -107,7 +108,7 @@ export function PostSearchRow({ row }: PostSearchRowProps) {
           onPress={(e) => { e.stopPropagation(); void doRestore(); }}
           style={[styles.actionBtnRestore, busy && styles.actionBtnDisabled]}
         >
-          <Text style={styles.actionTextRestore}>{he.admin.content.postInline.restore}</Text>
+          <Text style={styles.actionTextRestore}>{L.admin.content.postInline.restore}</Text>
         </Pressable>
       )}
     </Pressable>

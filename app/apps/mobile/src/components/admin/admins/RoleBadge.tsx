@@ -3,7 +3,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { AdminRole } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 // Semantic accent per role tier. Platform-wide roles lean on the brand primary;
 // org-scoped roles use cooler neutrals so the hierarchy reads at a glance.
@@ -27,12 +27,13 @@ export interface RoleBadgeProps {
 
 export function RoleBadge({ role, muted }: RoleBadgeProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const accent = ROLE_ACCENT[role] ?? '#475569';
   return (
     <View style={[styles.badge, { borderColor: accent }, muted && styles.muted]}>
       <View style={[styles.dot, { backgroundColor: accent }]} />
       <Text style={[styles.text, { color: accent }]} numberOfLines={1}>
-        {he.admin.roles[role]}
+        {L.admin.roles[role]}
       </Text>
     </View>
   );

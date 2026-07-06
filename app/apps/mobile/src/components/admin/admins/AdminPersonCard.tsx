@@ -8,17 +8,17 @@ import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, shadow, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../../AvatarInitials';
 import { rowDirectionStart, textAlignStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 import { RoleBadge } from './RoleBadge';
 
 const MAX_BADGES = 3;
 
-function lastSeenLabel(d: Date | null): string {
-  if (d === null) return he.admin.admins.row.neverSeen;
+function lastSeenLabel(L: LocaleBundle, d: Date | null): string {
+  if (d === null) return L.admin.admins.row.neverSeen;
   const ms = Date.now() - d.getTime();
-  if (ms < 60 * 60 * 1000) return he.admin.admins.row.seenMinutesAgo(Math.max(1, Math.floor(ms / 60_000)));
-  if (ms < 24 * 60 * 60 * 1000) return he.admin.admins.row.seenHoursAgo(Math.floor(ms / 3_600_000));
-  return he.admin.admins.row.seenDaysAgo(Math.floor(ms / 86_400_000));
+  if (ms < 60 * 60 * 1000) return L.admin.admins.row.seenMinutesAgo(Math.max(1, Math.floor(ms / 60_000)));
+  if (ms < 24 * 60 * 60 * 1000) return L.admin.admins.row.seenHoursAgo(Math.floor(ms / 3_600_000));
+  return L.admin.admins.row.seenDaysAgo(Math.floor(ms / 86_400_000));
 }
 
 export interface AdminPersonCardProps {
@@ -29,7 +29,8 @@ export interface AdminPersonCardProps {
 export function AdminPersonCard({ person, onPress }: AdminPersonCardProps) {
   const styles = useStyles();
   const { colors } = useTheme();
-  const name = person.displayName ?? he.admin.admins.row.unnamed;
+  const L = useLocaleBundle();
+  const name = person.displayName ?? L.admin.admins.row.unnamed;
   const badgeRoles = person.activeRoles.slice(0, MAX_BADGES);
   const overflow = person.activeRoles.length - badgeRoles.length;
 
@@ -44,12 +45,12 @@ export function AdminPersonCard({ person, onPress }: AdminPersonCardProps) {
         <Text style={styles.name} numberOfLines={1}>{name}</Text>
         <View style={styles.badges}>
           {badgeRoles.map((r) => <RoleBadge key={r} role={r} muted={!person.hasActiveGrant} />)}
-          {overflow > 0 && <Text style={styles.more}>{he.admin.admins.card.rolesMore(overflow)}</Text>}
+          {overflow > 0 && <Text style={styles.more}>{L.admin.admins.card.rolesMore(overflow)}</Text>}
           {person.activeRoles.length === 0 && (
-            <Text style={styles.noRole}>{he.admin.admins.card.rolesNone}</Text>
+            <Text style={styles.noRole}>{L.admin.admins.card.rolesNone}</Text>
           )}
         </View>
-        <Text style={styles.meta} numberOfLines={1}>{lastSeenLabel(person.lastSeenAt)}</Text>
+        <Text style={styles.meta} numberOfLines={1}>{lastSeenLabel(L, person.lastSeenAt)}</Text>
       </View>
       <Ionicons name="chevron-back" size={18} color={colors.textSecondary} style={styles.chevron} />
     </Pressable>

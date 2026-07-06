@@ -78,7 +78,34 @@ export default tseslint.config(
       // We don't ban it monorepo-wide; flag it at `warn` for visibility.
       '@typescript-eslint/no-require-imports': 'warn',
       'prefer-const': 'warn',
+      // FR-SETTINGS-018 — importing a locale bundle directly hardcodes one
+      // language, so the text ignores the active UI locale. Use
+      // useTranslation()/t() or the useLocaleBundle()/localeBundle() accessor.
+      // (The i18n internals that legitimately import the bundles are exempted
+      // by the override block below.)
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/i18n/locales/he',
+                '**/i18n/locales/he/**',
+                '**/i18n/locales/en',
+                '**/i18n/locales/en/**',
+              ],
+              message:
+                'Do not import locale bundles directly (text will not follow the active UI language, FR-SETTINGS-018). Use useTranslation()/t(), or useLocaleBundle()/localeBundle() from src/i18n/useLocaleBundle.',
+            },
+          ],
+        },
+      ],
     },
+  },
+  // i18n internals legitimately compose/select the raw locale bundles.
+  {
+    files: ['apps/mobile/src/i18n/**/*.{ts,tsx}'],
+    rules: { 'no-restricted-imports': 'off' },
   },
   // CommonJS config files (babel.config.js, metro.config.js, *.config.cjs).
   {

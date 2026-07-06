@@ -8,7 +8,7 @@ import { makeUseStyles, radius, useTheme } from '@kc/ui';
 import { AvatarInitials } from '../../AvatarInitials';
 import { RoleBadge } from './RoleBadge';
 import { rowDirectionStart, textAlignStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface ManagerPickerModalProps {
   readonly visible: boolean;
@@ -22,13 +22,14 @@ export function ManagerPickerModal(props: ManagerPickerModalProps) {
   const { visible, candidates, busy, onPick, onClose } = props;
   const styles = useStyles();
   const { colors } = useTheme();
+  const L = useLocaleBundle();
 
   return (
     <Modal visible={visible} transparent animationType="fade" onRequestClose={onClose}>
       <Pressable style={styles.backdrop} onPress={busy ? undefined : onClose}>
         <Pressable style={styles.sheet} onPress={() => undefined}>
-          <Text style={styles.title}>{he.admin.admins.managerPicker.title}</Text>
-          <Text style={styles.hint}>{he.admin.admins.managerPicker.hint}</Text>
+          <Text style={styles.title}>{L.admin.admins.managerPicker.title}</Text>
+          <Text style={styles.hint}>{L.admin.admins.managerPicker.hint}</Text>
 
           <Pressable
             accessibilityRole="button"
@@ -36,7 +37,7 @@ export function ManagerPickerModal(props: ManagerPickerModalProps) {
             onPress={() => onPick(null)}
             style={styles.detach}
           >
-            <Text style={styles.detachText}>{he.admin.admins.managerPicker.detach}</Text>
+            <Text style={styles.detachText}>{L.admin.admins.managerPicker.detach}</Text>
           </Pressable>
 
           <FlatList
@@ -44,7 +45,7 @@ export function ManagerPickerModal(props: ManagerPickerModalProps) {
             keyExtractor={(m) => m.grantId}
             style={styles.list}
             ListEmptyComponent={
-              <Text style={styles.empty}>{he.admin.admins.managerPicker.empty}</Text>
+              <Text style={styles.empty}>{L.admin.admins.managerPicker.empty}</Text>
             }
             renderItem={({ item }) => (
               <Pressable
@@ -54,12 +55,12 @@ export function ManagerPickerModal(props: ManagerPickerModalProps) {
                 style={styles.row}
               >
                 <AvatarInitials
-                  name={item.displayName ?? he.admin.admins.row.unnamed}
+                  name={item.displayName ?? L.admin.admins.row.unnamed}
                   avatarUrl={item.avatarUrl}
                   size={32}
                 />
                 <Text style={styles.name} numberOfLines={1}>
-                  {item.displayName ?? he.admin.admins.row.unnamed}
+                  {item.displayName ?? L.admin.admins.row.unnamed}
                 </Text>
                 <RoleBadge role={item.role} />
               </Pressable>
@@ -68,7 +69,7 @@ export function ManagerPickerModal(props: ManagerPickerModalProps) {
 
           <Pressable accessibilityRole="button" onPress={onClose} style={styles.cancel}>
             <Text style={[styles.cancelText, { color: colors.textSecondary }]}>
-              {he.admin.admins.managerPicker.cancel}
+              {L.admin.admins.managerPicker.cancel}
             </Text>
           </Pressable>
         </Pressable>

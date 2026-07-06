@@ -16,10 +16,11 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useCreateAdminTask } from '../../../src/hooks/useAdminTaskMutations';
 import { AssigneePicker } from '../../../src/components/admin/tasks/AssigneePicker';
 import { TaskCategoryPicker } from '../../../src/components/admin/tasks/TaskCategoryPicker';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 export default function NewTaskScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const { roles } = useAdminRoles();
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
 
@@ -38,7 +39,7 @@ export default function NewTaskScreen() {
   if (!can('tasks.create')) {
     return (
       <View style={styles.center}>
-        <Text style={styles.deniedTitle}>{he.admin.tasks.forbiddenTitle}</Text>
+        <Text style={styles.deniedTitle}>{L.admin.tasks.forbiddenTitle}</Text>
       </View>
     );
   }
@@ -75,28 +76,28 @@ export default function NewTaskScreen() {
 
   return (
     <ScrollView style={styles.root} contentContainerStyle={styles.content}>
-      <Text style={styles.title}>{he.admin.tasks.form.newTitle}</Text>
+      <Text style={styles.title}>{L.admin.tasks.form.newTitle}</Text>
 
-      <Text style={styles.label}>{he.admin.tasks.form.titleLabel}</Text>
+      <Text style={styles.label}>{L.admin.tasks.form.titleLabel}</Text>
       <TextInput
         style={styles.input}
         value={title}
         onChangeText={setTitle}
-        placeholder={he.admin.tasks.form.titlePlaceholder}
+        placeholder={L.admin.tasks.form.titlePlaceholder}
         maxLength={200}
       />
 
-      <Text style={styles.label}>{he.admin.tasks.form.descriptionLabel}</Text>
+      <Text style={styles.label}>{L.admin.tasks.form.descriptionLabel}</Text>
       <TextInput
         style={[styles.input, styles.multiline]}
         value={description}
         onChangeText={setDescription}
-        placeholder={he.admin.tasks.form.descriptionPlaceholder}
+        placeholder={L.admin.tasks.form.descriptionPlaceholder}
         multiline
         numberOfLines={4}
       />
 
-      <Text style={styles.label}>{he.admin.tasks.form.priorityLabel}</Text>
+      <Text style={styles.label}>{L.admin.tasks.form.priorityLabel}</Text>
       <View style={styles.priorityRow}>
         {ADMIN_TASK_PRIORITIES.map((p) => (
           <Pressable
@@ -105,35 +106,35 @@ export default function NewTaskScreen() {
             style={[styles.priorityChip, priority === p && styles.priorityChipActive]}
           >
             <Text style={[styles.priorityChipText, priority === p && styles.priorityChipTextActive]}>
-              {he.admin.tasks.priority[p]}
+              {L.admin.tasks.priority[p]}
             </Text>
           </Pressable>
         ))}
       </View>
 
-      <Text style={styles.label}>{he.admin.tasks.form.categoryLabel}</Text>
+      <Text style={styles.label}>{L.admin.tasks.form.categoryLabel}</Text>
       <TaskCategoryPicker value={category} onChange={setCategory} />
 
       {can('admins.view') && (
         <>
-          <Text style={styles.label}>{he.admin.tasks.form.assigneeLabel}</Text>
+          <Text style={styles.label}>{L.admin.tasks.form.assigneeLabel}</Text>
           <AssigneePicker value={assigneeId} onChange={setAssigneeId} />
         </>
       )}
 
-      <Text style={styles.label}>{he.admin.tasks.form.labelsLabel}</Text>
+      <Text style={styles.label}>{L.admin.tasks.form.labelsLabel}</Text>
       <TextInput
         style={styles.input}
         value={labelsRaw}
         onChangeText={setLabelsRaw}
-        placeholder={he.admin.tasks.form.labelsPlaceholder}
+        placeholder={L.admin.tasks.form.labelsPlaceholder}
       />
 
       {errorCode !== null && (
         <>
           <Text style={styles.error}>
-            {he.admin.tasks.errors[errorCode as keyof typeof he.admin.tasks.errors]
-              ?? he.admin.tasks.errors.unknown}
+            {L.admin.tasks.errors[errorCode as keyof LocaleBundle['admin']['tasks']['errors']]
+              ?? L.admin.tasks.errors.unknown}
           </Text>
           {errorDetail !== null && (
             <Text style={styles.errorDetail}>{errorDetail}</Text>
@@ -143,14 +144,14 @@ export default function NewTaskScreen() {
 
       <View style={styles.actions}>
         <Pressable style={styles.cancelBtn} onPress={() => router.back()}>
-          <Text style={styles.cancelBtnText}>{he.admin.tasks.form.cancel}</Text>
+          <Text style={styles.cancelBtnText}>{L.admin.tasks.form.cancel}</Text>
         </Pressable>
         <Pressable
           style={[styles.submitBtn, !canSubmit && styles.submitBtnDisabled]}
           disabled={!canSubmit}
           onPress={() => { void submit(); }}
         >
-          <Text style={styles.submitBtnText}>{he.admin.tasks.form.submit}</Text>
+          <Text style={styles.submitBtnText}>{L.admin.tasks.form.submit}</Text>
         </Pressable>
       </View>
     </ScrollView>

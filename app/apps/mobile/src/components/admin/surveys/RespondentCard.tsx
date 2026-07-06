@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import type { AdminSurveyRespondent, AdminSurveyQuestionStat } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { textAlignStart, rowDirectionStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 function fmt(iso: string): string {
   const d = new Date(iso);
@@ -20,7 +20,8 @@ export interface RespondentCardProps {
 
 export function RespondentCard({ respondent, questions }: RespondentCardProps): ReactElement {
   const styles = useStyles();
-  const t = he.admin.surveys.respondents;
+  const L = useLocaleBundle();
+  const t = L.admin.surveys.respondents;
   const labelFor = (qid: string): string =>
     questions.find((q) => q.id === qid)?.shortLabelHe ?? '';
 

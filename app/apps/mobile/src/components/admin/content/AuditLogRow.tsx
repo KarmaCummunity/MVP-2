@@ -3,7 +3,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { AdminAuditRow } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface AuditLogRowProps {
   readonly row: AdminAuditRow;
@@ -17,17 +17,18 @@ function fmtTs(d: Date): string {
 
 export function AuditLogRow({ row }: AuditLogRowProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   return (
     <View style={styles.root}>
       <View style={styles.headerRow}>
         <Text style={styles.action}>
-          {he.admin.content.auditAction[row.action as keyof typeof he.admin.content.auditAction]
+          {L.admin.content.auditAction[row.action as keyof LocaleBundle['admin']['content']['auditAction']]
             ?? row.action}
         </Text>
         <Text style={styles.ts}>{fmtTs(row.createdAt)}</Text>
       </View>
       <Text style={styles.actor}>
-        {row.actorDisplayName ?? he.admin.content.systemActor}
+        {row.actorDisplayName ?? L.admin.content.systemActor}
         {row.targetDisplayName && ` → ${row.targetDisplayName}`}
       </Text>
       {Object.keys(row.metadata).length > 0 && (
