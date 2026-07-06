@@ -1,6 +1,12 @@
 # Two-stage build: Expo web bundle → Node 20 Hono server.
 # Designed for Railway, builds anywhere Docker runs.
 #
+# (Comment-only touch 2026-07-06: retrigger Railway's KC-MVP-2/dev deploy —
+# main's branch protection requires an active deployment to that environment
+# matching the exact promoted commit, and Railway only rebuilds on changes
+# under its watched build path. See the analogous supabase-dev note in
+# .github/workflows/db-deploy.yml for the same failure mode.)
+#
 # No `# syntax=` frontend directive: it forced BuildKit to pull
 # docker/dockerfile:1.7 from Docker Hub every build, which failed with a
 # Docker Hub auth/rate-limit error (2026-06-04). This Dockerfile uses only

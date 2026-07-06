@@ -1897,22 +1897,12 @@ a.user-greeting:hover {
     top: 92px;
 }
 
-.personal-profile-card,
 .personal-nav,
 .personal-stats-grid div {
     background: var(--white);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     box-shadow: var(--shadow-sm);
-}
-
-.personal-profile-card {
-    padding: 24px;
-    text-align: center;
-}
-
-.personal-profile-card .profile-avatar {
-    margin-bottom: 16px;
 }
 
 /* FR-GLOWE-011 AC1 — profile-card loading skeleton (shown on first Personal
@@ -1965,7 +1955,7 @@ a.user-greeting:hover {
     border-radius: 999px;
 }
 
-.social-profile-hero.is-loading .social-profile-row {
+.social-profile-hero.is-loading .social-profile-body {
     padding: 24px;
 }
 
@@ -1973,47 +1963,8 @@ a.user-greeting:hover {
     .skeleton::after { animation: none; }
 }
 
-.personal-avatar-wrap {
-    position: relative;
-    width: fit-content;
-    margin: 0 auto 16px;
-}
-
-.personal-avatar-wrap .profile-avatar {
-    width: 112px;
-    height: 112px;
-    margin-bottom: 0;
-    border: 5px solid var(--white);
-    box-shadow: var(--shadow-md);
-}
-
-.personal-avatar-wrap button {
-    position: absolute;
-    right: -6px;
-    bottom: 8px;
-    border: 1px solid var(--border-color);
-    border-radius: 999px;
-    background: var(--white);
-    color: var(--primary-dark);
-    font: inherit;
-    font-size: 0.72rem;
-    font-weight: 900;
-    padding: 5px 9px;
-    cursor: pointer;
-}
-
-.personal-profile-card h2 {
-    margin-bottom: 6px;
-}
-
-.personal-profile-card p {
-    color: var(--text-secondary);
-    margin-bottom: 14px;
-}
-
 .profile-status-pill {
     display: inline-flex;
-    margin-bottom: 14px;
     padding: 6px 10px;
     border-radius: 999px;
     background: var(--primary-light);
@@ -2072,26 +2023,73 @@ a.user-greeting:hover {
     border-bottom: 1px solid var(--border-color);
 }
 
-.social-profile-row {
+.social-profile-body {
     display: grid;
-    grid-template-columns: auto minmax(0, 1fr) auto;
-    gap: 22px;
-    align-items: end;
+    gap: 18px;
     padding: 0 28px 28px;
+}
+
+.social-profile-head {
+    display: flex;
+    gap: 22px;
+    align-items: flex-end;
+}
+
+.social-avatar-wrap {
+    position: relative;
+    flex-shrink: 0;
+    margin-top: -64px;
 }
 
 .social-avatar {
     width: 136px;
     height: 136px;
-    margin-top: -64px;
+    margin: 0;
     border: 6px solid var(--white);
     box-shadow: var(--shadow-md);
 }
 
+.social-avatar-change {
+    position: absolute;
+    inset-inline-end: -4px;
+    inset-block-end: 6px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--primary-dark);
+    font: inherit;
+    font-size: 0.72rem;
+    font-weight: 900;
+    padding: 5px 9px;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.social-avatar-change:hover {
+    background: var(--primary-light);
+}
+
+.social-profile-copy {
+    min-width: 0;
+    padding-bottom: 6px;
+}
+
+.social-profile-tags {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 8px;
+    margin-bottom: 4px;
+}
+
+.social-profile-tags .profile-type {
+    margin: 0;
+}
+
 .social-profile-copy h2 {
-    font-size: clamp(1.8rem, 3vw, 2.8rem);
-    line-height: 1.05;
-    margin: 5px 0 8px;
+    font-size: clamp(1.6rem, 2.6vw, 2.4rem);
+    line-height: 1.1;
+    margin: 4px 0 8px;
 }
 
 .social-profile-copy p {
@@ -2103,24 +2101,26 @@ a.user-greeting:hover {
     display: flex;
     flex-wrap: wrap;
     gap: 8px;
-    margin-top: 12px;
 }
 
 .profile-meta-row span {
-    padding: 7px 10px;
+    padding: 7px 12px;
     border: 1px solid var(--border-color);
     border-radius: 999px;
     background: #fbfefd;
     color: var(--text-secondary);
     font-size: 0.82rem;
     font-weight: 800;
+    white-space: nowrap;
 }
 
 .personal-actions {
     display: flex;
     flex-wrap: wrap;
     gap: 10px;
-    justify-content: flex-end;
+    justify-content: flex-start;
+    padding-top: 18px;
+    border-top: 1px solid var(--border-color);
 }
 
 .personal-stats-grid {
@@ -3614,6 +3614,16 @@ a.user-greeting:hover {
     font-weight: 900;
 }
 
+/* When the toggle is present it carries the auto-margin instead, so the badge
+   sits directly before it rather than getting pushed to opposite ends. */
+.profile-section-heading:has(.section-collapse-toggle) .questionnaire-type-badge {
+    margin-inline-start: auto;
+}
+
+.profile-section-heading:has(.section-collapse-toggle) .questionnaire-type-badge ~ .section-collapse-toggle {
+    margin-inline-start: 0;
+}
+
 .questionnaire-badge-close {
     display: inline-flex;
     align-items: center;
@@ -3631,6 +3641,40 @@ a.user-greeting:hover {
 
 .questionnaire-badge-close:hover {
     background: rgba(0, 0, 0, 0.08);
+}
+
+.section-collapse-toggle {
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    margin-inline-start: auto;
+    padding: 6px 12px;
+    border: 1px solid var(--border-color);
+    border-radius: 999px;
+    background: var(--white);
+    color: var(--primary-dark);
+    font: inherit;
+    font-size: 0.8rem;
+    font-weight: 900;
+    cursor: pointer;
+    transition: background-color 0.2s;
+}
+
+.section-collapse-toggle:hover {
+    background: var(--primary-light);
+}
+
+.collapse-chevron {
+    font-size: 0.7rem;
+    transition: transform 0.2s;
+}
+
+.profile-section-card:not(.is-collapsed) .collapse-chevron {
+    transform: rotate(180deg);
+}
+
+.profile-section-card.is-collapsed .section-collapsible {
+    display: none;
 }
 
 .profile-info-list {
@@ -3903,12 +3947,13 @@ a.user-greeting:hover {
         position: static;
     }
 
-    .social-profile-row {
-        grid-template-columns: 1fr;
-        align-items: start;
+    .social-profile-head {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 12px;
     }
 
-    .social-avatar {
+    .social-avatar-wrap {
         margin-top: -76px;
     }
 
@@ -3916,8 +3961,8 @@ a.user-greeting:hover {
         grid-template-columns: 1fr;
     }
 
-    .personal-actions {
-        justify-content: flex-start;
+    .personal-actions .btn {
+        flex: 1 1 auto;
     }
 
     .profile-cover {
