@@ -516,9 +516,6 @@ const SAVED_ITEMS_KEY = 'gloweSavedItems';
 const POST_COMMENTS_KEY = 'glowePostComments';
 const APPLICATIONS_STORAGE_KEY = 'gloweApplications';
 const LEGACY_APPLICATIONS_STORAGE_KEY = 'revolutionaryApplications';
-const MODERATION_REPORTS_KEY = 'gloweModerationReports';
-const MODERATION_HIDDEN_KEY = 'gloweModerationHidden';
-const LOCAL_USERS_KEY = 'gloweUsers';
 
 let activeReportTarget = {
     type: 'general',
@@ -749,48 +746,6 @@ function readJsonStore(key, fallback) {
 
 function writeJsonStore(key, value) {
     localStorage.setItem(key, JSON.stringify(value));
-}
-
-function getModerationReports() {
-    return readJsonStore(MODERATION_REPORTS_KEY, []);
-}
-
-function saveModerationReports(reports) {
-    writeJsonStore(MODERATION_REPORTS_KEY, reports);
-}
-
-function getHiddenModerationItems() {
-    return readJsonStore(MODERATION_HIDDEN_KEY, []);
-}
-
-function saveHiddenModerationItems(items) {
-    writeJsonStore(MODERATION_HIDDEN_KEY, items);
-}
-
-function moderationKey(type, id) {
-    return `${type}:${id}`;
-}
-
-function isModerationHidden(type, id) {
-    return getHiddenModerationItems().includes(moderationKey(type, id));
-}
-
-function addHiddenModerationItem(type, id) {
-    const hidden = getHiddenModerationItems();
-    const key = moderationKey(type, id);
-    if (!hidden.includes(key)) saveHiddenModerationItems([key, ...hidden]);
-}
-
-function removeHiddenModerationItem(type, id) {
-    saveHiddenModerationItems(getHiddenModerationItems().filter(key => key !== moderationKey(type, id)));
-}
-
-function getLocalUsers() {
-    return readJsonStore(LOCAL_USERS_KEY, []);
-}
-
-function saveLocalUsers(users) {
-    writeJsonStore(LOCAL_USERS_KEY, users);
 }
 
 function filterOpportunityCatalog(opportunityList, filters) {
@@ -3450,7 +3405,7 @@ function getAllCommunityPosts() {
     return [...getSavedCommunityPosts(), ...communityPosts].map((post, index) => ({
         ...post,
         id: getPostId(post, index)
-    })).filter(post => !isModerationHidden('post', post.id));
+    }));
 }
 
 function buildShareUrl(platform, title, url) {
@@ -4709,7 +4664,7 @@ async function initOrganizationsPage() {
     const countLabel = document.getElementById('organization-results-count');
 
     function buildVisibleOrgs() {
-        return organizations.filter(org => !isModerationHidden('profile', org.id));
+        return [...organizations];
     }
 
     function refreshFilters(visibleOrgs) {
@@ -4942,7 +4897,7 @@ async function initCommunityPage() {
     }
 
     if (peopleContainer) {
-        const visiblePeople = people.filter(person => !isModerationHidden('profile', person.id));
+        const visiblePeople = [...people];
         peopleContainer.innerHTML = visiblePeople.length
             ? visiblePeople.map(person => `
                 <div class="person-row">
@@ -4972,52 +4927,10 @@ async function initCommunityPage() {
     }
 }
 
-function getAdminReviewUsers() {
-    return getLocalUsers().filter(user => (user.profileStatus || '').toLowerCase().includes('pending') || (user.reviewStatus || '').toLowerCase().includes('submit'));
-}
-
-function updateUserModerationStatus(userId, profileStatus) {
-    const users = getLocalUsers();
-    const updated = users.map(user => String(user.id) === String(userId) ? {
-        ...user,
-        profileStatus,
-        reviewStatus: profileStatus === 'Approved' ? 'Approved by admin' : 'Needs changes',
-        moderatedAt: new Date().toISOString()
-    } : user);
-    saveLocalUsers(updated);
-    initAdminPage();
-    showSuccessModal('Profile updated', `The profile was marked as ${profileStatus}.`);
-}
-
-function updateReportStatus(reportId, status) {
-    saveModerationReports(getModerationReports().map(report => report.id === reportId ? {
-        ...report,
-        status,
-        reviewedAt: new Date().toISOString()
-    } : report));
-    initAdminPage();
-}
-
-function hideReportedItem(type, id, reportId = '') {
-    addHiddenModerationItem(type, id);
-    if (reportId) updateReportStatus(reportId, 'Action taken');
-    initAdminPage();
-    showSuccessModal('Content hidden', 'This item is now hidden in the MVP moderation layer.');
-}
-
-function restoreModeratedItem(type, id) {
-    removeHiddenModerationItem(type, id);
-    initAdminPage();
-    showSuccessModal('Content restored', 'This item is visible again.');
-}
-
 function initAdminPage() {
-    const requestsContainer = document.getElementById('admin-join-requests');
     const reportsContainer = document.getElementById('admin-reports');
-    const hiddenContainer = document.getElementById('admin-hidden-items');
     const orgContainer = document.getElementById('admin-org-requests');
-    const stats = document.querySelectorAll('[data-admin-stat]');
-    if (!requestsContainer && !reportsContainer && !hiddenContainer && !orgContainer) return;
+    if (!reportsContainer && !orgContainer) return;
 
     if (orgContainer) loadPendingOrgs();
     if (reportsContainer) loadModerationReports();
@@ -5031,44 +4944,6 @@ function initAdminPage() {
             if (oStat) oStat.textContent = orgs;
         }).catch(() => {});
     }
-
-    const requests = getAdminReviewUsers();
-    const hidden = getHiddenModerationItems();
-
-    if (requestsContainer) {
-        requestsContainer.innerHTML = requests.length ? requests.map(user => `
-            <article class="admin-card">
-                <span class="post-type-tag">${escapeHtml(user.profileStatus || 'Pending review')}</span>
-                <h3>${escapeHtml(user.name || 'Unnamed profile')}</h3>
-                <p>${escapeHtml(user.profileTypeLabel || user.type || 'Community member')} | ${escapeHtml(user.email || '')}</p>
-                <p>${escapeHtml(user.shortLine || user.story || 'No public line yet.')}</p>
-                <div class="card-actions">
-                    <button class="btn btn-primary btn-small" type="button" onclick="updateUserModerationStatus('${user.id}', 'Approved')">Approve</button>
-                    <button class="btn btn-outline btn-small" type="button" onclick="updateUserModerationStatus('${user.id}', 'Needs changes')">Needs Changes</button>
-                    <button class="btn btn-outline btn-small" type="button" onclick="hideReportedItem('profile', '${user.id}')">Hide Profile</button>
-                </div>
-            </article>
-        `).join('') : '<div class="empty-state"><h3>No pending profiles</h3><p>New submitted profiles will appear here for review.</p></div>';
-    }
-
-    if (hiddenContainer) {
-        hiddenContainer.innerHTML = hidden.length ? hidden.map(key => {
-            const [type, id] = key.split(':');
-            return `
-                <article class="admin-card compact-admin-card">
-                    <h3>${escapeHtml(type)} hidden</h3>
-                    <p>${escapeHtml(id)}</p>
-                    <button class="btn btn-outline btn-small" type="button" onclick="restoreModeratedItem('${type}', '${id}')">Restore</button>
-                </article>
-            `;
-        }).join('') : '<div class="empty-state"><h3>No hidden items</h3><p>Items removed by admin will be listed here.</p></div>';
-    }
-
-    stats.forEach(stat => {
-        const type = stat.dataset.adminStat;
-        if (type === 'requests') stat.textContent = requests.length;
-        if (type === 'hidden') stat.textContent = hidden.length;
-    });
 }
 
 // FR-GLOWE-015 AC4 — live moderation report queue, backed by the admin-gated
