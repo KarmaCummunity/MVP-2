@@ -8,7 +8,7 @@ import { View, Text, Pressable, StyleSheet } from 'react-native';
 import { useRouter } from 'expo-router';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, useTheme } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { isOpaqueSystemShareHandle } from '../../../lib/shareHandleDisplay';
 
 export type LinkTarget = { type: 'post' | 'user'; id: string; handle: string };
@@ -72,7 +72,7 @@ export function TargetPreviewCard({
   const router = useRouter();
   const styles = useTargetPreviewCardStyles();
   const { colors } = useTheme();
-  const t = he.moderation.bubble.targetPreview;
+  const { t } = useTranslation();
 
   const navigate = () => {
     if (linkTarget.type === 'post') {
@@ -93,8 +93,8 @@ export function TargetPreviewCard({
 
   const a11yLabel =
     preview.kind === 'post'
-      ? t.a11yOpenPost.replace('{who}', a11yWho)
-      : t.a11yOpenProfile.replace('{who}', a11yWho);
+      ? t('moderation.bubble.targetPreview.a11yOpenPost').replace('{who}', a11yWho)
+      : t('moderation.bubble.targetPreview.a11yOpenProfile').replace('{who}', a11yWho);
 
   return (
     <Pressable
@@ -107,22 +107,22 @@ export function TargetPreviewCard({
         <>
           <Text style={styles.handle}>
             {isOpaqueSystemShareHandle(preview.author_handle)
-              ? `${preview.author_display_name} · ${t.postLabel}`
-              : `‎@${preview.author_handle} · ${t.postLabel}`}
+              ? `${preview.author_display_name} · ${t('moderation.bubble.targetPreview.postLabel')}`
+              : `‎@${preview.author_handle} · ${t('moderation.bubble.targetPreview.postLabel')}`}
           </Text>
           {preview.body_snippet ? (
             <Text style={styles.snippet} numberOfLines={3}>
               {preview.body_snippet}
             </Text>
           ) : null}
-          {preview.has_image ? <Text style={styles.snippet}>{t.hasImage}</Text> : null}
+          {preview.has_image ? <Text style={styles.snippet}>{t('moderation.bubble.targetPreview.hasImage')}</Text> : null}
         </>
       ) : (
         <>
           <Text style={styles.handle}>
             {isOpaqueSystemShareHandle(preview.handle)
-              ? `${preview.display_name} · ${t.profileLabel}`
-              : `‎@${preview.handle} · ${t.profileLabel}`}
+              ? `${preview.display_name} · ${t('moderation.bubble.targetPreview.profileLabel')}`
+              : `‎@${preview.handle} · ${t('moderation.bubble.targetPreview.profileLabel')}`}
           </Text>
           {preview.display_name && !isOpaqueSystemShareHandle(preview.handle) ? (
             <Text style={styles.snippet}>{preview.display_name}</Text>
@@ -136,7 +136,7 @@ export function TargetPreviewCard({
       )}
       <View style={styles.openRow}>
         <Ionicons name="chevron-back" size={16} color={colors.secondary} />
-        <Text style={styles.openText}>{t.open}</Text>
+        <Text style={styles.openText}>{t('moderation.bubble.targetPreview.open')}</Text>
       </View>
     </Pressable>
   );

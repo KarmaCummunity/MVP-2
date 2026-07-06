@@ -5,12 +5,14 @@ import React from 'react';
 import { Linking, Platform, Pressable, Text, View } from 'react-native';
 import { Stack, useLocalSearchParams } from 'expo-router';
 import { makeUseStyles, spacing, typography } from '@kc/ui';
-import he from '../src/i18n/locales/he';
+import { useTranslation } from 'react-i18next';
+import type { TFunction } from 'i18next';
 
 const SUPPORT_EMAIL = 'karmacommunity2.0@gmail.com';
 
-function openSupportMail() {
-  const { subject, body } = he.accountBlocked.supportMail;
+function openSupportMail(t: TFunction) {
+  const subject = t('accountBlocked.supportMail.subject');
+  const body = t('accountBlocked.supportMail.body');
   const q = `subject=${encodeURIComponent(subject)}&body=${encodeURIComponent(body)}`;
   const url = `mailto:${SUPPORT_EMAIL}?${q}`;
   if (Platform.OS === 'web' && globalThis.window !== undefined) {
@@ -22,23 +24,23 @@ function openSupportMail() {
 
 type Reason = 'banned' | 'suspended_admin' | 'suspended_for_false_reports';
 
-function pickContent(reason: string | undefined) {
-  const t = he.accountBlocked;
+function pickContentKey(reason: string | undefined): string {
   switch (reason as Reason | undefined) {
     case 'suspended_admin':
-      return t.suspendedAdmin;
+      return 'accountBlocked.suspendedAdmin';
     case 'suspended_for_false_reports':
-      return t.suspendedForFalseReports;
+      return 'accountBlocked.suspendedForFalseReports';
     case 'banned':
     default:
-      return t.banned;
+      return 'accountBlocked.banned';
   }
 }
 
 export default function AccountBlockedScreen() {
   const styles = useStyles();
+  const { t } = useTranslation();
   const { reason, until } = useLocalSearchParams<{ reason?: string; until?: string }>();
-  const content = pickContent(reason);
+  const contentKey = pickContentKey(reason);
 
   const formattedUntil = until
     ? new Date(until).toLocaleDateString('he-IL', {
@@ -47,16 +49,16 @@ export default function AccountBlockedScreen() {
         day: 'numeric',
       })
     : '';
-  const body = (content.body ?? '').replace('{until}', formattedUntil);
+  const body = t(`${contentKey}.body`, { defaultValue: '' }).replace('{until}', formattedUntil);
 
   return (
     <>
       <Stack.Screen options={{ headerTitle: '', headerBackVisible: false }} />
       <View style={styles.container}>
-        <Text style={styles.title}>{content.title}</Text>
+        <Text style={styles.title}>{t(`${contentKey}.title`)}</Text>
         <Text style={styles.body}>{body}</Text>
-        <Pressable onPress={openSupportMail}>
-          <Text style={styles.cta}>{content.cta}</Text>
+        <Pressable onPress={() => openSupportMail(t)}>
+          <Text style={styles.cta}>{t(`${contentKey}.cta`)}</Text>
         </Pressable>
       </View>
     </>

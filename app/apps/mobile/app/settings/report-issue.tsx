@@ -22,15 +22,15 @@ import { container } from '../../src/lib/container';
 import { NotifyModal } from '../../src/components/NotifyModal';
 import { rtlTextAlignStart } from '../../src/lib/rtlTextAlignStart';
 import { webTextRtl, webViewRtl } from '../../src/lib/webRtlStyle';
-import he from '../../src/i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 
-const t = he.settings.reportIssueScreen;
 const CATEGORIES = ['Bug', 'Account', 'Suggestion', 'Other'] as const;
 const MAX_DESC = 500;
 
 export default function ReportIssueScreen() {
   const detailStackScreenOptions = useDetailStackScreenOptions();
   const router = useRouter();
+  const { t } = useTranslation();
   const styles = useReportIssueScreenStyles();
   const { colors } = useTheme();
   const [category, setCategory] = useState<string | null>(null);
@@ -48,11 +48,11 @@ export default function ReportIssueScreen() {
       const chat = await container.submitSupportIssue.execute({ category, description: descTrimmed });
       router.replace({ pathname: '/chat/[id]', params: { id: chat.chatId } });
     } catch (err) {
-      const errorTitle = he.settings.reportIssueErrorTitle;
+      const errorTitle = t('settings.reportIssueErrorTitle');
       if (err instanceof ChatError && err.code === 'super_admin_not_found') {
-        setNotify({ title: errorTitle, message: t.errorAdminNotFound });
+        setNotify({ title: errorTitle, message: t('settings.reportIssueScreen.errorAdminNotFound') });
       } else {
-        setNotify({ title: errorTitle, message: t.errorGeneric });
+        setNotify({ title: errorTitle, message: t('settings.reportIssueScreen.errorGeneric') });
       }
     } finally {
       setBusy(false);
@@ -66,7 +66,7 @@ export default function ReportIssueScreen() {
           ...detailStackScreenOptions,
           headerStyle: { backgroundColor: colors.surface },
           headerTintColor: colors.primary,
-          headerTitle: t.title,
+          headerTitle: t('settings.reportIssueScreen.title'),
         }}
       />
       <KeyboardAvoidingView
@@ -83,11 +83,11 @@ export default function ReportIssueScreen() {
             <View style={styles.introIcon}>
               <Ionicons name="chatbubbles-outline" size={22} color={colors.primary} />
             </View>
-            <Text style={styles.copy}>{t.copy}</Text>
+            <Text style={styles.copy}>{t('settings.reportIssueScreen.copy')}</Text>
           </View>
 
           <Card padding="base" style={styles.formCard}>
-            <Text style={styles.label}>{t.categoryLabel}</Text>
+            <Text style={styles.label}>{t('settings.reportIssueScreen.categoryLabel')}</Text>
             <View style={styles.chips}>
               {CATEGORIES.map((cat) => {
                 const selected = category === cat;
@@ -100,19 +100,19 @@ export default function ReportIssueScreen() {
                     accessibilityState={{ selected }}
                   >
                     <Text style={[styles.chipText, selected && styles.chipTextSelected]}>
-                      {t.categories[cat]}
+                      {t(`settings.reportIssueScreen.categories.${cat}`)}
                     </Text>
                   </Pressable>
                 );
               })}
             </View>
 
-            <Text style={[styles.label, styles.labelSpaced]}>{t.descriptionLabel}</Text>
+            <Text style={[styles.label, styles.labelSpaced]}>{t('settings.reportIssueScreen.descriptionLabel')}</Text>
             <TextInput
               style={styles.input}
               multiline
               numberOfLines={6}
-              placeholder={t.descriptionPlaceholder}
+              placeholder={t('settings.reportIssueScreen.descriptionPlaceholder')}
               placeholderTextColor={colors.textSecondary}
               value={description}
               onChangeText={setDescription}
@@ -121,7 +121,7 @@ export default function ReportIssueScreen() {
             />
             <View style={styles.inputFooter}>
               {descTrimmed.length > 0 && descTrimmed.length < 10 ? (
-                <Text style={styles.hint}>{t.descriptionMinLength}</Text>
+                <Text style={styles.hint}>{t('settings.reportIssueScreen.descriptionMinLength')}</Text>
               ) : (
                 <View />
               )}
@@ -130,7 +130,7 @@ export default function ReportIssueScreen() {
           </Card>
 
           <PrimaryButton
-            label={busy ? t.submitting : t.submitBtn}
+            label={busy ? t('settings.reportIssueScreen.submitting') : t('settings.reportIssueScreen.submitBtn')}
             onPress={submit}
             loading={busy}
             disabled={!isValid}

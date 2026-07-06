@@ -9,7 +9,7 @@ import { hasPermission, type AdminRole } from '@kc/domain';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { useAuthStore } from '../../../store/authStore';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { confirmAndRun, showAdminToast } from './adminActions';
 import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
@@ -27,7 +27,7 @@ export function AutoRemovedBubble({
   const me = useAuthStore((s) => s.session?.userId ?? null);
   const styles = useAutoRemovedBubbleStyles();
   const { colors } = useTheme();
-  const t = he.moderation;
+  const { t } = useTranslation();
   const targetType = payload?.target_type as TargetType | undefined;
   const targetId = payload?.target_id as string | undefined;
   const showActions = canViewReports && !handledByLaterAction && !!targetType && !!targetId;
@@ -39,14 +39,14 @@ export function AutoRemovedBubble({
 
   return (
     <View style={[styles.bubble, handledByLaterAction && styles.dimmed]}>
-      <Text style={styles.title}>{t.bubble.autoRemoved.title}</Text>
-      {showChatNote ? <Text style={styles.note}>{t.bubble.targetPreview.chatNote}</Text> : null}
+      <Text style={styles.title}>{t('moderation.bubble.autoRemoved.title')}</Text>
+      {showChatNote ? <Text style={styles.note}>{t('moderation.bubble.targetPreview.chatNote')}</Text> : null}
 
       {showRichPreview && linkTarget && preview ? (
         <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor={colors.warning} />
       ) : null}
 
-      {showRichPreview ? <Text style={styles.evidence}>{t.bubble.targetPreview.evidenceLabel}</Text> : null}
+      {showRichPreview ? <Text style={styles.evidence}>{t('moderation.bubble.targetPreview.evidenceLabel')}</Text> : null}
 
       {body.length > 0 ? <Text style={styles.body}>{body}</Text> : null}
 
@@ -61,12 +61,12 @@ export function AutoRemovedBubble({
                     targetType: targetType!,
                     targetId: targetId!,
                   }),
-                onSuccess: () => showAdminToast(t.actions.success.restore),
+                onSuccess: () => showAdminToast(t('moderation.actions.success.restore')),
                 onError: showAdminToast,
               })
             }
           >
-            <Text style={styles.btn}>{t.actions.restore}</Text>
+            <Text style={styles.btn}>{t('moderation.actions.restore')}</Text>
           </Pressable>
           {targetType === 'user' && me ? (
             <Pressable
@@ -80,12 +80,12 @@ export function AutoRemovedBubble({
                       reason: 'policy_violation',
                       note: 'auto-removed at threshold',
                     }),
-                  onSuccess: () => showAdminToast(t.actions.success.ban),
+                  onSuccess: () => showAdminToast(t('moderation.actions.success.ban')),
                   onError: showAdminToast,
                 })
               }
             >
-              <Text style={styles.btn}>{t.actions.ban}</Text>
+              <Text style={styles.btn}>{t('moderation.actions.ban')}</Text>
             </Pressable>
           ) : null}
         </View>

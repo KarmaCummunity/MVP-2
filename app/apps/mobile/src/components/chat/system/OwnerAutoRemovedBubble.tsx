@@ -3,7 +3,7 @@
 import React from 'react';
 import { View, Text } from 'react-native';
 import { makeUseStyles, radius, typography } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
@@ -21,10 +21,10 @@ const useStyles = makeUseStyles(({ colors }) => ({
 
 export function OwnerAutoRemovedBubble(_props: SystemMessageBubbleProps) {
   const styles = useStyles();
-  const t = he.moderation;
+  const { t } = useTranslation();
   return (
     <View style={styles.bubble}>
-      <Text style={styles.body}>{t.bubble.ownerAutoRemoved.body}</Text>
+      <Text style={styles.body}>{t('moderation.bubble.ownerAutoRemoved.body')}</Text>
     </View>
   );
 }

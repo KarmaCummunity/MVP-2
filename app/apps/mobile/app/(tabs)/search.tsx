@@ -14,7 +14,7 @@ import { useQuery } from '@tanstack/react-query';
 import { useShallow } from 'zustand/react/shallow';
 import { useTheme } from '@kc/ui';
 import type { SearchResultType, SearchSortBy } from '@kc/domain';
-import { search as t } from '../../src/i18n/locales/he/donations';
+import { useTranslation } from 'react-i18next';
 
 import { useAuthStore } from '../../src/store/authStore';
 import { useSearchStore } from '../../src/store/searchStore';
@@ -40,6 +40,7 @@ const FULL_LIMIT = 50;   // results per section after "Show all"
 export default function SearchScreen() {
   const styles = useSearchScreenStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const session = useAuthStore((s) => s.session);
   const viewerId = session?.userId ?? null;
 
@@ -152,7 +153,7 @@ export default function SearchScreen() {
             value={inputText}
             onChangeText={handleTextChange}
             onSubmitEditing={handleSubmit}
-            placeholder={t.placeholder}
+            placeholder={t('search.placeholder')}
             placeholderTextColor={colors.textDisabled}
             textAlign="right"
             returnKeyType="search"
@@ -192,10 +193,10 @@ export default function SearchScreen() {
       >
         {([null, 'post', 'user', 'link'] as (SearchResultType | null)[]).map((type) => {
           const labels: Record<string, string> = {
-            '': t.all,
-            post: t.posts,
-            user: t.people,
-            link: t.links,
+            '': t('search.all'),
+            post: t('search.posts'),
+            user: t('search.people'),
+            link: t('search.links'),
           };
           const active = filters.resultType === type;
           return (
@@ -220,9 +221,9 @@ export default function SearchScreen() {
             <View style={styles.chipDivider} />
             {(['relevance', 'newest', 'followers'] as SearchSortBy[]).map((s) => {
               const labels: Record<string, string> = {
-                relevance: t.sortRelevance,
-                newest: t.sortNewest,
-                followers: t.sortFollowers,
+                relevance: t('search.sortRelevance'),
+                newest: t('search.sortNewest'),
+                followers: t('search.sortFollowers'),
               };
               const active = filters.sortBy === s;
               return (
@@ -256,7 +257,7 @@ export default function SearchScreen() {
         {isSingleCharTyped && (
           <View style={styles.emptyState}>
             <Ionicons name="text-outline" size={40} color={colors.textDisabled} />
-            <Text style={styles.emptySubtitle}>{t.minChars}</Text>
+            <Text style={styles.emptySubtitle}>{t('search.minChars')}</Text>
           </View>
         )}
 
@@ -264,7 +265,7 @@ export default function SearchScreen() {
         {!isSingleCharTyped && query.isLoading && (
           <View style={styles.loadingWrap}>
             <ActivityIndicator size="large" color={colors.primary} />
-            <Text style={styles.loadingText}>{t.loading}</Text>
+            <Text style={styles.loadingText}>{t('search.loading')}</Text>
           </View>
         )}
 
@@ -272,8 +273,8 @@ export default function SearchScreen() {
         {isSearchMode && !query.isLoading && results && !hasResults && (
           <View style={styles.emptyState}>
             <Ionicons name="search-outline" size={48} color={colors.textDisabled} />
-            <Text style={styles.emptyTitle}>{t.noResults}</Text>
-            <Text style={styles.emptySubtitle}>{t.noResultsDesc}</Text>
+            <Text style={styles.emptyTitle}>{t('search.noResults')}</Text>
+            <Text style={styles.emptySubtitle}>{t('search.noResultsDesc')}</Text>
           </View>
         )}
 
@@ -281,9 +282,9 @@ export default function SearchScreen() {
         {!isSearchMode && !isSingleCharTyped && store.recentSearches.length > 0 && (
           <View style={styles.section}>
             <View style={styles.sectionHeader}>
-              <Text style={styles.sectionTitle}>{t.recentSearches}</Text>
+              <Text style={styles.sectionTitle}>{t('search.recentSearches')}</Text>
               <TouchableOpacity onPress={() => store.clearRecentSearches()}>
-                <Text style={styles.clearRecentText}>{t.clearRecent}</Text>
+                <Text style={styles.clearRecentText}>{t('search.clearRecent')}</Text>
               </TouchableOpacity>
             </View>
             {store.recentSearches.map((q, i) => (
@@ -308,7 +309,7 @@ export default function SearchScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitle}>{t.sectionPeople}</Text>
+                    <Text style={styles.sectionTitle}>{t('search.sectionPeople')}</Text>
                     <Ionicons name="people" size={18} color={colors.primary} />
                     <Text style={styles.sectionCount}>({results.usersTotal})</Text>
                   </View>
@@ -317,7 +318,7 @@ export default function SearchScreen() {
                       style={styles.showAllBtn}
                       onPress={() => setExpandedSection('user')}
                     >
-                      <Text style={styles.showAllText}>{t.showAll}</Text>
+                      <Text style={styles.showAllText}>{t('search.showAll')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -332,7 +333,7 @@ export default function SearchScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitle}>{t.sectionPosts}</Text>
+                    <Text style={styles.sectionTitle}>{t('search.sectionPosts')}</Text>
                     <Ionicons name="cube" size={18} color={colors.primary} />
                     <Text style={styles.sectionCount}>({results.postsTotal})</Text>
                   </View>
@@ -341,7 +342,7 @@ export default function SearchScreen() {
                       style={styles.showAllBtn}
                       onPress={() => setExpandedSection('post')}
                     >
-                      <Text style={styles.showAllText}>{t.showAll}</Text>
+                      <Text style={styles.showAllText}>{t('search.showAll')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -356,7 +357,7 @@ export default function SearchScreen() {
               <View style={styles.section}>
                 <View style={styles.sectionHeader}>
                   <View style={styles.sectionTitleRow}>
-                    <Text style={styles.sectionTitle}>{t.sectionLinks}</Text>
+                    <Text style={styles.sectionTitle}>{t('search.sectionLinks')}</Text>
                     <Ionicons name="link" size={18} color={colors.secondary} />
                     <Text style={styles.sectionCount}>({results.linksTotal})</Text>
                   </View>
@@ -365,7 +366,7 @@ export default function SearchScreen() {
                       style={styles.showAllBtn}
                       onPress={() => setExpandedSection('link')}
                     >
-                      <Text style={styles.showAllText}>{t.showAll}</Text>
+                      <Text style={styles.showAllText}>{t('search.showAll')}</Text>
                     </TouchableOpacity>
                   )}
                 </View>
@@ -373,7 +374,7 @@ export default function SearchScreen() {
                 {filters.city && (
                   <View style={styles.nationalNote}>
                     <Ionicons name="globe-outline" size={14} color={colors.textSecondary} />
-                    <Text style={styles.nationalNoteText}>{t.nationalLinks}</Text>
+                    <Text style={styles.nationalNoteText}>{t('search.nationalLinks')}</Text>
                   </View>
                 )}
                 {results.links.map((link) => (
