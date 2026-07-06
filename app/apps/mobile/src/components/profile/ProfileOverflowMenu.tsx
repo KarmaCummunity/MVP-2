@@ -13,11 +13,9 @@ import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { hasPermission, type AdminRole } from '@kc/domain';
 import { useAdminRoles } from '../../hooks/useAdminRoles';
-import he from '../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { ReportUserModal } from './ReportUserModal';
 import { BanUserModal } from './BanUserModal';
-
-const t = he.moderation;
 
 interface Props {
   targetUserId: string;
@@ -28,6 +26,7 @@ type OpenModal = 'report' | 'ban' | null;
 export function ProfileOverflowMenu({ targetUserId }: Props) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const { t } = useTranslation();
   const { roles } = useAdminRoles();
   const canBan = hasPermission(roles as readonly AdminRole[], 'reports.permanent_ban');
   const [sheetOpen, setSheetOpen] = useState(false);
@@ -44,7 +43,7 @@ export function ProfileOverflowMenu({ targetUserId }: Props) {
       <Pressable
         onPress={() => setSheetOpen(true)}
         accessibilityRole="button"
-        accessibilityLabel={t.report.user.title}
+        accessibilityLabel={t('moderation.report.user.title')}
         hitSlop={8}
         style={styles.trigger}
       >
@@ -59,7 +58,7 @@ export function ProfileOverflowMenu({ targetUserId }: Props) {
               onPress={() => pick('report')}
               accessibilityRole="button"
             >
-              <Text style={styles.itemText}>{t.report.user.title}</Text>
+              <Text style={styles.itemText}>{t('moderation.report.user.title')}</Text>
             </TouchableOpacity>
             {canBan ? (
               <>
@@ -69,13 +68,13 @@ export function ProfileOverflowMenu({ targetUserId }: Props) {
                   onPress={() => pick('ban')}
                   accessibilityRole="button"
                 >
-                  <Text style={[styles.itemText, styles.itemDestructive]}>{t.actions.ban}</Text>
+                  <Text style={[styles.itemText, styles.itemDestructive]}>{t('moderation.actions.ban')}</Text>
                 </TouchableOpacity>
               </>
             ) : null}
             <View style={styles.divider} />
             <TouchableOpacity style={styles.item} onPress={close} accessibilityRole="button">
-              <Text style={[styles.itemText, styles.itemCancel]}>{t.actions.cancel}</Text>
+              <Text style={[styles.itemText, styles.itemCancel]}>{t('moderation.actions.cancel')}</Text>
             </TouchableOpacity>
           </Pressable>
         </Pressable>

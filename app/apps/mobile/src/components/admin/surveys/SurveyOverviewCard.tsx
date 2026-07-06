@@ -6,7 +6,7 @@ import { Ionicons } from '@expo/vector-icons';
 import type { AdminSurveyOverviewItem } from '@kc/domain';
 import { makeUseStyles, shadow, useTheme } from '@kc/ui';
 import { textAlignStart, rowDirectionStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 function fmt(iso: string | null): string | null {
   if (!iso) return null;
@@ -23,7 +23,8 @@ export interface SurveyOverviewCardProps {
 export function SurveyOverviewCard({ item, onPress }: SurveyOverviewCardProps): ReactElement {
   const styles = useStyles();
   const { colors } = useTheme();
-  const t = he.admin.surveys.overview;
+  const L = useLocaleBundle();
+  const t = L.admin.surveys.overview;
   const last = fmt(item.lastResponseAt);
 
   return (

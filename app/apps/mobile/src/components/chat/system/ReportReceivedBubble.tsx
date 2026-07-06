@@ -11,7 +11,7 @@ import { hasPermission, type AdminRole } from '@kc/domain';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { useAdminPortalReportsFlag } from '../../../hooks/useAdminPortalReportsFlag';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import { confirmAndRun, showAdminToast } from './adminActions';
 import { readLinkTarget, readPreview, TargetPreviewCard } from './targetPreviewCard';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
@@ -27,7 +27,7 @@ export function ReportReceivedBubble({
   const portalActive = useAdminPortalReportsFlag();
   const styles = useReportReceivedBubbleStyles();
   const { colors } = useTheme();
-  const t = he.moderation;
+  const { t } = useTranslation();
   const reportId = payload?.report_id as string | undefined;
   const targetType = payload?.target_type as string | undefined;
   const targetId = payload?.target_id as string | undefined;
@@ -41,7 +41,7 @@ export function ReportReceivedBubble({
   // enum as a safe fallback for unknown values (e.g. a future-added reason
   // not yet translated).
   const reasonLabel = reason
-    ? (t.reasons as Record<string, string>)[reason.toLowerCase()] ?? reason
+    ? t(`moderation.reasons.${reason.toLowerCase()}`, { defaultValue: reason })
     : undefined;
   const showActions = canViewReports && !handledByLaterAction && !!reportId;
 
@@ -52,19 +52,19 @@ export function ReportReceivedBubble({
 
   return (
     <View style={[styles.bubble, handledByLaterAction && styles.dimmed]}>
-      <Text style={styles.title}>{t.bubble.reportReceived.title}</Text>
-      {showChatNote ? <Text style={styles.note}>{t.bubble.targetPreview.chatNote}</Text> : null}
+      <Text style={styles.title}>{t('moderation.bubble.reportReceived.title')}</Text>
+      {showChatNote ? <Text style={styles.note}>{t('moderation.bubble.targetPreview.chatNote')}</Text> : null}
       {reasonLabel ? <Text style={styles.body}>{reasonLabel}</Text> : null}
 
       {showRichPreview && linkTarget && preview ? (
         <TargetPreviewCard linkTarget={linkTarget} preview={preview} borderColor={colors.borderStrong} />
       ) : null}
 
-      {showRichPreview ? <Text style={styles.evidence}>{t.bubble.targetPreview.evidenceLabel}</Text> : null}
+      {showRichPreview ? <Text style={styles.evidence}>{t('moderation.bubble.targetPreview.evidenceLabel')}</Text> : null}
 
       {body.length > 0 ? (
         <Text style={styles.body}>
-          <Text style={styles.noteLabel}>{`${t.bubble.targetPreview.reporterNoteLabel} `}</Text>
+          <Text style={styles.noteLabel}>{`${t('moderation.bubble.targetPreview.reporterNoteLabel')} `}</Text>
           {body}
         </Text>
       ) : null}
@@ -72,7 +72,7 @@ export function ReportReceivedBubble({
       {showActions ? (
         portalActive ? (
           <View style={styles.portalRow}>
-            <Text style={styles.portalNote}>{he.admin.coexistence.bubbleReadOnly}</Text>
+            <Text style={styles.portalNote}>{t('admin.coexistence.bubbleReadOnly')}</Text>
             {caseId ? (
               <Pressable
                 onPress={() =>
@@ -85,7 +85,7 @@ export function ReportReceivedBubble({
                 accessibilityRole="link"
               >
                 <Text style={styles.portalLinkText}>
-                  {he.admin.coexistence.bubbleOpenInPortal}
+                  {t('admin.coexistence.bubbleOpenInPortal')}
                 </Text>
               </Pressable>
             ) : null}
@@ -97,24 +97,24 @@ export function ReportReceivedBubble({
                 confirmAndRun({
                   action: 'dismiss',
                   onConfirm: () => container.dismissReport.execute({ reportId: reportId! }),
-                  onSuccess: () => showAdminToast(t.actions.success.dismiss),
+                  onSuccess: () => showAdminToast(t('moderation.actions.success.dismiss')),
                   onError: showAdminToast,
                 })
               }
             >
-              <Text style={styles.btn}>{t.actions.dismiss}</Text>
+              <Text style={styles.btn}>{t('moderation.actions.dismiss')}</Text>
             </Pressable>
             <Pressable
               onPress={() =>
                 confirmAndRun({
                   action: 'confirm',
                   onConfirm: () => container.confirmReport.execute({ reportId: reportId! }),
-                  onSuccess: () => showAdminToast(t.actions.success.confirm),
+                  onSuccess: () => showAdminToast(t('moderation.actions.success.confirm')),
                   onError: showAdminToast,
                 })
               }
             >
-              <Text style={styles.btn}>{t.actions.confirm}</Text>
+              <Text style={styles.btn}>{t('moderation.actions.confirm')}</Text>
             </Pressable>
           </View>
         )

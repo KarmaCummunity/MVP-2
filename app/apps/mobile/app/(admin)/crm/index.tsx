@@ -17,25 +17,26 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
 import { ContactCard } from '../../../src/components/admin/crm/ContactCard';
 import { ContactFormModal } from '../../../src/components/admin/crm/ContactFormModal';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 type StatusFilter = CrmContactStatus | 'all';
 
-async function confirmAction(message: string): Promise<boolean> {
+async function confirmAction(message: string, L: LocaleBundle): Promise<boolean> {
   if (Platform.OS === 'web') {
     return typeof window !== 'undefined' && window.confirm(message);
   }
   return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.crm.confirm.deleteTitle, message, [
-      { text: he.admin.crm.confirm.deleteCancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.crm.confirm.deleteOk, onPress: () => resolve(true) },
+    Alert.alert(L.admin.crm.confirm.deleteTitle, message, [
+      { text: L.admin.crm.confirm.deleteCancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: L.admin.crm.confirm.deleteOk, onPress: () => resolve(true) },
     ]);
   });
 }
 
 export default function CrmScreen() {
   const styles = useStyles();
-  const t = he.admin.crm;
+  const L = useLocaleBundle();
+  const t = L.admin.crm;
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const queryClient = useQueryClient();
@@ -116,7 +117,7 @@ export default function CrmScreen() {
             onEdit={() => setEditing(item)}
             onMarkContacted={() => { void markContacted.mutateAsync(item.contactId); }}
             onDelete={async () => {
-              const ok = await confirmAction(t.confirm.delete);
+              const ok = await confirmAction(t.confirm.delete, L);
               if (!ok) return;
               try { await remove.mutateAsync(item.contactId); }
               catch (err) {

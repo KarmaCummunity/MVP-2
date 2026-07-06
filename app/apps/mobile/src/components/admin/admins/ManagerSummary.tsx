@@ -5,7 +5,7 @@ import { Text, View } from 'react-native';
 import type { OrgTreeMember } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { textAlignStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface ManagerSummaryProps {
   readonly managerName: string | null;
@@ -13,29 +13,30 @@ export interface ManagerSummaryProps {
   readonly errCode: string | null;
 }
 
-function errorText(code: string): string {
-  const map = he.admin.admins.managerErrors;
-  return map[code as keyof typeof map] ?? map.unknown;
+function errorText(L: LocaleBundle, code: string): string {
+  const map = L.admin.admins.managerErrors;
+  return map[code as keyof LocaleBundle['admin']['admins']['managerErrors']] ?? map.unknown;
 }
 
 export function ManagerSummary({ managerName, subordinates, errCode }: ManagerSummaryProps) {
   const styles = useStyles();
-  const unnamed = he.admin.admins.row.unnamed;
+  const L = useLocaleBundle();
+  const unnamed = L.admin.admins.row.unnamed;
   return (
     <View>
-      <Text style={styles.label}>{he.admin.admins.detail.managerSection}</Text>
-      <Text style={styles.value}>{managerName ?? he.admin.admins.detail.managerNone}</Text>
+      <Text style={styles.label}>{L.admin.admins.detail.managerSection}</Text>
+      <Text style={styles.value}>{managerName ?? L.admin.admins.detail.managerNone}</Text>
 
-      <Text style={styles.label}>{he.admin.admins.detail.subordinatesSection}</Text>
+      <Text style={styles.label}>{L.admin.admins.detail.subordinatesSection}</Text>
       {subordinates.length === 0 ? (
-        <Text style={styles.value}>{he.admin.admins.detail.subordinatesNone}</Text>
+        <Text style={styles.value}>{L.admin.admins.detail.subordinatesNone}</Text>
       ) : (
         subordinates.map((s) => (
           <Text key={s.grantId} style={styles.value}>• {s.displayName ?? unnamed}</Text>
         ))
       )}
 
-      {errCode !== null && <Text style={styles.error}>{errorText(errCode)}</Text>}
+      {errCode !== null && <Text style={styles.error}>{errorText(L, errCode)}</Text>}
     </View>
   );
 }

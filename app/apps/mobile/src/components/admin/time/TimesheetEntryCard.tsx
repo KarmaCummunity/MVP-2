@@ -2,7 +2,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { TimesheetEntry } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TimesheetEntryCardProps {
   readonly entry: TimesheetEntry;
@@ -20,7 +20,8 @@ function fmtIso(s: string): string { return s.slice(0, 10); }
 export function TimesheetEntryCard(props: TimesheetEntryCardProps) {
   const { entry, isMine, canApprove } = props;
   const styles = useStyles();
-  const t = he.admin.time;
+  const L = useLocaleBundle();
+  const t = L.admin.time;
   const hours = entry.hoursX100 / 100;
   return (
     <View style={styles.card}>

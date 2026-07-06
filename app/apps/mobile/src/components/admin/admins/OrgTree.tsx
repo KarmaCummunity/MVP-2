@@ -8,7 +8,7 @@ import { Text, View } from 'react-native';
 import type { OrgTreeNode } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { OrgTreeRow } from './OrgTreeRow';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface OrgTreeProps {
   readonly forest: readonly OrgTreeNode[];
@@ -36,6 +36,7 @@ function flatten(
 
 export function OrgTree({ forest, onSelect }: OrgTreeProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const [collapsed, setCollapsed] = useState<ReadonlySet<string>>(new Set());
 
   const rows = useMemo(() => {
@@ -56,7 +57,7 @@ export function OrgTree({ forest, onSelect }: OrgTreeProps) {
   if (forest.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>{he.admin.admins.tree.empty}</Text>
+        <Text style={styles.emptyText}>{L.admin.admins.tree.empty}</Text>
       </View>
     );
   }

@@ -3,7 +3,7 @@
 import { Text, View } from 'react-native';
 import type { AdminTaskCategory } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TaskCategoryChipProps {
   readonly category: AdminTaskCategory;
@@ -24,11 +24,12 @@ const TONE: Record<AdminTaskCategory, Tone> = {
 
 export function TaskCategoryChip({ category }: TaskCategoryChipProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const tone = TONE[category];
   return (
     <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
       <Text style={[styles.text, styles[`text_${tone}` as const]]}>
-        {he.admin.tasks.category[category]}
+        {L.admin.tasks.category[category]}
       </Text>
     </View>
   );

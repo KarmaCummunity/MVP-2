@@ -5,11 +5,12 @@ import { Text, View } from 'react-native';
 import type { AdminSurveyQuestionStat } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { textAlignStart, rowDirectionStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export function QuestionStatCard({ stat }: { stat: AdminSurveyQuestionStat }): ReactElement {
   const styles = useStyles();
-  const t = he.admin.surveys.stats;
+  const L = useLocaleBundle();
+  const t = L.admin.surveys.stats;
   const max = Math.max(1, ...stat.distribution);
 
   return (

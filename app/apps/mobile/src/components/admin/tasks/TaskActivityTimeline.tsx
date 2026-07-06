@@ -6,12 +6,12 @@ import {
   parseAdminTaskCategory,
 } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
-function categoryLabel(value: unknown): string {
+function categoryLabel(value: unknown, L: LocaleBundle): string {
   if (typeof value !== 'string') return '';
   const parsed = parseAdminTaskCategory(value);
-  return parsed ? he.admin.tasks.category[parsed as AdminTaskCategory] : value;
+  return parsed ? L.admin.tasks.category[parsed as AdminTaskCategory] : value;
 }
 
 export interface TaskActivityTimelineProps {
@@ -24,49 +24,50 @@ function fmtTs(d: Date): string {
   });
 }
 
-function describe(activity: AdminTaskActivity): string {
+function describe(activity: AdminTaskActivity, L: LocaleBundle): string {
   const p = (activity.payload ?? {}) as Record<string, unknown>;
   const k = activity.kind as AdminTaskActivityKind;
   switch (k) {
     case 'created':
-      return he.admin.tasks.timeline.created;
+      return L.admin.tasks.timeline.created;
     case 'comment':
       return typeof p['body'] === 'string' ? (p['body'] as string) : '';
     case 'status_change':
-      return he.admin.tasks.timeline.statusChange(
+      return L.admin.tasks.timeline.statusChange(
         String(p['from'] ?? ''), String(p['to'] ?? ''),
       );
     case 'assignment_change':
       return p['to'] === null
-        ? he.admin.tasks.timeline.assignmentCleared
-        : he.admin.tasks.timeline.assignmentSet;
+        ? L.admin.tasks.timeline.assignmentCleared
+        : L.admin.tasks.timeline.assignmentSet;
     case 'priority_change':
-      return he.admin.tasks.timeline.priorityChange(
+      return L.admin.tasks.timeline.priorityChange(
         String(p['from'] ?? ''), String(p['to'] ?? ''),
       );
     case 'due_change':
       return p['to'] === null
-        ? he.admin.tasks.timeline.dueCleared
-        : he.admin.tasks.timeline.dueSet;
+        ? L.admin.tasks.timeline.dueCleared
+        : L.admin.tasks.timeline.dueSet;
     case 'title_change':
-      return he.admin.tasks.timeline.titleChanged;
+      return L.admin.tasks.timeline.titleChanged;
     case 'description_change':
-      return he.admin.tasks.timeline.descriptionChanged;
+      return L.admin.tasks.timeline.descriptionChanged;
     case 'labels_change':
-      return he.admin.tasks.timeline.labelsChanged;
+      return L.admin.tasks.timeline.labelsChanged;
     case 'category_change':
-      return he.admin.tasks.timeline.categoryChange(
-        categoryLabel(p['from']), categoryLabel(p['to']),
+      return L.admin.tasks.timeline.categoryChange(
+        categoryLabel(p['from'], L), categoryLabel(p['to'], L),
       );
   }
 }
 
 export function TaskActivityTimeline({ activities }: TaskActivityTimelineProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   if (activities.length === 0) {
     return (
       <View style={styles.empty}>
-        <Text style={styles.emptyText}>{he.admin.tasks.timeline.empty}</Text>
+        <Text style={styles.emptyText}>{L.admin.tasks.timeline.empty}</Text>
       </View>
     );
   }
@@ -76,9 +77,9 @@ export function TaskActivityTimeline({ activities }: TaskActivityTimelineProps) 
         <View key={a.activityId} style={[styles.row, a.kind === 'comment' && styles.commentRow]}>
           <View style={styles.bullet} />
           <View style={styles.content}>
-            <Text style={styles.body}>{describe(a)}</Text>
+            <Text style={styles.body}>{describe(a, L)}</Text>
             <Text style={styles.meta}>
-              {(a.actorDisplayName ?? he.admin.admins.row.unnamed)} · {fmtTs(a.createdAt)}
+              {(a.actorDisplayName ?? L.admin.admins.row.unnamed)} · {fmtTs(a.createdAt)}
             </Text>
           </View>
         </View>

@@ -26,7 +26,7 @@ import {
   TaskDueRangeFilter,
   isValidIsoDate,
 } from '../../../src/components/admin/tasks/TaskDueRangeFilter';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 function parseDueFrom(value: string): Date | undefined {
   if (!isValidIsoDate(value) || value.length === 0) return undefined;
@@ -41,6 +41,7 @@ function parseDueTo(value: string): Date | undefined {
 
 export default function TasksScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [statusFilter, setStatusFilter] = useState<AdminTaskStatus | null>(null);
   const [categoryFilter, setCategoryFilter] = useState<AdminTaskCategory | null>(null);
@@ -70,41 +71,41 @@ export default function TasksScreen() {
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
 
   if (rolesLoading) {
-    return <View style={styles.center}><Text>{he.admin.tasks.loading}</Text></View>;
+    return <View style={styles.center}><Text>{L.admin.tasks.loading}</Text></View>;
   }
   if (!can('tasks.view')) {
     return (
       <View style={styles.center}>
-        <Text style={styles.deniedTitle}>{he.admin.tasks.forbiddenTitle}</Text>
+        <Text style={styles.deniedTitle}>{L.admin.tasks.forbiddenTitle}</Text>
       </View>
     );
   }
 
   const filtersBar = (
     <View style={styles.filterCard}>
-      <Text style={styles.filterTitle}>{he.admin.tasks.filtersTitle}</Text>
+      <Text style={styles.filterTitle}>{L.admin.tasks.filtersTitle}</Text>
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <FilterChip
-          label={he.admin.tasks.filters.all}
+          label={L.admin.tasks.filters.all}
           active={statusFilter === null && !overdueOnly}
           onPress={() => { setStatusFilter(null); setOverdueOnly(false); }}
         />
         {ADMIN_TASK_STATUSES.map((s) => (
           <FilterChip
             key={s}
-            label={he.admin.tasks.status[s]}
+            label={L.admin.tasks.status[s]}
             active={statusFilter === s}
             onPress={() => { setStatusFilter(statusFilter === s ? null : s); }}
           />
         ))}
         <FilterChip
-          label={he.admin.tasks.filters.overdue}
+          label={L.admin.tasks.filters.overdue}
           active={overdueOnly}
           onPress={() => setOverdueOnly((v) => !v)}
         />
         <FilterChip
-          label={he.admin.tasks.filters.onlyMine}
+          label={L.admin.tasks.filters.onlyMine}
           active={onlyMine}
           onPress={() => setOnlyMine((v) => !v)}
         />
@@ -112,14 +113,14 @@ export default function TasksScreen() {
 
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.chips}>
         <FilterChip
-          label={he.admin.tasks.categoryFilters.all}
+          label={L.admin.tasks.categoryFilters.all}
           active={categoryFilter === null}
           onPress={() => setCategoryFilter(null)}
         />
         {ADMIN_TASK_CATEGORIES.map((c) => (
           <FilterChip
             key={c}
-            label={he.admin.tasks.category[c]}
+            label={L.admin.tasks.category[c]}
             active={categoryFilter === c}
             onPress={() => setCategoryFilter(categoryFilter === c ? null : c)}
           />
@@ -142,15 +143,15 @@ export default function TasksScreen() {
   return (
     <View style={styles.root}>
       <AdminScreenHeader
-        title={he.admin.tasks.title}
-        subtitle={!q.isLoading ? he.admin.tasks.countLabel(q.tasks.length) : undefined}
+        title={L.admin.tasks.title}
+        subtitle={!q.isLoading ? L.admin.tasks.countLabel(q.tasks.length) : undefined}
         right={can('tasks.create') ? (
           <Pressable
             accessibilityRole="button"
             onPress={() => router.push('/(admin)/tasks/new' as never)}
             style={styles.newBtn}
           >
-            <Text style={styles.newBtnText}>{he.admin.tasks.newBtn}</Text>
+            <Text style={styles.newBtnText}>{L.admin.tasks.newBtn}</Text>
           </Pressable>
         ) : undefined}
       />
@@ -169,8 +170,8 @@ export default function TasksScreen() {
         ListEmptyComponent={
           !q.isLoading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{he.admin.tasks.emptyTitle}</Text>
-              <Text style={styles.emptyHint}>{he.admin.tasks.emptyHint}</Text>
+              <Text style={styles.emptyTitle}>{L.admin.tasks.emptyTitle}</Text>
+              <Text style={styles.emptyHint}>{L.admin.tasks.emptyHint}</Text>
             </View>
           ) : null
         }

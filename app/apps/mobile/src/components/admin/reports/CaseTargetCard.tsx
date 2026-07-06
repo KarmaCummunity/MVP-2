@@ -12,7 +12,7 @@ import { router } from 'expo-router';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { AdminReportTargetType } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface CaseTargetCardProps {
   readonly targetType: AdminReportTargetType;
@@ -32,7 +32,8 @@ function fmtIso(iso: string | null): string | null {
 
 export function CaseTargetCard({ targetType, targetId, target }: CaseTargetCardProps) {
   const styles = useStyles();
-  const t = he.admin.caseDetail.targetCard;
+  const L = useLocaleBundle();
+  const t = L.admin.caseDetail.targetCard;
 
   if (targetType === 'post') {
     const preview  = asString(target['preview']);

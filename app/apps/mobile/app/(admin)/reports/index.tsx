@@ -8,16 +8,17 @@ import { useReportsInbox } from '../../../src/hooks/useReportsInbox';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { ReportFilters } from '../../../src/components/admin/reports/ReportFilters';
 import { ReportRow } from '../../../src/components/admin/reports/ReportRow';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 export default function ReportsInbox() {
+  const L = useLocaleBundle();
   const [filters, setFilters] = useState<ListOpenReportsFilters>({});
   const q = useReportsInbox(filters);
   const rows = q.data?.pages.flatMap((p) => p.rows) ?? [];
 
   return (
     <View style={styles.root}>
-      <AdminScreenHeader title={he.admin.reports.inboxTitle} />
+      <AdminScreenHeader title={L.admin.reports.inboxTitle} />
       <ReportFilters value={filters} onChange={setFilters} />
       <FlatList
         data={rows}
@@ -38,8 +39,8 @@ export default function ReportsInbox() {
         ListEmptyComponent={
           !q.isLoading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyTitle}>{he.admin.reports.emptyTitle}</Text>
-              <Text style={styles.emptyHint}>{he.admin.reports.emptyHint}</Text>
+              <Text style={styles.emptyTitle}>{L.admin.reports.emptyTitle}</Text>
+              <Text style={styles.emptyHint}>{L.admin.reports.emptyHint}</Text>
             </View>
           ) : null
         }

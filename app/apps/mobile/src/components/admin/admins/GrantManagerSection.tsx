@@ -11,7 +11,7 @@ import { ManagerSummary } from './ManagerSummary';
 import { ManagerPickerModal } from './ManagerPickerModal';
 import { useSetManager } from '../../../hooks/useSetManager';
 import { rowDirectionStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface GrantManagerSectionProps {
   readonly member: OrgTreeMember;
@@ -25,6 +25,7 @@ function sameScope(a: OrgTreeMember, b: OrgTreeMember): boolean {
 
 export function GrantManagerSection({ member, members, canManage }: GrantManagerSectionProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const setManager = useSetManager();
   const [pickerOpen, setPickerOpen] = useState(false);
   const [err, setErr] = useState<string | null>(null);
@@ -74,7 +75,7 @@ export function GrantManagerSection({ member, members, canManage }: GrantManager
             style={styles.assignBtn}
           >
             <Text style={styles.assignText}>
-              {manager ? he.admin.admins.detail.changeManager : he.admin.admins.detail.assignManager}
+              {manager ? L.admin.admins.detail.changeManager : L.admin.admins.detail.assignManager}
             </Text>
           </Pressable>
           {manager && (
@@ -84,7 +85,7 @@ export function GrantManagerSection({ member, members, canManage }: GrantManager
               onPress={() => { void pick(null); }}
               style={styles.clearBtn}
             >
-              <Text style={styles.clearText}>{he.admin.admins.detail.clearManager}</Text>
+              <Text style={styles.clearText}>{L.admin.admins.detail.clearManager}</Text>
             </Pressable>
           )}
         </View>

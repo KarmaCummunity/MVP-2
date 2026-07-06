@@ -23,22 +23,23 @@ import { TaskPriorityChip } from '../../../../src/components/admin/tasks/TaskPri
 import { TaskCategoryChip } from '../../../../src/components/admin/tasks/TaskCategoryChip';
 import { TaskCategoryPicker } from '../../../../src/components/admin/tasks/TaskCategoryPicker';
 import { TaskActivityTimeline } from '../../../../src/components/admin/tasks/TaskActivityTimeline';
-import he from '../../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../../src/i18n/useLocaleBundle';
 
-async function confirmAction(message: string): Promise<boolean> {
+async function confirmAction(message: string, L: LocaleBundle): Promise<boolean> {
   if (Platform.OS === 'web') {
     return typeof window !== 'undefined' && window.confirm(message);
   }
   return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.tasks.detail.confirmTitle, message, [
-      { text: he.admin.tasks.detail.cancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.tasks.detail.confirmOk, onPress: () => resolve(true) },
+    Alert.alert(L.admin.tasks.detail.confirmTitle, message, [
+      { text: L.admin.tasks.detail.cancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: L.admin.tasks.detail.confirmOk, onPress: () => resolve(true) },
     ]);
   });
 }
 
 export default function TaskDetailScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const params = useLocalSearchParams<{ taskId: string }>();
   const taskId = params.taskId;
   const { roles, isLoading: rolesLoading } = useAdminRoles();
@@ -55,13 +56,13 @@ export default function TaskDetailScreen() {
   const [errorCode, setErrorCode] = useState<string | null>(null);
 
   if (rolesLoading || q.isLoading) {
-    return <View style={styles.center}><Text>{he.admin.tasks.loading}</Text></View>;
+    return <View style={styles.center}><Text>{L.admin.tasks.loading}</Text></View>;
   }
   if (!can('tasks.view')) {
-    return <View style={styles.center}><Text style={styles.deniedTitle}>{he.admin.tasks.forbiddenTitle}</Text></View>;
+    return <View style={styles.center}><Text style={styles.deniedTitle}>{L.admin.tasks.forbiddenTitle}</Text></View>;
   }
   if (!q.detail) {
-    return <View style={styles.center}><Text>{he.admin.tasks.detail.notFound}</Text></View>;
+    return <View style={styles.center}><Text>{L.admin.tasks.detail.notFound}</Text></View>;
   }
 
   const t = q.detail.task;
@@ -104,7 +105,7 @@ export default function TaskDetailScreen() {
   }
 
   async function deleteTask() {
-    const ok = await confirmAction(he.admin.tasks.detail.deleteConfirm);
+    const ok = await confirmAction(L.admin.tasks.detail.deleteConfirm, L);
     if (!ok) return;
     setErrorCode(null);
     try {
@@ -131,22 +132,22 @@ export default function TaskDetailScreen() {
       <View style={styles.metaCol}>
         <Text style={styles.metaText}>
           {t.assigneeDisplayName
-            ? he.admin.tasks.row.assignedTo(t.assigneeDisplayName)
-            : he.admin.tasks.row.unassigned}
+            ? L.admin.tasks.row.assignedTo(t.assigneeDisplayName)
+            : L.admin.tasks.row.unassigned}
         </Text>
         <Text style={styles.metaText}>
-          {he.admin.tasks.detail.createdBy(t.createdByDisplayName ?? '?')}
+          {L.admin.tasks.detail.createdBy(t.createdByDisplayName ?? '?')}
         </Text>
         {t.dueAt && (
           <Text style={styles.metaText}>
-            {he.admin.tasks.row.dueOn(t.dueAt.toLocaleDateString('he-IL'))}
+            {L.admin.tasks.row.dueOn(t.dueAt.toLocaleDateString('he-IL'))}
           </Text>
         )}
       </View>
 
       {canMoveStatus && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{he.admin.tasks.detail.changeStatus}</Text>
+          <Text style={styles.sectionTitle}>{L.admin.tasks.detail.changeStatus}</Text>
           <View style={styles.statusRow}>
             {ADMIN_TASK_STATUSES
               .filter((s) => isStatusTransitionAllowed(t.status, s) && s !== t.status)
@@ -157,7 +158,7 @@ export default function TaskDetailScreen() {
                   onPress={() => { void moveStatus(s); }}
                   style={styles.statusBtn}
                 >
-                  <Text style={styles.statusBtnText}>{he.admin.tasks.status[s]}</Text>
+                  <Text style={styles.statusBtnText}>{L.admin.tasks.status[s]}</Text>
                 </Pressable>
               ))}
           </View>
@@ -166,7 +167,7 @@ export default function TaskDetailScreen() {
 
       {canMoveStatus && (
         <View style={styles.section}>
-          <Text style={styles.sectionTitle}>{he.admin.tasks.detail.changeCategory}</Text>
+          <Text style={styles.sectionTitle}>{L.admin.tasks.detail.changeCategory}</Text>
           <TaskCategoryPicker
             value={t.category}
             onChange={(c) => { void changeCategory(c); }}
@@ -176,17 +177,17 @@ export default function TaskDetailScreen() {
       )}
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{he.admin.tasks.detail.activity}</Text>
+        <Text style={styles.sectionTitle}>{L.admin.tasks.detail.activity}</Text>
         <TaskActivityTimeline activities={q.detail.activities} />
       </View>
 
       <View style={styles.section}>
-        <Text style={styles.sectionTitle}>{he.admin.tasks.detail.addComment}</Text>
+        <Text style={styles.sectionTitle}>{L.admin.tasks.detail.addComment}</Text>
         <TextInput
           style={[styles.input, styles.multiline]}
           value={commentBody}
           onChangeText={setCommentBody}
-          placeholder={he.admin.tasks.detail.commentPlaceholder}
+          placeholder={L.admin.tasks.detail.commentPlaceholder}
           multiline
           numberOfLines={3}
         />
@@ -195,20 +196,20 @@ export default function TaskDetailScreen() {
           disabled={addComment.isPending || commentBody.trim().length === 0}
           onPress={() => { void submitComment(); }}
         >
-          <Text style={styles.commentBtnText}>{he.admin.tasks.detail.submitComment}</Text>
+          <Text style={styles.commentBtnText}>{L.admin.tasks.detail.submitComment}</Text>
         </Pressable>
       </View>
 
       {errorCode !== null && (
         <Text style={styles.error}>
-          {he.admin.tasks.errors[errorCode as keyof typeof he.admin.tasks.errors]
-            ?? he.admin.tasks.errors.unknown}
+          {L.admin.tasks.errors[errorCode as keyof LocaleBundle['admin']['tasks']['errors']]
+            ?? L.admin.tasks.errors.unknown}
         </Text>
       )}
 
       {canDelete && (
         <Pressable style={styles.deleteBtn} onPress={() => { void deleteTask(); }}>
-          <Text style={styles.deleteBtnText}>{he.admin.tasks.detail.deleteBtn}</Text>
+          <Text style={styles.deleteBtnText}>{L.admin.tasks.detail.deleteBtn}</Text>
         </Pressable>
       )}
     </ScrollView>

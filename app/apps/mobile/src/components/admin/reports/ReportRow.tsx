@@ -5,20 +5,20 @@ import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { ReportInboxRow } from '@kc/domain';
 import { thresholdProgress } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface ReportRowProps {
   readonly row: ReportInboxRow;
 }
 
-function ageLabel(iso: string): string {
+function ageLabel(L: LocaleBundle, iso: string): string {
   const ms = Date.now() - new Date(iso).getTime();
   const mins = Math.floor(ms / 60_000);
-  if (mins < 60) return he.admin.reports.row.ageMinutes(mins);
+  if (mins < 60) return L.admin.reports.row.ageMinutes(mins);
   const hrs = Math.floor(mins / 60);
-  if (hrs < 24) return he.admin.reports.row.ageHours(hrs);
+  if (hrs < 24) return L.admin.reports.row.ageHours(hrs);
   const days = Math.floor(hrs / 24);
-  return he.admin.reports.row.ageDays(days);
+  return L.admin.reports.row.ageDays(days);
 }
 
 function preview(row: ReportInboxRow): string {
@@ -32,6 +32,7 @@ export function ReportRow({ row }: ReportRowProps) {
   const progress = thresholdProgress(row.reporterCount);
   const caseId = encodeURIComponent(`${row.targetType}:${row.targetId}`);
   const styles = useStyles();
+  const L = useLocaleBundle();
   return (
     <Pressable
       style={styles.root}
@@ -45,9 +46,9 @@ export function ReportRow({ row }: ReportRowProps) {
       <Text style={styles.preview} numberOfLines={2}>{preview(row)}</Text>
       <View style={styles.meta}>
         <Text style={styles.metaText}>
-          {he.admin.reports.row.thresholdLabel(progress.count, progress.threshold)}
+          {L.admin.reports.row.thresholdLabel(progress.count, progress.threshold)}
         </Text>
-        <Text style={styles.metaText}>{ageLabel(row.oldestAt)}</Text>
+        <Text style={styles.metaText}>{ageLabel(L, row.oldestAt)}</Text>
       </View>
     </Pressable>
   );

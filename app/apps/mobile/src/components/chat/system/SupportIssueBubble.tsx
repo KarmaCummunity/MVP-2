@@ -5,19 +5,20 @@ import { View, Text } from 'react-native';
 import { Ionicons } from '@expo/vector-icons';
 import { makeUseStyles, radius, spacing, typography, useTheme } from '@kc/ui';
 import { rtlTextAlignStart } from '../../../lib/rtlTextAlignStart';
-import he from '../../../i18n/locales/he';
+import { useTranslation } from 'react-i18next';
 import type { SystemMessageBubbleProps } from './SystemMessageBubble';
 
 export function SupportIssueBubble({ payload }: SystemMessageBubbleProps) {
   const styles = useSupportIssueBubbleStyles();
   const { colors } = useTheme();
-  const t = he.moderation.supportIssueBubble;
-  const tCategories = he.settings.reportIssueScreen.categories as Record<string, string>;
+  const { t } = useTranslation();
 
   const issueId = payload?.issue_id as string | undefined;
   const category = payload?.category as string | undefined;
   const description = payload?.description as string | undefined;
-  const categoryLabel = category ? (tCategories[category] ?? category) : undefined;
+  const categoryLabel = category
+    ? t(`settings.reportIssueScreen.categories.${category}`, { defaultValue: category })
+    : undefined;
   const shortId = issueId ? issueId.slice(-8) : undefined;
 
   return (
@@ -27,12 +28,12 @@ export function SupportIssueBubble({ payload }: SystemMessageBubbleProps) {
           <View style={styles.iconBadge}>
             <Ionicons name="headset-outline" size={18} color={colors.info} />
           </View>
-          <Text style={styles.title}>{t.title}</Text>
+          <Text style={styles.title}>{t('moderation.supportIssueBubble.title')}</Text>
         </View>
 
         {categoryLabel ? (
           <View style={styles.metaRow}>
-            <Text style={styles.metaLabel}>{t.categoryLabel}</Text>
+            <Text style={styles.metaLabel}>{t('moderation.supportIssueBubble.categoryLabel')}</Text>
             <View style={styles.categoryBadge}>
               <Text style={styles.categoryText}>{categoryLabel}</Text>
             </View>
@@ -46,7 +47,7 @@ export function SupportIssueBubble({ payload }: SystemMessageBubbleProps) {
         ) : null}
 
         {shortId ? (
-          <Text style={styles.ref}>{`${t.issueRef} …${shortId}`}</Text>
+          <Text style={styles.ref}>{`${t('moderation.supportIssueBubble.issueRef')} …${shortId}`}</Text>
         ) : null}
       </View>
     </View>

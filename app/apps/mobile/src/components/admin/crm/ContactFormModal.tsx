@@ -8,7 +8,7 @@ import {
 } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface ContactFormModalProps {
   readonly initial: CrmContact | null;
@@ -18,7 +18,8 @@ export interface ContactFormModalProps {
 
 export function ContactFormModal({ initial, onClose, onSaved }: ContactFormModalProps) {
   const styles = useStyles();
-  const t = he.admin.crm;
+  const L = useLocaleBundle();
+  const t = L.admin.crm;
   const isEdit = initial !== null;
   const [name, setName]           = useState(initial?.name ?? '');
   const [organization, setOrg]    = useState(initial?.organization ?? '');

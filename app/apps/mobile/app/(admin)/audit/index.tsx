@@ -16,7 +16,7 @@ import { container } from '../../../src/lib/container';
 import {
   downloadAuditCsv, isCsvExportSupported,
 } from '../../../src/lib/auditCsvExport';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 const COMMON_ACTIONS = [
   null,
@@ -49,6 +49,7 @@ function parseToDate(value: string): Date | undefined {
 
 export default function AuditScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [targetIdRaw, setTargetIdRaw] = useState('');
   const [action, setAction] = useState<string | null>(null);
@@ -71,7 +72,7 @@ export default function AuditScreen() {
   async function doExport() {
     setExportError(null);
     if (!isCsvExportSupported()) {
-      setExportError(he.admin.content.csvExport.unsupported);
+      setExportError(L.admin.content.csvExport.unsupported);
       return;
     }
     setExporting(true);
@@ -84,19 +85,19 @@ export default function AuditScreen() {
       const stamp = new Date().toISOString().slice(0, 19).replace(/[T:]/g, '-');
       const name  = `audit-${stamp}.csv`;
       const ok = downloadAuditCsv(page.rows, name);
-      if (!ok) setExportError(he.admin.content.csvExport.failed);
+      if (!ok) setExportError(L.admin.content.csvExport.failed);
     } catch (err) {
-      setExportError(err instanceof Error ? err.message : he.admin.content.csvExport.failed);
+      setExportError(err instanceof Error ? err.message : L.admin.content.csvExport.failed);
     } finally {
       setExporting(false);
     }
   }
 
   if (rolesLoading) {
-    return <View style={styles.center}><Text>{he.admin.content.loading}</Text></View>;
+    return <View style={styles.center}><Text>{L.admin.content.loading}</Text></View>;
   }
   if (!can('audit.view_own')) {
-    return <View style={styles.center}><Text style={styles.deniedTitle}>{he.admin.content.forbiddenTitle}</Text></View>;
+    return <View style={styles.center}><Text style={styles.deniedTitle}>{L.admin.content.forbiddenTitle}</Text></View>;
   }
 
   const canSeeAll = can('audit.view_any');
@@ -104,21 +105,21 @@ export default function AuditScreen() {
   return (
     <View style={styles.root}>
       <AdminScreenHeader
-        title={he.admin.content.auditTitle}
-        subtitle={!canSeeAll ? he.admin.content.tierLimited : undefined}
+        title={L.admin.content.auditTitle}
+        subtitle={!canSeeAll ? L.admin.content.tierLimited : undefined}
       />
       <TextInput
         style={styles.search}
         value={targetIdRaw}
         onChangeText={setTargetIdRaw}
-        placeholder={he.admin.content.auditTargetPlaceholder}
+        placeholder={L.admin.content.auditTargetPlaceholder}
         autoCapitalize="none"
         autoCorrect={false}
       />
 
       <View style={styles.dateRow}>
         <View style={styles.dateField}>
-          <Text style={styles.dateLabel}>{he.admin.content.dateFromLabel}</Text>
+          <Text style={styles.dateLabel}>{L.admin.content.dateFromLabel}</Text>
           <TextInput
             style={styles.dateInput}
             value={fromRaw}
@@ -130,7 +131,7 @@ export default function AuditScreen() {
           />
         </View>
         <View style={styles.dateField}>
-          <Text style={styles.dateLabel}>{he.admin.content.dateToLabel}</Text>
+          <Text style={styles.dateLabel}>{L.admin.content.dateToLabel}</Text>
           <TextInput
             style={styles.dateInput}
             value={toRaw}
@@ -148,7 +149,7 @@ export default function AuditScreen() {
           style={[styles.exportBtn, exporting && styles.exportBtnDisabled]}
         >
           <Text style={styles.exportBtnText}>
-            {exporting ? he.admin.content.csvExport.busy : he.admin.content.csvExport.action}
+            {exporting ? L.admin.content.csvExport.busy : L.admin.content.csvExport.action}
           </Text>
         </Pressable>
       </View>
@@ -165,13 +166,13 @@ export default function AuditScreen() {
           >
             <Text style={[styles.chipText, action === a && styles.chipTextActive]}>
               {a === null
-                ? he.admin.content.auditActionFilterAll
-                : (he.admin.content.auditAction[a as keyof typeof he.admin.content.auditAction] ?? a)}
+                ? L.admin.content.auditActionFilterAll
+                : (L.admin.content.auditAction[a as keyof LocaleBundle['admin']['content']['auditAction']] ?? a)}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
-      <Text style={styles.totalLabel}>{he.admin.content.totalCount(result.page.totalCount)}</Text>
+      <Text style={styles.totalLabel}>{L.admin.content.totalCount(result.page.totalCount)}</Text>
       <FlatList
         data={[...result.page.rows]}
         keyExtractor={(e) => e.eventId}
@@ -180,7 +181,7 @@ export default function AuditScreen() {
         ListEmptyComponent={
           !result.isLoading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>{he.admin.content.auditEmpty}</Text>
+              <Text style={styles.emptyText}>{L.admin.content.auditEmpty}</Text>
             </View>
           ) : null
         }

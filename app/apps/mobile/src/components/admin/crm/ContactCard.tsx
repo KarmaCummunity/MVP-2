@@ -2,7 +2,7 @@
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { CrmContact } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface ContactCardProps {
   readonly contact: CrmContact;
@@ -19,7 +19,8 @@ function fmt(d: Date): string {
 
 export function ContactCard({ contact, onEdit, onMarkContacted, onDelete }: ContactCardProps) {
   const styles = useStyles();
-  const t = he.admin.crm;
+  const L = useLocaleBundle();
+  const t = L.admin.crm;
   return (
     <View style={styles.card}>
       <View style={styles.cardHead}>

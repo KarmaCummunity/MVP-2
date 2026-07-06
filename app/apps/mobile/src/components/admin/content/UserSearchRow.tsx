@@ -11,7 +11,7 @@ import type { AdminUserSearchResult } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../hooks/useAdminRoles';
 import { BanUserModal } from '../../profile/BanUserModal';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface UserSearchRowProps {
   readonly row: AdminUserSearchResult;
@@ -32,6 +32,7 @@ function canShowBanButton(status: string): boolean {
 
 export function UserSearchRow({ row }: UserSearchRowProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const tone = statusTone(row.accountStatus);
   const { roles } = useAdminRoles();
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
@@ -50,28 +51,28 @@ export function UserSearchRow({ row }: UserSearchRowProps) {
       >
         <View style={styles.main}>
           <Text style={styles.name} numberOfLines={1}>
-            {row.displayName ?? he.admin.admins.row.unnamed}
+            {row.displayName ?? L.admin.admins.row.unnamed}
           </Text>
           {row.shareHandle && <Text style={styles.handle} numberOfLines={1}>@{row.shareHandle}</Text>}
           {row.cityName && <Text style={styles.meta} numberOfLines={1}>{row.cityName}</Text>}
         </View>
         <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
           <Text style={styles.chipText}>
-            {he.admin.content.userStatus[row.accountStatus as keyof typeof he.admin.content.userStatus]
+            {L.admin.content.userStatus[row.accountStatus as keyof LocaleBundle['admin']['content']['userStatus']]
               ?? row.accountStatus}
           </Text>
         </View>
         {showBan && (
           <Pressable
             accessibilityRole="button"
-            accessibilityLabel={he.admin.content.userInline.ban}
+            accessibilityLabel={L.admin.content.userInline.ban}
             onPress={(e) => {
               e.stopPropagation();
               setBanOpen(true);
             }}
             style={styles.actionBtn}
           >
-            <Text style={styles.actionText}>{he.admin.content.userInline.ban}</Text>
+            <Text style={styles.actionText}>{L.admin.content.userInline.ban}</Text>
           </Pressable>
         )}
       </Pressable>

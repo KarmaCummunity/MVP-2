@@ -2,7 +2,7 @@
 import { StyleSheet, Text, View } from 'react-native';
 import type { AdminTaskStatus } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TaskStatusChipProps {
   readonly status: AdminTaskStatus;
@@ -18,11 +18,12 @@ const TONE: Record<AdminTaskStatus, 'neutral' | 'info' | 'warning' | 'success' |
 
 export function TaskStatusChip({ status }: TaskStatusChipProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const tone = TONE[status];
   return (
     <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
       <Text style={[styles.text, styles[`text_${tone}` as const]]}>
-        {he.admin.tasks.status[status]}
+        {L.admin.tasks.status[status]}
       </Text>
     </View>
   );

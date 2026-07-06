@@ -12,12 +12,12 @@ import { type AdminPermission, type AdminRole, hasPermission } from '@kc/domain'
 import { makeUseStyles, useTheme } from '@kc/ui';
 import { useAdminRoles } from '../../hooks/useAdminRoles';
 import { rowDirectionStart, textAlignStart } from '../../lib/rtlLayout';
-import he from '../../i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../i18n/useLocaleBundle';
 
 type IconName = ComponentProps<typeof Ionicons>['name'];
 
 interface NavItem {
-  key: keyof typeof he.admin.nav;
+  key: keyof LocaleBundle['admin']['nav'];
   href: string;
   icon: IconName;
   perm: AdminPermission | null;
@@ -45,7 +45,8 @@ export function AdminNav({ variant }: { variant: 'sidebar' | 'topbar' }): ReactE
   const { roles } = useAdminRoles();
   const { colors } = useTheme();
   const styles = useStyles();
-  const labels = he.admin.nav;
+  const L = useLocaleBundle();
+  const labels = L.admin.nav;
 
   const items = ITEMS.filter(
     (it) => it.perm == null || hasPermission(roles as readonly AdminRole[], it.perm),
@@ -87,7 +88,7 @@ export function AdminNav({ variant }: { variant: 'sidebar' | 'topbar' }): ReactE
             <Ionicons name="shield-checkmark" size={18} color={colors.textInverse} />
           </View>
           <Text style={styles.brandText} numberOfLines={1}>
-            {he.admin.portalTitle}
+            {L.admin.portalTitle}
           </Text>
         </View>
         <View style={styles.sideList}>{items.map(renderItem)}</View>

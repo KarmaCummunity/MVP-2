@@ -20,13 +20,14 @@ import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHead
 import { GrantRoleModal } from '../../../src/components/admin/admins/GrantRoleModal';
 import { AdminsListView } from '../../../src/components/admin/admins/AdminsListView';
 import { AdminsTreeView } from '../../../src/components/admin/admins/AdminsTreeView';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 type ViewMode = 'list' | 'tree';
 const VIEW_MODES: readonly ViewMode[] = ['list', 'tree'];
 
 export default function AdminsScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const router = useRouter();
   const isWide = useBreakpoint() !== 'mobile';
   const { roles, isLoading: rolesLoading } = useAdminRoles();
@@ -36,13 +37,13 @@ export default function AdminsScreen() {
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
 
   if (rolesLoading) {
-    return <View style={styles.center}><Text>{he.admin.admins.loading}</Text></View>;
+    return <View style={styles.center}><Text>{L.admin.admins.loading}</Text></View>;
   }
   if (!can('admins.view')) {
     return (
       <View style={styles.center}>
-        <Text style={styles.deniedTitle}>{he.admin.admins.forbiddenTitle}</Text>
-        <Text style={styles.deniedHint}>{he.admin.admins.forbiddenHint}</Text>
+        <Text style={styles.deniedTitle}>{L.admin.admins.forbiddenTitle}</Text>
+        <Text style={styles.deniedHint}>{L.admin.admins.forbiddenHint}</Text>
       </View>
     );
   }
@@ -53,7 +54,7 @@ export default function AdminsScreen() {
 
   return (
     <View style={styles.root}>
-      <AdminScreenHeader title={he.admin.admins.title} />
+      <AdminScreenHeader title={L.admin.admins.title} />
       <View style={styles.headerControls}>
         <View style={styles.segment}>
           {VIEW_MODES.map((m) => (
@@ -64,14 +65,14 @@ export default function AdminsScreen() {
               style={[styles.segmentBtn, viewMode === m && styles.segmentBtnActive]}
             >
               <Text style={[styles.segmentText, viewMode === m && styles.segmentTextActive]}>
-                {m === 'list' ? he.admin.admins.viewList : he.admin.admins.viewTree}
+                {m === 'list' ? L.admin.admins.viewList : L.admin.admins.viewTree}
               </Text>
             </Pressable>
           ))}
         </View>
         {canGrant && (
           <Pressable accessibilityRole="button" onPress={() => setGrantOpen(true)} style={styles.grantBtn}>
-            <Text style={styles.grantBtnText}>{he.admin.admins.grantBtn}</Text>
+            <Text style={styles.grantBtnText}>{L.admin.admins.grantBtn}</Text>
           </Pressable>
         )}
       </View>

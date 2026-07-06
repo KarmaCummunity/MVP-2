@@ -2,7 +2,7 @@
 import { Text, View } from 'react-native';
 import type { AdminTaskPriority } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TaskPriorityChipProps {
   readonly priority: AdminTaskPriority;
@@ -17,11 +17,12 @@ const TONE: Record<AdminTaskPriority, 'muted' | 'neutral' | 'warning' | 'danger'
 
 export function TaskPriorityChip({ priority }: TaskPriorityChipProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const tone = TONE[priority];
   return (
     <View style={[styles.chip, styles[`chip_${tone}` as const]]}>
       <Text style={[styles.text, styles[`text_${tone}` as const]]}>
-        {he.admin.tasks.priority[priority]}
+        {L.admin.tasks.priority[priority]}
       </Text>
     </View>
   );
