@@ -131,6 +131,16 @@ Maps to `RELEASE_CHECKLIST.md` dev smoke:
 3. Write — create-post screen loads; title field accepts input.
 4. Chat — inbox screen opens.
 
+## GloWe suite (FR-GLOWE-*)
+
+The GloWe static frontend has its own Playwright projects (`glowe-setup` + `glowe`), separate from the KC P0 journeys — the dev deployment is currently GloWe-only, so this suite is the effective E2E gate.
+
+- **Specs:** `tests/e2e/journeys/glowe-*.spec.ts` — `glowe-public` (guest browsing, join gates, HE/RTL toggle), `glowe-member` (adaptive home, create menu, saved toggles, messaging, reporting), `glowe-org` (org create menu, event publish + cleanup, applicant inbox), `glowe-admin` (org approval + report queue; needs `E2E_TEST_EMAIL/PASSWORD`), `glowe-full-flow` (volunteer offers help on a need → KC chat visible to both personas; duplicate-application guard).
+- **Target URL:** `DEV_WEB_URL + /glowe` in CI; locally `GLOWE_WEB_URL=http://127.0.0.1:4321` after `npx serve app/apps/glowe-web -l 4321`. The Supabase URL + publishable key are parsed from `backend-config.js`.
+- **Personas:** seeded by `scripts/seed-glowe-dev.mjs` (run via the manual **Seed GloWe dev data** workflow; dev-only, idempotent, prod-ref-guarded). Signed-in specs mint sessions by password grant in `glowe-auth.setup.ts` and inject them as `glowe-auth-v1` + `gloweUser` localStorage. When the seed hasn't run, member/org/full-flow specs **skip** (guest specs still assert), so the job stays meaningful pre-seed.
+- **CI:** the `GloWe journeys` job in `CI — E2E dev` runs `npx playwright test --project=glowe` on every PR to `main` and via dispatch. The seeded pending org (יד תומכת) is reset to `pending` on each seed run so the approval flow always has a live case.
+- **Local browser pin:** set `PLAYWRIGHT_CHROMIUM_EXECUTABLE` when the environment ships its own Chromium instead of the Playwright download.
+
 ## Flake protocol (agents)
 
 1. First red without app change → re-run the workflow once.
