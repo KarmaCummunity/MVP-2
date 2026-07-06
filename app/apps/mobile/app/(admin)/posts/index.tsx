@@ -10,7 +10,7 @@ import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { useAdminPostSearch } from '../../../src/hooks/useAdminContentSearch';
 import { AdminScreenHeader } from '../../../src/components/admin/AdminScreenHeader';
 import { PostSearchRow } from '../../../src/components/admin/content/PostSearchRow';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 const STATUS_OPTIONS = [
   { value: null,                       key: 'all' as const },
@@ -23,6 +23,7 @@ const STATUS_OPTIONS = [
 
 export default function PostsScreen() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const [query, setQuery] = useState('');
   const [statusFilter, setStatusFilter] = useState<string | null>(null);
@@ -36,20 +37,20 @@ export default function PostsScreen() {
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
 
   if (rolesLoading) {
-    return <View style={styles.center}><Text>{he.admin.content.loading}</Text></View>;
+    return <View style={styles.center}><Text>{L.admin.content.loading}</Text></View>;
   }
   if (!can('posts.search')) {
-    return <View style={styles.center}><Text style={styles.deniedTitle}>{he.admin.content.forbiddenTitle}</Text></View>;
+    return <View style={styles.center}><Text style={styles.deniedTitle}>{L.admin.content.forbiddenTitle}</Text></View>;
   }
 
   return (
     <View style={styles.root}>
-      <AdminScreenHeader title={he.admin.content.postsTitle} />
+      <AdminScreenHeader title={L.admin.content.postsTitle} />
       <TextInput
         style={styles.search}
         value={query}
         onChangeText={setQuery}
-        placeholder={he.admin.content.searchPostsPlaceholder}
+        placeholder={L.admin.content.searchPostsPlaceholder}
         autoCapitalize="none"
         autoCorrect={false}
       />
@@ -61,12 +62,12 @@ export default function PostsScreen() {
             style={[styles.chip, statusFilter === s.value && styles.chipActive]}
           >
             <Text style={[styles.chipText, statusFilter === s.value && styles.chipTextActive]}>
-              {he.admin.content.postStatusFilter[s.key]}
+              {L.admin.content.postStatusFilter[s.key]}
             </Text>
           </Pressable>
         ))}
       </ScrollView>
-      <Text style={styles.totalLabel}>{he.admin.content.totalCount(result.page.totalCount)}</Text>
+      <Text style={styles.totalLabel}>{L.admin.content.totalCount(result.page.totalCount)}</Text>
       <FlatList
         data={[...result.page.rows]}
         keyExtractor={(p) => p.postId}
@@ -75,7 +76,7 @@ export default function PostsScreen() {
         ListEmptyComponent={
           !result.isLoading ? (
             <View style={styles.empty}>
-              <Text style={styles.emptyText}>{he.admin.content.postsEmpty}</Text>
+              <Text style={styles.emptyText}>{L.admin.content.postsEmpty}</Text>
             </View>
           ) : null
         }

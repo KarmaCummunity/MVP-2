@@ -2,7 +2,7 @@
 import { router } from 'expo-router';
 import type { ReactElement } from 'react';
 import { View, Text, Pressable, StyleSheet } from 'react-native';
-import he from '../../i18n/locales/he';
+import { useLocaleBundle } from '../../i18n/useLocaleBundle';
 
 export interface ComingSoonProps {
   subProject: 'A1' | 'A2' | 'A3' | 'A4';
@@ -10,7 +10,8 @@ export interface ComingSoonProps {
 }
 
 export function ComingSoon({ subProject, description }: ComingSoonProps): ReactElement {
-  const t = he.admin.comingSoon;
+  const L = useLocaleBundle();
+  const t = L.admin.comingSoon;
   const key = subProject.toLowerCase() as 'a1' | 'a2' | 'a3' | 'a4';
   return (
     <View style={styles.root}>

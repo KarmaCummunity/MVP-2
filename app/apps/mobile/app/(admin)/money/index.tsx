@@ -19,12 +19,12 @@ import { FinanceEntryFormModal } from '../../../src/components/admin/money/Finan
 import { AdminFilterChip } from '../../../src/components/admin/AdminFilterChip';
 import { AdminListEmpty } from '../../../src/components/admin/AdminListEmpty';
 import { confirmAction as platformConfirm } from '../../../src/services/platformConfirm';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 type DirFilter = FinanceDirection | 'all';
 
-function confirmDelete(message: string): Promise<boolean> {
-  const t = he.admin.money.confirm;
+function confirmDelete(message: string, L: LocaleBundle): Promise<boolean> {
+  const t = L.admin.money.confirm;
   return platformConfirm(t.deleteTitle, message, {
     confirmLabel: t.deleteOk,
     cancelLabel:  t.deleteCancel,
@@ -40,7 +40,8 @@ function fmtAmount(cents: number, currency: string): string {
 
 export default function MoneyScreen() {
   const styles = useStyles();
-  const t = he.admin.money;
+  const L = useLocaleBundle();
+  const t = L.admin.money;
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const queryClient = useQueryClient();
@@ -132,7 +133,7 @@ export default function MoneyScreen() {
             entry={item}
             onEdit={() => setEditing(item)}
             onDelete={async () => {
-              const ok = await confirmDelete(t.confirm.delete);
+              const ok = await confirmDelete(t.confirm.delete, L);
               if (!ok) return;
               try { await remove.mutateAsync(item.entryId); }
               catch (err) {

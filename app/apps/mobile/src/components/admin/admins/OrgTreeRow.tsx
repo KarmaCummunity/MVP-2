@@ -8,7 +8,7 @@ import { AvatarInitials } from '../../AvatarInitials';
 import { RoleBadge } from './RoleBadge';
 import { LevelBadge } from './LevelBadge';
 import { rowDirectionStart, textAlignStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface OrgTreeRowProps {
   readonly node: OrgTreeNode;
@@ -21,8 +21,9 @@ export interface OrgTreeRowProps {
 export function OrgTreeRow({ node, hasChildren, collapsed, onToggle, onSelect }: OrgTreeRowProps) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const L = useLocaleBundle();
   const { member, level } = node;
-  const name = member.displayName ?? he.admin.admins.row.unnamed;
+  const name = member.displayName ?? L.admin.admins.row.unnamed;
 
   return (
     <View style={[styles.row, { marginStart: level * 16 }]}>

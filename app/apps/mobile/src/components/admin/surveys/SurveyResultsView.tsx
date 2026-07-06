@@ -9,7 +9,7 @@ import { textAlignStart, rowDirectionStart } from '../../../lib/rtlLayout';
 import { AdminListEmpty } from '../AdminListEmpty';
 import { QuestionStatCard } from './QuestionStatCard';
 import { RespondentCard } from './RespondentCard';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface SurveyResultsViewProps {
   readonly results: AdminSurveyResults | null;
@@ -24,7 +24,8 @@ export function SurveyResultsView({
 }: SurveyResultsViewProps): ReactElement {
   const styles = useStyles();
   const { colors } = useTheme();
-  const t = he.admin.surveys;
+  const L = useLocaleBundle();
+  const t = L.admin.surveys;
 
   return (
     <View style={styles.root}>

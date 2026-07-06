@@ -18,20 +18,20 @@ import {
 import { makeUseStyles } from '@kc/ui';
 import { useAdminRoles } from '../../../src/hooks/useAdminRoles';
 import { container } from '../../../src/lib/container';
-import he from '../../../src/i18n/locales/he';
+import { useLocaleBundle, type LocaleBundle } from '../../../src/i18n/useLocaleBundle';
 
 type StatusFilter = OrgApplicationStatus | 'all';
 
 const STATUS_TABS: readonly StatusFilter[] = ['pending', 'approved', 'rejected', 'all'];
 
-async function confirmAction(message: string): Promise<boolean> {
+async function confirmAction(message: string, L: LocaleBundle): Promise<boolean> {
   if (Platform.OS === 'web') {
     return typeof window !== 'undefined' && window.confirm(message);
   }
   return new Promise<boolean>((resolve) => {
-    Alert.alert(he.admin.tasks.detail.confirmTitle, message, [
-      { text: he.admin.tasks.detail.cancel, style: 'cancel', onPress: () => resolve(false) },
-      { text: he.admin.tasks.detail.confirmOk, onPress: () => resolve(true) },
+    Alert.alert(L.admin.tasks.detail.confirmTitle, message, [
+      { text: L.admin.tasks.detail.cancel, style: 'cancel', onPress: () => resolve(false) },
+      { text: L.admin.tasks.detail.confirmOk, onPress: () => resolve(true) },
     ]);
   });
 }
@@ -45,7 +45,8 @@ function fmt(dt: Date): string {
 
 export default function OrgApprovalsScreen() {
   const styles = useStyles();
-  const t = he.admin.orgApprovals;
+  const L = useLocaleBundle();
+  const t = L.admin.orgApprovals;
   const { roles, isLoading: rolesLoading } = useAdminRoles();
   const can = (perm: AdminPermission) => hasPermission(roles as readonly AdminRole[], perm);
   const queryClient = useQueryClient();
@@ -107,7 +108,7 @@ export default function OrgApprovalsScreen() {
             application={item}
             busy={decide.isPending}
             onDecide={async (approve, note) => {
-              const ok = await confirmAction(approve ? t.actions.confirmApprove : t.actions.confirmReject);
+              const ok = await confirmAction(approve ? t.actions.confirmApprove : t.actions.confirmReject, L);
               if (!ok) return;
               try {
                 await decide.mutateAsync({ applicationId: item.applicationId, approve, note });
@@ -147,7 +148,8 @@ interface ApplicationCardProps {
 
 function ApplicationCard({ application, busy, onDecide }: ApplicationCardProps) {
   const styles = useStyles();
-  const t = he.admin.orgApprovals;
+  const L = useLocaleBundle();
+  const t = L.admin.orgApprovals;
   const [note, setNote] = useState('');
 
   const showActions = application.status === 'pending';

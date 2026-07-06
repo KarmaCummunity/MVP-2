@@ -6,7 +6,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import type { AdminGrant } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { container } from '../../../lib/container';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface AssigneePickerProps {
   readonly value: string | null;
@@ -21,18 +21,19 @@ interface PickEntry {
 
 export function AssigneePicker({ value, onChange }: AssigneePickerProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const q = useQuery({
     queryKey: ['admin.admins.list', { includeRevoked: false }],
     queryFn:  () => container.listAdmins.execute({ includeRevoked: false }),
     staleTime: 60_000,
   });
-  const entries = derivePickEntries(q.data ?? []);
+  const entries = derivePickEntries(q.data ?? [], L.admin.admins.row.unnamed);
 
   return (
     <View>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.row}>
         <ChipButton
-          label={he.admin.tasks.form.unassigned}
+          label={L.admin.tasks.form.unassigned}
           active={value === null}
           onPress={() => onChange(null)}
         />
@@ -49,7 +50,10 @@ export function AssigneePicker({ value, onChange }: AssigneePickerProps) {
   );
 }
 
-function derivePickEntries(grants: readonly AdminGrant[]): readonly PickEntry[] {
+function derivePickEntries(
+  grants: readonly AdminGrant[],
+  unnamedLabel: string,
+): readonly PickEntry[] {
   const seen = new Set<string>();
   const out: PickEntry[] = [];
   for (const g of grants) {
@@ -58,7 +62,7 @@ function derivePickEntries(grants: readonly AdminGrant[]): readonly PickEntry[] 
     seen.add(g.userId);
     out.push({
       userId: g.userId,
-      displayName: g.displayName ?? he.admin.admins.row.unnamed,
+      displayName: g.displayName ?? unnamedLabel,
       role: g.role,
     });
   }

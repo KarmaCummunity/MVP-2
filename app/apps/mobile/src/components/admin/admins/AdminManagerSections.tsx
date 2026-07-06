@@ -8,7 +8,7 @@ import { makeUseStyles, radius, useTheme } from '@kc/ui';
 import { useOrgTree } from '../../../hooks/useOrgTree';
 import { GrantManagerSection } from './GrantManagerSection';
 import { rowDirectionStart, textAlignStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface AdminManagerSectionsProps {
   readonly userId: string;
@@ -18,16 +18,17 @@ export interface AdminManagerSectionsProps {
 export function AdminManagerSections({ userId, canManage }: AdminManagerSectionsProps) {
   const styles = useStyles();
   const { colors } = useTheme();
+  const L = useLocaleBundle();
   const tree = useOrgTree(null);
   const memberships = tree.members.filter((m) => m.userId === userId);
 
   return (
     <View>
-      <Text style={styles.sectionTitle}>{he.admin.admins.detail.managerSection}</Text>
+      <Text style={styles.sectionTitle}>{L.admin.admins.detail.managerSection}</Text>
       {memberships.length === 0 ? (
         <View style={styles.placeholder}>
           <Ionicons name="git-network-outline" size={20} color={colors.textSecondary} />
-          <Text style={styles.hint}>{he.admin.admins.detail.managerNone}</Text>
+          <Text style={styles.hint}>{L.admin.admins.detail.managerNone}</Text>
         </View>
       ) : (
         memberships.map((m) => (

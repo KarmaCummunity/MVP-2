@@ -4,7 +4,7 @@
 import { ScrollView, Pressable, Text } from 'react-native';
 import { makeUseStyles } from '@kc/ui';
 import { rowDirectionStart } from '../../../lib/rtlLayout';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface OrgOption {
   readonly id: string;
@@ -19,6 +19,7 @@ export interface OrgSwitcherProps {
 
 export function OrgSwitcher({ orgs, selected, onSelect }: OrgSwitcherProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const chip = (id: string | null, label: string) => (
     <Pressable
       key={id ?? 'all'}
@@ -36,7 +37,7 @@ export function OrgSwitcher({ orgs, selected, onSelect }: OrgSwitcherProps) {
       showsHorizontalScrollIndicator={false}
       contentContainerStyle={styles.bar}
     >
-      {chip(null, he.admin.admins.tree.orgAll)}
+      {chip(null, L.admin.admins.tree.orgAll)}
       {orgs.map((o) => chip(o.id, o.name))}
     </ScrollView>
   );

@@ -5,7 +5,7 @@
 import { useMemo, useState } from 'react';
 import { Pressable, StyleSheet, Text, TextInput, View } from 'react-native';
 import { makeUseStyles } from '@kc/ui';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface TaskDueRangeFilterProps {
   readonly fromValue: string;
@@ -25,6 +25,7 @@ export function isValidIsoDate(value: string): boolean {
 
 export function TaskDueRangeFilter({ fromValue, toValue, onChange, onClear }: TaskDueRangeFilterProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const [from, setFrom] = useState(fromValue);
   const [to, setTo]     = useState(toValue);
 
@@ -35,24 +36,24 @@ export function TaskDueRangeFilter({ fromValue, toValue, onChange, onClear }: Ta
   return (
     <View style={styles.row}>
       <View style={styles.fieldCol}>
-        <Text style={styles.label}>{he.admin.tasks.dueRange.fromLabel}</Text>
+        <Text style={styles.label}>{L.admin.tasks.dueRange.fromLabel}</Text>
         <TextInput
           style={[styles.input, !fromOk && styles.invalid]}
           value={from}
           onChangeText={setFrom}
-          placeholder={he.admin.tasks.dueRange.placeholder}
+          placeholder={L.admin.tasks.dueRange.placeholder}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="numbers-and-punctuation"
         />
       </View>
       <View style={styles.fieldCol}>
-        <Text style={styles.label}>{he.admin.tasks.dueRange.toLabel}</Text>
+        <Text style={styles.label}>{L.admin.tasks.dueRange.toLabel}</Text>
         <TextInput
           style={[styles.input, !toOk && styles.invalid]}
           value={to}
           onChangeText={setTo}
-          placeholder={he.admin.tasks.dueRange.placeholder}
+          placeholder={L.admin.tasks.dueRange.placeholder}
           autoCapitalize="none"
           autoCorrect={false}
           keyboardType="numbers-and-punctuation"
@@ -64,14 +65,14 @@ export function TaskDueRangeFilter({ fromValue, toValue, onChange, onClear }: Ta
           onPress={() => onChange({ from, to })}
           style={[styles.applyBtn, (!dirty || !fromOk || !toOk) && styles.disabledBtn]}
         >
-          <Text style={styles.applyText}>{he.admin.tasks.dueRange.apply}</Text>
+          <Text style={styles.applyText}>{L.admin.tasks.dueRange.apply}</Text>
         </Pressable>
         {(fromValue.length > 0 || toValue.length > 0) && (
           <Pressable
             onPress={() => { setFrom(''); setTo(''); onClear(); }}
             style={styles.clearBtn}
           >
-            <Text style={styles.clearText}>{he.admin.tasks.dueRange.clear}</Text>
+            <Text style={styles.clearText}>{L.admin.tasks.dueRange.clear}</Text>
           </Pressable>
         )}
       </View>

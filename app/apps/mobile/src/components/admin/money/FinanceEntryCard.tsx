@@ -3,7 +3,7 @@ import { StyleSheet, Text, View } from 'react-native';
 import type { FinanceEntry } from '@kc/domain';
 import { makeUseStyles } from '@kc/ui';
 import { AdminCardActions } from '../AdminCardActions';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface FinanceEntryCardProps {
   readonly entry: FinanceEntry;
@@ -26,7 +26,8 @@ function fmtAmount(cents: number, currency: string): string {
 
 export function FinanceEntryCard({ entry, onEdit, onDelete }: FinanceEntryCardProps) {
   const styles = useStyles();
-  const t = he.admin.money;
+  const L = useLocaleBundle();
+  const t = L.admin.money;
   const sign = entry.direction === 'in' ? '+' : '-';
   return (
     <View style={styles.card}>

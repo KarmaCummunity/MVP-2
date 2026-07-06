@@ -9,7 +9,7 @@ import { useAdminsList } from '../../../hooks/useAdminsList';
 import { rowDirectionStart, textAlignStart } from '../../../lib/rtlLayout';
 import { AdminPersonCard } from './AdminPersonCard';
 import { buildAdminListItems, type AdminListItem } from './adminListItems';
-import he from '../../../i18n/locales/he';
+import { useLocaleBundle } from '../../../i18n/useLocaleBundle';
 
 export interface AdminsListViewProps {
   readonly isWide: boolean;
@@ -30,6 +30,7 @@ function renderItem(item: AdminListItem, onSelect: (userId: string) => void, sty
 
 export function AdminsListView({ isWide, onSelect }: AdminsListViewProps) {
   const styles = useStyles();
+  const L = useLocaleBundle();
   const [includeRevoked, setIncludeRevoked] = useState(false);
   const list = useAdminsList(includeRevoked);
   const people = useMemo<readonly AdminPerson[]>(() => groupGrantsByUser(list.grants), [list.grants]);
@@ -39,7 +40,7 @@ export function AdminsListView({ isWide, onSelect }: AdminsListViewProps) {
     <View style={styles.fill}>
       <View style={styles.toggleRow}>
         <Switch value={includeRevoked} onValueChange={setIncludeRevoked} />
-        <Text style={styles.toggleLabel}>{he.admin.admins.includeRevokedLabel}</Text>
+        <Text style={styles.toggleLabel}>{L.admin.admins.includeRevokedLabel}</Text>
       </View>
       <FlatList
         data={items}
@@ -55,10 +56,11 @@ export function AdminsListView({ isWide, onSelect }: AdminsListViewProps) {
 
 function EmptyState() {
   const styles = useStyles();
+  const L = useLocaleBundle();
   return (
     <View style={styles.empty}>
-      <Text style={styles.emptyTitle}>{he.admin.admins.emptyTitle}</Text>
-      <Text style={styles.emptyHint}>{he.admin.admins.emptyHint}</Text>
+      <Text style={styles.emptyTitle}>{L.admin.admins.emptyTitle}</Text>
+      <Text style={styles.emptyHint}>{L.admin.admins.emptyHint}</Text>
     </View>
   );
 }
