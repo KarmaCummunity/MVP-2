@@ -222,7 +222,11 @@ const peopleProfiles = PEOPLE.map((p) => ({
   skills: p.skills,
   profile_status: 'Approved',
 }));
-await upsert('glowe_profiles', [...orgProfiles, ...peopleProfiles], 'id');
+// PostgREST bulk upserts require every row in a batch to carry the SAME key
+// set (PGRST102) — orgs and individuals have different columns, so they go in
+// two batches.
+await upsert('glowe_profiles', orgProfiles, 'id');
+await upsert('glowe_profiles', peopleProfiles, 'id');
 console.log(`profiles upserted: ${orgProfiles.length + peopleProfiles.length}`);
 
 // ── 4. Opportunities (incl. events) ──────────────────────────────────────────
@@ -254,13 +258,13 @@ await upsert('glowe_opportunities', OPPS.map((o) => ({
   responsibilities: [],
   featured: ['seed-opp-mentoring', 'seed-event-beach-cleanup'].includes(o.id),
   created_at: daysAgo(o.created),
-  ...(o.start ? {
-    start_at: daysAhead(o.start),
-    end_at: o.end ? daysAhead(o.end) : null,
-    event_type: o.eventType,
-    registration_mode: o.regMode,
-    capacity: o.capacity,
-  } : {}),
+  // Event columns are always present so every row in the batch carries the
+  // same key set (PGRST102); plain opportunities keep them null.
+  start_at: o.start ? daysAhead(o.start) : null,
+  end_at: o.end ? daysAhead(o.end) : null,
+  event_type: o.eventType ?? null,
+  registration_mode: o.regMode ?? 'gated',
+  capacity: o.capacity ?? null,
 })), 'id');
 console.log(`opportunities upserted: ${OPPS.length}`);
 
@@ -405,7 +409,7 @@ await upsert('glowe_reports', [
     reporter_id: ids.tamar,
     target_type: 'post', target_id: 'seed-post-photo-tips',
     reason: 'other', note: 'נראה לי שהפוסט הזה שייך יותר לפורום מאשר לפיד — לשיקולכם.',
-    status: 'open',
+    status: 'open', reviewed_at: null,
   },
   {
     id: '5eedd002-0000-4000-8000-000000000002',
