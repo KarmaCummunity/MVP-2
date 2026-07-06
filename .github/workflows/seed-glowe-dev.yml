@@ -15,6 +15,14 @@ on:
       confirm:
         description: 'Type SEED-DEV to confirm seeding the dev database'
         required: true
+  # Auto-run on dev when the seed dataset itself changes (idempotent, dev-only;
+  # the prod-ref guard below still applies). Manual dispatch stays available
+  # for ad-hoc re-seeds.
+  push:
+    branches: [dev]
+    paths:
+      - 'scripts/seed-glowe-dev.mjs'
+      - '.github/workflows/seed-glowe-dev.yml'
 
 permissions:
   contents: read
@@ -32,7 +40,8 @@ jobs:
       SUPABASE_ACCESS_TOKEN: ${{ secrets.SUPABASE_ACCESS_TOKEN }}
       SUPABASE_PROJECT_REF: ${{ secrets.SUPABASE_PROJECT_REF }}
     steps:
-      - name: Require confirmation phrase
+      - name: Require confirmation phrase (manual runs)
+        if: github.event_name == 'workflow_dispatch'
         run: |
           set -euo pipefail
           if [ "${{ inputs.confirm }}" != "SEED-DEV" ]; then
