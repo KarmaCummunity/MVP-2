@@ -3962,7 +3962,7 @@ function renderPostCard(post) {
                     </article>
                 `).join('')}
                 <form class="comment-form" onsubmit="handlePostComment(event, '${postId}')">
-                    <input id="comment-input-${postId}" placeholder="Write a thoughtful comment..." required>
+                    <input id="comment-input-${postId}" aria-label="Write a thoughtful comment..." placeholder="Write a thoughtful comment..." required>
                     <button type="submit">Post</button>
                 </form>
             </div>
