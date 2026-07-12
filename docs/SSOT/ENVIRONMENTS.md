@@ -108,6 +108,7 @@ All feature PRs target `dev`. Configure GitHub → Settings → Branches → `de
 | Manifest | CI — contract | `web manifest parity` |
 | PR hygiene | CI — PR hygiene | `PR hygiene` |
 | Migration safety | CI — dev guard | `migration destructive-op scan` |
+| SonarCloud | CI — SonarCloud | `SonarCloud quality gate` |
 
 Do **not** require **CI — main release guard** on `dev` (prod-only release-source job). Prod-only post-merge jobs (`prod-smoke`, Edge Functions deploy to `supabase-prod`) stay on `main` only.
 
