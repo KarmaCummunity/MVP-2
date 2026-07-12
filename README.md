@@ -13,8 +13,9 @@ causes, opportunities, events, and projects that need support.
 ## Quickstart
 
 1. **Clone** this repository.
-2. **Start local Supabase** (Docker required): from the repo root, run
-   `supabase start`. See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup.
+2. **Start local Supabase and seed GLOWE** (Docker required): from the repo
+   root, run `./scripts/dev-up.sh`. See [CONTRIBUTING.md](CONTRIBUTING.md) for
+   full setup.
 3. **Install dependencies:** `cd app && pnpm install`
 4. **Configure env:** use [`app/.env.example`](app/.env.example) as the variable
    template. Copy it to `app/.env.local` (gitignored) and fill in the local API
@@ -23,7 +24,8 @@ causes, opportunities, events, and projects that need support.
 5. **Run GLOWE web:** `pnpm --filter @kc/glowe-web dev` (serves at
    `http://localhost:4321`).
 
-Full contributor setup, seeding, and verification steps are in
+The local seed is fictional, uses `@example.test` accounts, and refuses hosted
+Supabase URLs. Full contributor setup, seeding, and verification steps are in
 [CONTRIBUTING.md](CONTRIBUTING.md).
 
 ## Repository map

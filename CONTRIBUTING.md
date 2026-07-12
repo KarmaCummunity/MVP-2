@@ -41,15 +41,16 @@ or commit hosted `dev`/`prod` URLs, anon keys, or service-role keys.
 ### Steps
 
 1. **Clone** the repository and `cd` into it.
-2. **Start Supabase locally** (from repo root):
+2. **Start Supabase locally and seed GLOWE** (from repo root):
    ```bash
-   supabase start
-   supabase db reset   # applies migrations + seed
+   ./scripts/dev-up.sh
    ```
+   This wraps `supabase start`, `supabase db reset`, and
+   `node scripts/seed-glowe-local.mjs`. The seed uses fictional
+   `@example.test` accounts and refuses any non-local Supabase URL.
 3. **Configure env:** copy [`app/.env.example`](app/.env.example) to
-   `app/.env.local` (gitignored). Replace the placeholder Supabase URL and anon
-   key with the **local** values from `supabase status` — never hosted project
-   credentials.
+   `app/.env.local` (gitignored). Paste the **local** URL and anon key printed
+   by `./scripts/dev-up.sh` — never hosted project credentials.
 4. **Install JS dependencies:**
    ```bash
    cd app
@@ -66,8 +67,16 @@ or commit hosted `dev`/`prod` URLs, anon keys, or service-role keys.
    pnpm typecheck && pnpm test && pnpm lint
    ```
 
-Fictional local seed data for GLOWE is planned (see project backlog INFRA-OSS-3).
-Until that ships, `supabase db reset` applies the base `seed.sql` migrations.
+If Supabase is already running and reset, you can rerun only the fictional GLOWE
+seed:
+
+```bash
+SUPABASE_URL=http://127.0.0.1:54321 \
+SUPABASE_SERVICE_ROLE_KEY=<local-service-role-key> \
+node scripts/seed-glowe-local.mjs
+```
+
+Get the local service-role key from `supabase status -o env`. Never commit it.
 
 ## Branch & PR flow
 
