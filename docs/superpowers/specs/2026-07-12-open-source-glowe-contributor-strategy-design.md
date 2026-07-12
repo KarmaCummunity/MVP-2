@@ -1,6 +1,8 @@
 # Open-Source Contributor Strategy for GLOWE — Design
 
-**Status:** Approved by PM (2026-07-12). Ready for implementation plan.
+**Status:** Approved by PM (2026-07-12). Amended same day with merge-gate,
+security-tooling, local-DB, and a formal **CLA** document (PM 2026-07-12).
+Ready for implementation.
 
 ## Context
 
@@ -24,17 +26,25 @@ The PM retains sole merge authority on `main` and `dev`.
 4. Harden the repo/CI against a stranger's first PR without adding friction for
    contributors after their first accepted PR.
 5. Keep merge control on `main`/`dev` with the PM (`@navesarussi`) exclusively.
+6. External contributors develop against a **local** Supabase stack (Docker) with
+   fictional seed data — never against shared hosted DB credentials.
+7. Every PR into `dev` must pass the automated test/quality gates; `main` is
+   reachable only from `dev` and only after the full release-check set is green.
 
 ## Non-goals
 
 - No repo split between KC and GLOWE — framing/documentation change only, not an
-  architecture change.
-- No formal legal CLA-signing bot or lawyer-drafted agreement (flagged as a
-  future upgrade if the project grows past the informal stage).
+  architecture change (except the additive local-dev Docker/seed work in §8).
+- No CLA **signing bot** / DCO bot automation (flagged as a future upgrade). A
+  formal `CLA.md` document **is** in scope; acceptance is by opening a PR
+  (checkbox in the PR template + statement in `CONTRIBUTING.md`).
 - No change to `CODEOWNERS` or collaborator roles (decided in a prior session:
   leave the 5 existing admin-role collaborators as-is).
 - No change to branch protection's `required_approving_review_count: 0` — kept
   as documented below.
+- No requirement that external contributors obtain SonarCloud / Snyk /
+  CodeRabbit / GitGuardian accounts — those run as CI/org integrations against
+  PRs; contributors only need Docker + pnpm locally.
 
 ## Design
 
@@ -55,13 +65,58 @@ English, written for a first-time visitor with zero context. Sections, in order:
 6. **Contributing** — one line + link to `CONTRIBUTING.md`.
 7. **Security** — one line + link to `SECURITY.md`.
 
-### 2. `LICENSE` (new, root)
+### 2. `LICENSE` (new, root) — All Rights Reserved (contribution-visibility only)
 
-All-Rights-Reserved notice: `Copyright (c) 2026 KarmaCommunity. All rights
-reserved.` followed by one paragraph: the source is visible for transparency and
-contribution purposes only; no license is granted to copy, redistribute, or
-reuse the code outside contributing to this repository; contributions are
-governed by `CONTRIBUTING.md`.
+Must be a **source-available / no-reuse** notice (not MIT/Apache/GPL). Exact
+intent:
+
+1. Title line: `Copyright (c) 2026 KarmaCommunity. All rights reserved.`
+2. Visibility: source is published for transparency and to enable contributions
+   to **this** repository only.
+3. No grant: no license to copy, modify, redistribute, sublicense, commercially
+   reuse, or create derivative works **outside** contributing via pull requests
+   to this repository.
+4. Contributions: inbound contributions are governed by `CLA.md` (and the
+   contribution process in `CONTRIBUTING.md`).
+5. Trademarks: KarmaCommunity / GLOWE names and marks are not licensed.
+6. Disclaimer: software provided "AS IS", no warranties.
+
+Do **not** use an OSI open-source license text. Do **not** imply SPDX
+`MIT`/`Apache-2.0`.
+
+### 2b. `CLA.md` (new, root) — Contributor License Agreement
+
+Formal Individual (and short Entity) CLA. Not lawyer-certified; project-owned
+template adapted from common OSS CLA structure for an All-Rights-Reserved host
+project.
+
+Required terms:
+
+1. **Acceptance:** By opening a pull request (or checking the CLA box in the PR
+   template), the contributor agrees to this CLA.
+2. **Copyright license:** Contributor grants KarmaCommunity a perpetual,
+   worldwide, royalty-free, irrevocable, non-exclusive license to use,
+   reproduce, prepare derivative works of, publicly display/perform, sublicense,
+   and distribute the contribution, and to relicense the contribution as part of
+   the project under any terms KarmaCommunity chooses (including proprietary).
+3. **Patent license:** Contributor grants a patent license for claims necessarily
+   infringed by their contribution alone or in combination with the project.
+4. **Original work / right to submit:** Contributor represents they are legally
+   entitled to grant the above; if employer rights apply, they have permission
+   or use the Entity CLA section.
+5. **Attribution:** Contributor retains copyright in their contribution;
+   KarmaCommunity will preserve reasonable authorship credit (e.g. git history).
+6. **No obligation:** KarmaCommunity is not obligated to use any contribution.
+7. **Entity CLA:** short second section for contributions made on behalf of an
+   employer/organization.
+
+Wire into:
+
+- `CONTRIBUTING.md` § Contributor Terms → link to `CLA.md` (do not duplicate the
+  full legal text).
+- `.github/PULL_REQUEST_TEMPLATE.md` → required checkbox:
+  `I agree to the [Contributor License Agreement](../CLA.md)`.
+- `README.md` → Contributing line may mention CLA.
 
 ### 3. `CONTRIBUTING.md` (new, root)
 
@@ -69,24 +124,32 @@ Written for an external contributor, not an internal agent. Sections:
 
 1. **Scope** — GLOWE contributions welcome; KC-frontend PRs will be redirected/
    closed (link `AGENTS.md`'s standing directive so the reason is traceable).
-2. **Contributor Terms** (the informal CLA paragraph) — by opening a PR, the
-   contributor grants KarmaCommunity a perpetual, worldwide license to use,
-   modify, and relicense their contribution as part of the project; they retain
-   authorship credit; they affirm the contribution is their own original work.
-3. **Dev setup** — `pnpm install`, required env vars (reference `.env.example`,
-   explicit warning never to commit real secrets/credentials), how to run GLOWE
-   web locally, how to run `pnpm typecheck && pnpm test && pnpm lint` from `app/`.
+2. **Contributor Terms** — short pointer: opening a PR means you agree to
+   `CLA.md`; do not paste the full CLA here.
+3. **Dev setup** — Docker + `supabase start` (local stack), `pnpm install`,
+   env vars pointing at **local** keys from `supabase status` (reference
+   `app/.env.example` with a local override section), explicit warning never to
+   commit real secrets/credentials and never to point local `.env` at hosted
+   `dev`/`prod` projects. How to run GLOWE web locally, how to seed fictional
+   data (`pnpm`/`node` script), how to run
+   `pnpm typecheck && pnpm test && pnpm lint` from `app/`.
 4. **Branch & PR flow** — fork the repo, branch, PR against `dev` (never
    `main`), wait for `@navesarussi` review and merge. State explicitly that
    contributors do not have push access and all merges are maintainer-controlled.
+   Document: **tests + required CI checks must be green to merge into `dev`**;
+   **`main` accepts only PRs whose head is `dev`**, after the full release gate
+   set (see §6).
 5. **Commit/PR conventions** — simplified excerpt of `CLAUDE.md` §6: Conventional
    Commits format, and what the required "Mapped to spec" PR-body line means for
    an external contributor (`N/A` is an acceptable, common answer for most
    external PRs that aren't tied to a tracked `FR-*`).
-6. **Code style / merge bar** — passing lint/typecheck/test is the acceptance bar;
-   point to existing scripts, no new tooling introduced.
+6. **Code style / merge bar** — passing lint/typecheck/test (and the rest of the
+   required status checks on `dev`) is the acceptance bar; point to existing
+   scripts. New security scanners (Snyk / GitGuardian / etc.) join the bar when
+   wired as required checks (§7).
 7. **Who reviews** — `@navesarussi` is sole merge authority on `main`/`dev`
-   (matches existing root `CODEOWNERS` entry, unchanged).
+   (matches existing root `CODEOWNERS` entry, unchanged). CodeRabbit (when
+   enabled) posts non-blocking review comments; it does not merge.
 
 ### 4. Governance & security docs (new, root + `.github/`)
 
@@ -124,59 +187,94 @@ Written for an external contributor, not an internal agent. Sections:
 - **No change** to `CODEOWNERS` or collaborator roles (prior-session decision,
   reaffirmed).
 
-### 6. Mandatory CI security gates before merge into `dev`
+### 6. Merge gates (tests & release path) — amendment 2026-07-12
 
-PM directive: nothing merges into `dev` unless every gate below is green, and
-`main` is reachable **only** via a `dev`→`main` promotion PR (already true per
-`CLAUDE.md` §6/§13 — reaffirmed here, no change needed to that rule).
+**Policy (PM):**
 
-Current state of each gate, checked against the live repo:
+1. **Into `dev`:** a PR may merge only when all **required status checks** are
+   green. Unit tests and integration tests are part of that bar (today:
+   `typecheck · test · lint` in `CI — frontend`, plus backend SQL probes /
+   contract / SonarCloud quality gate — see
+   [`docs/SSOT/ENVIRONMENTS.md`](../../SSOT/ENVIRONMENTS.md) "Dev merge gates").
+2. **Into `main`:** only via a PR whose **head branch is `dev`** (already
+   enforced by `CI — main release guard` / `release PR source is dev`), and
+   only after the full **main** required-check set is green (see
+   [`docs/SSOT/RELEASE_CHECKLIST.md`](../../SSOT/RELEASE_CHECKLIST.md)
+   "Merge gates").
 
-| # | Gate | Status today | Action needed |
-|---|------|--------------|----------------|
-| 1 | SonarCloud (Sonar Qube Cloud) | ✅ Already a required check (`ci-sonar.yml`, "SonarCloud quality gate" required on both `main` and `dev`) | None |
-| 2 | Snyk | ❌ Not present | Add `.github/workflows/ci-snyk.yml` (dependency + code vulnerability scan); add as required check on `dev`. **Needs a Snyk account + `SNYK_TOKEN` repo secret — the PM must sign up and add the token; I'll scaffold the workflow to consume it.** |
-| 3 | CodeRabbit | ❌ Not present | GitHub App, not a workflow file. **Requires the PM to install "CodeRabbit" from the GitHub Marketplace on this repo** (app-install grants are a permission only the repo owner can approve) — I can prepare a `.coderabbit.yaml` config once installed. |
-| 4 | GitHub Dependabot | ✅ Already enabled (security updates `status: enabled`; `dependabot.yml` configured, version-update PRs capped at 0 per existing TD-173 decision, security PRs unaffected) | None |
-| 5 | GitGuardian | ❌ Not present | Third-party secret-scanning service, complements (doesn't replace) native GitHub secret scanning. **Requires the PM to sign up at gitguardian.com and install their GitHub App/action** — manual, cannot be done via API on the PM's behalf. I'll add the `.gitguardian.yaml` config + workflow once they share the API key as a secret. |
-| 6 | GitHub native Secret Scanning + push protection | ✅ Already enabled (done in a prior session) | None |
-| 7 | Automated tests (unit + integration) | ✅ Already required (`typecheck · test · lint`, `rpc · table contract`, `apply migrations · rls · types · sql probes`, `Hebrew source scan` all required on both branches) | None |
+**Implementation work for this amendment:**
 
-**Net new work**: only gates #2, #3, #5 need anything built, and all three
-block on the PM completing a manual signup/install step first (account
-creation and GitHub App installs are outside what I can do on your behalf).
-I'll scaffold every workflow/config file so that the moment you drop in the
-secret or click install, the gate goes live and becomes a required check on
-`dev`'s branch protection.
+- Document the policy clearly in `README.md` (one sentence) and
+  `CONTRIBUTING.md` (short "Merge bar" subsection) so external contributors see
+  it without reading `CLAUDE.md`.
+- Audit branch-protection required checks on `dev` and `main` against the SSOT
+  tables; add any missing check that the PM listed in §7 once that tool is
+  wired.
+- Do **not** loosen existing gates. SonarCloud is already a required check on
+  `dev`/`main` even though it is missing from the ENVIRONMENTS table — fix the
+  SSOT table drift in the same PR that lands the docs.
 
-### 7. Local-only database — no shared secrets for contributors
+### 7. Security & quality tooling matrix — amendment 2026-07-12
 
-**Problem this closes**: the existing `scripts/seed-glowe-dev.mjs` seeds the
-**shared cloud dev Supabase project** and requires `SUPABASE_SERVICE_ROLE_KEY`
-for that project — a real secret. External contributors must never receive
-that key. Today nothing stops a contributor from being handed it by mistake.
+PM-requested scanners. Inventory against current repo state (2026-07-12):
 
-**Fix**: formalize local-only development as the only path for outside
-contributors.
+| # | Tool | Current state | Target for contributor-open |
+| - | ---- | ------------- | --------------------------- |
+| 1 | **SonarCloud** (SonarQube SaaS) | ✅ Wired (`.github/workflows/ci-sonar.yml`); required status check `SonarCloud quality gate` on `dev`/`main`. Docs: `docs/dev/SONAR.md`. | Keep required. Mention in CONTRIBUTING merge bar. Fix ENVIRONMENTS SSOT table to list it. |
+| 2 | **Snyk** | ❌ Not present. | Add CI workflow (or Snyk GitHub App) scanning `app/pnpm-lock.yaml` + Docker base images on PRs to `dev`/`main`. Start as **non-blocking** comment/check; promote to required after first clean baseline. Needs org `SNYK_TOKEN` secret. |
+| 3 | **CodeRabbit** | ❌ Not present. | Install CodeRabbit GitHub App on `KarmaCummunity/MVP-2` (org admin UI). Reviews PRs with AI comments; **non-merging**, does not replace `@navesarussi`. Optional `.coderabbit.yaml` for GLOWE-path focus. |
+| 4 | **GitHub Dependabot** | 🟡 Config exists (`.github/dependabot.yml` → weekly npm + monthly Actions on `dev`). **Dependabot security updates** repo setting is currently **disabled**. | Enable Dependabot security updates via repo settings API/UI. Keep version updates as-is. |
+| 5 | **GitGuardian** | ❌ Not present. | Add GitGuardian GitHub App **or** `ggshield` CI job on PRs. Prefer App for push-time scanning. Needs org install + token if CI-based. |
+| 6 | **Secret Scanning** | ✅ Enabled + push protection enabled on the public repo. Validity checks / non-provider patterns still off. | Keep. Document in `SECURITY.md`. Optionally enable validity checks. |
+| 7 | **Automated tests** (unit + integration) | ✅ Required: Vitest unit suite via `typecheck · test · lint`; backend integration via `apply migrations · rls · types · sql probes`; E2E GloWe journeys required on `main` release PRs. | Keep. CONTRIBUTING must tell contributors how to run the local subset before opening a PR. |
 
-- `supabase start` (Supabase CLI) already runs the full backend
-  (Postgres, Auth, Storage, Realtime, Studio) as local Docker containers —
-  this is "smart Docker" already, just not documented as the contributor path.
-- `supabase db reset` applies every migration in `supabase/migrations/` plus
-  `supabase/seed.sql` (currently just reference data — cities — 29 lines).
-- **New script**: `scripts/seed-local-fake-data.mjs` — seeds realistic **fake**
-  GLOWE data (dummy orgs, individuals, posts/events/needs, sample chat) into
-  the **local** stack only. Mirrors `seed-glowe-dev.mjs`'s structure (idempotent,
-  upsert-on-conflict) but with the guard **inverted**: it refuses to run
-  against anything except `127.0.0.1`/`localhost`, so it can never accidentally
-  target the cloud dev or prod project. Uses the Supabase CLI's fixed local
-  service-role key (the well-known `supabase-demo` JWT already used in test
-  fixtures — safe to hardcode since it only authenticates against a
-  container on the contributor's own machine, never a real deployment).
-- `CONTRIBUTING.md` §Dev setup is updated to describe this exact flow:
-  `supabase start` → `supabase db reset` → `node scripts/seed-local-fake-data.mjs`
-  → run GLOWE web pointed at the local Supabase URL. No real credentials of
-  any kind touch a contributor's machine.
+**Ordering:** docs + settings (§1–§5) first; then Dependabot security updates +
+Secret Scanning documentation (zero new vendors); then Snyk / GitGuardian /
+CodeRabbit (each needs an org-admin credential or App install — flag as
+**[blocked: needs PM org-admin action]** in BACKLOG/project cards until the
+token/App is available).
+
+### 8. Local-first contributor database (Docker + fictional seed) — amendment 2026-07-12
+
+**Problem:** Opening the repo to strangers must not leak hosted `dev`/`prod`
+data or service-role keys. Today `app/.env.example` points at a hosted Supabase
+URL pattern, `supabase/seed.sql` only seeds cities, and the rich GloWe dataset
+lives in `scripts/seed-glowe-dev.mjs` which targets the **hosted** DEV project
+(service role — correctly prod-ref-guarded, but still not safe to hand to
+external contributors).
+
+**Design:**
+
+1. **Local stack via Supabase CLI + Docker** (Supabase local already uses Docker
+   under the hood — no separate bespoke compose unless the CLI path proves
+   insufficient). Document in `CONTRIBUTING.md`:
+   - Install Docker Desktop + Supabase CLI.
+   - From repo root: `supabase start` → `supabase db reset` (applies migrations +
+     `seed.sql`).
+   - Copy local API URL + anon key from `supabase status` into `app/.env.local`
+     (gitignored). Never commit service-role keys.
+2. **Fictional local seed** — extend local seeding so a contributor gets a usable
+   GLOWE sandbox after `db reset`:
+   - Prefer a **local-only** SQL seed file (e.g. `supabase/seed-glowe-local.sql`
+     included from `seed.sql` or loaded by a small `scripts/seed-glowe-local.mjs`
+     that talks to `http://127.0.0.1:54321` only and refuses any non-local URL).
+   - Reuse the persona/content shape from `scripts/seed-glowe-dev.mjs` where
+     practical, but with clearly fake names/emails (`local-*@example.test`) and
+     **no** dependency on hosted service-role secrets.
+   - Idempotent; safe to re-run; never touches hosted projects.
+3. **Smart Docker packaging (optional nicety, same epic):** a thin
+   `docker compose` (or documented one-liner script `scripts/dev-up.sh`) that
+   wraps `supabase start` + prints the env snippet + runs the local seed, so
+   first-time setup is one command. Prefer wrapping the official Supabase local
+   stack over reinventing Postgres/GoTrue/Storage containers.
+4. **CONTRIBUTING hard rule:** external contributors must not request or use
+   hosted DEV/PROD credentials. Maintainer-only workflows
+   (`seed-glowe-dev.yml`, etc.) stay internal.
+
+**Out of scope for v1 of this epic:** running the full Playwright GloWe E2E
+suite against every contributor's laptop (E2E stays on CI against the maintained
+dev deploy). Local bar = unit/integration + manual GLOWE click-through on
+localhost.
 
 ## Verification
 
@@ -185,24 +283,25 @@ contributors.
 - Issue templates appear correctly in GitHub's "New issue" chooser.
 - Actions fork-PR-approval setting and Discussions/private-vuln-reporting
   toggles verified via `gh api` read-back after enabling.
-- No changes to app code from §1-5, so no `pnpm typecheck`/`test`/`lint` impact
-  for those — docs/governance-only (`NA` for spec mapping, matches `CLAUDE.md`
-  §4 "what does NOT need an SSOT update" — pure documentation).
-- §6 (CI gates): each new workflow file is validated by the existing
-  `ci-actionlint.yml` gate before it can itself become a required check;
-  confirm each new gate shows up and passes on a throwaway test PR before
-  marking it required on `dev`'s branch protection.
-- §7 (local seed script): run `supabase start && supabase db reset && node
-  scripts/seed-local-fake-data.mjs` end-to-end on a clean machine/checkout and
-  confirm the GLOWE web app renders the seeded fake content when pointed at
-  the local Supabase URL; confirm the script hard-exits if pointed at any
-  non-localhost URL.
+- Branch-protection required checks on `dev`/`main` still include
+  `typecheck · test · lint` (and SonarCloud); `ci-main-guard` still enforces
+  `dev` → `main`.
+- Local path: fresh clone → Docker → `supabase start` → seed → GLOWE web serves
+  fictional data with zero hosted credentials.
+- Tooling matrix (§7): each row either verified-already-on or tracked as a
+  project card with clear owner (agent vs PM org-admin).
+- Docs/governance PRs map to spec as `N/A` (`CLAUDE.md` §4). Local-seed / CI
+  wiring PRs that change runtime contributor tooling still use `N/A` unless an
+  `FR-*` is touched; update `BACKLOG.md` INFRA rows for those tasks.
 
 ## Risk / rollout
 
-Low risk overall. §1-5 are additive documentation and repo-settings changes
-only. §6 introduces new required CI gates on `dev` — sequence each gate's
-"required" flag only after it has run green at least once, to avoid wedging
-every PR the moment the workflow file lands but before the PM has added the
-corresponding secret. §7 is a new script with no effect on existing scripts,
-CI, or the shared cloud dev database.
+- **Docs + repo settings:** low risk — additive.
+- **Fork-PR-approval gate:** friction only for first-time external contributors.
+- **Snyk / GitGuardian / CodeRabbit:** medium process risk — need org-admin
+  installs and a quiet baseline period before making checks required, otherwise
+  agent/autonomous-loop PRs on `dev` can stall.
+- **Local Docker + seed:** medium contributor-UX risk if Docker/Supabase CLI
+  versions drift; mitigate with pinned CLI version in CONTRIBUTING and a
+  smoke script. Zero risk to hosted data if the local seed hard-refuses
+  non-localhost URLs.
