@@ -46,9 +46,10 @@ or commit hosted `dev`/`prod` URLs, anon keys, or service-role keys.
    supabase start
    supabase db reset   # applies migrations + seed
    ```
-3. **Copy local credentials** from `supabase status` into `app/.env.local`
-   (gitignored). Use only the local API URL and anon key — never hosted
-   project credentials.
+3. **Configure env:** copy [`app/.env.example`](app/.env.example) to
+   `app/.env.local` (gitignored). Replace the placeholder Supabase URL and anon
+   key with the **local** values from `supabase status` — never hosted project
+   credentials.
 4. **Install JS dependencies:**
    ```bash
    cd app
@@ -76,6 +77,13 @@ Until that ships, `supabase db reset` applies the base `seed.sql` migrations.
 4. Wait for review and merge by the maintainer.
 
 Contributors do **not** have push access. All merges are maintainer-controlled.
+
+Branch protection keeps `required_approving_review_count` at **0** on purpose.
+External contributors cannot merge PRs regardless of that setting — only
+collaborators with write or admin access can use the merge button. The maintainer
+still reviews every external PR before merge. Raising the required review count
+would not add safety for fork-based contributors and could interfere with
+maintainer and automated agent workflows on `dev`.
 
 ## Commit & PR conventions
 

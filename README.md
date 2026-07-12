@@ -16,9 +16,10 @@ causes, opportunities, events, and projects that need support.
 2. **Start local Supabase** (Docker required): from the repo root, run
    `supabase start`. See [CONTRIBUTING.md](CONTRIBUTING.md) for full setup.
 3. **Install dependencies:** `cd app && pnpm install`
-4. **Configure env:** copy the local API URL and anon key from `supabase status`
-   into your local env file (see CONTRIBUTING.md — never use hosted dev/prod
-   credentials).
+4. **Configure env:** use [`app/.env.example`](app/.env.example) as the variable
+   template. Copy it to `app/.env.local` (gitignored) and fill in the local API
+   URL and anon key from `supabase status` — never use hosted dev/prod
+   credentials. See [CONTRIBUTING.md](CONTRIBUTING.md) for details.
 5. **Run GLOWE web:** `pnpm --filter @kc/glowe-web dev` (serves at
    `http://localhost:4321`).
 
