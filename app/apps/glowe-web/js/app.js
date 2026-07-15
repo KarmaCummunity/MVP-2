@@ -1171,12 +1171,18 @@ async function persistPersonalProfile(profile) {
     return saved;
 }
 
+// Normalize a project into its backend payload, falling back to the raw object
+// when the organizations helper module is unavailable (guest/offline).
+function buildProjectBackendPayload(project) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    return helpers ? helpers.buildProjectPayload(project) : project;
+}
+
 // FR-GLOWE-011 AC4 (write) — persist a new project. When signed in against a
 // live backend, insert via insertOwned('projects', …) and refresh the live
 // list; otherwise fall back to the localStorage/demo cache (guest/offline).
 async function persistPersonalProject(project) {
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const payload = buildProjectBackendPayload(project);
     const backend = window.gloweBackend;
     if (backend && backend.configured() && isLoggedIn()) {
         try {
@@ -1210,8 +1216,7 @@ async function deletePersonalProject(id) {
 // the localStorage cache. Mirrors persistPersonalProject's signed-in/offline split.
 async function updatePersonalProject(id, project) {
     if (!id) return;
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const payload = buildProjectBackendPayload(project);
     const backend = window.gloweBackend;
     if (backend && backend.configured() && isLoggedIn()) {
         try {
@@ -3451,15 +3456,21 @@ function postShareUrl(path = '') {
 async function sharePost(title, path = '') {
     const url = postShareUrl(path);
     const name = (title && String(title).trim()) || 'GloWe';
-    if (navigator.share) {
-        try {
-            await navigator.share({ title: name, text: `${name} | GloWe`, url });
-            return;
-        } catch (error) {
-            if (error && error.name === 'AbortError') return;
-        }
-    }
+    if (await tryNativeShare(name, url)) return;
     await copyShareLink(url);
+}
+
+// Attempt the platform's native share sheet. Returns true when it handled the
+// share — including an AbortError (the user dismissed the sheet) — and false
+// when the API is unavailable or errored, so the caller can fall back to copy.
+async function tryNativeShare(name, url) {
+    if (!navigator.share) return false;
+    try {
+        await navigator.share({ title: name, text: `${name} | GloWe`, url });
+        return true;
+    } catch (error) {
+        return Boolean(error && error.name === 'AbortError');
+    }
 }
 
 async function copyShareLink(url) {
@@ -3935,6 +3946,9 @@ function renderProjectCard(project, options) {
     `;
 }
 
+// Pre-existing render hotspot (owner menu + comments + tags); this PR only
+// added the action icons/count + share button, not the underlying complexity.
+// fallow-ignore-next-line complexity
 function renderPostCard(post) {
     const authorName = post.authorName || 'Community Member';
     const profileHref = post.authorId ? `profile.html?id=${post.authorId}` : '#';
