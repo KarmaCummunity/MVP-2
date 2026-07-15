@@ -733,12 +733,28 @@ a.user-greeting:hover {
 
 .opportunity-card {
     position: relative;
+    display: flex;
+    flex-direction: column;
     background: var(--white);
     border-radius: var(--radius-md);
     padding: 24px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
     transition: var(--transition);
+}
+
+/* Anchor the action row to the bottom of the card so buttons sit on one
+   baseline regardless of body length (design fix #6 — grid rows already
+   stretch to equal height, so margin-top:auto lines the actions up). */
+.opportunity-card,
+.wish-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.opportunity-card > .card-actions,
+.wish-card > .card-actions {
+    margin-top: auto;
 }
 
 .card-more-menu {
@@ -771,13 +787,21 @@ a.user-greeting:hover {
     color: var(--text-secondary);
 }
 
+/* Keep metadata badges on a single scannable line (design fix #7 — Tags/Pills
+   are for short metadata; a line break inside one breaks its structure). Long
+   text truncates with an ellipsis and exposes the full value via title tooltip. */
 .opportunity-badge {
+    flex: 0 1 auto;
+    max-width: 55%;
     background-color: var(--primary-light);
     color: var(--primary-dark);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .opportunity-title {
@@ -1687,9 +1711,12 @@ a.user-greeting:hover {
     margin-bottom: 24px;
 }
 
+/* Tighter heading-to-body ratio for a smoother typographic hierarchy
+   (design fix #2 — the old 1.5rem heading over ~0.95rem body was too large). */
 .opportunity-main h2 {
-    font-size: 1.5rem;
-    margin: 32px 0 16px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 28px 0 12px;
     color: var(--text-primary);
 }
 
@@ -1697,6 +1724,14 @@ a.user-greeting:hover {
 .opportunity-main li {
     color: var(--text-secondary);
     margin-bottom: 12px;
+}
+
+/* Muted empty-state row (design fix #2). */
+.opportunity-main .empty-detail {
+    list-style: none;
+    margin-left: -20px;
+    color: var(--text-light);
+    font-style: italic;
 }
 
 .opportunity-main ul {
@@ -1722,9 +1757,30 @@ a.user-greeting:hover {
     margin-bottom: 16px;
 }
 
+/* Group Location / Duration / Commitment into a single tight block so they read
+   as one unit instead of floating in negative space (design fix #3 — Law of
+   Proximity). Consistent left-aligned label/value rows on a subtle panel. */
 .apply-card .opportunity-details {
-    justify-content: center;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
     margin-bottom: 24px;
+    text-align: start;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.apply-card .opportunity-details .opportunity-detail {
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+}
+
+.apply-card .opportunity-details .opportunity-detail + .opportunity-detail {
+    border-top: 1px solid var(--border-color);
 }
 
 .org-info-card {
@@ -2419,6 +2475,60 @@ a.user-greeting:hover {
 .well-filters {
     position: sticky;
     top: 104px;
+    /* Cap the sticky sidebar to the viewport and scroll it internally so the
+       page no longer has to be dragged to the bottom to reach lower filters
+       (design fix #5 — scroll conflict). */
+    max-height: calc(100vh - 124px);
+    overflow-y: auto;
+}
+
+/* Collapsible filter groups — hide the long option lists behind a summary so
+   the initial choice set is small (design fix #5 — Progressive Disclosure /
+   Hick's Law). Native <details> keeps it dependency-free and accessible. */
+.filter-accordion {
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 -4px;
+    padding: 4px;
+}
+
+.filter-accordion > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 4px;
+    margin: 0;
+    list-style: none;
+    cursor: pointer;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.filter-accordion > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Chevron that rotates when the group is open. */
+.filter-accordion > summary::after {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: rotate(45deg);
+    transition: transform 0.18s ease;
+}
+
+.filter-accordion[open] > summary::after {
+    transform: rotate(-135deg);
+}
+
+.filter-pill-group {
+    padding-top: 4px;
+}
+
+.filter-static {
+    margin: 4px 0;
 }
 
 .well-filters h3,
@@ -2531,6 +2641,10 @@ a.user-greeting:hover {
     padding: 7px 12px;
     font-weight: 800;
     font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .entity-mark,
@@ -2717,31 +2831,72 @@ a.user-greeting:hover {
     line-height: 1.25;
 }
 
-.share-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border-color);
-}
-
-.share-row button {
+/* Single native-share button (design fix #9). Icon + label pill matching the
+   other card actions; the icon alone carries the meaning on tight layouts. */
+.post-share-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     border: 1px solid var(--border-color);
     background: #fbfefd;
     color: var(--text-secondary);
     border-radius: 999px;
-    padding: 7px 11px;
+    padding: 7px 12px;
     font: inherit;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 800;
     cursor: pointer;
+    transition: var(--transition);
 }
 
-.share-row button:hover {
+.post-share-button:hover {
     border-color: var(--primary-color);
     color: var(--primary-dark);
     background: var(--primary-light);
+}
+
+.share-icon,
+.action-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 auto;
+}
+
+/* Count badge on the Comment action (design fix #8). */
+.action-count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+/* Quiet transient confirmation (share clipboard fallback). */
+.glowe-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 16px);
+    z-index: 1000;
+    max-width: min(90vw, 360px);
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--primary-dark, #0f5d55);
+    color: var(--white, #fff);
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.glowe-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }
 
 .wish-author,
@@ -2997,10 +3152,16 @@ a.user-greeting:hover {
 
 .post-actions button,
 .post-actions a {
-    padding: 7px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
     border: 1px solid var(--border-color);
     border-radius: 999px;
     background: #fbfefd;
+    font-weight: 800;
+    font-size: 0.82rem;
+    cursor: pointer;
 }
 
 .post-actions button:hover,
@@ -3256,14 +3417,10 @@ a.user-greeting:hover {
     margin-top: 16px;
 }
 
-.group-stats-row span,
-.clean-step-list li {
+.group-stats-row span {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.78);
-}
-
-.group-stats-row span {
     padding: 8px 12px;
     font-weight: 800;
     color: var(--primary-dark);
@@ -3277,17 +3434,41 @@ a.user-greeting:hover {
     margin-bottom: 14px;
 }
 
+/* Static "what happens next" steps — a plain numbered sequence, NOT frames that
+   mimic buttons (design fix #4 — False Affordance). Counter chip carries the
+   order; no border/background that would signal interactivity. */
 .clean-step-list {
     display: grid;
-    gap: 8px;
+    gap: 12px;
     padding: 0;
     margin: 12px 0 16px;
     list-style: none;
+    counter-reset: step;
 }
 
 .clean-step-list li {
-    padding: 10px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0;
     color: var(--text-secondary);
+    text-align: start;
+}
+
+.clean-step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.78rem;
+    font-weight: 800;
 }
 
 /* ===== Write Post Page ===== */
@@ -5109,14 +5290,9 @@ a.user-greeting:hover {
     color: var(--primary-dark);
 }
 
-.linkedin-community-layout .post-comments,
-.linkedin-community-layout .share-row {
+.linkedin-community-layout .post-comments {
     margin-left: 18px;
     margin-right: 18px;
-}
-
-.linkedin-community-layout .share-row {
-    margin-bottom: 18px;
 }
 
 .linkedin-community-layout .person-row {
@@ -5862,8 +6038,33 @@ html[dir="rtl"] .path-grid button,
 html[dir="rtl"] .modal-content,
 html[dir="rtl"] .form-group label,
 html[dir="rtl"] .footer-section,
-html[dir="rtl"] .settings-grid {
+html[dir="rtl"] .settings-grid,
+html[dir="rtl"] .post-more-panel button,
+html[dir="rtl"] .filter-pill,
+html[dir="rtl"] .comment-summary {
     text-align: right;
+}
+
+/* The "..." action menu and its panel belong on the leading (right) edge in
+   RTL so the dropdown lines up with Hebrew reading order (design fix #1). */
+html[dir="rtl"] .post-more-menu {
+    right: auto;
+    left: 14px;
+}
+
+html[dir="rtl"] .card-more-menu {
+    right: auto;
+    left: 12px;
+}
+
+html[dir="rtl"] .post-more-panel {
+    right: auto;
+    left: 0;
+}
+
+html[dir="rtl"] .opportunity-header {
+    padding-right: 0;
+    padding-left: 44px;
 }
 
 /* Inputs/selects keep their own direction so placeholders sit on the right. */
