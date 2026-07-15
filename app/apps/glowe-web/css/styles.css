@@ -4803,10 +4803,6 @@ a.user-greeting:hover {
     gap: 14px;
 }
 
-.compact-admin-list {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
 .admin-card {
     padding: 18px;
 }
@@ -4818,10 +4814,6 @@ a.user-greeting:hover {
 .admin-card p,
 .admin-card small {
     color: var(--text-secondary);
-}
-
-.compact-admin-card h3 {
-    margin-top: 0;
 }
 
 .admin-note-label {
@@ -5695,7 +5687,6 @@ a.user-greeting:hover {
     .next-roadmap-grid,
     .admin-grid,
     .admin-stats,
-    .compact-admin-list,
     .ecosystem-points,
     .footer-grid,
     .stats-grid,
