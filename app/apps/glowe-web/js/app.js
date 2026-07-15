@@ -54,6 +54,28 @@ function showSuccessModal(title, message) {
     openModal('success-modal');
 }
 
+// Lightweight transient toast (auto-dismisses). Used for quiet confirmations
+// such as the share clipboard fallback, so no modal interrupts the flow.
+let gloweToastTimer = null;
+function showToast(message) {
+    if (typeof document === 'undefined') return;
+    let toast = document.getElementById('glowe-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'glowe-toast';
+        toast.className = 'glowe-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    // Reflow so re-triggering the animation works on repeat calls.
+    void toast.offsetWidth;
+    toast.classList.add('visible');
+    if (gloweToastTimer) clearTimeout(gloweToastTimer);
+    gloweToastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
+}
+
 // ── View-only write gating (FR-GLOWE-003) ───────────────────────────────────
 // Browsing is open to everyone, but creating content (a need, post, event, or
 // discussion) requires a registered account that is allowed to publish. Two
@@ -1149,12 +1171,18 @@ async function persistPersonalProfile(profile) {
     return saved;
 }
 
+// Normalize a project into its backend payload, falling back to the raw object
+// when the organizations helper module is unavailable (guest/offline).
+function buildProjectBackendPayload(project) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    return helpers ? helpers.buildProjectPayload(project) : project;
+}
+
 // FR-GLOWE-011 AC4 (write) — persist a new project. When signed in against a
 // live backend, insert via insertOwned('projects', …) and refresh the live
 // list; otherwise fall back to the localStorage/demo cache (guest/offline).
 async function persistPersonalProject(project) {
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const payload = buildProjectBackendPayload(project);
     const backend = window.gloweBackend;
     if (backend && backend.configured() && isLoggedIn()) {
         try {
@@ -1188,8 +1216,7 @@ async function deletePersonalProject(id) {
 // the localStorage cache. Mirrors persistPersonalProject's signed-in/offline split.
 async function updatePersonalProject(id, project) {
     if (!id) return;
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const payload = buildProjectBackendPayload(project);
     const backend = window.gloweBackend;
     if (backend && backend.configured() && isLoggedIn()) {
         try {
@@ -3408,52 +3435,62 @@ function getAllCommunityPosts() {
     }));
 }
 
-function buildShareUrl(platform, title, url) {
-    const encodedTitle = encodeURIComponent(title);
-    const encodedUrl = encodeURIComponent(url);
-    const encodedText = encodeURIComponent(`${title} | GloWe`);
-    const urls = {
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-        x: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
-        whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`
-    };
-    return urls[platform] || url;
+// One familiar Share icon per post, using the platform's native share sheet
+// (Web Share API) exactly like every other app. No per-network buttons and no
+// bare "Copy link" — desktop browsers without navigator.share fall back to a
+// silent clipboard copy + toast. (FR-GLOWE-008 AC5; design fix #9.)
+const SHARE_ICON_SVG = '<svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>';
+
+// Familiar visual anchors for the post actions (Jakob's Law; design fix #8).
+const COMMENT_ICON_SVG = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
+const SEND_ICON_SVG = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+
+// Resolve a post's relative path (e.g. "community.html?post=42") to an
+// absolute, shareable URL. Falls back to the current page when no path given.
+function postShareUrl(path = '') {
+    return new URL(path || window.location.pathname, window.location.href).href;
 }
 
-function shareContent(platform, title, path = '') {
-    const url = new URL(path || window.location.pathname, window.location.href).href;
-    window.open(buildShareUrl(platform, title, url), '_blank', 'noopener,noreferrer');
+// Native share with a silent clipboard fallback. AbortError means the user
+// dismissed the OS share sheet — treat it as a no-op, not an error.
+async function sharePost(title, path = '') {
+    const url = postShareUrl(path);
+    const name = (title && String(title).trim()) || 'GloWe';
+    if (await tryNativeShare(name, url)) return;
+    await copyShareLink(url);
 }
 
-// Copy a community post's canonical URL to the clipboard (FR-GLOWE-008 AC5).
-async function copyPostLink(postId) {
-    const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : '';
-    const url = (typeof GlowePosts !== 'undefined')
-        ? GlowePosts.postCanonicalUrl(postId, origin)
-        : `${origin}/glowe/pages/community.html?post=${encodeURIComponent(postId)}`;
+// Attempt the platform's native share sheet. Returns true when it handled the
+// share — including an AbortError (the user dismissed the sheet) — and false
+// when the API is unavailable or errored, so the caller can fall back to copy.
+async function tryNativeShare(name, url) {
+    if (!navigator.share) return false;
     try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(url);
-        }
-        showSuccessModal('Link copied', 'The post link is on your clipboard — share it anywhere.');
+        await navigator.share({ title: name, text: `${name} | GloWe`, url });
+        return true;
     } catch (error) {
-        showSuccessModal('Copy this link', url);
+        return Boolean(error && error.name === 'AbortError');
     }
 }
 
-function renderShareButtons(title, path = '') {
+async function copyShareLink(url) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(url);
+            showToast('Link copied');
+            return;
+        }
+    } catch (error) {
+        // Clipboard blocked (e.g. insecure context) — show the link to copy by hand.
+    }
+    showSuccessModal('Copy this link', url);
+}
+
+function renderShareButton(title, path = '') {
     const safeTitle = escapeHtml(title);
     const titleArg = jsString(title);
     const pathArg = jsString(path);
-    return `
-        <div class="share-row" aria-label="Share ${safeTitle}">
-            <button type="button" onclick="shareContent('facebook', '${titleArg}', '${pathArg}')">Facebook</button>
-            <button type="button" onclick="shareContent('linkedin', '${titleArg}', '${pathArg}')">LinkedIn</button>
-            <button type="button" onclick="shareContent('x', '${titleArg}', '${pathArg}')">X</button>
-            <button type="button" onclick="shareContent('whatsapp', '${titleArg}', '${pathArg}')">WhatsApp</button>
-        </div>
-    `;
+    return `<button type="button" class="post-share-button" onclick="sharePost('${titleArg}', '${pathArg}')" aria-label="Share ${safeTitle}" title="Share">${SHARE_ICON_SVG}<span class="post-share-label">Share</span></button>`;
 }
 
 // FR-GLOWE-015 AC1 — persist a report to glowe_reports. Duplicate reports on
@@ -3786,7 +3823,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
                     ${renderEntityMark(opportunity.organization)}
                     <span>${escapeHtml(opportunity.organization)}</span>
                 </div>
-                <span class="opportunity-badge">${escapeHtml(badge)}</span>
+                <span class="opportunity-badge" title="${escapeHtml(badge)}">${escapeHtml(badge)}</span>
             </div>
             <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
             <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
@@ -3801,6 +3838,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
                 ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save Opportunity')}
+                ${renderShareButton(opportunity.title, detailHref)}
             </div>
         </div>
     `;
@@ -3881,8 +3919,8 @@ function renderWishCard(wish) {
             <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail('${wish.id}')">Learn More</button>
             <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
             ${wishOwnerControls(wish)}
+            ${renderShareButton(wish.title, `wishing-well.html?wish=${wish.id}`)}
         </div>
-        ${renderShareButtons(wish.title, `wishing-well.html?wish=${wish.id}`)}
     </article>
     `;
 }
@@ -3908,6 +3946,9 @@ function renderProjectCard(project, options) {
     `;
 }
 
+// Pre-existing render hotspot (owner menu + comments + tags); this PR only
+// added the action icons/count + share button, not the underlying complexity.
+// fallow-ignore-next-line complexity
 function renderPostCard(post) {
     const authorName = post.authorName || 'Community Member';
     const profileHref = post.authorId ? `profile.html?id=${post.authorId}` : '#';
@@ -3947,11 +3988,12 @@ function renderPostCard(post) {
             <p data-tr-field="text">${escapeHtml(post.text)}</p>
             ${tags.length ? `<div class="post-tag-row">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
             <div class="post-actions">
-                <button type="button" onclick="focusCommentBox('${postId}')">Comment</button>
-                <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(post.authorId || '')}')">Send</button>
+                <button type="button" onclick="focusCommentBox('${postId}')">${COMMENT_ICON_SVG}<span>Comment</span>${comments.length ? `<span class="action-count">${comments.length}</span>` : ''}</button>
+                <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(post.authorId || '')}')">${SEND_ICON_SVG}<span>Send</span></button>
+                ${renderShareButton(post.title, `community.html?post=${encodeURIComponent(postId)}`)}
             </div>
             <div class="post-comments" id="comments-${postId}">
-                <div class="comment-summary">${comments.length} comment${comments.length === 1 ? '' : 's'}</div>
+                <div class="comment-summary"><span class="comment-count">${comments.length}</span> <span>${comments.length === 1 ? 'comment' : 'comments'}</span></div>
                 ${comments.slice(0, 3).map(comment => `
                     <article class="comment-row">
                         ${renderEntityMark(comment.author, 'comment-avatar')}
@@ -3965,10 +4007,6 @@ function renderPostCard(post) {
                     <input id="comment-input-${postId}" aria-label="Write a thoughtful comment..." placeholder="Write a thoughtful comment..." required>
                     <button type="submit">Post</button>
                 </form>
-            </div>
-            <div class="post-share-row">
-                ${renderShareButtons(post.title, `community.html?post=${encodeURIComponent(postId)}`)}
-                <button type="button" class="post-copy-link" onclick="copyPostLink('${postId}')">Copy link</button>
             </div>
         </article>
     `;
@@ -5327,6 +5365,9 @@ function renderDiscussionThread(thread, group, allReplies) {
                     <input class="reply-input" required placeholder="Write a reply">
                     <button class="btn btn-outline btn-small" type="submit">Reply</button>
                 </form>
+                <div class="thread-actions">
+                    ${renderShareButton(thread.title, `discussion-group.html?group=${encodeURIComponent(group.id)}`)}
+                </div>
             </div>
         </article>
     `;
@@ -5821,13 +5862,21 @@ async function initOpportunityDetailPage() {
     // tag each chip with a per-element field ("requirements.<i>") so the reader
     // driver translates and caches every item independently. `skills` stays
     // untranslated (short tech/label tags, excluded from the registry by AC4).
+    // Explicit empty state so a blank section reads as "nothing listed" rather
+    // than a load error (design fix #2 — Missing Empty States).
+    const emptyDetail = '<li class="empty-detail">None specified for this opportunity.</li>';
+
     const requirementsList = document.getElementById('opp-requirements');
-    requirementsList.innerHTML = (opportunity.requirements || [])
-        .map((req, i) => `<li data-tr-field="requirements.${i}">${escapeHtml(req)}</li>`).join('');
+    const reqs = (opportunity.requirements || []).filter(Boolean);
+    requirementsList.innerHTML = reqs.length
+        ? reqs.map((req, i) => `<li data-tr-field="requirements.${i}">${escapeHtml(req)}</li>`).join('')
+        : emptyDetail;
 
     const responsibilitiesList = document.getElementById('opp-responsibilities');
-    responsibilitiesList.innerHTML = (opportunity.responsibilities || [])
-        .map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('');
+    const resps = (opportunity.responsibilities || []).filter(Boolean);
+    responsibilitiesList.innerHTML = resps.length
+        ? resps.map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('')
+        : emptyDetail;
 
     // Mark the card + scan AFTER the chips exist so title, description and every
     // array element are collected in a single pass (the card gets data-tr-done).
@@ -6955,6 +7004,8 @@ const GLOWE_TRANSLATIONS = {
         "Climate": "אקלים",
         "Close": "סגירה",
         "Comment": "תגובה",
+        "comment": "תגובה",
+        "comments": "תגובות",
         "Commitment:": "מחויבות:",
         "Community Activity": "פעילות הקהילה",
         "Community Building": "בניית קהילה",
@@ -7191,6 +7242,7 @@ const GLOWE_TRANSLATIONS = {
         "No projects listed yet.": "אין עדיין פרויקטים רשומים.",
         "No projects yet. Add your first project.": "אין עדיין פרויקטים. הוסיפו את הפרויקט הראשון שלכם.",
         "No replies yet. Be the first to respond.": "אין עדיין תגובות. היו הראשונים להגיב.",
+        "None specified for this opportunity.": "לא צוינו עבור ההזדמנות הזו.",
         "No reports yet": "אין עדיין דיווחים",
         "No results": "אין תוצאות",
         "No saved items yet": "אין עדיין פריטים שמורים",
