@@ -5415,15 +5415,21 @@ a.user-greeting:hover {
         font-size: 1.25rem;
     }
 
+    /* Google-only auth collapses to a single small button (see
+       normalizeHeaderAuthButtons); it sits inline in the top bar next to the
+       language toggle rather than stretching into its own full-width row. */
     .auth-buttons {
-        width: 100%;
-        justify-content: stretch;
+        width: auto;
+        flex: 0 0 auto;
+        justify-content: flex-end;
         gap: 8px;
     }
 
     .auth-buttons .btn {
-        flex: 1 1 0;
+        flex: 0 0 auto;
         min-width: 0;
+        padding: 7px 12px;
+        font-size: 0.82rem;
     }
 
     /* On phones the user-menu collapses to compact icon buttons aligned to the

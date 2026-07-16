@@ -6353,7 +6353,21 @@ async function handleApplicationSubmit(event) {
 function initMyApplicationsPage() {
     const container = document.getElementById('personal-area-content');
     if (!container) return;
-    if (typeof requireGloweMember === 'function' && !requireGloweMember()) return;
+    // FR-GLOWE-023 AC1 — an anonymous visitor tapping the "Profile" tab sees an
+    // in-page sign-in prompt (like Settings/Messages) instead of being bounced
+    // back to the guest home; the contextual join modal opens immediately so
+    // the tap isn't a dead end.
+    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Sign in to open your personal area</h3>
+                <p>Your profile, applications, needs, and saved items live here once you are signed in.</p>
+                <button class="btn btn-primary" type="button" onclick="window.GloweGuest.requireMemberForAction('open-personal-area', {}, function(){})">Sign up / Sign in</button>
+            </div>
+        `;
+        if (window.GloweGuest) window.GloweGuest.requireMemberForAction('open-personal-area', {}, function () {});
+        return;
+    }
 
     function renderPersonalArea() {
         const profile = getPersonalProfile();
@@ -6819,6 +6833,8 @@ const GLOWE_TRANSLATIONS = {
         'Something went wrong deleting your profile. Please try again.': 'משהו השתבש במחיקת הפרופיל. אנא נסו שוב.',
         'Sign in to manage settings': 'התחברו כדי לנהל הגדרות',
         'Your account, language, and session options live here once you are signed in.': 'החשבון, השפה ואפשרויות ההתחברות יופיעו כאן לאחר הכניסה.',
+        'Sign in to open your personal area': 'התחברו כדי לפתוח את האזור האישי',
+        'Your profile, applications, needs, and saved items live here once you are signed in.': 'הפרופיל, הבקשות, הצרכים והפריטים השמורים שלכם יופיעו כאן לאחר הכניסה.',
         // Member home (FR-GLOWE-016)
         'Your GloWe': 'ה-GloWe שלכם',
         'Welcome back,': 'ברוכים השבים,',
@@ -8052,8 +8068,11 @@ function injectLanguageToggle() {
     btn.setAttribute('aria-label', current === 'he' ? 'Switch to English' : 'מעבר לעברית');
     btn.textContent = current === 'he' ? 'EN' : 'עב';
     btn.addEventListener('click', toggleGloweLanguage);
+    // Sits after the auth button (Sign up / Sign in) so the top bar reads
+    // logo -> auth button -> language toggle, keeping the language switch at
+    // the trailing edge of the header.
     const authButtons = container.querySelector('.auth-buttons');
-    container.insertBefore(btn, authButtons || null);
+    container.insertBefore(btn, authButtons ? authButtons.nextSibling : null);
 }
 
 function removeLanguageToggle() {
