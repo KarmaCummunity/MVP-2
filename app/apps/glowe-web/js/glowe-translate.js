@@ -156,7 +156,15 @@ if (typeof window !== 'undefined') {
                 btn.textContent = showingSource ? labels.show : labels.hide;
                 localizeLabel(btn);
             });
-            card.appendChild(btn);
+            // Keep the toggle adjacent to the translated content, not stranded
+            // below comments/share (Law of Proximity; design fix #9). Insert it
+            // before the first actions/comments block when the card has one.
+            const anchor = card.querySelector('.post-actions, .card-actions, .post-comments');
+            if (anchor && anchor.parentNode === card) {
+                card.insertBefore(btn, anchor);
+            } else {
+                card.appendChild(btn);
+            }
             localizeLabel(btn);
         }
 

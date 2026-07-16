@@ -1268,6 +1268,8 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ## D-67 — GloWe community-post share keeps social buttons and adds copy-link
 
+> **Superseded by `D-177` (2026-07-15).** GloWe posts now share via one native Web Share button with a silent clipboard+toast desktop fallback; the social buttons and standalone copy-link described below were removed.
+
 **Date.** 2026-07-04
 
 **Decision.** FR-GLOWE-008 AC5 ("share a community post") is satisfied by **both** the existing social-network share buttons (Facebook / LinkedIn / X / WhatsApp) **and** a new "Copy link" control that writes the post's canonical URL to the clipboard via `navigator.clipboard.writeText` and confirms with a success toast. The canonical URL is derived by a pure helper `GlowePosts.postCanonicalUrl(postId, origin)` → `<origin>/glowe/pages/community.html?post=<id>`, so the shared link is stable, keyed on the post id (not the mutable title), and testable in isolation.
@@ -1310,7 +1312,23 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
-## D-170 — Personal Area gate replaced hard redirect with the FR-GLOWE-023 contextual join modal
+## D-177 — GloWe posts share via one native Share button (supersedes D-67); design-fixes UX pass
+
+**Date.** 2026-07-15
+
+**Decision.** Every GloWe post-type card (community post, wish, opportunity, forum thread) exposes **one** Share icon button that calls the platform's native share sheet through the Web Share API (`navigator.share`), exactly like every consumer app. The per-network buttons (Facebook/LinkedIn/X/WhatsApp) and the standalone "Copy link" control are **removed**. On desktop browsers lacking `navigator.share`, the button falls back **silently** to copying the resolved absolute URL to the clipboard and confirming with a lightweight toast (`showToast`; `showSuccessModal` if the Clipboard API is blocked). This **supersedes `D-67`**, which had retained the social buttons + copy-link and rejected `navigator.share` over desktop support — the silent clipboard+toast fallback resolves that concern, and the PM (2026-07-15) explicitly asked for "a normal share mechanism like every app — no other-app tags, no copy link."
+
+Shipped in the same change-set: a GloWe design-fixes pass addressing nine reviewed UX defects (pure CSS/template polish, no `FR-*` AC change beyond AC5 above): (1) RTL alignment of the `...` action menu + its panel; (2) explicit empty state for opportunity requirements/responsibilities; (3) grouping Location/Duration/Commitment into one proximate meta block; (4) de-buttoning the static "What happens next" steps (numbered list, not ghost buttons); (5) collapsing the long Wishing Well filter lists into `<details>` accordions + capping the sticky sidebar height to end the scroll conflict; (6) anchoring grid-card action rows to a single bottom baseline; (7) single-line metadata badges (nowrap + ellipsis + title tooltip); (8) icons + a count on the Comment/Send actions and a localized, RTL comment summary; and the "Show original" translation toggle re-anchored adjacent to its post content.
+
+**Rationale.** A single familiar Share affordance is lower cognitive load than a row of network buttons (Progressive Disclosure), routes to whatever apps the user actually has, and drops the unstyled "Copy link" that broke visual consistency. The native sheet is the mechanism users already know (Jakob's Law); the clipboard+toast fallback keeps desktop parity without reintroducing per-network clutter.
+
+**Alternatives rejected.** Keep D-67's dual paths — the PM explicitly rejected the network buttons and copy-link. A desktop popover menu of copy/options — more surface for no real gain over a quiet copy+toast (the PM chose the silent fallback).
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-008 AC5); `app/apps/glowe-web/js/app.js`, `js/glowe-translate.js`, `css/styles.css`, `pages/wishing-well.html`.
+
+---
+
+## D-178 — Personal Area gate replaced hard redirect with the FR-GLOWE-023 contextual join modal
 
 **Date.** 2026-07-16
 
@@ -1328,7 +1346,8 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
-| 4.9 | 2026-07-16 | Added `D-170` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
+| 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
+| 4.9 | 2026-07-15 | Added `D-177` (GloWe posts share via one native Web Share button with silent clipboard+toast desktop fallback; removes per-network buttons + copy-link; **supersedes `D-67`**; bundles the nine-item GloWe design-fixes UX pass; `FR-GLOWE-008` AC5). |
 | 4.8 | 2026-07-05 | Added `D-69` (GloWe messaging on KC chats supersedes outreach stub; volunteer offers as `post_type='offer'` on the Wishing Well; dev persona seed + workflow; `FR-GLOWE-013..016`). |
 | 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |
 | 4.6 | 2026-07-04 | Added `D-67` (GloWe community-post share keeps social buttons and adds a copy-link control writing `postCanonicalUrl` to the clipboard; canonical URL keyed on `postId`; `FR-GLOWE-008` AC5). |
