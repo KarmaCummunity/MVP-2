@@ -464,3 +464,36 @@ gating (FR-GLOWE-003) rather than adding a login wall. Design:
 - AC7. **Mode B out of scope.** Progressive disclosure (let the guest fill the form, wall at
   submit, preserve input) must **not** be built without an explicit PM instruction (see
   `DECISIONS.md` D-68).
+
+---
+
+## FR-GLOWE-024 — Bilingual display names (person + organization)
+
+**Status.** ✅ Done — bilingual name columns + auto-generation + edit + localized render
+(migration `0230`, Edge Function `glowe-generate-name-en`, `js/glowe-localized-name.js`).
+Decision: D-179.
+
+Proper names are **not** routed through the UGC translation cache (FR-TRANSLATE-005 AC4).
+Instead each person/organization stores an English/Latin variant alongside the source name,
+and content snapshots stamp the English form at create time. The EN interface shows the
+English column when present; HE (and other locales) prefer the source name.
+
+**Acceptance Criteria.**
+- AC1. **Schema.** `glowe_profiles.display_name_en` + `org_name_en`, `glowe_posts.author_name_en`,
+  and `glowe_opportunities.organization_en` exist (nullable, max 120 chars). KC
+  `public.users.display_name` is unchanged.
+- AC2. **Onboarding.** Optional "Name in English" / "Organization name in English" fields on
+  the post-sign-in onboarding modal. When left blank: Latin source names are copied; non-Latin
+  source names call `glowe-generate-name-en` (authenticated). Provider failure leaves `_en` null
+  and the UI falls back to the source name.
+- AC3. **Edit profile.** Edit Profile exposes the English name fields (org English name shown
+  for organization accounts). Saving regenerates `_en` only when the primary name changed and
+  the user did not supply an English value.
+- AC4. **Localized render.** Cards, profile detail, opportunity detail, wish authors, and chat
+  counterpart labels resolve via `GloweLocalizedName` + `getGloweLanguage()`: EN prefers `_en`,
+  otherwise the primary.
+- AC5. **Content snapshots.** Creating a post/wish/offer stamps `author_name` + `author_name_en`;
+  creating an opportunity/event stamps `organization` + `organization_en`. Historical rows keep
+  the snapshot; profile pages always show the current profile values.
+- AC6. **Out of scope.** KC mobile `users.display_name_en`, `org_contact_name_en`, and routing
+  names through `glowe-translate` / `glowe_content_translations`.

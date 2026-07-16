@@ -134,6 +134,7 @@
         return {
             title: str(d.title),
             organization: str(d.organization),
+            organization_en: str(d.organization_en || d.organizationEn) || null,
             field: withDefault(d.field, 'Community'),
             commitment: 'Event',
             location: str(d.location),
@@ -169,7 +170,8 @@
             impact_area: d.impact_area || null,
             category: 'offer',
             status: 'open',
-            author_name: String(d.author_name || d.authorName || '').trim()
+            author_name: String(d.author_name || d.authorName || '').trim(),
+            author_name_en: String(d.author_name_en || d.authorNameEn || '').trim() || null
         };
     }
 

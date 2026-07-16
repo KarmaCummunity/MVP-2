@@ -699,6 +699,7 @@ a.user-greeting:hover {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
     margin-bottom: 40px;
+    align-items: stretch;
 }
 
 .opportunity-composer-section {
@@ -753,7 +754,9 @@ a.user-greeting:hover {
 }
 
 .opportunity-card > .card-actions,
-.wish-card > .card-actions {
+.wish-card > .card-actions,
+.post-card > .post-actions,
+.post-card > .post-share-row {
     margin-top: auto;
 }
 
@@ -820,8 +823,17 @@ a.user-greeting:hover {
 .opportunity-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 10px 16px;
     margin-bottom: 20px;
+}
+
+/* Group Location / Duration / Commitment into one visual cluster
+   (design fix #3 — Law of Proximity). */
+.opportunity-meta-group {
+    padding: 12px 14px;
+    background: #fbfefd;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
 }
 
 .opportunity-detail {
@@ -830,6 +842,11 @@ a.user-greeting:hover {
     gap: 6px;
     font-size: 0.9rem;
     color: var(--text-secondary);
+}
+
+.opportunity-detail strong {
+    color: var(--text-primary);
+    font-weight: 700;
 }
 
 .opportunity-skills {
@@ -845,6 +862,10 @@ a.user-greeting:hover {
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8rem;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .section-cta {
@@ -1629,9 +1650,9 @@ a.user-greeting:hover {
     background: var(--white);
     padding: 24px 0;
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 80px;
-    z-index: 50;
+    /* No sticky — avoids scroll conflict with the page (design fix #5). */
+    position: relative;
+    z-index: 1;
 }
 
 .filters-container {
@@ -1729,13 +1750,13 @@ a.user-greeting:hover {
 /* Muted empty-state row (design fix #2). */
 .opportunity-main .empty-detail {
     list-style: none;
-    margin-left: -20px;
+    margin-inline-start: -20px;
     color: var(--text-light);
     font-style: italic;
 }
 
 .opportunity-main ul {
-    margin-left: 20px;
+    margin-inline-start: 20px;
     list-style: disc;
 }
 
@@ -2237,7 +2258,7 @@ a.user-greeting:hover {
 
 .compact-empty {
     padding: 24px;
-    text-align: left;
+    text-align: start;
 }
 
 .application-card {
@@ -2473,13 +2494,12 @@ a.user-greeting:hover {
 }
 
 .well-filters {
-    position: sticky;
-    top: 104px;
-    /* Cap the sticky sidebar to the viewport and scroll it internally so the
-       page no longer has to be dragged to the bottom to reach lower filters
-       (design fix #5 — scroll conflict). */
-    max-height: calc(100vh - 124px);
-    overflow-y: auto;
+    /* No sticky page hijack — filters scroll with the page; long groups stay
+       collapsed behind <details class="filter-accordion"> (design fix #5). */
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
 }
 
 /* Collapsible filter groups — hide the long option lists behind a summary so
@@ -2576,7 +2596,7 @@ a.user-greeting:hover {
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    text-align: left;
+    text-align: start;
 }
 
 .filter-pill.active,
@@ -2610,6 +2630,9 @@ a.user-greeting:hover {
     border-radius: var(--radius-md);
     padding: 22px;
     box-shadow: 0 10px 30px rgba(24, 36, 61, 0.06);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .wish-card {
@@ -2695,7 +2718,7 @@ a.user-greeting:hover {
     color: inherit;
     font: inherit;
     font-weight: 800;
-    text-align: left;
+    text-align: start;
     cursor: pointer;
 }
 
@@ -2987,7 +3010,7 @@ a.user-greeting:hover {
     color: var(--text-secondary);
     font: inherit;
     font-weight: 800;
-    text-align: left;
+    text-align: start;
     padding: 10px 12px;
     cursor: pointer;
 }
@@ -3025,6 +3048,10 @@ a.user-greeting:hover {
     color: var(--text-secondary);
     font-size: 0.78rem;
     font-weight: 800;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .spotlight-block {
@@ -5243,8 +5270,8 @@ a.user-greeting:hover {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin: 16px 18px 0;
-    padding: 10px 0;
+    margin: 12px 0 0;
+    padding: 10px 0 0;
     border-top: 1px solid rgba(220, 232, 227, 0.75);
     color: var(--text-light);
     font-size: 0.86rem;
@@ -6038,8 +6065,19 @@ html[dir="rtl"] .footer-section,
 html[dir="rtl"] .settings-grid,
 html[dir="rtl"] .post-more-panel button,
 html[dir="rtl"] .filter-pill,
-html[dir="rtl"] .comment-summary {
+html[dir="rtl"] .comment-summary,
+html[dir="rtl"] .wish-card h3 button,
+html[dir="rtl"] .compact-empty,
+html[dir="rtl"] .post-card,
+html[dir="rtl"] .opportunity-main,
+html[dir="rtl"] .opportunity-card,
+html[dir="rtl"] .wish-card,
+html[dir="rtl"] .opportunity-meta-group {
     text-align: right;
+}
+
+html[dir="rtl"] .wish-card::before {
+    inset: 0 0 0 auto;
 }
 
 /* The "..." action menu and its panel belong on the leading (right) edge in

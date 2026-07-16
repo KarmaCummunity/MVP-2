@@ -53,10 +53,45 @@
         return clientPromise;
     }
 
+    // Non-Latin scripts that need an English variant (FR-GLOWE-024). Mirrors
+    // GloweLocalizedName.isPrimarilyLatin so backend works before that script loads.
+    const NON_LATIN_NAME = /[\u0590-\u05FF\u0600-\u06FF\u0400-\u04FF\u0370-\u03FF\u4E00-\u9FFF]/;
+
+    function isPrimarilyLatinName(text) {
+        const t = String(text || '').trim();
+        if (!t) return true;
+        return !NON_LATIN_NAME.test(t);
+    }
+
+    function trimName(value) {
+        return String(value == null ? '' : value).trim().slice(0, 120);
+    }
+
+    // Resolve English name: explicit user value wins; Latin primary is copied;
+    // otherwise call glowe-generate-name-en (failures → '').
+    async function resolveEnglishName(supabaseClient, primary, explicitEn, context) {
+        const explicit = trimName(explicitEn);
+        if (explicit) return explicit;
+        const source = trimName(primary);
+        if (!source) return '';
+        if (isPrimarilyLatinName(source)) return source;
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('glowe-generate-name-en', {
+                body: { names: [{ field: 'name', text: source, context: context || 'person' }] }
+            });
+            if (error) return '';
+            const first = data && Array.isArray(data.results) ? data.results[0] : null;
+            return trimName(first && first.textEn);
+        } catch (_e) {
+            return '';
+        }
+    }
+
     function profilePayload(profile = {}, user = null) {
         return {
             id: user ? user.id : profile.id,
             display_name: profile.name || profile.display_name || '',
+            display_name_en: profile.nameEn || profile.display_name_en || null,
             email: profile.email || (user ? user.email : ''),
             profile_type: profile.type || profile.profileTypeLabel || profile.profile_type || '',
             country: profile.country || '',
@@ -70,6 +105,8 @@
             skills: profile.skills || profile.interests || [],
             avatar_url: profile.avatarUrl || profile.avatar_url || '',
             profile_status: profile.profileStatus || profile.profile_status || 'Draft',
+            org_name: profile.orgName || profile.org_name || null,
+            org_name_en: profile.orgNameEn || profile.org_name_en || null,
             raw_profile: profile
         };
     }
@@ -80,6 +117,7 @@
             ...(row.raw_profile || {}),
             id: row.id,
             name: row.display_name,
+            nameEn: row.display_name_en || '',
             email: row.email,
             type: row.profile_type,
             focus: row.focus,
@@ -97,6 +135,7 @@
             approvalStatus: row.approval_status || 'not_required',
             country: row.country || '',
             orgName: row.org_name || '',
+            orgNameEn: row.org_name_en || '',
             orgWebsite: row.org_website || '',
             orgRegistrationNumber: row.org_registration_number || '',
             orgCountry: row.org_country || '',
@@ -152,6 +191,7 @@
         const row = {
             title: firstOf(payload.title, ''),
             organization: firstOf(payload.organization, ''),
+            organization_en: firstOf(payload.organizationEn, payload.organization_en, null) || null,
             org_icon: firstOf(payload.orgIcon, payload.org_icon, ''),
             location: firstOf(payload.location, ''),
             commitment: firstOf(payload.commitment, ''),
@@ -178,6 +218,7 @@
             language: payload.language || '',
             link: payload.link || '',
             author_name: payload.authorName || payload.author_name || '',
+            author_name_en: payload.authorNameEn || payload.author_name_en || null,
             // Wish discriminator + lifecycle (migration 0215). Defaults keep
             // community posts unchanged.
             post_type: payload.post_type || 'community',
@@ -291,7 +332,32 @@
         const supabaseClient = await getClient();
         const user = explicitUser || await currentUser();
         if (!supabaseClient || !user) return null;
-        const payload = profilePayload({ ...profile, id: user.id, email: user.email }, user);
+        const merged = { ...profile, id: user.id, email: user.email };
+        const existing = await fetchProfile().catch(() => null);
+        const primaryChanged = !existing
+            || trimName(existing.name) !== trimName(merged.name || merged.display_name);
+        const orgChanged = !existing
+            || trimName(existing.orgName) !== trimName(merged.orgName || merged.org_name);
+        // Auto-generate English only when the primary changed and the user did
+        // not supply an English value (FR-GLOWE-024).
+        if (primaryChanged && !trimName(merged.nameEn || merged.display_name_en)) {
+            merged.nameEn = await resolveEnglishName(
+                supabaseClient,
+                merged.name || merged.display_name,
+                '',
+                'person'
+            );
+        }
+        if (orgChanged && (merged.orgName || merged.org_name)
+            && !trimName(merged.orgNameEn || merged.org_name_en)) {
+            merged.orgNameEn = await resolveEnglishName(
+                supabaseClient,
+                merged.orgName || merged.org_name,
+                '',
+                'organization'
+            );
+        }
+        const payload = profilePayload(merged, user);
         const { data, error } = await supabaseClient
             .from(tbl('profiles'))
             .upsert(payload)
@@ -312,10 +378,14 @@
         const existing = await fetchProfile().catch(() => null);
         if (existing) return existing;
         const meta = user.user_metadata || {};
+        const displayName = meta.name || meta.full_name
+            || (user.email ? user.email.split('@')[0] : 'GloWe member');
+        const displayNameEn = await resolveEnglishName(supabaseClient, displayName, '', 'person');
         const payload = {
             id: user.id,
             email: user.email || meta.email || '',
-            display_name: meta.name || meta.full_name || (user.email ? user.email.split('@')[0] : 'GloWe member'),
+            display_name: displayName,
+            display_name_en: displayNameEn || null,
             avatar_url: meta.avatar_url || meta.picture || '',
         };
         const { data, error } = await supabaseClient
@@ -348,27 +418,39 @@
         return data ? data.publicUrl : null;
     }
 
-    // Post-sign-in onboarding (FR-GLOWE-002). Writes only the onboarding-related
-    // columns via upsert so a partial pre-existing profile row is preserved.
-    // Individuals are approved implicitly ('not_required'); organizations are
-    // submitted for KC admin review ('pending') and stay view-only until then.
+    // Post-sign-in onboarding (FR-GLOWE-002 + FR-GLOWE-024). Writes only the
+    // onboarding-related columns via upsert so a partial pre-existing profile
+    // row is preserved. Individuals are approved implicitly ('not_required');
+    // organizations are submitted for KC admin review ('pending') and stay
+    // view-only until then. English name variants are user-supplied or
+    // auto-generated when the source name is non-Latin.
     async function completeOnboarding(details = {}) {
         const supabaseClient = await getClient();
         const user = await currentUser();
         if (!supabaseClient || !user) return null;
         const isOrg = details.accountType === 'organization';
         const org = details.org || {};
+        const displayName = details.displayName || '';
+        const displayNameEn = await resolveEnglishName(
+            supabaseClient, displayName, details.displayNameEn, 'person'
+        );
+        const orgName = isOrg ? (org.name || '') : null;
+        const orgNameEn = isOrg
+            ? await resolveEnglishName(supabaseClient, orgName, org.nameEn, 'organization')
+            : null;
         const payload = {
             id: user.id,
             email: user.email,
-            display_name: details.displayName || '',
+            display_name: displayName,
+            display_name_en: displayNameEn || null,
             about: details.about || '',
             country: details.country || '',
             account_type: isOrg ? 'organization' : 'individual',
             onboarding_complete: true,
             approval_status: isOrg ? 'pending' : 'not_required',
             profile_type: isOrg ? 'Organization' : 'Individual',
-            org_name: isOrg ? (org.name || '') : null,
+            org_name: orgName,
+            org_name_en: orgNameEn || null,
             org_website: isOrg ? (org.website || '') : null,
             org_registration_number: isOrg ? (org.registrationNumber || '') : null,
             org_country: isOrg ? (org.country || details.country || '') : null,
@@ -821,9 +903,25 @@
     }
 
     // Compact identity for a chat counterpart (orgs show their org name).
+    // Includes English variants so the messages UI can localize (FR-GLOWE-024).
     function kcProfileSummary(row) {
+        const isOrg = row.account_type === 'organization';
+        const primary = isOrg
+            ? firstOf(row.org_name, row.display_name, 'GloWe member')
+            : firstOf(row.display_name, 'GloWe member');
+        const nameEn = isOrg
+            ? firstOf(row.org_name_en, row.display_name_en, '')
+            : firstOf(row.display_name_en, '');
+        let name = primary;
+        if (typeof window !== 'undefined' && window.GloweLocalizedName
+            && typeof window.getGloweLanguage === 'function') {
+            name = window.GloweLocalizedName.resolveLocalizedName(
+                primary, nameEn, window.getGloweLanguage()
+            ) || primary;
+        }
         return {
-            name: firstOf(row.org_name, row.display_name, 'GloWe member'),
+            name,
+            nameEn: nameEn || '',
             avatarUrl: firstOf(row.avatar_url, ''),
             accountType: firstOf(row.account_type, null)
         };
@@ -836,7 +934,7 @@
         if (!ctx || !userIds.length) return {};
         const result = await ctx.supabaseClient
             .from(tbl('profiles'))
-            .select('id, display_name, avatar_url, account_type, org_name')
+            .select('id, display_name, display_name_en, avatar_url, account_type, org_name, org_name_en')
             .in('id', userIds);
         const out = {};
         (result.data || []).forEach((row) => { out[row.id] = kcProfileSummary(row); });

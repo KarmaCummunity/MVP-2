@@ -1342,6 +1342,18 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-179 — GloWe bilingual display names stored as columns, not via UGC translation (2026-07-17)
+
+**Decision.** Person and organization display names on GloWe are bilingual via dedicated DB columns (`display_name_en`, `org_name_en`, plus content snapshots `author_name_en` / `organization_en`). English variants are user-editable and auto-generated on onboarding when the source name is non-Latin (`glowe-generate-name-en`). They are **not** translated on-demand through `glowe-translate` / `glowe_content_translations`. KC `public.users.display_name` is unchanged.
+
+**Rationale.** FR-TRANSLATE-005 AC4 deliberately excludes proper names from the UGC cache (no user edit of a cached translation; names are identity, not prose). Readers on the EN interface still need Latin names for Hebrew/Arabic/etc. registrants. Storing an editable `_en` column mirrors the cities `name_he`/`name_en` pattern and lets the owner correct auto-transliterations.
+
+**Alternatives rejected.** *Route names through `glowe-translate`* — violates AC4 and produces non-editable cached strings. *Add `display_name_en` on KC `users` in the same change* — out of GloWe MVP scope (PM: GloWe only). *Deterministic transliteration table only* — poor quality for org legal names; LLM transliteration with user override is better.
+
+**Affected.** Migration `0230_glowe_bilingual_names.sql`; Edge Function `glowe-generate-name-en`; `app/apps/glowe-web/js/{backend.js,app.js,glowe-localized-name.js,glowe-posts.js,glowe-opportunities.js,glowe-create.js,glowe-wishes.js}`; `spec/17_glowe_frontend.md` FR-GLOWE-024; `spec/18_translation.md` note.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |

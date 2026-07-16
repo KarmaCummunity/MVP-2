@@ -33,6 +33,7 @@
         return {
             title: String(d.title || '').trim(),
             organization: String(d.organization || '').trim(),
+            organization_en: String(d.organization_en || d.organizationEn || '').trim() || null,
             commitment: d.commitment || '',
             field: d.field || '',
             location: String(d.location || '').trim(),

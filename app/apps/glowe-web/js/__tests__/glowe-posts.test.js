@@ -22,7 +22,8 @@ describe('mapPostRow', () => {
             tags: ['a', 'b'], user_id: 'u1', author_name: 'Dana', created_at: '2026-01-01'
         })).toEqual({
             id: 'p1', title: 'Hello', category: 'Knowledge', text: 'Body',
-            tags: ['a', 'b'], authorId: 'u1', authorName: 'Dana', createdAt: '2026-01-01'
+            tags: ['a', 'b'], authorId: 'u1', authorName: 'Dana', authorNameEn: '',
+            createdAt: '2026-01-01'
         });
     });
 
@@ -160,12 +161,12 @@ describe('normalizePostDraft', () => {
         })).toEqual({
             post_type: 'community', title: 'Hello', category: 'Knowledge', text: 'Body',
             tags: ['Education', 'Climate'], audience: 'Everyone', language: 'English',
-            link: 'https://x.io', author_name: 'Dana'
+            link: 'https://x.io', author_name: 'Dana', author_name_en: null
         });
     });
 
     it('collapses blank optional fields and prefers text over body', () => {
         const payload = GlowePosts.normalizePostDraft({ title: 'T', text: 'Real', body: 'Ignored' });
-        expect(payload).toMatchObject({ post_type: 'community', title: 'T', text: 'Real', tags: [], category: '', audience: '', language: '', link: '', author_name: '' });
+        expect(payload).toMatchObject({ post_type: 'community', title: 'T', text: 'Real', tags: [], category: '', audience: '', language: '', link: '', author_name: '', author_name_en: null });
     });
 });

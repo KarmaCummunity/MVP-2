@@ -156,14 +156,20 @@ if (typeof window !== 'undefined') {
                 btn.textContent = showingSource ? labels.show : labels.hide;
                 localizeLabel(btn);
             });
-            // Keep the toggle adjacent to the translated content, not stranded
-            // below comments/share (Law of Proximity; design fix #9). Insert it
-            // before the first actions/comments block when the card has one.
-            const anchor = card.querySelector('.post-actions, .card-actions, .post-comments');
-            if (anchor && anchor.parentNode === card) {
-                card.insertBefore(btn, anchor);
+            // Place next to the translated title/body (Law of Proximity; design fix #9),
+            // not stranded below comments/share.
+            const titleEl = card.querySelector('[data-tr-field="title"]');
+            const bodyEl = card.querySelector('[data-tr-field="text"], [data-tr-field="description"]');
+            const anchor = titleEl || bodyEl;
+            if (anchor) {
+                anchor.insertAdjacentElement('afterend', btn);
             } else {
-                card.appendChild(btn);
+                const fallback = card.querySelector('.post-actions, .card-actions, .post-comments');
+                if (fallback && fallback.parentNode === card) {
+                    card.insertBefore(btn, fallback);
+                } else {
+                    card.appendChild(btn);
+                }
             }
             localizeLabel(btn);
         }
