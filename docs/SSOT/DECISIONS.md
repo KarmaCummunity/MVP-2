@@ -1328,10 +1328,25 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-178 — Personal Area gate replaced hard redirect with the FR-GLOWE-023 contextual join modal
+
+**Date.** 2026-07-16
+
+**Decision.** `requireGloweMember()` (a hard `window.location.href` redirect back to the guest home) is removed. The bottom-nav "Profile" tab and the header's "Personal Area" link both point at `my-applications.html` unconditionally; `initMyApplicationsPage()` now renders an in-page sign-in prompt on `personal-area-content` for anonymous visitors (the same pattern already used by `settings`/`messages`) and immediately opens the `open-personal-area` contextual join modal via `GloweGuest.requireMemberForAction` (already registered in `GLOWE_JOIN_ACTIONS` but previously unwired). Google sign-in reloads the page and the personal area renders normally.
+
+**Rationale.** PM report: tapping the "Profile" tab while signed out visibly flashed and bounced back to the marketing home, reading as a broken tab rather than an auth gate. `requireGloweMember()`'s silent-redirect design (FR-GLOWE-016 AC1, as originally written) predates FR-GLOWE-023's contextual-join pattern, which every other identity-gated action (create, apply, RSVP, message, save, report) already uses. Aligning the last remaining hard-redirect gate onto the existing pattern is a bug fix, not a new feature.
+
+**Alternatives rejected.** A dedicated `/login` page — the app is Google-only auth via modal (`D-33`); a full page would duplicate `showJoinPrompt()`'s UI for no gain. Keeping the redirect but adding a toast — still a dead-end tap; the contextual modal already solves this everywhere else.
+
+**Affected docs.** `spec/17_glowe_frontend.md` (`FR-GLOWE-016` AC1); `app/apps/glowe-web/js/{app.js,auth.js}`; `app/apps/glowe-web/css/styles.css` (header auth button now inline instead of a stretched mobile banner, moved next to `.lang-toggle`).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
 | 4.9 | 2026-07-15 | Added `D-177` (GloWe posts share via one native Web Share button with silent clipboard+toast desktop fallback; removes per-network buttons + copy-link; **supersedes `D-67`**; bundles the nine-item GloWe design-fixes UX pass; `FR-GLOWE-008` AC5). |
 | 4.8 | 2026-07-05 | Added `D-69` (GloWe messaging on KC chats supersedes outreach stub; volunteer offers as `post_type='offer'` on the Wishing Well; dev persona seed + workflow; `FR-GLOWE-013..016`). |
 | 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |

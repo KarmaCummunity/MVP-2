@@ -477,15 +477,6 @@ function gloweHomeHref(pathname) {
     return path.includes('/pages/') ? '../index.html' : 'index.html';
 }
 
-// Guard for member-only surfaces (the Personal Area). Anonymous visitors are
-// bounced to the guest home; pages with a graceful sign-in prompt (Settings,
-// Messages) and the public profile view must NOT call this.
-function requireGloweMember() {
-    if (isLoggedIn()) return true;
-    window.location.href = gloweHomeHref();
-    return false;
-}
-
 // Handle logout
 async function logout() {
     // Clear the local identity first so the UI flips immediately even if the

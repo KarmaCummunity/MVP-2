@@ -401,9 +401,13 @@ FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
 - AC1. **Session integrity (done).** `logout()` clears all identity keys (`gloweUser`, legacy
   key, and the cached `glowePersonalProfile`) and always redirects to the guest home from any
   page via an `inPages`-aware relative href (correct on local `.html` and dev clean URLs). The
-  Personal Area (`my-applications`) is guarded by `requireGloweMember()` — anonymous visitors are
-  redirected home before any member body renders. `settings`/`messages` keep their FR-GLOWE-004
-  AC2 sign-in prompts and `profile` stays the public profile view; none are force-guarded.
+  Personal Area (`my-applications`) is **not** force-redirected: an anonymous visitor (including
+  one who taps the bottom-nav "Profile" tab) sees an in-page sign-in prompt on
+  `personal-area-content` — same pattern as `settings`/`messages` (FR-GLOWE-004 AC2) — and the
+  contextual join modal (`requireMemberForAction('open-personal-area', …)`, FR-GLOWE-023) opens
+  immediately so the tap is never a dead end. `profile` stays the public profile view; none are
+  force-guarded to a redirect. (Revised 2026-07-16 — previously used a hard `requireGloweMember()`
+  redirect to the guest home, which read as a broken tab to first-time visitors.)
 - AC2. **Adaptive home (done).** Signed-in members see a personal hero ("Welcome back, {first
   name}" + create CTAs), a "Your activity" rail (their own posts, filtered by `authorId`), and a
   unified "What's happening" feed (recency-interleaved opportunities + posts, capped) in place of
