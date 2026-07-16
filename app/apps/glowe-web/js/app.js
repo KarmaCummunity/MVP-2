@@ -1590,9 +1590,46 @@ function renderRegistrationWizardLegacy() {
     `;
 }
 
+// The full nav label row only fits a desktop-width header. On phones it
+// collapses behind a single menu icon (see .nav-toggle / .main-nav.nav-open
+// in styles.css) instead of wrapping into a second/third row of labels.
+function ensureNavToggle() {
+    const headerContainer = document.querySelector('.main-header .container');
+    const nav = document.querySelector('.main-nav');
+    if (!headerContainer || !nav) return;
+    let toggle = headerContainer.querySelector('.nav-toggle');
+    if (!toggle) {
+        toggle = document.createElement('button');
+        toggle.type = 'button';
+        toggle.className = 'nav-toggle';
+        toggle.setAttribute('aria-label', 'Menu');
+        toggle.setAttribute('aria-expanded', 'false');
+        toggle.setAttribute('aria-controls', 'main-nav');
+        toggle.innerHTML = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><line x1="3" y1="6" x2="21" y2="6"></line><line x1="3" y1="12" x2="21" y2="12"></line><line x1="3" y1="18" x2="21" y2="18"></line></svg>';
+        toggle.addEventListener('click', () => {
+            const isOpen = nav.classList.toggle('nav-open');
+            toggle.setAttribute('aria-expanded', String(isOpen));
+        });
+        headerContainer.insertBefore(toggle, nav);
+    }
+    nav.id = 'main-nav';
+    // A link tap navigates to a new page anyway, but close the panel first so
+    // a back-navigation doesn't land on a still-open menu.
+    if (!nav.dataset.closeOnNavBound) {
+        nav.addEventListener('click', (event) => {
+            if (event.target.closest('.nav-link')) {
+                nav.classList.remove('nav-open');
+                toggle.setAttribute('aria-expanded', 'false');
+            }
+        });
+        nav.dataset.closeOnNavBound = 'true';
+    }
+}
+
 function normalizeMainNavigation() {
     const nav = document.querySelector('.main-nav');
     if (!nav) return;
+    ensureNavToggle();
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const homeHref = inPages ? '../index.html' : 'index.html';
