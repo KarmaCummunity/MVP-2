@@ -9,7 +9,7 @@ import { Ionicons } from '@expo/vector-icons';
 import { useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useTheme } from '@kc/ui';
-import { TABS, type IoniconName, type TabKey } from './shell/tabs.config';
+import { TABS, resolveActiveTabKey, type IoniconName } from './shell/tabs.config';
 
 // Glassmorphism on web — RN-Web forwards unknown style keys to CSS. RN's
 // ViewStyle type doesn't include backdrop-filter, so cast through unknown.
@@ -22,17 +22,6 @@ const webGlass: ViewStyle =
     : ({} as ViewStyle);
 
 export const TAB_BAR_HEIGHT = 50;
-
-function activeTab(segments: string[]): TabKey | null {
-  if (segments[0] === '(tabs)') {
-    if (segments[1] === 'profile') return 'profile';
-    if (segments[1] === 'create') return 'create';
-    if (segments[1] === 'search') return 'search';
-    if (segments[1] === 'donations') return 'donations';
-    return 'home';
-  }
-  return null;
-}
 
 interface IconBtnProps {
   active: boolean;
@@ -49,14 +38,18 @@ function IconBtn({ active, onPress, label, iconActive, iconInactive }: IconBtnPr
     <Pressable
       onPress={onPress}
       accessibilityRole="button"
+      accessibilityState={{ selected: active }}
       accessibilityLabel={label}
       style={({ pressed }) => [styles.tabBtn, pressed && styles.tabBtnPressed]}
     >
-      <Ionicons
-        name={active ? iconActive : iconInactive}
-        size={26}
-        color={active ? colors.primary : colors.tabInactive}
-      />
+      <View style={[styles.iconSlot, active && styles.iconSlotActive]}>
+        <Ionicons
+          key={active ? iconActive : iconInactive}
+          name={active ? iconActive : iconInactive}
+          size={active ? 28 : 24}
+          color={active ? colors.tabActive : colors.tabInactive}
+        />
+      </View>
     </Pressable>
   );
 }
@@ -88,7 +81,7 @@ export function TabBar() {
   const router = useRouter();
   const { t } = useTranslation();
   const segments = useSegments() as string[];
-  const active = activeTab(segments);
+  const active = resolveActiveTabKey(segments);
   const styles = useTabBarStyles();
 
   return (
@@ -148,6 +141,16 @@ const useTabBarStyles = makeUseStyles(({ colors, isDark }) => ({
     justifyContent: 'center' as const,
   },
   tabBtnPressed: { opacity: 0.6 },
+  iconSlot: {
+    width: 40,
+    height: 40,
+    borderRadius: 20,
+    alignItems: 'center' as const,
+    justifyContent: 'center' as const,
+  },
+  iconSlotActive: {
+    backgroundColor: colors.primarySurface,
+  },
   plusCircle: {
     width: 40,
     height: 40,
