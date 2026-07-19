@@ -101,7 +101,7 @@ GloweLocal!2026
 exist in the **local** Auth database so data and RLS can be exercised; the
 production-shaped UI does not currently expose a password form. Guest browsing
 of seeded content works immediately. A
-[`good first issue`](https://github.com/KarmaCummunity/MVP-2/labels/good%20first%20issue)
+[`good first issue`](https://github.com/KarmaCummunity/GloWe/labels/good%20first%20issue)
 tracks adding a **localhost-only** password sign-in panel for contributors.
 
 ### Clean-machine checklist
@@ -129,7 +129,7 @@ Run this once on a fresh machine before your first PR:
 5. Maintainer review target: **within 3 business days**. Ping
    [@navesarussi](https://github.com/navesarussi) only if that window passes.
 
-Questions: [GitHub Discussions](https://github.com/KarmaCummunity/MVP-2/discussions).
+Questions: [GitHub Discussions](https://github.com/KarmaCummunity/GloWe/discussions).
 
 ## Branch & PR flow
 
@@ -173,9 +173,13 @@ may write `N/A — tooling/docs only` when the change is not tied to an internal
 A PR into `dev` may merge only when **all required status checks** are green,
 including:
 
-- `typecheck · test · lint` (frontend CI)
-- Backend SQL probes, contract checks, and migration guards (when applicable)
+- `typecheck · test · lint` (unit tests via Vitest)
+- Backend integration: `apply migrations · rls · types · sql probes`, `rpc · table contract`
 - **SonarCloud quality gate**
+
+Additional scanners (Snyk, GitGuardian, CodeRabbit) may post findings on your PR.
+They are advisory until promoted to required checks — see [`SECURITY.md`](SECURITY.md)
+for the full tooling matrix.
 
 Run the local subset (`pnpm typecheck && pnpm test && pnpm lint` from `app/`)
 before pushing to catch failures early.
@@ -189,8 +193,8 @@ full release gate set passes. See `docs/SSOT/RELEASE_CHECKLIST.md`.
 `dev` and `main`, and is listed in root [`CODEOWNERS`](CODEOWNERS) for
 contributor-facing paths (including `app/apps/glowe-web/` and `.github/`).
 
-Automated tools (e.g. SonarCloud, and future Snyk / CodeRabbit integrations) may
-post findings but do not merge PRs.
+Automated tools (SonarCloud, Snyk, GitGuardian, CodeRabbit) may post findings
+but do not merge PRs.
 
 ## Code of Conduct
 
