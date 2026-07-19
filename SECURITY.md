@@ -20,7 +20,7 @@ GitHub/org integrations on every PR.
 | 2 | **Snyk** | ✅ Active (`SNYK_TOKEN` set) | No (promote later) | Workflow: `.github/workflows/ci-snyk.yml`. |
 | 3 | **CodeRabbit** | ✅ Active (org App installed) | No (review comments only) | `.coderabbit.yaml` focuses on `app/apps/glowe-web/**`. |
 | 4 | **GitHub Dependabot** | ✅ Active | N/A (opens fix PRs) | Config: `.github/dependabot.yml`. Security updates: **enabled**. |
-| 5 | **GitGuardian** (ggshield) | ✅ Active (`GITGUARDIAN_API_KEY` set) | No (promote later) | Workflow: `.github/workflows/ci-gitguardian.yml`. |
+| 5 | **GitGuardian** (ggshield) | ✅ Active (`GITGUARDIAN_API_KEY` set) | No (promote later) | Workflow: `.github/workflows/ci-gitguardian.yml`. Baseline false positives: `.gitguardian.yaml` (hash-based) + dashboard ignores for local CI fixtures. |
 | 6 | **Secret Scanning** | ✅ Active | Push-time block | Enabled + push protection on the public repo. |
 | 7 | **Automated tests** | ✅ Active | **Yes** | Unit: `typecheck · test · lint` (Vitest). Integration: `apply migrations · rls · types · sql probes`, `rpc · table contract`. E2E on `main` release: `CI — E2E dev`. |
 
@@ -60,7 +60,20 @@ Add these under **GitHub → Settings → Secrets and variables → Actions** (r
 2. `.coderabbit.yaml` is already committed — reviews focus on `app/apps/glowe-web/**`.
 3. Open a test PR; verify CodeRabbit posts review comments (non-merging).
 
-### Promoting Snyk / GitGuardian to required checks
+### GitGuardian baseline (false positives)
+
+Three recurring **non-secret** patterns are documented explicitly:
+
+| Pattern | Location | Why safe |
+| --- | --- | --- |
+| Supabase local `service_role` demo JWT | `sqlProbes.integration.test.ts` | Supabase CLI default; works only on `127.0.0.1:54321` |
+| `PGPASSWORD=postgres` | `ci-backend.yml` | Default password for ephemeral local Postgres in CI |
+| E2E fixture UUID | `supabase/seed-e2e.sql` | Comment-only test user id (reference moved to `TESTING.md`) |
+
+- **CI (`ggshield`)** reads `.gitguardian.yaml` — `ignored_matches` use occurrence SHA256 hashes only (no broad path ignores).
+- **GitHub App** dashboard incidents are ignored with `false_positive` / `test_credential` after verification.
+- **Do not** add blanket `ignored_paths` or disable detectors repo-wide.
+
 
 After 1–2 weeks of clean baselines:
 
