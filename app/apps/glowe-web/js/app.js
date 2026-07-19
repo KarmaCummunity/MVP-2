@@ -55,10 +55,12 @@ function showSuccessModal(title, message) {
 }
 
 // Lightweight transient toast (auto-dismisses). Used for quiet confirmations
-// such as the share clipboard fallback, so no modal interrupts the flow.
+// such as profile saves and the share clipboard fallback.
 let gloweToastTimer = null;
-function showToast(message) {
+function showToast(message, options) {
     if (typeof document === 'undefined') return;
+    const dict = typeof gloweDict === 'function' ? gloweDict() : null;
+    const text = (dict && dict[message]) ? dict[message] : message;
     let toast = document.getElementById('glowe-toast');
     if (!toast) {
         toast = document.createElement('div');
@@ -68,7 +70,10 @@ function showToast(message) {
         toast.setAttribute('aria-live', 'polite');
         document.body.appendChild(toast);
     }
-    toast.textContent = message;
+    const isError = Boolean(options && options.error);
+    toast.textContent = text;
+    toast.classList.toggle('is-error', isError);
+    toast.classList.toggle('is-success', !isError);
     // Reflow so re-triggering the animation works on repeat calls.
     void toast.offsetWidth;
     toast.classList.add('visible');
@@ -2793,7 +2798,7 @@ async function handleAvatarEditSave() {
 
         closeAvatarEditModal();
         if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
-        showSuccessModal('Profile saved', 'Profile saved');
+        showToast('Profile saved');
     } catch (error) {
         setAvatarEditStatus(error.message || 'Could not save photo.', { error: true });
     } finally {
@@ -2848,12 +2853,16 @@ async function handleProfileEdit(event) {
         };
     }
 
-    await persistPersonalProfile(profileDraft);
-    closeModal('edit-profile-modal');
-    if (typeof window.renderPersonalArea === 'function') {
-        window.renderPersonalArea();
+    try {
+        await persistPersonalProfile(profileDraft);
+        closeModal('edit-profile-modal');
+        if (typeof window.renderPersonalArea === 'function') {
+            window.renderPersonalArea();
+        }
+        showToast('Profile saved');
+    } catch (error) {
+        showToast(error.message || 'Could not save profile.', { error: true });
     }
-    showSuccessModal('Profile saved', 'Profile saved');
 }
 
 function setProjectModalMode(title, submitLabel) {
@@ -7333,6 +7342,8 @@ const GLOWE_TRANSLATIONS = {
         'Change profile photo': 'שינוי תמונת פרופיל',
         'Remove photo': 'הסרת תמונה',
         'Save photo': 'שמירת תמונה',
+        'Profile saved': 'הפרופיל נשמר',
+        'Could not save profile.': 'לא ניתן לשמור את הפרופיל.',
         'Replace': 'החלפה',
         'Cancel': 'ביטול',
         'Photo will be removed when you save.': 'התמונה תוסר בעת השמירה.',

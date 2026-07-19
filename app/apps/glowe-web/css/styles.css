@@ -3072,6 +3072,14 @@ a.user-greeting:hover {
     transform: translate(-50%, 0);
 }
 
+.glowe-toast.is-error {
+    background: #8a1c2b;
+}
+
+.glowe-toast.is-success {
+    background: var(--primary-dark, #0f5d55);
+}
+
 .wish-author,
 .post-author,
 .person-row > a {
