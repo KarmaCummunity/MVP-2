@@ -1,0 +1,15 @@
+# GitGuardian / ggshield — documented false positives only.
+# Hashes are occurrence SHAs from `ggshield secret scan path <file>`.
+# Dashboard ignores are separate (GitHub App); see SECURITY.md § GitGuardian baseline.
+version: 2
+
+secret:
+  ignored_matches:
+  # Supabase CLI default local service_role JWT (issuer supabase-demo, localhost only).
+  # app/packages/infrastructure-supabase/src/rpc/__tests__/sqlProbes.integration.test.ts
+    - name: Supabase local demo service_role JWT (sqlProbes integration test)
+      match: 065578e26a723bd46479de496334c43f32263bc0c9b7ef2660446a3a829ba3e1
+  # Default password for the ephemeral Postgres started by `supabase start` in CI.
+  # .github/workflows/ci-backend.yml — not a hosted credential.
+    - name: Local Supabase CI PGPASSWORD (postgres)
+      match: 6e0d657eb1f0fbc40cf0b8f3c3873ef627cc9cb7c4108d1c07d979c04bc8a4bb

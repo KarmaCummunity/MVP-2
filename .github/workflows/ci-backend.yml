@@ -115,6 +115,7 @@ jobs:
 
       - name: Run all DB tests (supabase/tests/*.sql)
         if: needs.changes.outputs.backend == 'true'
+        # Default password for the ephemeral Postgres container started by `supabase start` in CI.
         env:
           PGPASSWORD: postgres
         run: |

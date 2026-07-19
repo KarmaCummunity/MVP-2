@@ -206,7 +206,7 @@
 | INFRA-OSS-3 | **Local Docker Supabase + fictional GLOWE seed** — contributor-safe local stack; refuse hosted URLs | infra | ✅ Done | same design §8 |
 | INFRA-OSS-4 | **Snyk PR scan** — `.github/workflows/ci-snyk.yml`; `SNYK_TOKEN` configured | infra | 🟡 In progress [promote to required after baseline] | same design §7; `SECURITY.md` |
 | INFRA-OSS-5 | **CodeRabbit App** — org App installed; `.coderabbit.yaml` on `glowe-web` paths | infra | ✅ Done | same design §7; `SECURITY.md` |
-| INFRA-OSS-6 | **GitGuardian** — `.github/workflows/ci-gitguardian.yml`; `GITGUARDIAN_API_KEY` configured | infra | 🟡 In progress [promote to required after baseline] | same design §7; `SECURITY.md` |
+| INFRA-OSS-6 | **GitGuardian** — CI + `.gitguardian.yaml` baseline; dashboard incidents triaged | infra | ✅ Done | same design §7; `SECURITY.md` |
 | INFRA-OSS-7 | **Dependabot security updates + Secret Scanning docs** — enable security updates; document already-on secret scanning | infra | ✅ Done | same design §7 |
 | INFRA-OSS-8 | **Contributor ops pack** — README/CONTRIBUTING depth, contributor-task template, scope-guard Action (close mobile-only PRs), labels, good-first issues (#704/#726–#735), Discussions welcome (#736); project #2 view wiring = one-time PM CLI step in runbook | infra | ✅ Done | `OPERATOR_RUNBOOK.md` § External GLOWE contributors |
 
