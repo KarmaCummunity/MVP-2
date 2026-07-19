@@ -5899,7 +5899,7 @@ function _adaptDbProfile(p, projects) {
         languages: p.languages || [],
         skills: p.skills || [],
         impactArea: p.orgField || p.focus || '',
-        mission: isOrg ? (p.orgDescription || p.about || '') : '',
+        mission: isOrg ? (p.orgDescription || p.about || '') : (p.about || ''),
         bio: p.about || '',
         story: p.about || '',
         focus: p.focus || '',
@@ -5907,7 +5907,15 @@ function _adaptDbProfile(p, projects) {
         volunteers: 0,
         opportunities: 0,
         projects: Array.isArray(projects) ? projects : [],
-        status: p.approvalStatus === 'approved' ? 'Verified organization' : 'Pending verification'
+        accountType: p.accountType,
+        onboardingComplete: p.onboardingComplete,
+        approvalStatus: p.approvalStatus,
+        about: p.about || '',
+        orgDescription: p.orgDescription || '',
+        orgField: p.orgField || '',
+        avatarUrl: p.avatarUrl || '',
+        _raw: p,
+        isOwnerView: false
     };
 }
 
@@ -5952,15 +5960,44 @@ async function initProfilePage() {
         const ensured = await withEnsuredEnglishNames([dbProfile]);
         dbProfile = ensured[0] || dbProfile;
         const projects = await _loadPublicProjects(backend, id);
-        _renderProfileContent(_adaptDbProfile(dbProfile, projects), container);
+        const me = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+        const adapted = _adaptDbProfile(dbProfile, projects);
+        adapted.isOwnerView = Boolean(me && me.id === dbProfile.id);
+        _renderProfileContent(adapted, container);
     } catch {
         _profileNotFound(container);
     }
 }
 
+function _publicTrustStatusLabel(profile, isOrg) {
+    const typeLabel = profile.type || (isOrg ? 'Organization' : 'Community Member');
+    if (!profile.isOwnerView && isOrg && (profile.approvalStatus === 'pending' || profile.approvalStatus === 'rejected')) {
+        return typeLabel;
+    }
+    if (isOrg && profile.approvalStatus === 'approved') {
+        return 'Verified organization';
+    }
+    return typeLabel;
+}
+
 function _renderProfileContent(profile, container) {
 
-    const isOrg = Boolean(profile.mission);
+    const isOrg = profile.accountType === 'organization'
+        || (!profile.accountType && profile.type && profile.type !== 'Community Member');
+    const isOwnerView = Boolean(profile.isOwnerView);
+    const ux = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx : null;
+    const chip = isOwnerView && ux
+        ? ux.profileStatusChip(profile, { isOwner: true })
+        : null;
+    const chipHtml = chip
+        ? `<button type="button" class="profile-status-cta profile-status-cta--${chip.kind}" onclick="handleProfileStatusChipClick('${chip.action}')">${escapeHtml(chip.label)}</button>`
+        : '';
+    const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
+    const avatarHtml = isOwnerView
+        ? `<div class="social-avatar-wrap">${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}<button type="button" class="social-avatar-change social-avatar-change--icon" aria-label="Change profile photo" onclick="openAvatarEditModal()">${cameraIcon}</button></div>`
+        : (profile.avatarUrl
+            ? renderPersonalAvatar(profile, 'profile-avatar')
+            : renderEntityMark(profile.name, 'profile-avatar'));
     const typeConfig = getProfileTypeConfig(profile);
     const projects = profile.projects || [];
     const languages = profile.languages || [];
@@ -5987,7 +6024,7 @@ function _renderProfileContent(profile, container) {
     const progressText = profile.impact || `${profile.volunteers || primaryStat || 0} people connected through projects, opportunities, or community activity.`;
     const learningText = profile.learning || 'This profile can add more field insights, measurement notes, and lessons learned as the work develops.';
     const mediaLinks = profile.media || profile.website || profile.publicLink || '';
-    const trustStatus = profile.status || profile.profileStatus || (isOrg ? 'Approved profile' : 'Community profile');
+    const trustStatus = _publicTrustStatusLabel(profile, isOrg);
     const safeContact = profile.email || 'Contact through GloWe messages';
 
     // FR-TRANSLATE-005 AC7 — DB profiles carry `_tr`; tag the mission prose so the
@@ -5998,9 +6035,12 @@ function _renderProfileContent(profile, container) {
         <section class="profile-cover profile-story-cover">
             <div class="profile-cover-band"></div>
             <div class="profile-hero">
-                ${renderEntityMark(profile.name, 'profile-avatar')}
+                ${avatarHtml}
                 <div class="profile-summary">
-                    <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
+                    <div class="social-profile-tags">
+                        <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
+                        ${chipHtml}
+                    </div>
                     <h1>${escapeHtml(profile.name)}</h1>
                     <p${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="opportunity-skills">${tags.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}</div>
@@ -6011,7 +6051,7 @@ function _renderProfileContent(profile, container) {
                     <details class="profile-more-menu">
                         <summary aria-label="More profile actions">...</summary>
                         <div>
-                            <button type="button" onclick="openEditProfile('${safeName}')">Edit profile</button>
+                            ${isOwnerView ? `<button type="button" onclick="openEditProfile('${safeName}')">Edit profile</button>` : ''}
                             <button type="button" onclick="showSuccessModal('Following ${safeName}', 'You will see updates from this profile in your community feed.')">Follow updates</button>
                             <button type="button" onclick="openReportModal('profile', '${profile.id}', '${safeName}')">Report</button>
                         </div>
