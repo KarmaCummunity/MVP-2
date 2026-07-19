@@ -2595,9 +2595,13 @@ function handleProfileStatusChipClick(action) {
     openGloweOnboarding(getPersonalProfile());
 }
 
-function openEditProfile(profileName = '') {
+async function openEditProfile(profileName = '') {
     ensureGlobalUI();
-    const profile = getPersonalProfile();
+    let profile = getPersonalProfile();
+    if (typeof GloweLocalizedName !== 'undefined'
+        && GloweLocalizedName.profileNeedsEnglishName(profile)) {
+        profile = await backfillPersonalProfileEnglishName(profile) || profile;
+    }
     const isOrg = profile.accountType === 'organization';
     const individualPanel = document.getElementById('edit-profile-fields-individual');
     const orgPanel = document.getElementById('edit-profile-fields-organization');
@@ -4098,10 +4102,15 @@ async function backfillPersonalProfileEnglishName(profile) {
         && typeof isLoggedIn === 'function'
         && isLoggedIn();
     if (!ready) return profile;
+    const englishBefore = String(profile.orgNameEn || profile.nameEn || '').trim();
     const patches = await backend.ensureProfileEnglishNames([profile.id]);
     if (!patches || !patches.length) return profile;
     const next = GloweLocalizedName.applyEnglishNamePatches([profile], patches)[0] || profile;
+    const englishAfter = String(next.orgNameEn || next.nameEn || '').trim();
     savePersonalProfile(next);
+    if (!englishBefore && englishAfter && typeof window.renderPersonalArea === 'function') {
+        window.renderPersonalArea();
+    }
     return next;
 }
 

@@ -353,14 +353,14 @@
         const user = explicitUser || await currentUser();
         if (!supabaseClient || !user) return null;
         const merged = { ...profile, id: user.id, email: user.email };
-        const existing = await fetchProfile().catch(() => null);
-        const primaryChanged = !existing
-            || trimName(existing.name) !== trimName(merged.name || merged.display_name);
-        const orgChanged = !existing
-            || trimName(existing.orgName) !== trimName(merged.orgName || merged.org_name);
-        // Auto-generate English only when the primary changed and the user did
-        // not supply an English value (FR-GLOWE-024).
-        if (primaryChanged && !trimName(merged.nameEn || merged.display_name_en)) {
+        const needsPersonEn = !trimName(merged.nameEn || merged.display_name_en)
+            && trimName(merged.name || merged.display_name)
+            && !isPrimarilyLatinName(merged.name || merged.display_name);
+        const needsOrgEn = (merged.orgName || merged.org_name)
+            && !trimName(merged.orgNameEn || merged.org_name_en)
+            && !isPrimarilyLatinName(merged.orgName || merged.org_name);
+        // Auto-generate English when missing and the primary is non-Latin (FR-GLOWE-024).
+        if (needsPersonEn) {
             merged.nameEn = await resolveEnglishName(
                 supabaseClient,
                 merged.name || merged.display_name,
@@ -368,8 +368,7 @@
                 'person'
             );
         }
-        if (orgChanged && (merged.orgName || merged.org_name)
-            && !trimName(merged.orgNameEn || merged.org_name_en)) {
+        if (needsOrgEn) {
             merged.orgNameEn = await resolveEnglishName(
                 supabaseClient,
                 merged.orgName || merged.org_name,
