@@ -163,3 +163,16 @@ describe('authorNeedsEnglishName / applyAuthorEnglishFromProfiles', () => {
         expect(comments[0].authorEn).toBe('Yad Tomechet');
     });
 });
+
+describe('nameForToggleView / initialsForName', () => {
+    it('shows primary when toggled to source, localized otherwise', () => {
+        expect(GloweLocalizedName.nameForToggleView('נווה', 'Naveh', 'en', true)).toBe('נווה');
+        expect(GloweLocalizedName.nameForToggleView('נווה', 'Naveh', 'en', false)).toBe('Naveh');
+        expect(GloweLocalizedName.nameForToggleView('נווה', 'Naveh', 'he', false)).toBe('נווה');
+    });
+
+    it('builds initials for avatar marks', () => {
+        expect(GloweLocalizedName.initialsForName('Tamar Golan')).toBe('TG');
+        expect(GloweLocalizedName.initialsForName('נווה')).toBe('נ');
+    });
+});

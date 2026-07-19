@@ -6,7 +6,7 @@ Ready for implementation.
 
 ## Context
 
-The KarmaCommunity/MVP-2 repo is public but has no README, LICENSE, CONTRIBUTING.md,
+The KarmaCommunity/GloWe repo is public but has no README, LICENSE, CONTRIBUTING.md,
 SECURITY.md, or issue templates. `AGENTS.md` already directs internal agents that
 GLOWE (`app/apps/glowe-web/**`) is the sole active product and the KC mobile
 frontend (`app/apps/mobile/**`) is paused — but that framing is invisible to
@@ -222,7 +222,7 @@ PM-requested scanners. Inventory against current repo state (2026-07-12):
 | - | ---- | ------------- | --------------------------- |
 | 1 | **SonarCloud** (SonarQube SaaS) | ✅ Wired (`.github/workflows/ci-sonar.yml`); required status check `SonarCloud quality gate` on `dev`/`main`. Docs: `docs/dev/SONAR.md`. | Keep required. Mention in CONTRIBUTING merge bar. Fix ENVIRONMENTS SSOT table to list it. |
 | 2 | **Snyk** | ❌ Not present. | Add CI workflow (or Snyk GitHub App) scanning `app/pnpm-lock.yaml` + Docker base images on PRs to `dev`/`main`. Start as **non-blocking** comment/check; promote to required after first clean baseline. Needs org `SNYK_TOKEN` secret. |
-| 3 | **CodeRabbit** | ❌ Not present. | Install CodeRabbit GitHub App on `KarmaCummunity/MVP-2` (org admin UI). Reviews PRs with AI comments; **non-merging**, does not replace `@navesarussi`. Optional `.coderabbit.yaml` for GLOWE-path focus. |
+| 3 | **CodeRabbit** | ❌ Not present. | Install CodeRabbit GitHub App on `KarmaCummunity/GloWe` (org admin UI). Reviews PRs with AI comments; **non-merging**, does not replace `@navesarussi`. Optional `.coderabbit.yaml` for GLOWE-path focus. |
 | 4 | **GitHub Dependabot** | 🟡 Config exists (`.github/dependabot.yml` → weekly npm + monthly Actions on `dev`). **Dependabot security updates** repo setting is currently **disabled**. | Enable Dependabot security updates via repo settings API/UI. Keep version updates as-is. |
 | 5 | **GitGuardian** | ❌ Not present. | Add GitGuardian GitHub App **or** `ggshield` CI job on PRs. Prefer App for push-time scanning. Needs org install + token if CI-based. |
 | 6 | **Secret Scanning** | ✅ Enabled + push protection enabled on the public repo. Validity checks / non-provider patterns still off. | Keep. Document in `SECURITY.md`. Optionally enable validity checks. |

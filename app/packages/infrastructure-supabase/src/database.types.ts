@@ -4384,6 +4384,7 @@ export type Database = {
           location: string | null
           org_icon: string | null
           organization: string
+          organization_en: string | null
           registration_mode: string
           requirements: string[]
           responsibilities: string[]
@@ -4487,6 +4488,7 @@ export type Database = {
           country: string | null
           created_at: string
           display_name: string
+          display_name_en: string | null
           email: string | null
           focus: string | null
           id: string
@@ -4501,6 +4503,7 @@ export type Database = {
           org_description: string | null
           org_field: string | null
           org_name: string | null
+          org_name_en: string | null
           org_registration_number: string | null
           org_review_note: string | null
           org_reviewed_at: string | null
@@ -4564,6 +4567,7 @@ export type Database = {
           country: string | null
           created_at: string
           display_name: string
+          display_name_en: string | null
           email: string | null
           focus: string | null
           id: string
@@ -4578,6 +4582,7 @@ export type Database = {
           org_description: string | null
           org_field: string | null
           org_name: string | null
+          org_name_en: string | null
           org_registration_number: string | null
           org_review_note: string | null
           org_reviewed_at: string | null

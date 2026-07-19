@@ -204,9 +204,9 @@
 | INFRA-OSS-1 | **Open-source contributor docs pack** — root README/LICENSE/CLA/CONTRIBUTING/CoC/SECURITY + issue templates; GLOWE-only framing | infra | ✅ Done | `docs/superpowers/specs/2026-07-12-open-source-glowe-contributor-strategy-design.md` |
 | INFRA-OSS-2 | **GitHub settings for external contributors** — fork-PR approval, Discussions, private vulnerability reporting | infra | ✅ Done | same design §5 |
 | INFRA-OSS-3 | **Local Docker Supabase + fictional GLOWE seed** — contributor-safe local stack; refuse hosted URLs | infra | ✅ Done | same design §8 |
-| INFRA-OSS-4 | **Snyk PR scan** — workflow or App; non-blocking then required | infra | ⏳ Planned [blocked: needs SNYK_TOKEN / org App] | same design §7 |
-| INFRA-OSS-5 | **CodeRabbit App** — AI review comments; non-merging | infra | ⏳ Planned [blocked: needs org-admin App install] | same design §7 |
-| INFRA-OSS-6 | **GitGuardian** — secret leak detection App or ggshield CI | infra | ⏳ Planned [blocked: needs org-admin App / token] | same design §7 |
+| INFRA-OSS-4 | **Snyk PR scan** — `.github/workflows/ci-snyk.yml`; `SNYK_TOKEN` configured | infra | 🟡 In progress [promote to required after baseline] | same design §7; `SECURITY.md` |
+| INFRA-OSS-5 | **CodeRabbit App** — org App installed; `.coderabbit.yaml` on `glowe-web` paths | infra | ✅ Done | same design §7; `SECURITY.md` |
+| INFRA-OSS-6 | **GitGuardian** — `.github/workflows/ci-gitguardian.yml`; `GITGUARDIAN_API_KEY` configured | infra | 🟡 In progress [promote to required after baseline] | same design §7; `SECURITY.md` |
 | INFRA-OSS-7 | **Dependabot security updates + Secret Scanning docs** — enable security updates; document already-on secret scanning | infra | ✅ Done | same design §7 |
 | INFRA-OSS-8 | **Contributor ops pack** — README/CONTRIBUTING depth, contributor-task template, scope-guard Action (close mobile-only PRs), labels, good-first issues (#704/#726–#735), Discussions welcome (#736); project #2 view wiring = one-time PM CLI step in runbook | infra | ✅ Done | `OPERATOR_RUNBOOK.md` § External GLOWE contributors |
 

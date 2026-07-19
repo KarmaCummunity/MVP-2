@@ -243,8 +243,8 @@ EOF
 - [ ] **Step 1: Enable Discussions**
 
 ```bash
-gh api -X PATCH repos/KarmaCummunity/MVP-2 -f has_discussions=true
-gh api repos/KarmaCummunity/MVP-2 --jq .has_discussions
+gh api -X PATCH repos/KarmaCummunity/GloWe -f has_discussions=true
+gh api repos/KarmaCummunity/GloWe --jq .has_discussions
 ```
 
 Expected: `true`.
@@ -252,9 +252,9 @@ Expected: `true`.
 - [ ] **Step 2: Enable private vulnerability reporting**
 
 ```bash
-gh api -X PUT repos/KarmaCummunity/MVP-2/private-vulnerability-reporting
+gh api -X PUT repos/KarmaCummunity/GloWe/private-vulnerability-reporting
 # read-back:
-gh api repos/KarmaCummunity/MVP-2/private-vulnerability-reporting --jq .enabled
+gh api repos/KarmaCummunity/GloWe/private-vulnerability-reporting --jq .enabled
 ```
 
 Expected: `true` (endpoint may 404 on older API — if so, document Settings → Security → Advisories UI path).
@@ -264,7 +264,7 @@ Expected: `true` (endpoint may 404 on older API — if so, document Settings →
 Investigate:
 
 ```bash
-gh api repos/KarmaCummunity/MVP-2/actions/permissions/workflow --jq .
+gh api repos/KarmaCummunity/GloWe/actions/permissions/workflow --jq .
 ```
 
 Set `default_workflow_permissions` / fork approval via the supported Actions permissions endpoint, or document manual path: **Settings → Actions → General → Fork pull request workflows from outside collaborators → Require approval for first-time contributors**.
@@ -272,14 +272,14 @@ Set `default_workflow_permissions` / fork approval via the supported Actions per
 - [ ] **Step 4: Enable Dependabot security updates**
 
 ```bash
-gh api -X PUT repos/KarmaCummunity/MVP-2/vulnerability-alerts
-gh api -X PUT repos/KarmaCummunity/MVP-2/automated-security-fixes
+gh api -X PUT repos/KarmaCummunity/GloWe/vulnerability-alerts
+gh api -X PUT repos/KarmaCummunity/GloWe/automated-security-fixes
 ```
 
 Read-back:
 
 ```bash
-gh api repos/KarmaCummunity/MVP-2 --jq .security_and_analysis
+gh api repos/KarmaCummunity/GloWe --jq .security_and_analysis
 ```
 
 Expect `dependabot_security_updates.status` = `enabled`. Secret scanning should remain `enabled` with push protection.
@@ -390,7 +390,7 @@ Flip `INFRA-OSS-3` → ✅.
 
 ### Task 6: CodeRabbit (blocked until App install)
 
-- [ ] **Step 1:** PM installs CodeRabbit GitHub App on `KarmaCummunity/MVP-2`.
+- [ ] **Step 1:** PM installs CodeRabbit GitHub App on `KarmaCummunity/GloWe`.
 - [ ] **Step 2:** Optional `.coderabbit.yaml` with path filters prioritizing `app/apps/glowe-web/**`.
 - [ ] **Step 3:** Verify a draft PR receives a CodeRabbit comment.
 - [ ] **Step 4:** Flip `INFRA-OSS-5` → ✅.

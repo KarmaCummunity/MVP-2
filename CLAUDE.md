@@ -6,11 +6,11 @@
 
 **App-wide semver lives in `app/VERSION` (`MAJOR.MINOR.PATCH`). GloWe footer shows `vX.Y.Z` (FR-GLOWE-025 / D-181).**
 
-1. **PATCH auto-bumps on every push to `dev`** (workflow `Bump app version` → short-lived PR titled `chore(version): …`; `dev` forbids direct pushes). Do **not** hand-edit patch for routine merges.
-2. **When you ship a breaking change → bump MAJOR** (e.g. `1.4.2` → `2.0.0`) in the same PR **before** merge to `dev`. Also sync `app/apps/glowe-web/js/glowe-version.js` (or run `node scripts/bump-app-version.mjs` after setting the new base and adjusting — prefer writing both files to the target version explicitly).
+1. **Every PR into `dev` must bump PATCH** in the same change-set (`app/VERSION` **and** `app/apps/glowe-web/js/glowe-version.js`, or `node scripts/bump-app-version.mjs`). Org policy blocks GitHub Actions from opening PRs, so auto-bump on push is not available.
+2. **When you ship a breaking change → bump MAJOR** (e.g. `1.4.2` → `2.0.0`) in the same PR **before** merge to `dev`.
 3. **When you ship a significant non-breaking feature set → bump MINOR** (e.g. `1.4.2` → `1.5.0`) the same way.
 4. **Never hardcode a stale version in HTML/CSS.** Footer reads `GloweAppVersion` from `glowe-version.js` only.
-5. Version-bump bot commits use `[skip version]` — do not strip that marker from those commits.
+5. Optional: `workflow_dispatch` on `Bump app version` pushes a prepared `chore/version-bump-*` branch; a human/agent still opens the PR.
 
 ## 1. Required reading (before doing anything)
 
@@ -142,7 +142,7 @@ When you spot tech debt outside the immediate scope:
 
 ## 6. Git & PR workflow
 
-> Repo: `KarmaCummunity/MVP-2` · Default branch: `main` · Merge strategy: **squash** · Auto-merge: **on, after CI passes**.
+> Repo: `KarmaCummunity/GloWe` · Default branch: `main` · Merge strategy: **squash** · Auto-merge: **on, after CI passes**.
 > **Working branch: `dev`.** All PRs target `dev`. `main` is updated by squash-merging `dev` → `main`. Full topology in [`docs/SSOT/ENVIRONMENTS.md`](docs/SSOT/ENVIRONMENTS.md).
 
 ### Pre-flight (once per session)
@@ -152,7 +152,7 @@ gh --version              # GitHub CLI installed
 gh auth status            # Logged in to github.com
 git config user.name      # non-empty
 git config user.email     # non-empty
-gh repo view --json nameWithOwner -q .nameWithOwner   # KarmaCummunity/MVP-2
+gh repo view --json nameWithOwner -q .nameWithOwner   # KarmaCummunity/GloWe
 ```
 
 If any check fails, stop and point the user to `SETUP_GIT_AGENT.md`. Do not improvise.

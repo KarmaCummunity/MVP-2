@@ -4,7 +4,7 @@ One-time setup so the agent (Claude Code / Cursor) can branch, commit, push, ope
 
 You do steps 1–5 once on your Mac. After that, the agent follows `.cursor/rules/git-workflow.mdc` automatically on every code change.
 
-> The repo is `KarmaCummunity/MVP-2`. Default branch: `main`. Merge style: **squash**. Auto-merge: **on, after CI passes**.
+> The repo is `KarmaCummunity/GloWe`. Default branch: `main`. Merge style: **squash**. Auto-merge: **on, after CI passes**.
 
 ---
 
@@ -44,10 +44,10 @@ Run from `/Users/navesarussi/KC/MVP-2`:
 
 ```bash
 # Tell gh which repo this clone points to.
-gh repo set-default KarmaCummunity/MVP-2
+gh repo set-default KarmaCummunity/GloWe
 
 # Set squash as the only allowed merge method (matches our workflow).
-gh repo edit KarmaCummunity/MVP-2 \
+gh repo edit KarmaCummunity/GloWe \
   --enable-squash-merge \
   --enable-auto-merge \
   --delete-branch-on-merge \
@@ -61,7 +61,7 @@ This is what makes the auto-merge gate meaningful — `main` will only accept co
 
 Easiest path is the GitHub UI:
 
-1. Open https://github.com/KarmaCummunity/MVP-2/settings/branches
+1. Open https://github.com/KarmaCummunity/GloWe/settings/branches
 2. **Add rule** → branch name pattern: `main`
 3. Enable:
    - **Require a pull request before merging** (Approvals: 0 — you're the only reviewer for now).
@@ -78,7 +78,7 @@ Easiest path is the GitHub UI:
 
 All feature PRs target `dev`. After the first CI run on a PR to `dev`, configure:
 
-1. Open https://github.com/KarmaCummunity/MVP-2/settings/branches
+1. Open https://github.com/KarmaCummunity/GloWe/settings/branches
 2. **Add rule** → branch name pattern: `dev`
 3. Enable:
    - **Require a pull request before merging** (0 approvals).
@@ -106,7 +106,7 @@ gh --version
 gh auth status
 git config user.name
 git config user.email
-gh repo view --json nameWithOwner -q .nameWithOwner    # → KarmaCummunity/MVP-2
+gh repo view --json nameWithOwner -q .nameWithOwner    # → KarmaCummunity/GloWe
 ( cd app && pnpm install && pnpm typecheck && pnpm test && pnpm lint )
 ```
 

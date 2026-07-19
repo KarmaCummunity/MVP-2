@@ -1,13 +1,11 @@
 name: Bump app version
 
-# Auto-increment app/VERSION patch on every push to `dev` (FR-GLOWE-025 / D-181).
-# `dev` is branch-protected (no direct pushes — same GH006 class as TD-182), so the
-# bump lands via a short-lived PR titled `chore(version): …` (skip guard matches
-# that subject prefix only — do not put the skip marker in other commit bodies).
+# Org policy blocks GitHub Actions from creating PRs (409 / GraphQL createPullRequest).
+# This workflow therefore only prepares a bump branch; agents (or a human) open the PR.
+# Preferred path: agents bump app/VERSION + glowe-version.js in every PR to `dev`
+# (see CLAUDE.md APP VERSION banner). workflow_dispatch remains for a prepared branch.
 
 on:
-  push:
-    branches: [dev]
   workflow_dispatch:
 
 concurrency:
@@ -16,14 +14,10 @@ concurrency:
 
 jobs:
   bump:
-    name: Bump patch (dev)
-    # Skip only real version-bump squash commits (subject prefix), not prose that
-    # happens to mention the words "skip version".
-    if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(version):') }}
+    name: Prepare version bump branch
     runs-on: ubuntu-latest
     permissions:
       contents: write
-      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -34,49 +28,25 @@ jobs:
         with:
           node-version-file: .nvmrc
 
-      - name: Bump patch + sync glowe-version.js
-        id: bump
-        run: |
-          out="$(node scripts/bump-app-version.mjs)"
-          echo "$out"
-          echo "summary=$out" >> "$GITHUB_OUTPUT"
-          echo "version=$(cut -d' ' -f3 <<<"$out")" >> "$GITHUB_OUTPUT"
-
-      - name: Open PR and auto-merge
+      - name: Bump patch + push branch
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
           set -euo pipefail
-          VERSION="${{ steps.bump.outputs.version }}"
+          out="$(node scripts/bump-app-version.mjs)"
+          echo "$out"
+          VERSION="$(cut -d' ' -f3 <<<"$out")"
           BRANCH="chore/version-bump-${VERSION}"
 
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
-
           git add app/VERSION app/apps/glowe-web/js/glowe-version.js
           if git diff --cached --quiet; then
-            echo "No version changes to commit"
+            echo "No version changes"
             exit 0
           fi
-
-          for num in $(gh pr list --base dev --state open --json number,headRefName \
-            --jq '.[] | select(.headRefName | startswith("chore/version-bump-")) | .number'); do
-            gh pr close "$num" --comment "Superseded by bump to ${VERSION}." || true
-          done
-
           git switch -c "$BRANCH"
           git commit -m "chore(version): bump to ${VERSION}"
           git push -u origin HEAD
-
-          gh pr create --base dev --head "$BRANCH" \
-            --title "chore(version): bump to ${VERSION}" \
-            --body "## Summary
-          Auto PATCH bump after a push to \`dev\` (FR-GLOWE-025 / D-181).
-
-          ## Mapped to spec
-          - FR-GLOWE-025 — App-wide semver
-
-          ## SSOT updated
-          - [x] N/A (version stamp only)"
-
-          gh pr merge --squash --auto --delete-branch
+          echo "::notice::Pushed ${BRANCH}. Open a PR to dev (Actions cannot create PRs under org policy)."
+          echo "Branch: https://github.com/${{ github.repository }}/pull/new/${BRANCH}"
