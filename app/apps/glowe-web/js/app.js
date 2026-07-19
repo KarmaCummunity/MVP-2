@@ -2166,6 +2166,28 @@ function ensureGlobalUI() {
         `);
     }
 
+    if (!document.getElementById('avatar-edit-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="avatar-edit-modal" class="modal">
+                <div class="modal-content avatar-edit-modal-content">
+                    <span class="close-modal" onclick="closeModal('avatar-edit-modal')">&times;</span>
+                    <h2>Change profile photo</h2>
+                    <div class="avatar-edit-preview-wrap">
+                        <img id="avatar-edit-preview" class="avatar-edit-preview" alt="" hidden>
+                    </div>
+                    <input type="file" id="avatar-edit-file" accept="image/*" hidden onchange="handleAvatarEditFileChange(event)">
+                    <small id="avatar-edit-status"></small>
+                    <div class="modal-actions avatar-edit-actions">
+                        <button type="button" class="btn btn-outline" onclick="triggerAvatarEditReplace()">Replace</button>
+                        <button type="button" class="btn btn-outline" onclick="handleAvatarEditRemove()">Remove photo</button>
+                        <button type="button" class="btn btn-primary" id="avatar-edit-save-btn" onclick="handleAvatarEditSave()">Save photo</button>
+                        <button type="button" class="btn btn-outline" onclick="closeModal('avatar-edit-modal')">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+
     if (!document.getElementById('glowe-onboarding-modal')) {
         document.body.insertAdjacentHTML('beforeend', `
             <div id="glowe-onboarding-modal" class="modal">
@@ -2609,6 +2631,122 @@ function openEditProfile(profileName = '') {
         if (publicLinkEl) publicLinkEl.value = profile.publicLink || '';
     }
     openModal('edit-profile-modal');
+}
+
+let avatarEditPendingFile = null;
+let avatarEditRemoveRequested = false;
+let avatarEditPreviewObjectUrl = null;
+
+function revokeAvatarEditPreviewUrl() {
+    if (avatarEditPreviewObjectUrl) {
+        URL.revokeObjectURL(avatarEditPreviewObjectUrl);
+        avatarEditPreviewObjectUrl = null;
+    }
+}
+
+function setAvatarEditStatus(message) {
+    const status = document.getElementById('avatar-edit-status');
+    if (status) status.textContent = message || '';
+}
+
+function updateAvatarEditPreview(src) {
+    const preview = document.getElementById('avatar-edit-preview');
+    if (!preview) return;
+    if (src) {
+        preview.src = src;
+        preview.hidden = false;
+    } else {
+        preview.removeAttribute('src');
+        preview.hidden = true;
+    }
+}
+
+function resetAvatarEditState() {
+    avatarEditPendingFile = null;
+    avatarEditRemoveRequested = false;
+    revokeAvatarEditPreviewUrl();
+    const input = document.getElementById('avatar-edit-file');
+    if (input) input.value = '';
+    setAvatarEditStatus('');
+}
+
+function openAvatarEditModal() {
+    ensureGlobalUI();
+    resetAvatarEditState();
+    const profile = getPersonalProfile();
+    updateAvatarEditPreview(profile.avatarUrl || '');
+    openModal('avatar-edit-modal');
+}
+
+function triggerAvatarEditReplace() {
+    const input = document.getElementById('avatar-edit-file');
+    if (input) input.click();
+}
+
+function handleAvatarEditFileChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const check = orgHelpers ? orgHelpers.validateAvatarFile(file) : { valid: true };
+    if (!check.valid) {
+        setAvatarEditStatus(check.error);
+        event.target.value = '';
+        return;
+    }
+    avatarEditPendingFile = file;
+    avatarEditRemoveRequested = false;
+    revokeAvatarEditPreviewUrl();
+    avatarEditPreviewObjectUrl = URL.createObjectURL(file);
+    updateAvatarEditPreview(avatarEditPreviewObjectUrl);
+    setAvatarEditStatus('');
+}
+
+function handleAvatarEditRemove() {
+    avatarEditPendingFile = null;
+    avatarEditRemoveRequested = true;
+    revokeAvatarEditPreviewUrl();
+    const input = document.getElementById('avatar-edit-file');
+    if (input) input.value = '';
+    updateAvatarEditPreview('');
+    setAvatarEditStatus('Photo will be removed when you save.');
+}
+
+async function handleAvatarEditSave() {
+    const profile = getPersonalProfile();
+    const saveBtn = document.getElementById('avatar-edit-save-btn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        if (avatarEditRemoveRequested) {
+            setAvatarEditStatus('Saving...');
+            await persistPersonalProfile({ avatarUrl: '' });
+        } else if (avatarEditPendingFile) {
+            const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+            const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarEditPendingFile) : { valid: true };
+            if (!check.valid) {
+                setAvatarEditStatus(check.error);
+                return;
+            }
+            setAvatarEditStatus('Uploading...');
+            const avatarUrl = await uploadProfileImage(avatarEditPendingFile);
+            await persistPersonalProfile({ avatarUrl });
+        } else if (profile.avatarUrl) {
+            closeModal('avatar-edit-modal');
+            return;
+        } else {
+            closeModal('avatar-edit-modal');
+            return;
+        }
+
+        closeModal('avatar-edit-modal');
+        resetAvatarEditState();
+        if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+        showSuccessModal('Profile saved', 'Profile saved');
+    } catch (error) {
+        setAvatarEditStatus(error.message || 'Could not save photo.');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
 }
 
 async function handleProfileEdit(event) {
@@ -6697,6 +6835,7 @@ function initMyApplicationsPage() {
         const chipHtml = chip
             ? `<button type="button" class="profile-status-cta profile-status-cta--${chip.kind}" onclick="handleProfileStatusChipClick('${chip.action}')">${escapeHtml(chip.label)}</button>`
             : '';
+        const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
 
         container.innerHTML = `
             <div class="personal-shell">
@@ -6722,7 +6861,7 @@ function initMyApplicationsPage() {
                             <div class="social-profile-head">
                                 <div class="social-avatar-wrap">
                                     ${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}
-                                    <button type="button" class="social-avatar-change" onclick="openEditProfile()">Change</button>
+                                    <button type="button" class="social-avatar-change social-avatar-change--icon" aria-label="Change profile photo" onclick="openAvatarEditModal()">${cameraIcon}</button>
                                 </div>
                                 <div class="social-profile-copy">
                                     <div class="social-profile-tags">
