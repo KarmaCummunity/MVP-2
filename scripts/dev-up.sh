@@ -61,5 +61,16 @@ Add this to app/.env.local:
 EXPO_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
 EXPO_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
 
+Fictional seed password (all local users): GloweLocal!2026
+  - glowe-local-org-harbor-food@example.test  (approved org)
+  - glowe-local-org-garden-futures@example.test (pending org)
+  - glowe-local-alex@example.test
+  - glowe-local-sam@example.test
+  - glowe-local-riley@example.test
+
+Auth note: the GLOWE UI is Google-only; guest browsing of seeded data works now.
+A localhost password panel for these users is tracked as a good-first-issue.
+
 Never commit app/.env.local or service-role keys.
+See CONTRIBUTING.md for the full contributor checklist.
 EOF

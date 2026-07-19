@@ -16,7 +16,8 @@ The agent (or a human) fills these in. CI will block merge if "Mapped to spec" i
 - FR-XXX-NNN — <title>
 
 ## Changes
-<!-- Concrete list of edits — files added / changed / removed, plus key behavioral effects. -->
+<!-- Concrete list of edits — files added / changed / removed, plus key behavioral effects.
+     Prefer one issue per PR and keep the diff reviewable (~≤300 lines when possible). -->
 -
 
 ## Tests
