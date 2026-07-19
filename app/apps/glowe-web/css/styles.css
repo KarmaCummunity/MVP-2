@@ -2281,6 +2281,15 @@ a.user-greeting:hover {
     color: var(--text-secondary);
 }
 
+#avatar-edit-status.is-error {
+    color: #8a1c2b;
+    font-weight: 600;
+}
+
+#avatar-edit-status.is-info {
+    color: var(--text-secondary);
+}
+
 .avatar-edit-actions {
     justify-content: center;
 }

@@ -2661,9 +2661,13 @@ function revokeAvatarEditPreviewUrl() {
     }
 }
 
-function setAvatarEditStatus(message) {
+function setAvatarEditStatus(message, options) {
     const status = document.getElementById('avatar-edit-status');
-    if (status) status.textContent = message || '';
+    if (!status) return;
+    status.textContent = message || '';
+    const isError = Boolean(options && options.error);
+    status.classList.toggle('is-error', isError && Boolean(message));
+    status.classList.toggle('is-info', !isError && Boolean(message));
 }
 
 function updateAvatarEditPreview(src) {
@@ -2706,13 +2710,32 @@ function triggerAvatarEditReplace() {
 }
 
 // fallow-ignore-next-line complexity
-function handleAvatarEditFileChange(event) {
+async function handleAvatarEditFileChange(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
     const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    if (orgHelpers && typeof orgHelpers.prepareAvatarUploadFile === 'function') {
+        setAvatarEditStatus('Preparing photo...');
+        const prepared = await orgHelpers.prepareAvatarUploadFile(file);
+        if (!prepared.ok) {
+            setAvatarEditStatus(prepared.error, { error: true });
+            event.target.value = '';
+            return;
+        }
+        avatarEditPendingFile = prepared.file;
+        avatarEditRemoveRequested = false;
+        revokeAvatarEditPreviewUrl();
+        avatarEditPreviewObjectUrl = URL.createObjectURL(prepared.file);
+        updateAvatarEditPreview(avatarEditPreviewObjectUrl);
+        setAvatarEditStatus(
+            prepared.compressed ? 'Photo optimized for upload.' : '',
+            { error: false }
+        );
+        return;
+    }
     const check = orgHelpers ? orgHelpers.validateAvatarFile(file) : { valid: true };
     if (!check.valid) {
-        setAvatarEditStatus(check.error);
+        setAvatarEditStatus(check.error, { error: true });
         event.target.value = '';
         return;
     }
@@ -2731,7 +2754,7 @@ function handleAvatarEditRemove() {
     const input = document.getElementById('avatar-edit-file');
     if (input) input.value = '';
     updateAvatarEditPreview('');
-    setAvatarEditStatus('Photo will be removed when you save.');
+    setAvatarEditStatus('Photo will be removed when you save.', { error: false });
 }
 
 // fallow-ignore-next-line complexity
@@ -2745,13 +2768,23 @@ async function handleAvatarEditSave() {
             await persistPersonalProfile({ avatarUrl: '' });
         } else if (avatarEditPendingFile) {
             const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-            const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarEditPendingFile) : { valid: true };
-            if (!check.valid) {
-                setAvatarEditStatus(check.error);
-                return;
+            let fileToUpload = avatarEditPendingFile;
+            if (orgHelpers && typeof orgHelpers.prepareAvatarUploadFile === 'function') {
+                const prepared = await orgHelpers.prepareAvatarUploadFile(avatarEditPendingFile);
+                if (!prepared.ok) {
+                    setAvatarEditStatus(prepared.error, { error: true });
+                    return;
+                }
+                fileToUpload = prepared.file;
+            } else {
+                const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarEditPendingFile) : { valid: true };
+                if (!check.valid) {
+                    setAvatarEditStatus(check.error, { error: true });
+                    return;
+                }
             }
             setAvatarEditStatus('Uploading...');
-            const avatarUrl = await uploadProfileImage(avatarEditPendingFile);
+            const avatarUrl = await uploadProfileImage(fileToUpload);
             await persistPersonalProfile({ avatarUrl });
         } else {
             closeAvatarEditModal();
@@ -2762,7 +2795,7 @@ async function handleAvatarEditSave() {
         if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
         showSuccessModal('Profile saved', 'Profile saved');
     } catch (error) {
-        setAvatarEditStatus(error.message || 'Could not save photo.');
+        setAvatarEditStatus(error.message || 'Could not save photo.', { error: true });
     } finally {
         if (saveBtn) saveBtn.disabled = false;
     }
@@ -7305,6 +7338,12 @@ const GLOWE_TRANSLATIONS = {
         'Photo will be removed when you save.': 'התמונה תוסר בעת השמירה.',
         'Saving...': 'שומר...',
         'Uploading...': 'מעלה...',
+        'Preparing photo...': 'מכין את התמונה...',
+        'Photo optimized for upload.': 'התמונה עברה אופטימיזציה להעלאה.',
+        'Could not read image.': 'לא ניתן לקרוא את התמונה.',
+        'Could not compress image.': 'לא ניתן לדחוס את התמונה.',
+        'Image is too large. Try a smaller photo.': 'התמונה גדולה מדי. נסו תמונה קטנה יותר.',
+        'Image is too large even after compression. Try a smaller photo.': 'התמונה גדולה מדי גם אחרי דחיסה. נסו תמונה קטנה יותר.',
         'Could not save photo.': 'לא ניתן לשמור את התמונה.',
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Opportunities': 'הזדמנויות',
