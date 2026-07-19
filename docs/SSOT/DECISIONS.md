@@ -1374,10 +1374,23 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-182 — GloWe chat Realtime via thin JS adapter (2026-07-19)
+
+**Decision.** Ship GloWe direct-message Realtime in vanilla JS: `glowe-chat-realtime.js` mirrors KC `SupabaseChatRealtime.ts` channel topics and `postgres_changes` filters; `backend.js` exposes `kcSubscribeToChat` / `kcSubscribeToInbox`; UI orchestration lives in `glowe-chat-ui.js`. No shared TypeScript package and no GloWe bundler — the static site loads IIFE modules the same way as `glowe-messages.js`.
+
+**Rationale.** KC mobile already owns the Realtime contract against `public.messages` / `public.chats`; GloWe reuses the same Supabase project and RPCs (D-69). Importing `@kc/infrastructure-supabase` from the no-build GloWe stack would violate the Phase-A constraint (D-61) and add deploy complexity for a single consumer.
+
+**Alternatives rejected.** *Shared npm package* — cross-package wiring for one static frontend. *Polling* — worse UX and load vs. existing Realtime infra. *Defer to Phase C monolith* — PM approved this slice now; parity helpers are small and unit-tested.
+
+**Affected.** `app/apps/glowe-web/js/glowe-chat-realtime.js`, `glowe-chat-ui.js`, `backend.js`, `glowe-messages.js`; FR-CHAT-001..003 (GloWe surface); FR-GLOWE-014; plan `docs/superpowers/plans/2026-07-19-glowe-chat-realtime.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.13 | 2026-07-19 | Added `D-182` (GloWe chat Realtime via thin JS adapter mirroring KC `SupabaseChatRealtime`; no shared TS package). |
 | 4.12 | 2026-07-19 | Added `D-181` (app-wide semver + auto patch on `dev` push; GloWe footer `vX.Y.Z`; FR-GLOWE-025). |
 | 4.11 | 2026-07-19 | Added `D-180` (GloWe `.tr-slot` toggle convention + consistent org card actions; FR-TRANSLATE-005 comments/tags). |
 | 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
