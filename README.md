@@ -1,4 +1,4 @@
-# Karma Community / GLOWE
+# GloWe
 
 **KC mobile app development is paused.** All active development targets **GLOWE**
 (`app/apps/glowe-web/`). GLOWE and the legacy KC mobile app share the same
@@ -39,8 +39,8 @@ Supabase URLs. Seed logins and verification steps are in
 Start with issues labeled **`good first issue`** (also tagged
 `contributor-facing`):
 
-- [Good first issues](https://github.com/KarmaCummunity/MVP-2/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
-- [Help wanted](https://github.com/KarmaCummunity/MVP-2/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
+- [Good first issues](https://github.com/KarmaCummunity/GloWe/issues?q=is%3Aissue+is%3Aopen+label%3A%22good+first+issue%22)
+- [Help wanted](https://github.com/KarmaCummunity/GloWe/issues?q=is%3Aissue+is%3Aopen+label%3A%22help+wanted%22)
 - Project board:
   [GloWe (org project #2)](https://github.com/orgs/KarmaCummunity/projects/2)
 
@@ -68,7 +68,7 @@ Use the **Good first issues** and **Contributor board** views on that project.
    business days**.
 
 Questions before coding? Use
-[GitHub Discussions](https://github.com/KarmaCummunity/MVP-2/discussions).
+[GitHub Discussions](https://github.com/KarmaCummunity/GloWe/discussions).
 
 ## Repository map
 
