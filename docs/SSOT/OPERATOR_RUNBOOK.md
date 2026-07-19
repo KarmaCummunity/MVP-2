@@ -511,11 +511,11 @@ Then add contributor issues to project #2 and set Status=Todo:
 ```bash
 for n in 704 726 727 728 729 730 731 732 733 734 735; do
   gh project item-add 2 --owner KarmaCummunity \
-    --url "https://github.com/KarmaCummunity/MVP-2/issues/$n"
+    --url "https://github.com/KarmaCummunity/GloWe/issues/$n"
 done
 for n in 708 709 710 712 713; do
   gh project item-add 2 --owner KarmaCummunity \
-    --url "https://github.com/KarmaCummunity/MVP-2/issues/$n"
+    --url "https://github.com/KarmaCummunity/GloWe/issues/$n"
 done
 ```
 
@@ -532,6 +532,23 @@ Mixed mobile+other PRs get a one-time warning comment.
 
 Categories: **Q&A**, **Ideas**, **Show and tell**, **Announcements** (maintainer).
 Point newcomers from README / issue-template `config.yml` contact links.
+
+Welcome thread: [Discussion #736](https://github.com/KarmaCummunity/GloWe/discussions/736) — pin manually in the UI (GraphQL pin API unavailable).
+
+### Security tooling secrets (INFRA-OSS-4/5/6)
+
+Workflows are committed; scans **skip gracefully** until secrets exist:
+
+| Secret | Workflow | Obtain |
+| --- | --- | --- |
+| `SNYK_TOKEN` | `CI — Snyk` | https://app.snyk.io/account |
+| `GITGUARDIAN_API_KEY` | `CI — GitGuardian` | GitGuardian dashboard → API |
+| *(none)* | CodeRabbit | Install https://github.com/apps/coderabbitai on the repo |
+
+Full matrix: [`SECURITY.md`](../../SECURITY.md) at repo root.
+
+After a clean baseline, promote `Snyk dependency scan` / `GitGuardian secret scan` to
+required branch-protection checks and update `ENVIRONMENTS.md` in the same PR.
 
 ### Review SLA
 

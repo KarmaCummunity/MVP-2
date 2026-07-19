@@ -142,7 +142,7 @@ When you spot tech debt outside the immediate scope:
 
 ## 6. Git & PR workflow
 
-> Repo: `KarmaCummunity/MVP-2` · Default branch: `main` · Merge strategy: **squash** · Auto-merge: **on, after CI passes**.
+> Repo: `KarmaCummunity/GloWe` · Default branch: `main` · Merge strategy: **squash** · Auto-merge: **on, after CI passes**.
 > **Working branch: `dev`.** All PRs target `dev`. `main` is updated by squash-merging `dev` → `main`. Full topology in [`docs/SSOT/ENVIRONMENTS.md`](docs/SSOT/ENVIRONMENTS.md).
 
 ### Pre-flight (once per session)
@@ -152,7 +152,7 @@ gh --version              # GitHub CLI installed
 gh auth status            # Logged in to github.com
 git config user.name      # non-empty
 git config user.email     # non-empty
-gh repo view --json nameWithOwner -q .nameWithOwner   # KarmaCummunity/MVP-2
+gh repo view --json nameWithOwner -q .nameWithOwner   # KarmaCummunity/GloWe
 ```
 
 If any check fails, stop and point the user to `SETUP_GIT_AGENT.md`. Do not improvise.
