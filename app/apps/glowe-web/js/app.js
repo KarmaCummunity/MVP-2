@@ -1164,7 +1164,10 @@ async function syncPersonalDataFromBackend() {
             ? window.gloweBackend.listOwned('saved_items').catch(() => null)
             : Promise.resolve(null)
     ]);
-    if (profile) localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify(profile));
+    if (profile) {
+        localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify(profile));
+        await backfillPersonalProfileEnglishName(profile);
+    }
     if (Array.isArray(projects) && projects.length) localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify(projects));
     if (Array.isArray(savedItems) && savedItems.length) {
         localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(savedItems.map(item => ({
@@ -4035,6 +4038,22 @@ async function fetchAndPopulate(backendFn, targetArray, mapper) {
     } catch (_e) {
         // leave array empty; page shows empty state
     }
+}
+
+// FR-GLOWE-024 — on Personal Area load, lazy-fill missing English names for the
+// signed-in owner so EN readers and downstream author snapshots resolve Latin names.
+async function backfillPersonalProfileEnglishName(profile) {
+    if (!profile || !profile.id) return profile;
+    if (typeof GloweLocalizedName === 'undefined') return profile;
+    if (!GloweLocalizedName.profileNeedsEnglishName(profile)) return profile;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return profile;
+    if (!backend.configured() || !(typeof isLoggedIn === 'function' && isLoggedIn())) return profile;
+    const patches = await backend.ensureProfileEnglishNames([profile.id]);
+    if (!patches || !patches.length) return profile;
+    const next = GloweLocalizedName.applyEnglishNamePatches([profile], patches)[0] || profile;
+    savePersonalProfile(next);
+    return next;
 }
 
 // FR-GLOWE-024 — when the reader is on EN, materialize missing *_en columns for
