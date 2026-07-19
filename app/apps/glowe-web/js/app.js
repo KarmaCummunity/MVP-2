@@ -1347,8 +1347,7 @@ function renderQuestionnaireProfile(profile) {
         { label: 'Geographic activity', value: profile.location },
         { label: typeConfig.publicPrompt || 'Open actions', value: profile.publicActions || profile.needs },
         { label: typeConfig.fundingLabel || 'Funding / support sources', value: profile.funding },
-        { label: typeConfig.budgetLabel || 'Annual budget / support context', value: profile.annualBudget },
-        { label: 'Profile status', value: profile.profileStatus }
+        { label: typeConfig.budgetLabel || 'Annual budget / support context', value: profile.annualBudget }
     ];
 
     return rows.map(({ label, value, raw }) => `
