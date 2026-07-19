@@ -2078,104 +2078,88 @@ function ensureGlobalUI() {
                     <h2>Edit profile</h2>
                     <p class="modal-intro">Update the public information that helps others understand who you are and how to collaborate.</p>
                     <form onsubmit="handleProfileEdit(event)">
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-name">Display name</label>
-                                <input id="edit-profile-name" type="text" required placeholder="Organization or person name">
+                        <div id="edit-profile-fields-individual">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-name">Display name</label>
+                                    <input id="edit-profile-name" type="text" required placeholder="Your name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-name-en">Name in English (optional)</label>
+                                    <input id="edit-profile-name-en" type="text" placeholder="Latin / English display name">
+                                    <small>Generated automatically — change if you like</small>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="edit-profile-type">Profile type</label>
-                                <input id="edit-profile-type" type="text" placeholder="NGO, business, volunteer, initiative...">
+                                <label for="edit-profile-about">Bio</label>
+                                <textarea id="edit-profile-about" rows="4" placeholder="A few words about you and what you're working on"></textarea>
                             </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-name-en">Name in English (optional)</label>
-                                <input id="edit-profile-name-en" type="text" placeholder="Latin / English display name">
-                            </div>
-                            <div class="form-group" id="edit-profile-org-name-en-group" hidden>
-                                <label for="edit-profile-org-name-en">Organization name in English (optional)</label>
-                                <input id="edit-profile-org-name-en" type="text" placeholder="Organization name in English">
-                            </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-country">Country / region</label>
-                                <input id="edit-profile-country" type="text" placeholder="Country / region">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-focus">Interest areas</label>
+                                    <input id="edit-profile-focus" type="text" placeholder="Education, health, climate...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-country">Country / region</label>
+                                    <input id="edit-profile-country" type="text" placeholder="Country / region">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-profile-public-link">Website / public link</label>
                                 <input id="edit-profile-public-link" type="url" placeholder="https://...">
                             </div>
                         </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-focus">Interest areas</label>
-                                <input id="edit-profile-focus" type="text" required placeholder="Education, health, climate...">
+                        <div id="edit-profile-fields-organization" hidden>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-name">Organization name</label>
+                                    <input id="edit-profile-org-name" type="text" placeholder="Organization name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-name-en">Organization name in English (optional)</label>
+                                    <input id="edit-profile-org-name-en" type="text" placeholder="Organization name in English">
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-field">Field / sector</label>
+                                    <input id="edit-profile-org-field" type="text" placeholder="Education, health, environment...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-country">Country</label>
+                                    <input id="edit-profile-org-country" type="text" placeholder="Country">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="edit-profile-sdgs">SDGs</label>
-                                <input id="edit-profile-sdgs" type="text" placeholder="Quality Education, Climate Action...">
+                                <label for="edit-profile-org-description">Description</label>
+                                <textarea id="edit-profile-org-description" rows="4" placeholder="What does your organization do?"></textarea>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-short-line">Short public line</label>
-                            <input id="edit-profile-short-line" type="text" placeholder="One clear sentence people can understand quickly">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-about" id="edit-profile-about-label">Mission / story</label>
-                            <textarea id="edit-profile-about" rows="4" required placeholder="Mission, current work, or what you offer."></textarea>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-values" id="edit-profile-values-label">Values and goals</label>
-                                <textarea id="edit-profile-values" rows="4" placeholder="Values, goals, leadership, or principles"></textarea>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-website">Website</label>
+                                    <input id="edit-profile-org-website" type="url" placeholder="https://...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-size">Size (optional)</label>
+                                    <input id="edit-profile-org-size" type="text" placeholder="e.g. 1-10, 11-50">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="edit-profile-community" id="edit-profile-community-label">Community / audience</label>
-                                <textarea id="edit-profile-community" rows="4" placeholder="Who do you serve, support, work with, or hope to reach?"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-problem" id="edit-profile-problem-label">Problem addressed</label>
-                                <textarea id="edit-profile-problem" rows="4" placeholder="What problem or need are you working on?"></textarea>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-contact-name">Contact name</label>
+                                    <input id="edit-profile-org-contact-name" type="text" placeholder="Contact person">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-contact-email">Contact email</label>
+                                    <input id="edit-profile-org-contact-email" type="email" placeholder="email@example.com">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="edit-profile-solution" id="edit-profile-solution-label">Solution / method</label>
-                                <textarea id="edit-profile-solution" rows="4" placeholder="What do you do in practice?"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-methods">Methods / approaches</label>
-                                <input id="edit-profile-methods" type="text" placeholder="Advocacy, education, field work, research...">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-profile-location">Geographic activity</label>
-                                <input id="edit-profile-location" type="text" placeholder="Local / regional / global / remote">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-needs" id="edit-profile-needs-label">Open actions / looking for</label>
-                            <textarea id="edit-profile-needs" rows="3" placeholder="Partners, volunteers, funding, knowledge, visibility..."></textarea>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-socials">Social links</label>
-                                <textarea id="edit-profile-socials" rows="3" placeholder="Facebook, LinkedIn, Instagram, YouTube..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-profile-media">Articles / videos / reports</label>
-                                <textarea id="edit-profile-media" rows="3" placeholder="Useful public links"></textarea>
+                                <label for="edit-profile-org-contact-phone">Contact phone (optional)</label>
+                                <input id="edit-profile-org-contact-phone" type="tel" placeholder="+972...">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="edit-profile-avatar">Profile image</label>
-                            <input id="edit-profile-avatar" type="file" accept="image/*">
-                            <small id="edit-profile-upload-status">Optional. JPG, PNG or WebP, up to 5 MB.</small>
-                        </div>
-                        <button class="btn btn-primary btn-block" type="submit">Save Profile Draft</button>
+                        <button class="btn btn-primary btn-block" type="submit">Save profile</button>
                     </form>
                 </div>
             </div>
@@ -2579,93 +2563,99 @@ function handleProfileStatusChipClick(action) {
 function openEditProfile(profileName = '') {
     ensureGlobalUI();
     const profile = getPersonalProfile();
-    const typeConfig = getProfileTypeConfig(profile);
     const isOrg = profile.accountType === 'organization';
-    document.getElementById('edit-profile-name').value = profileName || profile.name;
-    const nameEnEl = document.getElementById('edit-profile-name-en');
-    if (nameEnEl) nameEnEl.value = profile.nameEn || '';
-    const orgEnGroup = document.getElementById('edit-profile-org-name-en-group');
-    const orgEnEl = document.getElementById('edit-profile-org-name-en');
-    if (orgEnGroup) orgEnGroup.hidden = !isOrg;
-    if (orgEnEl) orgEnEl.value = profile.orgNameEn || '';
-    document.getElementById('edit-profile-type').value = profile.type || '';
-    document.getElementById('edit-profile-country').value = profile.country || '';
-    document.getElementById('edit-profile-public-link').value = profile.publicLink || '';
-    document.getElementById('edit-profile-focus').value = profile.focus || '';
-    document.getElementById('edit-profile-sdgs').value = (profile.sdgs || []).join(', ');
-    document.getElementById('edit-profile-short-line').value = profile.shortLine || '';
-    document.getElementById('edit-profile-about').value = profile.about || '';
-    document.getElementById('edit-profile-values').value = profile.values || '';
-    document.getElementById('edit-profile-community').value = profile.community || '';
-    document.getElementById('edit-profile-problem').value = profile.problem || '';
-    document.getElementById('edit-profile-solution').value = profile.solution || '';
-    document.getElementById('edit-profile-methods').value = profile.methods || '';
-    document.getElementById('edit-profile-location').value = profile.location || '';
-    document.getElementById('edit-profile-needs').value = profile.needs || '';
-    document.getElementById('edit-profile-socials').value = profile.socials || '';
-    document.getElementById('edit-profile-media').value = profile.media || '';
-    document.getElementById('edit-profile-about-label').textContent = typeConfig.storyLabel || 'Mission / story';
-    document.getElementById('edit-profile-about').placeholder = typeConfig.storyPlaceholder || 'Mission, current work, or what you offer.';
-    document.getElementById('edit-profile-values-label').textContent = typeConfig.valuesLabel || 'Values and goals';
-    document.getElementById('edit-profile-values').placeholder = typeConfig.valuesPlaceholder || 'Values, goals, leadership, or principles';
-    document.getElementById('edit-profile-community-label').textContent = typeConfig.communityLabel || 'Community / audience';
-    document.getElementById('edit-profile-community').placeholder = typeConfig.communityPlaceholder || 'Who do you serve, support, work with, or hope to reach?';
-    document.getElementById('edit-profile-problem-label').textContent = typeConfig.problemLabel || 'Problem addressed';
-    document.getElementById('edit-profile-problem').placeholder = typeConfig.problemPlaceholder || 'What problem or need are you working on?';
-    document.getElementById('edit-profile-solution-label').textContent = typeConfig.solutionLabel || 'Solution / method';
-    document.getElementById('edit-profile-solution').placeholder = typeConfig.solutionPlaceholder || 'What do you do in practice?';
-    document.getElementById('edit-profile-methods').placeholder = typeConfig.methodsPlaceholder || 'Advocacy, education, field work, research...';
-    document.getElementById('edit-profile-needs-label').textContent = typeConfig.publicPrompt || 'Open actions / looking for';
-    document.getElementById('edit-profile-needs').placeholder = typeConfig.publicPlaceholder || 'Partners, volunteers, funding, knowledge, visibility...';
+    const individualPanel = document.getElementById('edit-profile-fields-individual');
+    const orgPanel = document.getElementById('edit-profile-fields-organization');
+    if (individualPanel) individualPanel.hidden = isOrg;
+    if (orgPanel) orgPanel.hidden = !isOrg;
+
+    const nameEl = document.getElementById('edit-profile-name');
+    const orgNameEl = document.getElementById('edit-profile-org-name');
+    if (nameEl) nameEl.required = !isOrg;
+    if (orgNameEl) orgNameEl.required = isOrg;
+
+    if (isOrg) {
+        if (orgNameEl) orgNameEl.value = profileName || profile.orgName || profile.name || '';
+        const orgNameEnEl = document.getElementById('edit-profile-org-name-en');
+        if (orgNameEnEl) orgNameEnEl.value = profile.orgNameEn || '';
+        const orgFieldEl = document.getElementById('edit-profile-org-field');
+        if (orgFieldEl) orgFieldEl.value = profile.orgField || '';
+        const orgDescEl = document.getElementById('edit-profile-org-description');
+        if (orgDescEl) orgDescEl.value = profile.orgDescription || profile.about || '';
+        const orgWebsiteEl = document.getElementById('edit-profile-org-website');
+        if (orgWebsiteEl) orgWebsiteEl.value = profile.orgWebsite || '';
+        const orgCountryEl = document.getElementById('edit-profile-org-country');
+        if (orgCountryEl) orgCountryEl.value = profile.orgCountry || profile.country || '';
+        const orgSizeEl = document.getElementById('edit-profile-org-size');
+        if (orgSizeEl) orgSizeEl.value = profile.orgSize || '';
+        const orgContactNameEl = document.getElementById('edit-profile-org-contact-name');
+        if (orgContactNameEl) orgContactNameEl.value = profile.orgContactName || '';
+        const orgContactEmailEl = document.getElementById('edit-profile-org-contact-email');
+        if (orgContactEmailEl) orgContactEmailEl.value = profile.orgContactEmail || '';
+        const orgContactPhoneEl = document.getElementById('edit-profile-org-contact-phone');
+        if (orgContactPhoneEl) orgContactPhoneEl.value = profile.orgContactPhone || '';
+    } else {
+        const aboutValue = profile.about || profile.story || profile.shortLine || '';
+        if (nameEl) nameEl.value = profileName || profile.name || '';
+        const nameEnEl = document.getElementById('edit-profile-name-en');
+        if (nameEnEl) nameEnEl.value = profile.nameEn || '';
+        const aboutEl = document.getElementById('edit-profile-about');
+        if (aboutEl) aboutEl.value = aboutValue;
+        const focusEl = document.getElementById('edit-profile-focus');
+        if (focusEl) focusEl.value = profile.focus || '';
+        const countryEl = document.getElementById('edit-profile-country');
+        if (countryEl) countryEl.value = profile.country || '';
+        const publicLinkEl = document.getElementById('edit-profile-public-link');
+        if (publicLinkEl) publicLinkEl.value = profile.publicLink || '';
+    }
     openModal('edit-profile-modal');
 }
 
 async function handleProfileEdit(event) {
     event.preventDefault();
-    const status = document.getElementById('edit-profile-upload-status');
-    const avatarInput = document.getElementById('edit-profile-avatar');
-    let uploadWarning = '';
-    const profileDraft = {
-        name: document.getElementById('edit-profile-name').value,
-        nameEn: (document.getElementById('edit-profile-name-en') || {}).value || '',
-        orgNameEn: (document.getElementById('edit-profile-org-name-en') || {}).value || '',
-        type: document.getElementById('edit-profile-type').value,
-        country: document.getElementById('edit-profile-country').value,
-        publicLink: document.getElementById('edit-profile-public-link').value,
-        focus: document.getElementById('edit-profile-focus').value,
-        interests: commaList(document.getElementById('edit-profile-focus').value),
-        skills: commaList(document.getElementById('edit-profile-focus').value),
-        sdgs: commaList(document.getElementById('edit-profile-sdgs').value),
-        shortLine: document.getElementById('edit-profile-short-line').value,
-        about: document.getElementById('edit-profile-about').value,
-        story: document.getElementById('edit-profile-about').value,
-        values: document.getElementById('edit-profile-values').value,
-        community: document.getElementById('edit-profile-community').value,
-        problem: document.getElementById('edit-profile-problem').value,
-        solution: document.getElementById('edit-profile-solution').value,
-        methods: document.getElementById('edit-profile-methods').value,
-        location: document.getElementById('edit-profile-location').value,
-        needs: document.getElementById('edit-profile-needs').value,
-        publicActions: document.getElementById('edit-profile-needs').value,
-        socials: document.getElementById('edit-profile-socials').value,
-        media: document.getElementById('edit-profile-media').value
+    const val = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
     };
+    const existing = getPersonalProfile();
+    const isOrg = existing.accountType === 'organization';
+    let profileDraft;
 
-    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
-        const avatarFile = avatarInput.files[0];
-        const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-        const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarFile) : { valid: true };
-        if (!check.valid) {
-            if (status) status.textContent = check.error;
-            return;
-        }
-        try {
-            if (status) status.textContent = 'Uploading image...';
-            profileDraft.avatarUrl = await uploadProfileImage(avatarFile);
-        } catch (error) {
-            if (status) status.textContent = error.message;
-            uploadWarning = ' Image upload could not be completed.';
-        }
+    if (isOrg) {
+        const orgName = val('edit-profile-org-name');
+        const orgDescription = val('edit-profile-org-description');
+        const country = val('edit-profile-org-country');
+        const orgField = val('edit-profile-org-field');
+        profileDraft = {
+            name: orgName || existing.name,
+            orgName,
+            orgNameEn: val('edit-profile-org-name-en'),
+            orgField,
+            orgDescription,
+            about: orgDescription,
+            orgWebsite: val('edit-profile-org-website'),
+            country,
+            orgCountry: country,
+            orgSize: val('edit-profile-org-size'),
+            orgContactName: val('edit-profile-org-contact-name'),
+            orgContactEmail: val('edit-profile-org-contact-email'),
+            orgContactPhone: val('edit-profile-org-contact-phone'),
+            type: 'Organization',
+            focus: orgField
+        };
+    } else {
+        const aboutValue = val('edit-profile-about');
+        profileDraft = {
+            name: val('edit-profile-name'),
+            nameEn: val('edit-profile-name-en'),
+            about: aboutValue,
+            story: aboutValue,
+            shortLine: aboutValue.slice(0, 160),
+            focus: val('edit-profile-focus'),
+            country: val('edit-profile-country'),
+            publicLink: val('edit-profile-public-link'),
+            type: 'Individual'
+        };
     }
 
     await persistPersonalProfile(profileDraft);
@@ -2673,7 +2663,7 @@ async function handleProfileEdit(event) {
     if (typeof window.renderPersonalArea === 'function') {
         window.renderPersonalArea();
     }
-    showSuccessModal('Profile saved', `Your personal profile was saved through the backend when available.${uploadWarning}`);
+    showSuccessModal('Profile saved', 'Profile saved');
 }
 
 function setProjectModalMode(title, submitLabel) {
