@@ -4277,10 +4277,7 @@ function renderProjectCard(project, options) {
     // `.deletable` is undefined — so the control stays hidden for viewers.
     const deletable = Boolean(options && options.deletable);
     const ownerActions = deletable
-        ? `<div class="project-card-actions">
-            <button type="button" class="project-edit-action" onclick="openEditPersonalProjectModal('${jsString(project.id)}')">Edit</button>
-            <button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>
-        </div>`
+        ? GloweProfileUx.projectOwnerActionsHtml(jsString(project.id))
         : '';
     return `
         <div class="project-card" data-tr-card data-tr-type="glowe_project" data-tr-id="${project.id}">

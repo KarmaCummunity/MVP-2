@@ -4207,6 +4207,30 @@ a.user-greeting:hover {
     gap: 16px;
 }
 
+.project-card {
+    position: relative;
+}
+
+.project-card-actions--icons {
+    position: absolute;
+    inset-block-start: 10px;
+    inset-inline-end: 10px;
+    display: flex;
+    gap: 6px;
+}
+
+.project-icon-action {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
+}
+
 @media (max-width: 900px) {
     .split-section {
         grid-template-columns: 1fr;
