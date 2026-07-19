@@ -1048,6 +1048,7 @@ export type Database = {
       glowe_comments: {
         Row: {
           author_name: string | null
+          author_name_en: string | null
           created_at: string
           id: string
           post_id: string
@@ -1056,6 +1057,7 @@ export type Database = {
         }
         Insert: {
           author_name?: string | null
+          author_name_en?: string | null
           created_at?: string
           id?: string
           post_id: string
@@ -1064,6 +1066,7 @@ export type Database = {
         }
         Update: {
           author_name?: string | null
+          author_name_en?: string | null
           created_at?: string
           id?: string
           post_id?: string
