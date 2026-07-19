@@ -470,3 +470,69 @@ select doc_type, current_version, last_material_version, last_material_severity
 ```
 
 The published row should show the new `current_version`. For `standard` / `critical`, `last_material_version` advances; for `minor`, it stays.
+
+---
+
+## External GLOWE contributors (INFRA-OSS-8)
+
+Org project board: [GloWe (#2)](https://github.com/orgs/KarmaCummunity/projects/2) — public.
+
+### Labels
+
+| Label | Use |
+| --- | --- |
+| `contributor-facing` | Safe for volunteers |
+| `good first issue` / `help wanted` | Entry / next tasks |
+| `maintainer-only` | Org-admin / PM only (Snyk, CodeRabbit, GitGuardian, Phase C, …) |
+| `area:glowe-web` / `area:docs` / `area:a11y` / `area:i18n` | Area filter |
+| `size:S` / `size:M` | Effort hint |
+
+### Project views (maintainer setup)
+
+On project #2, keep these views (create in the GitHub UI if missing):
+
+1. **Contributor board** — Board layout, Status columns Todo → In Progress → Done; filter `label:contributor-facing`.
+2. **Good first issues** — Table/Board filtered to `label:"good first issue"` + open.
+3. **Maintainer / blocked** — filter `label:maintainer-only` (Snyk / CodeRabbit / GitGuardian / large epics).
+
+Custom fields (optional): **Size** (S/M/L), **Area** (glowe-web/docs/a11y/i18n).
+
+#### One-time: grant CLI project scope + bulk-add items
+
+`@navesarussi` must refresh the GitHub CLI token (interactive browser):
+
+```bash
+gh auth switch --user navesarussi
+gh auth refresh -h github.com -s project,read:project,repo,workflow,read:org
+```
+
+Then add contributor issues to project #2 and set Status=Todo:
+
+```bash
+for n in 704 726 727 728 729 730 731 732 733 734 735; do
+  gh project item-add 2 --owner KarmaCummunity \
+    --url "https://github.com/KarmaCummunity/MVP-2/issues/$n"
+done
+for n in 708 709 710 712 713; do
+  gh project item-add 2 --owner KarmaCummunity \
+    --url "https://github.com/KarmaCummunity/MVP-2/issues/$n"
+done
+```
+
+Create the three views + Size/Area fields in the project UI (Settings → …) if the
+GraphQL/CLI field APIs are unavailable.
+
+### Scope guard
+
+Workflow `.github/workflows/ci-scope-guard.yml` closes PRs that only touch
+`app/apps/mobile/**` and comments with links to `AGENTS.md` + `CONTRIBUTING.md`.
+Mixed mobile+other PRs get a one-time warning comment.
+
+### Discussions
+
+Categories: **Q&A**, **Ideas**, **Show and tell**, **Announcements** (maintainer).
+Point newcomers from README / issue-template `config.yml` contact links.
+
+### Review SLA
+
+Documented in `CONTRIBUTING.md`: aim to review external PRs within **3 business days**.

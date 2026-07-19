@@ -207,6 +207,7 @@
 | INFRA-OSS-5 | **CodeRabbit App** — AI review comments; non-merging | infra | ⏳ Planned [blocked: needs org-admin App install] | same design §7 |
 | INFRA-OSS-6 | **GitGuardian** — secret leak detection App or ggshield CI | infra | ⏳ Planned [blocked: needs org-admin App / token] | same design §7 |
 | INFRA-OSS-7 | **Dependabot security updates + Secret Scanning docs** — enable security updates; document already-on secret scanning | infra | ✅ Done | same design §7 |
+| INFRA-OSS-8 | **Contributor ops pack** — README/CONTRIBUTING depth, contributor-task template, scope-guard Action (close mobile-only PRs), labels, good-first issues (#704/#726–#735), Discussions welcome (#736); project #2 view wiring = one-time PM CLI step in runbook | infra | ✅ Done | `OPERATOR_RUNBOOK.md` § External GLOWE contributors |
 
 ---
 

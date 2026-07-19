@@ -8,4 +8,4 @@ labels: enhancement
 ## Problem
 ## Proposed solution
 ## Scope note
-GLOWE frontend (`app/apps/glowe-web`) is in scope. KC mobile frontend PRs are out of scope (see AGENTS.md).
+GLOWE frontend (`app/apps/glowe-web`) is in scope. KC mobile frontend PRs are out of scope (see AGENTS.md / CONTRIBUTING.md). Prefer the **Contributor task** template for well-scoped volunteer work.
