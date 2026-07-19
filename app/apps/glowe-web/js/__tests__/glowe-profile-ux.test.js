@@ -2,7 +2,8 @@ import { describe, it, expect } from 'vitest';
 import {
     isProfileSparse,
     profileStatusChip,
-    profileBioSource
+    profileBioSource,
+    publicTrustStatusLabel
 } from '../glowe-profile-ux.js';
 
 describe('isProfileSparse', () => {
@@ -64,6 +65,31 @@ describe('profileStatusChip', () => {
             about: 'Bio',
             focus: ''
         }, { isOwner: true })).toBe(null);
+    });
+});
+
+describe('publicTrustStatusLabel', () => {
+    it('hides pending/rejected from visitors', () => {
+        expect(publicTrustStatusLabel({
+            type: 'Health NGO',
+            isOwnerView: false,
+            approvalStatus: 'pending'
+        }, true)).toBe('Health NGO');
+        expect(publicTrustStatusLabel({
+            type: 'Health NGO',
+            isOwnerView: false,
+            approvalStatus: 'rejected'
+        }, true)).toBe('Health NGO');
+    });
+    it('shows Verified organization when approved', () => {
+        expect(publicTrustStatusLabel({
+            type: 'Health NGO',
+            approvalStatus: 'approved'
+        }, true)).toBe('Verified organization');
+    });
+    it('falls back for individuals', () => {
+        expect(publicTrustStatusLabel({ type: 'Volunteer' }, false)).toBe('Volunteer');
+        expect(publicTrustStatusLabel({}, false)).toBe('Community Member');
     });
 });
 

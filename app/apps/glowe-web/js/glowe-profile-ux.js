@@ -25,31 +25,32 @@
         return !bioText(p) && !focusText(p);
     }
 
+    const ORG_STATUS_CHIP = {
+        pending: { kind: 'pending_review', label: 'Pending review', action: 'none' },
+        rejected: { kind: 'needs_changes', label: 'Needs changes', action: 'edit' }
+    };
+
     function profileStatusChip(profile, options) {
-        const isOwner = Boolean(options && options.isOwner);
-        if (!isOwner) return null;
+        if (!(options && options.isOwner)) return null;
         const p = profile || {};
         if (p.onboardingComplete !== true) {
-            return {
-                kind: 'complete_profile',
-                label: 'Complete profile',
-                action: 'onboarding'
-            };
+            return { kind: 'complete_profile', label: 'Complete profile', action: 'onboarding' };
         }
-        if (p.accountType === 'organization' && p.approvalStatus === 'pending') {
-            return { kind: 'pending_review', label: 'Pending review', action: 'none' };
-        }
-        if (p.accountType === 'organization' && p.approvalStatus === 'rejected') {
-            return { kind: 'needs_changes', label: 'Needs changes', action: 'edit' };
-        }
+        const orgChip = p.accountType === 'organization' ? ORG_STATUS_CHIP[p.approvalStatus] : null;
+        if (orgChip) return orgChip;
         if (isProfileSparse(p)) {
-            return {
-                kind: 'complete_profile',
-                label: 'Complete profile',
-                action: 'edit'
-            };
+            return { kind: 'complete_profile', label: 'Complete profile', action: 'edit' };
         }
         return null;
+    }
+
+    // Visitor-safe trust label for public profile sidebar (hide pending/rejected).
+    function publicTrustStatusLabel(profile, isOrg) {
+        const p = profile || {};
+        const typeLabel = p.type || (isOrg ? 'Organization' : 'Community Member');
+        if (!isOrg) return typeLabel;
+        if (!p.isOwnerView && ORG_STATUS_CHIP[p.approvalStatus]) return typeLabel;
+        return p.approvalStatus === 'approved' ? 'Verified organization' : typeLabel;
     }
 
     function profileBioSource(profile) {
@@ -89,6 +90,7 @@
         isProfileSparse: isProfileSparse,
         profileStatusChip: profileStatusChip,
         profileBioSource: profileBioSource,
+        publicTrustStatusLabel: publicTrustStatusLabel,
         CAMERA_ICON_SVG: CAMERA_ICON_SVG,
         projectOwnerActionsHtml: projectOwnerActionsHtml
     };

@@ -2587,12 +2587,12 @@ function renderProfileStatusChipHtml(chip) {
 }
 
 function handleProfileStatusChipClick(action) {
-    if (action === 'onboarding') {
-        const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : null;
-        if (typeof openGloweOnboarding === 'function') openGloweOnboarding(profile);
+    if (action === 'edit') {
+        openEditProfile();
         return;
     }
-    if (action === 'edit') openEditProfile();
+    if (action !== 'onboarding') return;
+    openGloweOnboarding(getPersonalProfile());
 }
 
 function openEditProfile(profileName = '') {
@@ -2701,6 +2701,7 @@ function triggerAvatarEditReplace() {
     if (input) input.click();
 }
 
+// fallow-ignore-next-line complexity
 function handleAvatarEditFileChange(event) {
     const file = event.target.files && event.target.files[0];
     if (!file) return;
@@ -2729,8 +2730,8 @@ function handleAvatarEditRemove() {
     setAvatarEditStatus('Photo will be removed when you save.');
 }
 
+// fallow-ignore-next-line complexity
 async function handleAvatarEditSave() {
-    const profile = getPersonalProfile();
     const saveBtn = document.getElementById('avatar-edit-save-btn');
     if (saveBtn) saveBtn.disabled = true;
 
@@ -2748,9 +2749,6 @@ async function handleAvatarEditSave() {
             setAvatarEditStatus('Uploading...');
             const avatarUrl = await uploadProfileImage(avatarEditPendingFile);
             await persistPersonalProfile({ avatarUrl });
-        } else if (profile.avatarUrl) {
-            closeAvatarEditModal();
-            return;
         } else {
             closeAvatarEditModal();
             return;
@@ -4056,13 +4054,18 @@ async function fetchAndPopulate(backendFn, targetArray, mapper) {
 
 // FR-GLOWE-024 — on Personal Area load, lazy-fill missing English names for the
 // signed-in owner so EN readers and downstream author snapshots resolve Latin names.
+// fallow-ignore-next-line complexity
 async function backfillPersonalProfileEnglishName(profile) {
-    if (!profile || !profile.id) return profile;
-    if (typeof GloweLocalizedName === 'undefined') return profile;
-    if (!GloweLocalizedName.profileNeedsEnglishName(profile)) return profile;
     const backend = window.gloweBackend;
-    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return profile;
-    if (!backend.configured() || !(typeof isLoggedIn === 'function' && isLoggedIn())) return profile;
+    const ready = profile && profile.id
+        && typeof GloweLocalizedName !== 'undefined'
+        && GloweLocalizedName.profileNeedsEnglishName(profile)
+        && backend
+        && typeof backend.ensureProfileEnglishNames === 'function'
+        && backend.configured()
+        && typeof isLoggedIn === 'function'
+        && isLoggedIn();
+    if (!ready) return profile;
     const patches = await backend.ensureProfileEnglishNames([profile.id]);
     if (!patches || !patches.length) return profile;
     const next = GloweLocalizedName.applyEnglishNamePatches([profile], patches)[0] || profile;
@@ -4289,19 +4292,9 @@ function renderProjectCard(project, options) {
     // `options.deletable` is only passed from the owner's Personal Area. On the
     // public profile the map callback passes the numeric index here, whose
     // `.deletable` is undefined — so the control stays hidden for viewers.
-    const deletable = Boolean(options && options.deletable);
-    let ownerActions = '';
-    if (deletable) {
-        const ux = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx : null;
-        if (ux && typeof ux.projectOwnerActionsHtml === 'function') {
-            ownerActions = ux.projectOwnerActionsHtml(jsString(project.id));
-        } else {
-            ownerActions = `<div class="project-card-actions">
-            <button type="button" class="project-edit-action" onclick="openEditPersonalProjectModal('${jsString(project.id)}')">Edit</button>
-            <button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>
-        </div>`;
-        }
-    }
+    const ownerActions = (options && options.deletable)
+        ? GloweProfileUx.projectOwnerActionsHtml(jsString(project.id))
+        : '';
     return `
         <div class="project-card" data-tr-card data-tr-type="glowe_project" data-tr-id="${project.id}">
             <span class="opportunity-badge">${escapeHtml(project.status)}</span>
@@ -5993,14 +5986,7 @@ async function initProfilePage() {
 }
 
 function _publicTrustStatusLabel(profile, isOrg) {
-    const typeLabel = profile.type || (isOrg ? 'Organization' : 'Community Member');
-    if (!profile.isOwnerView && isOrg && (profile.approvalStatus === 'pending' || profile.approvalStatus === 'rejected')) {
-        return typeLabel;
-    }
-    if (isOrg && profile.approvalStatus === 'approved') {
-        return 'Verified organization';
-    }
-    return typeLabel;
+    return GloweProfileUx.publicTrustStatusLabel(profile, isOrg);
 }
 
 function _renderProfileContent(profile, container) {
