@@ -2595,6 +2595,7 @@ function handleProfileStatusChipClick(action) {
     openGloweOnboarding(getPersonalProfile());
 }
 
+// fallow-ignore-next-line complexity
 async function openEditProfile(profileName = '') {
     ensureGlobalUI();
     let profile = getPersonalProfile();

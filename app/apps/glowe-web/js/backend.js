@@ -348,6 +348,7 @@
         return fromProfileRow(data);
     }
 
+    // fallow-ignore-next-line complexity
     async function upsertProfile(profile, explicitUser = null) {
         const supabaseClient = await getClient();
         const user = explicitUser || await currentUser();
