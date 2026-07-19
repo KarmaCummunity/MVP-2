@@ -1121,6 +1121,14 @@ a.user-greeting:hover {
     margin: 0;
 }
 
+.footer-bottom .footer-build {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+    color: var(--text-light);
+}
+
 /* ===== Modal ===== */
 .modal {
     display: none;
