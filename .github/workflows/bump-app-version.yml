@@ -2,12 +2,13 @@ name: Bump app version
 
 # Auto-increment app/VERSION patch on every push to `dev` (FR-GLOWE-025 / D-181).
 # `dev` is branch-protected (no direct pushes — same GH006 class as TD-182), so the
-# bump lands via a short-lived PR with squash title containing `[skip version]`
-# to avoid a re-trigger loop.
+# bump lands via a short-lived PR titled `chore(version): …` (skip guard matches
+# that subject prefix only — do not put the skip marker in other commit bodies).
 
 on:
   push:
     branches: [dev]
+  workflow_dispatch:
 
 concurrency:
   group: bump-app-version-dev
@@ -16,7 +17,9 @@ concurrency:
 jobs:
   bump:
     name: Bump patch (dev)
-    if: ${{ !contains(github.event.head_commit.message, '[skip version]') }}
+    # Skip only real version-bump squash commits (subject prefix), not prose that
+    # happens to mention the words "skip version".
+    if: ${{ github.event_name == 'workflow_dispatch' || !startsWith(github.event.head_commit.message, 'chore(version):') }}
     runs-on: ubuntu-latest
     permissions:
       contents: write
@@ -56,18 +59,17 @@ jobs:
             exit 0
           fi
 
-          # Drop any stale open auto-bump PRs so we do not stack them.
           for num in $(gh pr list --base dev --state open --json number,headRefName \
             --jq '.[] | select(.headRefName | startswith("chore/version-bump-")) | .number'); do
             gh pr close "$num" --comment "Superseded by bump to ${VERSION}." || true
           done
 
           git switch -c "$BRANCH"
-          git commit -m "chore(version): bump to ${VERSION} [skip version]"
+          git commit -m "chore(version): bump to ${VERSION}"
           git push -u origin HEAD
 
           gh pr create --base dev --head "$BRANCH" \
-            --title "chore(version): bump to ${VERSION} [skip version]" \
+            --title "chore(version): bump to ${VERSION}" \
             --body "## Summary
           Auto PATCH bump after a push to \`dev\` (FR-GLOWE-025 / D-181).
 
