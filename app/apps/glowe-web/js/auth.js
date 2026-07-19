@@ -507,6 +507,8 @@ function updateAuthUI() {
     const userMenu = document.querySelector('.user-menu');
     const userNameSpan = document.getElementById('user-name');
     
+    document.body.classList.toggle('glowe-signed-in', isLoggedIn());
+
     if (isLoggedIn()) {
         const user = getCurrentUser();
         if (authButtons) authButtons.style.display = 'none';
