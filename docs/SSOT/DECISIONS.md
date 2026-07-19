@@ -1364,10 +1364,21 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-181 — App-wide semver (`app/VERSION`) with auto patch on every `dev` push (2026-07-19)
+
+**Decision.** Product version is app-wide semver in `app/VERSION`. Every push to `dev` auto-increments **PATCH** (GitHub Action + `[skip version]` commit). **MAJOR/MINOR** are manual. GloWe footer shows `vX.Y.Z` from `glowe-version.js`; `web-postbuild` re-stamps from `app/VERSION` on deploy. KC mobile UI display deferred.
+
+**Rationale.** PM needs a normal `x.x.x` marker on the live `dev` site to verify deploys; the version applies to the whole app, not only the static web shell. Auto-patch on every push (not only successful web deploys) keeps the counter honest across BE/FE/docs merges.
+
+**Affected.** `app/VERSION`, `scripts/bump-app-version.mjs`, `.github/workflows/bump-app-version.yml`, `glowe-version.js`, `ensureGlobalFooter`, `web-postbuild.mjs`; FR-GLOWE-025; bold rule in `CLAUDE.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.12 | 2026-07-19 | Added `D-181` (app-wide semver + auto patch on `dev` push; GloWe footer `vX.Y.Z`; FR-GLOWE-025). |
 | 4.11 | 2026-07-19 | Added `D-180` (GloWe `.tr-slot` toggle convention + consistent org card actions; FR-TRANSLATE-005 comments/tags). |
 | 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
 | 4.9 | 2026-07-15 | Added `D-177` (GloWe posts share via one native Web Share button with silent clipboard+toast desktop fallback; removes per-network buttons + copy-link; **supersedes `D-67`**; bundles the nine-item GloWe design-fixes UX pass; `FR-GLOWE-008` AC5). |

@@ -2,6 +2,16 @@
 
 > **Single source of truth for all agent rules in this repo.** If anything below conflicts with another file, this one wins.
 
+## ⚠️ APP VERSION (`app/VERSION`) — ALWAYS REMEMBER
+
+**App-wide semver lives in `app/VERSION` (`MAJOR.MINOR.PATCH`). GloWe footer shows `vX.Y.Z` (FR-GLOWE-025 / D-181).**
+
+1. **PATCH auto-bumps on every push to `dev`** (workflow `Bump app version`). Do **not** hand-edit patch for routine merges.
+2. **When you ship a breaking change → bump MAJOR** (e.g. `1.4.2` → `2.0.0`) in the same PR **before** merge to `dev`. Also sync `app/apps/glowe-web/js/glowe-version.js` (or run `node scripts/bump-app-version.mjs` after setting the new base and adjusting — prefer writing both files to the target version explicitly).
+3. **When you ship a significant non-breaking feature set → bump MINOR** (e.g. `1.4.2` → `1.5.0`) the same way.
+4. **Never hardcode a stale version in HTML/CSS.** Footer reads `GloweAppVersion` from `glowe-version.js` only.
+5. Version-bump bot commits use `[skip version]` — do not strip that marker from those commits.
+
 ## 1. Required reading (before doing anything)
 
 1. **`docs/SSOT/spec/{domain}.md`** — single source of truth per feature domain. Each file is the full spec (FR-IDs, ACs, business rules) plus a status header (✅/🟡/⏳). Read only the file relevant to your task.

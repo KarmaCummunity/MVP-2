@@ -1759,6 +1759,7 @@ function ensureGlobalFooter() {
             </div>
             <div class="footer-bottom">
                 <p>${currentYear} GloWe. Built for shared knowledge, mutual support, and action that lasts.</p>
+                <p class="footer-build" translate="no">${footerBuildLabel()}</p>
             </div>
         </div>
     `;
@@ -1770,6 +1771,15 @@ function ensureGlobalFooter() {
         document.body.appendChild(footer);
     }
     footer.innerHTML = footerHtml;
+}
+
+/** App-wide semver from glowe-version.js (FR-GLOWE-025). */
+function footerBuildLabel() {
+    const version = window.GloweAppVersion && window.GloweAppVersion.version;
+    if (typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version)) {
+        return `v${version}`;
+    }
+    return 'v0.0.0-local';
 }
 
 // A bottom-nav tab also lights up for its sibling pages (community covers the

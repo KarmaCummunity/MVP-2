@@ -17,12 +17,13 @@
 // TO GATE KC BEHIND /glowe AGAIN ON PROD: set EXPO_PUBLIC_ENVIRONMENT=development
 // for the `cloudflare-prod` GitHub environment (or force GATE_ROOT below).
 
-import { writeFileSync, existsSync, cpSync } from 'node:fs';
+import { writeFileSync, readFileSync, existsSync, cpSync } from 'node:fs';
 import { resolve, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
 const here = dirname(fileURLToPath(import.meta.url));
-const distDir = resolve(here, '..', 'apps', 'mobile', 'dist');
+const appRoot = resolve(here, '..');
+const distDir = resolve(appRoot, 'apps', 'mobile', 'dist');
 const redirectsPath = resolve(distDir, '_redirects');
 
 // Same semantics as `isDevEnvironment()`: only the literal 'development' value
@@ -44,8 +45,33 @@ if (existsSync(gloweSrc)) {
     filter: (src) => !skip.has(src.split('/').pop()),
   });
   console.log(`[web-postbuild] copied GloWe → ${gloweDest}`);
+  stampGloweAppVersion(gloweDest);
 } else {
   console.warn(`[web-postbuild] GloWe source not found at ${gloweSrc} — skipping /glowe mount`);
+}
+
+/** Re-stamp footer version from app/VERSION (FR-GLOWE-025 / D-181). */
+function stampGloweAppVersion(gloweDestDir) {
+  const versionPath = resolve(appRoot, 'VERSION');
+  if (!existsSync(versionPath)) {
+    console.warn(`[web-postbuild] ${versionPath} missing — skip glowe version stamp`);
+    return;
+  }
+  const version = readFileSync(versionPath, 'utf8').trim();
+  if (!/^\d+\.\d+\.\d+$/.test(version)) {
+    console.warn(`[web-postbuild] invalid VERSION ${JSON.stringify(version)} — skip stamp`);
+    return;
+  }
+  const out = resolve(gloweDestDir, 'js', 'glowe-version.js');
+  writeFileSync(
+    out,
+    `// App-wide display version (FR-GLOWE-025 / D-181). Stamped by web-postbuild.\n` +
+      `(function (root) {\n` +
+      `    root.GloweAppVersion = { version: '${version}' };\n` +
+      `})(typeof self !== 'undefined' ? self : this);\n`,
+    'utf8',
+  );
+  console.log(`[web-postbuild] stamped GloWe version ${version} → ${out}`);
 }
 
 // _redirects strategy:

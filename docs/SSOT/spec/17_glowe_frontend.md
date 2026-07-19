@@ -497,3 +497,20 @@ English column when present; HE (and other locales) prefer the source name.
   the snapshot; profile pages always show the current profile values.
 - AC6. **Out of scope.** KC mobile `users.display_name_en`, `org_contact_name_en`, and routing
   names through `glowe-translate` / `glowe_content_translations`.
+
+## FR-GLOWE-025 — App-wide semver in GloWe footer
+
+**Status.** ✅ Done — `app/VERSION` SSOT + auto patch bump on every `dev` push + footer `vX.Y.Z`.
+Decision: D-181. Design: `docs/superpowers/specs/2026-07-19-app-semver-footer-design.md`.
+
+**Acceptance Criteria.**
+- AC1. **SSOT.** `app/VERSION` holds `MAJOR.MINOR.PATCH` (one line). Mirrored to
+  `apps/glowe-web/js/glowe-version.js` as `GloweAppVersion.version`.
+- AC2. **Auto patch.** Every push to `dev` (except commits marked `[skip version]`) increments
+  PATCH via `.github/workflows/bump-app-version.yml` and commits the bump.
+- AC3. **Footer.** Shared `ensureGlobalFooter()` renders a small `.footer-build` line under the
+  tagline as `vX.Y.Z` (not translated).
+- AC4. **Deploy stamp.** `web-postbuild.mjs` re-stamps `glowe-version.js` from `app/VERSION` on
+  every Cloudflare Pages build so the live site cannot ship a stale mirror.
+- AC5. **Manual major/minor.** Agents bump MAJOR/MINOR in PRs when appropriate (see `CLAUDE.md`
+  version banner). KC mobile UI display of the same version is out of scope for this FR.
