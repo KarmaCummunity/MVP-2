@@ -3209,9 +3209,20 @@ async function loadPostComments() {
     if (!backend || !backend.configured()) return;
     let rows = [];
     try { rows = await backend.listAll('comments'); } catch (_e) { rows = []; }
-    backendPostComments = (typeof GlowePosts !== 'undefined')
-        ? GlowePosts.groupCommentsByPost(rows || [])
-        : {};
+    const helpers = (typeof GlowePosts !== 'undefined') ? GlowePosts : null;
+    const grouped = helpers ? helpers.groupCommentsByPost(rows || []) : {};
+    const flat = [];
+    Object.keys(grouped).forEach(function (postId) {
+        (grouped[postId] || []).forEach(function (c) { flat.push(c); });
+    });
+    const patched = await withEnsuredAuthorEnglishNames(flat);
+    const out = {};
+    patched.forEach(function (c) {
+        const key = String(c.postId == null ? '' : c.postId);
+        if (!out[key]) out[key] = [];
+        out[key].push(c);
+    });
+    backendPostComments = out;
 }
 
 // Comments to render for a post: backend rows (authoritative) merged with any
@@ -3427,10 +3438,12 @@ function formatThreadActivity(createdAt) {
 function savePostComment(postId, text) {
     const comments = getPostComments();
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    const profile = getPersonalProfile();
+    const author = gloweCurrentAuthorNamePair();
     const newComment = {
         id: `comment-${Date.now()}`,
-        author: user ? user.name : profile.name,
+        authorId: user ? user.id : '',
+        author: author.primary,
+        authorEn: author.english || '',
         text: text.trim(),
         createdAt: new Date().toISOString()
     };
@@ -3440,7 +3453,8 @@ function savePostComment(postId, text) {
         window.gloweBackend.insertOwned('comments', {
             post_id: postId,
             text: newComment.text,
-            author_name: newComment.author
+            author_name: newComment.author,
+            author_name_en: newComment.authorEn || null
         }).catch(() => {});
     }
     return newComment;
@@ -3768,9 +3782,10 @@ async function loadCommunityPosts() {
     const helpers = (typeof GlowePosts !== 'undefined') ? GlowePosts : null;
     let rows = [];
     try { rows = await backend.listAll('posts'); } catch (_e) { rows = []; }
-    const mapped = helpers
+    let mapped = helpers
         ? helpers.mapCommunityRows(rows)
         : (rows || []).map(mapPostRow);
+    mapped = await withEnsuredAuthorEnglishNames(mapped);
     communityPosts.push(...mapped);
 }
 
@@ -3880,6 +3895,52 @@ async function withEnsuredEnglishNames(profiles) {
     return GloweLocalizedName.applyEnglishNamePatches(list, patches);
 }
 
+// FR-GLOWE-024 — backfill missing author English snapshots on posts/comments
+// from the author's glowe_profiles row (generate-on-read when still empty).
+async function withEnsuredAuthorEnglishNames(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.authorNeedsEnglishName);
+    if (!needing.length) return list;
+    const ids = [];
+    const seen = {};
+    needing.forEach(function (row) {
+        const id = row.authorId || row.userId;
+        if (!id || seen[String(id)]) return;
+        seen[String(id)] = true;
+        ids.push(String(id));
+    });
+    if (!ids.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return list;
+    const patches = await backend.ensureProfileEnglishNames(ids);
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyAuthorEnglishFromProfiles(list, patches);
+}
+
+function translationToggleSlotHtml() {
+    if (typeof GloweUiConventions !== 'undefined') {
+        return GloweUiConventions.translationToggleSlotHtml();
+    }
+    return '<div class="tr-slot" aria-live="polite"></div>';
+}
+
+function cardActionsClassName() {
+    if (typeof GloweUiConventions !== 'undefined') {
+        return GloweUiConventions.cardActionsClass();
+    }
+    return 'card-actions card-actions--consistent';
+}
+
+function uniqueCardMeta(values) {
+    if (typeof GloweUiConventions !== 'undefined') {
+        return GloweUiConventions.uniqueMeta(values);
+    }
+    return (values || []).filter(Boolean);
+}
+
 function renderOpportunityCard(opportunity, basePath = '') {
     const titleForMessage = jsString(opportunity.title);
     const detailHref = `${basePath}pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
@@ -3916,6 +3977,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
                 </div>
                 ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}">${escapeHtml(badge)}</span>` : ''}
             </div>
+            ${translationToggleSlotHtml()}
             <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
             <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
             <div class="opportunity-meta-group opportunity-details">
@@ -3939,6 +4001,22 @@ function renderOpportunityCard(opportunity, basePath = '') {
 // Render organization card
 function renderOrganizationCard(organization, basePath = '') {
     const profileHref = `${basePath}pages/profile.html?id=${organization.id}`;
+    const saveLabel = (typeof GloweUiConventions !== 'undefined')
+        ? GloweUiConventions.saveLabelFor('profile')
+        : 'Save';
+    const placeBits = uniqueCardMeta([organization.location, organization.scope]);
+    const detailHtml = [
+        ...placeBits.map((v) => `<span class="opportunity-detail">${escapeHtml(v)}</span>`),
+        `<span class="opportunity-detail">${escapeHtml(String(organization.volunteers || 0))} volunteers</span>`
+    ].join('');
+    const skillTags = uniqueCardMeta([
+        organization.type || 'Organization',
+        organization.impactArea || ''
+    ]);
+    const skillsHtml = skillTags.map((tag, i) => {
+        const tr = i === 0 ? ' data-tr-field="org_field"' : '';
+        return `<span class="skill-tag"${tr}>${escapeHtml(tag)}</span>`;
+    }).join('');
     return `
         <div class="opportunity-card" data-tr-card data-tr-type="glowe_profile" data-tr-id="${organization.id}">
             <details class="post-more-menu card-more-menu">
@@ -3955,21 +4033,15 @@ function renderOrganizationCard(organization, basePath = '') {
                 </div>
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
+            ${translationToggleSlotHtml()}
             <h3 class="opportunity-title">${escapeHtml(organization.name)}</h3>
             <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
-            <div class="opportunity-details">
-                <span class="opportunity-detail">${escapeHtml(organization.location)}</span>
-                <span class="opportunity-detail">${escapeHtml(organization.scope || 'Global')}</span>
-                <span class="opportunity-detail">${escapeHtml(organization.volunteers)} volunteers</span>
-            </div>
-            <div class="opportunity-skills">
-                <span class="skill-tag" data-tr-field="org_field">${escapeHtml(organization.type || 'Organization')}</span>
-                <span class="skill-tag">${escapeHtml(organization.impactArea || 'Impact')}</span>
-            </div>
-            <div class="card-actions">
+            <div class="opportunity-details">${detailHtml}</div>
+            <div class="opportunity-skills">${skillsHtml}</div>
+            <div class="${cardActionsClassName()}">
                 <a href="${profileHref}" class="btn btn-outline btn-small">View Profile</a>
                 <button class="btn btn-primary btn-small" type="button" onclick="openReachOutModal('${organization.id}', '${jsString(organization.name)}')">Reach Out</button>
-                ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, 'Save Profile')}
+                ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, saveLabel)}
             </div>
         </div>
     `;
@@ -3996,6 +4068,7 @@ function renderWishCard(wish) {
                 <span class="wish-type" style="background:${style.color}" title="${escapeHtml(wish.type)}">${escapeHtml(wish.type)}</span>
                 ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save', 'heart-button')}
             </div>
+            ${translationToggleSlotHtml()}
             <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
                 ${renderEntityMark(authorName, 'wish-image')}
                 <span class="sr-only">Open wish details</span>
@@ -4072,6 +4145,29 @@ function renderPostCard(post) {
     const deleteButton = ownsPost
         ? `<button type="button" class="post-delete-action" onclick="deleteCommunityPost('${postId}')">Delete post</button>`
         : '';
+    const tagsHtml = tags.length
+        ? `<div class="post-tag-row">${tags.map((tag, i) =>
+            `<span data-tr-field="tags.${i}" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`
+        ).join('')}</div>`
+        : '';
+    const commentsHtml = comments.slice(0, 3).map((comment) => {
+        const commentAuthor = (typeof GloweLocalizedName !== 'undefined')
+            ? GloweLocalizedName.resolveLocalizedName(comment.author, comment.authorEn, gloweReaderLang())
+            : (comment.author || 'Community Member');
+        const commentId = comment.id || '';
+        const trAttrs = commentId
+            ? ` data-tr-card data-tr-type="glowe_comment" data-tr-id="${escapeHtml(String(commentId))}"`
+            : '';
+        return `
+                    <article class="comment-row"${trAttrs}>
+                        ${renderEntityMark(commentAuthor, 'comment-avatar')}
+                        <div>
+                            ${commentId ? translationToggleSlotHtml() : ''}
+                            <strong>${escapeHtml(commentAuthor)}</strong>
+                            <p${commentId ? ' data-tr-field="text"' : ''}>${escapeHtml(comment.text)}</p>
+                        </div>
+                    </article>`;
+    }).join('');
     return `
         <article class="post-card" id="post-${postId}" data-tr-card data-tr-type="glowe_post" data-tr-id="${postId}">
             <details class="post-more-menu">
@@ -4094,9 +4190,10 @@ function renderPostCard(post) {
                 </a>
                 <span class="post-type-tag" title="Post | ${escapeHtml(post.category)}">Post | ${escapeHtml(post.category)}</span>
             </div>
+            ${translationToggleSlotHtml()}
             <h3 data-tr-field="title">${escapeHtml(post.title)}</h3>
             <p data-tr-field="text">${escapeHtml(post.text)}</p>
-            ${tags.length ? `<div class="post-tag-row">${tags.map(tag => `<span title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+            ${tagsHtml}
             <div class="post-engagement-row">
                 <span class="comment-summary" aria-live="polite">${formatCommentCount(comments.length)}</span>
             </div>
@@ -4106,15 +4203,7 @@ function renderPostCard(post) {
                 ${renderShareButton(post.title, `community.html?post=${encodeURIComponent(postId)}`)}
             </div>
             <div class="post-comments" id="comments-${postId}">
-                ${comments.slice(0, 3).map(comment => `
-                    <article class="comment-row">
-                        ${renderEntityMark(comment.author, 'comment-avatar')}
-                        <div>
-                            <strong>${escapeHtml(comment.author)}</strong>
-                            <p>${escapeHtml(comment.text)}</p>
-                        </div>
-                    </article>
-                `).join('')}
+                ${commentsHtml}
                 <form class="comment-form" onsubmit="handlePostComment(event, '${postId}')">
                     <input id="comment-input-${postId}" aria-label="Write a thoughtful comment..." placeholder="Write a thoughtful comment..." required>
                     <button type="submit">Post</button>

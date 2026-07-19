@@ -1354,10 +1354,21 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-180 — GloWe translation toggle slot + card action grid convention (2026-07-19)
+
+**Decision.** Every translated UGC card reserves a `.tr-slot` under the header/author row for the "Show original" / "Show translation" control. `glowe-translate.js` injects into that slot first. Shared helpers live in `js/glowe-ui-conventions.js`. Organization card footers use `.card-actions--consistent` (CSS grid) with short Save/Saved labels so saved vs unsaved cards share one layout. Meta chips (location/scope, type/impact) are deduped before render.
+
+**Rationale.** PM reported inconsistent toggle placement and org-card footers that reflow when the save label length changes. A single convention file prevents per-card drift.
+
+**Affected.** `glowe-ui-conventions.js`, `glowe-translate.js`, `app.js` card renderers, `styles.css`; FR-TRANSLATE-005 AC7; migration `0231` (comments + tags).
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.11 | 2026-07-19 | Added `D-180` (GloWe `.tr-slot` toggle convention + consistent org card actions; FR-TRANSLATE-005 comments/tags). |
 | 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
 | 4.9 | 2026-07-15 | Added `D-177` (GloWe posts share via one native Web Share button with silent clipboard+toast desktop fallback; removes per-network buttons + copy-link; **supersedes `D-67`**; bundles the nine-item GloWe design-fixes UX pass; `FR-GLOWE-008` AC5). |
 | 4.8 | 2026-07-05 | Added `D-69` (GloWe messaging on KC chats supersedes outreach stub; volunteer offers as `post_type='offer'` on the Wishing Well; dev persona seed + workflow; `FR-GLOWE-013..016`). |

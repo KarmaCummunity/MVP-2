@@ -138,3 +138,28 @@ describe('profileNeedsEnglishName / applyEnglishNamePatches', () => {
         expect(patched[1].nameEn).toBe('Naveh');
     });
 });
+
+describe('authorNeedsEnglishName / applyAuthorEnglishFromProfiles', () => {
+    it('detects Hebrew authors missing English', () => {
+        expect(GloweLocalizedName.authorNeedsEnglishName({
+            authorName: 'תמר גולן', authorNameEn: ''
+        })).toBe(true);
+        expect(GloweLocalizedName.authorNeedsEnglishName({
+            author: 'תמר גולן', authorEn: 'Tamar Golan'
+        })).toBe(false);
+    });
+
+    it('stamps authorNameEn / authorEn from profile patches', () => {
+        const posts = GloweLocalizedName.applyAuthorEnglishFromProfiles(
+            [{ authorId: 'u1', authorName: 'תמר גולן', authorNameEn: '' }],
+            [{ id: 'u1', displayNameEn: 'Tamar Golan' }]
+        );
+        expect(posts[0].authorNameEn).toBe('Tamar Golan');
+
+        const comments = GloweLocalizedName.applyAuthorEnglishFromProfiles(
+            [{ authorId: 'u2', author: 'יד תומכת', authorEn: '' }],
+            [{ id: 'u2', orgNameEn: 'Yad Tomechet' }]
+        );
+        expect(comments[0].authorEn).toBe('Yad Tomechet');
+    });
+});

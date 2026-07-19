@@ -105,6 +105,52 @@
         });
     }
 
+    // Best English name from a generate-name-en profile patch.
+    function englishFromProfilePatch(patch) {
+        if (!patch) return '';
+        return trim(patch.orgNameEn) || trim(patch.displayNameEn) || '';
+    }
+
+    // Stamp missing authorNameEn / authorEn on posts/comments from profile
+    // patches keyed by authorId / userId.
+    function applyAuthorEnglishFromProfiles(items, patches, idKeys) {
+        const keys = idKeys && idKeys.length ? idKeys : ['authorId', 'userId'];
+        const byId = {};
+        (patches || []).forEach(function (patch) {
+            if (patch && patch.id) byId[String(patch.id)] = englishFromProfilePatch(patch);
+        });
+        return (items || []).map(function (item) {
+            if (!item) return item;
+            const existing = trim(item.authorNameEn) || trim(item.authorEn);
+            if (existing) return item;
+            let authorId = '';
+            for (let i = 0; i < keys.length; i += 1) {
+                if (item[keys[i]]) {
+                    authorId = String(item[keys[i]]);
+                    break;
+                }
+            }
+            const english = authorId ? byId[authorId] : '';
+            if (!english) return item;
+            const next = Object.assign({}, item);
+            if (Object.prototype.hasOwnProperty.call(item, 'authorName') || Object.prototype.hasOwnProperty.call(item, 'authorNameEn')) {
+                next.authorNameEn = english;
+            }
+            if (Object.prototype.hasOwnProperty.call(item, 'author') || Object.prototype.hasOwnProperty.call(item, 'authorEn')) {
+                next.authorEn = english;
+            }
+            return next;
+        });
+    }
+
+    // True when a post/comment-like row still needs an English author fill.
+    function authorNeedsEnglishName(row) {
+        const r = row || {};
+        const primary = trim(r.authorName != null ? r.authorName : r.author);
+        const english = trim(r.authorNameEn != null ? r.authorNameEn : (r.authorEn || ''));
+        return Boolean(primary) && !english && !isPrimarilyLatin(primary);
+    }
+
     return {
         isPrimarilyLatin: isPrimarilyLatin,
         resolveLocalizedName: resolveLocalizedName,
@@ -113,6 +159,9 @@
         localizedOrganizationName: localizedOrganizationName,
         englishNameOrCopy: englishNameOrCopy,
         profileNeedsEnglishName: profileNeedsEnglishName,
-        applyEnglishNamePatches: applyEnglishNamePatches
+        applyEnglishNamePatches: applyEnglishNamePatches,
+        englishFromProfilePatch: englishFromProfilePatch,
+        applyAuthorEnglishFromProfiles: applyAuthorEnglishFromProfiles,
+        authorNeedsEnglishName: authorNeedsEnglishName
     };
 });

@@ -110,13 +110,20 @@ describe('postCanonicalUrl', () => {
 describe('mapCommentRow', () => {
     it('maps a glowe_comments row to the card shape', () => {
         expect(GlowePosts.mapCommentRow({
-            id: 'c1', post_id: 'p1', text: 'Nice', author_name: 'Dana', created_at: '2026-01-02'
-        })).toEqual({ id: 'c1', postId: 'p1', author: 'Dana', text: 'Nice', createdAt: '2026-01-02' });
+            id: 'c1', post_id: 'p1', text: 'Nice', author_name: 'Dana',
+            author_name_en: 'Dana', user_id: 'u1', created_at: '2026-01-02'
+        })).toEqual({
+            id: 'c1', postId: 'p1', authorId: 'u1', author: 'Dana',
+            authorEn: 'Dana', text: 'Nice', createdAt: '2026-01-02'
+        });
     });
 
     it('applies friendly defaults for missing fields', () => {
         expect(GlowePosts.mapCommentRow({ id: 'c2', post_id: 'p2' }))
-            .toEqual({ id: 'c2', postId: 'p2', author: 'Community Member', text: '', createdAt: '' });
+            .toEqual({
+                id: 'c2', postId: 'p2', authorId: '', author: 'Community Member',
+                authorEn: '', text: '', createdAt: ''
+            });
     });
 });
 

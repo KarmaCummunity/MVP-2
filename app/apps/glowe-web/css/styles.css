@@ -163,26 +163,30 @@ ul {
     display: flex;
     align-items: center;
     justify-content: space-between;
-    padding: 16px 20px;
-    gap: 14px;
+    flex-wrap: nowrap;
+    padding: 16px clamp(10px, 1.5vw, 20px);
+    gap: clamp(6px, 1vw, 14px);
+    min-width: 0;
 }
 
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: clamp(6px, 0.8vw, 10px);
+    flex: 0 0 auto;
+    min-width: 0;
 }
 
 .logo-icon {
-    width: 42px;
-    height: 42px;
+    width: clamp(32px, 3.2vw, 42px);
+    height: clamp(32px, 3.2vw, 42px);
     background: url('../assets/glowe-life-flower.png') center / contain no-repeat;
     font-size: 0;
     flex: 0 0 auto;
 }
 
 .logo-text {
-    font-size: 1.5rem;
+    font-size: clamp(1.05rem, 0.75rem + 0.7vw, 1.5rem);
     font-weight: 700;
     color: var(--primary-dark);
     letter-spacing: 0;
@@ -190,30 +194,34 @@ ul {
 
 .main-nav {
     display: flex;
-    gap: 6px;
-    padding: 4px;
+    align-items: center;
+    gap: clamp(8px, 1.1vw, 18px);
+    padding: clamp(4px, 0.35vw, 6px) clamp(8px, 0.8vw, 14px);
     background: rgba(15, 93, 85, 0.06);
     border: 1px solid rgba(15, 93, 85, 0.12);
     border-radius: 999px;
     max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.main-nav::-webkit-scrollbar {
-    display: none;
+    min-width: 0;
+    flex: 1 1 0;
+    justify-content: center;
+    flex-wrap: nowrap;
+    /* Scale labels to fit — never create a horizontal scrollbar. */
+    overflow-x: hidden;
 }
 
 .nav-link {
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: clamp(0.7rem, 0.4rem + 0.55vw, 0.92rem);
     text-transform: none;
     transition: var(--transition);
-    padding: 8px 14px;
+    padding: clamp(6px, 0.3vw + 4px, 8px) clamp(10px, 0.7vw + 6px, 16px);
     position: relative;
     border-radius: 999px;
     white-space: nowrap;
+    min-width: 0;
+    flex: 0 0 auto;
+    text-align: center;
 }
 
 .nav-link:hover,
@@ -229,25 +237,68 @@ ul {
 
 .auth-buttons {
     display: flex;
-    gap: 12px;
+    gap: clamp(6px, 0.8vw, 12px);
     flex: 0 0 auto;
+    min-width: 0;
+}
+
+.auth-buttons .btn {
+    padding: clamp(6px, 0.4vw + 4px, 10px) clamp(10px, 0.8vw + 6px, 18px);
+    font-size: clamp(0.75rem, 0.55rem + 0.35vw, 0.92rem);
+    white-space: nowrap;
 }
 
 .user-menu {
     display: flex;
     align-items: center;
-    gap: 10px;
-    flex: 0 0 auto;
+    gap: clamp(4px, 0.6vw, 10px);
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 .user-greeting {
     color: var(--text-secondary);
     font-weight: 600;
     text-decoration: none;
+    max-width: 9.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 a.user-greeting:hover {
     color: var(--primary-color);
+}
+
+/* Tablet+: match Messages chrome — icon-only Settings/Admin before phone breakpoint. */
+@media (max-width: 992px) {
+    .user-menu .header-settings-btn,
+    .user-menu .glowe-admin-link {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-settings-label,
+    .glowe-admin-label {
+        display: none;
+    }
+
+    .header-settings-icon,
+    .glowe-admin-icon {
+        display: inline-flex;
+    }
+
+    .user-greeting {
+        display: none;
+    }
 }
 
 .header-icon-btn {
@@ -287,8 +338,8 @@ a.user-greeting:hover {
     height: 20px;
 }
 
-/* Settings/Admin keep their text labels on desktop; icons shown only on
-   phone widths (see the max-width: 680px block). */
+/* Settings/Admin keep text labels on wide desktops; icons from ≤992px
+   (see tablet media query) and phones (≤680px). */
 .header-settings-icon,
 .glowe-admin-icon {
     display: none;
@@ -2310,25 +2361,6 @@ a.user-greeting:hover {
 
 /* ===== Responsive ===== */
 @media (max-width: 992px) {
-    .main-header .container {
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .main-nav {
-        order: 3;
-        width: 100%;
-        overflow: visible;
-        flex-wrap: wrap;
-        justify-content: center;
-        border-radius: var(--radius-md);
-    }
-
-    .nav-link {
-        flex: 1 1 128px;
-        text-align: center;
-    }
-    
     .hero .container {
         flex-direction: column;
         text-align: center;
@@ -2655,6 +2687,27 @@ a.user-greeting:hover {
     justify-content: space-between;
     gap: 12px;
     flex-wrap: wrap;
+}
+
+/* Org/opportunity footers: identical 3-column layout whether Save or Saved. */
+.card-actions.card-actions--consistent {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.card-actions.card-actions--consistent > .btn,
+.card-actions.card-actions--consistent > a.btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.card-actions.card-actions--consistent > .btn-primary {
+    min-width: 7.5rem;
 }
 
 .wish-type {
@@ -5442,16 +5495,6 @@ a.user-greeting:hover {
         padding-right: clamp(18px, 3vw, 32px);
     }
 
-    .main-header .container {
-        flex-wrap: wrap;
-    }
-
-    .main-nav {
-        order: 3;
-        flex: 1 1 100%;
-        justify-content: center;
-    }
-
     .home-intro-section .container,
     .home-ecosystem-section .container,
     .next-story-section .container,
@@ -5597,6 +5640,7 @@ a.user-greeting:hover {
     }
 
     .main-header .container {
+        flex-wrap: wrap;
         padding: 12px 14px;
         gap: 10px;
     }
@@ -5661,10 +5705,14 @@ a.user-greeting:hover {
     }
 
     .main-nav {
+        order: 3;
         display: grid;
         grid-template-columns: repeat(2, minmax(0, 1fr));
         border-radius: var(--radius-md);
         width: 100%;
+        flex: 1 1 100%;
+        overflow: visible;
+        flex-wrap: wrap;
     }
 
     .nav-link {
@@ -5672,6 +5720,7 @@ a.user-greeting:hover {
         font-size: 0.82rem;
         white-space: normal;
         text-align: center;
+        flex: 1 1 auto;
     }
 
     .hero h1,
@@ -6251,10 +6300,22 @@ body.glowe-member-home main > section:not(#member-home) {
     }
 }
 
-/* FR-TRANSLATE-005 — "Show original" toggle injected on translated UGC cards. */
+/* FR-TRANSLATE-005 — reserved slot + "Show original" toggle on UGC cards. */
+.tr-slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 0;
+    margin: 2px 0 0;
+}
+
+.tr-slot:empty {
+    display: none;
+}
+
 .tr-toggle {
     display: inline-block;
-    margin-top: 8px;
+    margin: 0;
     padding: 2px 8px;
     border: 1px solid var(--primary-light);
     border-radius: 999px;
@@ -6267,6 +6328,11 @@ body.glowe-member-home main > section:not(#member-home) {
 
 .tr-toggle:hover {
     background: var(--primary-light);
+}
+
+.comment-row .tr-slot {
+    justify-content: flex-start;
+    margin-bottom: 2px;
 }
 
 /* ── FR-GLOWE-016 — adaptive create system ─────────────────────────────── */
