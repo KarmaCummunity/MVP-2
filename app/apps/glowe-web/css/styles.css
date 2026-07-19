@@ -6186,6 +6186,26 @@ html[dir="rtl"] .lang-toggle {
     box-shadow: 0 6px 16px rgba(15, 93, 85, 0.08);
 }
 
+/* ===== Auth-aware marketing blocks ===== */
+.glowe-member-only {
+    display: none;
+}
+
+body.glowe-signed-in .glowe-guest-only {
+    display: none !important;
+}
+
+body.glowe-signed-in .glowe-member-only {
+    display: block;
+}
+
+.about-cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
+}
+
 /* ===== Member home (FR-GLOWE-016) ===== */
 /* When a signed-in member is on the home page, the marketing sections are
    hidden and the personalized member-home section takes over the same container. */

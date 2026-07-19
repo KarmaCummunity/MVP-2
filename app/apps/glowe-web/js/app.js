@@ -7805,6 +7805,8 @@ const GLOWE_TRANSLATIONS = {
         "You may request deletion of your account or data at any time.": "תוכלו לבקש את מחיקת החשבון או הנתונים שלכם בכל עת.",
         "You retain full ownership of your intellectual property.": "אתם שומרים על בעלות מלאה על הקניין הרוחני שלכם.",
         "You've got something the world needs.": "יש לכם משהו שהעולם זקוק לו.",
+        "You're already part of GloWe.": "אתם כבר חלק מ-GloWe.",
+        "Explore the community, share what you know, or pick up where you left off.": "גלו את הקהילה, שתפו את מה שאתם יודעים, או המשיכו מאיפה שהפסקתם.",
         "Your Availability": "הזמינות שלכם",
         "Your Community Home": "בית הקהילה שלכם",
         "Your full name": "השם המלא שלכם",
