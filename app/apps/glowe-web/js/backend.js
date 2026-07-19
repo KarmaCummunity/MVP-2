@@ -279,14 +279,34 @@
         return data;
     }
 
+    // Prefer a clean same-origin return URL (no hash). If redirectTo is rejected
+    // by Supabase Auth's allowlist, Google lands on site_url (pages.dev) instead
+    // of local — keep this deterministic for local GloWe on :4321.
+    function oauthRedirectTo() {
+        try {
+            const u = new URL(window.location.href);
+            return u.origin + u.pathname + u.search;
+        } catch (_e) {
+            return window.location.origin + '/';
+        }
+    }
+
     async function signInWithGoogle() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return null;
+        const redirectTo = oauthRedirectTo();
         const { data, error } = await supabaseClient.auth.signInWithOAuth({
             provider: 'google',
-            options: { redirectTo: window.location.href }
+            options: {
+                redirectTo,
+                // Take control of navigation so local redirects are not dropped.
+                skipBrowserRedirect: true
+            }
         });
         if (error) throw error;
+        if (data && data.url) {
+            window.location.assign(data.url);
+        }
         return data;
     }
 
