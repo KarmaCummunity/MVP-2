@@ -125,6 +125,101 @@
         return { valid: true, error: '' };
     }
 
+    function startOfLocalDay(d) {
+        return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
+    }
+
+    function dayLabelForIso(iso, nowMs, labelFn) {
+        const d = new Date(iso);
+        const now = new Date(typeof nowMs === 'number' ? nowMs : Date.now());
+        const diffDays = Math.round((startOfLocalDay(now) - startOfLocalDay(d)) / 86400000);
+        if (diffDays === 0) return labelFn('today');
+        if (diffDays === 1) return labelFn('yesterday');
+        const sameYear = d.getFullYear() === now.getFullYear();
+        try {
+            return d.toLocaleDateString(undefined, {
+                weekday: 'long', day: 'numeric', month: 'long',
+                ...(sameYear ? {} : { year: 'numeric' })
+            });
+        } catch (_e) {
+            return d.toISOString().slice(0, 10);
+        }
+    }
+
+    function groupMessagesWithDaySeparators(messages, nowMs, labelFn) {
+        const out = [];
+        let lastDay = '';
+        (Array.isArray(messages) ? messages : []).forEach(function (m) {
+            const dayKey = String(m.createdAt || '').slice(0, 10);
+            if (dayKey && dayKey !== lastDay) {
+                lastDay = dayKey;
+                out.push({ type: 'day', label: dayLabelForIso(m.createdAt, nowMs, labelFn) });
+            }
+            out.push({ type: 'msg', message: m });
+        });
+        return out;
+    }
+
+    function createOptimisticMessage(clientId, meId, chatId, body) {
+        return {
+            clientId: String(clientId),
+            id: String(clientId),
+            chatId: String(chatId),
+            mine: true,
+            isSystem: false,
+            text: String(body),
+            createdAt: new Date().toISOString(),
+            pending: true,
+            failed: false
+        };
+    }
+
+    function reconcileOptimistic(messages, serverRow, clientId, meId) {
+        const mapped = mapMessageRow(serverRow, meId);
+        return (Array.isArray(messages) ? messages : []).map(function (m) {
+            if (m.clientId === clientId || (m.pending && m.text === mapped.text && m.mine)) {
+                return Object.assign({}, mapped, { clientId: m.clientId, pending: false, failed: false });
+            }
+            return m;
+        });
+    }
+
+    function markMessageFailed(messages, clientId) {
+        return (Array.isArray(messages) ? messages : []).map(function (m) {
+            if (m.clientId === clientId) return Object.assign({}, m, { pending: false, failed: true });
+            return m;
+        });
+    }
+
+    function shouldDedupeIncoming(existing, incomingRow) {
+        const id = incomingRow && (incomingRow.message_id || incomingRow.id);
+        if (!id) return false;
+        return (Array.isArray(existing) ? existing : []).some(function (m) {
+            return String(m.id) === String(id);
+        });
+    }
+
+    function patchInboxOnNewMessage(inbox, messageRow, meId, openChatId) {
+        const chatId = String(messageRow.chat_id || '');
+        const body = String(messageRow.body || '');
+        const at = messageRow.created_at || '';
+        const senderId = String(messageRow.sender_id || '');
+        const list = (Array.isArray(inbox) ? inbox : []).map(function (c) { return Object.assign({}, c); });
+        const idx = list.findIndex(function (c) { return String(c.chatId) === chatId; });
+        const bumpUnread = openChatId !== chatId && senderId !== String(meId);
+        if (idx >= 0) {
+            const row = list[idx];
+            row.previewText = body;
+            row.previewAt = at;
+            row.lastMessageAt = at;
+            if (bumpUnread) row.unread = (Number(row.unread) || 0) + 1;
+            list.splice(idx, 1);
+            list.unshift(row);
+            return list;
+        }
+        return list;
+    }
+
     return {
         mapChatRow: mapChatRow,
         inboxRows: inboxRows,
@@ -134,6 +229,13 @@
         mapMessageRow: mapMessageRow,
         mapMessageRows: mapMessageRows,
         formatChatTime: formatChatTime,
-        validateMessageDraft: validateMessageDraft
+        validateMessageDraft: validateMessageDraft,
+        dayLabelForIso: dayLabelForIso,
+        groupMessagesWithDaySeparators: groupMessagesWithDaySeparators,
+        createOptimisticMessage: createOptimisticMessage,
+        reconcileOptimistic: reconcileOptimistic,
+        markMessageFailed: markMessageFailed,
+        shouldDedupeIncoming: shouldDedupeIncoming,
+        patchInboxOnNewMessage: patchInboxOnNewMessage
     };
 });

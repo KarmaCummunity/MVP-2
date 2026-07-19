@@ -8502,6 +8502,9 @@ const GLOWE_TRANSLATIONS = {
         "This conversation could not be opened.": "לא הצלחנו לפתוח את השיחה הזו.",
         "Back to messages": "חזרה להודעות",
         "Back": "חזרה",
+        "Today": "היום",
+        "Yesterday": "אתמול",
+        "Retry": "נסה שוב",
         "No messages yet. Say hello!": "אין הודעות עדיין. אמרו שלום!",
         "Write a message...": "כתבו הודעה...",
         "Send": "שליחה",
@@ -8766,172 +8769,9 @@ async function deleteAccount() {
     await logout();
 }
 
-// Messages page (FR-GLOWE-016 AC6) — a real inbox + thread view riding on
-// KC's shared public.chats / public.messages. ?chat=<id> opens a thread.
-// Gate the messages surface: guests get a sign-in prompt, an unconfigured
-// backend gets an explanation. Returns true when the inbox may render.
-function messagesPageReady(container) {
-    if (!gloweIsLoggedIn()) {
-        container.innerHTML = `
-            <div class="empty-state">
-                <h3>Sign in to see your messages</h3>
-                <p>Direct conversations with volunteers, organizations, and partners live here once you are signed in.</p>
-                <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
-            </div>
-        `;
-        return false;
-    }
-    if (!backendReady()) {
-        container.innerHTML = '<div class="empty-state"><h3>Messages are unavailable</h3><p>Messaging needs a live connection right now. Please try again shortly.</p></div>';
-        return false;
-    }
-    return true;
-}
-
+// Messages page (FR-GLOWE-016 AC6) — inbox + thread delegated to GloweChatUI (FR-GLOWE-014).
 function initMessagesPage() {
-    const container = document.getElementById('messages-content');
-    if (!container || !messagesPageReady(container)) return;
-    const chatId = new URLSearchParams(window.location.search).get('chat');
-    if (chatId) {
-        renderChatThread(container, chatId);
-        return;
-    }
-    renderChatInbox(container);
-}
-
-function chatLoadingState(container, body) {
-    container.innerHTML = `<div class="empty-state"><h3>Loading…</h3><p>${body}</p></div>`;
-}
-
-function chatEmptyInboxState(container) {
-    container.innerHTML = `
-        <div class="empty-state">
-            <h3>No conversations yet</h3>
-            <p>Reach out to an organization, offer help on a need, or message a community member — conversations will appear here.</p>
-            <div class="modal-actions">
-                <a class="btn btn-primary" href="organizations.html">Browse Organizations</a>
-                <a class="btn btn-outline" href="wishing-well.html">Open the Wishing Well</a>
-            </div>
-        </div>
-    `;
-}
-
-function chatCounterpartName(chat, profiles) {
-    const who = profiles[chat.otherId] || {};
-    return who.name || 'GloWe member';
-}
-
-function chatUnreadBadgeHtml(unread) {
-    return unread ? `<span class="chat-unread-badge">${unread}</span>` : '';
-}
-
-function renderChatInboxRow(chat, profiles) {
-    const name = chatCounterpartName(chat, profiles);
-    const rowClass = chat.unread ? ' has-unread' : '';
-    const preview = String(chat.previewText || '').slice(0, 90);
-    const time = GloweMessages.formatChatTime(chat.previewAt || chat.lastMessageAt);
-    return `
-        <a class="chat-inbox-row${rowClass}" href="messages.html?chat=${encodeURIComponent(chat.chatId)}">
-            ${renderEntityMark(name, 'avatar')}
-            <span class="chat-inbox-main">
-                <strong>${escapeHtml(name)}</strong>
-                <small>${escapeHtml(preview)}</small>
-            </span>
-            <span class="chat-inbox-side">
-                <small>${escapeHtml(time)}</small>
-                ${chatUnreadBadgeHtml(chat.unread)}
-            </span>
-        </a>
-    `;
-}
-
-async function renderChatInbox(container) {
-    chatLoadingState(container, 'Fetching your conversations.');
-    const backend = window.gloweBackend;
-    const me = await backend.currentUser().catch(() => null);
-    if (!me) return;
-    const rows = await backend.kcListMyChats().catch(() => []);
-    let chats = GloweMessages.inboxRows(rows, me.id);
-    if (!chats.length) {
-        chatEmptyInboxState(container);
-        return;
-    }
-    const chatIds = chats.map(c => c.chatId);
-    const [previews, unread, profiles] = await Promise.all([
-        backend.kcLastMessages(chatIds).catch(() => []),
-        backend.kcUnreadCounts(chatIds).catch(() => []),
-        backend.kcCounterpartProfiles(chats.map(c => c.otherId)).catch(() => ({}))
-    ]);
-    chats = GloweMessages.attachUnread(GloweMessages.attachPreviews(chats, previews), unread);
-    container.innerHTML = `<div class="chat-inbox-list">${chats.map(chat => renderChatInboxRow(chat, profiles)).join('')}</div>`;
-}
-
-// Resolve the counterpart's display identity for the thread header. Falls
-// back to a generic label when the chat row or profile is unavailable.
-async function resolveChatCounterpartName(backend, chatId, meId) {
-    const myChats = await backend.kcListMyChats(50).catch(() => []);
-    const chatRow = myChats.find(c => String(c.chat_id) === String(chatId));
-    if (!chatRow) return 'GloWe member';
-    const counterpartId = GloweMessages.mapChatRow(chatRow, meId).otherId;
-    const profiles = await backend.kcCounterpartProfiles([counterpartId]).catch(() => ({}));
-    return (profiles[counterpartId] || {}).name || 'GloWe member';
-}
-
-function renderChatBubbles(messages) {
-    if (!messages.length) return '<p class="muted-note">No messages yet. Say hello!</p>';
-    return messages.map(m => `
-        <div class="chat-bubble${m.mine ? ' mine' : ''}${m.isSystem ? ' system' : ''}">
-            <p>${escapeHtml(m.text)}</p>
-            <small>${escapeHtml(GloweMessages.formatChatTime(m.createdAt))}</small>
-        </div>
-    `).join('');
-}
-
-async function renderChatThread(container, chatId) {
-    chatLoadingState(container, 'Opening the conversation.');
-    const backend = window.gloweBackend;
-    const me = await backend.currentUser().catch(() => null);
-    if (!me) return;
-    let rows;
-    try {
-        rows = await backend.kcGetMessages(chatId, 100);
-    } catch (_e) {
-        container.innerHTML = '<div class="empty-state"><h3>Conversation unavailable</h3><p>This conversation could not be opened.</p><a class="btn btn-outline" href="messages.html">Back to messages</a></div>';
-        return;
-    }
-    const counterpartName = await resolveChatCounterpartName(backend, chatId, me.id);
-    const messages = GloweMessages.mapMessageRows(rows, me.id);
-    container.innerHTML = `
-        <div class="chat-thread">
-            <div class="chat-thread-header">
-                <a class="btn btn-outline btn-small" href="messages.html">Back</a>
-                <strong>${escapeHtml(counterpartName)}</strong>
-            </div>
-            <div class="chat-thread-messages" id="chat-thread-messages">
-                ${renderChatBubbles(messages)}
-            </div>
-            <form class="chat-send-form" onsubmit="handleChatSend(event, '${jsString(chatId)}')">
-                <input id="chat-send-input" autocomplete="off" maxlength="2000" placeholder="Write a message...">
-                <button class="btn btn-primary" type="submit">Send</button>
-            </form>
-        </div>
-    `;
-    const scroller = document.getElementById('chat-thread-messages');
-    if (scroller) scroller.scrollTop = scroller.scrollHeight;
-    backend.kcMarkChatRead(chatId).catch(() => {});
-}
-
-async function handleChatSend(event, chatId) {
-    event.preventDefault();
-    const text = fieldValue('chat-send-input');
-    const check = GloweMessages.validateMessageDraft(text);
-    if (!check.valid) return;
-    const sent = await window.gloweBackend.kcSendMessage(chatId, text).catch(() => null);
-    if (!sent) {
-        showSuccessModal('Could not send', 'Something went wrong sending your message. Please try again.');
-        return;
-    }
-    renderChatThread(document.getElementById('messages-content'), chatId);
+    if (window.GloweChatUI) window.GloweChatUI.initMessagesPage();
 }
 
 // Seed the opening message of a fresh conversation; the chat still opens if
@@ -8968,6 +8808,7 @@ function applyMessagesBadge(total) {
     badge.textContent = messagesBadgeCount(total);
     anchor.appendChild(badge);
 }
+window.applyMessagesBadge = applyMessagesBadge;
 
 // Header unread badge (FR-GLOWE-016) — total unread messages across chats.
 async function refreshMessagesBadge() {
@@ -8996,6 +8837,11 @@ document.addEventListener('DOMContentLoaded', function() {
     ensureGlobalUI();
     normalizeMainNavigation();
     refreshMessagesBadge();
+    if (window.GloweChatUI && gloweIsLoggedIn() && backendReady()) {
+        window.GloweChatUI.startGlobalInboxSubscription({
+            onUnreadTotalChanged: applyMessagesBadge
+        });
+    }
     if (localStorage.getItem('gloweLowDataMode') === 'true') {
         document.body.classList.add('low-data-mode');
     }

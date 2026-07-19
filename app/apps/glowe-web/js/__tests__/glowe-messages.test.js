@@ -103,3 +103,72 @@ describe('formatChatTime', () => {
     expect(label).toBeTruthy();
   });
 });
+
+describe('dayLabelForIso / groupMessagesWithDaySeparators', () => {
+  const NOW = new Date(2026, 6, 19, 15, 0, 0).getTime();
+  const labels = (k) => ({ today: 'Today', yesterday: 'Yesterday' }[k] || k);
+
+  it('labels today and yesterday', () => {
+    expect(GloweMessages.dayLabelForIso(new Date(2026, 6, 19, 10, 0, 0).toISOString(), NOW, labels)).toBe('Today');
+    expect(GloweMessages.dayLabelForIso(new Date(2026, 6, 18, 10, 0, 0).toISOString(), NOW, labels)).toBe('Yesterday');
+  });
+
+  it('inserts day separators between messages', () => {
+    const msgs = [
+      { id: 'm1', text: 'a', createdAt: new Date(2026, 6, 18, 10, 0, 0).toISOString(), mine: false, isSystem: false },
+      { id: 'm2', text: 'b', createdAt: new Date(2026, 6, 19, 10, 0, 0).toISOString(), mine: true, isSystem: false }
+    ];
+    const items = GloweMessages.groupMessagesWithDaySeparators(msgs, NOW, labels);
+    expect(items.filter(i => i.type === 'day').length).toBe(2);
+    expect(items.filter(i => i.type === 'msg').map(i => i.message.id)).toEqual(['m1', 'm2']);
+  });
+});
+
+describe('optimistic send helpers', () => {
+  const CHAT = 'cccccccc-0000-0000-0000-000000000003';
+
+  it('creates a pending optimistic row', () => {
+    const row = GloweMessages.createOptimisticMessage('client-1', ME, CHAT, 'hello');
+    expect(row).toMatchObject({ clientId: 'client-1', pending: true, failed: false, mine: true, text: 'hello' });
+  });
+
+  it('reconciles pending with server row', () => {
+    const list = [GloweMessages.createOptimisticMessage('client-1', ME, CHAT, 'hello')];
+    const server = { message_id: 'srv-1', sender_id: ME, body: 'hello', created_at: '2026-07-19T10:00:00Z', kind: 'user' };
+    const out = GloweMessages.reconcileOptimistic(list, server, 'client-1', ME);
+    expect(out[0]).toMatchObject({ id: 'srv-1', pending: false, failed: false });
+  });
+
+  it('marks failed without removing the row', () => {
+    const list = [GloweMessages.createOptimisticMessage('client-1', ME, CHAT, 'hello')];
+    const out = GloweMessages.markMessageFailed(list, 'client-1');
+    expect(out[0]).toMatchObject({ failed: true, pending: false });
+  });
+});
+
+describe('shouldDedupeIncoming / patchInboxOnNewMessage', () => {
+  it('dedupes by message_id', () => {
+    const existing = [{ id: 'm1', text: 'hi' }];
+    expect(GloweMessages.shouldDedupeIncoming(existing, { message_id: 'm1', body: 'hi' })).toBe(true);
+    expect(GloweMessages.shouldDedupeIncoming(existing, { message_id: 'm2', body: 'yo' })).toBe(false);
+  });
+
+  it('moves chat to top and updates preview on new message', () => {
+    const inbox = [
+      { chatId: 'c2', otherId: OTHER, previewText: 'old', previewAt: '2026-07-18', unread: 0, lastMessageAt: '2026-07-18' },
+      { chatId: 'c1', otherId: ME, previewText: 'x', previewAt: '2026-07-17', unread: 1, lastMessageAt: '2026-07-17' }
+    ];
+    const row = { chat_id: 'c2', sender_id: OTHER, body: 'new', created_at: '2026-07-19T12:00:00Z' };
+    const out = GloweMessages.patchInboxOnNewMessage(inbox, row, ME, null);
+    expect(out[0].chatId).toBe('c2');
+    expect(out[0].previewText).toBe('new');
+    expect(out[0].unread).toBe(1);
+  });
+
+  it('does not bump unread when that chat is open', () => {
+    const inbox = [{ chatId: 'c1', otherId: OTHER, previewText: 'x', previewAt: '2026-07-17', unread: 0, lastMessageAt: '2026-07-17' }];
+    const row = { chat_id: 'c1', sender_id: OTHER, body: 'new', created_at: '2026-07-19T12:00:00Z' };
+    const out = GloweMessages.patchInboxOnNewMessage(inbox, row, ME, 'c1');
+    expect(out[0].unread).toBe(0);
+  });
+});

@@ -6678,6 +6678,42 @@ body.glowe-member-home main > section:not(#member-home) {
     opacity: 0.75;
 }
 
+.chat-day-separator {
+    display: flex;
+    justify-content: center;
+    margin: 0.75rem 0;
+}
+
+.chat-day-separator span {
+    font-size: 0.75rem;
+    padding: 0.25rem 0.75rem;
+    border-radius: 999px;
+    background: var(--surface-muted, #f3f0ec);
+    color: var(--text-muted, #6b6560);
+}
+
+.chat-bubble.pending {
+    opacity: 0.7;
+}
+
+.chat-bubble.failed {
+    border: 1px solid #c44;
+}
+
+.chat-retry-btn {
+    margin-top: 0.25rem;
+    font-size: 0.75rem;
+    text-decoration: underline;
+    background: none;
+    border: none;
+    cursor: pointer;
+}
+
+.chat-thread-header a {
+    color: inherit;
+    text-decoration: underline;
+}
+
 .chat-send-form {
     display: flex;
     gap: 8px;

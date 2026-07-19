@@ -496,6 +496,8 @@ async function logout() {
     }
     localStorage.removeItem(GLOWE_SUPABASE_SESSION_KEY);
 
+    if (window.GloweChatUI) window.GloweChatUI.teardownAll();
+
     // Always return to the guest home: a full nav tears down any open modal and
     // guarantees no member-only view survives the session change.
     window.location.href = gloweHomeHref();

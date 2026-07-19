@@ -922,6 +922,24 @@
         return true;
     }
 
+    async function kcSubscribeToChat(chatId, callbacks) {
+        const client = await getClient();
+        const user = await currentUser();
+        if (!client || !user || !chatId || typeof window.GloweChatRealtime === 'undefined') {
+            return function () {};
+        }
+        return window.GloweChatRealtime.subscribeToChat(client, chatId, callbacks || {});
+    }
+
+    async function kcSubscribeToInbox(callbacks, options) {
+        const client = await getClient();
+        const user = await currentUser();
+        if (!client || !user || typeof window.GloweChatRealtime === 'undefined') {
+            return function () {};
+        }
+        return window.GloweChatRealtime.subscribeToInbox(client, user.id, callbacks || {}, options || {});
+    }
+
     // Compact identity for a chat counterpart (orgs show their org name).
     // Includes English variants so the messages UI can localize (FR-GLOWE-024).
     function kcProfileSummary(row) {
@@ -1086,6 +1104,8 @@
         kcGetMessages,
         kcSendMessage,
         kcMarkChatRead,
+        kcSubscribeToChat,
+        kcSubscribeToInbox,
         kcCounterpartProfiles,
         kcFollowCounts,
         apiRequest
