@@ -151,6 +151,45 @@
         return Boolean(primary) && !english && !isPrimarilyLatin(primary);
     }
 
+    const NAME_MARK_CLASSES = ['entity-mark', 'avatar', 'comment-avatar', 'wish-image'];
+
+    function isNameMark(el) {
+        if (!el || !el.classList) return false;
+        for (let i = 0; i < NAME_MARK_CLASSES.length; i += 1) {
+            if (el.classList.contains(NAME_MARK_CLASSES[i])) return true;
+        }
+        return false;
+    }
+
+    function initialsForName(name) {
+        return String(name || '')
+            .replace(/&/g, ' ')
+            .split(/\s+/)
+            .filter(Boolean)
+            .slice(0, 2)
+            .map(function (word) { return word[0]; })
+            .join('')
+            .toUpperCase() || 'GW';
+    }
+
+    // When the UGC toggle shows source prose, show the primary name; otherwise
+    // follow the reader interface language (FR-GLOWE-024 + FR-TRANSLATE-005 AC7).
+    function nameForToggleView(primary, english, lang, showingSource) {
+        if (showingSource) return trim(primary) || trim(english) || '';
+        return resolveLocalizedName(primary, english, lang);
+    }
+
+    function applyToggleNamesInCard(card, showingSource, lang) {
+        if (!card || !card.querySelectorAll) return;
+        card.querySelectorAll('[data-ln-primary]').forEach(function (el) {
+            if (el.closest('[data-tr-card]') !== card) return;
+            const primary = el.getAttribute('data-ln-primary') || '';
+            const english = el.getAttribute('data-ln-english') || '';
+            const text = nameForToggleView(primary, english, lang, showingSource);
+            el.textContent = isNameMark(el) ? initialsForName(text) : text;
+        });
+    }
+
     return {
         isPrimarilyLatin: isPrimarilyLatin,
         resolveLocalizedName: resolveLocalizedName,
@@ -162,6 +201,9 @@
         applyEnglishNamePatches: applyEnglishNamePatches,
         englishFromProfilePatch: englishFromProfilePatch,
         applyAuthorEnglishFromProfiles: applyAuthorEnglishFromProfiles,
-        authorNeedsEnglishName: authorNeedsEnglishName
+        authorNeedsEnglishName: authorNeedsEnglishName,
+        nameForToggleView: nameForToggleView,
+        applyToggleNamesInCard: applyToggleNamesInCard,
+        initialsForName: initialsForName
     };
 });

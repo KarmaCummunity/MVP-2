@@ -159,6 +159,10 @@ if (typeof window !== 'undefined') {
                         ? el.getAttribute('data-tr-translated')
                         : el.getAttribute('data-tr-source');
                 });
+                const ln = window.GloweLocalizedName;
+                if (ln && typeof ln.applyToggleNamesInCard === 'function') {
+                    ln.applyToggleNamesInCard(card, !showingSource, readerLang());
+                }
                 btn.setAttribute('data-showing', showingSource ? 'translation' : 'source');
                 btn.textContent = showingSource ? labels.show : labels.hide;
                 localizeLabel(btn);
