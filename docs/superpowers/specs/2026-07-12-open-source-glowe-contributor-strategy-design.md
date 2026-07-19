@@ -124,6 +124,60 @@ Written for an external contributor, not an internal agent. Sections:
 - **No change** to `CODEOWNERS` or collaborator roles (prior-session decision,
   reaffirmed).
 
+### 6. Mandatory CI security gates before merge into `dev`
+
+PM directive: nothing merges into `dev` unless every gate below is green, and
+`main` is reachable **only** via a `dev`→`main` promotion PR (already true per
+`CLAUDE.md` §6/§13 — reaffirmed here, no change needed to that rule).
+
+Current state of each gate, checked against the live repo:
+
+| # | Gate | Status today | Action needed |
+|---|------|--------------|----------------|
+| 1 | SonarCloud (Sonar Qube Cloud) | ✅ Already a required check (`ci-sonar.yml`, "SonarCloud quality gate" required on both `main` and `dev`) | None |
+| 2 | Snyk | ❌ Not present | Add `.github/workflows/ci-snyk.yml` (dependency + code vulnerability scan); add as required check on `dev`. **Needs a Snyk account + `SNYK_TOKEN` repo secret — the PM must sign up and add the token; I'll scaffold the workflow to consume it.** |
+| 3 | CodeRabbit | ❌ Not present | GitHub App, not a workflow file. **Requires the PM to install "CodeRabbit" from the GitHub Marketplace on this repo** (app-install grants are a permission only the repo owner can approve) — I can prepare a `.coderabbit.yaml` config once installed. |
+| 4 | GitHub Dependabot | ✅ Already enabled (security updates `status: enabled`; `dependabot.yml` configured, version-update PRs capped at 0 per existing TD-173 decision, security PRs unaffected) | None |
+| 5 | GitGuardian | ❌ Not present | Third-party secret-scanning service, complements (doesn't replace) native GitHub secret scanning. **Requires the PM to sign up at gitguardian.com and install their GitHub App/action** — manual, cannot be done via API on the PM's behalf. I'll add the `.gitguardian.yaml` config + workflow once they share the API key as a secret. |
+| 6 | GitHub native Secret Scanning + push protection | ✅ Already enabled (done in a prior session) | None |
+| 7 | Automated tests (unit + integration) | ✅ Already required (`typecheck · test · lint`, `rpc · table contract`, `apply migrations · rls · types · sql probes`, `Hebrew source scan` all required on both branches) | None |
+
+**Net new work**: only gates #2, #3, #5 need anything built, and all three
+block on the PM completing a manual signup/install step first (account
+creation and GitHub App installs are outside what I can do on your behalf).
+I'll scaffold every workflow/config file so that the moment you drop in the
+secret or click install, the gate goes live and becomes a required check on
+`dev`'s branch protection.
+
+### 7. Local-only database — no shared secrets for contributors
+
+**Problem this closes**: the existing `scripts/seed-glowe-dev.mjs` seeds the
+**shared cloud dev Supabase project** and requires `SUPABASE_SERVICE_ROLE_KEY`
+for that project — a real secret. External contributors must never receive
+that key. Today nothing stops a contributor from being handed it by mistake.
+
+**Fix**: formalize local-only development as the only path for outside
+contributors.
+
+- `supabase start` (Supabase CLI) already runs the full backend
+  (Postgres, Auth, Storage, Realtime, Studio) as local Docker containers —
+  this is "smart Docker" already, just not documented as the contributor path.
+- `supabase db reset` applies every migration in `supabase/migrations/` plus
+  `supabase/seed.sql` (currently just reference data — cities — 29 lines).
+- **New script**: `scripts/seed-local-fake-data.mjs` — seeds realistic **fake**
+  GLOWE data (dummy orgs, individuals, posts/events/needs, sample chat) into
+  the **local** stack only. Mirrors `seed-glowe-dev.mjs`'s structure (idempotent,
+  upsert-on-conflict) but with the guard **inverted**: it refuses to run
+  against anything except `127.0.0.1`/`localhost`, so it can never accidentally
+  target the cloud dev or prod project. Uses the Supabase CLI's fixed local
+  service-role key (the well-known `supabase-demo` JWT already used in test
+  fixtures — safe to hardcode since it only authenticates against a
+  container on the contributor's own machine, never a real deployment).
+- `CONTRIBUTING.md` §Dev setup is updated to describe this exact flow:
+  `supabase start` → `supabase db reset` → `node scripts/seed-local-fake-data.mjs`
+  → run GLOWE web pointed at the local Supabase URL. No real credentials of
+  any kind touch a contributor's machine.
+
 ## Verification
 
 - `README.md`, `LICENSE`, `CONTRIBUTING.md`, `CODE_OF_CONDUCT.md`, `SECURITY.md`
@@ -131,12 +185,24 @@ Written for an external contributor, not an internal agent. Sections:
 - Issue templates appear correctly in GitHub's "New issue" chooser.
 - Actions fork-PR-approval setting and Discussions/private-vuln-reporting
   toggles verified via `gh api` read-back after enabling.
-- No changes to app code, so no `pnpm typecheck`/`test`/`lint` impact — this is
-  a docs/governance-only change (`NA` for spec mapping, matches `CLAUDE.md` §4
-  "what does NOT need an SSOT update" — pure documentation).
+- No changes to app code from §1-5, so no `pnpm typecheck`/`test`/`lint` impact
+  for those — docs/governance-only (`NA` for spec mapping, matches `CLAUDE.md`
+  §4 "what does NOT need an SSOT update" — pure documentation).
+- §6 (CI gates): each new workflow file is validated by the existing
+  `ci-actionlint.yml` gate before it can itself become a required check;
+  confirm each new gate shows up and passes on a throwaway test PR before
+  marking it required on `dev`'s branch protection.
+- §7 (local seed script): run `supabase start && supabase db reset && node
+  scripts/seed-local-fake-data.mjs` end-to-end on a clean machine/checkout and
+  confirm the GLOWE web app renders the seeded fake content when pointed at
+  the local Supabase URL; confirm the script hard-exits if pointed at any
+  non-localhost URL.
 
 ## Risk / rollout
 
-Low risk — additive documentation and repo-settings changes only. No code,
-schema, or CI-behavior change beyond the fork-PR-approval gate (which only adds
-friction for first-time external contributors, not existing collaborators).
+Low risk overall. §1-5 are additive documentation and repo-settings changes
+only. §6 introduces new required CI gates on `dev` — sequence each gate's
+"required" flag only after it has run green at least once, to avoid wedging
+every PR the moment the workflow file lands but before the PM has added the
+corresponding secret. §7 is a new script with no effect on existing scripts,
+CI, or the shared cloud dev database.
