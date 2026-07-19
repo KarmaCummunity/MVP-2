@@ -6934,6 +6934,10 @@ function initMyApplicationsPage() {
         const bioText = bioSrc.text || profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.';
         const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
         const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
+        // FR-GLOWE-024 — EN UI prefers display_name_en; HE prefers primary Hebrew name.
+        const heroDisplayName = (typeof GloweLocalizedName !== 'undefined')
+            ? GloweLocalizedName.localizedProfileName(profile, gloweReaderLang())
+            : (profile.name || '');
 
         container.innerHTML = `
             <div class="personal-shell">
@@ -6966,7 +6970,7 @@ function initMyApplicationsPage() {
                                         <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
                                         ${chipHtml}
                                     </div>
-                                    <h2>${profile.name}</h2>
+                                    <h2>${escapeHtml(heroDisplayName)}</h2>
                                     <div class="social-profile-bio" data-tr-card data-tr-type="glowe_profile" data-tr-id="${escapeHtml(profile.id || '')}">
                                         <p data-tr-field="${bioSrc.field || 'about'}">${escapeHtml(bioText)}</p>
                                     </div>
