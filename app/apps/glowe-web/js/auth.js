@@ -77,7 +77,7 @@ function buildPersonalProfileFromRegistration(user = {}) {
         skills: interests,
         avatarUrl: user.avatarUrl || '',
         reviewStatus: user.reviewStatus || 'Save as draft',
-        profileStatus: user.profileStatus || 'Draft',
+        profileStatus: user.profileStatus || '',
         createdAt: user.createdAt || new Date().toISOString()
     };
 }

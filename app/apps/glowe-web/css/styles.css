@@ -2122,6 +2122,23 @@ a.user-greeting:hover {
     font-weight: 900;
 }
 
+.profile-status-cta {
+    border: 1px solid var(--primary);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.profile-status-cta--pending_review {
+    border-color: var(--border-color);
+    background: var(--bg-soft, #f5f5f5);
+    cursor: default;
+}
+
 .personal-nav {
     display: grid;
     padding: 10px;

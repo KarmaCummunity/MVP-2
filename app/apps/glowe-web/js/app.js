@@ -2568,6 +2568,15 @@ function openOnboardingModal() {
     openModal('onboarding-modal');
 }
 
+function handleProfileStatusChipClick(action) {
+    if (action === 'onboarding') {
+        if (typeof openOnboardingModal === 'function') openOnboardingModal();
+        else if (typeof maybeShowOnboarding === 'function') maybeShowOnboarding();
+        return;
+    }
+    if (action === 'edit') openEditProfile();
+}
+
 function openEditProfile(profileName = '') {
     ensureGlobalUI();
     const profile = getPersonalProfile();
@@ -6692,6 +6701,13 @@ function initMyApplicationsPage() {
         const showProfileSkeleton = orgHelpers
             ? orgHelpers.shouldShowProfileSkeleton(personalProfileLoading, hasCachedPersonalProfile())
             : false;
+        const ux = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx : null;
+        const chip = ux ? ux.profileStatusChip(profile, { isOwner: true }) : null;
+        const bioSrc = ux ? ux.profileBioSource(profile) : { text: profile.shortLine || profile.about || '', field: 'about' };
+        const bioText = bioSrc.text || profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.';
+        const chipHtml = chip
+            ? `<button type="button" class="profile-status-cta profile-status-cta--${chip.kind}" onclick="handleProfileStatusChipClick('${chip.action}')">${escapeHtml(chip.label)}</button>`
+            : '';
 
         container.innerHTML = `
             <div class="personal-shell">
@@ -6722,10 +6738,12 @@ function initMyApplicationsPage() {
                                 <div class="social-profile-copy">
                                     <div class="social-profile-tags">
                                         <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
-                                        <span class="profile-status-pill">${escapeHtml(profile.profileStatus || 'Community profile')}</span>
+                                        ${chipHtml}
                                     </div>
                                     <h2>${profile.name}</h2>
-                                    <p>${escapeHtml(profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.')}</p>
+                                    <div class="social-profile-bio" data-tr-card data-tr-type="glowe_profile" data-tr-id="${escapeHtml(profile.id || '')}">
+                                        <p data-tr-field="${bioSrc.field || 'about'}">${escapeHtml(bioText)}</p>
+                                    </div>
                                 </div>
                             </div>
                             <div class="profile-meta-row">
@@ -7035,6 +7053,14 @@ const GLOWE_TRANSLATIONS = {
         'Organization name in English (optional)': 'שם הארגון באנגלית (אופציונלי)',
         'Organization name in English': 'שם הארגון באנגלית',
         'English org name — auto-filled if blank': 'שם הארגון באנגלית — ימולא אוטומטית אם ריק',
+        // FR-GLOWE-011 profile completion UX
+        'Complete profile': 'השלם פרופיל',
+        'Pending review': 'ממתין לאישור',
+        'Needs changes': 'דרושים שינויים',
+        'Save profile': 'שמירת פרופיל',
+        'Change profile photo': 'שינוי תמונת פרופיל',
+        'Remove photo': 'הסרת תמונה',
+        'Save photo': 'שמירת תמונה',
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Opportunities': 'הזדמנויות',
         'My Events': 'האירועים שלי',

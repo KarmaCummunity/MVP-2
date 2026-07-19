@@ -104,7 +104,7 @@
             availability: profile.availability || profile.size || '',
             skills: profile.skills || profile.interests || [],
             avatar_url: profile.avatarUrl || profile.avatar_url || '',
-            profile_status: profile.profileStatus || profile.profile_status || 'Draft',
+            profile_status: profile.profileStatus || profile.profile_status || null,
             org_name: profile.orgName || profile.org_name || null,
             org_name_en: profile.orgNameEn || profile.org_name_en || null,
             raw_profile: profile
