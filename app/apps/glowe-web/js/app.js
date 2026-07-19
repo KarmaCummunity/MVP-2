@@ -3073,6 +3073,30 @@ function renderEntityMark(name, className = 'entity-mark') {
     return `<span class="${className}">${getInitials(name)}</span>`;
 }
 
+function bilingualNameAttrs(primary, english) {
+    return `data-ln-primary="${escapeHtml(primary || '')}" data-ln-english="${escapeHtml(english || '')}"`;
+}
+
+function renderLocalizedEntityMark(primary, english, displayName, className = 'entity-mark') {
+    return `<span class="${className}" ${bilingualNameAttrs(primary, english)}>${getInitials(displayName)}</span>`;
+}
+
+function authorNamePairFrom(row) {
+    const r = row || {};
+    return {
+        primary: String(r.authorName != null ? r.authorName : (r.author_name != null ? r.author_name : (r.author || ''))).trim(),
+        english: String(r.authorNameEn != null ? r.authorNameEn : (r.author_name_en != null ? r.author_name_en : (r.authorEn || ''))).trim()
+    };
+}
+
+function orgNamePairFrom(row) {
+    const r = row || {};
+    return {
+        primary: String(r.organization != null ? r.organization : (r.namePrimary != null ? r.namePrimary : (r.orgName || r.name || ''))).trim(),
+        english: String(r.organizationEn != null ? r.organizationEn : (r.organization_en != null ? r.organization_en : (r.nameEn || ''))).trim()
+    };
+}
+
 function escapeHtml(value = '') {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -3634,6 +3658,11 @@ function openWishDetail(wishId) {
     const wish = wishes.find(item => String(item.id) === String(wishId));
     if (!wish) return;
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
+    const authorPair = authorNamePairFrom(wish);
+    const authorName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.resolveLocalizedName(authorPair.primary, authorPair.english, gloweReaderLang())
+            || authorPair.primary || wish.author || 'GloWe Member'
+        : (wish.author || 'GloWe Member');
     const content = document.getElementById('wish-detail-content');
     content.innerHTML = `
         <button class="close-modal" type="button" aria-label="Close wish details" onclick="closeModal('wish-detail-modal')">&times;</button>
@@ -3642,8 +3671,8 @@ function openWishDetail(wishId) {
                 <span class="wish-type" style="background:${style.color}">${wish.type}</span>
                 <h2 data-tr-field="title">${wish.title}</h2>
                 <a class="wish-author" href="profile.html?id=${wish.authorId}">
-                    ${renderEntityMark(wish.author)}
-                    <span>${wish.author}</span>
+                    ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName)}
+                    <span ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
                     <small>${wish.time}</small>
                 </a>
             </div>
@@ -3868,13 +3897,16 @@ function currentAuthorName() {
 
 function mapProfileToOrg(profile) {
     const lang = gloweReaderLang();
+    const primary = profile.orgName || profile.name || 'Organization';
+    const english = profile.orgNameEn || profile.nameEn || '';
     const name = (typeof GloweLocalizedName !== 'undefined')
         ? GloweLocalizedName.localizedProfileName(profile, lang)
-        : (profile.orgName || profile.name || 'Organization');
+        : primary;
     return {
         id: profile.id,
         name,
-        nameEn: profile.orgNameEn || profile.nameEn || '',
+        namePrimary: primary,
+        nameEn: english,
         type: profile.orgField || profile.type || 'Organization',
         mission: profile.orgDescription || profile.about || '',
         missionField: profile.orgDescription ? 'org_description' : 'about',
@@ -3972,6 +4004,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
     const orgName = (typeof GloweLocalizedName !== 'undefined')
         ? GloweLocalizedName.localizedOrganizationName(opportunity, gloweReaderLang(), 'GloWe Member')
         : (opportunity.organization || 'GloWe Member');
+    const orgPair = orgNamePairFrom(opportunity);
     const badge = isEvent
         ? (events.eventTypeLabel(opportunity.eventType) || 'Event')
         : (opportunity.commitment || '');
@@ -3994,8 +4027,8 @@ function renderOpportunityCard(opportunity, basePath = '') {
             </details>
             <div class="opportunity-header">
                 <div class="opportunity-org">
-                    ${renderEntityMark(orgName)}
-                    <span>${escapeHtml(orgName)}</span>
+                    ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName)}
+                    <span ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(orgName)}</span>
                 </div>
                 ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}">${escapeHtml(badge)}</span>` : ''}
             </div>
@@ -4026,6 +4059,7 @@ function renderOrganizationCard(organization, basePath = '') {
     const saveLabel = (typeof GloweUiConventions !== 'undefined')
         ? GloweUiConventions.saveLabelFor('profile')
         : 'Save';
+    const orgPair = orgNamePairFrom(organization);
     const placeBits = uniqueCardMeta([organization.location, organization.scope]);
     const detailHtml = [
         ...placeBits.map((v) => `<span class="opportunity-detail">${escapeHtml(v)}</span>`),
@@ -4051,12 +4085,12 @@ function renderOrganizationCard(organization, basePath = '') {
             </details>
             <div class="opportunity-header">
                 <div class="opportunity-org">
-                    ${renderEntityMark(organization.name)}
+                    ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, organization.name)}
                 </div>
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
             ${translationToggleSlotHtml()}
-            <h3 class="opportunity-title">${escapeHtml(organization.name)}</h3>
+            <h3 class="opportunity-title" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(organization.name)}</h3>
             <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
             <div class="opportunity-details">${detailHtml}</div>
             <div class="opportunity-skills">${skillsHtml}</div>
@@ -4072,9 +4106,10 @@ function renderOrganizationCard(organization, basePath = '') {
 function renderWishCard(wish) {
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
     const areas = Array.isArray(wish.areas) ? wish.areas : [];
+    const authorPair = authorNamePairFrom(wish);
     const authorName = (typeof GloweLocalizedName !== 'undefined')
-        ? GloweLocalizedName.resolveLocalizedName(wish.author, wish.authorEn, gloweReaderLang())
-            || wish.author || 'GloWe Member'
+        ? GloweLocalizedName.resolveLocalizedName(authorPair.primary, authorPair.english, gloweReaderLang())
+            || authorPair.primary || 'GloWe Member'
         : (wish.author || 'GloWe Member');
     return `
         <article class="wish-card" style="--tag-color: ${style.color}" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
@@ -4092,13 +4127,13 @@ function renderWishCard(wish) {
             </div>
             ${translationToggleSlotHtml()}
             <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
-                ${renderEntityMark(authorName, 'wish-image')}
+                ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName, 'wish-image')}
                 <span class="sr-only">Open wish details</span>
             </button>
             <h3><button type="button" data-tr-field="title" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
             <a class="wish-author" href="profile.html?id=${wish.authorId}">
-                ${renderEntityMark(authorName)}
-                <span>${escapeHtml(authorName)}</span>
+                ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName)}
+                <span ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
                 <small>${escapeHtml(wish.time)}</small>
             </a>
             <p data-tr-field="text">${escapeHtml(wish.description)}</p>
@@ -4153,6 +4188,7 @@ function formatCommentCount(count) {
 // added the action icons/count + share button, not the underlying complexity.
 // fallow-ignore-next-line complexity
 function renderPostCard(post) {
+    const authorPair = authorNamePairFrom(post);
     const authorName = (typeof GloweLocalizedName !== 'undefined')
         ? GloweLocalizedName.localizedAuthorName(post, gloweReaderLang(), 'Community Member')
         : (post.authorName || 'Community Member');
@@ -4173,8 +4209,9 @@ function renderPostCard(post) {
         ).join('')}</div>`
         : '';
     const commentsHtml = comments.slice(0, 3).map((comment) => {
+        const commentPair = authorNamePairFrom(comment);
         const commentAuthor = (typeof GloweLocalizedName !== 'undefined')
-            ? GloweLocalizedName.resolveLocalizedName(comment.author, comment.authorEn, gloweReaderLang())
+            ? GloweLocalizedName.resolveLocalizedName(commentPair.primary, commentPair.english, gloweReaderLang())
             : (comment.author || 'Community Member');
         const commentId = comment.id || '';
         const trAttrs = commentId
@@ -4182,10 +4219,10 @@ function renderPostCard(post) {
             : '';
         return `
                     <article class="comment-row"${trAttrs}>
-                        ${renderEntityMark(commentAuthor, 'comment-avatar')}
+                        ${renderLocalizedEntityMark(commentPair.primary, commentPair.english, commentAuthor, 'comment-avatar')}
                         <div>
                             ${commentId ? translationToggleSlotHtml() : ''}
-                            <strong>${escapeHtml(commentAuthor)}</strong>
+                            <strong ${bilingualNameAttrs(commentPair.primary, commentPair.english)}>${escapeHtml(commentAuthor)}</strong>
                             <p${commentId ? ' data-tr-field="text"' : ''}>${escapeHtml(comment.text)}</p>
                         </div>
                     </article>`;
@@ -4204,9 +4241,9 @@ function renderPostCard(post) {
             </details>
             <div class="post-author-row">
                 <a class="post-author" href="${profileHref}">
-                    ${renderEntityMark(authorName, 'avatar')}
+                    ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName, 'avatar')}
                     <span>
-                        <strong>${escapeHtml(authorName)}</strong>
+                        <strong ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</strong>
                         <small>${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'now'}</small>
                     </span>
                 </a>
