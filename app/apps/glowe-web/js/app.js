@@ -1622,19 +1622,16 @@ function normalizeMainNavigation() {
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const homeHref = inPages ? '../index.html' : 'index.html';
-    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
-    // Once signed in, Home gives way to the Personal Area as the primary tab —
-    // the logged-in user's landing context is their own dashboard, not the
-    // marketing home page.
-    const links = loggedIn
-        ? [{ label: 'Personal Area', href: `${prefix}my-applications.html`, match: 'my-applications' }]
-        : [{ label: 'Home', href: homeHref, match: 'index' }];
-    links.push(
+    // Home stays in the top nav for every session — parity with the mobile
+    // bottom-nav Home tab. Personal Area is reached via the greeting / Profile
+    // tab, not by replacing Home when signed in.
+    const links = [
+        { label: 'Home', href: homeHref, match: 'index' },
         { label: 'Wishing Well', href: `${prefix}wishing-well.html`, match: 'wishing-well' },
         { label: 'Organizations', href: `${prefix}organizations.html`, match: 'organizations' },
         { label: 'Community', href: `${prefix}community.html`, match: 'community' },
         { label: 'About', href: `${prefix}about.html`, match: 'about' }
-    );
+    ];
     const page = resolveGlowePage(window.location.pathname);
     nav.innerHTML = links.map(link => {
         const active = page === link.match
@@ -1645,24 +1642,36 @@ function normalizeMainNavigation() {
     }).join('');
 }
 
+function ensureHeaderEnd() {
+    const headerContainer = document.querySelector('.main-header .container');
+    if (!headerContainer) return null;
+    let headerEnd = headerContainer.querySelector('.header-end');
+    if (!headerEnd) {
+        headerEnd = document.createElement('div');
+        headerEnd.className = 'header-end';
+        headerContainer.appendChild(headerEnd);
+    }
+    return headerEnd;
+}
+
 function normalizeHeaderUserMenu() {
     const headerContainer = document.querySelector('.main-header .container');
     if (!headerContainer) return;
 
+    const headerEnd = ensureHeaderEnd();
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
-    let userMenu = headerContainer.querySelector('.user-menu');
+    let userMenu = headerEnd.querySelector('.user-menu') || headerContainer.querySelector('.user-menu');
     if (!userMenu) {
         userMenu = document.createElement('div');
         userMenu.className = 'user-menu';
-        headerContainer.appendChild(userMenu);
+    }
+    if (userMenu.parentElement !== headerEnd) {
+        headerEnd.appendChild(userMenu);
     }
     userMenu.style.display = 'none';
-    // "Personal Area" already appears once as the primary nav tab when signed in
-    // (see normalizeMainNavigation), so the greeting block keeps only the
-    // identity link + the Messages and Settings actions. Log Out lives inside
-    // the Settings screen (see initSettingsPage). Settings collapses to its gear
-    // icon on phone widths; Messages is icon-only everywhere.
+    // Personal Area is reached via this greeting link (and the mobile Profile
+    // tab). Top nav always keeps Home — it no longer swaps away when signed in.
     const chatIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
     const gearIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
     userMenu.innerHTML = `
@@ -1698,11 +1707,14 @@ window.applyAdminLink = applyAdminLink;
 function normalizeHeaderAuthButtons() {
     const headerContainer = document.querySelector('.main-header .container');
     if (!headerContainer) return;
-    let authButtons = headerContainer.querySelector('.auth-buttons');
+    const headerEnd = ensureHeaderEnd();
+    let authButtons = headerEnd.querySelector('.auth-buttons') || headerContainer.querySelector('.auth-buttons');
     if (!authButtons) {
         authButtons = document.createElement('div');
         authButtons.className = 'auth-buttons';
-        headerContainer.appendChild(authButtons);
+    }
+    if (authButtons.parentElement !== headerEnd) {
+        headerEnd.appendChild(authButtons);
     }
     // Auth is Google-only, so signing in and joining are the same action.
     // A single combined button avoids the false "Log In vs Join" distinction.
@@ -8345,8 +8357,8 @@ function toggleGloweLanguage() {
 // Header language toggle — shown only for anonymous visitors.
 // Logged-in users access language via the Settings page.
 function injectLanguageToggle() {
-    const container = document.querySelector('.main-header .container');
-    if (!container || container.querySelector('.lang-toggle')) return;
+    const headerEnd = ensureHeaderEnd();
+    if (!headerEnd || headerEnd.querySelector('.lang-toggle')) return;
     const current = getGloweLanguage();
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -8355,11 +8367,8 @@ function injectLanguageToggle() {
     btn.setAttribute('aria-label', current === 'he' ? 'Switch to English' : 'מעבר לעברית');
     btn.textContent = current === 'he' ? 'EN' : 'עב';
     btn.addEventListener('click', toggleGloweLanguage);
-    // Sits after the auth button (Sign up / Sign in) so the top bar reads
-    // logo -> auth button -> language toggle, keeping the language switch at
-    // the trailing edge of the header.
-    const authButtons = container.querySelector('.auth-buttons');
-    container.insertBefore(btn, authButtons ? authButtons.nextSibling : null);
+    // Trailing edge of the header-end cluster (after auth / user-menu).
+    headerEnd.appendChild(btn);
 }
 
 function removeLanguageToggle() {

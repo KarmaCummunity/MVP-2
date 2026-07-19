@@ -160,12 +160,12 @@ ul {
 }
 
 .main-header .container {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) max-content;
     align-items: center;
-    justify-content: space-between;
-    flex-wrap: nowrap;
-    padding: 16px clamp(10px, 1.5vw, 20px);
-    gap: clamp(6px, 1vw, 14px);
+    column-gap: clamp(8px, 1.2vw, 16px);
+    row-gap: 0;
+    padding: 14px clamp(12px, 1.8vw, 20px);
     min-width: 0;
 }
 
@@ -173,7 +173,8 @@ ul {
     display: flex;
     align-items: center;
     gap: clamp(6px, 0.8vw, 10px);
-    flex: 0 0 auto;
+    grid-column: 1;
+    grid-row: 1;
     min-width: 0;
 }
 
@@ -186,7 +187,7 @@ ul {
 }
 
 .logo-text {
-    font-size: clamp(1.05rem, 0.75rem + 0.7vw, 1.5rem);
+    font-size: clamp(1.1rem, 0.85rem + 0.55vw, 1.5rem);
     font-weight: 700;
     color: var(--primary-dark);
     letter-spacing: 0;
@@ -195,33 +196,34 @@ ul {
 .main-nav {
     display: flex;
     align-items: center;
-    gap: clamp(8px, 1.1vw, 18px);
-    padding: clamp(4px, 0.35vw, 6px) clamp(8px, 0.8vw, 14px);
+    justify-content: space-evenly;
+    gap: clamp(6px, 0.9vw, 14px);
+    padding: 4px clamp(6px, 0.7vw, 12px);
     background: rgba(15, 93, 85, 0.06);
     border: 1px solid rgba(15, 93, 85, 0.12);
     border-radius: 999px;
-    max-width: 100%;
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
     min-width: 0;
-    flex: 1 1 0;
-    justify-content: center;
     flex-wrap: nowrap;
-    /* Scale labels to fit — never create a horizontal scrollbar. */
-    overflow-x: hidden;
+    overflow: hidden;
 }
 
 .nav-link {
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: clamp(0.7rem, 0.4rem + 0.55vw, 0.92rem);
+    font-size: clamp(0.72rem, 0.4rem + 0.55vw, 0.92rem);
     text-transform: none;
-    transition: var(--transition);
-    padding: clamp(6px, 0.3vw + 4px, 8px) clamp(10px, 0.7vw + 6px, 16px);
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    padding: clamp(6px, 0.35vw + 4px, 8px) clamp(8px, 0.7vw + 4px, 16px);
     position: relative;
     border-radius: 999px;
     white-space: nowrap;
     min-width: 0;
-    flex: 0 0 auto;
+    flex: 1 1 0;
     text-align: center;
+    cursor: pointer;
 }
 
 .nav-link:hover,
@@ -235,11 +237,25 @@ ul {
     display: none;
 }
 
-.auth-buttons {
-    display: flex;
-    gap: clamp(6px, 0.8vw, 12px);
-    flex: 0 0 auto;
+.header-end {
+    grid-column: 3;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: clamp(6px, 0.7vw, 10px);
     min-width: 0;
+}
+
+.auth-buttons,
+.user-menu {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+
+.auth-buttons {
+    gap: clamp(6px, 0.8vw, 12px);
 }
 
 .auth-buttons .btn {
@@ -249,11 +265,8 @@ ul {
 }
 
 .user-menu {
-    display: flex;
-    align-items: center;
-    gap: clamp(4px, 0.6vw, 10px);
-    flex: 0 1 auto;
-    min-width: 0;
+    justify-content: flex-end;
+    gap: clamp(4px, 0.55vw, 8px);
 }
 
 .user-greeting {
@@ -5640,9 +5653,9 @@ a.user-greeting:hover {
     }
 
     .main-header .container {
-        flex-wrap: wrap;
+        grid-template-columns: auto max-content;
         padding: 12px 14px;
-        gap: 10px;
+        column-gap: 10px;
     }
 
     .logo-icon {
@@ -5656,10 +5669,9 @@ a.user-greeting:hover {
 
     /* Google-only auth collapses to a single small button (see
        normalizeHeaderAuthButtons); it sits inline in the top bar next to the
-       language toggle rather than stretching into its own full-width row. */
+       language toggle rather than stretching into its own full-width banner. */
     .auth-buttons {
         width: auto;
-        flex: 0 0 auto;
         justify-content: flex-end;
         gap: 8px;
     }
@@ -5704,23 +5716,12 @@ a.user-greeting:hover {
         display: none;
     }
 
-    .main-nav {
-        order: 3;
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        border-radius: var(--radius-md);
-        width: 100%;
-        flex: 1 1 100%;
-        overflow: visible;
-        flex-wrap: wrap;
+    .header-end {
+        grid-column: 2;
     }
 
-    .nav-link {
-        padding: 9px 8px;
-        font-size: 0.82rem;
-        white-space: normal;
-        text-align: center;
-        flex: 1 1 auto;
+    .main-nav {
+        display: none !important;
     }
 
     .hero h1,
