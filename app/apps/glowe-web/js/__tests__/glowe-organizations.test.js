@@ -24,6 +24,8 @@ const {
     isDeleteAccountConfirmed,
     shouldShowProfileSkeleton,
     validateAvatarFile,
+    prepareAvatarUploadFile,
+    isAvatarImageFile,
     mapApplicantRow,
     mapApplicantRows,
     canDecideApplication,
@@ -508,6 +510,46 @@ describe('validateAvatarFile', () => {
     it('honors a custom maxBytes option', () => {
         expect(validateAvatarFile({ type: 'image/png', size: 2048 }, { maxBytes: 1024 }).valid).toBe(false);
         expect(validateAvatarFile({ type: 'image/png', size: 512 }, { maxBytes: 1024 }).valid).toBe(true);
+    });
+});
+
+describe('prepareAvatarUploadFile', () => {
+    it('returns the file unchanged when it is already under the cap', async () => {
+        const file = { type: 'image/jpeg', size: 1024, name: 'avatar.jpg' };
+        await expect(prepareAvatarUploadFile(file)).resolves.toEqual({
+            ok: true,
+            file,
+            compressed: false
+        });
+    });
+
+    it('rejects a missing file', async () => {
+        const result = await prepareAvatarUploadFile(null);
+        expect(result.ok).toBe(false);
+        expect(result.error).toMatch(/image file/i);
+    });
+
+    it('rejects a non-image file', async () => {
+        const result = await prepareAvatarUploadFile({ type: 'application/pdf', size: 100 });
+        expect(result.ok).toBe(false);
+        expect(result.error).toMatch(/image file/i);
+    });
+
+    it('rejects an oversized file when compression is unavailable', async () => {
+        const result = await prepareAvatarUploadFile({
+            type: 'image/png',
+            size: 5 * 1024 * 1024 + 1
+        });
+        expect(result.ok).toBe(false);
+        expect(result.error).toMatch(/5 MB/);
+    });
+});
+
+describe('isAvatarImageFile', () => {
+    it('accepts image mime types only', () => {
+        expect(isAvatarImageFile({ type: 'image/png' })).toBe(true);
+        expect(isAvatarImageFile({ type: 'application/pdf' })).toBe(false);
+        expect(isAvatarImageFile(null)).toBe(false);
     });
 });
 

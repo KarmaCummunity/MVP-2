@@ -349,16 +349,110 @@
     // the file must be an image (`image/*`) and at most `maxBytes` (default 5 MB,
     // matching the `glowe-avatars` bucket cap in migration 0219). Returns
     // { valid, error } so the modal can show an inline message before uploading.
+    function isAvatarImageFile(file) {
+        return Boolean(file && String(file.type || '').startsWith('image/'));
+    }
+
     function validateAvatarFile(file, options) {
         const maxBytes = (options && options.maxBytes) || 5 * 1024 * 1024;
         if (!file) return { valid: false, error: 'Please choose an image file.' };
-        if (!String(file.type || '').startsWith('image/')) {
+        if (!isAvatarImageFile(file)) {
             return { valid: false, error: 'Please choose an image file.' };
         }
         if (Number(file.size) > maxBytes) {
             return { valid: false, error: 'Image must be under 5 MB.' };
         }
         return { valid: true };
+    }
+
+    function loadAvatarImage(file) {
+        return new Promise(function (resolve, reject) {
+            const image = new Image();
+            const url = URL.createObjectURL(file);
+            image.onload = function () {
+                URL.revokeObjectURL(url);
+                resolve(image);
+            };
+            image.onerror = function () {
+                URL.revokeObjectURL(url);
+                reject(new Error('Could not read image.'));
+            };
+            image.src = url;
+        });
+    }
+
+    function canvasToAvatarBlob(canvas, type, quality) {
+        return new Promise(function (resolve, reject) {
+            canvas.toBlob(function (blob) {
+                if (blob) resolve(blob);
+                else reject(new Error('Could not compress image.'));
+            }, type, quality);
+        });
+    }
+
+    // Resize/re-encode heavy photos in the browser so uploads stay under the
+    // storage cap without blocking the user.
+    async function compressAvatarImageFile(file, options) {
+        const opts = options || {};
+        const maxBytes = opts.maxBytes || 5 * 1024 * 1024;
+        const outputType = opts.outputType || 'image/jpeg';
+        const image = await loadAvatarImage(file);
+        let maxDimension = opts.maxDimension || 1024;
+        let quality = typeof opts.quality === 'number' ? opts.quality : 0.85;
+
+        for (let attempt = 0; attempt < 8; attempt += 1) {
+            const scale = Math.min(1, maxDimension / Math.max(image.width, image.height));
+            const width = Math.max(1, Math.round(image.width * scale));
+            const height = Math.max(1, Math.round(image.height * scale));
+            const canvas = document.createElement('canvas');
+            canvas.width = width;
+            canvas.height = height;
+            const context = canvas.getContext('2d');
+            if (!context) throw new Error('Could not compress image.');
+            context.drawImage(image, 0, 0, width, height);
+            const blob = await canvasToAvatarBlob(canvas, outputType, quality);
+            if (blob.size <= maxBytes) {
+                const baseName = String(file.name || 'avatar').replace(/\.[^.]+$/, '');
+                return new File([blob], baseName + '.jpg', {
+                    type: outputType,
+                    lastModified: Date.now()
+                });
+            }
+            if (quality > 0.45) quality -= 0.15;
+            else maxDimension = Math.max(256, Math.round(maxDimension * 0.75));
+        }
+        throw new Error('Image is too large. Try a smaller photo.');
+    }
+
+    // Validate type and return the file as-is, or compress automatically when
+    // it exceeds `maxBytes` (browser only).
+    async function prepareAvatarUploadFile(file, options) {
+        const maxBytes = (options && options.maxBytes) || 5 * 1024 * 1024;
+        if (!file) return { ok: false, error: 'Please choose an image file.' };
+        if (!isAvatarImageFile(file)) {
+            return { ok: false, error: 'Please choose an image file.' };
+        }
+        if (Number(file.size) <= maxBytes) {
+            return { ok: true, file: file, compressed: false };
+        }
+        if (typeof document === 'undefined') {
+            return { ok: false, error: 'Image must be under 5 MB.' };
+        }
+        try {
+            const compressed = await compressAvatarImageFile(file, { maxBytes: maxBytes });
+            if (compressed.size > maxBytes) {
+                return {
+                    ok: false,
+                    error: 'Image is too large even after compression. Try a smaller photo.'
+                };
+            }
+            return { ok: true, file: compressed, compressed: true };
+        } catch (error) {
+            return {
+                ok: false,
+                error: (error && error.message) ? error.message : 'Could not compress image.'
+            };
+        }
     }
 
     return {
@@ -392,6 +486,8 @@
         volunteerApplicationViews: volunteerApplicationViews,
         isDeleteAccountConfirmed: isDeleteAccountConfirmed,
         shouldShowProfileSkeleton: shouldShowProfileSkeleton,
-        validateAvatarFile: validateAvatarFile
+        isAvatarImageFile: isAvatarImageFile,
+        validateAvatarFile: validateAvatarFile,
+        prepareAvatarUploadFile: prepareAvatarUploadFile
     };
 });
