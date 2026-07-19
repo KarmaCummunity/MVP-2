@@ -309,6 +309,7 @@ If you don't see a home for something below, **ask the PM** before inventing a n
 
 | Concern                   | File / directory                       |
 | ------------------------- | -------------------------------------- |
+| **App semver (`x.x.x`)**  | **`app/VERSION`** (+ `glowe-version.js`; see banner § above) |
 | Priority queue            | `docs/SSOT/BACKLOG.md`                 |
 | Feature specs (FR-*)      | `docs/SSOT/spec/{domain}.md`           |
 | Tech debt register        | `docs/SSOT/TECH_DEBT.md`               |
