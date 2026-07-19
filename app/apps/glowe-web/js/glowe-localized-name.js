@@ -74,12 +74,45 @@
         return '';
     }
 
+    // True when a fromProfileRow-shaped profile still needs an English fill.
+    function profileNeedsEnglishName(profile) {
+        const p = profile || {};
+        const isOrg = p.accountType === 'organization';
+        if (isOrg) {
+            const primary = trim(p.orgName || p.name);
+            const english = trim(p.orgNameEn || p.nameEn);
+            return Boolean(primary) && !english && !isPrimarilyLatin(primary);
+        }
+        const primary = trim(p.name);
+        const english = trim(p.nameEn);
+        return Boolean(primary) && !english && !isPrimarilyLatin(primary);
+    }
+
+    // Apply { id, displayNameEn?, orgNameEn? } patches onto profile objects.
+    function applyEnglishNamePatches(profiles, patches) {
+        const byId = {};
+        (patches || []).forEach(function (patch) {
+            if (patch && patch.id) byId[String(patch.id)] = patch;
+        });
+        return (profiles || []).map(function (profile) {
+            if (!profile || !profile.id) return profile;
+            const patch = byId[String(profile.id)];
+            if (!patch) return profile;
+            const next = Object.assign({}, profile);
+            if (patch.displayNameEn) next.nameEn = patch.displayNameEn;
+            if (patch.orgNameEn) next.orgNameEn = patch.orgNameEn;
+            return next;
+        });
+    }
+
     return {
         isPrimarilyLatin: isPrimarilyLatin,
         resolveLocalizedName: resolveLocalizedName,
         localizedProfileName: localizedProfileName,
         localizedAuthorName: localizedAuthorName,
         localizedOrganizationName: localizedOrganizationName,
-        englishNameOrCopy: englishNameOrCopy
+        englishNameOrCopy: englishNameOrCopy,
+        profileNeedsEnglishName: profileNeedsEnglishName,
+        applyEnglishNamePatches: applyEnglishNamePatches
     };
 });

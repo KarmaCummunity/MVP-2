@@ -994,6 +994,29 @@
         return fromProfileRow(data);
     }
 
+    // FR-GLOWE-024 — lazy-fill missing English names for public profiles so EN
+    // readers see Latin names even when onboarding never supplied one. Anon OK
+    // (edge function mode B). Failures return [] so callers keep source names.
+    async function ensureProfileEnglishNames(profileIds) {
+        const ids = (profileIds || []).filter(Boolean).map(String);
+        if (!ids.length) return [];
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('glowe-generate-name-en', {
+                body: { profileIds: ids }
+            });
+            if (error) {
+                console.warn('ensureProfileEnglishNames failed:', error.message || error);
+                return [];
+            }
+            return (data && Array.isArray(data.profiles)) ? data.profiles : [];
+        } catch (e) {
+            console.warn('ensureProfileEnglishNames failed:', e && e.message ? e.message : e);
+            return [];
+        }
+    }
+
     window.gloweBackend = {
         configured,
         getClient,
@@ -1005,6 +1028,7 @@
         deleteProfile,
         fetchProfile,
         fetchProfileById,
+        ensureProfileEnglishNames,
         upsertProfile,
         ensureProfileFromGoogle,
         uploadAvatar,

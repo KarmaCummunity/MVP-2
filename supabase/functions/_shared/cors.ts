@@ -7,7 +7,12 @@ const RAW = (Deno.env.get('PUBLIC_RESEARCH_ALLOWED_ORIGINS') ?? '').trim();
 
 export const ALLOWED_ORIGINS: string[] = RAW
   ? RAW.split(',').map((s) => s.trim()).filter(Boolean)
-  : ['http://localhost:8081', 'http://localhost:19006'];
+  : [
+    'http://localhost:8081',
+    'http://localhost:19006',
+    'http://localhost:4321',
+    'http://127.0.0.1:4321',
+  ];
 
 export function isAllowedOrigin(origin: string | null): boolean {
   return origin !== null && ALLOWED_ORIGINS.includes(origin);

@@ -103,3 +103,38 @@ describe('englishNameOrCopy', () => {
         expect(englishNameOrCopy('נווה', '')).toBe('');
     });
 });
+
+describe('profileNeedsEnglishName / applyEnglishNamePatches', () => {
+    it('detects missing English for Hebrew org names', () => {
+        expect(GloweLocalizedName.profileNeedsEnglishName({
+            accountType: 'organization',
+            orgName: 'יד תומכת',
+            orgNameEn: ''
+        })).toBe(true);
+        expect(GloweLocalizedName.profileNeedsEnglishName({
+            accountType: 'organization',
+            orgName: 'יד תומכת',
+            orgNameEn: 'Yad Tomechet'
+        })).toBe(false);
+        expect(GloweLocalizedName.profileNeedsEnglishName({
+            accountType: 'organization',
+            orgName: 'Open Heart',
+            orgNameEn: ''
+        })).toBe(false);
+    });
+
+    it('patches org and person English fields by id', () => {
+        const patched = GloweLocalizedName.applyEnglishNamePatches(
+            [
+                { id: '1', accountType: 'organization', orgName: 'יד תומכת', orgNameEn: '' },
+                { id: '2', accountType: 'individual', name: 'נווה', nameEn: '' }
+            ],
+            [
+                { id: '1', orgNameEn: 'Yad Tomechet' },
+                { id: '2', displayNameEn: 'Naveh' }
+            ]
+        );
+        expect(patched[0].orgNameEn).toBe('Yad Tomechet');
+        expect(patched[1].nameEn).toBe('Naveh');
+    });
+});

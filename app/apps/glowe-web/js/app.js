@@ -3864,6 +3864,22 @@ async function fetchAndPopulate(backendFn, targetArray, mapper) {
     }
 }
 
+// FR-GLOWE-024 — when the reader is on EN, materialize missing *_en columns for
+// profiles that still only have a non-Latin source name, then return patched rows.
+async function withEnsuredEnglishNames(profiles) {
+    const list = Array.isArray(profiles) ? profiles.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.profileNeedsEnglishName);
+    if (!needing.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return list;
+    const patches = await backend.ensureProfileEnglishNames(needing.map((p) => p.id));
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyEnglishNamePatches(list, patches);
+}
+
 function renderOpportunityCard(opportunity, basePath = '') {
     const titleForMessage = jsString(opportunity.title);
     const detailHref = `${basePath}pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
@@ -4862,7 +4878,13 @@ async function initOrganizationsPage() {
     }
 
     container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading organizations…</p></div>';
-    await fetchAndPopulate(() => gloweBackend.listApprovedOrgs(), organizations, mapProfileToOrg);
+    try {
+        const rows = await gloweBackend.listApprovedOrgs();
+        const ensured = await withEnsuredEnglishNames(rows || []);
+        organizations.splice(0, organizations.length, ...ensured.map(mapProfileToOrg));
+    } catch (_e) {
+        organizations.splice(0, organizations.length);
+    }
     refreshFilters(buildVisibleOrgs());
     renderOrganizations();
 }
@@ -5662,8 +5684,10 @@ async function initProfilePage() {
     const backend = window.gloweBackend;
     if (!backend || !backend.configured()) { _profileNotFound(container); return; }
     try {
-        const dbProfile = await backend.fetchProfileById(id);
+        let dbProfile = await backend.fetchProfileById(id);
         if (!dbProfile) { _profileNotFound(container); return; }
+        const ensured = await withEnsuredEnglishNames([dbProfile]);
+        dbProfile = ensured[0] || dbProfile;
         const projects = await _loadPublicProjects(backend, id);
         _renderProfileContent(_adaptDbProfile(dbProfile, projects), container);
     } catch {
