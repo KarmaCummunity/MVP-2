@@ -2122,6 +2122,23 @@ a.user-greeting:hover {
     font-weight: 900;
 }
 
+.profile-status-cta {
+    border: 1px solid var(--primary);
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font: inherit;
+    font-size: 0.75rem;
+    font-weight: 800;
+    padding: 4px 10px;
+    border-radius: 999px;
+    cursor: pointer;
+}
+.profile-status-cta--pending_review {
+    border-color: var(--border-color);
+    background: var(--bg-soft, #f5f5f5);
+    cursor: default;
+}
+
 .personal-nav {
     display: grid;
     padding: 10px;
@@ -2216,6 +2233,56 @@ a.user-greeting:hover {
 
 .social-avatar-change:hover {
     background: var(--primary-light);
+}
+
+.social-avatar-change--icon {
+    width: 40px;
+    height: 40px;
+    padding: 0;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+    font-size: 0;
+}
+
+.social-avatar-change--icon svg {
+    display: block;
+}
+
+.avatar-edit-modal-content {
+    max-width: 420px;
+}
+
+.avatar-edit-preview-wrap {
+    display: flex;
+    justify-content: center;
+    margin: 20px 0 12px;
+}
+
+.avatar-edit-preview {
+    width: 120px;
+    height: 120px;
+    border-radius: 50%;
+    object-fit: cover;
+    border: 4px solid var(--white);
+    box-shadow: var(--shadow-md);
+}
+
+.avatar-edit-preview[hidden] {
+    display: none;
+}
+
+#avatar-edit-status {
+    display: block;
+    text-align: center;
+    min-height: 1.2em;
+    margin-bottom: 12px;
+    color: var(--text-secondary);
+}
+
+.avatar-edit-actions {
+    justify-content: center;
 }
 
 .social-profile-copy {
@@ -4138,6 +4205,34 @@ a.user-greeting:hover {
     display: grid;
     grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
     gap: 16px;
+}
+
+.project-card {
+    position: relative;
+}
+
+.project-card:has(.project-card-actions) h3 {
+    padding-inline-end: 4.5rem;
+}
+
+.project-card-actions--icons {
+    position: absolute;
+    inset-block-start: 10px;
+    inset-inline-end: 10px;
+    display: flex;
+    gap: 6px;
+}
+
+.project-icon-action {
+    width: 32px;
+    height: 32px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border: 1px solid var(--border-color);
+    border-radius: 8px;
+    background: var(--white);
+    cursor: pointer;
 }
 
 @media (max-width: 900px) {

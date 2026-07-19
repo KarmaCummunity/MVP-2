@@ -1164,7 +1164,10 @@ async function syncPersonalDataFromBackend() {
             ? window.gloweBackend.listOwned('saved_items').catch(() => null)
             : Promise.resolve(null)
     ]);
-    if (profile) localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify(profile));
+    if (profile) {
+        localStorage.setItem(PERSONAL_PROFILE_KEY, JSON.stringify(profile));
+        await backfillPersonalProfileEnglishName(profile);
+    }
     if (Array.isArray(projects) && projects.length) localStorage.setItem(PERSONAL_PROJECTS_KEY, JSON.stringify(projects));
     if (Array.isArray(savedItems) && savedItems.length) {
         localStorage.setItem(SAVED_ITEMS_KEY, JSON.stringify(savedItems.map(item => ({
@@ -1347,8 +1350,7 @@ function renderQuestionnaireProfile(profile) {
         { label: 'Geographic activity', value: profile.location },
         { label: typeConfig.publicPrompt || 'Open actions', value: profile.publicActions || profile.needs },
         { label: typeConfig.fundingLabel || 'Funding / support sources', value: profile.funding },
-        { label: typeConfig.budgetLabel || 'Annual budget / support context', value: profile.annualBudget },
-        { label: 'Profile status', value: profile.profileStatus }
+        { label: typeConfig.budgetLabel || 'Annual budget / support context', value: profile.annualBudget }
     ];
 
     return rows.map(({ label, value, raw }) => `
@@ -2079,105 +2081,111 @@ function ensureGlobalUI() {
                     <h2>Edit profile</h2>
                     <p class="modal-intro">Update the public information that helps others understand who you are and how to collaborate.</p>
                     <form onsubmit="handleProfileEdit(event)">
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-name">Display name</label>
-                                <input id="edit-profile-name" type="text" required placeholder="Organization or person name">
+                        <div id="edit-profile-fields-individual">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-name">Display name</label>
+                                    <input id="edit-profile-name" type="text" required placeholder="Your name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-name-en">Name in English (optional)</label>
+                                    <input id="edit-profile-name-en" type="text" placeholder="Latin / English display name">
+                                    <small>Generated automatically — change if you like</small>
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="edit-profile-type">Profile type</label>
-                                <input id="edit-profile-type" type="text" placeholder="NGO, business, volunteer, initiative...">
+                                <label for="edit-profile-about">Bio</label>
+                                <textarea id="edit-profile-about" rows="4" placeholder="A few words about you and what you're working on"></textarea>
                             </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-name-en">Name in English (optional)</label>
-                                <input id="edit-profile-name-en" type="text" placeholder="Latin / English display name">
-                            </div>
-                            <div class="form-group" id="edit-profile-org-name-en-group" hidden>
-                                <label for="edit-profile-org-name-en">Organization name in English (optional)</label>
-                                <input id="edit-profile-org-name-en" type="text" placeholder="Organization name in English">
-                            </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-country">Country / region</label>
-                                <input id="edit-profile-country" type="text" placeholder="Country / region">
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-focus">Interest areas</label>
+                                    <input id="edit-profile-focus" type="text" placeholder="Education, health, climate...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-country">Country / region</label>
+                                    <input id="edit-profile-country" type="text" placeholder="Country / region">
+                                </div>
                             </div>
                             <div class="form-group">
                                 <label for="edit-profile-public-link">Website / public link</label>
                                 <input id="edit-profile-public-link" type="url" placeholder="https://...">
                             </div>
                         </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-focus">Interest areas</label>
-                                <input id="edit-profile-focus" type="text" required placeholder="Education, health, climate...">
+                        <div id="edit-profile-fields-organization" hidden>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-name">Organization name</label>
+                                    <input id="edit-profile-org-name" type="text" placeholder="Organization name">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-name-en">Organization name in English (optional)</label>
+                                    <input id="edit-profile-org-name-en" type="text" placeholder="Organization name in English">
+                                </div>
+                            </div>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-field">Field / sector</label>
+                                    <input id="edit-profile-org-field" type="text" placeholder="Education, health, environment...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-country">Country</label>
+                                    <input id="edit-profile-org-country" type="text" placeholder="Country">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="edit-profile-sdgs">SDGs</label>
-                                <input id="edit-profile-sdgs" type="text" placeholder="Quality Education, Climate Action...">
+                                <label for="edit-profile-org-description">Description</label>
+                                <textarea id="edit-profile-org-description" rows="4" placeholder="What does your organization do?"></textarea>
                             </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-short-line">Short public line</label>
-                            <input id="edit-profile-short-line" type="text" placeholder="One clear sentence people can understand quickly">
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-about" id="edit-profile-about-label">Mission / story</label>
-                            <textarea id="edit-profile-about" rows="4" required placeholder="Mission, current work, or what you offer."></textarea>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-values" id="edit-profile-values-label">Values and goals</label>
-                                <textarea id="edit-profile-values" rows="4" placeholder="Values, goals, leadership, or principles"></textarea>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-website">Website</label>
+                                    <input id="edit-profile-org-website" type="url" placeholder="https://...">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-size">Size (optional)</label>
+                                    <input id="edit-profile-org-size" type="text" placeholder="e.g. 1-10, 11-50">
+                                </div>
                             </div>
-                            <div class="form-group">
-                                <label for="edit-profile-community" id="edit-profile-community-label">Community / audience</label>
-                                <textarea id="edit-profile-community" rows="4" placeholder="Who do you serve, support, work with, or hope to reach?"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-problem" id="edit-profile-problem-label">Problem addressed</label>
-                                <textarea id="edit-profile-problem" rows="4" placeholder="What problem or need are you working on?"></textarea>
+                            <div class="form-grid-2">
+                                <div class="form-group">
+                                    <label for="edit-profile-org-contact-name">Contact name</label>
+                                    <input id="edit-profile-org-contact-name" type="text" placeholder="Contact person">
+                                </div>
+                                <div class="form-group">
+                                    <label for="edit-profile-org-contact-email">Contact email</label>
+                                    <input id="edit-profile-org-contact-email" type="email" placeholder="email@example.com">
+                                </div>
                             </div>
                             <div class="form-group">
-                                <label for="edit-profile-solution" id="edit-profile-solution-label">Solution / method</label>
-                                <textarea id="edit-profile-solution" rows="4" placeholder="What do you do in practice?"></textarea>
-                            </div>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-methods">Methods / approaches</label>
-                                <input id="edit-profile-methods" type="text" placeholder="Advocacy, education, field work, research...">
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-profile-location">Geographic activity</label>
-                                <input id="edit-profile-location" type="text" placeholder="Local / regional / global / remote">
-                            </div>
-                        </div>
-                        <div class="form-group">
-                            <label for="edit-profile-needs" id="edit-profile-needs-label">Open actions / looking for</label>
-                            <textarea id="edit-profile-needs" rows="3" placeholder="Partners, volunteers, funding, knowledge, visibility..."></textarea>
-                        </div>
-                        <div class="form-grid-2">
-                            <div class="form-group">
-                                <label for="edit-profile-socials">Social links</label>
-                                <textarea id="edit-profile-socials" rows="3" placeholder="Facebook, LinkedIn, Instagram, YouTube..."></textarea>
-                            </div>
-                            <div class="form-group">
-                                <label for="edit-profile-media">Articles / videos / reports</label>
-                                <textarea id="edit-profile-media" rows="3" placeholder="Useful public links"></textarea>
+                                <label for="edit-profile-org-contact-phone">Contact phone (optional)</label>
+                                <input id="edit-profile-org-contact-phone" type="tel" placeholder="+972...">
                             </div>
                         </div>
-                        <div class="form-group">
-                            <label for="edit-profile-avatar">Profile image</label>
-                            <input id="edit-profile-avatar" type="file" accept="image/*">
-                            <small id="edit-profile-upload-status">Optional. JPG, PNG or WebP, up to 5 MB.</small>
-                        </div>
-                        <button class="btn btn-primary btn-block" type="submit">Save Profile Draft</button>
+                        <button class="btn btn-primary btn-block" type="submit">Save profile</button>
                     </form>
+                </div>
+            </div>
+        `);
+    }
+
+    if (!document.getElementById('avatar-edit-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="avatar-edit-modal" class="modal">
+                <div class="modal-content avatar-edit-modal-content">
+                    <span class="close-modal" onclick="closeAvatarEditModal()">&times;</span>
+                    <h2>Change profile photo</h2>
+                    <div class="avatar-edit-preview-wrap">
+                        <img id="avatar-edit-preview" class="avatar-edit-preview" alt="" hidden>
+                    </div>
+                    <input type="file" id="avatar-edit-file" accept="image/*" hidden onchange="handleAvatarEditFileChange(event)">
+                    <small id="avatar-edit-status"></small>
+                    <div class="modal-actions avatar-edit-actions">
+                        <button type="button" class="btn btn-outline" onclick="triggerAvatarEditReplace()">Replace</button>
+                        <button type="button" class="btn btn-outline" onclick="handleAvatarEditRemove()">Remove photo</button>
+                        <button type="button" class="btn btn-primary" id="avatar-edit-save-btn" onclick="handleAvatarEditSave()">Save photo</button>
+                        <button type="button" class="btn btn-outline" onclick="closeAvatarEditModal()">Cancel</button>
+                    </div>
                 </div>
             </div>
         `);
@@ -2568,96 +2576,239 @@ function openOnboardingModal() {
     openModal('onboarding-modal');
 }
 
+function renderProfileStatusChipHtml(chip) {
+    if (!chip) return '';
+    const klass = `profile-status-cta profile-status-cta--${chip.kind}`;
+    const label = escapeHtml(chip.label);
+    if (chip.action === 'none') {
+        return `<span class="${klass}" aria-disabled="true">${label}</span>`;
+    }
+    return `<button type="button" class="${klass}" onclick="handleProfileStatusChipClick('${chip.action}')">${label}</button>`;
+}
+
+function handleProfileStatusChipClick(action) {
+    if (action === 'edit') {
+        openEditProfile();
+        return;
+    }
+    if (action !== 'onboarding') return;
+    openGloweOnboarding(getPersonalProfile());
+}
+
 function openEditProfile(profileName = '') {
     ensureGlobalUI();
     const profile = getPersonalProfile();
-    const typeConfig = getProfileTypeConfig(profile);
     const isOrg = profile.accountType === 'organization';
-    document.getElementById('edit-profile-name').value = profileName || profile.name;
-    const nameEnEl = document.getElementById('edit-profile-name-en');
-    if (nameEnEl) nameEnEl.value = profile.nameEn || '';
-    const orgEnGroup = document.getElementById('edit-profile-org-name-en-group');
-    const orgEnEl = document.getElementById('edit-profile-org-name-en');
-    if (orgEnGroup) orgEnGroup.hidden = !isOrg;
-    if (orgEnEl) orgEnEl.value = profile.orgNameEn || '';
-    document.getElementById('edit-profile-type').value = profile.type || '';
-    document.getElementById('edit-profile-country').value = profile.country || '';
-    document.getElementById('edit-profile-public-link').value = profile.publicLink || '';
-    document.getElementById('edit-profile-focus').value = profile.focus || '';
-    document.getElementById('edit-profile-sdgs').value = (profile.sdgs || []).join(', ');
-    document.getElementById('edit-profile-short-line').value = profile.shortLine || '';
-    document.getElementById('edit-profile-about').value = profile.about || '';
-    document.getElementById('edit-profile-values').value = profile.values || '';
-    document.getElementById('edit-profile-community').value = profile.community || '';
-    document.getElementById('edit-profile-problem').value = profile.problem || '';
-    document.getElementById('edit-profile-solution').value = profile.solution || '';
-    document.getElementById('edit-profile-methods').value = profile.methods || '';
-    document.getElementById('edit-profile-location').value = profile.location || '';
-    document.getElementById('edit-profile-needs').value = profile.needs || '';
-    document.getElementById('edit-profile-socials').value = profile.socials || '';
-    document.getElementById('edit-profile-media').value = profile.media || '';
-    document.getElementById('edit-profile-about-label').textContent = typeConfig.storyLabel || 'Mission / story';
-    document.getElementById('edit-profile-about').placeholder = typeConfig.storyPlaceholder || 'Mission, current work, or what you offer.';
-    document.getElementById('edit-profile-values-label').textContent = typeConfig.valuesLabel || 'Values and goals';
-    document.getElementById('edit-profile-values').placeholder = typeConfig.valuesPlaceholder || 'Values, goals, leadership, or principles';
-    document.getElementById('edit-profile-community-label').textContent = typeConfig.communityLabel || 'Community / audience';
-    document.getElementById('edit-profile-community').placeholder = typeConfig.communityPlaceholder || 'Who do you serve, support, work with, or hope to reach?';
-    document.getElementById('edit-profile-problem-label').textContent = typeConfig.problemLabel || 'Problem addressed';
-    document.getElementById('edit-profile-problem').placeholder = typeConfig.problemPlaceholder || 'What problem or need are you working on?';
-    document.getElementById('edit-profile-solution-label').textContent = typeConfig.solutionLabel || 'Solution / method';
-    document.getElementById('edit-profile-solution').placeholder = typeConfig.solutionPlaceholder || 'What do you do in practice?';
-    document.getElementById('edit-profile-methods').placeholder = typeConfig.methodsPlaceholder || 'Advocacy, education, field work, research...';
-    document.getElementById('edit-profile-needs-label').textContent = typeConfig.publicPrompt || 'Open actions / looking for';
-    document.getElementById('edit-profile-needs').placeholder = typeConfig.publicPlaceholder || 'Partners, volunteers, funding, knowledge, visibility...';
+    const individualPanel = document.getElementById('edit-profile-fields-individual');
+    const orgPanel = document.getElementById('edit-profile-fields-organization');
+    if (individualPanel) individualPanel.hidden = isOrg;
+    if (orgPanel) orgPanel.hidden = !isOrg;
+
+    const nameEl = document.getElementById('edit-profile-name');
+    const orgNameEl = document.getElementById('edit-profile-org-name');
+    if (nameEl) nameEl.required = !isOrg;
+    if (orgNameEl) orgNameEl.required = isOrg;
+
+    if (isOrg) {
+        if (orgNameEl) orgNameEl.value = profileName || profile.orgName || profile.name || '';
+        const orgNameEnEl = document.getElementById('edit-profile-org-name-en');
+        if (orgNameEnEl) orgNameEnEl.value = profile.orgNameEn || '';
+        const orgFieldEl = document.getElementById('edit-profile-org-field');
+        if (orgFieldEl) orgFieldEl.value = profile.orgField || '';
+        const orgDescEl = document.getElementById('edit-profile-org-description');
+        if (orgDescEl) orgDescEl.value = profile.orgDescription || profile.about || '';
+        const orgWebsiteEl = document.getElementById('edit-profile-org-website');
+        if (orgWebsiteEl) orgWebsiteEl.value = profile.orgWebsite || '';
+        const orgCountryEl = document.getElementById('edit-profile-org-country');
+        if (orgCountryEl) orgCountryEl.value = profile.orgCountry || profile.country || '';
+        const orgSizeEl = document.getElementById('edit-profile-org-size');
+        if (orgSizeEl) orgSizeEl.value = profile.orgSize || '';
+        const orgContactNameEl = document.getElementById('edit-profile-org-contact-name');
+        if (orgContactNameEl) orgContactNameEl.value = profile.orgContactName || '';
+        const orgContactEmailEl = document.getElementById('edit-profile-org-contact-email');
+        if (orgContactEmailEl) orgContactEmailEl.value = profile.orgContactEmail || '';
+        const orgContactPhoneEl = document.getElementById('edit-profile-org-contact-phone');
+        if (orgContactPhoneEl) orgContactPhoneEl.value = profile.orgContactPhone || '';
+    } else {
+        const aboutValue = profile.about || profile.story || profile.shortLine || '';
+        if (nameEl) nameEl.value = profileName || profile.name || '';
+        const nameEnEl = document.getElementById('edit-profile-name-en');
+        if (nameEnEl) nameEnEl.value = profile.nameEn || '';
+        const aboutEl = document.getElementById('edit-profile-about');
+        if (aboutEl) aboutEl.value = aboutValue;
+        const focusEl = document.getElementById('edit-profile-focus');
+        if (focusEl) focusEl.value = profile.focus || '';
+        const countryEl = document.getElementById('edit-profile-country');
+        if (countryEl) countryEl.value = profile.country || '';
+        const publicLinkEl = document.getElementById('edit-profile-public-link');
+        if (publicLinkEl) publicLinkEl.value = profile.publicLink || '';
+    }
     openModal('edit-profile-modal');
+}
+
+let avatarEditPendingFile = null;
+let avatarEditRemoveRequested = false;
+let avatarEditPreviewObjectUrl = null;
+
+function revokeAvatarEditPreviewUrl() {
+    if (avatarEditPreviewObjectUrl) {
+        URL.revokeObjectURL(avatarEditPreviewObjectUrl);
+        avatarEditPreviewObjectUrl = null;
+    }
+}
+
+function setAvatarEditStatus(message) {
+    const status = document.getElementById('avatar-edit-status');
+    if (status) status.textContent = message || '';
+}
+
+function updateAvatarEditPreview(src) {
+    const preview = document.getElementById('avatar-edit-preview');
+    if (!preview) return;
+    if (src) {
+        preview.src = src;
+        preview.hidden = false;
+    } else {
+        preview.removeAttribute('src');
+        preview.hidden = true;
+    }
+}
+
+function resetAvatarEditState() {
+    avatarEditPendingFile = null;
+    avatarEditRemoveRequested = false;
+    revokeAvatarEditPreviewUrl();
+    const input = document.getElementById('avatar-edit-file');
+    if (input) input.value = '';
+    setAvatarEditStatus('');
+}
+
+function closeAvatarEditModal() {
+    resetAvatarEditState();
+    closeModal('avatar-edit-modal');
+}
+
+function openAvatarEditModal() {
+    ensureGlobalUI();
+    resetAvatarEditState();
+    const profile = getPersonalProfile();
+    updateAvatarEditPreview(profile.avatarUrl || '');
+    openModal('avatar-edit-modal');
+}
+
+function triggerAvatarEditReplace() {
+    const input = document.getElementById('avatar-edit-file');
+    if (input) input.click();
+}
+
+// fallow-ignore-next-line complexity
+function handleAvatarEditFileChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    const check = orgHelpers ? orgHelpers.validateAvatarFile(file) : { valid: true };
+    if (!check.valid) {
+        setAvatarEditStatus(check.error);
+        event.target.value = '';
+        return;
+    }
+    avatarEditPendingFile = file;
+    avatarEditRemoveRequested = false;
+    revokeAvatarEditPreviewUrl();
+    avatarEditPreviewObjectUrl = URL.createObjectURL(file);
+    updateAvatarEditPreview(avatarEditPreviewObjectUrl);
+    setAvatarEditStatus('');
+}
+
+function handleAvatarEditRemove() {
+    avatarEditPendingFile = null;
+    avatarEditRemoveRequested = true;
+    revokeAvatarEditPreviewUrl();
+    const input = document.getElementById('avatar-edit-file');
+    if (input) input.value = '';
+    updateAvatarEditPreview('');
+    setAvatarEditStatus('Photo will be removed when you save.');
+}
+
+// fallow-ignore-next-line complexity
+async function handleAvatarEditSave() {
+    const saveBtn = document.getElementById('avatar-edit-save-btn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        if (avatarEditRemoveRequested) {
+            setAvatarEditStatus('Saving...');
+            await persistPersonalProfile({ avatarUrl: '' });
+        } else if (avatarEditPendingFile) {
+            const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+            const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarEditPendingFile) : { valid: true };
+            if (!check.valid) {
+                setAvatarEditStatus(check.error);
+                return;
+            }
+            setAvatarEditStatus('Uploading...');
+            const avatarUrl = await uploadProfileImage(avatarEditPendingFile);
+            await persistPersonalProfile({ avatarUrl });
+        } else {
+            closeAvatarEditModal();
+            return;
+        }
+
+        closeAvatarEditModal();
+        if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+        showSuccessModal('Profile saved', 'Profile saved');
+    } catch (error) {
+        setAvatarEditStatus(error.message || 'Could not save photo.');
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
 }
 
 async function handleProfileEdit(event) {
     event.preventDefault();
-    const status = document.getElementById('edit-profile-upload-status');
-    const avatarInput = document.getElementById('edit-profile-avatar');
-    let uploadWarning = '';
-    const profileDraft = {
-        name: document.getElementById('edit-profile-name').value,
-        nameEn: (document.getElementById('edit-profile-name-en') || {}).value || '',
-        orgNameEn: (document.getElementById('edit-profile-org-name-en') || {}).value || '',
-        type: document.getElementById('edit-profile-type').value,
-        country: document.getElementById('edit-profile-country').value,
-        publicLink: document.getElementById('edit-profile-public-link').value,
-        focus: document.getElementById('edit-profile-focus').value,
-        interests: commaList(document.getElementById('edit-profile-focus').value),
-        skills: commaList(document.getElementById('edit-profile-focus').value),
-        sdgs: commaList(document.getElementById('edit-profile-sdgs').value),
-        shortLine: document.getElementById('edit-profile-short-line').value,
-        about: document.getElementById('edit-profile-about').value,
-        story: document.getElementById('edit-profile-about').value,
-        values: document.getElementById('edit-profile-values').value,
-        community: document.getElementById('edit-profile-community').value,
-        problem: document.getElementById('edit-profile-problem').value,
-        solution: document.getElementById('edit-profile-solution').value,
-        methods: document.getElementById('edit-profile-methods').value,
-        location: document.getElementById('edit-profile-location').value,
-        needs: document.getElementById('edit-profile-needs').value,
-        publicActions: document.getElementById('edit-profile-needs').value,
-        socials: document.getElementById('edit-profile-socials').value,
-        media: document.getElementById('edit-profile-media').value
+    const val = (id) => {
+        const el = document.getElementById(id);
+        return el ? el.value.trim() : '';
     };
+    const existing = getPersonalProfile();
+    const isOrg = existing.accountType === 'organization';
+    let profileDraft;
 
-    if (avatarInput && avatarInput.files && avatarInput.files[0]) {
-        const avatarFile = avatarInput.files[0];
-        const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-        const check = orgHelpers ? orgHelpers.validateAvatarFile(avatarFile) : { valid: true };
-        if (!check.valid) {
-            if (status) status.textContent = check.error;
-            return;
-        }
-        try {
-            if (status) status.textContent = 'Uploading image...';
-            profileDraft.avatarUrl = await uploadProfileImage(avatarFile);
-        } catch (error) {
-            if (status) status.textContent = error.message;
-            uploadWarning = ' Image upload could not be completed.';
-        }
+    if (isOrg) {
+        const orgName = val('edit-profile-org-name');
+        const orgDescription = val('edit-profile-org-description');
+        const country = val('edit-profile-org-country');
+        const orgField = val('edit-profile-org-field');
+        profileDraft = {
+            name: orgName || existing.name,
+            orgName,
+            orgNameEn: val('edit-profile-org-name-en'),
+            orgField,
+            orgDescription,
+            about: orgDescription,
+            orgWebsite: val('edit-profile-org-website'),
+            country,
+            orgCountry: country,
+            orgSize: val('edit-profile-org-size'),
+            orgContactName: val('edit-profile-org-contact-name'),
+            orgContactEmail: val('edit-profile-org-contact-email'),
+            orgContactPhone: val('edit-profile-org-contact-phone'),
+            type: 'Organization',
+            focus: orgField
+        };
+    } else {
+        const aboutValue = val('edit-profile-about');
+        profileDraft = {
+            name: val('edit-profile-name'),
+            nameEn: val('edit-profile-name-en'),
+            about: aboutValue,
+            story: aboutValue,
+            shortLine: aboutValue.slice(0, 160),
+            focus: val('edit-profile-focus'),
+            country: val('edit-profile-country'),
+            publicLink: val('edit-profile-public-link'),
+            type: 'Individual'
+        };
     }
 
     await persistPersonalProfile(profileDraft);
@@ -2665,7 +2816,7 @@ async function handleProfileEdit(event) {
     if (typeof window.renderPersonalArea === 'function') {
         window.renderPersonalArea();
     }
-    showSuccessModal('Profile saved', `Your personal profile was saved through the backend when available.${uploadWarning}`);
+    showSuccessModal('Profile saved', 'Profile saved');
 }
 
 function setProjectModalMode(title, submitLabel) {
@@ -3933,6 +4084,27 @@ async function fetchAndPopulate(backendFn, targetArray, mapper) {
     }
 }
 
+// FR-GLOWE-024 — on Personal Area load, lazy-fill missing English names for the
+// signed-in owner so EN readers and downstream author snapshots resolve Latin names.
+// fallow-ignore-next-line complexity
+async function backfillPersonalProfileEnglishName(profile) {
+    const backend = window.gloweBackend;
+    const ready = profile && profile.id
+        && typeof GloweLocalizedName !== 'undefined'
+        && GloweLocalizedName.profileNeedsEnglishName(profile)
+        && backend
+        && typeof backend.ensureProfileEnglishNames === 'function'
+        && backend.configured()
+        && typeof isLoggedIn === 'function'
+        && isLoggedIn();
+    if (!ready) return profile;
+    const patches = await backend.ensureProfileEnglishNames([profile.id]);
+    if (!patches || !patches.length) return profile;
+    const next = GloweLocalizedName.applyEnglishNamePatches([profile], patches)[0] || profile;
+    savePersonalProfile(next);
+    return next;
+}
+
 // FR-GLOWE-024 — when the reader is on EN, materialize missing *_en columns for
 // profiles that still only have a non-Latin source name, then return patched rows.
 async function withEnsuredEnglishNames(profiles) {
@@ -4155,12 +4327,8 @@ function renderProjectCard(project, options) {
     // `options.deletable` is only passed from the owner's Personal Area. On the
     // public profile the map callback passes the numeric index here, whose
     // `.deletable` is undefined — so the control stays hidden for viewers.
-    const deletable = Boolean(options && options.deletable);
-    const ownerActions = deletable
-        ? `<div class="project-card-actions">
-            <button type="button" class="project-edit-action" onclick="openEditPersonalProjectModal('${jsString(project.id)}')">Edit</button>
-            <button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>
-        </div>`
+    const ownerActions = (options && options.deletable)
+        ? GloweProfileUx.projectOwnerActionsHtml(jsString(project.id))
         : '';
     return `
         <div class="project-card" data-tr-card data-tr-type="glowe_project" data-tr-id="${project.id}">
@@ -5784,7 +5952,7 @@ function _adaptDbProfile(p, projects) {
         languages: p.languages || [],
         skills: p.skills || [],
         impactArea: p.orgField || p.focus || '',
-        mission: isOrg ? (p.orgDescription || p.about || '') : '',
+        mission: isOrg ? (p.orgDescription || p.about || '') : (p.about || ''),
         bio: p.about || '',
         story: p.about || '',
         focus: p.focus || '',
@@ -5792,7 +5960,15 @@ function _adaptDbProfile(p, projects) {
         volunteers: 0,
         opportunities: 0,
         projects: Array.isArray(projects) ? projects : [],
-        status: p.approvalStatus === 'approved' ? 'Verified organization' : 'Pending verification'
+        accountType: p.accountType,
+        onboardingComplete: p.onboardingComplete,
+        approvalStatus: p.approvalStatus,
+        about: p.about || '',
+        orgDescription: p.orgDescription || '',
+        orgField: p.orgField || '',
+        avatarUrl: p.avatarUrl || '',
+        _raw: p,
+        isOwnerView: false
     };
 }
 
@@ -5837,15 +6013,35 @@ async function initProfilePage() {
         const ensured = await withEnsuredEnglishNames([dbProfile]);
         dbProfile = ensured[0] || dbProfile;
         const projects = await _loadPublicProjects(backend, id);
-        _renderProfileContent(_adaptDbProfile(dbProfile, projects), container);
+        const me = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
+        const adapted = _adaptDbProfile(dbProfile, projects);
+        adapted.isOwnerView = Boolean(me && me.id === dbProfile.id);
+        _renderProfileContent(adapted, container);
     } catch {
         _profileNotFound(container);
     }
 }
 
+function _publicTrustStatusLabel(profile, isOrg) {
+    return GloweProfileUx.publicTrustStatusLabel(profile, isOrg);
+}
+
 function _renderProfileContent(profile, container) {
 
-    const isOrg = Boolean(profile.mission);
+    const isOrg = profile.accountType === 'organization'
+        || (!profile.accountType && profile.type && profile.type !== 'Community Member');
+    const isOwnerView = Boolean(profile.isOwnerView);
+    const ux = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx : null;
+    const chip = isOwnerView && ux
+        ? ux.profileStatusChip(profile, { isOwner: true })
+        : null;
+    const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
+    const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
+    const avatarHtml = isOwnerView
+        ? `<div class="social-avatar-wrap">${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}<button type="button" class="social-avatar-change social-avatar-change--icon" aria-label="Change profile photo" onclick="openAvatarEditModal()">${cameraIcon}</button></div>`
+        : (profile.avatarUrl
+            ? renderPersonalAvatar(profile, 'profile-avatar')
+            : renderEntityMark(profile.name, 'profile-avatar'));
     const typeConfig = getProfileTypeConfig(profile);
     const projects = profile.projects || [];
     const languages = profile.languages || [];
@@ -5872,7 +6068,7 @@ function _renderProfileContent(profile, container) {
     const progressText = profile.impact || `${profile.volunteers || primaryStat || 0} people connected through projects, opportunities, or community activity.`;
     const learningText = profile.learning || 'This profile can add more field insights, measurement notes, and lessons learned as the work develops.';
     const mediaLinks = profile.media || profile.website || profile.publicLink || '';
-    const trustStatus = profile.status || profile.profileStatus || (isOrg ? 'Approved profile' : 'Community profile');
+    const trustStatus = _publicTrustStatusLabel(profile, isOrg);
     const safeContact = profile.email || 'Contact through GloWe messages';
 
     // FR-TRANSLATE-005 AC7 — DB profiles carry `_tr`; tag the mission prose so the
@@ -5883,9 +6079,12 @@ function _renderProfileContent(profile, container) {
         <section class="profile-cover profile-story-cover">
             <div class="profile-cover-band"></div>
             <div class="profile-hero">
-                ${renderEntityMark(profile.name, 'profile-avatar')}
+                ${avatarHtml}
                 <div class="profile-summary">
-                    <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
+                    <div class="social-profile-tags">
+                        <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
+                        ${chipHtml}
+                    </div>
                     <h1>${escapeHtml(profile.name)}</h1>
                     <p${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="opportunity-skills">${tags.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}</div>
@@ -5896,7 +6095,7 @@ function _renderProfileContent(profile, container) {
                     <details class="profile-more-menu">
                         <summary aria-label="More profile actions">...</summary>
                         <div>
-                            <button type="button" onclick="openEditProfile('${safeName}')">Edit profile</button>
+                            ${isOwnerView ? `<button type="button" onclick="openEditProfile('${safeName}')">Edit profile</button>` : ''}
                             <button type="button" onclick="showSuccessModal('Following ${safeName}', 'You will see updates from this profile in your community feed.')">Follow updates</button>
                             <button type="button" onclick="openReportModal('profile', '${profile.id}', '${safeName}')">Report</button>
                         </div>
@@ -6729,6 +6928,12 @@ function initMyApplicationsPage() {
         const showProfileSkeleton = orgHelpers
             ? orgHelpers.shouldShowProfileSkeleton(personalProfileLoading, hasCachedPersonalProfile())
             : false;
+        const ux = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx : null;
+        const chip = ux ? ux.profileStatusChip(profile, { isOwner: true }) : null;
+        const bioSrc = ux ? ux.profileBioSource(profile) : { text: profile.shortLine || profile.about || '', field: 'about' };
+        const bioText = bioSrc.text || profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.';
+        const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
+        const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
 
         container.innerHTML = `
             <div class="personal-shell">
@@ -6754,15 +6959,17 @@ function initMyApplicationsPage() {
                             <div class="social-profile-head">
                                 <div class="social-avatar-wrap">
                                     ${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}
-                                    <button type="button" class="social-avatar-change" onclick="openEditProfile()">Change</button>
+                                    <button type="button" class="social-avatar-change social-avatar-change--icon" aria-label="Change profile photo" onclick="openAvatarEditModal()">${cameraIcon}</button>
                                 </div>
                                 <div class="social-profile-copy">
                                     <div class="social-profile-tags">
                                         <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
-                                        <span class="profile-status-pill">${escapeHtml(profile.profileStatus || 'Community profile')}</span>
+                                        ${chipHtml}
                                     </div>
                                     <h2>${profile.name}</h2>
-                                    <p>${escapeHtml(profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.')}</p>
+                                    <div class="social-profile-bio" data-tr-card data-tr-type="glowe_profile" data-tr-id="${escapeHtml(profile.id || '')}">
+                                        <p data-tr-field="${bioSrc.field || 'about'}">${escapeHtml(bioText)}</p>
+                                    </div>
                                 </div>
                             </div>
                             <div class="profile-meta-row">
@@ -7072,6 +7279,20 @@ const GLOWE_TRANSLATIONS = {
         'Organization name in English (optional)': 'שם הארגון באנגלית (אופציונלי)',
         'Organization name in English': 'שם הארגון באנגלית',
         'English org name — auto-filled if blank': 'שם הארגון באנגלית — ימולא אוטומטית אם ריק',
+        // FR-GLOWE-011 profile completion UX
+        'Complete profile': 'השלם פרופיל',
+        'Pending review': 'ממתין לאישור',
+        'Needs changes': 'דרושים שינויים',
+        'Save profile': 'שמירת פרופיל',
+        'Change profile photo': 'שינוי תמונת פרופיל',
+        'Remove photo': 'הסרת תמונה',
+        'Save photo': 'שמירת תמונה',
+        'Replace': 'החלפה',
+        'Cancel': 'ביטול',
+        'Photo will be removed when you save.': 'התמונה תוסר בעת השמירה.',
+        'Saving...': 'שומר...',
+        'Uploading...': 'מעלה...',
+        'Could not save photo.': 'לא ניתן לשמור את התמונה.',
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Opportunities': 'הזדמנויות',
         'My Events': 'האירועים שלי',
