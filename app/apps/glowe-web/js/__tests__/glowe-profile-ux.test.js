@@ -39,6 +39,15 @@ describe('profileStatusChip', () => {
         expect(c.kind).toBe('pending_review');
         expect(c.action).toBe('none');
     });
+    it('org rejected shows needs_changes', () => {
+        const c = profileStatusChip({
+            onboardingComplete: true,
+            accountType: 'organization',
+            approvalStatus: 'rejected'
+        }, { isOwner: true });
+        expect(c.kind).toBe('needs_changes');
+        expect(c.action).toBe('edit');
+    });
     it('sparse complete profile', () => {
         const c = profileStatusChip({
             onboardingComplete: true,

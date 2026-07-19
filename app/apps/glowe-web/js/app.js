@@ -2173,7 +2173,7 @@ function ensureGlobalUI() {
         document.body.insertAdjacentHTML('beforeend', `
             <div id="avatar-edit-modal" class="modal">
                 <div class="modal-content avatar-edit-modal-content">
-                    <span class="close-modal" onclick="closeModal('avatar-edit-modal')">&times;</span>
+                    <span class="close-modal" onclick="closeAvatarEditModal()">&times;</span>
                     <h2>Change profile photo</h2>
                     <div class="avatar-edit-preview-wrap">
                         <img id="avatar-edit-preview" class="avatar-edit-preview" alt="" hidden>
@@ -2184,7 +2184,7 @@ function ensureGlobalUI() {
                         <button type="button" class="btn btn-outline" onclick="triggerAvatarEditReplace()">Replace</button>
                         <button type="button" class="btn btn-outline" onclick="handleAvatarEditRemove()">Remove photo</button>
                         <button type="button" class="btn btn-primary" id="avatar-edit-save-btn" onclick="handleAvatarEditSave()">Save photo</button>
-                        <button type="button" class="btn btn-outline" onclick="closeModal('avatar-edit-modal')">Cancel</button>
+                        <button type="button" class="btn btn-outline" onclick="closeAvatarEditModal()">Cancel</button>
                     </div>
                 </div>
             </div>
@@ -2576,10 +2576,20 @@ function openOnboardingModal() {
     openModal('onboarding-modal');
 }
 
+function renderProfileStatusChipHtml(chip) {
+    if (!chip) return '';
+    const klass = `profile-status-cta profile-status-cta--${chip.kind}`;
+    const label = escapeHtml(chip.label);
+    if (chip.action === 'none') {
+        return `<span class="${klass}" aria-disabled="true">${label}</span>`;
+    }
+    return `<button type="button" class="${klass}" onclick="handleProfileStatusChipClick('${chip.action}')">${label}</button>`;
+}
+
 function handleProfileStatusChipClick(action) {
     if (action === 'onboarding') {
-        if (typeof openOnboardingModal === 'function') openOnboardingModal();
-        else if (typeof maybeShowOnboarding === 'function') maybeShowOnboarding();
+        const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : null;
+        if (typeof openGloweOnboarding === 'function') openGloweOnboarding(profile);
         return;
     }
     if (action === 'edit') openEditProfile();
@@ -2673,6 +2683,11 @@ function resetAvatarEditState() {
     setAvatarEditStatus('');
 }
 
+function closeAvatarEditModal() {
+    resetAvatarEditState();
+    closeModal('avatar-edit-modal');
+}
+
 function openAvatarEditModal() {
     ensureGlobalUI();
     resetAvatarEditState();
@@ -2734,15 +2749,14 @@ async function handleAvatarEditSave() {
             const avatarUrl = await uploadProfileImage(avatarEditPendingFile);
             await persistPersonalProfile({ avatarUrl });
         } else if (profile.avatarUrl) {
-            closeModal('avatar-edit-modal');
+            closeAvatarEditModal();
             return;
         } else {
-            closeModal('avatar-edit-modal');
+            closeAvatarEditModal();
             return;
         }
 
-        closeModal('avatar-edit-modal');
-        resetAvatarEditState();
+        closeAvatarEditModal();
         if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
         showSuccessModal('Profile saved', 'Profile saved');
     } catch (error) {
@@ -4276,9 +4290,18 @@ function renderProjectCard(project, options) {
     // public profile the map callback passes the numeric index here, whose
     // `.deletable` is undefined — so the control stays hidden for viewers.
     const deletable = Boolean(options && options.deletable);
-    const ownerActions = deletable
-        ? GloweProfileUx.projectOwnerActionsHtml(jsString(project.id))
-        : '';
+    let ownerActions = '';
+    if (deletable) {
+        const ux = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx : null;
+        if (ux && typeof ux.projectOwnerActionsHtml === 'function') {
+            ownerActions = ux.projectOwnerActionsHtml(jsString(project.id));
+        } else {
+            ownerActions = `<div class="project-card-actions">
+            <button type="button" class="project-edit-action" onclick="openEditPersonalProjectModal('${jsString(project.id)}')">Edit</button>
+            <button type="button" class="project-delete-action" onclick="deletePersonalProject('${jsString(project.id)}')">Delete</button>
+        </div>`;
+        }
+    }
     return `
         <div class="project-card" data-tr-card data-tr-type="glowe_project" data-tr-id="${project.id}">
             <span class="opportunity-badge">${escapeHtml(project.status)}</span>
@@ -5989,9 +6012,7 @@ function _renderProfileContent(profile, container) {
     const chip = isOwnerView && ux
         ? ux.profileStatusChip(profile, { isOwner: true })
         : null;
-    const chipHtml = chip
-        ? `<button type="button" class="profile-status-cta profile-status-cta--${chip.kind}" onclick="handleProfileStatusChipClick('${chip.action}')">${escapeHtml(chip.label)}</button>`
-        : '';
+    const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
     const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
     const avatarHtml = isOwnerView
         ? `<div class="social-avatar-wrap">${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}<button type="button" class="social-avatar-change social-avatar-change--icon" aria-label="Change profile photo" onclick="openAvatarEditModal()">${cameraIcon}</button></div>`
@@ -6888,9 +6909,7 @@ function initMyApplicationsPage() {
         const chip = ux ? ux.profileStatusChip(profile, { isOwner: true }) : null;
         const bioSrc = ux ? ux.profileBioSource(profile) : { text: profile.shortLine || profile.about || '', field: 'about' };
         const bioText = bioSrc.text || profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.';
-        const chipHtml = chip
-            ? `<button type="button" class="profile-status-cta profile-status-cta--${chip.kind}" onclick="handleProfileStatusChipClick('${chip.action}')">${escapeHtml(chip.label)}</button>`
-            : '';
+        const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
         const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
 
         container.innerHTML = `
@@ -7245,6 +7264,12 @@ const GLOWE_TRANSLATIONS = {
         'Change profile photo': 'שינוי תמונת פרופיל',
         'Remove photo': 'הסרת תמונה',
         'Save photo': 'שמירת תמונה',
+        'Replace': 'החלפה',
+        'Cancel': 'ביטול',
+        'Photo will be removed when you save.': 'התמונה תוסר בעת השמירה.',
+        'Saving...': 'שומר...',
+        'Uploading...': 'מעלה...',
+        'Could not save photo.': 'לא ניתן לשמור את התמונה.',
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Opportunities': 'הזדמנויות',
         'My Events': 'האירועים שלי',

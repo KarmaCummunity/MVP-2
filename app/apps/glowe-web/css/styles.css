@@ -4211,6 +4211,10 @@ a.user-greeting:hover {
     position: relative;
 }
 
+.project-card:has(.project-card-actions) h3 {
+    padding-inline-end: 4.5rem;
+}
+
 .project-card-actions--icons {
     position: absolute;
     inset-block-start: 10px;
