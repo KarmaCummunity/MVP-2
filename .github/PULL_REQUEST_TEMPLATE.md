@@ -6,6 +6,10 @@ The agent (or a human) fills these in. CI will block merge if "Mapped to spec" i
 ## Summary
 <!-- 2-4 sentences: what changed and why. -->
 
+## Contributor License Agreement
+
+- [ ] I have read and agree to the [Contributor License Agreement](../CLA.md).
+
 ## Mapped to spec
 <!-- Required. List FR-* IDs touched, or write "N/A — tooling/docs only".
      Link to docs/SSOT/spec/<file>.md when applicable. -->
