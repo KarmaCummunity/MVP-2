@@ -1366,9 +1366,9 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ## D-181 — App-wide semver (`app/VERSION`) with auto patch on every `dev` push (2026-07-19)
 
-**Decision.** Product version is app-wide semver in `app/VERSION`. Every push to `dev` auto-increments **PATCH** via GitHub Action that opens a short-lived PR (direct push to `dev` is blocked by branch protection — GH006; same class as TD-182). Squash subjects use the `chore(version):` prefix so the workflow skips itself (match subject prefix only — do not put a skip marker in unrelated commit bodies). **MAJOR/MINOR** are manual. GloWe footer shows `vX.Y.Z` from `glowe-version.js`; `web-postbuild` re-stamps from `app/VERSION` on deploy. KC mobile UI display deferred.
+**Decision.** Product version is app-wide semver in `app/VERSION`. **PATCH is bumped in every PR into `dev` by the authoring agent** (org policy blocks GitHub Actions from creating PRs, so push-triggered auto-bump cannot land). Optional `workflow_dispatch` on `Bump app version` only prepares a `chore/version-bump-*` branch. **MAJOR/MINOR** are manual for breaking / significant feature sets. GloWe footer shows `vX.Y.Z` from `glowe-version.js`; `web-postbuild` re-stamps from `app/VERSION` on deploy. KC mobile UI display deferred.
 
-**Rationale.** PM needs a normal `x.x.x` marker on the live `dev` site to verify deploys; the version applies to the whole app, not only the static web shell. Auto-patch on every push (not only successful web deploys) keeps the counter honest across BE/FE/docs merges.
+**Rationale.** PM needs a normal `x.x.x` marker on the live `dev` site to verify deploys; the version applies to the whole app. Auto-PR bump was attempted and blocked at the org Actions permission layer (same family as TD-182 / GH006). Agent-owned PATCH bumps keep the counter honest without requiring an org policy change.
 
 **Affected.** `app/VERSION`, `scripts/bump-app-version.mjs`, `.github/workflows/bump-app-version.yml`, `glowe-version.js`, `ensureGlobalFooter`, `web-postbuild.mjs`; FR-GLOWE-025; bold rule in `CLAUDE.md`.
 
