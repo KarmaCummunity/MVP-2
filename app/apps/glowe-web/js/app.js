@@ -54,6 +54,28 @@ function showSuccessModal(title, message) {
     openModal('success-modal');
 }
 
+// Lightweight transient toast (auto-dismisses). Used for quiet confirmations
+// such as the share clipboard fallback, so no modal interrupts the flow.
+let gloweToastTimer = null;
+function showToast(message) {
+    if (typeof document === 'undefined') return;
+    let toast = document.getElementById('glowe-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'glowe-toast';
+        toast.className = 'glowe-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+    toast.textContent = message;
+    // Reflow so re-triggering the animation works on repeat calls.
+    void toast.offsetWidth;
+    toast.classList.add('visible');
+    if (gloweToastTimer) clearTimeout(gloweToastTimer);
+    gloweToastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
+}
+
 // ── View-only write gating (FR-GLOWE-003) ───────────────────────────────────
 // Browsing is open to everyone, but creating content (a need, post, event, or
 // discussion) requires a registered account that is allowed to publish. Two
@@ -242,10 +264,28 @@ function gloweIsLoggedIn() {
 }
 
 // The signed-in author's display name for authored content (orgs publish
-// under their organization name).
+// under their organization name). Localized via FR-GLOWE-024 when available.
+function gloweReaderLang() {
+    return (typeof getGloweLanguage === 'function') ? getGloweLanguage() : 'en';
+}
+
 function gloweCurrentAuthorName() {
     const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
+    if (typeof GloweLocalizedName !== 'undefined') {
+        return GloweLocalizedName.localizedProfileName(profile, gloweReaderLang());
+    }
     return profile.orgName || profile.name || 'GloWe Member';
+}
+
+// Source + English pair for stamping content snapshots at create time.
+function gloweCurrentAuthorNamePair() {
+    const profile = (typeof getPersonalProfile === 'function') ? getPersonalProfile() : {};
+    const isOrg = profile && profile.accountType === 'organization';
+    const primary = (isOrg ? (profile.orgName || profile.name) : (profile && profile.name)) || 'GloWe Member';
+    const english = isOrg
+        ? (profile.orgNameEn || profile.nameEn || '')
+        : ((profile && profile.nameEn) || '');
+    return { primary, english };
 }
 
 // Shared submit path for the tailored create forms (FR-GLOWE-016 AC4):
@@ -273,6 +313,7 @@ async function submitCreateDraft(form, options) {
 function readEventDraft() {
     const isDigital = fieldValue('event-type') === 'digital';
     const locationValue = fieldValue('event-location');
+    const author = gloweCurrentAuthorNamePair();
     return {
         title: fieldValue('event-title'),
         description: fieldValue('event-description'),
@@ -283,7 +324,8 @@ function readEventDraft() {
         location: isDigital ? 'Online' : locationValue,
         capacity: fieldValue('event-capacity'),
         registration_mode: fieldValue('event-registration'),
-        organization: gloweCurrentAuthorName()
+        organization: author.primary,
+        organization_en: author.english || null
     };
 }
 
@@ -353,11 +395,13 @@ function openOfferComposer() {
 async function handleOfferPostSubmit(event) {
     event.preventDefault();
     if (!canCreateContent('create-post')) return;
+    const author = gloweCurrentAuthorNamePair();
     const draft = {
         title: fieldValue('offer-title'),
         text: fieldValue('offer-text'),
         impact_area: fieldValue('offer-impact-area'),
-        author_name: gloweCurrentAuthorName()
+        author_name: author.primary,
+        author_name_en: author.english || null
     };
     await submitCreateDraft(event.target, {
         check: GloweCreate.validateOfferPostDraft(draft),
@@ -387,9 +431,11 @@ function openGloweOnboarding(profile) {
     const user = (typeof getCurrentUser === 'function' && getCurrentUser()) || {};
     const setVal = (id, value) => { const el = document.getElementById(id); if (el) el.value = value || ''; };
     setVal('onboarding-display-name', (profile && profile.name) || user.name || '');
+    setVal('onboarding-display-name-en', (profile && profile.nameEn) || '');
     setVal('onboarding-country', (profile && profile.country) || '');
     setVal('onboarding-about', (profile && profile.about) || '');
     setVal('onboarding-org-contact-email', user.email || '');
+    setVal('onboarding-org-name-en', (profile && profile.orgNameEn) || '');
     toggleOnboardingOrgFields();
     openModal('glowe-onboarding-modal');
 }
@@ -436,11 +482,13 @@ async function handleGloweOnboarding(event) {
 
     const details = {
         displayName: val('onboarding-display-name'),
+        displayNameEn: val('onboarding-display-name-en'),
         country: val('onboarding-country'),
         about: val('onboarding-about'),
         accountType,
         org: isOrg ? {
             name: val('onboarding-org-name'),
+            nameEn: val('onboarding-org-name-en'),
             registrationNumber: val('onboarding-org-registration'),
             website: val('onboarding-org-website'),
             country: val('onboarding-org-country'),
@@ -1149,12 +1197,18 @@ async function persistPersonalProfile(profile) {
     return saved;
 }
 
+// Normalize a project into its backend payload, falling back to the raw object
+// when the organizations helper module is unavailable (guest/offline).
+function buildProjectBackendPayload(project) {
+    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    return helpers ? helpers.buildProjectPayload(project) : project;
+}
+
 // FR-GLOWE-011 AC4 (write) — persist a new project. When signed in against a
 // live backend, insert via insertOwned('projects', …) and refresh the live
 // list; otherwise fall back to the localStorage/demo cache (guest/offline).
 async function persistPersonalProject(project) {
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const payload = buildProjectBackendPayload(project);
     const backend = window.gloweBackend;
     if (backend && backend.configured() && isLoggedIn()) {
         try {
@@ -1188,8 +1242,7 @@ async function deletePersonalProject(id) {
 // the localStorage cache. Mirrors persistPersonalProject's signed-in/offline split.
 async function updatePersonalProject(id, project) {
     if (!id) return;
-    const helpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
-    const payload = helpers ? helpers.buildProjectPayload(project) : project;
+    const payload = buildProjectBackendPayload(project);
     const backend = window.gloweBackend;
     if (backend && backend.configured() && isLoggedIn()) {
         try {
@@ -1569,19 +1622,16 @@ function normalizeMainNavigation() {
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const homeHref = inPages ? '../index.html' : 'index.html';
-    const loggedIn = typeof isLoggedIn === 'function' && isLoggedIn();
-    // Once signed in, Home gives way to the Personal Area as the primary tab —
-    // the logged-in user's landing context is their own dashboard, not the
-    // marketing home page.
-    const links = loggedIn
-        ? [{ label: 'Personal Area', href: `${prefix}my-applications.html`, match: 'my-applications' }]
-        : [{ label: 'Home', href: homeHref, match: 'index' }];
-    links.push(
+    // Home stays in the top nav for every session — parity with the mobile
+    // bottom-nav Home tab. Personal Area is reached via the greeting / Profile
+    // tab, not by replacing Home when signed in.
+    const links = [
+        { label: 'Home', href: homeHref, match: 'index' },
         { label: 'Wishing Well', href: `${prefix}wishing-well.html`, match: 'wishing-well' },
         { label: 'Organizations', href: `${prefix}organizations.html`, match: 'organizations' },
         { label: 'Community', href: `${prefix}community.html`, match: 'community' },
         { label: 'About', href: `${prefix}about.html`, match: 'about' }
-    );
+    ];
     const page = resolveGlowePage(window.location.pathname);
     nav.innerHTML = links.map(link => {
         const active = page === link.match
@@ -1592,24 +1642,36 @@ function normalizeMainNavigation() {
     }).join('');
 }
 
+function ensureHeaderEnd() {
+    const headerContainer = document.querySelector('.main-header .container');
+    if (!headerContainer) return null;
+    let headerEnd = headerContainer.querySelector('.header-end');
+    if (!headerEnd) {
+        headerEnd = document.createElement('div');
+        headerEnd.className = 'header-end';
+        headerContainer.appendChild(headerEnd);
+    }
+    return headerEnd;
+}
+
 function normalizeHeaderUserMenu() {
     const headerContainer = document.querySelector('.main-header .container');
     if (!headerContainer) return;
 
+    const headerEnd = ensureHeaderEnd();
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
-    let userMenu = headerContainer.querySelector('.user-menu');
+    let userMenu = headerEnd.querySelector('.user-menu') || headerContainer.querySelector('.user-menu');
     if (!userMenu) {
         userMenu = document.createElement('div');
         userMenu.className = 'user-menu';
-        headerContainer.appendChild(userMenu);
+    }
+    if (userMenu.parentElement !== headerEnd) {
+        headerEnd.appendChild(userMenu);
     }
     userMenu.style.display = 'none';
-    // "Personal Area" already appears once as the primary nav tab when signed in
-    // (see normalizeMainNavigation), so the greeting block keeps only the
-    // identity link + the Messages and Settings actions. Log Out lives inside
-    // the Settings screen (see initSettingsPage). Settings collapses to its gear
-    // icon on phone widths; Messages is icon-only everywhere.
+    // Personal Area is reached via this greeting link (and the mobile Profile
+    // tab). Top nav always keeps Home — it no longer swaps away when signed in.
     const chatIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
     const gearIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
     userMenu.innerHTML = `
@@ -1645,11 +1707,14 @@ window.applyAdminLink = applyAdminLink;
 function normalizeHeaderAuthButtons() {
     const headerContainer = document.querySelector('.main-header .container');
     if (!headerContainer) return;
-    let authButtons = headerContainer.querySelector('.auth-buttons');
+    const headerEnd = ensureHeaderEnd();
+    let authButtons = headerEnd.querySelector('.auth-buttons') || headerContainer.querySelector('.auth-buttons');
     if (!authButtons) {
         authButtons = document.createElement('div');
         authButtons.className = 'auth-buttons';
-        headerContainer.appendChild(authButtons);
+    }
+    if (authButtons.parentElement !== headerEnd) {
+        headerEnd.appendChild(authButtons);
     }
     // Auth is Google-only, so signing in and joining are the same action.
     // A single combined button avoids the false "Log In vs Join" distinction.
@@ -1694,6 +1759,7 @@ function ensureGlobalFooter() {
             </div>
             <div class="footer-bottom">
                 <p>${currentYear} GloWe. Built for shared knowledge, mutual support, and action that lasts.</p>
+                <p class="footer-build" translate="no">${footerBuildLabel()}</p>
             </div>
         </div>
     `;
@@ -1705,6 +1771,15 @@ function ensureGlobalFooter() {
         document.body.appendChild(footer);
     }
     footer.innerHTML = footerHtml;
+}
+
+/** App-wide semver from glowe-version.js (FR-GLOWE-025). */
+function footerBuildLabel() {
+    const version = window.GloweAppVersion && window.GloweAppVersion.version;
+    if (typeof version === 'string' && /^\d+\.\d+\.\d+$/.test(version)) {
+        return `v${version}`;
+    }
+    return 'v0.0.0-local';
 }
 
 // A bottom-nav tab also lights up for its sibling pages (community covers the
@@ -2016,6 +2091,16 @@ function ensureGlobalUI() {
                         </div>
                         <div class="form-grid-2">
                             <div class="form-group">
+                                <label for="edit-profile-name-en">Name in English (optional)</label>
+                                <input id="edit-profile-name-en" type="text" placeholder="Latin / English display name">
+                            </div>
+                            <div class="form-group" id="edit-profile-org-name-en-group" hidden>
+                                <label for="edit-profile-org-name-en">Organization name in English (optional)</label>
+                                <input id="edit-profile-org-name-en" type="text" placeholder="Organization name in English">
+                            </div>
+                        </div>
+                        <div class="form-grid-2">
+                            <div class="form-group">
                                 <label for="edit-profile-country">Country / region</label>
                                 <input id="edit-profile-country" type="text" placeholder="Country / region">
                             </div>
@@ -2110,6 +2195,10 @@ function ensureGlobalUI() {
                             <label for="onboarding-display-name">Your name</label>
                             <input id="onboarding-display-name" type="text" required placeholder="Full name">
                         </div>
+                        <div class="form-group">
+                            <label for="onboarding-display-name-en">Name in English (optional)</label>
+                            <input id="onboarding-display-name-en" type="text" placeholder="Latin / English name — auto-filled if left blank">
+                        </div>
                         <div class="form-grid-2">
                             <div class="form-group">
                                 <label for="onboarding-country">Country / region</label>
@@ -2143,15 +2232,21 @@ function ensureGlobalUI() {
                                     <input id="onboarding-org-name" type="text" placeholder="Registered / public name">
                                 </div>
                                 <div class="form-group">
-                                    <label for="onboarding-org-registration">Registration / NGO number</label>
-                                    <input id="onboarding-org-registration" type="text" placeholder="Legal registration number">
+                                    <label for="onboarding-org-name-en">Organization name in English (optional)</label>
+                                    <input id="onboarding-org-name-en" type="text" placeholder="English org name — auto-filled if blank">
                                 </div>
                             </div>
                             <div class="form-grid-2">
                                 <div class="form-group">
+                                    <label for="onboarding-org-registration">Registration / NGO number</label>
+                                    <input id="onboarding-org-registration" type="text" placeholder="Legal registration number">
+                                </div>
+                                <div class="form-group">
                                     <label for="onboarding-org-website">Website / public link</label>
                                     <input id="onboarding-org-website" type="url" placeholder="https://...">
                                 </div>
+                            </div>
+                            <div class="form-grid-2">
                                 <div class="form-group">
                                     <label for="onboarding-org-country">Country of operation</label>
                                     <input id="onboarding-org-country" type="text" placeholder="Where you operate">
@@ -2477,7 +2572,14 @@ function openEditProfile(profileName = '') {
     ensureGlobalUI();
     const profile = getPersonalProfile();
     const typeConfig = getProfileTypeConfig(profile);
+    const isOrg = profile.accountType === 'organization';
     document.getElementById('edit-profile-name').value = profileName || profile.name;
+    const nameEnEl = document.getElementById('edit-profile-name-en');
+    if (nameEnEl) nameEnEl.value = profile.nameEn || '';
+    const orgEnGroup = document.getElementById('edit-profile-org-name-en-group');
+    const orgEnEl = document.getElementById('edit-profile-org-name-en');
+    if (orgEnGroup) orgEnGroup.hidden = !isOrg;
+    if (orgEnEl) orgEnEl.value = profile.orgNameEn || '';
     document.getElementById('edit-profile-type').value = profile.type || '';
     document.getElementById('edit-profile-country').value = profile.country || '';
     document.getElementById('edit-profile-public-link').value = profile.publicLink || '';
@@ -2517,6 +2619,8 @@ async function handleProfileEdit(event) {
     let uploadWarning = '';
     const profileDraft = {
         name: document.getElementById('edit-profile-name').value,
+        nameEn: (document.getElementById('edit-profile-name-en') || {}).value || '',
+        orgNameEn: (document.getElementById('edit-profile-org-name-en') || {}).value || '',
         type: document.getElementById('edit-profile-type').value,
         country: document.getElementById('edit-profile-country').value,
         publicLink: document.getElementById('edit-profile-public-link').value,
@@ -2672,11 +2776,13 @@ async function handleWishSubmit(event) {
     if (submitBtn) { submitBtn.disabled = true; submitBtn.textContent = 'Publishing...'; }
     try {
         const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : null;
+        const author = gloweCurrentAuthorNamePair();
         await backend.insertOwned('posts', {
             post_type: 'wish', status: 'open',
             title: draft.title, wish_type: draft.wish_type, impact_area: draft.impact_area,
             text: helpers ? helpers.buildWishText(draft) : (draft.details || ''),
-            authorName: (profile && profile.name) || 'GloWe Member'
+            authorName: author.primary || (profile && profile.name) || 'GloWe Member',
+            authorNameEn: author.english || null
         });
         closeModal('wish-modal');
         event.target.reset();
@@ -2967,6 +3073,30 @@ function renderEntityMark(name, className = 'entity-mark') {
     return `<span class="${className}">${getInitials(name)}</span>`;
 }
 
+function bilingualNameAttrs(primary, english) {
+    return `data-ln-primary="${escapeHtml(primary || '')}" data-ln-english="${escapeHtml(english || '')}"`;
+}
+
+function renderLocalizedEntityMark(primary, english, displayName, className = 'entity-mark') {
+    return `<span class="${className}" ${bilingualNameAttrs(primary, english)}>${getInitials(displayName)}</span>`;
+}
+
+function authorNamePairFrom(row) {
+    const r = row || {};
+    return {
+        primary: String(r.authorName != null ? r.authorName : (r.author_name != null ? r.author_name : (r.author || ''))).trim(),
+        english: String(r.authorNameEn != null ? r.authorNameEn : (r.author_name_en != null ? r.author_name_en : (r.authorEn || ''))).trim()
+    };
+}
+
+function orgNamePairFrom(row) {
+    const r = row || {};
+    return {
+        primary: String(r.organization != null ? r.organization : (r.namePrimary != null ? r.namePrimary : (r.orgName || r.name || ''))).trim(),
+        english: String(r.organizationEn != null ? r.organizationEn : (r.organization_en != null ? r.organization_en : (r.nameEn || ''))).trim()
+    };
+}
+
 function escapeHtml(value = '') {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -3125,9 +3255,20 @@ async function loadPostComments() {
     if (!backend || !backend.configured()) return;
     let rows = [];
     try { rows = await backend.listAll('comments'); } catch (_e) { rows = []; }
-    backendPostComments = (typeof GlowePosts !== 'undefined')
-        ? GlowePosts.groupCommentsByPost(rows || [])
-        : {};
+    const helpers = (typeof GlowePosts !== 'undefined') ? GlowePosts : null;
+    const grouped = helpers ? helpers.groupCommentsByPost(rows || []) : {};
+    const flat = [];
+    Object.keys(grouped).forEach(function (postId) {
+        (grouped[postId] || []).forEach(function (c) { flat.push(c); });
+    });
+    const patched = await withEnsuredAuthorEnglishNames(flat);
+    const out = {};
+    patched.forEach(function (c) {
+        const key = String(c.postId == null ? '' : c.postId);
+        if (!out[key]) out[key] = [];
+        out[key].push(c);
+    });
+    backendPostComments = out;
 }
 
 // Comments to render for a post: backend rows (authoritative) merged with any
@@ -3343,10 +3484,12 @@ function formatThreadActivity(createdAt) {
 function savePostComment(postId, text) {
     const comments = getPostComments();
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    const profile = getPersonalProfile();
+    const author = gloweCurrentAuthorNamePair();
     const newComment = {
         id: `comment-${Date.now()}`,
-        author: user ? user.name : profile.name,
+        authorId: user ? user.id : '',
+        author: author.primary,
+        authorEn: author.english || '',
         text: text.trim(),
         createdAt: new Date().toISOString()
     };
@@ -3356,7 +3499,8 @@ function savePostComment(postId, text) {
         window.gloweBackend.insertOwned('comments', {
             post_id: postId,
             text: newComment.text,
-            author_name: newComment.author
+            author_name: newComment.author,
+            author_name_en: newComment.authorEn || null
         }).catch(() => {});
     }
     return newComment;
@@ -3408,52 +3552,62 @@ function getAllCommunityPosts() {
     }));
 }
 
-function buildShareUrl(platform, title, url) {
-    const encodedTitle = encodeURIComponent(title);
-    const encodedUrl = encodeURIComponent(url);
-    const encodedText = encodeURIComponent(`${title} | GloWe`);
-    const urls = {
-        facebook: `https://www.facebook.com/sharer/sharer.php?u=${encodedUrl}`,
-        linkedin: `https://www.linkedin.com/sharing/share-offsite/?url=${encodedUrl}`,
-        x: `https://twitter.com/intent/tweet?text=${encodedText}&url=${encodedUrl}`,
-        whatsapp: `https://wa.me/?text=${encodedText}%20${encodedUrl}`
-    };
-    return urls[platform] || url;
+// One familiar Share icon per post, using the platform's native share sheet
+// (Web Share API) exactly like every other app. No per-network buttons and no
+// bare "Copy link" — desktop browsers without navigator.share fall back to a
+// silent clipboard copy + toast. (FR-GLOWE-008 AC5; design fix #9.)
+const SHARE_ICON_SVG = '<svg class="share-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="18" cy="5" r="3"></circle><circle cx="6" cy="12" r="3"></circle><circle cx="18" cy="19" r="3"></circle><line x1="8.59" y1="13.51" x2="15.42" y2="17.49"></line><line x1="15.41" y1="6.51" x2="8.59" y2="10.49"></line></svg>';
+
+// Familiar visual anchors for the post actions (Jakob's Law; design fix #8).
+const COMMENT_ICON_SVG = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
+const SEND_ICON_SVG = '<svg class="action-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><line x1="22" y1="2" x2="11" y2="13"></line><polygon points="22 2 15 22 11 13 2 9 22 2"></polygon></svg>';
+
+// Resolve a post's relative path (e.g. "community.html?post=42") to an
+// absolute, shareable URL. Falls back to the current page when no path given.
+function postShareUrl(path = '') {
+    return new URL(path || window.location.pathname, window.location.href).href;
 }
 
-function shareContent(platform, title, path = '') {
-    const url = new URL(path || window.location.pathname, window.location.href).href;
-    window.open(buildShareUrl(platform, title, url), '_blank', 'noopener,noreferrer');
+// Native share with a silent clipboard fallback. AbortError means the user
+// dismissed the OS share sheet — treat it as a no-op, not an error.
+async function sharePost(title, path = '') {
+    const url = postShareUrl(path);
+    const name = (title && String(title).trim()) || 'GloWe';
+    if (await tryNativeShare(name, url)) return;
+    await copyShareLink(url);
 }
 
-// Copy a community post's canonical URL to the clipboard (FR-GLOWE-008 AC5).
-async function copyPostLink(postId) {
-    const origin = (typeof window !== 'undefined' && window.location) ? window.location.origin : '';
-    const url = (typeof GlowePosts !== 'undefined')
-        ? GlowePosts.postCanonicalUrl(postId, origin)
-        : `${origin}/glowe/pages/community.html?post=${encodeURIComponent(postId)}`;
+// Attempt the platform's native share sheet. Returns true when it handled the
+// share — including an AbortError (the user dismissed the sheet) — and false
+// when the API is unavailable or errored, so the caller can fall back to copy.
+async function tryNativeShare(name, url) {
+    if (!navigator.share) return false;
     try {
-        if (navigator.clipboard && navigator.clipboard.writeText) {
-            await navigator.clipboard.writeText(url);
-        }
-        showSuccessModal('Link copied', 'The post link is on your clipboard — share it anywhere.');
+        await navigator.share({ title: name, text: `${name} | GloWe`, url });
+        return true;
     } catch (error) {
-        showSuccessModal('Copy this link', url);
+        return Boolean(error && error.name === 'AbortError');
     }
 }
 
-function renderShareButtons(title, path = '') {
+async function copyShareLink(url) {
+    try {
+        if (navigator.clipboard && navigator.clipboard.writeText) {
+            await navigator.clipboard.writeText(url);
+            showToast('Link copied');
+            return;
+        }
+    } catch (error) {
+        // Clipboard blocked (e.g. insecure context) — show the link to copy by hand.
+    }
+    showSuccessModal('Copy this link', url);
+}
+
+function renderShareButton(title, path = '') {
     const safeTitle = escapeHtml(title);
     const titleArg = jsString(title);
     const pathArg = jsString(path);
-    return `
-        <div class="share-row" aria-label="Share ${safeTitle}">
-            <button type="button" onclick="shareContent('facebook', '${titleArg}', '${pathArg}')">Facebook</button>
-            <button type="button" onclick="shareContent('linkedin', '${titleArg}', '${pathArg}')">LinkedIn</button>
-            <button type="button" onclick="shareContent('x', '${titleArg}', '${pathArg}')">X</button>
-            <button type="button" onclick="shareContent('whatsapp', '${titleArg}', '${pathArg}')">WhatsApp</button>
-        </div>
-    `;
+    return `<button type="button" class="post-share-button" onclick="sharePost('${titleArg}', '${pathArg}')" aria-label="Share ${safeTitle}" title="Share">${SHARE_ICON_SVG}<span class="post-share-label">Share</span></button>`;
 }
 
 // FR-GLOWE-015 AC1 — persist a report to glowe_reports. Duplicate reports on
@@ -3504,6 +3658,11 @@ function openWishDetail(wishId) {
     const wish = wishes.find(item => String(item.id) === String(wishId));
     if (!wish) return;
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
+    const authorPair = authorNamePairFrom(wish);
+    const authorName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.resolveLocalizedName(authorPair.primary, authorPair.english, gloweReaderLang())
+            || authorPair.primary || wish.author || 'GloWe Member'
+        : (wish.author || 'GloWe Member');
     const content = document.getElementById('wish-detail-content');
     content.innerHTML = `
         <button class="close-modal" type="button" aria-label="Close wish details" onclick="closeModal('wish-detail-modal')">&times;</button>
@@ -3512,8 +3671,8 @@ function openWishDetail(wishId) {
                 <span class="wish-type" style="background:${style.color}">${wish.type}</span>
                 <h2 data-tr-field="title">${wish.title}</h2>
                 <a class="wish-author" href="profile.html?id=${wish.authorId}">
-                    ${renderEntityMark(wish.author)}
-                    <span>${wish.author}</span>
+                    ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName)}
+                    <span ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
                     <small>${wish.time}</small>
                 </a>
             </div>
@@ -3627,6 +3786,7 @@ function mapOpportunityRow(row) {
         id: row.id,
         title: row.title || '',
         organization: row.organization || 'GloWe Member',
+        organizationEn: row.organization_en || '',
         orgIcon: row.org_icon || getInitials(row.organization || 'GloWe'),
         location: row.location || '',
         commitment: row.commitment || '',
@@ -3648,6 +3808,8 @@ function mapOpportunityRow(row) {
 
 function mapPostRow(row) {
     if (typeof GlowePosts !== 'undefined') return GlowePosts.mapPostRow(row);
+    const authorName = row.author_name || 'Community Member';
+    const authorNameEn = row.author_name_en || '';
     return {
         id: row.id,
         title: row.title || '',
@@ -3655,7 +3817,8 @@ function mapPostRow(row) {
         text: row.text || '',
         tags: Array.isArray(row.tags) ? row.tags : [],
         authorId: row.user_id || '',
-        authorName: row.author_name || 'Community Member',
+        authorName,
+        authorNameEn,
         createdAt: row.created_at || ''
     };
 }
@@ -3670,9 +3833,10 @@ async function loadCommunityPosts() {
     const helpers = (typeof GlowePosts !== 'undefined') ? GlowePosts : null;
     let rows = [];
     try { rows = await backend.listAll('posts'); } catch (_e) { rows = []; }
-    const mapped = helpers
+    let mapped = helpers
         ? helpers.mapCommunityRows(rows)
         : (rows || []).map(mapPostRow);
+    mapped = await withEnsuredAuthorEnglishNames(mapped);
     communityPosts.push(...mapped);
 }
 
@@ -3722,16 +3886,27 @@ async function deleteCommunityPost(postId) {
 
 // Display name for the signed-in author, falling back to their saved profile.
 function currentAuthorName() {
+    const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : null;
+    if (profile && typeof GloweLocalizedName !== 'undefined') {
+        return GloweLocalizedName.localizedProfileName(profile, gloweReaderLang());
+    }
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
     if (user && user.name) return user.name;
-    const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : null;
     return (profile && profile.name) || 'Community Member';
 }
 
 function mapProfileToOrg(profile) {
+    const lang = gloweReaderLang();
+    const primary = profile.orgName || profile.name || 'Organization';
+    const english = profile.orgNameEn || profile.nameEn || '';
+    const name = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedProfileName(profile, lang)
+        : primary;
     return {
         id: profile.id,
-        name: profile.orgName || profile.name || 'Organization',
+        name,
+        namePrimary: primary,
+        nameEn: english,
         type: profile.orgField || profile.type || 'Organization',
         mission: profile.orgDescription || profile.about || '',
         missionField: profile.orgDescription ? 'org_description' : 'about',
@@ -3758,49 +3933,121 @@ async function fetchAndPopulate(backendFn, targetArray, mapper) {
     }
 }
 
+// FR-GLOWE-024 — when the reader is on EN, materialize missing *_en columns for
+// profiles that still only have a non-Latin source name, then return patched rows.
+async function withEnsuredEnglishNames(profiles) {
+    const list = Array.isArray(profiles) ? profiles.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.profileNeedsEnglishName);
+    if (!needing.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return list;
+    const patches = await backend.ensureProfileEnglishNames(needing.map((p) => p.id));
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyEnglishNamePatches(list, patches);
+}
+
+// FR-GLOWE-024 — backfill missing author English snapshots on posts/comments
+// from the author's glowe_profiles row (generate-on-read when still empty).
+async function withEnsuredAuthorEnglishNames(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.authorNeedsEnglishName);
+    if (!needing.length) return list;
+    const ids = [];
+    const seen = {};
+    needing.forEach(function (row) {
+        const id = row.authorId || row.userId;
+        if (!id || seen[String(id)]) return;
+        seen[String(id)] = true;
+        ids.push(String(id));
+    });
+    if (!ids.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return list;
+    const patches = await backend.ensureProfileEnglishNames(ids);
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyAuthorEnglishFromProfiles(list, patches);
+}
+
+function translationToggleSlotHtml() {
+    if (typeof GloweUiConventions !== 'undefined') {
+        return GloweUiConventions.translationToggleSlotHtml();
+    }
+    return '<div class="tr-slot" aria-live="polite"></div>';
+}
+
+function cardActionsClassName() {
+    if (typeof GloweUiConventions !== 'undefined') {
+        return GloweUiConventions.cardActionsClass();
+    }
+    return 'card-actions card-actions--consistent';
+}
+
+function uniqueCardMeta(values) {
+    if (typeof GloweUiConventions !== 'undefined') {
+        return GloweUiConventions.uniqueMeta(values);
+    }
+    return (values || []).filter(Boolean);
+}
+
 function renderOpportunityCard(opportunity, basePath = '') {
     const titleForMessage = jsString(opportunity.title);
     const detailHref = `${basePath}pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
     const skills = Array.isArray(opportunity.skills) ? opportunity.skills : [];
     const events = (typeof GloweEvents !== 'undefined') ? GloweEvents : null;
     const isEvent = events ? events.isEvent(opportunity) : false;
+    const orgName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedOrganizationName(opportunity, gloweReaderLang(), 'GloWe Member')
+        : (opportunity.organization || 'GloWe Member');
+    const orgPair = orgNamePairFrom(opportunity);
     const badge = isEvent
         ? (events.eventTypeLabel(opportunity.eventType) || 'Event')
         : (opportunity.commitment || '');
     const eventMeta = isEvent
-        ? `<span class="opportunity-detail">${escapeHtml(events.formatEventDate(opportunity))}</span>`
+        ? `<span class="opportunity-detail"><strong>When:</strong> ${escapeHtml(events.formatEventDate(opportunity))}</span>`
         : '';
+    const location = opportunity.location || '';
+    const duration = opportunity.duration || '';
+    const commitment = opportunity.commitment || '';
 
     return `
         <div class="opportunity-card" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${opportunity.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More opportunity actions">...</summary>
                 <div class="post-more-panel">
-                    ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save opportunity', 'post-menu-action')}
-                    <button type="button" onclick="openPrivateMessage('${jsString(opportunity.organization)}', '${jsString(opportunity.ownerId || '')}')">Message publisher</button>
+                    ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, orgName, detailHref, 'Save opportunity', 'post-menu-action')}
+                    <button type="button" onclick="openPrivateMessage('${jsString(orgName)}', '${jsString(opportunity.ownerId || '')}')">Message publisher</button>
                     <button type="button" onclick="openReportModal('opportunity', '${opportunity.id}', '${titleForMessage}')">Report</button>
                 </div>
             </details>
             <div class="opportunity-header">
                 <div class="opportunity-org">
-                    ${renderEntityMark(opportunity.organization)}
-                    <span>${escapeHtml(opportunity.organization)}</span>
+                    ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName)}
+                    <span ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(orgName)}</span>
                 </div>
-                <span class="opportunity-badge">${escapeHtml(badge)}</span>
+                ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}">${escapeHtml(badge)}</span>` : ''}
             </div>
+            ${translationToggleSlotHtml()}
             <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
             <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
-            <div class="opportunity-details">
+            <div class="opportunity-meta-group opportunity-details">
                 ${eventMeta}
-                <span class="opportunity-detail">${escapeHtml(opportunity.location)}</span>
-                <span class="opportunity-detail">${escapeHtml(opportunity.duration)}</span>
+                ${location ? `<span class="opportunity-detail"><strong>Location:</strong> ${escapeHtml(location)}</span>` : ''}
+                ${duration ? `<span class="opportunity-detail"><strong>Duration:</strong> ${escapeHtml(duration)}</span>` : ''}
+                ${!isEvent && commitment ? `<span class="opportunity-detail"><strong>Commitment:</strong> ${escapeHtml(commitment)}</span>` : ''}
             </div>
             <div class="opportunity-skills">
-                ${skills.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}
+                ${skills.map(skill => `<span class="skill-tag" title="${escapeHtml(skill)}">${escapeHtml(skill)}</span>`).join('')}
             </div>
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
-                ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, opportunity.organization, detailHref, 'Save Opportunity')}
+                ${savedToggleButtonHtml('opportunity', opportunity.id, opportunity.title, orgName, detailHref, 'Save Opportunity')}
+                ${renderShareButton(opportunity.title, detailHref)}
             </div>
         </div>
     `;
@@ -3809,6 +4056,23 @@ function renderOpportunityCard(opportunity, basePath = '') {
 // Render organization card
 function renderOrganizationCard(organization, basePath = '') {
     const profileHref = `${basePath}pages/profile.html?id=${organization.id}`;
+    const saveLabel = (typeof GloweUiConventions !== 'undefined')
+        ? GloweUiConventions.saveLabelFor('profile')
+        : 'Save';
+    const orgPair = orgNamePairFrom(organization);
+    const placeBits = uniqueCardMeta([organization.location, organization.scope]);
+    const detailHtml = [
+        ...placeBits.map((v) => `<span class="opportunity-detail">${escapeHtml(v)}</span>`),
+        `<span class="opportunity-detail">${escapeHtml(String(organization.volunteers || 0))} volunteers</span>`
+    ].join('');
+    const skillTags = uniqueCardMeta([
+        organization.type || 'Organization',
+        organization.impactArea || ''
+    ]);
+    const skillsHtml = skillTags.map((tag, i) => {
+        const tr = i === 0 ? ' data-tr-field="org_field"' : '';
+        return `<span class="skill-tag"${tr}>${escapeHtml(tag)}</span>`;
+    }).join('');
     return `
         <div class="opportunity-card" data-tr-card data-tr-type="glowe_profile" data-tr-id="${organization.id}">
             <details class="post-more-menu card-more-menu">
@@ -3821,25 +4085,19 @@ function renderOrganizationCard(organization, basePath = '') {
             </details>
             <div class="opportunity-header">
                 <div class="opportunity-org">
-                    ${renderEntityMark(organization.name)}
+                    ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, organization.name)}
                 </div>
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
-            <h3 class="opportunity-title">${escapeHtml(organization.name)}</h3>
+            ${translationToggleSlotHtml()}
+            <h3 class="opportunity-title" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(organization.name)}</h3>
             <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
-            <div class="opportunity-details">
-                <span class="opportunity-detail">${escapeHtml(organization.location)}</span>
-                <span class="opportunity-detail">${escapeHtml(organization.scope || 'Global')}</span>
-                <span class="opportunity-detail">${escapeHtml(organization.volunteers)} volunteers</span>
-            </div>
-            <div class="opportunity-skills">
-                <span class="skill-tag" data-tr-field="org_field">${escapeHtml(organization.type || 'Organization')}</span>
-                <span class="skill-tag">${escapeHtml(organization.impactArea || 'Impact')}</span>
-            </div>
-            <div class="card-actions">
+            <div class="opportunity-details">${detailHtml}</div>
+            <div class="opportunity-skills">${skillsHtml}</div>
+            <div class="${cardActionsClassName()}">
                 <a href="${profileHref}" class="btn btn-outline btn-small">View Profile</a>
                 <button class="btn btn-primary btn-small" type="button" onclick="openReachOutModal('${organization.id}', '${jsString(organization.name)}')">Reach Out</button>
-                ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, 'Save Profile')}
+                ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, saveLabel)}
             </div>
         </div>
     `;
@@ -3848,28 +4106,34 @@ function renderOrganizationCard(organization, basePath = '') {
 function renderWishCard(wish) {
     const style = wishTypeStyles[wish.type] || { color: '#E3F5F0' };
     const areas = Array.isArray(wish.areas) ? wish.areas : [];
+    const authorPair = authorNamePairFrom(wish);
+    const authorName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.resolveLocalizedName(authorPair.primary, authorPair.english, gloweReaderLang())
+            || authorPair.primary || 'GloWe Member'
+        : (wish.author || 'GloWe Member');
     return `
         <article class="wish-card" style="--tag-color: ${style.color}" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More wish actions">...</summary>
                 <div class="post-more-panel">
-                    ${savedToggleButtonHtml('wish', wish.id, wish.title, wish.author, `wishing-well.html?wish=${wish.id}`, 'Save wish', 'post-menu-action')}
-                    <button type="button" onclick="openPrivateMessage('${jsString(wish.author)}', '${jsString(wish.authorId || '')}')">Message author</button>
+                    ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save wish', 'post-menu-action')}
+                    <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(wish.authorId || '')}')">Message author</button>
                     <button type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 </div>
             </details>
             <div class="wish-card-top">
-                <span class="wish-type" style="background:${style.color}">${escapeHtml(wish.type)}</span>
-                ${savedToggleButtonHtml('wish', wish.id, wish.title, wish.author, `wishing-well.html?wish=${wish.id}`, 'Save', 'heart-button')}
+                <span class="wish-type" style="background:${style.color}" title="${escapeHtml(wish.type)}">${escapeHtml(wish.type)}</span>
+                ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save', 'heart-button')}
             </div>
+            ${translationToggleSlotHtml()}
             <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
-                ${renderEntityMark(wish.author, 'wish-image')}
+                ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName, 'wish-image')}
                 <span class="sr-only">Open wish details</span>
             </button>
             <h3><button type="button" data-tr-field="title" onclick="openWishDetail('${wish.id}')">${escapeHtml(wish.title)}</button></h3>
             <a class="wish-author" href="profile.html?id=${wish.authorId}">
-                ${renderEntityMark(wish.author)}
-                <span>${escapeHtml(wish.author)}</span>
+                ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName)}
+                <span ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
                 <small>${escapeHtml(wish.time)}</small>
             </a>
             <p data-tr-field="text">${escapeHtml(wish.description)}</p>
@@ -3881,10 +4145,10 @@ function renderWishCard(wish) {
             <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail('${wish.id}')">Learn More</button>
             <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
             ${wishOwnerControls(wish)}
+            ${renderShareButton(wish.title, `wishing-well.html?wish=${wish.id}`)}
         </div>
-        ${renderShareButtons(wish.title, `wishing-well.html?wish=${wish.id}`)}
     </article>
-    `;
+`;
 }
 
 function renderProjectCard(project, options) {
@@ -3908,8 +4172,26 @@ function renderProjectCard(project, options) {
     `;
 }
 
+function formatCommentCount(count) {
+    const n = Number(count) || 0;
+    const lang = (typeof getGloweLanguage === 'function') ? getGloweLanguage() : 'en';
+    if (lang === 'he') {
+        if (n === 0) return 'אין תגובות';
+        if (n === 1) return 'תגובה אחת';
+        return `${n} תגובות`;
+    }
+    if (n === 1) return '1 comment';
+    return `${n} comments`;
+}
+
+// Pre-existing render hotspot (owner menu + comments + tags); this PR only
+// added the action icons/count + share button, not the underlying complexity.
+// fallow-ignore-next-line complexity
 function renderPostCard(post) {
-    const authorName = post.authorName || 'Community Member';
+    const authorPair = authorNamePairFrom(post);
+    const authorName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedAuthorName(post, gloweReaderLang(), 'Community Member')
+        : (post.authorName || 'Community Member');
     const profileHref = post.authorId ? `profile.html?id=${post.authorId}` : '#';
     const tags = Array.isArray(post.tags) ? post.tags : [];
     const postId = post.id || getPostId(post);
@@ -3921,6 +4203,30 @@ function renderPostCard(post) {
     const deleteButton = ownsPost
         ? `<button type="button" class="post-delete-action" onclick="deleteCommunityPost('${postId}')">Delete post</button>`
         : '';
+    const tagsHtml = tags.length
+        ? `<div class="post-tag-row">${tags.map((tag, i) =>
+            `<span data-tr-field="tags.${i}" title="${escapeHtml(tag)}">${escapeHtml(tag)}</span>`
+        ).join('')}</div>`
+        : '';
+    const commentsHtml = comments.slice(0, 3).map((comment) => {
+        const commentPair = authorNamePairFrom(comment);
+        const commentAuthor = (typeof GloweLocalizedName !== 'undefined')
+            ? GloweLocalizedName.resolveLocalizedName(commentPair.primary, commentPair.english, gloweReaderLang())
+            : (comment.author || 'Community Member');
+        const commentId = comment.id || '';
+        const trAttrs = commentId
+            ? ` data-tr-card data-tr-type="glowe_comment" data-tr-id="${escapeHtml(String(commentId))}"`
+            : '';
+        return `
+                    <article class="comment-row"${trAttrs}>
+                        ${renderLocalizedEntityMark(commentPair.primary, commentPair.english, commentAuthor, 'comment-avatar')}
+                        <div>
+                            ${commentId ? translationToggleSlotHtml() : ''}
+                            <strong ${bilingualNameAttrs(commentPair.primary, commentPair.english)}>${escapeHtml(commentAuthor)}</strong>
+                            <p${commentId ? ' data-tr-field="text"' : ''}>${escapeHtml(comment.text)}</p>
+                        </div>
+                    </article>`;
+    }).join('');
     return `
         <article class="post-card" id="post-${postId}" data-tr-card data-tr-type="glowe_post" data-tr-id="${postId}">
             <details class="post-more-menu">
@@ -3935,40 +4241,32 @@ function renderPostCard(post) {
             </details>
             <div class="post-author-row">
                 <a class="post-author" href="${profileHref}">
-                    ${renderEntityMark(authorName, 'avatar')}
+                    ${renderLocalizedEntityMark(authorPair.primary, authorPair.english, authorName, 'avatar')}
                     <span>
-                        <strong>${escapeHtml(authorName)}</strong>
+                        <strong ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</strong>
                         <small>${post.createdAt ? new Date(post.createdAt).toLocaleDateString() : 'now'}</small>
                     </span>
                 </a>
-                <span class="post-type-tag">Post | ${escapeHtml(post.category)}</span>
+                <span class="post-type-tag" title="Post | ${escapeHtml(post.category)}">Post | ${escapeHtml(post.category)}</span>
             </div>
+            ${translationToggleSlotHtml()}
             <h3 data-tr-field="title">${escapeHtml(post.title)}</h3>
             <p data-tr-field="text">${escapeHtml(post.text)}</p>
-            ${tags.length ? `<div class="post-tag-row">${tags.map(tag => `<span>${escapeHtml(tag)}</span>`).join('')}</div>` : ''}
+            ${tagsHtml}
+            <div class="post-engagement-row">
+                <span class="comment-summary" aria-live="polite">${formatCommentCount(comments.length)}</span>
+            </div>
             <div class="post-actions">
-                <button type="button" onclick="focusCommentBox('${postId}')">Comment</button>
-                <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(post.authorId || '')}')">Send</button>
+                <button type="button" onclick="focusCommentBox('${postId}')">${COMMENT_ICON_SVG}<span>Comment</span>${comments.length ? `<span class="action-count">${comments.length}</span>` : ''}</button>
+                <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(post.authorId || '')}')">${SEND_ICON_SVG}<span>Send</span></button>
+                ${renderShareButton(post.title, `community.html?post=${encodeURIComponent(postId)}`)}
             </div>
             <div class="post-comments" id="comments-${postId}">
-                <div class="comment-summary">${comments.length} comment${comments.length === 1 ? '' : 's'}</div>
-                ${comments.slice(0, 3).map(comment => `
-                    <article class="comment-row">
-                        ${renderEntityMark(comment.author, 'comment-avatar')}
-                        <div>
-                            <strong>${escapeHtml(comment.author)}</strong>
-                            <p>${escapeHtml(comment.text)}</p>
-                        </div>
-                    </article>
-                `).join('')}
+                ${commentsHtml}
                 <form class="comment-form" onsubmit="handlePostComment(event, '${postId}')">
-                    <input id="comment-input-${postId}" placeholder="Write a thoughtful comment..." required>
+                    <input id="comment-input-${postId}" aria-label="Write a thoughtful comment..." placeholder="Write a thoughtful comment..." required>
                     <button type="submit">Post</button>
                 </form>
-            </div>
-            <div class="post-share-row">
-                ${renderShareButtons(post.title, `community.html?post=${encodeURIComponent(postId)}`)}
-                <button type="button" class="post-copy-link" onclick="copyPostLink('${postId}')">Copy link</button>
             </div>
         </article>
     `;
@@ -4171,13 +4469,15 @@ function closeInlineComposer() {
 async function handleInlinePostSubmit(event) {
     event.preventDefault();
     const topic = postTopics.find(item => item.id === document.getElementById('inline-post-topic').value) || postTopics[0];
+    const author = gloweCurrentAuthorNamePair();
     const published = await submitCommunityPost({
         title: document.getElementById('inline-post-title').value,
         category: topic.label,
         text: document.getElementById('inline-post-body').value,
         tags: document.getElementById('inline-post-tags').value,
         audience: 'Everyone',
-        author_name: currentAuthorName()
+        author_name: author.primary,
+        author_name_en: author.english || null
     });
     if (!published) return;
     closeInlineComposer();
@@ -4245,6 +4545,7 @@ function initWritePostPage() {
     form.addEventListener('submit', async event => {
         event.preventDefault();
         const topic = selectedTopic();
+        const author = gloweCurrentAuthorNamePair();
         const published = await submitCommunityPost({
             title: document.getElementById('post-title').value,
             category: topic.label,
@@ -4253,7 +4554,8 @@ function initWritePostPage() {
             audience: document.getElementById('post-audience').value,
             language: document.getElementById('post-language').value,
             link: document.getElementById('post-link').value,
-            author_name: currentAuthorName()
+            author_name: author.primary,
+            author_name_en: author.english || null
         });
         if (!published) return;
         showSuccessModal('Post connected to feed', 'Your post was saved and will appear at the top of the community feed.');
@@ -4625,9 +4927,16 @@ async function handleOpportunitySubmit(event) {
     event.preventDefault();
     if (!canCreateContent()) return;
     const helpers = (typeof GloweOpportunities !== 'undefined') ? GloweOpportunities : null;
+    const author = gloweCurrentAuthorNamePair();
+    const orgPrimary = document.getElementById('opportunity-organization').value;
     const draft = {
         title: document.getElementById('opportunity-title').value,
-        organization: document.getElementById('opportunity-organization').value,
+        organization: orgPrimary,
+        organization_en: (String(orgPrimary || '').trim() === String(author.primary || '').trim()
+            || !String(orgPrimary || '').trim())
+            ? (author.english || null)
+            : ((typeof GloweLocalizedName !== 'undefined'
+                && GloweLocalizedName.isPrimarilyLatin(orgPrimary)) ? orgPrimary.trim() : null),
         commitment: document.getElementById('opportunity-type').value,
         field: document.getElementById('opportunity-field').value,
         location: document.getElementById('opportunity-location').value,
@@ -4717,7 +5026,13 @@ async function initOrganizationsPage() {
     }
 
     container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading organizations…</p></div>';
-    await fetchAndPopulate(() => gloweBackend.listApprovedOrgs(), organizations, mapProfileToOrg);
+    try {
+        const rows = await gloweBackend.listApprovedOrgs();
+        const ensured = await withEnsuredEnglishNames(rows || []);
+        organizations.splice(0, organizations.length, ...ensured.map(mapProfileToOrg));
+    } catch (_e) {
+        organizations.splice(0, organizations.length);
+    }
     refreshFilters(buildVisibleOrgs());
     renderOrganizations();
 }
@@ -5327,6 +5642,9 @@ function renderDiscussionThread(thread, group, allReplies) {
                     <input class="reply-input" required placeholder="Write a reply">
                     <button class="btn btn-outline btn-small" type="submit">Reply</button>
                 </form>
+                <div class="thread-actions">
+                    ${renderShareButton(thread.title, `discussion-group.html?group=${encodeURIComponent(group.id)}`)}
+                </div>
             </div>
         </article>
     `;
@@ -5450,10 +5768,15 @@ function _adaptDbProfile(p, projects) {
     // about; member: about). Only DB profiles carry this; static profiles omit
     // `_tr`, so they get no (unmatchable) translation markup. See TD-135.
     const missionField = isOrg ? (p.orgDescription ? 'org_description' : 'about') : 'about';
+    const lang = gloweReaderLang();
+    const displayName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedProfileName(p, lang)
+        : (isOrg ? (p.orgName || p.name || 'Unnamed organization') : (p.name || 'Anonymous'));
     return {
         _tr: { type: 'glowe_profile', id: p.id, missionField: missionField },
         id: p.id,
-        name: isOrg ? (p.orgName || p.name || 'Unnamed organization') : (p.name || 'Anonymous'),
+        name: displayName,
+        nameEn: isOrg ? (p.orgNameEn || p.nameEn || '') : (p.nameEn || ''),
         type: isOrg ? (p.orgField || 'Organization') : 'Community Member',
         email: p.orgContactEmail || p.email || '',
         location: p.location || p.orgCountry || '',
@@ -5509,8 +5832,10 @@ async function initProfilePage() {
     const backend = window.gloweBackend;
     if (!backend || !backend.configured()) { _profileNotFound(container); return; }
     try {
-        const dbProfile = await backend.fetchProfileById(id);
+        let dbProfile = await backend.fetchProfileById(id);
         if (!dbProfile) { _profileNotFound(container); return; }
+        const ensured = await withEnsuredEnglishNames([dbProfile]);
+        dbProfile = ensured[0] || dbProfile;
         const projects = await _loadPublicProjects(backend, id);
         _renderProfileContent(_adaptDbProfile(dbProfile, projects), container);
     } catch {
@@ -5810,8 +6135,11 @@ async function initOpportunityDetailPage() {
     }
     
     // Populate page content
+    const orgName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedOrganizationName(opportunity, gloweReaderLang(), 'GloWe Member')
+        : (opportunity.organization || 'GloWe Member');
     document.getElementById('opp-title').textContent = opportunity.title;
-    document.getElementById('opp-org').innerHTML = `${renderEntityMark(opportunity.organization)} ${escapeHtml(opportunity.organization)}`;
+    document.getElementById('opp-org').innerHTML = `${renderEntityMark(orgName)} ${escapeHtml(orgName)}`;
     document.getElementById('opp-location').textContent = opportunity.location;
     document.getElementById('opp-duration').textContent = opportunity.duration;
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
@@ -5821,20 +6149,28 @@ async function initOpportunityDetailPage() {
     // tag each chip with a per-element field ("requirements.<i>") so the reader
     // driver translates and caches every item independently. `skills` stays
     // untranslated (short tech/label tags, excluded from the registry by AC4).
+    // Explicit empty state so a blank section reads as "nothing listed" rather
+    // than a load error (design fix #2 — Missing Empty States).
+    const emptyDetail = '<li class="empty-detail">None specified for this opportunity.</li>';
+
     const requirementsList = document.getElementById('opp-requirements');
-    requirementsList.innerHTML = (opportunity.requirements || [])
-        .map((req, i) => `<li data-tr-field="requirements.${i}">${escapeHtml(req)}</li>`).join('');
+    const reqs = (opportunity.requirements || []).filter(Boolean);
+    requirementsList.innerHTML = reqs.length
+        ? reqs.map((req, i) => `<li data-tr-field="requirements.${i}">${escapeHtml(req)}</li>`).join('')
+        : emptyDetail;
 
     const responsibilitiesList = document.getElementById('opp-responsibilities');
-    responsibilitiesList.innerHTML = (opportunity.responsibilities || [])
-        .map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('');
+    const resps = (opportunity.responsibilities || []).filter(Boolean);
+    responsibilitiesList.innerHTML = resps.length
+        ? resps.map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('')
+        : emptyDetail;
 
     // Mark the card + scan AFTER the chips exist so title, description and every
     // array element are collected in a single pass (the card gets data-tr-done).
     markOpportunityDetailForTranslation(opportunity.id);
     
     const skillsContainer = document.getElementById('opp-skills');
-    skillsContainer.innerHTML = (opportunity.skills || []).map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('');
+    skillsContainer.innerHTML = (opportunity.skills || []).map(skill => `<span class="skill-tag" title="${escapeHtml(skill)}">${escapeHtml(skill)}</span>`).join('');
     
     // Organization info
     const org = getOrganizationByName(opportunity.organization);
@@ -6353,7 +6689,21 @@ async function handleApplicationSubmit(event) {
 function initMyApplicationsPage() {
     const container = document.getElementById('personal-area-content');
     if (!container) return;
-    if (typeof requireGloweMember === 'function' && !requireGloweMember()) return;
+    // FR-GLOWE-023 AC1 — an anonymous visitor tapping the "Profile" tab sees an
+    // in-page sign-in prompt (like Settings/Messages) instead of being bounced
+    // back to the guest home; the contextual join modal opens immediately so
+    // the tap isn't a dead end.
+    if (!(typeof isLoggedIn === 'function' && isLoggedIn())) {
+        container.innerHTML = `
+            <div class="empty-state">
+                <h3>Sign in to open your personal area</h3>
+                <p>Your profile, applications, needs, and saved items live here once you are signed in.</p>
+                <button class="btn btn-primary" type="button" onclick="window.GloweGuest.requireMemberForAction('open-personal-area', {}, function(){})">Sign up / Sign in</button>
+            </div>
+        `;
+        if (window.GloweGuest) window.GloweGuest.requireMemberForAction('open-personal-area', {}, function () {});
+        return;
+    }
 
     function renderPersonalArea() {
         const profile = getPersonalProfile();
@@ -6715,6 +7065,13 @@ const GLOWE_TRANSLATIONS = {
         // UGC translation toggle (FR-TRANSLATE-005)
         'Show original': 'הצג מקור',
         'Show translation': 'הצג תרגום',
+        // Bilingual names (FR-GLOWE-024)
+        'Name in English (optional)': 'שם באנגלית (אופציונלי)',
+        'Latin / English display name': 'שם תצוגה באנגלית / לטינית',
+        'Latin / English name — auto-filled if left blank': 'שם באנגלית / לטינית — ימולא אוטומטית אם יישאר ריק',
+        'Organization name in English (optional)': 'שם הארגון באנגלית (אופציונלי)',
+        'Organization name in English': 'שם הארגון באנגלית',
+        'English org name — auto-filled if blank': 'שם הארגון באנגלית — ימולא אוטומטית אם ריק',
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Opportunities': 'הזדמנויות',
         'My Events': 'האירועים שלי',
@@ -6819,6 +7176,8 @@ const GLOWE_TRANSLATIONS = {
         'Something went wrong deleting your profile. Please try again.': 'משהו השתבש במחיקת הפרופיל. אנא נסו שוב.',
         'Sign in to manage settings': 'התחברו כדי לנהל הגדרות',
         'Your account, language, and session options live here once you are signed in.': 'החשבון, השפה ואפשרויות ההתחברות יופיעו כאן לאחר הכניסה.',
+        'Sign in to open your personal area': 'התחברו כדי לפתוח את האזור האישי',
+        'Your profile, applications, needs, and saved items live here once you are signed in.': 'הפרופיל, הבקשות, הצרכים והפריטים השמורים שלכם יופיעו כאן לאחר הכניסה.',
         // Member home (FR-GLOWE-016)
         'Your GloWe': 'ה-GloWe שלכם',
         'Welcome back,': 'ברוכים השבים,',
@@ -6955,6 +7314,8 @@ const GLOWE_TRANSLATIONS = {
         "Climate": "אקלים",
         "Close": "סגירה",
         "Comment": "תגובה",
+        "comment": "תגובה",
+        "comments": "תגובות",
         "Commitment:": "מחויבות:",
         "Community Activity": "פעילות הקהילה",
         "Community Building": "בניית קהילה",
@@ -7191,6 +7552,7 @@ const GLOWE_TRANSLATIONS = {
         "No projects listed yet.": "אין עדיין פרויקטים רשומים.",
         "No projects yet. Add your first project.": "אין עדיין פרויקטים. הוסיפו את הפרויקט הראשון שלכם.",
         "No replies yet. Be the first to respond.": "אין עדיין תגובות. היו הראשונים להגיב.",
+        "None specified for this opportunity.": "לא צוינו עבור ההזדמנות הזו.",
         "No reports yet": "אין עדיין דיווחים",
         "No results": "אין תוצאות",
         "No saved items yet": "אין עדיין פריטים שמורים",
@@ -7490,6 +7852,8 @@ const GLOWE_TRANSLATIONS = {
         "You may request deletion of your account or data at any time.": "תוכלו לבקש את מחיקת החשבון או הנתונים שלכם בכל עת.",
         "You retain full ownership of your intellectual property.": "אתם שומרים על בעלות מלאה על הקניין הרוחני שלכם.",
         "You've got something the world needs.": "יש לכם משהו שהעולם זקוק לו.",
+        "You're already part of GloWe.": "אתם כבר חלק מ-GloWe.",
+        "Explore the community, share what you know, or pick up where you left off.": "גלו את הקהילה, שתפו את מה שאתם יודעים, או המשיכו מאיפה שהפסקתם.",
         "Your Availability": "הזמינות שלכם",
         "Your Community Home": "בית הקהילה שלכם",
         "Your full name": "השם המלא שלכם",
@@ -8042,8 +8406,8 @@ function toggleGloweLanguage() {
 // Header language toggle — shown only for anonymous visitors.
 // Logged-in users access language via the Settings page.
 function injectLanguageToggle() {
-    const container = document.querySelector('.main-header .container');
-    if (!container || container.querySelector('.lang-toggle')) return;
+    const headerEnd = ensureHeaderEnd();
+    if (!headerEnd || headerEnd.querySelector('.lang-toggle')) return;
     const current = getGloweLanguage();
     const btn = document.createElement('button');
     btn.type = 'button';
@@ -8052,8 +8416,8 @@ function injectLanguageToggle() {
     btn.setAttribute('aria-label', current === 'he' ? 'Switch to English' : 'מעבר לעברית');
     btn.textContent = current === 'he' ? 'EN' : 'עב';
     btn.addEventListener('click', toggleGloweLanguage);
-    const authButtons = container.querySelector('.auth-buttons');
-    container.insertBefore(btn, authButtons || null);
+    // Trailing edge of the header-end cluster (after auth / user-menu).
+    headerEnd.appendChild(btn);
 }
 
 function removeLanguageToggle() {
@@ -8096,7 +8460,11 @@ function initSettingsPage() {
                     <h2>Account</h2>
                 </div>
                 <div class="profile-info-list">
-                    <p><strong>Name</strong><span>${escapeHtml(profile.name || 'GloWe member')}</span></p>
+                    <p><strong>Name</strong><span>${escapeHtml(
+                        (typeof GloweLocalizedName !== 'undefined')
+                            ? GloweLocalizedName.localizedProfileName(profile, lang)
+                            : (profile.name || 'GloWe member')
+                    )}</span></p>
                     <p><strong>Email</strong><span>${escapeHtml(profile.email || 'Not available')}</span></p>
                     <p><strong>Account type</strong><span>${escapeHtml(profile.type || 'Community member')}</span></p>
                 </div>

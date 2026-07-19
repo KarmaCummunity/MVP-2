@@ -138,7 +138,11 @@ if (typeof window !== 'undefined') {
         }
 
         function injectToggle(card, _target) {
-            if (card.querySelector('.tr-toggle')) return;
+            const already = Array.prototype.some.call(
+                card.querySelectorAll('.tr-toggle'),
+                function (el) { return el.closest('[data-tr-card]') === card; }
+            );
+            if (already) return;
             const labels = T.TOGGLE_LABELS;
             const btn = document.createElement('button');
             btn.type = 'button';
@@ -148,15 +152,42 @@ if (typeof window !== 'undefined') {
             btn.addEventListener('click', function () {
                 const showingSource = btn.getAttribute('data-showing') === 'source';
                 card.querySelectorAll('[data-tr-translated]').forEach(function (el) {
+                    // Only swap fields owned by this card (nested comment cards
+                    // keep their own toggle + source/translated attrs).
+                    if (el.closest('[data-tr-card]') !== card) return;
                     el.textContent = showingSource
                         ? el.getAttribute('data-tr-translated')
                         : el.getAttribute('data-tr-source');
                 });
+                const ln = window.GloweLocalizedName;
+                if (ln && typeof ln.applyToggleNamesInCard === 'function') {
+                    ln.applyToggleNamesInCard(card, !showingSource, readerLang());
+                }
                 btn.setAttribute('data-showing', showingSource ? 'translation' : 'source');
                 btn.textContent = showingSource ? labels.show : labels.hide;
                 localizeLabel(btn);
             });
-            card.appendChild(btn);
+            // Global convention: prefer the reserved .tr-slot under the card
+            // header (see glowe-ui-conventions.js). Fallback keeps proximity
+            // to title/body for older markup.
+            const slot = card.querySelector(':scope > .tr-slot, .tr-slot');
+            if (slot && slot.closest('[data-tr-card]') === card) {
+                slot.appendChild(btn);
+            } else {
+                const titleEl = card.querySelector('[data-tr-field="title"]');
+                const bodyEl = card.querySelector('[data-tr-field="text"], [data-tr-field="description"]');
+                const anchor = titleEl || bodyEl;
+                if (anchor && anchor.closest('[data-tr-card]') === card) {
+                    anchor.insertAdjacentElement('afterend', btn);
+                } else {
+                    const fallback = card.querySelector('.post-actions, .card-actions, .post-comments');
+                    if (fallback && fallback.parentNode === card) {
+                        card.insertBefore(btn, fallback);
+                    } else {
+                        card.appendChild(btn);
+                    }
+                }
+            }
             localizeLabel(btn);
         }
 

@@ -160,29 +160,34 @@ ul {
 }
 
 .main-header .container {
-    display: flex;
+    display: grid;
+    grid-template-columns: auto minmax(0, 1fr) max-content;
     align-items: center;
-    justify-content: space-between;
-    padding: 16px 20px;
-    gap: 14px;
+    column-gap: clamp(8px, 1.2vw, 16px);
+    row-gap: 0;
+    padding: 14px clamp(12px, 1.8vw, 20px);
+    min-width: 0;
 }
 
 .logo {
     display: flex;
     align-items: center;
-    gap: 10px;
+    gap: clamp(6px, 0.8vw, 10px);
+    grid-column: 1;
+    grid-row: 1;
+    min-width: 0;
 }
 
 .logo-icon {
-    width: 42px;
-    height: 42px;
+    width: clamp(32px, 3.2vw, 42px);
+    height: clamp(32px, 3.2vw, 42px);
     background: url('../assets/glowe-life-flower.png') center / contain no-repeat;
     font-size: 0;
     flex: 0 0 auto;
 }
 
 .logo-text {
-    font-size: 1.5rem;
+    font-size: clamp(1.1rem, 0.85rem + 0.55vw, 1.5rem);
     font-weight: 700;
     color: var(--primary-dark);
     letter-spacing: 0;
@@ -190,30 +195,35 @@ ul {
 
 .main-nav {
     display: flex;
-    gap: 6px;
-    padding: 4px;
+    align-items: center;
+    justify-content: space-evenly;
+    gap: clamp(6px, 0.9vw, 14px);
+    padding: 4px clamp(6px, 0.7vw, 12px);
     background: rgba(15, 93, 85, 0.06);
     border: 1px solid rgba(15, 93, 85, 0.12);
     border-radius: 999px;
-    max-width: 100%;
-    overflow-x: auto;
-    scrollbar-width: none;
-}
-
-.main-nav::-webkit-scrollbar {
-    display: none;
+    grid-column: 2;
+    grid-row: 1;
+    width: 100%;
+    min-width: 0;
+    flex-wrap: nowrap;
+    overflow: hidden;
 }
 
 .nav-link {
     color: var(--text-secondary);
     font-weight: 600;
-    font-size: 0.92rem;
+    font-size: clamp(0.72rem, 0.4rem + 0.55vw, 0.92rem);
     text-transform: none;
-    transition: var(--transition);
-    padding: 8px 14px;
+    transition: color 0.2s ease, background-color 0.2s ease, box-shadow 0.2s ease;
+    padding: clamp(6px, 0.35vw + 4px, 8px) clamp(8px, 0.7vw + 4px, 16px);
     position: relative;
     border-radius: 999px;
     white-space: nowrap;
+    min-width: 0;
+    flex: 1 1 0;
+    text-align: center;
+    cursor: pointer;
 }
 
 .nav-link:hover,
@@ -227,27 +237,81 @@ ul {
     display: none;
 }
 
+.header-end {
+    grid-column: 3;
+    grid-row: 1;
+    display: inline-flex;
+    align-items: center;
+    justify-content: flex-end;
+    gap: clamp(6px, 0.7vw, 10px);
+    min-width: 0;
+}
+
+.auth-buttons,
+.user-menu {
+    display: inline-flex;
+    align-items: center;
+    min-width: 0;
+}
+
 .auth-buttons {
-    display: flex;
-    gap: 12px;
-    flex: 0 0 auto;
+    gap: clamp(6px, 0.8vw, 12px);
+}
+
+.auth-buttons .btn {
+    padding: clamp(6px, 0.4vw + 4px, 10px) clamp(10px, 0.8vw + 6px, 18px);
+    font-size: clamp(0.75rem, 0.55rem + 0.35vw, 0.92rem);
+    white-space: nowrap;
 }
 
 .user-menu {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    flex: 0 0 auto;
+    justify-content: flex-end;
+    gap: clamp(4px, 0.55vw, 8px);
 }
 
 .user-greeting {
     color: var(--text-secondary);
     font-weight: 600;
     text-decoration: none;
+    max-width: 9.5rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+    flex: 0 1 auto;
+    min-width: 0;
 }
 
 a.user-greeting:hover {
     color: var(--primary-color);
+}
+
+/* Tablet+: match Messages chrome — icon-only Settings/Admin before phone breakpoint. */
+@media (max-width: 992px) {
+    .user-menu .header-settings-btn,
+    .user-menu .glowe-admin-link {
+        width: 40px;
+        height: 40px;
+        min-width: 40px;
+        padding: 0;
+        border-radius: 50%;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .header-settings-label,
+    .glowe-admin-label {
+        display: none;
+    }
+
+    .header-settings-icon,
+    .glowe-admin-icon {
+        display: inline-flex;
+    }
+
+    .user-greeting {
+        display: none;
+    }
 }
 
 .header-icon-btn {
@@ -287,8 +351,8 @@ a.user-greeting:hover {
     height: 20px;
 }
 
-/* Settings/Admin keep their text labels on desktop; icons shown only on
-   phone widths (see the max-width: 680px block). */
+/* Settings/Admin keep text labels on wide desktops; icons from ≤992px
+   (see tablet media query) and phones (≤680px). */
 .header-settings-icon,
 .glowe-admin-icon {
     display: none;
@@ -699,6 +763,7 @@ a.user-greeting:hover {
     grid-template-columns: repeat(auto-fit, minmax(320px, 1fr));
     gap: 24px;
     margin-bottom: 40px;
+    align-items: stretch;
 }
 
 .opportunity-composer-section {
@@ -733,12 +798,30 @@ a.user-greeting:hover {
 
 .opportunity-card {
     position: relative;
+    display: flex;
+    flex-direction: column;
     background: var(--white);
     border-radius: var(--radius-md);
     padding: 24px;
     box-shadow: var(--shadow-sm);
     border: 1px solid var(--border-color);
     transition: var(--transition);
+}
+
+/* Anchor the action row to the bottom of the card so buttons sit on one
+   baseline regardless of body length (design fix #6 — grid rows already
+   stretch to equal height, so margin-top:auto lines the actions up). */
+.opportunity-card,
+.wish-card {
+    display: flex;
+    flex-direction: column;
+}
+
+.opportunity-card > .card-actions,
+.wish-card > .card-actions,
+.post-card > .post-actions,
+.post-card > .post-share-row {
+    margin-top: auto;
 }
 
 .card-more-menu {
@@ -771,13 +854,21 @@ a.user-greeting:hover {
     color: var(--text-secondary);
 }
 
+/* Keep metadata badges on a single scannable line (design fix #7 — Tags/Pills
+   are for short metadata; a line break inside one breaks its structure). Long
+   text truncates with an ellipsis and exposes the full value via title tooltip. */
 .opportunity-badge {
+    flex: 0 1 auto;
+    max-width: 55%;
     background-color: var(--primary-light);
     color: var(--primary-dark);
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8rem;
     font-weight: 600;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .opportunity-title {
@@ -796,8 +887,17 @@ a.user-greeting:hover {
 .opportunity-details {
     display: flex;
     flex-wrap: wrap;
-    gap: 16px;
+    gap: 10px 16px;
     margin-bottom: 20px;
+}
+
+/* Group Location / Duration / Commitment into one visual cluster
+   (design fix #3 — Law of Proximity). */
+.opportunity-meta-group {
+    padding: 12px 14px;
+    background: #fbfefd;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
 }
 
 .opportunity-detail {
@@ -806,6 +906,11 @@ a.user-greeting:hover {
     gap: 6px;
     font-size: 0.9rem;
     color: var(--text-secondary);
+}
+
+.opportunity-detail strong {
+    color: var(--text-primary);
+    font-weight: 700;
 }
 
 .opportunity-skills {
@@ -821,6 +926,10 @@ a.user-greeting:hover {
     padding: 4px 12px;
     border-radius: 20px;
     font-size: 0.8rem;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .section-cta {
@@ -1010,6 +1119,14 @@ a.user-greeting:hover {
 
 .footer-bottom p {
     margin: 0;
+}
+
+.footer-bottom .footer-build {
+    margin-top: 8px;
+    font-size: 0.75rem;
+    letter-spacing: 0.02em;
+    opacity: 0.7;
+    color: var(--text-light);
 }
 
 /* ===== Modal ===== */
@@ -1605,9 +1722,9 @@ a.user-greeting:hover {
     background: var(--white);
     padding: 24px 0;
     border-bottom: 1px solid var(--border-color);
-    position: sticky;
-    top: 80px;
-    z-index: 50;
+    /* No sticky — avoids scroll conflict with the page (design fix #5). */
+    position: relative;
+    z-index: 1;
 }
 
 .filters-container {
@@ -1687,9 +1804,12 @@ a.user-greeting:hover {
     margin-bottom: 24px;
 }
 
+/* Tighter heading-to-body ratio for a smoother typographic hierarchy
+   (design fix #2 — the old 1.5rem heading over ~0.95rem body was too large). */
 .opportunity-main h2 {
-    font-size: 1.5rem;
-    margin: 32px 0 16px;
+    font-size: 1.2rem;
+    font-weight: 800;
+    margin: 28px 0 12px;
     color: var(--text-primary);
 }
 
@@ -1699,8 +1819,16 @@ a.user-greeting:hover {
     margin-bottom: 12px;
 }
 
+/* Muted empty-state row (design fix #2). */
+.opportunity-main .empty-detail {
+    list-style: none;
+    margin-inline-start: -20px;
+    color: var(--text-light);
+    font-style: italic;
+}
+
 .opportunity-main ul {
-    margin-left: 20px;
+    margin-inline-start: 20px;
     list-style: disc;
 }
 
@@ -1722,9 +1850,30 @@ a.user-greeting:hover {
     margin-bottom: 16px;
 }
 
+/* Group Location / Duration / Commitment into a single tight block so they read
+   as one unit instead of floating in negative space (design fix #3 — Law of
+   Proximity). Consistent left-aligned label/value rows on a subtle panel. */
 .apply-card .opportunity-details {
-    justify-content: center;
+    flex-direction: column;
+    flex-wrap: nowrap;
+    align-items: stretch;
+    gap: 0;
     margin-bottom: 24px;
+    text-align: start;
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-sm);
+    overflow: hidden;
+}
+
+.apply-card .opportunity-details .opportunity-detail {
+    justify-content: space-between;
+    gap: 12px;
+    padding: 10px 14px;
+    font-size: 0.88rem;
+}
+
+.apply-card .opportunity-details .opportunity-detail + .opportunity-detail {
+    border-top: 1px solid var(--border-color);
 }
 
 .org-info-card {
@@ -2181,7 +2330,7 @@ a.user-greeting:hover {
 
 .compact-empty {
     padding: 24px;
-    text-align: left;
+    text-align: start;
 }
 
 .application-card {
@@ -2233,25 +2382,6 @@ a.user-greeting:hover {
 
 /* ===== Responsive ===== */
 @media (max-width: 992px) {
-    .main-header .container {
-        flex-wrap: wrap;
-        align-items: center;
-    }
-
-    .main-nav {
-        order: 3;
-        width: 100%;
-        overflow: visible;
-        flex-wrap: wrap;
-        justify-content: center;
-        border-radius: var(--radius-md);
-    }
-
-    .nav-link {
-        flex: 1 1 128px;
-        text-align: center;
-    }
-    
     .hero .container {
         flex-direction: column;
         text-align: center;
@@ -2417,8 +2547,61 @@ a.user-greeting:hover {
 }
 
 .well-filters {
-    position: sticky;
-    top: 104px;
+    /* No sticky page hijack — filters scroll with the page; long groups stay
+       collapsed behind <details class="filter-accordion"> (design fix #5). */
+    position: relative;
+    top: auto;
+    max-height: none;
+    overflow: visible;
+}
+
+/* Collapsible filter groups — hide the long option lists behind a summary so
+   the initial choice set is small (design fix #5 — Progressive Disclosure /
+   Hick's Law). Native <details> keeps it dependency-free and accessible. */
+.filter-accordion {
+    border-bottom: 1px solid var(--border-color);
+    margin: 0 -4px;
+    padding: 4px;
+}
+
+.filter-accordion > summary {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 8px;
+    padding: 12px 4px;
+    margin: 0;
+    list-style: none;
+    cursor: pointer;
+    font-weight: 800;
+    color: var(--text-primary);
+}
+
+.filter-accordion > summary::-webkit-details-marker {
+    display: none;
+}
+
+/* Chevron that rotates when the group is open. */
+.filter-accordion > summary::after {
+    content: '';
+    width: 9px;
+    height: 9px;
+    border-right: 2px solid var(--text-secondary);
+    border-bottom: 2px solid var(--text-secondary);
+    transform: rotate(45deg);
+    transition: transform 0.18s ease;
+}
+
+.filter-accordion[open] > summary::after {
+    transform: rotate(-135deg);
+}
+
+.filter-pill-group {
+    padding-top: 4px;
+}
+
+.filter-static {
+    margin: 4px 0;
 }
 
 .well-filters h3,
@@ -2466,7 +2649,7 @@ a.user-greeting:hover {
     font: inherit;
     font-weight: 700;
     cursor: pointer;
-    text-align: left;
+    text-align: start;
 }
 
 .filter-pill.active,
@@ -2500,6 +2683,9 @@ a.user-greeting:hover {
     border-radius: var(--radius-md);
     padding: 22px;
     box-shadow: 0 10px 30px rgba(24, 36, 61, 0.06);
+    display: flex;
+    flex-direction: column;
+    height: 100%;
 }
 
 .wish-card {
@@ -2524,6 +2710,27 @@ a.user-greeting:hover {
     flex-wrap: wrap;
 }
 
+/* Org/opportunity footers: identical 3-column layout whether Save or Saved. */
+.card-actions.card-actions--consistent {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+    align-items: stretch;
+    gap: 8px;
+    flex-wrap: nowrap;
+}
+
+.card-actions.card-actions--consistent > .btn,
+.card-actions.card-actions--consistent > a.btn {
+    width: 100%;
+    justify-content: center;
+    white-space: nowrap;
+    min-width: 0;
+}
+
+.card-actions.card-actions--consistent > .btn-primary {
+    min-width: 7.5rem;
+}
+
 .wish-type {
     color: var(--primary-dark);
     background: var(--primary-light);
@@ -2531,6 +2738,10 @@ a.user-greeting:hover {
     padding: 7px 12px;
     font-weight: 800;
     font-size: 0.9rem;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 100%;
 }
 
 .entity-mark,
@@ -2581,7 +2792,7 @@ a.user-greeting:hover {
     color: inherit;
     font: inherit;
     font-weight: 800;
-    text-align: left;
+    text-align: start;
     cursor: pointer;
 }
 
@@ -2717,31 +2928,72 @@ a.user-greeting:hover {
     line-height: 1.25;
 }
 
-.share-row {
-    display: flex;
-    flex-wrap: wrap;
-    gap: 8px;
-    margin-top: 16px;
-    padding-top: 14px;
-    border-top: 1px solid var(--border-color);
-}
-
-.share-row button {
+/* Single native-share button (design fix #9). Icon + label pill matching the
+   other card actions; the icon alone carries the meaning on tight layouts. */
+.post-share-button {
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
     border: 1px solid var(--border-color);
     background: #fbfefd;
     color: var(--text-secondary);
     border-radius: 999px;
-    padding: 7px 11px;
+    padding: 7px 12px;
     font: inherit;
-    font-size: 0.78rem;
+    font-size: 0.82rem;
     font-weight: 800;
     cursor: pointer;
+    transition: var(--transition);
 }
 
-.share-row button:hover {
+.post-share-button:hover {
     border-color: var(--primary-color);
     color: var(--primary-dark);
     background: var(--primary-light);
+}
+
+.share-icon,
+.action-icon {
+    width: 17px;
+    height: 17px;
+    flex: 0 0 auto;
+}
+
+/* Count badge on the Comment action (design fix #8). */
+.action-count {
+    min-width: 18px;
+    padding: 0 5px;
+    border-radius: 999px;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.72rem;
+    font-weight: 800;
+    text-align: center;
+}
+
+/* Quiet transient confirmation (share clipboard fallback). */
+.glowe-toast {
+    position: fixed;
+    left: 50%;
+    bottom: 28px;
+    transform: translate(-50%, 16px);
+    z-index: 1000;
+    max-width: min(90vw, 360px);
+    padding: 12px 18px;
+    border-radius: 999px;
+    background: var(--primary-dark, #0f5d55);
+    color: var(--white, #fff);
+    font-weight: 700;
+    font-size: 0.9rem;
+    box-shadow: var(--shadow-lg);
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.2s ease, transform 0.2s ease;
+}
+
+.glowe-toast.visible {
+    opacity: 1;
+    transform: translate(-50%, 0);
 }
 
 .wish-author,
@@ -2832,7 +3084,7 @@ a.user-greeting:hover {
     color: var(--text-secondary);
     font: inherit;
     font-weight: 800;
-    text-align: left;
+    text-align: start;
     padding: 10px 12px;
     cursor: pointer;
 }
@@ -2870,6 +3122,10 @@ a.user-greeting:hover {
     color: var(--text-secondary);
     font-size: 0.78rem;
     font-weight: 800;
+    white-space: nowrap;
+    max-width: 100%;
+    overflow: hidden;
+    text-overflow: ellipsis;
 }
 
 .spotlight-block {
@@ -2997,10 +3253,16 @@ a.user-greeting:hover {
 
 .post-actions button,
 .post-actions a {
-    padding: 7px 10px;
+    display: inline-flex;
+    align-items: center;
+    gap: 7px;
+    padding: 7px 12px;
     border: 1px solid var(--border-color);
     border-radius: 999px;
     background: #fbfefd;
+    font-weight: 800;
+    font-size: 0.82rem;
+    cursor: pointer;
 }
 
 .post-actions button:hover,
@@ -3256,14 +3518,10 @@ a.user-greeting:hover {
     margin-top: 16px;
 }
 
-.group-stats-row span,
-.clean-step-list li {
+.group-stats-row span {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-sm);
     background: rgba(255, 255, 255, 0.78);
-}
-
-.group-stats-row span {
     padding: 8px 12px;
     font-weight: 800;
     color: var(--primary-dark);
@@ -3277,17 +3535,41 @@ a.user-greeting:hover {
     margin-bottom: 14px;
 }
 
+/* Static "what happens next" steps — a plain numbered sequence, NOT frames that
+   mimic buttons (design fix #4 — False Affordance). Counter chip carries the
+   order; no border/background that would signal interactivity. */
 .clean-step-list {
     display: grid;
-    gap: 8px;
+    gap: 12px;
     padding: 0;
     margin: 12px 0 16px;
     list-style: none;
+    counter-reset: step;
 }
 
 .clean-step-list li {
-    padding: 10px 12px;
+    display: flex;
+    align-items: flex-start;
+    gap: 10px;
+    padding: 0;
     color: var(--text-secondary);
+    text-align: start;
+}
+
+.clean-step-list li::before {
+    counter-increment: step;
+    content: counter(step);
+    flex: 0 0 auto;
+    width: 22px;
+    height: 22px;
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 50%;
+    background: var(--primary-light);
+    color: var(--primary-dark);
+    font-size: 0.78rem;
+    font-weight: 800;
 }
 
 /* ===== Write Post Page ===== */
@@ -4622,10 +4904,6 @@ a.user-greeting:hover {
     gap: 14px;
 }
 
-.compact-admin-list {
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-}
-
 .admin-card {
     padding: 18px;
 }
@@ -4637,10 +4915,6 @@ a.user-greeting:hover {
 .admin-card p,
 .admin-card small {
     color: var(--text-secondary);
-}
-
-.compact-admin-card h3 {
-    margin-top: 0;
 }
 
 .admin-note-label {
@@ -5070,8 +5344,8 @@ a.user-greeting:hover {
     align-items: center;
     justify-content: space-between;
     gap: 10px;
-    margin: 16px 18px 0;
-    padding: 10px 0;
+    margin: 12px 0 0;
+    padding: 10px 0 0;
     border-top: 1px solid rgba(220, 232, 227, 0.75);
     color: var(--text-light);
     font-size: 0.86rem;
@@ -5109,14 +5383,9 @@ a.user-greeting:hover {
     color: var(--primary-dark);
 }
 
-.linkedin-community-layout .post-comments,
-.linkedin-community-layout .share-row {
+.linkedin-community-layout .post-comments {
     margin-left: 18px;
     margin-right: 18px;
-}
-
-.linkedin-community-layout .share-row {
-    margin-bottom: 18px;
 }
 
 .linkedin-community-layout .person-row {
@@ -5245,16 +5514,6 @@ a.user-greeting:hover {
     .container {
         padding-left: clamp(18px, 3vw, 32px);
         padding-right: clamp(18px, 3vw, 32px);
-    }
-
-    .main-header .container {
-        flex-wrap: wrap;
-    }
-
-    .main-nav {
-        order: 3;
-        flex: 1 1 100%;
-        justify-content: center;
     }
 
     .home-intro-section .container,
@@ -5402,8 +5661,9 @@ a.user-greeting:hover {
     }
 
     .main-header .container {
+        grid-template-columns: auto max-content;
         padding: 12px 14px;
-        gap: 10px;
+        column-gap: 10px;
     }
 
     .logo-icon {
@@ -5415,15 +5675,20 @@ a.user-greeting:hover {
         font-size: 1.25rem;
     }
 
+    /* Google-only auth collapses to a single small button (see
+       normalizeHeaderAuthButtons); it sits inline in the top bar next to the
+       language toggle rather than stretching into its own full-width banner. */
     .auth-buttons {
-        width: 100%;
-        justify-content: stretch;
+        width: auto;
+        justify-content: flex-end;
         gap: 8px;
     }
 
     .auth-buttons .btn {
-        flex: 1 1 0;
+        flex: 0 0 auto;
         min-width: 0;
+        padding: 7px 12px;
+        font-size: 0.82rem;
     }
 
     /* On phones the user-menu collapses to compact icon buttons aligned to the
@@ -5459,18 +5724,12 @@ a.user-greeting:hover {
         display: none;
     }
 
-    .main-nav {
-        display: grid;
-        grid-template-columns: repeat(2, minmax(0, 1fr));
-        border-radius: var(--radius-md);
-        width: 100%;
+    .header-end {
+        grid-column: 2;
     }
 
-    .nav-link {
-        padding: 9px 8px;
-        font-size: 0.82rem;
-        white-space: normal;
-        text-align: center;
+    .main-nav {
+        display: none !important;
     }
 
     .hero h1,
@@ -5519,7 +5778,6 @@ a.user-greeting:hover {
     .next-roadmap-grid,
     .admin-grid,
     .admin-stats,
-    .compact-admin-list,
     .ecosystem-points,
     .footer-grid,
     .stats-grid,
@@ -5862,8 +6120,44 @@ html[dir="rtl"] .path-grid button,
 html[dir="rtl"] .modal-content,
 html[dir="rtl"] .form-group label,
 html[dir="rtl"] .footer-section,
-html[dir="rtl"] .settings-grid {
+html[dir="rtl"] .settings-grid,
+html[dir="rtl"] .post-more-panel button,
+html[dir="rtl"] .filter-pill,
+html[dir="rtl"] .comment-summary,
+html[dir="rtl"] .wish-card h3 button,
+html[dir="rtl"] .compact-empty,
+html[dir="rtl"] .post-card,
+html[dir="rtl"] .opportunity-main,
+html[dir="rtl"] .opportunity-card,
+html[dir="rtl"] .wish-card,
+html[dir="rtl"] .opportunity-meta-group {
     text-align: right;
+}
+
+html[dir="rtl"] .wish-card::before {
+    inset: 0 0 0 auto;
+}
+
+/* The "..." action menu and its panel belong on the leading (right) edge in
+   RTL so the dropdown lines up with Hebrew reading order (design fix #1). */
+html[dir="rtl"] .post-more-menu {
+    right: auto;
+    left: 14px;
+}
+
+html[dir="rtl"] .card-more-menu {
+    right: auto;
+    left: 12px;
+}
+
+html[dir="rtl"] .post-more-panel {
+    right: auto;
+    left: 0;
+}
+
+html[dir="rtl"] .opportunity-header {
+    padding-right: 0;
+    padding-left: 44px;
 }
 
 /* Inputs/selects keep their own direction so placeholders sit on the right. */
@@ -5898,6 +6192,26 @@ html[dir="rtl"] .lang-toggle {
 .lang-toggle:hover {
     background: rgba(15, 93, 85, 0.08);
     box-shadow: 0 6px 16px rgba(15, 93, 85, 0.08);
+}
+
+/* ===== Auth-aware marketing blocks ===== */
+.glowe-member-only {
+    display: none;
+}
+
+body.glowe-signed-in .glowe-guest-only {
+    display: none !important;
+}
+
+body.glowe-signed-in .glowe-member-only {
+    display: block;
+}
+
+.about-cta-actions {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    justify-content: center;
 }
 
 /* ===== Member home (FR-GLOWE-016) ===== */
@@ -6015,10 +6329,22 @@ body.glowe-member-home main > section:not(#member-home) {
     }
 }
 
-/* FR-TRANSLATE-005 — "Show original" toggle injected on translated UGC cards. */
+/* FR-TRANSLATE-005 — reserved slot + "Show original" toggle on UGC cards. */
+.tr-slot {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    min-height: 0;
+    margin: 2px 0 0;
+}
+
+.tr-slot:empty {
+    display: none;
+}
+
 .tr-toggle {
     display: inline-block;
-    margin-top: 8px;
+    margin: 0;
     padding: 2px 8px;
     border: 1px solid var(--primary-light);
     border-radius: 999px;
@@ -6031,6 +6357,11 @@ body.glowe-member-home main > section:not(#member-home) {
 
 .tr-toggle:hover {
     background: var(--primary-light);
+}
+
+.comment-row .tr-slot {
+    justify-content: flex-start;
+    margin-bottom: 2px;
 }
 
 /* ── FR-GLOWE-016 — adaptive create system ─────────────────────────────── */

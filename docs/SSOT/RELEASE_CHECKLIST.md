@@ -34,6 +34,7 @@ Required on the release PR (GitHub branch protection on `main`):
 | PR hygiene | CI — PR hygiene | `PR hygiene` |
 | Main release guard | CI — main release guard | `release PR source is dev` + `migration destructive-op scan` |
 | E2E dev | CI — E2E dev | `user journeys (P0)` |
+| SonarCloud | CI — SonarCloud | `SonarCloud quality gate` |
 
 > Path-filtered workflows: a release PR that only touches `docs/**` will not run the frontend/backend/contract workflows. Such PRs are rare; release PRs typically touch app + supabase paths and trigger the full set. `CI — PR hygiene` always runs on non-draft PRs.
 

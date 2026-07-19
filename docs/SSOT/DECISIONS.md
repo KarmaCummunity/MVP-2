@@ -1268,6 +1268,8 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ## D-67 — GloWe community-post share keeps social buttons and adds copy-link
 
+> **Superseded by `D-177` (2026-07-15).** GloWe posts now share via one native Web Share button with a silent clipboard+toast desktop fallback; the social buttons and standalone copy-link described below were removed.
+
 **Date.** 2026-07-04
 
 **Decision.** FR-GLOWE-008 AC5 ("share a community post") is satisfied by **both** the existing social-network share buttons (Facebook / LinkedIn / X / WhatsApp) **and** a new "Copy link" control that writes the post's canonical URL to the clipboard via `navigator.clipboard.writeText` and confirms with a success toast. The canonical URL is derived by a pure helper `GlowePosts.postCanonicalUrl(postId, origin)` → `<origin>/glowe/pages/community.html?post=<id>`, so the shared link is stable, keyed on the post id (not the mutable title), and testable in isolation.
@@ -1310,10 +1312,76 @@ Design spec: `docs/superpowers/specs/2026-05-24-closed-post-dual-surface-privacy
 
 ---
 
+## D-177 — GloWe posts share via one native Share button (supersedes D-67); design-fixes UX pass
+
+**Date.** 2026-07-15
+
+**Decision.** Every GloWe post-type card (community post, wish, opportunity, forum thread) exposes **one** Share icon button that calls the platform's native share sheet through the Web Share API (`navigator.share`), exactly like every consumer app. The per-network buttons (Facebook/LinkedIn/X/WhatsApp) and the standalone "Copy link" control are **removed**. On desktop browsers lacking `navigator.share`, the button falls back **silently** to copying the resolved absolute URL to the clipboard and confirming with a lightweight toast (`showToast`; `showSuccessModal` if the Clipboard API is blocked). This **supersedes `D-67`**, which had retained the social buttons + copy-link and rejected `navigator.share` over desktop support — the silent clipboard+toast fallback resolves that concern, and the PM (2026-07-15) explicitly asked for "a normal share mechanism like every app — no other-app tags, no copy link."
+
+Shipped in the same change-set: a GloWe design-fixes pass addressing nine reviewed UX defects (pure CSS/template polish, no `FR-*` AC change beyond AC5 above): (1) RTL alignment of the `...` action menu + its panel; (2) explicit empty state for opportunity requirements/responsibilities; (3) grouping Location/Duration/Commitment into one proximate meta block; (4) de-buttoning the static "What happens next" steps (numbered list, not ghost buttons); (5) collapsing the long Wishing Well filter lists into `<details>` accordions + capping the sticky sidebar height to end the scroll conflict; (6) anchoring grid-card action rows to a single bottom baseline; (7) single-line metadata badges (nowrap + ellipsis + title tooltip); (8) icons + a count on the Comment/Send actions and a localized, RTL comment summary; and the "Show original" translation toggle re-anchored adjacent to its post content.
+
+**Rationale.** A single familiar Share affordance is lower cognitive load than a row of network buttons (Progressive Disclosure), routes to whatever apps the user actually has, and drops the unstyled "Copy link" that broke visual consistency. The native sheet is the mechanism users already know (Jakob's Law); the clipboard+toast fallback keeps desktop parity without reintroducing per-network clutter.
+
+**Alternatives rejected.** Keep D-67's dual paths — the PM explicitly rejected the network buttons and copy-link. A desktop popover menu of copy/options — more surface for no real gain over a quiet copy+toast (the PM chose the silent fallback).
+
+**Affected docs.** `docs/SSOT/spec/17_glowe_frontend.md` (FR-GLOWE-008 AC5); `app/apps/glowe-web/js/app.js`, `js/glowe-translate.js`, `css/styles.css`, `pages/wishing-well.html`.
+
+---
+
+## D-178 — Personal Area gate replaced hard redirect with the FR-GLOWE-023 contextual join modal
+
+**Date.** 2026-07-16
+
+**Decision.** `requireGloweMember()` (a hard `window.location.href` redirect back to the guest home) is removed. The bottom-nav "Profile" tab and the header's "Personal Area" link both point at `my-applications.html` unconditionally; `initMyApplicationsPage()` now renders an in-page sign-in prompt on `personal-area-content` for anonymous visitors (the same pattern already used by `settings`/`messages`) and immediately opens the `open-personal-area` contextual join modal via `GloweGuest.requireMemberForAction` (already registered in `GLOWE_JOIN_ACTIONS` but previously unwired). Google sign-in reloads the page and the personal area renders normally.
+
+**Rationale.** PM report: tapping the "Profile" tab while signed out visibly flashed and bounced back to the marketing home, reading as a broken tab rather than an auth gate. `requireGloweMember()`'s silent-redirect design (FR-GLOWE-016 AC1, as originally written) predates FR-GLOWE-023's contextual-join pattern, which every other identity-gated action (create, apply, RSVP, message, save, report) already uses. Aligning the last remaining hard-redirect gate onto the existing pattern is a bug fix, not a new feature.
+
+**Alternatives rejected.** A dedicated `/login` page — the app is Google-only auth via modal (`D-33`); a full page would duplicate `showJoinPrompt()`'s UI for no gain. Keeping the redirect but adding a toast — still a dead-end tap; the contextual modal already solves this everywhere else.
+
+**Affected docs.** `spec/17_glowe_frontend.md` (`FR-GLOWE-016` AC1); `app/apps/glowe-web/js/{app.js,auth.js}`; `app/apps/glowe-web/css/styles.css` (header auth button now inline instead of a stretched mobile banner, moved next to `.lang-toggle`).
+
+---
+
+## D-179 — GloWe bilingual display names stored as columns, not via UGC translation (2026-07-17)
+
+**Decision.** Person and organization display names on GloWe are bilingual via dedicated DB columns (`display_name_en`, `org_name_en`, plus content snapshots `author_name_en` / `organization_en`). English variants are user-editable and auto-generated on onboarding when the source name is non-Latin (`glowe-generate-name-en`). They are **not** translated on-demand through `glowe-translate` / `glowe_content_translations`. KC `public.users.display_name` is unchanged.
+
+**Rationale.** FR-TRANSLATE-005 AC4 deliberately excludes proper names from the UGC cache (no user edit of a cached translation; names are identity, not prose). Readers on the EN interface still need Latin names for Hebrew/Arabic/etc. registrants. Storing an editable `_en` column mirrors the cities `name_he`/`name_en` pattern and lets the owner correct auto-transliterations.
+
+**Alternatives rejected.** *Route names through `glowe-translate`* — violates AC4 and produces non-editable cached strings. *Add `display_name_en` on KC `users` in the same change* — out of GloWe MVP scope (PM: GloWe only). *Deterministic transliteration table only* — poor quality for org legal names; LLM transliteration with user override is better.
+
+**Affected.** Migration `0230_glowe_bilingual_names.sql`; Edge Function `glowe-generate-name-en`; `app/apps/glowe-web/js/{backend.js,app.js,glowe-localized-name.js,glowe-posts.js,glowe-opportunities.js,glowe-create.js,glowe-wishes.js}`; `spec/17_glowe_frontend.md` FR-GLOWE-024; `spec/18_translation.md` note.
+
+---
+
+## D-180 — GloWe translation toggle slot + card action grid convention (2026-07-19)
+
+**Decision.** Every translated UGC card reserves a `.tr-slot` under the header/author row for the "Show original" / "Show translation" control. `glowe-translate.js` injects into that slot first. Shared helpers live in `js/glowe-ui-conventions.js`. Organization card footers use `.card-actions--consistent` (CSS grid) with short Save/Saved labels so saved vs unsaved cards share one layout. Meta chips (location/scope, type/impact) are deduped before render.
+
+**Rationale.** PM reported inconsistent toggle placement and org-card footers that reflow when the save label length changes. A single convention file prevents per-card drift.
+
+**Affected.** `glowe-ui-conventions.js`, `glowe-translate.js`, `app.js` card renderers, `styles.css`; FR-TRANSLATE-005 AC7; migration `0231` (comments + tags).
+
+---
+
+## D-181 — App-wide semver (`app/VERSION`) with auto patch on every `dev` push (2026-07-19)
+
+**Decision.** Product version is app-wide semver in `app/VERSION`. **PATCH is bumped in every PR into `dev` by the authoring agent** (org policy blocks GitHub Actions from creating PRs, so push-triggered auto-bump cannot land). Optional `workflow_dispatch` on `Bump app version` only prepares a `chore/version-bump-*` branch. **MAJOR/MINOR** are manual for breaking / significant feature sets. GloWe footer shows `vX.Y.Z` from `glowe-version.js`; `web-postbuild` re-stamps from `app/VERSION` on deploy. KC mobile UI display deferred.
+
+**Rationale.** PM needs a normal `x.x.x` marker on the live `dev` site to verify deploys; the version applies to the whole app. Auto-PR bump was attempted and blocked at the org Actions permission layer (same family as TD-182 / GH006). Agent-owned PATCH bumps keep the counter honest without requiring an org policy change.
+
+**Affected.** `app/VERSION`, `scripts/bump-app-version.mjs`, `.github/workflows/bump-app-version.yml`, `glowe-version.js`, `ensureGlobalFooter`, `web-postbuild.mjs`; FR-GLOWE-025; bold rule in `CLAUDE.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.12 | 2026-07-19 | Added `D-181` (app-wide semver + auto patch on `dev` push; GloWe footer `vX.Y.Z`; FR-GLOWE-025). |
+| 4.11 | 2026-07-19 | Added `D-180` (GloWe `.tr-slot` toggle convention + consistent org card actions; FR-TRANSLATE-005 comments/tags). |
+| 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |
+| 4.9 | 2026-07-15 | Added `D-177` (GloWe posts share via one native Web Share button with silent clipboard+toast desktop fallback; removes per-network buttons + copy-link; **supersedes `D-67`**; bundles the nine-item GloWe design-fixes UX pass; `FR-GLOWE-008` AC5). |
 | 4.8 | 2026-07-05 | Added `D-69` (GloWe messaging on KC chats supersedes outreach stub; volunteer offers as `post_type='offer'` on the Wishing Well; dev persona seed + workflow; `FR-GLOWE-013..016`). |
 | 4.7 | 2026-07-04 | Added `D-68` (GloWe guest conversion ships Mode A instant contextual join now; Mode B progressive disclosure is PM-gated; `FR-GLOWE-023`). |
 | 4.6 | 2026-07-04 | Added `D-67` (GloWe community-post share keeps social buttons and adds a copy-link control writing `postCanonicalUrl` to the clipboard; canonical URL keyed on `postId`; `FR-GLOWE-008` AC5). |

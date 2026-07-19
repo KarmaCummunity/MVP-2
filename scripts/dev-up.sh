@@ -1,0 +1,76 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+require_command() {
+  if ! command -v "$1" >/dev/null 2>&1; then
+    echo "Missing required command: $1" >&2
+    exit 1
+  fi
+}
+
+require_env_value() {
+  local name="$1"
+  local value="${!name:-}"
+  if [[ -z "$value" ]]; then
+    echo "Could not read $name from 'supabase status -o env'." >&2
+    exit 1
+  fi
+}
+
+require_command docker
+require_command supabase
+require_command node
+
+if ! docker info >/dev/null 2>&1; then
+  echo "Docker is not running. Start Docker Desktop and retry." >&2
+  exit 1
+fi
+
+echo "Starting local Supabase..."
+supabase start
+
+echo "Resetting local database..."
+supabase db reset
+
+echo "Reading local Supabase credentials..."
+status_env="$(supabase status -o env)"
+
+set -a
+eval "$status_env"
+set +a
+
+SUPABASE_URL="${API_URL:-}"
+SUPABASE_SERVICE_ROLE_KEY="${SERVICE_ROLE_KEY:-}"
+
+require_env_value SUPABASE_URL
+require_env_value SUPABASE_SERVICE_ROLE_KEY
+require_env_value ANON_KEY
+
+export SUPABASE_URL
+export SUPABASE_SERVICE_ROLE_KEY
+
+echo "Seeding fictional local GLOWE data..."
+node scripts/seed-glowe-local.mjs
+
+cat <<EOF
+
+Local GLOWE database is ready.
+
+Add this to app/.env.local:
+
+EXPO_PUBLIC_SUPABASE_URL=${SUPABASE_URL}
+EXPO_PUBLIC_SUPABASE_ANON_KEY=${ANON_KEY}
+
+Fictional seed password (all local users): GloweLocal!2026
+  - glowe-local-org-harbor-food@example.test  (approved org)
+  - glowe-local-org-garden-futures@example.test (pending org)
+  - glowe-local-alex@example.test
+  - glowe-local-sam@example.test
+  - glowe-local-riley@example.test
+
+Auth note: the GLOWE UI is Google-only; guest browsing of seeded data works now.
+A localhost password panel for these users is tracked as a good-first-issue.
+
+Never commit app/.env.local or service-role keys.
+See CONTRIBUTING.md for the full contributor checklist.
+EOF

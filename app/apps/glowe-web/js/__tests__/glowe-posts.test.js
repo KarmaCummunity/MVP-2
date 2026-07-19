@@ -22,7 +22,8 @@ describe('mapPostRow', () => {
             tags: ['a', 'b'], user_id: 'u1', author_name: 'Dana', created_at: '2026-01-01'
         })).toEqual({
             id: 'p1', title: 'Hello', category: 'Knowledge', text: 'Body',
-            tags: ['a', 'b'], authorId: 'u1', authorName: 'Dana', createdAt: '2026-01-01'
+            tags: ['a', 'b'], authorId: 'u1', authorName: 'Dana', authorNameEn: '',
+            createdAt: '2026-01-01'
         });
     });
 
@@ -109,13 +110,20 @@ describe('postCanonicalUrl', () => {
 describe('mapCommentRow', () => {
     it('maps a glowe_comments row to the card shape', () => {
         expect(GlowePosts.mapCommentRow({
-            id: 'c1', post_id: 'p1', text: 'Nice', author_name: 'Dana', created_at: '2026-01-02'
-        })).toEqual({ id: 'c1', postId: 'p1', author: 'Dana', text: 'Nice', createdAt: '2026-01-02' });
+            id: 'c1', post_id: 'p1', text: 'Nice', author_name: 'Dana',
+            author_name_en: 'Dana', user_id: 'u1', created_at: '2026-01-02'
+        })).toEqual({
+            id: 'c1', postId: 'p1', authorId: 'u1', author: 'Dana',
+            authorEn: 'Dana', text: 'Nice', createdAt: '2026-01-02'
+        });
     });
 
     it('applies friendly defaults for missing fields', () => {
         expect(GlowePosts.mapCommentRow({ id: 'c2', post_id: 'p2' }))
-            .toEqual({ id: 'c2', postId: 'p2', author: 'Community Member', text: '', createdAt: '' });
+            .toEqual({
+                id: 'c2', postId: 'p2', authorId: '', author: 'Community Member',
+                authorEn: '', text: '', createdAt: ''
+            });
     });
 });
 
@@ -160,12 +168,12 @@ describe('normalizePostDraft', () => {
         })).toEqual({
             post_type: 'community', title: 'Hello', category: 'Knowledge', text: 'Body',
             tags: ['Education', 'Climate'], audience: 'Everyone', language: 'English',
-            link: 'https://x.io', author_name: 'Dana'
+            link: 'https://x.io', author_name: 'Dana', author_name_en: null
         });
     });
 
     it('collapses blank optional fields and prefers text over body', () => {
         const payload = GlowePosts.normalizePostDraft({ title: 'T', text: 'Real', body: 'Ignored' });
-        expect(payload).toMatchObject({ post_type: 'community', title: 'T', text: 'Real', tags: [], category: '', audience: '', language: '', link: '', author_name: '' });
+        expect(payload).toMatchObject({ post_type: 'community', title: 'T', text: 'Real', tags: [], category: '', audience: '', language: '', link: '', author_name: '', author_name_en: null });
     });
 });

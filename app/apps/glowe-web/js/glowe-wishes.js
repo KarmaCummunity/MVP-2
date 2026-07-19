@@ -34,6 +34,7 @@
 
     // Map a glowe_posts row to the wish view model the board renders. glowe_posts
     // has no location column (0215), so location is best-effort from raw fields.
+    // Author English is kept alongside primary; render localizes via FR-GLOWE-024.
     function mapWishRow(row) {
         const area = field(row, 'impact_area', 'impactArea');
         return {
@@ -42,6 +43,7 @@
             title: field(row, 'title', 'title') || '',
             description: field(row, 'text', 'text') || '',
             author: field(row, 'author_name', 'authorName') || 'GloWe Member',
+            authorEn: field(row, 'author_name_en', 'authorNameEn') || '',
             authorId: field(row, 'user_id', 'userId') || field(row, 'author_id', 'authorId') || '',
             location: row && (row.location || '') || '',
             areas: area ? [area] : [],

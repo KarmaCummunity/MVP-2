@@ -6,13 +6,18 @@ The agent (or a human) fills these in. CI will block merge if "Mapped to spec" i
 ## Summary
 <!-- 2-4 sentences: what changed and why. -->
 
+## Contributor License Agreement
+
+- [ ] I have read and agree to the [Contributor License Agreement](../CLA.md).
+
 ## Mapped to spec
 <!-- Required. List FR-* IDs touched, or write "N/A — tooling/docs only".
      Link to docs/SSOT/spec/<file>.md when applicable. -->
 - FR-XXX-NNN — <title>
 
 ## Changes
-<!-- Concrete list of edits — files added / changed / removed, plus key behavioral effects. -->
+<!-- Concrete list of edits — files added / changed / removed, plus key behavioral effects.
+     Prefer one issue per PR and keep the diff reviewable (~≤300 lines when possible). -->
 -
 
 ## Tests

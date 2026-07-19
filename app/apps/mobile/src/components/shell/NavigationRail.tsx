@@ -3,7 +3,7 @@ import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { useRouter, useSegments } from 'expo-router';
 import { useTranslation } from 'react-i18next';
 import { makeUseStyles, useBreakpoint, useTheme, spacing, shellDimensions } from '@kc/ui';
-import { TABS, type TabDefinition } from './tabs.config';
+import { TABS, isTabActive, type TabDefinition } from './tabs.config';
 
 type NavigationRailProps = {
   /** When true, render icon + label rows. When false, icon-only column. */
@@ -63,20 +63,6 @@ function NavigationRailItem({ tab, expanded }: { tab: TabDefinition; expanded: b
       )}
     </Pressable>
   );
-}
-
-function isTabActive(tab: TabDefinition, segments: string[]): boolean {
-  // tab.route patterns: '/(tabs)' (home), '/(tabs)/profile', '/(tabs)/search', etc.
-  // Strip the (tabs) prefix to get the named segment (if any).
-  const parts = tab.route.split('/').filter(Boolean); // ['(tabs)'] or ['(tabs)', 'profile']
-  const named = parts[1]; // undefined for home, 'profile' / 'search' / 'donations' / 'create' for others
-  if (!named) {
-    // Home tab — active when we're inside (tabs) but not in any named subroute.
-    if (!segments.includes('(tabs)')) return false;
-    const namedSubroutes = ['profile', 'search', 'donations', 'create'];
-    return !namedSubroutes.some((s) => segments.includes(s));
-  }
-  return segments.includes(named);
 }
 
 const useStyles = makeUseStyles(() => ({

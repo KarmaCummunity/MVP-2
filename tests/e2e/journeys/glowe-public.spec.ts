@@ -104,4 +104,58 @@ test.describe('GloWe guest browsing', () => {
     await page.waitForLoadState('domcontentloaded');
     await expect(page.locator('html')).not.toHaveAttribute('dir', 'rtl');
   });
+
+  // Design_Fixes_Notes.pdf — UX polish checks (FR-GLOWE-005/007/008/009).
+  test('wishing well filters use accordion groups instead of a long sticky list', async ({ page }) => {
+    await page.goto(gloweUrl('wishing-well.html'));
+    const accordions = page.locator('.well-filters .filter-accordion');
+    await expect(accordions).toHaveCount(2);
+    await expect(page.locator('.well-filters details.filter-accordion[open]')).toHaveCount(1);
+    // Closed Impact Areas should not force a sticky sidebar hijack.
+    const sticky = await page.locator('.well-filters').evaluate((el) => getComputedStyle(el).position);
+    expect(sticky).not.toBe('sticky');
+  });
+
+  test('opportunity cards group location/duration/commitment metadata', async ({ page }) => {
+    await page.goto(gloweUrl('volunteer-network.html'));
+    const card = page.locator('.opportunity-card').first();
+    test.skip(!(await card.count()), 'no opportunity cards yet');
+    await expect(card.locator('.opportunity-meta-group')).toBeVisible();
+    await expect(card.locator('.opportunity-meta-group .opportunity-detail strong').first()).toBeVisible();
+  });
+
+  test('community posts use a single Share control and localized comment chrome', async ({ page }) => {
+    await page.goto(gloweUrl('community.html'));
+    const post = page.locator('.post-card').first();
+    test.skip(!(await post.count()), 'no community posts yet');
+
+    // Progressive disclosure: one Share button, not four always-visible networks.
+    await expect(post.locator('.post-share-button')).toHaveCount(1);
+    await expect(post.locator('.share-row button')).toHaveCount(0);
+    await expect(post.locator('.post-actions .action-icon')).toHaveCount(2);
+
+    // Switch to Hebrew and confirm comment summary is localized (not "N comments").
+    await page.locator('.lang-toggle').first().click();
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('html')).toHaveAttribute('dir', 'rtl');
+    const hePost = page.locator('.post-card').first();
+    test.skip(!(await hePost.count()), 'no community posts after language switch');
+    const summary = hePost.locator('.comment-summary');
+    await expect(summary).toBeVisible();
+    await expect(summary).not.toContainText(/comments?/i);
+  });
+
+  test('opportunity detail shows empty-state copy when requirements are missing', async ({ page }) => {
+    await page.goto(gloweUrl('volunteer-network.html'));
+    const firstLink = page.locator('.opportunity-card a.btn-primary').first();
+    test.skip(!(await firstLink.count()), 'no opportunity detail links yet');
+    await firstLink.click();
+    await page.waitForLoadState('domcontentloaded');
+    await expect(page.locator('#opp-requirements, #opp-responsibilities').first()).toBeVisible();
+    // Empty rows use the muted empty-detail marker rather than a blank heading.
+    const empty = page.locator('.opportunity-main .empty-detail');
+    if (await empty.count()) {
+      await expect(empty.first()).toBeVisible();
+    }
+  });
 });

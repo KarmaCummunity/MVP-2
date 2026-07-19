@@ -35,7 +35,17 @@ interface SourceEntry {
   arrayFields?: Set<string>;
 }
 const SOURCE: Record<string, SourceEntry> = {
-  glowe_post: { table: 'glowe_posts', pk: 'id', fields: { title: 'title', text: 'text' } },
+  glowe_post: {
+    table: 'glowe_posts',
+    pk: 'id',
+    fields: { title: 'title', text: 'text', tags: 'tags' },
+    arrayFields: new Set(['tags']),
+  },
+  glowe_comment: {
+    table: 'glowe_comments',
+    pk: 'id',
+    fields: { text: 'text' },
+  },
   glowe_opportunity: {
     table: 'glowe_opportunities', pk: 'id',
     fields: {

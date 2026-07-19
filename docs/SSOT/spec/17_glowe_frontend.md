@@ -215,7 +215,7 @@ The Community page (`pages/community.html`) and Write Post page (`pages/write-po
 - AC2. ✅ **Search/filter.** The existing keyword search and tag/category filters apply client-side to the fetched post list.
 - AC3. ✅ **Create.** The Write Post page form and the inline composer persist to `glowe_posts` via `insertOwned('posts', payload)` with `post_type = 'community'` (shared `submitCommunityPost`). Required: `title`, `text`. Optional: `category`, `tags[]`, `audience`, `language`, `link`. `canCreateContent()` gate enforced.
 - AC4. ✅ **Comments.** Comment **create** persists via `insertOwned('comments', { post_id, text, author_name })`; comment **display** now reads from `glowe_comments` — `loadPostComments()` (in `initCommunityPage`/`initMemberHome`) fetches via `listAll('comments')` and `GlowePosts.groupCommentsByPost` groups by `post_id`. `getPostCommentsFor(postId)` prefers backend rows and merges any local-only comment just posted (`GlowePosts.mergeCommentLists`, deduped by author+text) for instant feedback; localStorage is the offline/demo fallback when the backend is unconfigured.
-- AC5. ✅ **Share.** Post cards render the social-share buttons (Facebook/LinkedIn/X/WhatsApp) **and** a "Copy link" control that writes the post's canonical URL — `GlowePosts.postCanonicalUrl(postId, origin)` → `<origin>/glowe/pages/community.html?post=<id>` — to the clipboard via `navigator.clipboard.writeText` and confirms with a success toast (`copyPostLink`). Canonical URL keyed on `postId` (not the mutable title). Per `D-67`, both share paths are retained.
+- AC5. ✅ **Share.** Every post-type card (community post, wish, opportunity, forum thread) renders **one** familiar Share icon button (`renderShareButton` → `sharePost(title, path)`). It invokes the platform's native share sheet via the Web Share API (`navigator.share({ title, text, url })`) — the same mechanism every app uses — and on desktop browsers without `navigator.share` falls back **silently** to copying the resolved absolute URL to the clipboard and confirming with a lightweight toast (`showToast`, with `showSuccessModal` as the copy-blocked fallback). `AbortError` (user dismissed the sheet) is a no-op. The prior per-network buttons (Facebook/LinkedIn/X/WhatsApp) and the separate "Copy link" control are removed. Supersedes `D-67` per `D-177`.
 - AC6. ✅ **Author attribution.** Post cards display `author_name` (mapped from the row). Pre-Phase-B / anonymous rows fall back to "Community Member". (Join to `glowe_profiles.display_name` deferred; `author_name` is stamped at create from the signed-in profile.)
 - AC7. ✅ **Delete own post.** The post author sees a "Delete post" CTA in the post more-menu (owner-only via `GlowePosts.isPostOwner`); `deleteCommunityPost` calls `removeOwned('posts', { id })` (RLS owner-scoped, hard-delete) then reloads the feed.
 - AC8. ✅ **Translations.** All Phase-B community-feed strings (create, delete-flow, share/copy-link) are in `GLOWE_TRANSLATIONS.he`. The comment-read path adds no new user-facing copy (comment text is user content; the "N comments" chrome was already localized).
@@ -401,9 +401,13 @@ FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
 - AC1. **Session integrity (done).** `logout()` clears all identity keys (`gloweUser`, legacy
   key, and the cached `glowePersonalProfile`) and always redirects to the guest home from any
   page via an `inPages`-aware relative href (correct on local `.html` and dev clean URLs). The
-  Personal Area (`my-applications`) is guarded by `requireGloweMember()` — anonymous visitors are
-  redirected home before any member body renders. `settings`/`messages` keep their FR-GLOWE-004
-  AC2 sign-in prompts and `profile` stays the public profile view; none are force-guarded.
+  Personal Area (`my-applications`) is **not** force-redirected: an anonymous visitor (including
+  one who taps the bottom-nav "Profile" tab) sees an in-page sign-in prompt on
+  `personal-area-content` — same pattern as `settings`/`messages` (FR-GLOWE-004 AC2) — and the
+  contextual join modal (`requireMemberForAction('open-personal-area', …)`, FR-GLOWE-023) opens
+  immediately so the tap is never a dead end. `profile` stays the public profile view; none are
+  force-guarded to a redirect. (Revised 2026-07-16 — previously used a hard `requireGloweMember()`
+  redirect to the guest home, which read as a broken tab to first-time visitors.)
 - AC2. **Adaptive home (done).** Signed-in members see a personal hero ("Welcome back, {first
   name}" + create CTAs), a "Your activity" rail (their own posts, filtered by `authorId`), and a
   unified "What's happening" feed (recency-interleaved opportunities + posts, capped) in place of
@@ -460,3 +464,54 @@ gating (FR-GLOWE-003) rather than adding a login wall. Design:
 - AC7. **Mode B out of scope.** Progressive disclosure (let the guest fill the form, wall at
   submit, preserve input) must **not** be built without an explicit PM instruction (see
   `DECISIONS.md` D-68).
+
+---
+
+## FR-GLOWE-024 — Bilingual display names (person + organization)
+
+**Status.** ✅ Done — bilingual name columns + auto-generation + edit + localized render
+(migration `0230`, Edge Function `glowe-generate-name-en`, `js/glowe-localized-name.js`).
+Decision: D-179.
+
+Proper names are **not** routed through the UGC translation cache (FR-TRANSLATE-005 AC4).
+Instead each person/organization stores an English/Latin variant alongside the source name,
+and content snapshots stamp the English form at create time. The EN interface shows the
+English column when present; HE (and other locales) prefer the source name.
+
+**Acceptance Criteria.**
+- AC1. **Schema.** `glowe_profiles.display_name_en` + `org_name_en`, `glowe_posts.author_name_en`,
+  and `glowe_opportunities.organization_en` exist (nullable, max 120 chars). KC
+  `public.users.display_name` is unchanged.
+- AC2. **Onboarding.** Optional "Name in English" / "Organization name in English" fields on
+  the post-sign-in onboarding modal. When left blank: Latin source names are copied; non-Latin
+  source names call `glowe-generate-name-en` (authenticated). Provider failure leaves `_en` null
+  and the UI falls back to the source name.
+- AC3. **Edit profile.** Edit Profile exposes the English name fields (org English name shown
+  for organization accounts). Saving regenerates `_en` only when the primary name changed and
+  the user did not supply an English value.
+- AC4. **Localized render.** Cards, profile detail, opportunity detail, wish authors, and chat
+  counterpart labels resolve via `GloweLocalizedName` + `getGloweLanguage()`: EN prefers `_en`,
+  otherwise the primary.
+- AC5. **Content snapshots.** Creating a post/wish/offer stamps `author_name` + `author_name_en`;
+  creating an opportunity/event stamps `organization` + `organization_en`. Historical rows keep
+  the snapshot; profile pages always show the current profile values.
+- AC6. **Out of scope.** KC mobile `users.display_name_en`, `org_contact_name_en`, and routing
+  names through `glowe-translate` / `glowe_content_translations`.
+
+## FR-GLOWE-025 — App-wide semver in GloWe footer
+
+**Status.** ✅ Done — `app/VERSION` SSOT + auto patch bump on every `dev` push + footer `vX.Y.Z`.
+Decision: D-181. Design: `docs/superpowers/specs/2026-07-19-app-semver-footer-design.md`.
+
+**Acceptance Criteria.**
+- AC1. **SSOT.** `app/VERSION` holds `MAJOR.MINOR.PATCH` (one line). Mirrored to
+  `apps/glowe-web/js/glowe-version.js` as `GloweAppVersion.version`.
+- AC2. **Patch bumps.** Every PR into `dev` increments PATCH in `app/VERSION` + `glowe-version.js`
+  (agent-owned; org policy blocks Actions from opening PRs). Optional `workflow_dispatch` only
+  prepares a bump branch.
+- AC3. **Footer.** Shared `ensureGlobalFooter()` renders a small `.footer-build` line under the
+  tagline as `vX.Y.Z` (not translated).
+- AC4. **Deploy stamp.** `web-postbuild.mjs` re-stamps `glowe-version.js` from `app/VERSION` on
+  every Cloudflare Pages build so the live site cannot ship a stale mirror.
+- AC5. **Manual major/minor.** Agents bump MAJOR/MINOR in PRs when appropriate (see `CLAUDE.md`
+  version banner). KC mobile UI display of the same version is out of scope for this FR.

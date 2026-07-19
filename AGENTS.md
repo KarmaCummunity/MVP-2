@@ -4,6 +4,8 @@ This repository follows the `CLAUDE.md` convention for agent rules.
 All process, architecture, and workflow rules live in [`CLAUDE.md`](./CLAUDE.md).
 Read it first.
 
+**⚠️ App version:** see the bold **APP VERSION (`app/VERSION`)** banner at the top of `CLAUDE.md` (FR-GLOWE-025 / D-181). **Bump PATCH in every PR to `dev`**; bump MAJOR/MINOR manually when appropriate.
+
 If you landed in [`docs/`](./docs/) first, [`docs/AGENTS.md`](./docs/AGENTS.md) points back here; it does not define extra rules.
 
 ## ⚠️ Active product focus (2026-07-04, standing until explicitly revised)

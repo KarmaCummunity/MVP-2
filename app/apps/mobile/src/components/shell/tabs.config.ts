@@ -67,3 +67,34 @@ export const TABS: readonly TabDefinition[] = [
     iconInactive: 'home-outline',
   },
 ] as const;
+
+const NAMED_TAB_SEGMENTS = ['profile', 'search', 'donations', 'create'] as const;
+
+/** True when `tab` matches the current expo-router segment trail. */
+export function isTabActive(tab: TabDefinition, segments: readonly string[]): boolean {
+  const parts = tab.route.split('/').filter(Boolean);
+  const named = parts[1];
+
+  if (!named) {
+    // Home — active inside (tabs) without a named sibling, or on flat web segments.
+    return !NAMED_TAB_SEGMENTS.some((segment) => segments.includes(segment));
+  }
+
+  return segments.includes(named);
+}
+
+/** Active bottom-rail / tab-bar key, or null when outside the tab navigator. */
+export function resolveActiveTabKey(segments: readonly string[]): TabKey | null {
+  const onTabSurface =
+    segments.includes('(tabs)') ||
+    NAMED_TAB_SEGMENTS.some((segment) => segments.includes(segment)) ||
+    segments.includes('index') ||
+    segments.length === 0;
+
+  if (!onTabSurface) return null;
+
+  for (const tab of TABS) {
+    if (isTabActive(tab, segments)) return tab.key;
+  }
+  return null;
+}
