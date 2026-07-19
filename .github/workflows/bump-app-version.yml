@@ -1,7 +1,9 @@
 name: Bump app version
 
 # Auto-increment app/VERSION patch on every push to `dev` (FR-GLOWE-025 / D-181).
-# Commits with `[skip version]` so this workflow does not re-trigger itself.
+# `dev` is branch-protected (no direct pushes — same GH006 class as TD-182), so the
+# bump lands via a short-lived PR with squash title containing `[skip version]`
+# to avoid a re-trigger loop.
 
 on:
   push:
@@ -18,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     permissions:
       contents: write
+      pull-requests: write
     steps:
       - uses: actions/checkout@v4
         with:
@@ -36,15 +39,42 @@ jobs:
           echo "summary=$out" >> "$GITHUB_OUTPUT"
           echo "version=$(cut -d' ' -f3 <<<"$out")" >> "$GITHUB_OUTPUT"
 
-      - name: Commit and push
+      - name: Open PR and auto-merge
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
         run: |
+          set -euo pipefail
+          VERSION="${{ steps.bump.outputs.version }}"
+          BRANCH="chore/version-bump-${VERSION}"
+
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
           git add app/VERSION app/apps/glowe-web/js/glowe-version.js
           if git diff --cached --quiet; then
             echo "No version changes to commit"
             exit 0
           fi
-          git commit -m "chore(version): bump to ${{ steps.bump.outputs.version }} [skip version]"
-          git pull --rebase origin dev
-          git push origin HEAD:dev
+
+          # Drop any stale open auto-bump PRs so we do not stack them.
+          for num in $(gh pr list --base dev --state open --json number,headRefName \
+            --jq '.[] | select(.headRefName | startswith("chore/version-bump-")) | .number'); do
+            gh pr close "$num" --comment "Superseded by bump to ${VERSION}." || true
+          done
+
+          git switch -c "$BRANCH"
+          git commit -m "chore(version): bump to ${VERSION} [skip version]"
+          git push -u origin HEAD
+
+          gh pr create --base dev --head "$BRANCH" \
+            --title "chore(version): bump to ${VERSION} [skip version]" \
+            --body "## Summary
+          Auto PATCH bump after a push to \`dev\` (FR-GLOWE-025 / D-181).
+
+          ## Mapped to spec
+          - FR-GLOWE-025 — App-wide semver
+
+          ## SSOT updated
+          - [x] N/A (version stamp only)"
+
+          gh pr merge --squash --auto --delete-branch

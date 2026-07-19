@@ -507,7 +507,8 @@ Decision: D-181. Design: `docs/superpowers/specs/2026-07-19-app-semver-footer-de
 - AC1. **SSOT.** `app/VERSION` holds `MAJOR.MINOR.PATCH` (one line). Mirrored to
   `apps/glowe-web/js/glowe-version.js` as `GloweAppVersion.version`.
 - AC2. **Auto patch.** Every push to `dev` (except commits marked `[skip version]`) increments
-  PATCH via `.github/workflows/bump-app-version.yml` and commits the bump.
+  PATCH via `.github/workflows/bump-app-version.yml`, which opens a short-lived PR (branch
+  protection blocks direct pushes to `dev`) and squash-merges with `[skip version]` in the title.
 - AC3. **Footer.** Shared `ensureGlobalFooter()` renders a small `.footer-build` line under the
   tagline as `vX.Y.Z` (not translated).
 - AC4. **Deploy stamp.** `web-postbuild.mjs` re-stamps `glowe-version.js` from `app/VERSION` on

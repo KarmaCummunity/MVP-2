@@ -1366,7 +1366,7 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ## D-181 — App-wide semver (`app/VERSION`) with auto patch on every `dev` push (2026-07-19)
 
-**Decision.** Product version is app-wide semver in `app/VERSION`. Every push to `dev` auto-increments **PATCH** (GitHub Action + `[skip version]` commit). **MAJOR/MINOR** are manual. GloWe footer shows `vX.Y.Z` from `glowe-version.js`; `web-postbuild` re-stamps from `app/VERSION` on deploy. KC mobile UI display deferred.
+**Decision.** Product version is app-wide semver in `app/VERSION`. Every push to `dev` auto-increments **PATCH** via GitHub Action that opens a short-lived PR (direct push to `dev` is blocked by branch protection — GH006; same class as TD-182). Squash title includes `[skip version]` to avoid a re-trigger loop. **MAJOR/MINOR** are manual. GloWe footer shows `vX.Y.Z` from `glowe-version.js`; `web-postbuild` re-stamps from `app/VERSION` on deploy. KC mobile UI display deferred.
 
 **Rationale.** PM needs a normal `x.x.x` marker on the live `dev` site to verify deploys; the version applies to the whole app, not only the static web shell. Auto-patch on every push (not only successful web deploys) keeps the counter honest across BE/FE/docs merges.
 
