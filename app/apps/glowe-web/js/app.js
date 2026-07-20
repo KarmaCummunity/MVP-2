@@ -7098,22 +7098,7 @@ function initMyApplicationsPage() {
             : (profile.name || '');
 
         container.innerHTML = `
-            <div class="personal-shell">
-                <aside class="personal-sidebar">
-                    <nav class="personal-nav" aria-label="Personal area sections">
-                        <a href="#personal-profile">Overview</a>
-                        <a href="#personal-projects">Projects</a>
-                        <a href="#personal-opportunities">Opportunities</a>
-                        <a href="#personal-needs">My Needs</a>
-                        <a href="#personal-posts">My Posts</a>
-                        <a href="#personal-my-opportunities">My Opportunities</a>
-                        <a href="#personal-offers">My Offers</a>
-                        <a href="#personal-events">My Events</a>
-                        <a href="#personal-saved">Saved</a>
-                        <a href="#personal-activity">Activity</a>
-                    </nav>
-                </aside>
-
+            <div class="personal-shell personal-shell--compact">
                 <div class="personal-main">
                     ${showProfileSkeleton ? personalProfileSkeletonHero() : `<section class="social-profile-hero" id="personal-profile">
                         <div class="social-cover"></div>
@@ -7148,14 +7133,28 @@ function initMyApplicationsPage() {
                         </div>
                     </section>`}
 
-                    <section class="personal-stats-grid">
-                        <div><strong>${followCounts.followers}</strong><span>Followers</span></div>
-                        <div><strong>${followCounts.following}</strong><span>Following</span></div>
-                        <div><strong>${projects.length}</strong><span>Projects</span></div>
-                        <div><strong>${userApplications.length}</strong><span>Applications</span></div>
-                        <div><strong>${savedItems.length}</strong><span>Saved</span></div>
-                        <div><strong>${savedPosts.length}</strong><span>Posts</span></div>
-                    </section>
+                    <div class="personal-summary-bar">
+                        <section class="personal-stats-grid personal-stats-grid--compact" aria-label="Profile summary">
+                            <div><strong>${followCounts.followers}</strong><span>Followers</span></div>
+                            <div><strong>${followCounts.following}</strong><span>Following</span></div>
+                            <div><strong>${projects.length}</strong><span>Projects</span></div>
+                            <div><strong>${userApplications.length}</strong><span>Applications</span></div>
+                            <div><strong>${savedItems.length}</strong><span>Saved</span></div>
+                            <div><strong>${savedPosts.length}</strong><span>Posts</span></div>
+                        </section>
+                        <nav class="personal-nav personal-nav--scroll" aria-label="Personal area sections">
+                            <a href="#personal-profile">Overview</a>
+                            <a href="#personal-projects">Projects</a>
+                            <a href="#personal-opportunities">Opportunities</a>
+                            <a href="#personal-needs">My Needs</a>
+                            <a href="#personal-posts">My Posts</a>
+                            <a href="#personal-my-opportunities">My Opportunities</a>
+                            <a href="#personal-offers">My Offers</a>
+                            <a href="#personal-events">My Events</a>
+                            <a href="#personal-saved">Saved</a>
+                            <a href="#personal-activity">Activity</a>
+                        </nav>
+                    </div>
 
                     <section class="personal-grid">
                         <article class="profile-section-card${isQuestionnaireCollapsed() ? ' is-collapsed' : ''}">
@@ -7317,6 +7316,7 @@ function initMyApplicationsPage() {
         if (!showProfileSkeleton) {
             markProfileBioTranslation(document.getElementById('personal-profile'), profile);
         }
+        translateGloweTree(container);
     }
 
     // FR-GLOWE-011 AC1 — a backend profile fetch will run only when signed in
@@ -7467,6 +7467,12 @@ const GLOWE_TRANSLATIONS = {
         'Image is too large even after compression. Try a smaller photo.': 'התמונה גדולה מדי גם אחרי דחיסה. נסו תמונה קטנה יותר.',
         'Could not save photo.': 'לא ניתן לשמור את התמונה.',
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
+        'Followers': 'עוקבים',
+        'Following': 'במעקב',
+        'Show details': 'הצג פרטים',
+        'Hide details': 'הסתר פרטים',
+        'Individual': 'פרטי',
+        'Settings': 'הגדרות',
         'Opportunities': 'הזדמנויות',
         'My Events': 'האירועים שלי',
         'Focus not added yet': 'תחום מיקוד טרם נוסף',
