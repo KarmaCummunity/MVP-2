@@ -511,10 +511,14 @@ function updateAuthUI() {
 
     if (isLoggedIn()) {
         const user = getCurrentUser();
+        const profile = typeof getPersonalProfile === 'function' ? getPersonalProfile() : {};
+        const displayName = (typeof GloweLocalizedName !== 'undefined' && typeof getGloweLanguage === 'function')
+            ? GloweLocalizedName.localizedProfileName(profile, getGloweLanguage())
+            : (user.name || '');
         if (authButtons) authButtons.style.display = 'none';
         if (userMenu) {
             userMenu.style.display = 'flex';
-            if (userNameSpan) userNameSpan.textContent = user.name.split(' ')[0];
+            if (userNameSpan) userNameSpan.textContent = (displayName || user.name || '').split(' ')[0];
         }
         // Language is managed in Settings once signed in — remove the header toggle.
         if (typeof window.removeLanguageToggle === 'function') window.removeLanguageToggle();

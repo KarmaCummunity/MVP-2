@@ -2023,7 +2023,7 @@ a.user-greeting:hover {
 /* ===== Applications Page ===== */
 .applications-page,
 .personal-area-page {
-    padding: 60px 0 86px;
+    padding: 24px 0 48px;
 }
 
 .applications-list {
@@ -2034,20 +2034,31 @@ a.user-greeting:hover {
 
 .personal-shell {
     display: grid;
-    grid-template-columns: 300px minmax(0, 1fr);
-    gap: 24px;
+    grid-template-columns: minmax(0, 1fr);
+    gap: 16px;
     align-items: start;
 }
 
+.personal-shell--compact {
+    gap: 12px;
+}
+
 .personal-sidebar {
+    display: none;
+}
+
+.personal-summary-bar {
     display: grid;
-    gap: 16px;
+    gap: 8px;
     position: sticky;
-    top: 92px;
+    top: 64px;
+    z-index: 20;
+    background: var(--bg-color, #f7faf7);
+    padding-bottom: 4px;
 }
 
 .personal-nav,
-.personal-stats-grid div {
+.personal-stats-grid:not(.personal-stats-grid--compact) div {
     background: var(--white);
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
@@ -2142,6 +2153,45 @@ a.user-greeting:hover {
 .personal-nav {
     display: grid;
     padding: 10px;
+}
+
+.personal-nav--scroll {
+    display: flex;
+    flex-wrap: nowrap;
+    gap: 6px;
+    padding: 6px 8px;
+    overflow-x: auto;
+    -webkit-overflow-scrolling: touch;
+    scroll-snap-type: x proximity;
+    scrollbar-width: none;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.personal-nav--scroll::-webkit-scrollbar {
+    display: none;
+}
+
+.personal-nav--scroll a {
+    flex: 0 0 auto;
+    scroll-snap-align: start;
+    padding: 6px 12px;
+    border-radius: 999px;
+    border: 1px solid var(--border-color);
+    background: #fbfefd;
+    color: var(--text-secondary);
+    font-size: 0.76rem;
+    font-weight: 800;
+    line-height: 1.2;
+    white-space: nowrap;
+}
+
+.personal-nav--scroll a:hover,
+.personal-nav--scroll a:focus-visible {
+    background: var(--primary-light);
+    color: var(--primary-dark);
 }
 
 .personal-nav a {
@@ -2354,7 +2404,30 @@ a.user-greeting:hover {
     gap: 16px;
 }
 
-.personal-stats-grid div {
+.personal-stats-grid--compact {
+    display: flex;
+    flex-wrap: nowrap;
+    justify-content: space-between;
+    gap: 2px;
+    padding: 8px 10px;
+    background: var(--white);
+    border: 1px solid var(--border-color);
+    border-radius: var(--radius-md);
+    box-shadow: var(--shadow-sm);
+}
+
+.personal-stats-grid--compact div {
+    flex: 1 1 0;
+    min-width: 0;
+    padding: 4px 2px;
+    text-align: center;
+    background: transparent;
+    border: none;
+    box-shadow: none;
+    border-radius: 0;
+}
+
+.personal-stats-grid:not(.personal-stats-grid--compact) div {
     padding: 20px;
 }
 
@@ -2362,11 +2435,25 @@ a.user-greeting:hover {
     display: block;
     color: var(--primary-dark);
     font-size: 1.8rem;
+    line-height: 1.1;
+}
+
+.personal-stats-grid--compact strong {
+    font-size: 1rem;
+    font-weight: 900;
 }
 
 .personal-stats-grid span {
     color: var(--text-secondary);
     font-weight: 800;
+}
+
+.personal-stats-grid--compact span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.62rem;
+    font-weight: 700;
+    line-height: 1.15;
 }
 
 .personal-card-header {
@@ -6143,6 +6230,105 @@ a.user-greeting:hover {
         font-weight: 800;
         text-align: center;
     }
+
+    .personal-area-page {
+        padding: 12px 0 32px;
+    }
+
+    .personal-summary-bar {
+        top: 56px;
+        margin-inline: -4px;
+    }
+
+    .social-cover {
+        min-height: 96px;
+    }
+
+    .social-profile-body {
+        gap: 12px;
+        padding: 0 14px 16px;
+    }
+
+    .social-avatar-wrap {
+        margin-top: -48px;
+    }
+
+    .social-avatar {
+        width: 88px;
+        height: 88px;
+        border-width: 4px;
+    }
+
+    .social-avatar-change--icon {
+        width: 32px;
+        height: 32px;
+        inset-inline-end: -2px;
+        inset-block-end: 2px;
+    }
+
+    .social-profile-copy h2 {
+        font-size: 1.25rem;
+        margin: 2px 0 4px;
+    }
+
+    .social-profile-copy p {
+        font-size: 0.82rem;
+        line-height: 1.35;
+    }
+
+    .profile-meta-row {
+        gap: 4px;
+    }
+
+    .profile-meta-row span {
+        padding: 4px 8px;
+        font-size: 0.68rem;
+        font-weight: 700;
+    }
+
+    .personal-actions {
+        display: grid;
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 6px;
+        padding-top: 10px;
+    }
+
+    .personal-actions .btn {
+        padding: 8px 10px;
+        font-size: 0.78rem;
+        min-height: 0;
+    }
+
+    .personal-stats-grid--compact {
+        padding: 6px 4px;
+    }
+
+    .personal-stats-grid--compact strong {
+        font-size: 0.92rem;
+    }
+
+    .personal-stats-grid--compact span {
+        font-size: 0.58rem;
+    }
+
+    .personal-nav--scroll a {
+        padding: 5px 10px;
+        font-size: 0.7rem;
+    }
+
+    .profile-section-card {
+        padding: 14px;
+    }
+
+    .profile-section-heading h2 {
+        font-size: 1rem;
+    }
+
+    .profile-section-heading span:first-child {
+        width: 24px;
+        height: 24px;
+        font-size: 0.68rem;
+    }
 }
 
 /* ── GloWe onboarding (FR-GLOWE-002) ───────────────────────────────────── */
@@ -6457,18 +6643,22 @@ body.glowe-member-home main > section:not(#member-home) {
 .tr-toggle {
     display: inline-block;
     margin: 0;
-    padding: 2px 8px;
-    border: 1px solid var(--primary-light);
-    border-radius: 999px;
+    padding: 0;
+    border: none;
+    border-radius: 0;
     background: transparent;
-    color: var(--primary-color);
-    font-size: 0.78rem;
-    font-weight: 600;
+    color: var(--text-muted, #6b7280);
+    font-size: 0.68rem;
+    font-weight: 500;
+    line-height: 1.3;
+    text-decoration: underline;
+    text-underline-offset: 2px;
     cursor: pointer;
 }
 
 .tr-toggle:hover {
-    background: var(--primary-light);
+    background: transparent;
+    color: var(--primary-color);
 }
 
 .comment-row .tr-slot {
