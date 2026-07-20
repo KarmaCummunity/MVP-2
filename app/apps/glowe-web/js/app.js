@@ -1306,10 +1306,12 @@ async function uploadProfileImage(file) {
 }
 
 function renderPersonalAvatar(profile, className = 'profile-avatar') {
+    const displayName = localizedProfileDisplayName(profile);
     if (profile.avatarUrl) {
-        return `<img class="${className} profile-avatar-img" src="${profile.avatarUrl}" alt="${profile.name}">`;
+        return `<img class="${className} profile-avatar-img" src="${profile.avatarUrl}" alt="${escapeHtml(displayName)}">`;
     }
-    return renderEntityMark(profile.name, className);
+    const pair = profileNamePairFrom(profile);
+    return renderLocalizedEntityMark(pair.primary, pair.english, displayName, className);
 }
 
 function renderProfileValue(value, emptyText = 'Not added yet') {
@@ -3294,6 +3296,78 @@ function orgNamePairFrom(row) {
     };
 }
 
+function profileNamePairFrom(profile) {
+    if (typeof GloweLocalizedName !== 'undefined' && typeof GloweLocalizedName.profileNamePair === 'function') {
+        return GloweLocalizedName.profileNamePair(profile);
+    }
+    const p = profile || {};
+    const isOrg = p.accountType === 'organization';
+    if (isOrg) {
+        return {
+            primary: String(p.orgName || p.name || '').trim(),
+            english: String(p.orgNameEn || p.nameEn || '').trim()
+        };
+    }
+    return {
+        primary: String(p.name || '').trim(),
+        english: String(p.nameEn || '').trim()
+    };
+}
+
+function localizedProfileDisplayName(profile, fallback) {
+    if (typeof GloweLocalizedName !== 'undefined') {
+        return GloweLocalizedName.localizedProfileName(profile, gloweReaderLang()) || fallback || 'GloWe Member';
+    }
+    const pair = profileNamePairFrom(profile);
+    return pair.primary || pair.english || fallback || 'GloWe Member';
+}
+
+function localizedProfileFirstName(profile, fallback) {
+    if (typeof GloweLocalizedName !== 'undefined' && typeof GloweLocalizedName.localizedFirstName === 'function') {
+        return GloweLocalizedName.localizedFirstName(profile, gloweReaderLang(), fallback || 'there');
+    }
+    return localizedProfileDisplayName(profile, fallback || 'there').split(/\s+/)[0] || fallback || 'there';
+}
+
+function applyLocalizedNameAttrs(el, profile) {
+    if (!el) return;
+    const pair = profileNamePairFrom(profile);
+    el.setAttribute('data-ln-primary', pair.primary);
+    el.setAttribute('data-ln-english', pair.english);
+}
+
+function markProfileBioTranslation(rootEl, profile) {
+    if (!rootEl || !profile || !profile.id || profile.id === 'demo-personal-profile') return;
+    const isOrg = profile.accountType === 'organization';
+    const field = isOrg && profile.orgDescription ? 'org_description' : 'about';
+    rootEl.setAttribute('data-tr-card', '');
+    rootEl.setAttribute('data-tr-type', 'glowe_profile');
+    rootEl.setAttribute('data-tr-id', profile.id);
+    const bioEl = rootEl.querySelector('[data-profile-bio]');
+    if (bioEl) bioEl.setAttribute('data-tr-field', field);
+    if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
+        window.GloweTranslate.scan(rootEl);
+    }
+}
+
+async function getLocalizedPersonalProfile() {
+    let profile = getPersonalProfile();
+    if (!profile || !profile.id || profile.id === 'demo-personal-profile') return profile;
+    const ensured = await withEnsuredEnglishNames([profile]);
+    return ensured[0] || profile;
+}
+
+function renderPersonLinkContent(profile, options = {}) {
+    const className = options.className || 'avatar';
+    const pair = profileNamePairFrom(profile);
+    const displayName = localizedProfileDisplayName(profile);
+    const metaHtml = options.meta ? `<small>${escapeHtml(options.meta)}</small>` : '';
+    return `
+        ${renderLocalizedEntityMark(pair.primary, pair.english, displayName, className)}
+        <span><strong ${bilingualNameAttrs(pair.primary, pair.english)}>${escapeHtml(displayName)}</strong>${metaHtml}</span>
+    `;
+}
+
 function escapeHtml(value = '') {
     return String(value)
         .replace(/&/g, '&amp;')
@@ -4891,12 +4965,15 @@ function renderMemberFeedPost(post) {
     const postId = post.id || '';
     const href = `pages/community.html#post-${encodeURIComponent(postId)}`;
     const snippet = (post.text || '').slice(0, 140);
+    const authorName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedAuthorName(post, gloweReaderLang(), 'Community Member')
+        : (post.authorName || 'Community Member');
     return `
         <a class="member-feed-card" href="${href}">
             <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
             <h3>${escapeHtml(post.title || 'Community post')}</h3>
             <p>${escapeHtml(snippet)}</p>
-            <span class="member-feed-author">${escapeHtml(post.authorName || 'Community Member')}</span>
+            <span class="member-feed-author">${escapeHtml(authorName)}</span>
         </a>`;
 }
 
@@ -4957,9 +5034,9 @@ async function initMemberHome() {
         loadPostComments()
     ]);
 
-    const profile = getPersonalProfile();
+    const profile = await getLocalizedPersonalProfile();
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
-    const firstName = (profile.firstName || (profile.name || '').split(' ')[0] || 'there').trim();
+    const firstName = localizedProfileFirstName(profile, 'there');
     const allPosts = getAllCommunityPosts();
     const activity = selectMemberActivity(allPosts, user ? user.id : '');
     const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts);
@@ -5354,11 +5431,13 @@ async function loadLiveWishes() {
     // The board carries open needs (wishes) plus standing volunteer offers
     // (post_type='offer', FR-GLOWE-016), newest first as returned by listAll.
     const create = (typeof GloweCreate !== 'undefined') ? GloweCreate : null;
-    wishes.push(...(rows || []).reduce((acc, row) => {
+    let mapped = (rows || []).reduce((acc, row) => {
         if (helpers.isOpenWish(row)) acc.push(helpers.mapWishRow(row));
         else if (create && create.isOpenOffer(row)) acc.push({ ...helpers.mapWishRow(row), type: 'Volunteer Offer' });
         return acc;
-    }, []));
+    }, []);
+    mapped = await withEnsuredAuthorEnglishNames(mapped);
+    wishes.push(...mapped);
     let projectCount = 0;
     try { projectCount = ((await backend.listAll('projects')) || []).length; } catch (_e) { projectCount = 0; }
     updateWellSummary(projectCount);
@@ -5377,19 +5456,37 @@ function updateWellSummary(projectCount) {
     `;
 }
 
+async function paintCommunityProfileSidebar() {
+    const communityProfile = await getLocalizedPersonalProfile();
+    const profileName = document.getElementById('community-profile-name');
+    const profileLine = document.getElementById('community-profile-line');
+    const profileAvatar = document.getElementById('community-profile-avatar');
+    const profileCard = document.querySelector('.community-profile-card');
+    const displayName = localizedProfileDisplayName(communityProfile);
+    const pair = profileNamePairFrom(communityProfile);
+    const bioText = communityProfile.shortLine || communityProfile.about
+        || 'Share knowledge, ask for support, and build practical impact with the community.';
+    if (profileName) {
+        profileName.textContent = displayName;
+        applyLocalizedNameAttrs(profileName, communityProfile);
+    }
+    if (profileLine) {
+        profileLine.textContent = bioText;
+    }
+    if (profileAvatar) {
+        profileAvatar.textContent = getInitials(displayName);
+        applyLocalizedNameAttrs(profileAvatar, communityProfile);
+    }
+    if (profileCard) markProfileBioTranslation(profileCard, communityProfile);
+}
+
 async function initCommunityPage() {
     const container = document.getElementById('community-feed');
     const peopleContainer = document.getElementById('people-list');
     const groupsContainer = document.getElementById('topic-groups-list');
     const searchInput = document.getElementById('community-feed-search');
     const feedFilterButtons = document.querySelectorAll('[data-feed-filter]');
-    const communityProfile = getPersonalProfile();
-    const profileName = document.getElementById('community-profile-name');
-    const profileLine = document.getElementById('community-profile-line');
-    const profileAvatar = document.getElementById('community-profile-avatar');
-    if (profileName) profileName.textContent = communityProfile.name || 'GloWe Member';
-    if (profileLine) profileLine.textContent = communityProfile.shortLine || communityProfile.about || 'Share knowledge, ask for support, and build practical impact with the community.';
-    if (profileAvatar) profileAvatar.textContent = getInitials(communityProfile.name || 'GloWe Member');
+    paintCommunityProfileSidebar();
 
     function postMatchesFilter(post, filter) {
         if (filter === 'all') return true;
@@ -5436,12 +5533,11 @@ async function initCommunityPage() {
             ? visiblePeople.map(person => `
                 <div class="person-row">
                     <a href="profile.html?id=${person.id}">
-                        ${renderEntityMark(person.name, 'avatar')}
-                        <span><strong>${escapeHtml(person.name)}</strong><small>${escapeHtml(person.location || '')}</small></span>
+                        ${renderPersonLinkContent(person, { meta: person.location || '' })}
                     </a>
                     <div class="person-actions">
-                        <button type="button" onclick="showSuccessModal('Profile saved', '${person.name.replace(/'/g, "\\'")} was saved to your profile list.')">Save</button>
-                        <button type="button" onclick="openPrivateMessage('${person.name.replace(/'/g, "\\'")}')">Message</button>
+                        <button type="button" onclick="showSuccessModal('Profile saved', '${jsString(localizedProfileDisplayName(person))} was saved to your profile list.')">Save</button>
+                        <button type="button" onclick="openPrivateMessage('${jsString(localizedProfileDisplayName(person))}')">Message</button>
                     </div>
                 </div>
             `).join('')
@@ -5708,14 +5804,12 @@ function initForumsPage() {
             ? people.slice(0, 4).map((person, index) => `
                 <article class="forum-leader-card">
                     <a href="profile.html?id=${person.id}" class="forum-leader-main">
-                        ${renderEntityMark(person.name, 'avatar')}
-                        <span>
-                            <strong>${escapeHtml(person.name)}</strong>
-                            <small>${(person.skills || []).slice(0, 2).join(', ')}</small>
-                        </span>
+                        ${renderPersonLinkContent(person, {
+                            meta: (person.skills || []).slice(0, 2).join(', ')
+                        })}
                     </a>
                     <p>${index % 2 === 0 ? 'Available for peer advice and focused questions.' : 'Can help facilitate a respectful, practical discussion.'}</p>
-                    <button class="btn btn-outline btn-small" type="button" onclick="openPrivateMessage('${jsString(person.name)}')">Message</button>
+                    <button class="btn btn-outline btn-small" type="button" onclick="openPrivateMessage('${jsString(localizedProfileDisplayName(person))}')">Message</button>
                 </article>
             `).join('')
             : '<p class="muted-note">Community members with active contributions will be featured here.</p>';
@@ -5902,10 +5996,11 @@ function initDiscussionGroupPage() {
         ? people.slice(0, 5).map(person => `
             <div class="person-row">
                 <a href="profile.html?id=${person.id}">
-                    ${renderEntityMark(person.name, 'avatar')}
-                    <span><strong>${escapeHtml(person.name)}</strong><small>${(person.skills || []).slice(0, 2).join(', ')}</small></span>
+                    ${renderPersonLinkContent(person, {
+                        meta: (person.skills || []).slice(0, 2).join(', ')
+                    })}
                 </a>
-                <button type="button" onclick="openPrivateMessage('${jsString(person.name)}')">Message</button>
+                <button type="button" onclick="openPrivateMessage('${jsString(localizedProfileDisplayName(person))}')">Message</button>
             </div>
         `).join('')
         : '<p class="muted-note">Members will appear here once they join this group.</p>';
@@ -5995,6 +6090,8 @@ function _adaptDbProfile(p, projects) {
         _tr: { type: 'glowe_profile', id: p.id, missionField: missionField },
         id: p.id,
         name: displayName,
+        namePrimary: isOrg ? (p.orgName || p.name || '') : (p.name || ''),
+        nameEnglish: isOrg ? (p.orgNameEn || p.nameEn || '') : (p.nameEn || ''),
         nameEn: isOrg ? (p.orgNameEn || p.nameEn || '') : (p.nameEn || ''),
         type: isOrg ? (p.orgField || 'Organization') : 'Community Member',
         email: p.orgContactEmail || p.email || '',
@@ -6088,11 +6185,15 @@ function _renderProfileContent(profile, container) {
         : null;
     const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
     const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
+    const namePair = {
+        primary: profile.namePrimary || profile.name || '',
+        english: profile.nameEnglish || profile.nameEn || ''
+    };
     const avatarHtml = isOwnerView
         ? `<div class="social-avatar-wrap">${renderPersonalAvatar(profile, 'profile-avatar social-avatar')}<button type="button" class="social-avatar-change social-avatar-change--icon" aria-label="Change profile photo" onclick="openAvatarEditModal()">${cameraIcon}</button></div>`
         : (profile.avatarUrl
             ? renderPersonalAvatar(profile, 'profile-avatar')
-            : renderEntityMark(profile.name, 'profile-avatar'));
+            : renderLocalizedEntityMark(namePair.primary, namePair.english, profile.name, 'profile-avatar'));
     const typeConfig = getProfileTypeConfig(profile);
     const projects = profile.projects || [];
     const languages = profile.languages || [];
@@ -6136,7 +6237,7 @@ function _renderProfileContent(profile, container) {
                         <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
                         ${chipHtml}
                     </div>
-                    <h1>${escapeHtml(profile.name)}</h1>
+                    <h1 ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(profile.name)}</h1>
                     <p${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="opportunity-skills">${tags.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}</div>
                 </div>
@@ -6385,11 +6486,12 @@ async function initOpportunityDetailPage() {
     }
     
     // Populate page content
+    const orgPair = orgNamePairFrom(opportunity);
     const orgName = (typeof GloweLocalizedName !== 'undefined')
         ? GloweLocalizedName.localizedOrganizationName(opportunity, gloweReaderLang(), 'GloWe Member')
         : (opportunity.organization || 'GloWe Member');
     document.getElementById('opp-title').textContent = opportunity.title;
-    document.getElementById('opp-org').innerHTML = `${renderEntityMark(orgName)} ${escapeHtml(orgName)}`;
+    document.getElementById('opp-org').innerHTML = `${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName)} ${escapeHtml(orgName)}`;
     document.getElementById('opp-location').textContent = opportunity.location;
     document.getElementById('opp-duration').textContent = opportunity.duration;
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
@@ -6425,10 +6527,13 @@ async function initOpportunityDetailPage() {
     // Organization info
     const org = getOrganizationByName(opportunity.organization);
     if (org) {
-        document.getElementById('org-name').textContent = org.name;
+        const orgDisplay = localizedProfileDisplayName(org, org.name);
+        document.getElementById('org-name').textContent = orgDisplay;
         document.getElementById('org-mission').textContent = org.mission;
+        const orgNameEl = document.getElementById('org-name');
+        if (orgNameEl) applyLocalizedNameAttrs(orgNameEl, org);
     } else {
-        document.getElementById('org-name').textContent = opportunity.organization;
+        document.getElementById('org-name').textContent = orgName;
         document.getElementById('org-mission').textContent = 'This local opportunity was published by a GloWe community member and is ready for interested volunteers or collaborators.';
     }
 
@@ -6957,6 +7062,8 @@ function initMyApplicationsPage() {
 
     function renderPersonalArea() {
         const profile = getPersonalProfile();
+        const displayName = localizedProfileDisplayName(profile);
+        const namePair = profileNamePairFrom(profile);
         const projects = getPersonalProjectsForView();
         const myNeeds = getMyWishesForView();
         const myPosts = getMyPostsForView();
@@ -7021,7 +7128,7 @@ function initMyApplicationsPage() {
                                         <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
                                         ${chipHtml}
                                     </div>
-                                    <h2>${escapeHtml(heroDisplayName)}</h2>
+                                    <h2 ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(heroDisplayName)}</h2>
                                     <div class="social-profile-bio" data-tr-card data-tr-type="glowe_profile" data-tr-id="${escapeHtml(profile.id || '')}">
                                         <p data-tr-field="${bioSrc.field || 'about'}">${escapeHtml(bioText)}</p>
                                     </div>
@@ -7207,6 +7314,9 @@ function initMyApplicationsPage() {
                 </div>
             </div>
         `;
+        if (!showProfileSkeleton) {
+            markProfileBioTranslation(document.getElementById('personal-profile'), profile);
+        }
     }
 
     // FR-GLOWE-011 AC1 — a backend profile fetch will run only when signed in
