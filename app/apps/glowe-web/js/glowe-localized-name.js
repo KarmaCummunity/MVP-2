@@ -35,6 +35,28 @@
         return p || e || '';
     }
 
+    // Source + English pair for a fromProfileRow-shaped profile (FR-GLOWE-024).
+    function profileNamePair(profile) {
+        const p = profile || {};
+        const isOrg = p.accountType === 'organization';
+        if (isOrg) {
+            return {
+                primary: trim(p.orgName || p.name),
+                english: trim(p.orgNameEn || p.nameEn)
+            };
+        }
+        return {
+            primary: trim(p.name),
+            english: trim(p.nameEn)
+        };
+    }
+
+    // First token of the localized display name (welcome / header chips).
+    function localizedFirstName(profile, lang, fallback) {
+        const display = localizedProfileName(profile, lang) || fallback || 'there';
+        return display.split(/\s+/).filter(Boolean)[0] || fallback || 'there';
+    }
+
     // Person vs organization display name from a fromProfileRow-shaped profile.
     function localizedProfileName(profile, lang) {
         const p = profile || {};
@@ -193,6 +215,8 @@
     return {
         isPrimarilyLatin: isPrimarilyLatin,
         resolveLocalizedName: resolveLocalizedName,
+        profileNamePair: profileNamePair,
+        localizedFirstName: localizedFirstName,
         localizedProfileName: localizedProfileName,
         localizedAuthorName: localizedAuthorName,
         localizedOrganizationName: localizedOrganizationName,

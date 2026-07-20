@@ -4,6 +4,8 @@ import GloweLocalizedName from '../glowe-localized-name.js';
 const {
     isPrimarilyLatin,
     resolveLocalizedName,
+    profileNamePair,
+    localizedFirstName,
     localizedProfileName,
     localizedAuthorName,
     localizedOrganizationName,
@@ -44,6 +46,25 @@ describe('resolveLocalizedName', () => {
     it('prefers primary for non-en languages', () => {
         expect(resolveLocalizedName('נווה', 'Naveh', 'he')).toBe('נווה');
         expect(resolveLocalizedName('', 'Naveh', 'he')).toBe('Naveh');
+    });
+});
+
+describe('profileNamePair / localizedFirstName', () => {
+    it('extracts org and person name pairs', () => {
+        expect(profileNamePair({
+            accountType: 'organization',
+            orgName: 'לב פתוח',
+            orgNameEn: 'Open Heart'
+        })).toEqual({ primary: 'לב פתוח', english: 'Open Heart' });
+        expect(profileNamePair({ name: 'נוה', nameEn: 'Naveh' })).toEqual({
+            primary: 'נוה',
+            english: 'Naveh'
+        });
+    });
+
+    it('returns the first token of the localized display name', () => {
+        expect(localizedFirstName({ name: 'נוה סרוסי', nameEn: 'Naveh Sarusi' }, 'en')).toBe('Naveh');
+        expect(localizedFirstName({ name: 'נוה סרוסי', nameEn: 'Naveh Sarusi' }, 'he')).toBe('נוה');
     });
 });
 
