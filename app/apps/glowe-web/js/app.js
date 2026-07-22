@@ -4271,6 +4271,49 @@ async function withEnsuredAuthorEnglishNames(items) {
     return GloweLocalizedName.applyAuthorEnglishFromProfiles(list, patches);
 }
 
+// FR-GLOWE-024 AC4/AC5 — backfill missing organization English snapshots on
+// opportunities from their own `organization` source (generate-on-read + persist
+// when still empty). Mirrors withEnsuredAuthorEnglishNames so opportunity cards on
+// the home / board show a Latin publisher name to EN readers, not the Hebrew source.
+async function withEnsuredOrganizationEnglishNames(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.opportunityNeedsEnglishName);
+    if (!needing.length) return list;
+    const ids = [];
+    const seen = {};
+    needing.forEach(function (row) {
+        const id = row.id;
+        if (!id || seen[String(id)]) return;
+        seen[String(id)] = true;
+        ids.push(String(id));
+    });
+    if (!ids.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureOpportunityEnglishNames !== 'function') return list;
+    const patches = await backend.ensureOpportunityEnglishNames(ids);
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyOrganizationEnglishFromPatches(list, patches);
+}
+
+// Load live opportunities into a shared array, then backfill missing English
+// publisher names for EN readers. Wraps fetchAndPopulate's fetch/filter/map so
+// every opportunity surface (home, board, reload, detail) heals names uniformly.
+async function loadOpportunitiesInto(targetArray) {
+    try {
+        if (typeof gloweBackend === 'undefined' || !gloweBackend.configured()) return;
+        const rows = await gloweBackend.listAll('opportunities');
+        if (!rows) return;
+        const visible = rows.filter(row => !row || row.status !== 'removed');
+        const mapped = await withEnsuredOrganizationEnglishNames(visible.map(mapOpportunityRow));
+        targetArray.splice(0, targetArray.length, ...mapped);
+    } catch (_e) {
+        // leave array as-is; the surface keeps its previous / empty state
+    }
+}
+
 function translationToggleSlotHtml() {
     if (typeof GloweUiConventions !== 'undefined') {
         return GloweUiConventions.translationToggleSlotHtml();
@@ -4895,7 +4938,7 @@ async function initFeaturedOpportunities() {
     const container = document.getElementById('featured-opportunities');
     if (container) {
         container.innerHTML = '<p class="muted-note">Loading opportunities…</p>';
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await loadOpportunitiesInto(opportunities);
         const featured = getFeaturedOpportunities().slice(0, 3);
         container.innerHTML = featured.length
             ? featured.map(opp => renderOpportunityCard(opp)).join('')
@@ -5029,7 +5072,7 @@ async function initMemberHome() {
     root.innerHTML = '<div class="container"><p class="muted-note">Loading your GloWe home…</p></div>';
 
     await Promise.all([
-        fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow),
+        loadOpportunitiesInto(opportunities),
         loadCommunityPosts(),
         loadPostComments()
     ]);
@@ -5080,7 +5123,7 @@ async function initOpportunitiesPage() {
     // Re-fetch the live board after a publish so created opportunities appear
     // with real server ids (working detail links), not a client-side copy.
     reloadOpportunities = async function () {
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await loadOpportunitiesInto(opportunities);
         renderOpportunities();
     };
 
@@ -5129,7 +5172,7 @@ async function initOpportunitiesPage() {
     // Fetch real data then render
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading opportunities…</p></div>';
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await loadOpportunitiesInto(opportunities);
         renderOpportunities();
     }
 
@@ -6476,7 +6519,7 @@ async function initOpportunityDetailPage() {
     // opportunities/events aren't present yet — fetch before the lookup.
     if (!getOpportunityByAnyId(opportunityId)
         && typeof gloweBackend !== 'undefined' && gloweBackend.configured()) {
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await loadOpportunitiesInto(opportunities);
     }
 
     const opportunity = getOpportunityByAnyId(opportunityId);

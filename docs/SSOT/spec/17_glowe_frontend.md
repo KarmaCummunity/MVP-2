@@ -475,7 +475,8 @@ gating (FR-GLOWE-003) rather than adding a login wall. Design:
 ## FR-GLOWE-024 — Bilingual display names (person + organization)
 
 **Status.** ✅ Done — bilingual name columns + auto-generation + edit + localized render
-(migration `0230`, Edge Function `glowe-generate-name-en`, `js/glowe-localized-name.js`).
++ generate-on-read backfill for profiles, post authors, and opportunity org snapshots
+(migration `0230`, Edge Function `glowe-generate-name-en` modes A/B/C, `js/glowe-localized-name.js`).
 Decision: D-179.
 
 Proper names are **not** routed through the UGC translation cache (FR-TRANSLATE-005 AC4).
@@ -500,7 +501,14 @@ English column when present; HE (and other locales) prefer the source name.
 - AC5. **Content snapshots.** Creating a post/wish/offer stamps `author_name` + `author_name_en`;
   creating an opportunity/event stamps `organization` + `organization_en`. Historical rows keep
   the snapshot; profile pages always show the current profile values.
-- AC6. **Out of scope.** KC mobile `users.display_name_en`, `org_contact_name_en`, and routing
+- AC6. **Generate-on-read backfill.** For EN readers, list/card loaders self-heal missing English
+  snapshots without an edit cycle: profiles (`glowe-generate-name-en` mode B, persists `*_en`),
+  post/comment authors (mode B via the author's profile), and opportunity org snapshots
+  (mode C — `{ opportunityIds }` → generates + persists `glowe_opportunities.organization_en`
+  from the row's own non-Latin `organization`). Anon-friendly; provider/network failures leave
+  the source name in place. This closes the home/board gap where a Hebrew publisher name stayed
+  Hebrew for EN readers because only create-time stamping existed for opportunities.
+- AC7. **Out of scope.** KC mobile `users.display_name_en`, `org_contact_name_en`, and routing
   names through `glowe-translate` / `glowe_content_translations`.
 
 ## FR-GLOWE-025 — App-wide semver in GloWe footer
