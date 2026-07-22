@@ -3,6 +3,8 @@ export * from './ports/IGloweAuthGateway';
 export * from './ports/IGloweProfileRepository';
 export * from './use-cases/GetCreateMenuState';
 export * from './use-cases/CompleteOnboarding';
+export * from './use-cases/ListCommunityPosts';
+export * from './use-cases/CreateCommunityPost';
 export * from './ports/IGlowePostRepository';
 export * from './ports/IGloweOpportunityRepository';
 export * from './ports/IGloweForumRepository';
