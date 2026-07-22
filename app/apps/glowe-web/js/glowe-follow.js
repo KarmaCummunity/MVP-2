@@ -5,25 +5,28 @@
     if (typeof module !== 'undefined' && module.exports) module.exports = api;
     root.GloweFollow = api;
 })(typeof self !== 'undefined' ? self : this, function () {
+    function buttonState(state, label, showNote) {
+        return { state: state, label: label || '', showNote: !!showNote };
+    }
+
+    function deriveFromTarget(t) {
+        if (String(t.accountStatus) !== 'active') return buttonState('unavailable');
+        if (String(t.privacyMode) === 'Private') return buttonState('private_account', '', true);
+        return buttonState('not_following_public', '+ Follow');
+    }
+
+    function deriveFromRaw(r) {
+        const t = r.target;
+        if (!t) return buttonState('unavailable');
+        if (r.followingExists) return buttonState('following', 'Following ✓');
+        return deriveFromTarget(t);
+    }
+
     function deriveButtonState(raw, viewerId, targetUserId) {
         const me = String(viewerId || '');
         const target = String(targetUserId || '');
-        if (!me || !target || me === target) {
-            return { state: 'self', label: '', showNote: false };
-        }
-        const r = raw || {};
-        const t = r.target;
-        if (!t) return { state: 'unavailable', label: '', showNote: false };
-        if (r.followingExists) {
-            return { state: 'following', label: 'Following ✓', showNote: false };
-        }
-        if (String(t.accountStatus) !== 'active') {
-            return { state: 'unavailable', label: '', showNote: false };
-        }
-        if (String(t.privacyMode) === 'Private') {
-            return { state: 'private_account', label: '', showNote: true };
-        }
-        return { state: 'not_following_public', label: '+ Follow', showNote: false };
+        if (!me || !target || me === target) return buttonState('self');
+        return deriveFromRaw(raw || {});
     }
 
     function followButtonHtml(stateInfo, targetId) {
@@ -48,34 +51,43 @@
         return 'connections.html?user=' + encodeURIComponent(String(userId || '')) + '&tab=' + t;
     }
 
+    function trimName(value) {
+        const s = value && String(value).trim();
+        return s || '';
+    }
+
+    function pickDisplayName(g, p) {
+        return trimName(g.name) || trimName(p.display_name) || 'GloWe member';
+    }
+
     function mapFollowListRow(publicUser, gloweProfile) {
         const p = publicUser || {};
         const g = gloweProfile || {};
         const userId = String(g.id || p.user_id || '');
-        const name = (g.name && String(g.name).trim())
-            || (p.display_name && String(p.display_name).trim())
-            || 'GloWe member';
         return {
             userId: userId,
-            name: name,
+            name: pickDisplayName(g, p),
             avatarUrl: g.avatarUrl || p.avatar_url || '',
             profileHref: 'profile.html?id=' + encodeURIComponent(userId)
         };
     }
 
+    function errorText(err) {
+        const e = err || {};
+        return String(e.message || '') + ' ' + String(e.details || '');
+    }
+
     function isAlreadyFollowingError(err) {
         const e = err || {};
-        const text = String(e.message || '') + ' ' + String(e.details || '');
+        const text = errorText(e);
         if (e.code === '23505' && text.indexOf('follow_edges_pkey') !== -1) return true;
         return text.indexOf('already_following') !== -1;
     }
 
     function mapFollowError(err) {
         const e = err || {};
-        const text = String(e.message || '') + ' ' + String(e.details || '');
-        if (isAlreadyFollowingError(e)) {
-            return { code: 'already_following', message: '' };
-        }
+        const text = errorText(e);
+        if (isAlreadyFollowingError(e)) return { code: 'already_following', message: '' };
         if (text.indexOf('blocked_relationship') !== -1 || e.code === '42501') {
             return { code: 'blocked_relationship', message: "Can't follow this profile" };
         }

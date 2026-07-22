@@ -1090,123 +1090,31 @@ function getFollowCountsForView() {
     return personalFollowCounts || { followers: 0, following: 0 };
 }
 
-async function resolveFollowButtonHtml(targetId) {
-    if (!targetId || !window.GloweFollow || !backendReady()) return '';
-    const me = await window.gloweBackend.currentUser().catch(() => null);
-    if (!me) {
-        return GloweFollow.followButtonHtml(
-            { state: 'not_following_public', label: '+ Follow' }, targetId
-        );
-    }
-    if (String(me.id) === String(targetId)) return '';
-    const raw = await window.gloweBackend.kcGetFollowState(targetId).catch(() => null);
-    if (!raw) return '';
-    const info = GloweFollow.deriveButtonState(raw, me.id, targetId);
-    let html = GloweFollow.followButtonHtml(info, targetId);
-    if (info.showNote) html += GloweFollow.privateNoteHtml();
-    return html;
+// Follow UI lives in glowe-follow-ui.js (FR-GLOWE-026) — thin delegates keep app.js lean.
+function resolveFollowButtonHtml(targetId) {
+    return window.GloweFollowUI
+        ? window.GloweFollowUI.resolveFollowButtonHtml(targetId)
+        : Promise.resolve('');
 }
-
-async function handleFollowToggle(targetId) {
-    const proceed = async function () {
-        const backend = window.gloweBackend;
-        const me = await backend.currentUser().catch(() => null);
-        if (!me || !targetId) return;
-        const raw = await backend.kcGetFollowState(targetId).catch(() => null);
-        const info = GloweFollow.deriveButtonState(raw || {}, me.id, targetId);
-        if (info.state === 'following') {
-            const nameEl = document.querySelector('[data-follow-name="' + targetId + '"]');
-            const name = (nameEl && nameEl.textContent) || 'this profile';
-            if (!window.confirm('Stop following ' + name + '?')) return;
-            try {
-                await backend.kcUnfollow(targetId);
-            } catch (e) {
-                const mapped = GloweFollow.mapFollowError(e);
-                showSuccessModal('Could not unfollow', mapped.message || 'Something went wrong');
-                return;
-            }
-        } else if (info.state === 'not_following_public') {
-            try {
-                await backend.kcFollow(targetId);
-            } catch (e) {
-                if (GloweFollow.isAlreadyFollowingError(e)) {
-                    /* treat as success */
-                } else {
-                    const mapped = GloweFollow.mapFollowError(e);
-                    showSuccessModal('Could not follow', mapped.message || 'Something went wrong');
-                    return;
-                }
-            }
-        } else {
-            return;
-        }
-        await refreshFollowUi(targetId);
-    };
-    if (window.GloweGuest) {
-        window.GloweGuest.requireMemberForAction('follow-profile', {}, proceed);
-    } else {
-        proceed();
-    }
+function handleFollowToggle(targetId) {
+    if (window.GloweFollowUI) window.GloweFollowUI.handleFollowToggle(targetId);
 }
 window.handleFollowToggle = handleFollowToggle;
-
-async function refreshFollowUi(targetId) {
-    const html = await resolveFollowButtonHtml(targetId);
-    document.querySelectorAll('[data-follow-slot="' + targetId + '"]').forEach(function (n) {
-        n.innerHTML = html;
-    });
-    const counts = await window.gloweBackend.kcPublicCounts(targetId).catch(() => null);
-    if (counts) {
-        const f = document.querySelector('[data-followers-count="' + targetId + '"]');
-        const g = document.querySelector('[data-following-count="' + targetId + '"]');
-        if (f) f.textContent = String(counts.followers);
-        if (g) g.textContent = String(counts.following);
-    }
-    if (typeof personalFollowCounts !== 'undefined') {
-        loadFollowCounts();
-    }
+function hydrateFollowSlots(root) {
+    return window.GloweFollowUI
+        ? window.GloweFollowUI.hydrateFollowSlots(root)
+        : Promise.resolve();
 }
-
-async function hydrateFollowSlots(root) {
-    const slots = (root || document).querySelectorAll('[data-follow-slot]');
-    const ids = Array.from(slots).map(function (s) { return s.getAttribute('data-follow-slot'); });
-    const unique = Array.from(new Set(ids.filter(Boolean)));
-    await Promise.all(unique.map(async function (id) {
-        const html = await resolveFollowButtonHtml(id);
-        document.querySelectorAll('[data-follow-slot="' + id + '"]').forEach(function (s) {
-            s.innerHTML = html;
-        });
-    }));
-}
-
 function profileFollowStatsHtml(profileId) {
-    if (!profileId || typeof GloweFollow === 'undefined') return '';
-    return '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'followers') + '">' +
-        '<strong data-followers-count="' + profileId + '">—</strong><span>Followers</span></a>' +
-        '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'following') + '">' +
-        '<strong data-following-count="' + profileId + '">—</strong><span>Following</span></a>';
+    return window.GloweFollowUI ? window.GloweFollowUI.profileFollowStatsHtml(profileId) : '';
 }
-
 function personalFollowStatsHtml(profileId, followCounts) {
-    if (!profileId || typeof GloweFollow === 'undefined') {
-        return '<div><strong>' + followCounts.followers + '</strong><span>Followers</span></div>' +
-            '<div><strong>' + followCounts.following + '</strong><span>Following</span></div>';
-    }
-    return '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'followers') + '">' +
-        '<strong data-followers-count="' + profileId + '">' + followCounts.followers + '</strong><span>Followers</span></a>' +
-        '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'following') + '">' +
-        '<strong data-following-count="' + profileId + '">' + followCounts.following + '</strong><span>Following</span></a>';
+    return window.GloweFollowUI
+        ? window.GloweFollowUI.personalFollowStatsHtml(profileId, followCounts)
+        : '';
 }
-
 function loadProfilePublicFollowCounts(profileId, container) {
-    if (!profileId || !container || !window.GloweFollow || !backendReady()) return;
-    window.gloweBackend.kcPublicCounts(profileId).then(function (counts) {
-        if (!counts) return;
-        const fEl = container.querySelector('[data-followers-count="' + profileId + '"]');
-        const gEl = container.querySelector('[data-following-count="' + profileId + '"]');
-        if (fEl) fEl.textContent = String(counts.followers);
-        if (gEl) gEl.textContent = String(counts.following);
-    }).catch(function () {});
+    if (window.GloweFollowUI) window.GloweFollowUI.loadProfilePublicFollowCounts(profileId, container);
 }
 
 // Render the compact "My Offers" list for the Personal Area (offers the user
@@ -9196,55 +9104,8 @@ function initMessagesPage() {
     renderChatInbox(container);
 }
 
-async function initConnectionsPage() {
-    const container = document.getElementById('connections-content');
-    if (!container) return;
-    if (!gloweIsLoggedIn()) {
-        container.innerHTML = '<div class="empty-state"><h3>Sign in to see connections</h3><p>Followers and following lists are available after you sign in.</p><button class="btn btn-primary" type="button" onclick="openModal(\'login-modal\')">Sign up / Sign in</button></div>';
-        return;
-    }
-    if (!backendReady()) {
-        container.innerHTML = '<div class="empty-state"><h3>Connections unavailable</h3><p>Please try again shortly.</p></div>';
-        return;
-    }
-    const params = new URLSearchParams(window.location.search);
-    const userId = params.get('user');
-    const tab = params.get('tab') === 'following' ? 'following' : 'followers';
-    if (!userId) {
-        container.innerHTML = '<div class="empty-state"><h3>Profile not found</h3><p>Missing user id.</p></div>';
-        return;
-    }
-    container.innerHTML = '<div class="empty-state"><h3>Loading…</h3></div>';
-    const backend = window.gloweBackend;
-    const profiles = await backend.kcCounterpartProfiles([userId]).catch(() => ({}));
-    const ownerName = (profiles[userId] && profiles[userId].name) || 'GloWe member';
-    const rows = tab === 'following'
-        ? await backend.kcListFollowing(userId).catch(() => [])
-        : await backend.kcListFollowers(userId).catch(() => []);
-    const ids = rows.map(function (r) { return r.user_id; });
-    const gloweProfiles = await backend.kcCounterpartProfiles(ids).catch(() => ({}));
-    const tabs = '<div class="connections-tabs">' +
-        '<a class="' + (tab === 'followers' ? 'active' : '') + '" href="' + GloweFollow.connectionsPageUrl(userId, 'followers') + '">Followers</a>' +
-        '<a class="' + (tab === 'following' ? 'active' : '') + '" href="' + GloweFollow.connectionsPageUrl(userId, 'following') + '">Following</a>' +
-        '</div>';
-    if (!rows.length) {
-        const empty = tab === 'following' ? 'Not following anyone yet' : 'No followers yet';
-        container.innerHTML = '<h2>' + escapeHtml(ownerName) + '</h2>' + tabs +
-            '<div class="empty-state"><h3>' + empty + '</h3></div>';
-        return;
-    }
-    const list = rows.map(function (r) {
-        const mapped = GloweFollow.mapFollowListRow(r, gloweProfiles[r.user_id]);
-        return '<div class="connections-row">' +
-            '<a class="connections-row-main" href="' + mapped.profileHref + '">' +
-            renderEntityMark(mapped.name, 'avatar') +
-            '<strong data-follow-name="' + mapped.userId + '">' + escapeHtml(mapped.name) + '</strong></a>' +
-            '<span class="follow-slot" data-follow-slot="' + mapped.userId + '" data-follow-name="' + jsString(mapped.name) + '"></span>' +
-            '</div>';
-    }).join('');
-    container.innerHTML = '<h2>' + escapeHtml(ownerName) + '</h2>' + tabs +
-        '<div class="connections-list">' + list + '</div>';
-    await hydrateFollowSlots(container);
+function initConnectionsPage() {
+    if (window.GloweFollowUI) window.GloweFollowUI.initConnectionsPage();
 }
 
 function chatLoadingState(container, body) {
