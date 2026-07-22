@@ -57,7 +57,7 @@ begin
   end if;
 
   return query
-  select distinct on (h.check_name)
+  select
     h.check_name,
     h.status,
     h.latency_ms,
@@ -65,9 +65,13 @@ begin
     h.app_version,
     h.checked_at
   from public.glowe_health_checks h
-  where h.environment = 'glowe_prod'
-    and h.checked_at > now() - interval '7 days'
-  order by h.check_name, h.checked_at desc;
+  inner join (
+    select distinct on (check_name) id
+    from public.glowe_health_checks
+    where environment = 'glowe_prod'
+      and checked_at > now() - interval '7 days'
+    order by check_name, checked_at desc, id desc
+  ) latest on latest.id = h.id;
 end;
 $$;
 

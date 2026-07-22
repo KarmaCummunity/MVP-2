@@ -77,10 +77,10 @@ end $$;
 
 -- Service-role insert (superuser in migration test harness)
 reset role;
-insert into public.glowe_health_checks (run_id, check_name, status, latency_ms, app_version, environment)
+insert into public.glowe_health_checks (run_id, check_name, status, latency_ms, app_version, environment, checked_at)
 values
-  ('run-0232-a', 'home_load', 'ok', 120, '1.0.13', 'glowe_prod'),
-  ('run-0232-b', 'home_load', 'fail', 9000, '1.0.13', 'glowe_prod');
+  ('run-0232-a', 'home_load', 'ok', 120, '1.0.13', 'glowe_prod', now() - interval '2 minutes'),
+  ('run-0232-b', 'home_load', 'fail', 9000, '1.0.13', 'glowe_prod', now());
 
 update public.glowe_health_checks
    set error_code = 'timeout',
