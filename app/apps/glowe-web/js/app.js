@@ -1090,6 +1090,125 @@ function getFollowCountsForView() {
     return personalFollowCounts || { followers: 0, following: 0 };
 }
 
+async function resolveFollowButtonHtml(targetId) {
+    if (!targetId || !window.GloweFollow || !backendReady()) return '';
+    const me = await window.gloweBackend.currentUser().catch(() => null);
+    if (!me) {
+        return GloweFollow.followButtonHtml(
+            { state: 'not_following_public', label: '+ Follow' }, targetId
+        );
+    }
+    if (String(me.id) === String(targetId)) return '';
+    const raw = await window.gloweBackend.kcGetFollowState(targetId).catch(() => null);
+    if (!raw) return '';
+    const info = GloweFollow.deriveButtonState(raw, me.id, targetId);
+    let html = GloweFollow.followButtonHtml(info, targetId);
+    if (info.showNote) html += GloweFollow.privateNoteHtml();
+    return html;
+}
+
+async function handleFollowToggle(targetId) {
+    const proceed = async function () {
+        const backend = window.gloweBackend;
+        const me = await backend.currentUser().catch(() => null);
+        if (!me || !targetId) return;
+        const raw = await backend.kcGetFollowState(targetId).catch(() => null);
+        const info = GloweFollow.deriveButtonState(raw || {}, me.id, targetId);
+        if (info.state === 'following') {
+            const nameEl = document.querySelector('[data-follow-name="' + targetId + '"]');
+            const name = (nameEl && nameEl.textContent) || 'this profile';
+            if (!window.confirm('Stop following ' + name + '?')) return;
+            try {
+                await backend.kcUnfollow(targetId);
+            } catch (e) {
+                const mapped = GloweFollow.mapFollowError(e);
+                showSuccessModal('Could not unfollow', mapped.message || 'Something went wrong');
+                return;
+            }
+        } else if (info.state === 'not_following_public') {
+            try {
+                await backend.kcFollow(targetId);
+            } catch (e) {
+                if (GloweFollow.isAlreadyFollowingError(e)) {
+                    /* treat as success */
+                } else {
+                    const mapped = GloweFollow.mapFollowError(e);
+                    showSuccessModal('Could not follow', mapped.message || 'Something went wrong');
+                    return;
+                }
+            }
+        } else {
+            return;
+        }
+        await refreshFollowUi(targetId);
+    };
+    if (window.GloweGuest) {
+        window.GloweGuest.requireMemberForAction('follow-profile', {}, proceed);
+    } else {
+        proceed();
+    }
+}
+window.handleFollowToggle = handleFollowToggle;
+
+async function refreshFollowUi(targetId) {
+    const html = await resolveFollowButtonHtml(targetId);
+    document.querySelectorAll('[data-follow-slot="' + targetId + '"]').forEach(function (n) {
+        n.innerHTML = html;
+    });
+    const counts = await window.gloweBackend.kcPublicCounts(targetId).catch(() => null);
+    if (counts) {
+        const f = document.querySelector('[data-followers-count="' + targetId + '"]');
+        const g = document.querySelector('[data-following-count="' + targetId + '"]');
+        if (f) f.textContent = String(counts.followers);
+        if (g) g.textContent = String(counts.following);
+    }
+    if (typeof personalFollowCounts !== 'undefined') {
+        loadFollowCounts();
+    }
+}
+
+async function hydrateFollowSlots(root) {
+    const slots = (root || document).querySelectorAll('[data-follow-slot]');
+    const ids = Array.from(slots).map(function (s) { return s.getAttribute('data-follow-slot'); });
+    const unique = Array.from(new Set(ids.filter(Boolean)));
+    await Promise.all(unique.map(async function (id) {
+        const html = await resolveFollowButtonHtml(id);
+        document.querySelectorAll('[data-follow-slot="' + id + '"]').forEach(function (s) {
+            s.innerHTML = html;
+        });
+    }));
+}
+
+function profileFollowStatsHtml(profileId) {
+    if (!profileId || typeof GloweFollow === 'undefined') return '';
+    return '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'followers') + '">' +
+        '<strong data-followers-count="' + profileId + '">—</strong><span>Followers</span></a>' +
+        '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'following') + '">' +
+        '<strong data-following-count="' + profileId + '">—</strong><span>Following</span></a>';
+}
+
+function personalFollowStatsHtml(profileId, followCounts) {
+    if (!profileId || typeof GloweFollow === 'undefined') {
+        return '<div><strong>' + followCounts.followers + '</strong><span>Followers</span></div>' +
+            '<div><strong>' + followCounts.following + '</strong><span>Following</span></div>';
+    }
+    return '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'followers') + '">' +
+        '<strong data-followers-count="' + profileId + '">' + followCounts.followers + '</strong><span>Followers</span></a>' +
+        '<a class="profile-stat-link" href="' + GloweFollow.connectionsPageUrl(profileId, 'following') + '">' +
+        '<strong data-following-count="' + profileId + '">' + followCounts.following + '</strong><span>Following</span></a>';
+}
+
+function loadProfilePublicFollowCounts(profileId, container) {
+    if (!profileId || !container || !window.GloweFollow || !backendReady()) return;
+    window.gloweBackend.kcPublicCounts(profileId).then(function (counts) {
+        if (!counts) return;
+        const fEl = container.querySelector('[data-followers-count="' + profileId + '"]');
+        const gEl = container.querySelector('[data-following-count="' + profileId + '"]');
+        if (fEl) fEl.textContent = String(counts.followers);
+        if (gEl) gEl.textContent = String(counts.following);
+    }).catch(function () {});
+}
+
 // Render the compact "My Offers" list for the Personal Area (offers the user
 // made on other people's wishes). Empty state points back to the wish board.
 function renderMyOffersList(list) {
@@ -4387,13 +4506,14 @@ function renderOrganizationCard(organization, basePath = '') {
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
             ${translationToggleSlotHtml()}
-            <h3 class="opportunity-title" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(organization.name)}</h3>
+            <h3 class="opportunity-title" data-follow-name="${organization.id}" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(organization.name)}</h3>
             <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
             <div class="opportunity-details">${detailHtml}</div>
             <div class="opportunity-skills">${skillsHtml}</div>
             <div class="${cardActionsClassName()}">
                 <a href="${profileHref}" class="btn btn-outline btn-small">View Profile</a>
                 <button class="btn btn-primary btn-small" type="button" onclick="openReachOutModal('${organization.id}', '${jsString(organization.name)}')">Reach Out</button>
+                <span class="follow-slot" data-follow-slot="${organization.id}"></span>
                 ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, saveLabel)}
             </div>
         </div>
@@ -5306,6 +5426,7 @@ async function initOrganizationsPage() {
         if (countLabel) {
             countLabel.textContent = `${filtered.length} of ${visibleOrgs.length} profiles shown`;
         }
+        hydrateFollowSlots(container);
     }
 
     [searchInput, regionSelect, typeSelect].filter(Boolean).forEach(control => {
@@ -6318,18 +6439,18 @@ function _renderProfileContent(profile, container) {
                         <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
                         ${chipHtml}
                     </div>
-                    <h1 ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(profile.name)}</h1>
+                    <h1 data-follow-name="${profile.id}" ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(profile.name)}</h1>
                     <p${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="opportunity-skills">${tags.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}</div>
                 </div>
                 <div class="profile-actions">
                     <button class="btn btn-outline" type="button" onclick="showSuccessModal('Profile saved', '${safeName} was saved to your profile list.')">Save</button>
                     <button class="btn btn-primary" type="button" onclick="openPrivateMessage('${safeName}')">Message</button>
+                    ${!isOwnerView && profile.id ? '<span class="follow-slot" data-follow-slot="' + profile.id + '"></span>' : ''}
                     <details class="profile-more-menu">
                         <summary aria-label="More profile actions">...</summary>
                         <div>
                             ${isOwnerView ? `<button type="button" onclick="openEditProfile('${safeName}')">Edit profile</button>` : ''}
-                            <button type="button" onclick="showSuccessModal('Following ${safeName}', 'You will see updates from this profile in your community feed.')">Follow updates</button>
                             <button type="button" onclick="openReportModal('profile', '${profile.id}', '${safeName}')">Report</button>
                         </div>
                     </details>
@@ -6340,6 +6461,7 @@ function _renderProfileContent(profile, container) {
                 <div><strong>${projects.length}</strong><span>Projects</span></div>
                 <div><strong>${opportunityCount}</strong><span>Opportunities</span></div>
                 <div><strong>${relatedWishes.length}</strong><span>Open Needs</span></div>
+                ${profileFollowStatsHtml(profile.id)}
             </div>
         </section>
 
@@ -6504,7 +6626,6 @@ function _renderProfileContent(profile, container) {
 
                 <article class="org-info-card">
                     <h4>Profile actions</h4>
-                    <button class="btn btn-outline btn-block" type="button" onclick="showSuccessModal('Following ${safeName}', 'You will see updates from this profile in your community feed.')">Follow Updates</button>
                     <button class="btn btn-outline btn-block" type="button" onclick="openReportModal('profile', '${profile.id}', '${safeName}')">Report</button>
                 </article>
             </aside>
@@ -6522,6 +6643,14 @@ function _renderProfileContent(profile, container) {
             window.GloweTranslate.scan();
         }
     }
+
+    if (!isOwnerView && profile.id) {
+        resolveFollowButtonHtml(profile.id).then(function (html) {
+            const slot = container.querySelector('[data-follow-slot="' + profile.id + '"]');
+            if (slot) slot.innerHTML = html;
+        });
+    }
+    loadProfilePublicFollowCounts(profile.id, container);
 }
 
 // Initialize opportunity detail page
@@ -7216,8 +7345,7 @@ function initMyApplicationsPage() {
 
                     <div class="personal-summary-bar">
                         <section class="personal-stats-grid personal-stats-grid--compact" aria-label="Profile summary">
-                            <div><strong>${followCounts.followers}</strong><span>Followers</span></div>
-                            <div><strong>${followCounts.following}</strong><span>Following</span></div>
+                            ${personalFollowStatsHtml(profile.id, followCounts)}
                             <div><strong>${projects.length}</strong><span>Projects</span></div>
                             <div><strong>${userApplications.length}</strong><span>Applications</span></div>
                             <div><strong>${savedItems.length}</strong><span>Saved</span></div>
@@ -7550,6 +7678,19 @@ const GLOWE_TRANSLATIONS = {
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Followers': 'עוקבים',
         'Following': 'במעקב',
+        '+ Follow': '+ עקבו',
+        'Following ✓': 'עוקבים ✓',
+        'Stop following': 'הפסק לעקוב',
+        'This account requires approval to follow.': 'חשבון זה דורש אישור כדי לעקוב.',
+        'No followers yet': 'אין עוקבים עדיין',
+        'Not following anyone yet': 'לא עוקבים אחרי אף אחד עדיין',
+        'Sign in to follow': 'התחברו כדי לעקוב',
+        'Sign in with Google to follow profiles and stay updated on their work.': 'התחברו עם Google כדי לעקוב אחרי פרופילים ולהישאר מעודכנים בעבודתם.',
+        "Can't follow this profile": 'לא ניתן לעקוב אחרי הפרופיל הזה',
+        'Could not follow': 'לא ניתן לעקוב',
+        'Could not unfollow': 'לא ניתן להפסיק לעקוב',
+        'Connections': 'קשרים',
+        'Sign in to see connections': 'התחברו כדי לראות קשרים',
         'Show details': 'הצג פרטים',
         'Hide details': 'הסתר פרטים',
         'Individual': 'פרטי',
@@ -9055,6 +9196,57 @@ function initMessagesPage() {
     renderChatInbox(container);
 }
 
+async function initConnectionsPage() {
+    const container = document.getElementById('connections-content');
+    if (!container) return;
+    if (!gloweIsLoggedIn()) {
+        container.innerHTML = '<div class="empty-state"><h3>Sign in to see connections</h3><p>Followers and following lists are available after you sign in.</p><button class="btn btn-primary" type="button" onclick="openModal(\'login-modal\')">Sign up / Sign in</button></div>';
+        return;
+    }
+    if (!backendReady()) {
+        container.innerHTML = '<div class="empty-state"><h3>Connections unavailable</h3><p>Please try again shortly.</p></div>';
+        return;
+    }
+    const params = new URLSearchParams(window.location.search);
+    const userId = params.get('user');
+    const tab = params.get('tab') === 'following' ? 'following' : 'followers';
+    if (!userId) {
+        container.innerHTML = '<div class="empty-state"><h3>Profile not found</h3><p>Missing user id.</p></div>';
+        return;
+    }
+    container.innerHTML = '<div class="empty-state"><h3>Loading…</h3></div>';
+    const backend = window.gloweBackend;
+    const profiles = await backend.kcCounterpartProfiles([userId]).catch(() => ({}));
+    const ownerName = (profiles[userId] && profiles[userId].name) || 'GloWe member';
+    const rows = tab === 'following'
+        ? await backend.kcListFollowing(userId).catch(() => [])
+        : await backend.kcListFollowers(userId).catch(() => []);
+    const ids = rows.map(function (r) { return r.user_id; });
+    const gloweProfiles = await backend.kcCounterpartProfiles(ids).catch(() => ({}));
+    const tabs = '<div class="connections-tabs">' +
+        '<a class="' + (tab === 'followers' ? 'active' : '') + '" href="' + GloweFollow.connectionsPageUrl(userId, 'followers') + '">Followers</a>' +
+        '<a class="' + (tab === 'following' ? 'active' : '') + '" href="' + GloweFollow.connectionsPageUrl(userId, 'following') + '">Following</a>' +
+        '</div>';
+    if (!rows.length) {
+        const empty = tab === 'following' ? 'Not following anyone yet' : 'No followers yet';
+        container.innerHTML = '<h2>' + escapeHtml(ownerName) + '</h2>' + tabs +
+            '<div class="empty-state"><h3>' + empty + '</h3></div>';
+        return;
+    }
+    const list = rows.map(function (r) {
+        const mapped = GloweFollow.mapFollowListRow(r, gloweProfiles[r.user_id]);
+        return '<div class="connections-row">' +
+            '<a class="connections-row-main" href="' + mapped.profileHref + '">' +
+            renderEntityMark(mapped.name, 'avatar') +
+            '<strong data-follow-name="' + mapped.userId + '">' + escapeHtml(mapped.name) + '</strong></a>' +
+            '<span class="follow-slot" data-follow-slot="' + mapped.userId + '" data-follow-name="' + jsString(mapped.name) + '"></span>' +
+            '</div>';
+    }).join('');
+    container.innerHTML = '<h2>' + escapeHtml(ownerName) + '</h2>' + tabs +
+        '<div class="connections-list">' + list + '</div>';
+    await hydrateFollowSlots(container);
+}
+
 function chatLoadingState(container, body) {
     container.innerHTML = `<div class="empty-state"><h3>Loading…</h3><p>${body}</p></div>`;
 }
@@ -9288,6 +9480,8 @@ document.addEventListener('DOMContentLoaded', function() {
         initSettingsPage();
     } else if (page === 'messages') {
         initMessagesPage();
+    } else if (page === 'connections') {
+        initConnectionsPage();
     }
 
     // Translate the now-rendered chrome + page, then watch for later injections.
