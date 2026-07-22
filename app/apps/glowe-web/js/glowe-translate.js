@@ -175,7 +175,7 @@ if (typeof window !== 'undefined') {
                 slot.appendChild(btn);
             } else {
                 const titleEl = card.querySelector('[data-tr-field="title"]');
-                const bodyEl = card.querySelector('[data-tr-field="text"], [data-tr-field="description"]');
+                const bodyEl = card.querySelector('[data-tr-field="text"], [data-tr-field="description"], [data-tr-field="body"]');
                 const anchor = titleEl || bodyEl;
                 if (anchor && anchor.closest('[data-tr-card]') === card) {
                     anchor.insertAdjacentElement('afterend', btn);
