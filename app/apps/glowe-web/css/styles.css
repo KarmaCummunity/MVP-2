@@ -5336,7 +5336,6 @@ a.user-greeting:hover {
     gap: 14px;
 }
 
-.community-profile-card,
 .community-mini-card,
 .community-feed-header,
 .community-feed-controls,
@@ -5347,10 +5346,6 @@ a.user-greeting:hover {
     border: 1px solid rgba(15, 93, 85, 0.12);
     border-radius: var(--radius-md);
     box-shadow: 0 8px 24px rgba(24, 36, 61, 0.06);
-}
-
-.community-profile-card {
-    overflow: hidden;
 }
 
 .community-feed-header {
@@ -5413,64 +5408,6 @@ a.user-greeting:hover {
     background: var(--primary-dark);
     border-color: var(--primary-dark);
     color: var(--white);
-}
-
-.profile-cover {
-    height: 76px;
-    background:
-        linear-gradient(135deg, rgba(20, 124, 117, 0.74), rgba(13, 93, 115, 0.52)),
-        url('../assets/glowe-roundtable-conference.png') center / cover no-repeat;
-}
-
-.community-profile-body {
-    display: grid;
-    gap: 10px;
-    justify-items: center;
-    text-align: center;
-    padding: 0 18px 20px;
-}
-
-.large-avatar {
-    width: 72px;
-    height: 72px;
-    margin-top: -36px;
-    background: var(--white);
-    border: 3px solid var(--white);
-    box-shadow: var(--shadow-md);
-}
-
-.community-profile-body h2 {
-    font-size: 1.1rem;
-    color: var(--text-primary);
-}
-
-.community-profile-body p {
-    color: var(--text-secondary);
-    font-size: 0.92rem;
-    line-height: 1.45;
-}
-
-.community-profile-stats {
-    width: 100%;
-    display: grid;
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-    gap: 8px;
-    padding: 10px 0;
-    border-top: 1px solid var(--border-color);
-    border-bottom: 1px solid var(--border-color);
-}
-
-.community-profile-stats span {
-    display: grid;
-    gap: 2px;
-    color: var(--text-secondary);
-    font-size: 0.78rem;
-    font-weight: 800;
-}
-
-.community-profile-stats strong {
-    color: var(--primary-dark);
-    font-size: 1rem;
 }
 
 .community-mini-card {
@@ -6965,4 +6902,59 @@ body.glowe-member-home main > section:not(#member-home) {
     padding: 12px 14px;
     border: 1px solid var(--border-color);
     border-radius: 999px;
+}
+
+.follow-btn.follow-btn--following {
+    background: var(--surface-muted, #f3f0ec);
+}
+.follow-private-note {
+    font-size: 0.85rem;
+    color: var(--text-muted, #6b6560);
+    margin: 0.5rem 0 0;
+}
+.profile-stat-link {
+    color: inherit;
+    text-decoration: none;
+}
+.profile-stat-link:hover strong,
+.profile-stat-link:focus strong {
+    text-decoration: underline;
+}
+.connections-tabs {
+    display: flex;
+    gap: 0.5rem;
+    margin-bottom: 1rem;
+}
+.connections-tabs a {
+    padding: 0.4rem 0.9rem;
+    border-radius: 999px;
+    text-decoration: none;
+    color: inherit;
+    border: 1px solid transparent;
+}
+.connections-tabs a.active {
+    border-color: var(--border, #ddd);
+    background: var(--surface-muted, #f3f0ec);
+    font-weight: 600;
+}
+.connections-list {
+    display: flex;
+    flex-direction: column;
+    gap: 0.5rem;
+}
+.connections-row {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 0.6rem 0;
+    border-bottom: 1px solid var(--border, #eee);
+}
+.connections-row a.connections-row-main {
+    display: flex;
+    align-items: center;
+    gap: 0.75rem;
+    flex: 1;
+    min-width: 0;
+    color: inherit;
+    text-decoration: none;
 }

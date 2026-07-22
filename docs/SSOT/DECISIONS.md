@@ -1386,10 +1386,23 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-183 — GloWe follow system rides KC `follow_edges` (2026-07-22)
+
+**Decision.** GloWe follow/unfollow uses KC's existing `follow_edges` graph via thin `backend.js` adapters (`kcFollow`, `kcUnfollow`, `kcGetFollowState`, `kcListFollowers`, `kcListFollowing`, `kcPublicCounts`) plus pure helpers in `glowe-follow.js` — the same pattern as the GloWe chat Realtime slice. MVP is public follow/unfollow only; private accounts hide the Follow button and show an approval-required note (no follow-request flow). No shared TypeScript package import from GloWe, no new RPCs, no DB migrations.
+
+**Rationale.** KC already owns the follow domain in `@kc/application` / `infrastructure-supabase`; GloWe is vanilla JS with no bundler. Reusing `follow_edges` + RLS keeps one graph for KC mobile and GloWe without duplicating schema or business rules.
+
+**Alternatives rejected.** *New GloWe-only follow table* — violates D-61 shared identity. *Import `@kc/application` from GloWe* — no bundler, out of scope. *New batch follow-state RPC* — deferred; sequential per-id hydration is acceptable for MVP org directory size.
+
+**Affected.** `app/apps/glowe-web/js/{glowe-follow.js,glowe-follow-ui.js,backend.js,app.js,glowe-guest.js}`; `pages/{profile,organizations,my-applications,connections}.html`; `styles.css`; FR-GLOWE-026; FR-FOLLOW-001/002/011 (MVP subset); design `docs/superpowers/specs/2026-07-22-glowe-follow-system-design.md`.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.14 | 2026-07-22 | Added `D-183` (GloWe follow on KC `follow_edges` via `backend.js` + `glowe-follow.js`; public MVP only; FR-GLOWE-026). |
 | 4.13 | 2026-07-22 | Added `D-182` (GloWe prod synthetics → `glowe_health_checks` + admin health panel; `INFRA-QA-W7`). |
 | 4.12 | 2026-07-19 | Added `D-181` (app-wide semver + auto patch on `dev` push; GloWe footer `vX.Y.Z`; FR-GLOWE-025). |
 | 4.11 | 2026-07-19 | Added `D-180` (GloWe `.tr-slot` toggle convention + consistent org card actions; FR-TRANSLATE-005 comments/tags). |

@@ -1090,6 +1090,33 @@ function getFollowCountsForView() {
     return personalFollowCounts || { followers: 0, following: 0 };
 }
 
+// Follow UI lives in glowe-follow-ui.js (FR-GLOWE-026) — thin delegates keep app.js lean.
+function resolveFollowButtonHtml(targetId) {
+    return window.GloweFollowUI
+        ? window.GloweFollowUI.resolveFollowButtonHtml(targetId)
+        : Promise.resolve('');
+}
+function handleFollowToggle(targetId) {
+    if (window.GloweFollowUI) window.GloweFollowUI.handleFollowToggle(targetId);
+}
+window.handleFollowToggle = handleFollowToggle;
+function hydrateFollowSlots(root) {
+    return window.GloweFollowUI
+        ? window.GloweFollowUI.hydrateFollowSlots(root)
+        : Promise.resolve();
+}
+function profileFollowStatsHtml(profileId) {
+    return window.GloweFollowUI ? window.GloweFollowUI.profileFollowStatsHtml(profileId) : '';
+}
+function personalFollowStatsHtml(profileId, followCounts) {
+    return window.GloweFollowUI
+        ? window.GloweFollowUI.personalFollowStatsHtml(profileId, followCounts)
+        : '';
+}
+function loadProfilePublicFollowCounts(profileId, container) {
+    if (window.GloweFollowUI) window.GloweFollowUI.loadProfilePublicFollowCounts(profileId, container);
+}
+
 // Render the compact "My Offers" list for the Personal Area (offers the user
 // made on other people's wishes). Empty state points back to the wish board.
 function renderMyOffersList(list) {
@@ -4387,13 +4414,14 @@ function renderOrganizationCard(organization, basePath = '') {
                 <span class="opportunity-badge">${escapeHtml(organization.status || 'Approved')}</span>
             </div>
             ${translationToggleSlotHtml()}
-            <h3 class="opportunity-title" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(organization.name)}</h3>
+            <h3 class="opportunity-title" data-follow-name="${organization.id}" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(organization.name)}</h3>
             <p class="opportunity-description" data-tr-field="${organization.missionField}">${escapeHtml(organization.mission)}</p>
             <div class="opportunity-details">${detailHtml}</div>
             <div class="opportunity-skills">${skillsHtml}</div>
             <div class="${cardActionsClassName()}">
                 <a href="${profileHref}" class="btn btn-outline btn-small">View Profile</a>
                 <button class="btn btn-primary btn-small" type="button" onclick="openReachOutModal('${organization.id}', '${jsString(organization.name)}')">Reach Out</button>
+                <span class="follow-slot" data-follow-slot="${organization.id}"></span>
                 ${savedToggleButtonHtml('profile', organization.id, organization.name, organization.type || 'Organization', profileHref, saveLabel)}
             </div>
         </div>
@@ -5306,6 +5334,7 @@ async function initOrganizationsPage() {
         if (countLabel) {
             countLabel.textContent = `${filtered.length} of ${visibleOrgs.length} profiles shown`;
         }
+        hydrateFollowSlots(container);
     }
 
     [searchInput, regionSelect, typeSelect].filter(Boolean).forEach(control => {
@@ -5456,37 +5485,12 @@ function updateWellSummary(projectCount) {
     `;
 }
 
-async function paintCommunityProfileSidebar() {
-    const communityProfile = await getLocalizedPersonalProfile();
-    const profileName = document.getElementById('community-profile-name');
-    const profileLine = document.getElementById('community-profile-line');
-    const profileAvatar = document.getElementById('community-profile-avatar');
-    const profileCard = document.querySelector('.community-profile-card');
-    const displayName = localizedProfileDisplayName(communityProfile);
-    const pair = profileNamePairFrom(communityProfile);
-    const bioText = communityProfile.shortLine || communityProfile.about
-        || 'Share knowledge, ask for support, and build practical impact with the community.';
-    if (profileName) {
-        profileName.textContent = displayName;
-        applyLocalizedNameAttrs(profileName, communityProfile);
-    }
-    if (profileLine) {
-        profileLine.textContent = bioText;
-    }
-    if (profileAvatar) {
-        profileAvatar.textContent = getInitials(displayName);
-        applyLocalizedNameAttrs(profileAvatar, communityProfile);
-    }
-    if (profileCard) markProfileBioTranslation(profileCard, communityProfile);
-}
-
 async function initCommunityPage() {
     const container = document.getElementById('community-feed');
     const peopleContainer = document.getElementById('people-list');
     const groupsContainer = document.getElementById('topic-groups-list');
     const searchInput = document.getElementById('community-feed-search');
     const feedFilterButtons = document.querySelectorAll('[data-feed-filter]');
-    paintCommunityProfileSidebar();
 
     function postMatchesFilter(post, filter) {
         if (filter === 'all') return true;
@@ -6318,18 +6322,18 @@ function _renderProfileContent(profile, container) {
                         <span class="profile-type">${escapeHtml(profile.type || 'Community Member')}</span>
                         ${chipHtml}
                     </div>
-                    <h1 ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(profile.name)}</h1>
+                    <h1 data-follow-name="${profile.id}" ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(profile.name)}</h1>
                     <p${missionFieldAttr}>${escapeHtml(missionText)}</p>
                     <div class="opportunity-skills">${tags.map(skill => `<span class="skill-tag">${escapeHtml(skill)}</span>`).join('')}</div>
                 </div>
                 <div class="profile-actions">
                     <button class="btn btn-outline" type="button" onclick="showSuccessModal('Profile saved', '${safeName} was saved to your profile list.')">Save</button>
                     <button class="btn btn-primary" type="button" onclick="openPrivateMessage('${safeName}')">Message</button>
+                    ${!isOwnerView && profile.id ? '<span class="follow-slot" data-follow-slot="' + profile.id + '"></span>' : ''}
                     <details class="profile-more-menu">
                         <summary aria-label="More profile actions">...</summary>
                         <div>
                             ${isOwnerView ? `<button type="button" onclick="openEditProfile('${safeName}')">Edit profile</button>` : ''}
-                            <button type="button" onclick="showSuccessModal('Following ${safeName}', 'You will see updates from this profile in your community feed.')">Follow updates</button>
                             <button type="button" onclick="openReportModal('profile', '${profile.id}', '${safeName}')">Report</button>
                         </div>
                     </details>
@@ -6340,6 +6344,7 @@ function _renderProfileContent(profile, container) {
                 <div><strong>${projects.length}</strong><span>Projects</span></div>
                 <div><strong>${opportunityCount}</strong><span>Opportunities</span></div>
                 <div><strong>${relatedWishes.length}</strong><span>Open Needs</span></div>
+                ${profileFollowStatsHtml(profile.id)}
             </div>
         </section>
 
@@ -6504,7 +6509,6 @@ function _renderProfileContent(profile, container) {
 
                 <article class="org-info-card">
                     <h4>Profile actions</h4>
-                    <button class="btn btn-outline btn-block" type="button" onclick="showSuccessModal('Following ${safeName}', 'You will see updates from this profile in your community feed.')">Follow Updates</button>
                     <button class="btn btn-outline btn-block" type="button" onclick="openReportModal('profile', '${profile.id}', '${safeName}')">Report</button>
                 </article>
             </aside>
@@ -6522,6 +6526,14 @@ function _renderProfileContent(profile, container) {
             window.GloweTranslate.scan();
         }
     }
+
+    if (!isOwnerView && profile.id) {
+        resolveFollowButtonHtml(profile.id).then(function (html) {
+            const slot = container.querySelector('[data-follow-slot="' + profile.id + '"]');
+            if (slot) slot.innerHTML = html;
+        });
+    }
+    loadProfilePublicFollowCounts(profile.id, container);
 }
 
 // Initialize opportunity detail page
@@ -7216,8 +7228,7 @@ function initMyApplicationsPage() {
 
                     <div class="personal-summary-bar">
                         <section class="personal-stats-grid personal-stats-grid--compact" aria-label="Profile summary">
-                            <div><strong>${followCounts.followers}</strong><span>Followers</span></div>
-                            <div><strong>${followCounts.following}</strong><span>Following</span></div>
+                            ${personalFollowStatsHtml(profile.id, followCounts)}
                             <div><strong>${projects.length}</strong><span>Projects</span></div>
                             <div><strong>${userApplications.length}</strong><span>Applications</span></div>
                             <div><strong>${savedItems.length}</strong><span>Saved</span></div>
@@ -7550,6 +7561,19 @@ const GLOWE_TRANSLATIONS = {
         // Personal-area nav + labels (were rendering in English on the Hebrew UI)
         'Followers': 'עוקבים',
         'Following': 'במעקב',
+        '+ Follow': '+ עקבו',
+        'Following ✓': 'עוקבים ✓',
+        'Stop following': 'הפסק לעקוב',
+        'This account requires approval to follow.': 'חשבון זה דורש אישור כדי לעקוב.',
+        'No followers yet': 'אין עוקבים עדיין',
+        'Not following anyone yet': 'לא עוקבים אחרי אף אחד עדיין',
+        'Sign in to follow': 'התחברו כדי לעקוב',
+        'Sign in with Google to follow profiles and stay updated on their work.': 'התחברו עם Google כדי לעקוב אחרי פרופילים ולהישאר מעודכנים בעבודתם.',
+        "Can't follow this profile": 'לא ניתן לעקוב אחרי הפרופיל הזה',
+        'Could not follow': 'לא ניתן לעקוב',
+        'Could not unfollow': 'לא ניתן להפסיק לעקוב',
+        'Connections': 'קשרים',
+        'Sign in to see connections': 'התחברו כדי לראות קשרים',
         'Show details': 'הצג פרטים',
         'Hide details': 'הסתר פרטים',
         'Individual': 'פרטי',
@@ -9055,6 +9079,10 @@ function initMessagesPage() {
     renderChatInbox(container);
 }
 
+function initConnectionsPage() {
+    if (window.GloweFollowUI) window.GloweFollowUI.initConnectionsPage();
+}
+
 function chatLoadingState(container, body) {
     container.innerHTML = `<div class="empty-state"><h3>Loading…</h3><p>${body}</p></div>`;
 }
@@ -9288,6 +9316,8 @@ document.addEventListener('DOMContentLoaded', function() {
         initSettingsPage();
     } else if (page === 'messages') {
         initMessagesPage();
+    } else if (page === 'connections') {
+        initConnectionsPage();
     }
 
     // Translate the now-rendered chrome + page, then watch for later injections.
