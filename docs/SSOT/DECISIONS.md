@@ -1374,10 +1374,23 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ---
 
+## D-182 — GloWe production synthetics + admin health panel (2026-07-22)
+
+**Decision.** Store automated GloWe live-site probe results in `glowe_health_checks` (migration `0233`) and surface them in the GloWe admin portal. Probes are **read-only Playwright** journeys (`prod-health` project) run from `glowe-prod-smoke.yml` after `dev` deploy and on a 15-minute cron. **GloWe production** (`https://dev.karma-community.pages.dev/glowe`) is a **separate live URL** from **KC production** (`https://karma-community-kc.com`); ingest targets the **dev** Supabase project (GloWe's backend today). KC HTTP smoke stays in `prod-smoke.yml` on `main` only.
+
+**Rationale.** HTTP-200 smoke cannot catch broken feeds, auth wiring, or Supabase client failures. Admins need in-product visibility without opening GitHub Actions. Reuses existing Playwright infra and GloWe admin RBAC (`is_glowe_admin`).
+
+**Alternatives rejected.** Third-party-only monitoring (Checkly) without admin portal integration — rejected for MVP (add later as redundant channel). Write probes in prod — deferred (canary user in a follow-up). Polling-only checks without browser — insufficient for JS/runtime failures.
+
+**Mapped to:** `INFRA-QA-W7`, FR-GLOWE-018 extension.
+
+---
+
 ## Change Log
 
 | Version | Date | Summary |
 | ------- | ---- | ------- |
+| 4.13 | 2026-07-22 | Added `D-182` (GloWe prod synthetics → `glowe_health_checks` + admin health panel; `INFRA-QA-W7`). |
 | 4.12 | 2026-07-19 | Added `D-181` (app-wide semver + auto patch on `dev` push; GloWe footer `vX.Y.Z`; FR-GLOWE-025). |
 | 4.11 | 2026-07-19 | Added `D-180` (GloWe `.tr-slot` toggle convention + consistent org card actions; FR-TRANSLATE-005 comments/tags). |
 | 4.10 | 2026-07-16 | Added `D-178` (Personal Area / bottom-nav "Profile" tab gate replaced hard redirect-home with the FR-GLOWE-023 contextual join modal; header auth button moved inline next to the language toggle on mobile). |

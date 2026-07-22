@@ -50,7 +50,17 @@ export default defineConfig({
     {
       name: 'glowe',
       testMatch: /glowe-.*\.spec\.ts/,
+      testIgnore: /prod-health\.spec\.ts/,
       dependencies: ['glowe-setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+    },
+    // Read-only GloWe live-site synthetics (INFRA-QA-W7). Uses GLOWE_PROD_URL
+    // (https://dev.karma-community.pages.dev/glowe); no auth setup.
+    {
+      name: 'prod-health',
+      testMatch: /prod-health\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
       },

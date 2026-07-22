@@ -155,4 +155,24 @@ The GloWe static frontend has its own Playwright projects (`glowe-setup` + `glow
 
 ## Human PM check (5 min, prod only)
 
-After merge to `main`: incognito prod URL, sign-in, feed, one write path, chat inbox. See `RELEASE_CHECKLIST.md` post-deploy section.
+After merge to `main`: incognito prod URL, sign-in, one write path, chat inbox. See `RELEASE_CHECKLIST.md` post-deploy section.
+
+## Production synthetics (GloWe, `INFRA-QA-W7`)
+
+Read-only Playwright probes against **`GLOWE_PROD_URL`** — GloWe's live site (`https://dev.karma-community.pages.dev/glowe`). **Not** `karma-community-kc.com/glowe`.
+
+- **Spec:** `tests/e2e/journeys/prod-health.spec.ts` (`prod-health` project).
+- **CI:** `.github/workflows/glowe-prod-smoke.yml` — post-merge on `dev`, `workflow_dispatch`, every 15 minutes.
+- **KC smoke (separate):** `.github/workflows/prod-smoke.yml` — HTTP 200 on `KC_PROD_URL` after `main` merge.
+- **Ingest:** `scripts/record-prod-health.mjs` → `glowe_health_checks` on **dev** Supabase via `supabase-dev` environment.
+- **Admin UI:** `admin.html` → System health panel.
+
+Local run:
+
+```bash
+export GLOWE_PROD_URL=https://dev.karma-community.pages.dev/glowe
+cd tests/e2e && npm install && npx playwright install chromium
+npx playwright test --project=prod-health
+```
+
+## Flake protocol (agents)

@@ -5564,6 +5564,7 @@ function initAdminPage() {
 
     if (orgContainer) loadPendingOrgs();
     if (reportsContainer) loadModerationReports();
+    loadAdminHealthPanel();
 
     const backend = window.gloweBackend;
     if (backend && backend.configured()) {
@@ -5573,6 +5574,83 @@ function initAdminPage() {
             if (mStat) mStat.textContent = members;
             if (oStat) oStat.textContent = orgs;
         }).catch(() => {});
+    }
+}
+
+function adminHealthErrorHtml(error) {
+    if (isForbiddenError(error)) {
+        return '<div class="empty-state"><h3>Reviewers only</h3><p>Production health probes are visible to GloWe reviewers.</p></div>';
+    }
+    return '<div class="empty-state"><h3>Could not load health probes</h3><p>Please refresh and try again.</p></div>';
+}
+
+function renderAdminHealthSummary(rows) {
+    const summaryEl = document.getElementById('admin-health-summary');
+    const overallEl = document.getElementById('admin-health-overall');
+    if (!summaryEl || !overallEl || !window.GloweHealth) return;
+
+    const normalized = (rows || []).map((row) => GloweHealth.normalizeSummaryRow(row)).filter(Boolean);
+    const overall = GloweHealth.worstStatus(normalized);
+    overallEl.textContent = GloweHealth.statusLabel(overall);
+    overallEl.className = `health-pill ${GloweHealth.statusClass(overall)}`;
+
+    if (!normalized.length) {
+        summaryEl.innerHTML = '<div class="empty-state"><h3>No probes yet</h3><p>Production synthetics will appear here after the first scheduled run or deploy smoke.</p></div>';
+        return;
+    }
+
+    summaryEl.innerHTML = normalized.map((row) => `
+        <article class="admin-health-card ${GloweHealth.statusClass(row.status)}">
+            <span class="health-pill ${GloweHealth.statusClass(row.status)}">${escapeHtml(GloweHealth.statusLabel(row.status))}</span>
+            <h3>${escapeHtml(GloweHealth.humanCheckName(row.checkName))}</h3>
+            <p class="admin-health-meta">${escapeHtml(GloweHealth.formatLatency(row.latencyMs))} · ${escapeHtml(GloweHealth.formatCheckedAt(row.checkedAt))}</p>
+            ${row.errorDetail ? `<p class="admin-health-error">${escapeHtml(row.errorDetail)}</p>` : ''}
+        </article>
+    `).join('');
+}
+
+function renderAdminHealthHistory(rows) {
+    const historyEl = document.getElementById('admin-health-history');
+    if (!historyEl || !window.GloweHealth) return;
+    const list = (rows || []).map((row) => GloweHealth.normalizeSummaryRow({
+        check_name: row.check_name,
+        status: row.status,
+        latency_ms: row.latency_ms,
+        error_detail: row.error_detail,
+        app_version: row.app_version,
+        checked_at: row.checked_at,
+    })).filter(Boolean);
+
+    if (!list.length) {
+        historyEl.innerHTML = '<div class="empty-state"><h3>No history yet</h3><p>Recent probe runs will be listed here.</p></div>';
+        return;
+    }
+
+    historyEl.innerHTML = list.map((row) => `
+        <article class="admin-card">
+            <span class="health-pill ${GloweHealth.statusClass(row.status)}">${escapeHtml(GloweHealth.statusLabel(row.status))}</span>
+            <h3>${escapeHtml(GloweHealth.humanCheckName(row.checkName))}</h3>
+            <p>${escapeHtml(GloweHealth.formatLatency(row.latencyMs))} · v${escapeHtml(row.appVersion || '—')} · ${escapeHtml(GloweHealth.formatCheckedAt(row.checkedAt))}</p>
+            ${row.errorDetail ? `<p>${escapeHtml(row.errorDetail)}</p>` : ''}
+        </article>
+    `).join('');
+}
+
+async function loadAdminHealthPanel() {
+    const summaryEl = document.getElementById('admin-health-summary');
+    if (!summaryEl || !backendReady()) return;
+
+    try {
+        const [summary, history] = await Promise.all([
+            window.gloweBackend.adminHealthSummary(),
+            window.gloweBackend.adminListHealthChecks(30),
+        ]);
+        renderAdminHealthSummary(summary);
+        renderAdminHealthHistory(history);
+    } catch (error) {
+        summaryEl.innerHTML = adminHealthErrorHtml(error);
+        const historyEl = document.getElementById('admin-health-history');
+        if (historyEl) historyEl.innerHTML = '';
     }
 }
 
