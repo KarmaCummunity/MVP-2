@@ -42,15 +42,15 @@ end $$;
 
 do $$
 begin
-  perform pg_temp.mk_user('00000000-0000-0000-0000-0000000232mb', 'member0232');
-  perform pg_temp.mk_user('00000000-0000-0000-0000-0000000232ad', 'admin0232');
+  perform pg_temp.mk_user('00000000-0000-0000-0000-000000023201', 'member0232');
+  perform pg_temp.mk_user('00000000-0000-0000-0000-000000023202', 'admin0232');
   insert into public.admin_role_grants (user_id, role)
-  values ('00000000-0000-0000-0000-0000000232ad', 'glowe_admin');
+  values ('00000000-0000-0000-0000-000000023202', 'glowe_admin');
 end $$;
 
 -- Non-admin blocked
 select set_config('request.jwt.claims',
-  jsonb_build_object('sub', '00000000-0000-0000-0000-0000000232mb', 'role', 'authenticated')::text, true);
+  jsonb_build_object('sub', '00000000-0000-0000-0000-000000023201', 'role', 'authenticated')::text, true);
 set local role authenticated;
 
 select pg_temp.expect_blocked(
@@ -63,7 +63,7 @@ select pg_temp.expect_blocked(
 -- Admin reads empty summary before probes land
 reset role;
 select set_config('request.jwt.claims',
-  jsonb_build_object('sub', '00000000-0000-0000-0000-0000000232ad', 'role', 'authenticated')::text, true);
+  jsonb_build_object('sub', '00000000-0000-0000-0000-000000023202', 'role', 'authenticated')::text, true);
 set local role authenticated;
 
 do $$
@@ -88,7 +88,7 @@ update public.glowe_health_checks
  where run_id = 'run-0232-b';
 
 select set_config('request.jwt.claims',
-  jsonb_build_object('sub', '00000000-0000-0000-0000-0000000232ad', 'role', 'authenticated')::text, true);
+  jsonb_build_object('sub', '00000000-0000-0000-0000-000000023202', 'role', 'authenticated')::text, true);
 set local role authenticated;
 
 do $$
