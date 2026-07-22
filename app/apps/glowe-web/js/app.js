@@ -1,8 +1,6 @@
 // Main application logic
 
-// Default intro for the sign-in / registration modal. A gated action can swap in
-// a tailored message via promptGuestSignIn(); openModal restores this default so a
-// later plain sign-in never shows stale, action-specific copy.
+// Legacy copy kept for fallback toasts when Google auth cannot start.
 const LOGIN_MODAL_DEFAULT_INTRO = 'Sign in with your Google account to continue.';
 
 // Modal handling
@@ -18,20 +16,14 @@ function openModal(modalId) {
     }
 }
 
-// Guests can browse but not save (or perform other gated actions). Instead of a
-// dead-end notice, open the real sign-in / registration screen with a tailored
-// intro so a guest can create a free account and complete the action.
+// Guests can browse but not save (or perform other gated actions). Start Google
+// OAuth immediately instead of an intermediate sign-in modal.
 function promptGuestSignIn(message) {
-    ensureGlobalUI();
-    if (!document.getElementById('login-modal')) {
-        showSuccessModal('Sign in', message || LOGIN_MODAL_DEFAULT_INTRO);
+    if (typeof handleGoogleSignIn === 'function') {
+        handleGoogleSignIn();
         return;
     }
-    openModal('login-modal');
-    if (message) {
-        const intro = document.querySelector('#login-modal .modal-intro');
-        if (intro) intro.textContent = message;
-    }
+    showSuccessModal('Sign in', message || LOGIN_MODAL_DEFAULT_INTRO);
 }
 
 function closeModal(modalId) {
@@ -1755,7 +1747,7 @@ function normalizeHeaderAuthButtons() {
     // Auth is Google-only, so signing in and joining are the same action.
     // A single combined button avoids the false "Log In vs Join" distinction.
     authButtons.innerHTML = `
-        <button class="btn btn-primary btn-small" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
+        <button class="btn btn-primary btn-small" type="button" onclick="handleGoogleSignIn()">Sign up / Sign in</button>
     `;
 }
 
@@ -2444,11 +2436,8 @@ function ensureGlobalUI() {
 
     document.querySelectorAll('.auth-buttons button').forEach(button => {
         const label = button.textContent.trim().toLowerCase();
-        if (!button.getAttribute('onclick') && label.includes('log')) {
-            button.setAttribute('onclick', "openModal('login-modal')");
-        }
-        if (!button.getAttribute('onclick') && (label.includes('join') || label.includes('sign'))) {
-            button.setAttribute('onclick', "openModal('register-modal')");
+        if (!button.getAttribute('onclick') && (label.includes('log') || label.includes('join') || label.includes('sign'))) {
+            button.setAttribute('onclick', 'handleGoogleSignIn()');
         }
     });
 
@@ -2460,13 +2449,13 @@ function ensureGlobalUI() {
             const text = link.textContent.trim().toLowerCase();
             if (text.includes('register') || text.includes('join')) {
                 event.preventDefault();
-                openModal('register-modal');
+                handleGoogleSignIn();
             } else if (text.includes('post') || text.includes('opportunity')) {
                 event.preventDefault();
                 openWishModal();
             } else if (text.includes('log')) {
                 event.preventDefault();
-                openModal('login-modal');
+                handleGoogleSignIn();
             }
         });
     }
@@ -9021,7 +9010,7 @@ function initSettingsPage() {
             <div class="empty-state">
                 <h3>Sign in to manage settings</h3>
                 <p>Your account, language, and session options live here once you are signed in.</p>
-                <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
+                <button class="btn btn-primary" type="button" onclick="handleGoogleSignIn()">Sign up / Sign in</button>
             </div>
         `;
         return;
@@ -9128,7 +9117,7 @@ function messagesPageReady(container) {
             <div class="empty-state">
                 <h3>Sign in to see your messages</h3>
                 <p>Direct conversations with volunteers, organizations, and partners live here once you are signed in.</p>
-                <button class="btn btn-primary" type="button" onclick="openModal('login-modal')">Sign up / Sign in</button>
+                <button class="btn btn-primary" type="button" onclick="handleGoogleSignIn()">Sign up / Sign in</button>
             </div>
         `;
         return false;

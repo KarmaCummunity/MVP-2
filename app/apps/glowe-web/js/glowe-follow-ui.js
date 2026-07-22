@@ -243,7 +243,7 @@
 
     function connectionsGateHtml(kind) {
         if (kind === 'signin') {
-            return '<div class="empty-state"><h3>Sign in to see connections</h3><p>Followers and following lists are available after you sign in.</p><button class="btn btn-primary" type="button" onclick="openModal(\'login-modal\')">Sign up / Sign in</button></div>';
+            return '<div class="empty-state"><h3>Sign in to see connections</h3><p>Followers and following lists are available after you sign in.</p><button class="btn btn-primary" type="button" onclick="handleGoogleSignIn()">Sign up / Sign in</button></div>';
         }
         if (kind === 'unavailable') {
             return '<div class="empty-state"><h3>Connections unavailable</h3><p>Please try again shortly.</p></div>';
