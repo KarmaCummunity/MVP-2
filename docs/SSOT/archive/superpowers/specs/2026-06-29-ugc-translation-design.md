@@ -15,7 +15,7 @@ GLOWE (the current MVP riding on Karma Community infrastructure) is a **global, 
 
 This is **shared platform infrastructure**: it must serve both GLOWE and (later) KC, and any future content type. It is not a GLOWE-only feature.
 
-**Out of scope (UI strings):** translating the app's own UI chrome is a separate, already-architected `react-i18next` effort (`docs/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md`). This design covers **UGC only**.
+**Out of scope (UI strings):** translating the app's own UI chrome is a separate, already-architected `react-i18next` effort (`docs/SSOT/archive/superpowers/specs/2026-05-16-hebrew-to-i18n-design.md`). This design covers **UGC only**.
 
 ## 2. Core decisions (from brainstorming + council)
 

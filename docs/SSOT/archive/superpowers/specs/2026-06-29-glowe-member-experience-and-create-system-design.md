@@ -66,7 +66,7 @@ Implications:
 - **Event** = an FR-007 opportunity with a date. For *this* milestone it is a client-side
   **validation profile** (date+location made required) and RSVP reuses the FR-007/FR-011 application
   flow. **Update (D-66):** the events feature now grows beyond a pure validation profile — see
-  `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md`. It stays **additive on
+  `docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md`. It stays **additive on
   `glowe_opportunities`/`glowe_applications` (still no new tables)**, but adds event-metadata and
   registration-lifecycle columns (migration `0211`), so an Event *is* distinguishable from a plain
   opportunity by `start_at`/`event_type`. Home/cards may still render events as opportunities; a

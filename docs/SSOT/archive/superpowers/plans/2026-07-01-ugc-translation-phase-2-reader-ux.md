@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript monorepo (pnpm/turbo), `@kc/domain`/`@kc/application`/`@kc/infrastructure-supabase`/`apps/mobile` (Expo RN, expo-router, React Query, react-i18next, RTL-forced), Supabase (Postgres + Edge Functions/Deno), vitest.
 
-**Spec:** `docs/superpowers/specs/2026-07-01-ugc-translation-phase-2-reader-ux-design.md` (incl. Revision 1 council fixes). FR-TRANSLATE-003.
+**Spec:** `docs/SSOT/archive/superpowers/specs/2026-07-01-ugc-translation-phase-2-reader-ux-design.md` (incl. Revision 1 council fixes). FR-TRANSLATE-003.
 
 ---
 

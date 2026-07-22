@@ -3,7 +3,7 @@
 > **Status:** 🟡 Design (brainstormed 2026-06-29) — awaiting PM review before plan.
 > **Prefix:** `FR-GLOWE-017..022` (new). Supersedes the admin-surface ACs of `FR-GLOWE-003 AC4` and `FR-GLOWE-015 AC4`.
 > **Related:** `docs/SSOT/spec/17_glowe_frontend.md`, `docs/SSOT/spec/12_super_admin.md` (KC admin portal infra), `DECISIONS.md` D-61 (GloWe-on-KC convergence).
-> **Companion:** `docs/superpowers/specs/2026-06-29-glowe-admin-portal-test-plan.md` (unit + DB + E2E test plan).
+> **Companion:** `docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-admin-portal-test-plan.md` (unit + DB + E2E test plan).
 
 ## 1. Essence (why)
 
@@ -180,4 +180,4 @@ gate is the security boundary. A non-reviewer hitting any URL is redirected to t
 ## 13. Next step
 
 On PM approval of this design + the companion test plan, invoke the writing-plans skill to produce
-the phased implementation plan (`docs/superpowers/plans/`).
+the phased implementation plan (`docs/SSOT/archive/superpowers/plans/`).

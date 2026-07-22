@@ -232,7 +232,7 @@ Use the Edit tool to append to `docs/SSOT/spec/14_responsive_desktop.md`. The ex
 
 **Status:** ⏳ Planned
 
-Cross-cutting fix for content cropping behind the floating tab bar on mobile + platform-aware paper cuts. Audit-driven, mapped 1:1 to plan `docs/superpowers/plans/2026-05-25-mobile-platform-polish-audit.md`.
+Cross-cutting fix for content cropping behind the floating tab bar on mobile + platform-aware paper cuts. Audit-driven, mapped 1:1 to plan `docs/SSOT/archive/superpowers/plans/2026-05-25-mobile-platform-polish-audit.md`.
 
 **ACs:**
 - AC1. Every screen where `useShellTabBarVisibility()` returns `true` reserves enough bottom inset on its scrollable content (or on its floating footer) that the last row is fully visible above the floating-pill TabBar across the **full supported-device matrix**: iPhone SE 2nd/3rd gen (375×667, 20pt top inset, 0pt bottom), iPhone 8 (375×667, 20pt/0pt), iPhone 12/13 mini (375×812 — the narrowest modern Face ID iPhone, 50pt notch, 34pt home-indicator), iPhone X / XR / 11 / 11 Pro / 11 Pro Max (375–414×812–896, 44pt notch), iPhone 12–13 (390×844, 47pt notch), iPhone 14 Pro through 16 Pro / 16 Pro Max (393–430×852–932, 59pt Dynamic Island); small Android (360×640, gesture-nav or 3-button-nav), standard Android (393×873, Pixel 6/7/8), large Android (412×915, Pixel Pro), Android foldable closed (≈360×780, Z Fold outer); mobile web at 320 / 360 / 375 / 414 / 430 viewport widths (Mobile Safari + Chrome). The visible-cell check holds at default Dynamic Type **and** at the OS-level "Larger Text" / "Largest" setting (Android font scale 1.0 → 1.3).

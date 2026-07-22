@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, vitest, Supabase Postgres migrations (tables + triggers + grants), pnpm + turbo monorepo (packages under `app/`).
 
-> **Spec:** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` §4 (data model), §7 (single-flight/dedup), §8 (variant-aware keys, short-circuit). Builds on Phase 0 (`FR-TRANSLATE-001`): `LanguageTag`, `createLanguageTag`, the `source_language` columns. Implements `FR-TRANSLATE-002` (cache substrate slice).
+> **Spec:** `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md` §4 (data model), §7 (single-flight/dedup), §8 (variant-aware keys, short-circuit). Builds on Phase 0 (`FR-TRANSLATE-001`): `LanguageTag`, `createLanguageTag`, the `source_language` columns. Implements `FR-TRANSLATE-002` (cache substrate slice).
 
 ---
 

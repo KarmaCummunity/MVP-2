@@ -10,7 +10,7 @@ Prefix: `FR-TRANSLATE-*`
 
 Translate user-generated content into each reader's preferred language so the platform is linguistically accessible to everyone. This is **shared infrastructure** serving both KC and GLOWE — it must stay world/product-agnostic.
 
-Architecture (see design doc `docs/superpowers/specs/2026-06-29-ugc-translation-design.md`): **demand-driven (lazy) materialization** — translate per `(content, field, target_language)` only when a real reader requests it, then cache in Postgres. This supports unlimited target languages while paying for and storing only the few actually demanded per item. Translation never runs on the read path (translate-ahead-of-read; cache hits served inline as ordinary fields). LLM-flash provider behind a Supabase Edge Function holding the API key; provider must be zero-retention / under DPA.
+Architecture (see design doc `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md`): **demand-driven (lazy) materialization** — translate per `(content, field, target_language)` only when a real reader requests it, then cache in Postgres. This supports unlimited target languages while paying for and storing only the few actually demanded per item. Translation never runs on the read path (translate-ahead-of-read; cache hits served inline as ordinary fields). LLM-flash provider behind a Supabase Edge Function holding the API key; provider must be zero-retention / under DPA.
 
 Posts auto-translate. **Chat translation is opt-in (default off)** with a sender-consent gate — a message is sent for translation only if its sender opted in — and is deferred to the last phase.
 
@@ -27,8 +27,8 @@ Non-goals (out of scope):
 Inert language primitives the rest of the system depends on: a validated, normalized BCP-47 `LanguageTag`; a pure resolver for "which language does this reader want"; a persisted `preferred_language` on users; and nullable `source_language` plumbing on posts and messages. No translation, LLM, or UI in this phase.
 
 **Source.**
-- Design spec: `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` §3, §4, §8.
-- Plan: `docs/superpowers/plans/2026-06-29-ugc-translation-phase-0-foundations.md`.
+- Design spec: `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md` §3, §4, §8.
+- Plan: `docs/SSOT/archive/superpowers/plans/2026-06-29-ugc-translation-phase-0-foundations.md`.
 - Decisions: `D-63` (zero-retention/DPA provider), `D-64` (posts auto / chat opt-in with sender-consent gate).
 
 **Acceptance Criteria.**
@@ -51,8 +51,8 @@ Inert language primitives the rest of the system depends on: a validated, normal
 Demand-driven materialization for posts. Phase 1a delivers the inert cache substrate the later phases populate and consume: a Postgres cache table keyed per `(content_type, content_id, target_language, field)` with single-flight semantics, the pure domain primitives that model a translation request and decide whether/how to cache, and a cache repository behind an application port. No LLM, Edge Function, read-path change, or UI in 1a.
 
 **Source.**
-- Design spec: `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` §4 (data model), §7 (single-flight/dedup), §8 (variant-aware keys, short-circuit).
-- Plan (1a): `docs/superpowers/plans/2026-06-29-ugc-translation-phase-1a-cache-core.md`.
+- Design spec: `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md` §4 (data model), §7 (single-flight/dedup), §8 (variant-aware keys, short-circuit).
+- Plan (1a): `docs/SSOT/archive/superpowers/plans/2026-06-29-ugc-translation-phase-1a-cache-core.md`.
 - Decisions: `D-63` (demand-driven cache + zero-retention/DPA provider), `D-64` (posts auto / chat opt-in).
 
 **Acceptance Criteria (Phase 1a — cache core).**
@@ -80,7 +80,7 @@ Demand-driven materialization for posts. Phase 1a delivers the inert cache subst
 
 ## FR-TRANSLATE-003 — Reader UX (Phase 2, ✅ Done)
 
-> **Status:** ✅ Landed. Settings language picker + viewport-gated feed translation + translated post detail with show-original toggle. Design: `docs/superpowers/specs/2026-07-01-ugc-translation-phase-2-reader-ux-design.md`; plan: `docs/superpowers/plans/2026-07-01-ugc-translation-phase-2-reader-ux.md`.
+> **Status:** ✅ Landed. Settings language picker + viewport-gated feed translation + translated post detail with show-original toggle. Design: `docs/SSOT/archive/superpowers/specs/2026-07-01-ugc-translation-phase-2-reader-ux-design.md`; plan: `docs/SSOT/archive/superpowers/plans/2026-07-01-ugc-translation-phase-2-reader-ux.md`.
 
 Demand-driven reader UX over the Phase 1 substrate: a Settings picker sets the reader's target language; the feed translates only the visible window on-demand (source-then-swap); the full post renders translated with a per-post show-original toggle. All failures degrade silently to source text.
 
@@ -103,7 +103,7 @@ Opt-in chat translation (default off) with a sender-consent gate; per-conversati
 
 ## FR-TRANSLATE-005 — GLOWE web reader translation (✅ Done)
 
-> **Status:** ✅ Done. Surfaces the translation engine into the GLOWE static web frontend (`app/apps/glowe-web`), which shares the KC Supabase backend. GLOWE is the active MVP (AGENTS.md § Active product focus); the KC app frontend is out of scope. Design + plan: `docs/superpowers/specs/2026-07-04-glowe-web-translation-design.md`, `docs/superpowers/plans/2026-07-04-glowe-web-translation.md`.
+> **Status:** ✅ Done. Surfaces the translation engine into the GLOWE static web frontend (`app/apps/glowe-web`), which shares the KC Supabase backend. GLOWE is the active MVP (AGENTS.md § Active product focus); the KC app frontend is out of scope. Design + plan: `docs/SSOT/archive/superpowers/specs/2026-07-04-glowe-web-translation-design.md`, `docs/SSOT/archive/superpowers/plans/2026-07-04-glowe-web-translation.md`.
 >
 > **Landed (live on dev):** AC1–AC9 done — `glowe_content_translations` cache (migrations `0219` + `0220` `org_description` + `0221` `org_field` + `0226` array-element field pattern + `0232` forum thread/reply types + `body` field), `glowe-translate` Edge Function reading source rows server-side (scalar **and** array elements via a `field.index` convention), `_shared/translation/` provider extraction, `glowe-translate.js` demand-driven translate + "show original" toggle localized via `GLOWE_TRANSLATIONS`. **AC7 done:** all list/card render paths wired (`renderPostCard`, `renderOpportunityCard`, `renderWishCard`, `renderProjectCard`, `renderOrganizationCard` — incl. the `org_field` category tag) **plus** the wish detail modal (`glowe_post` title+text), the opportunity detail page (`glowe_opportunity` title+description **and** per-element `requirements`/`responsibilities` chips), the profile detail page (`glowe_profile` mission prose, DB-profile-only via a render-time-resolved `data-tr-field`), and forum threads/replies (`glowe_forum_thread` title+body on `renderDiscussionThread` + forums summary rows; `glowe_forum_reply` body on inline replies). Toggle appears only when a translation was applied. **Residual (TD-135, by design):** derived composite profile prose (`valuesText`/`solutionText`, no single source column) stays untranslated; array/tag fields excluded by AC4 (opportunity `skills`, wish `areas`, profile `skills`/`languages`, names) are intentionally never translated.
 
