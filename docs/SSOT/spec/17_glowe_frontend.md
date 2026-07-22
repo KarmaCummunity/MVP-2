@@ -219,7 +219,7 @@ The Community page (`pages/community.html`) and Write Post page (`pages/write-po
 - AC6. ✅ **Author attribution.** Post cards display `author_name` (mapped from the row). Pre-Phase-B / anonymous rows fall back to "Community Member". (Join to `glowe_profiles.display_name` deferred; `author_name` is stamped at create from the signed-in profile.)
 - AC7. ✅ **Delete own post.** The post author sees a "Delete post" CTA in the post more-menu (owner-only via `GlowePosts.isPostOwner`); `deleteCommunityPost` calls `removeOwned('posts', { id })` (RLS owner-scoped, hard-delete) then reloads the feed.
 - AC8. ✅ **Translations.** All Phase-B community-feed strings (create, delete-flow, share/copy-link) are in `GLOWE_TRANSLATIONS.he`. The comment-read path adds no new user-facing copy (comment text is user content; the "N comments" chrome was already localized).
-- AC9. ✅ **No duplicate profile chrome on Community.** The Community left rail no longer shows a personal profile card (cover / name / bio / "View Personal Area"). Profile lives on Personal Area / Profile tabs only; the left rail keeps the "Your Community Home" nav card.
+- AC9. ✅ **No duplicate profile chrome on Community.** The Community left rail no longer shows a personal profile card (cover / name / bio / "View Personal Area"). Profile lives on Personal Area / Profile tabs only; the left rail keeps the "Your Community Home" nav card. On phone widths (≤760px) that nav renders as a compact single-row of small pill buttons instead of a tall vertical link stack.
 ---
 
 ## FR-GLOWE-009 — Forums & Discussions: live threads
