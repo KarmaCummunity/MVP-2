@@ -25,6 +25,7 @@ export interface GloweCreateType {
 
 export interface GloweProfileGate {
   accountType?: string;
+  type?: string;
   approvalStatus?: string;
 }
 
