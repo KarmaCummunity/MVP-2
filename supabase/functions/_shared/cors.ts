@@ -15,11 +15,20 @@ const DEV_ORIGINS = [
   'http://127.0.0.1:3000',
 ];
 
+// GloWe static site hosts (FR-TRANSLATE-005). Always allowed so translation
+// works on dev/prod Pages deploys even when PUBLIC_RESEARCH_ALLOWED_ORIGINS
+// only lists legacy KC web origins.
+const GLOWE_ORIGINS = [
+  'https://dev.karma-community.pages.dev',
+  'https://karma-community-kc.com',
+  'https://www.karma-community-kc.com',
+];
+
 const FROM_ENV = RAW
   ? RAW.split(',').map((s) => s.trim()).filter(Boolean)
   : [];
 
-export const ALLOWED_ORIGINS: string[] = [...new Set([...DEV_ORIGINS, ...FROM_ENV])];
+export const ALLOWED_ORIGINS: string[] = [...new Set([...DEV_ORIGINS, ...GLOWE_ORIGINS, ...FROM_ENV])];
 
 export function isAllowedOrigin(origin: string | null): boolean {
   return origin !== null && ALLOWED_ORIGINS.includes(origin);
