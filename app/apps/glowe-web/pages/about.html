@@ -29,8 +29,8 @@
                 <a href="about.html" class="nav-link active">About</a>
             </nav>
             <div class="auth-buttons">
-                <button class="btn btn-outline" onclick="openModal('login-modal')">Log In</button>
-                <button class="btn btn-primary" onclick="openModal('register-modal')">Join GloWe</button>
+                <button class="btn btn-outline" onclick="handleGoogleSignIn()">Log In</button>
+                <button class="btn btn-primary" onclick="handleGoogleSignIn()">Join GloWe</button>
             </div>
             <div class="user-menu" style="display: none;">
                 <span class="user-greeting">Welcome, <span id="user-name"></span>!</span>
@@ -98,7 +98,7 @@
                     <div class="about-join-cta glowe-guest-only" style="text-align: center; margin-top: 48px;">
                         <h2>You've got something the world needs.</h2>
                         <p style="margin-bottom: 24px;">Join with experience, questions, resources, or a willingness to help.</p>
-                        <button class="btn btn-primary btn-large" onclick="openModal('register-modal')">Join GloWe</button>
+                        <button class="btn btn-primary btn-large" onclick="handleGoogleSignIn()">Join GloWe</button>
                     </div>
                     <div class="about-member-cta glowe-member-only" style="text-align: center; margin-top: 48px;">
                         <h2>You're already part of GloWe.</h2>

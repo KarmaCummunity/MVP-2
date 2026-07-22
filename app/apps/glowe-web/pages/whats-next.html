@@ -22,8 +22,8 @@
             </a>
             <nav class="main-nav"></nav>
             <div class="auth-buttons">
-                <button class="btn btn-outline" onclick="openModal('login-modal')">Log In</button>
-                <button class="btn btn-primary" onclick="openModal('register-modal')">Join GloWe</button>
+                <button class="btn btn-outline" onclick="handleGoogleSignIn()">Log In</button>
+                <button class="btn btn-primary" onclick="handleGoogleSignIn()">Join GloWe</button>
             </div>
             <div class="user-menu" style="display: none;">
                 <span class="user-greeting">Welcome, <span id="user-name"></span>!</span>
@@ -39,7 +39,7 @@
                 <h1>What we want to build next</h1>
                 <p>GloWe begins as a simple MVP: profiles, posts, wishes, opportunities, and conversations. From here, we want to grow carefully, with local communities, field knowledge, and technology that serves people.</p>
                 <div class="hero-actions">
-                    <button class="btn btn-primary btn-large" type="button" onclick="openModal('register-modal')">Join the MVP</button>
+                    <button class="btn btn-primary btn-large" type="button" onclick="handleGoogleSignIn()">Join the MVP</button>
                     <a class="btn btn-outline btn-large" href="community.html">Enter Community</a>
                 </div>
             </div>
@@ -113,7 +113,7 @@
             <div class="container">
                 <h2>Help shape what comes next.</h2>
                 <p>The MVP is here so we can learn with you: what helps, what is missing, and what should be built with care.</p>
-                <button class="btn btn-primary btn-large" type="button" onclick="openModal('register-modal')">Create Your Profile</button>
+                <button class="btn btn-primary btn-large" type="button" onclick="handleGoogleSignIn()">Create Your Profile</button>
             </div>
         </section>
     </main>

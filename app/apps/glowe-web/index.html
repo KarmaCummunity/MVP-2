@@ -29,8 +29,8 @@
                 <a href="pages/about.html" class="nav-link">About</a>
             </nav>
             <div class="auth-buttons">
-                <button class="btn btn-outline" onclick="openModal('login-modal')">Log In</button>
-                <button class="btn btn-primary" onclick="openModal('register-modal')">Join GloWe</button>
+                <button class="btn btn-outline" onclick="handleGoogleSignIn()">Log In</button>
+                <button class="btn btn-primary" onclick="handleGoogleSignIn()">Join GloWe</button>
             </div>
             <div class="user-menu" style="display: none;">
                 <span class="user-greeting">Welcome, <span id="user-name"></span>!</span>
@@ -52,7 +52,7 @@
                     <h1>You do not have to carry the work alone.</h1>
                     <p>GloWe is a warm, professional community for people, organizations, initiatives, volunteers, and partners working around the SDGs. Here you can ask for support, offer what you know, share field wisdom, and meet people who walk beside you in the work.</p>
                     <div class="hero-cta">
-                        <button class="btn btn-primary btn-large" type="button" onclick="openModal('register-modal')">Find Your Place</button>
+                        <button class="btn btn-primary btn-large" type="button" onclick="handleGoogleSignIn()">Find Your Place</button>
                         <a href="pages/community.html" class="btn btn-outline btn-large">Meet the Community</a>
                         <button class="btn btn-outline btn-large" type="button" onclick="openWishModal()">Ask for Support</button>
                     </div>
@@ -387,7 +387,7 @@
                 <h2 class="cta-heading-final">You have a place in this community.</h2>
                 <h2>You've got something the world needs.</h2>
                 <p>Bring what you know. Ask for what you need. Meet people who are working, learning, building, and caring around the SDGs.</p>
-                <button class="btn btn-primary btn-large" onclick="openModal('register-modal')">Join GloWe</button>
+                <button class="btn btn-primary btn-large" onclick="handleGoogleSignIn()">Join GloWe</button>
             </div>
         </section>
     </main>
@@ -408,8 +408,8 @@
                 </div>
                 <div class="footer-section">
                     <h4>For Organizations</h4>
-                    <a href="#" onclick="openModal('register-modal'); return false;">Register Your Organization</a>
-                    <a href="#" onclick="openModal('register-modal'); return false;">Post an Opportunity</a>
+                    <a href="#" onclick="handleGoogleSignIn(); return false;">Register Your Organization</a>
+                    <a href="#" onclick="handleGoogleSignIn(); return false;">Post an Opportunity</a>
                 </div>
                 <div class="footer-section">
                     <h4>Connect</h4>
