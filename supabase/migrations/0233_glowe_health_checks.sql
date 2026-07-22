@@ -1,4 +1,4 @@
--- 0232_glowe_health_checks — GloWe production synthetic monitoring (INFRA-QA-W7).
+-- 0233_glowe_health_checks — GloWe production synthetic monitoring (INFRA-QA-W7).
 --
 -- CI/cron probes (service-role REST insert) record per-check outcomes; GloWe
 -- admins read the latest summary + recent history via SECURITY DEFINER RPCs.

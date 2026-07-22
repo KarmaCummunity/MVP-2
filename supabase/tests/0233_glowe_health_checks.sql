@@ -1,5 +1,5 @@
--- supabase/tests/0232_glowe_health_checks.sql
--- Regression for migration 0232 (INFRA-QA-W7 / FR-GLOWE-018 health visibility).
+-- supabase/tests/0233_glowe_health_checks.sql
+-- Regression for migration 0233 (INFRA-QA-W7 / FR-GLOWE-018 health visibility).
 --
 -- Verifies:
 --   • non-admin blocked on glowe_admin_health_summary / list_health_checks
