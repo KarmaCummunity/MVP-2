@@ -17,7 +17,7 @@ create table if not exists public.glowe_health_checks (
   error_code   text,
   error_detail text,
   app_version  text,
-  environment  text not null default 'production',
+  environment  text not null default 'glowe_prod',
   checked_at   timestamptz not null default now(),
   constraint glowe_health_checks_status_chk
     check (status in ('ok', 'degraded', 'fail')),
@@ -65,7 +65,7 @@ begin
     h.app_version,
     h.checked_at
   from public.glowe_health_checks h
-  where h.environment = 'production'
+  where h.environment = 'glowe_prod'
     and h.checked_at > now() - interval '7 days'
   order by h.check_name, h.checked_at desc;
 end;
@@ -116,7 +116,7 @@ begin
     h.environment,
     h.checked_at
   from public.glowe_health_checks h
-  where h.environment = 'production'
+  where h.environment = 'glowe_prod'
   order by h.checked_at desc
   limit v_limit;
 end;

@@ -56,8 +56,8 @@ export default defineConfig({
         ...devices['Desktop Chrome'],
       },
     },
-    // Read-only production synthetics (INFRA-QA-W7). Uses PROD_WEB_URL + /glowe;
-    // no auth setup or write credentials.
+    // Read-only GloWe live-site synthetics (INFRA-QA-W7). Uses GLOWE_PROD_URL
+    // (https://dev.karma-community.pages.dev/glowe); no auth setup.
     {
       name: 'prod-health',
       testMatch: /prod-health\.spec\.ts/,

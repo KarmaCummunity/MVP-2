@@ -58,7 +58,11 @@ Watch **Railway → prod** — new deployment from `main` reaches **Success**.
 
 ## Post-deploy smoke (operator — ~5 min)
 
-Automated **Prod smoke** checks HTTP 200 **and** read-only GloWe functional probes (home, feed, wishing well, forums, messages guest gate). Results surface in **Admin → System health** when ingest secrets are configured. Spot-check manually:
+Automated checks after deploy:
+- **KC (`main`):** `prod-smoke.yml` — HTTP 200 on `KC_PROD_URL`.
+- **GloWe (`dev`):** `glowe-prod-smoke.yml` — Playwright probes on `GLOWE_PROD_URL`; results in admin **System health** when ingest runs.
+
+Spot-check manually:
 
 - [ ] **Prod URL loads** — incognito window, no dev banner.
 - [ ] **Sign-in** — Google (web) or email OTP path you ship.

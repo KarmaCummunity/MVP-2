@@ -3,8 +3,8 @@
  * Persist Playwright prod-health JSON results into glowe_health_checks (INFRA-QA-W7).
  *
  * Requires:
- *   EXPO_PUBLIC_SUPABASE_URL (or SUPABASE_URL) — prod project URL
- *   SUPABASE_SERVICE_ROLE_KEY — prod service role (GitHub secret)
+ *   EXPO_PUBLIC_SUPABASE_URL (or SUPABASE_URL) — GloWe backend (dev project today)
+ *   SUPABASE_SERVICE_ROLE_KEY — dev service role (GitHub supabase-dev environment)
  *
  * Usage:
  *   node scripts/record-prod-health.mjs tests/e2e/test-results/results.json
@@ -21,7 +21,7 @@ if (!reportPath) {
 const supabaseUrl = (process.env.EXPO_PUBLIC_SUPABASE_URL ?? process.env.SUPABASE_URL ?? '').replace(/\/$/, '');
 const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY ?? '';
 const runId = process.env.GITHUB_RUN_ID ?? `local-${Date.now()}`;
-const environment = process.env.GLOWE_HEALTH_ENV ?? 'production';
+const environment = process.env.GLOWE_HEALTH_ENV ?? 'glowe_prod';
 const appVersion = process.env.GLOWE_APP_VERSION ?? null;
 
 if (!supabaseUrl || !serviceKey) {

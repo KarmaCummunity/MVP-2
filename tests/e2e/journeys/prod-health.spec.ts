@@ -1,12 +1,12 @@
-// Production read-only health probes (INFRA-QA-W7 / FR-GLOWE-018).
-// Runs against PROD_WEB_URL + /glowe — no writes, no auth credentials.
+// GloWe live-site read-only health probes (INFRA-QA-W7 / FR-GLOWE-018).
+// Target: GLOWE_PROD_URL (https://dev.karma-community.pages.dev/glowe) — no writes.
 import { test, expect } from '@playwright/test';
-import { fetchAppVersion, gloweUrl, GLOWE_BASE, PROD_WEB_URL, VERSION_RE } from '../lib/prod';
+import { fetchAppVersion, gloweUrl, GLOWE_BASE, GLOWE_PROD_URL, VERSION_RE } from '../lib/prod';
 
 test.describe.configure({ mode: 'serial' });
 
 test.beforeAll(() => {
-  test.skip(!PROD_WEB_URL, 'PROD_WEB_URL is not set — skipping prod-health suite');
+  test.skip(!GLOWE_PROD_URL, 'GLOWE_PROD_URL is not set — skipping prod-health suite');
 });
 
 test.describe('GloWe production health (read-only)', () => {

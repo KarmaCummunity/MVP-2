@@ -79,8 +79,8 @@ end $$;
 reset role;
 insert into public.glowe_health_checks (run_id, check_name, status, latency_ms, app_version, environment)
 values
-  ('run-0232-a', 'home_load', 'ok', 120, '1.0.13', 'production'),
-  ('run-0232-b', 'home_load', 'fail', 9000, '1.0.13', 'production');
+  ('run-0232-a', 'home_load', 'ok', 120, '1.0.13', 'glowe_prod'),
+  ('run-0232-b', 'home_load', 'fail', 9000, '1.0.13', 'glowe_prod');
 
 update public.glowe_health_checks
    set error_code = 'timeout',

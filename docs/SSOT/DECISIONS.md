@@ -1376,7 +1376,7 @@ Shipped in the same change-set: a GloWe design-fixes pass addressing nine review
 
 ## D-182 — GloWe production synthetics + admin health panel (2026-07-22)
 
-**Decision.** Store automated production probe results in `glowe_health_checks` (migration `0232`) and surface them in the GloWe admin portal. Probes are **read-only Playwright** journeys (`prod-health` project) run from `prod-smoke.yml` after deploy and on a 15-minute cron. CI ingests rows via the prod **service role** (GitHub secret) — no client-trusted writes. Auto-rollback remains a separate phase (frontend-only; DB forward-fix only).
+**Decision.** Store automated GloWe live-site probe results in `glowe_health_checks` (migration `0232`) and surface them in the GloWe admin portal. Probes are **read-only Playwright** journeys (`prod-health` project) run from `glowe-prod-smoke.yml` after `dev` deploy and on a 15-minute cron. **GloWe production** (`https://dev.karma-community.pages.dev/glowe`) is a **separate live URL** from **KC production** (`https://karma-community-kc.com`); ingest targets the **dev** Supabase project (GloWe's backend today). KC HTTP smoke stays in `prod-smoke.yml` on `main` only.
 
 **Rationale.** HTTP-200 smoke cannot catch broken feeds, auth wiring, or Supabase client failures. Admins need in-product visibility without opening GitHub Actions. Reuses existing Playwright infra and GloWe admin RBAC (`is_glowe_admin`).
 
