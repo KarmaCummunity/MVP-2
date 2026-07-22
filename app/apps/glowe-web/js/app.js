@@ -5568,7 +5568,8 @@ function initAdminPage() {
 
     if (orgContainer) loadPendingOrgs();
     if (reportsContainer) loadModerationReports();
-    loadAdminHealthPanel();
+    initAdminTabs();
+    prefetchAdminHealthBadge();
 
     const backend = window.gloweBackend;
     if (backend && backend.configured()) {
@@ -5578,6 +5579,62 @@ function initAdminPage() {
             if (mStat) mStat.textContent = members;
             if (oStat) oStat.textContent = orgs;
         }).catch(() => {});
+    }
+}
+
+let adminHealthLoaded = false;
+
+function getAdminTabFromUrl() {
+    const params = new URLSearchParams(window.location.search);
+    if (params.get('tab') === 'health') return 'health';
+    if (window.location.hash === '#health') return 'health';
+    return 'moderation';
+}
+
+function switchAdminTab(tabName) {
+    const tab = tabName === 'health' ? 'health' : 'moderation';
+    document.querySelectorAll('[data-admin-tab]').forEach((btn) => {
+        const active = btn.dataset.adminTab === tab;
+        btn.classList.toggle('active', active);
+        btn.setAttribute('aria-selected', active ? 'true' : 'false');
+    });
+    document.querySelectorAll('.admin-tab-panel').forEach((panel) => {
+        const active = panel.id === `admin-tab-${tab}`;
+        panel.classList.toggle('active', active);
+        panel.hidden = !active;
+    });
+    if (tab === 'health' && !adminHealthLoaded) {
+        loadAdminHealthPanel();
+    }
+}
+
+function initAdminTabs() {
+    const bar = document.querySelector('.admin-tab-bar');
+    if (!bar) return;
+    bar.addEventListener('click', (event) => {
+        const btn = event.target.closest('[data-admin-tab]');
+        if (!btn) return;
+        switchAdminTab(btn.dataset.adminTab);
+    });
+    switchAdminTab(getAdminTabFromUrl());
+}
+
+function updateAdminHealthBadge(overall) {
+    const badge = document.getElementById('admin-health-tab-badge');
+    if (!badge || !window.GloweHealth) return;
+    const showBadge = overall && overall !== 'ok' && overall !== 'unknown';
+    badge.hidden = !showBadge;
+    badge.className = `admin-tab-badge ${GloweHealth.statusClass(overall)}`;
+    badge.textContent = showBadge ? GloweHealth.statusLabel(overall) : '';
+}
+
+async function prefetchAdminHealthBadge() {
+    if (!backendReady() || !window.GloweHealth) return;
+    try {
+        const summary = await window.gloweBackend.adminHealthSummary();
+        updateAdminHealthBadge(GloweHealth.worstStatus(summary));
+    } catch {
+        /* badge stays hidden until a full load */
     }
 }
 
@@ -5597,6 +5654,7 @@ function renderAdminHealthSummary(rows) {
     const overall = GloweHealth.worstStatus(normalized);
     overallEl.textContent = GloweHealth.statusLabel(overall);
     overallEl.className = `health-pill ${GloweHealth.statusClass(overall)}`;
+    updateAdminHealthBadge(overall);
 
     if (!normalized.length) {
         summaryEl.innerHTML = '<div class="empty-state"><h3>No probes yet</h3><p>Production synthetics will appear here after the first scheduled run or deploy smoke.</p></div>';
@@ -5605,8 +5663,11 @@ function renderAdminHealthSummary(rows) {
 
     summaryEl.innerHTML = normalized.map((row) => `
         <article class="admin-health-card ${GloweHealth.statusClass(row.status)}">
-            <span class="health-pill ${GloweHealth.statusClass(row.status)}">${escapeHtml(GloweHealth.statusLabel(row.status))}</span>
-            <h3>${escapeHtml(GloweHealth.humanCheckName(row.checkName))}</h3>
+            <div class="admin-health-card-head">
+                <span class="health-status-dot" aria-hidden="true"></span>
+                <h3>${escapeHtml(GloweHealth.humanCheckName(row.checkName))}</h3>
+                <span class="health-pill ${GloweHealth.statusClass(row.status)}">${escapeHtml(GloweHealth.statusLabel(row.status))}</span>
+            </div>
             <p class="admin-health-meta">${escapeHtml(GloweHealth.formatLatency(row.latencyMs))} · ${escapeHtml(GloweHealth.formatCheckedAt(row.checkedAt))}</p>
             ${row.errorDetail ? `<p class="admin-health-error">${escapeHtml(row.errorDetail)}</p>` : ''}
         </article>
@@ -5626,35 +5687,46 @@ function renderAdminHealthHistory(rows) {
     })).filter(Boolean);
 
     if (!list.length) {
-        historyEl.innerHTML = '<div class="empty-state"><h3>No history yet</h3><p>Recent probe runs will be listed here.</p></div>';
+        historyEl.innerHTML = '<tr><td colspan="6"><div class="empty-state"><h3>No history yet</h3><p>Recent probe runs will be listed here.</p></div></td></tr>';
         return;
     }
 
     historyEl.innerHTML = list.map((row) => `
-        <article class="admin-card">
-            <span class="health-pill ${GloweHealth.statusClass(row.status)}">${escapeHtml(GloweHealth.statusLabel(row.status))}</span>
-            <h3>${escapeHtml(GloweHealth.humanCheckName(row.checkName))}</h3>
-            <p>${escapeHtml(GloweHealth.formatLatency(row.latencyMs))} · v${escapeHtml(row.appVersion || '—')} · ${escapeHtml(GloweHealth.formatCheckedAt(row.checkedAt))}</p>
-            ${row.errorDetail ? `<p>${escapeHtml(row.errorDetail)}</p>` : ''}
-        </article>
+        <tr>
+            <th scope="row">${escapeHtml(GloweHealth.humanCheckName(row.checkName))}</th>
+            <td><span class="health-pill ${GloweHealth.statusClass(row.status)}">${escapeHtml(GloweHealth.statusLabel(row.status))}</span></td>
+            <td>${escapeHtml(GloweHealth.formatLatency(row.latencyMs))}</td>
+            <td>${escapeHtml(row.appVersion || '—')}</td>
+            <td>${escapeHtml(GloweHealth.formatCheckedAt(row.checkedAt))}</td>
+            <td class="admin-health-detail">${row.errorDetail ? escapeHtml(row.errorDetail) : '—'}</td>
+        </tr>
     `).join('');
 }
 
-async function loadAdminHealthPanel() {
+async function loadAdminHealthPanel(force = false) {
     const summaryEl = document.getElementById('admin-health-summary');
+    const refreshBtn = document.getElementById('admin-health-refresh');
     if (!summaryEl || !backendReady()) return;
+
+    if (refreshBtn) refreshBtn.disabled = true;
+    if (force || !adminHealthLoaded) {
+        summaryEl.innerHTML = '<div class="empty-state admin-health-placeholder"><h3>Loading…</h3><p>Fetching the latest probe results.</p></div>';
+    }
 
     try {
         const [summary, history] = await Promise.all([
             window.gloweBackend.adminHealthSummary(),
             window.gloweBackend.adminListHealthChecks(30),
         ]);
+        adminHealthLoaded = true;
         renderAdminHealthSummary(summary);
         renderAdminHealthHistory(history);
     } catch (error) {
         summaryEl.innerHTML = adminHealthErrorHtml(error);
         const historyEl = document.getElementById('admin-health-history');
         if (historyEl) historyEl.innerHTML = '';
+    } finally {
+        if (refreshBtn) refreshBtn.disabled = false;
     }
 }
 
