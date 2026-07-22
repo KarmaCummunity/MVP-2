@@ -38,7 +38,7 @@
             <div class="container">
                 <span class="hero-kicker">Admin review</span>
                 <h1>Keep the community safe and trustworthy.</h1>
-                <p>Review new profile submissions, respond to reports, and hide content that does not fit the GloWe community standards.</p>
+                <p>Review new profile submissions, respond to reports, and monitor production health from one place.</p>
             </div>
         </section>
 
@@ -51,43 +51,76 @@
                     <article><strong data-admin-stat="reports">0</strong><span>Open reports</span></article>
                 </div>
 
-                <section class="admin-panel admin-panel-wide" id="admin-health-panel">
-                    <div class="section-toolbar">
-                        <div>
-                            <h2>System health</h2>
-                            <p>Automated production probes (read-only). Refreshed after each deploy and on a 15-minute schedule.</p>
-                        </div>
-                        <span id="admin-health-overall" class="health-pill health-unknown">No data</span>
-                    </div>
-                    <div id="admin-health-summary" class="admin-health-grid">
-                        <div class="empty-state"><h3>Loading…</h3><p>Fetching the latest probe results.</p></div>
-                    </div>
-                    <details class="admin-health-history">
-                        <summary>Recent probe history</summary>
-                        <div id="admin-health-history" class="admin-list"></div>
-                    </details>
-                </section>
+                <div class="admin-shell admin-panel admin-panel-wide">
+                    <nav class="admin-tab-bar" role="tablist" aria-label="Admin sections">
+                        <button type="button" class="admin-tab active" role="tab" id="admin-tab-btn-moderation" data-admin-tab="moderation" aria-controls="admin-tab-moderation" aria-selected="true">Moderation</button>
+                        <button type="button" class="admin-tab" role="tab" id="admin-tab-btn-health" data-admin-tab="health" aria-controls="admin-tab-health" aria-selected="false">
+                            System health
+                            <span id="admin-health-tab-badge" class="admin-tab-badge health-unknown" hidden></span>
+                        </button>
+                    </nav>
 
-                <div class="admin-grid">
-                    <section class="admin-panel admin-panel-wide">
-                        <div class="section-toolbar">
-                            <div>
-                                <h2>Pending organizations</h2>
-                                <p>Organizations awaiting verification. Approve serious requests; rejected ones stay view-only.</p>
-                            </div>
-                        </div>
-                        <div id="admin-org-requests" class="admin-list"></div>
-                    </section>
+                    <div id="admin-tab-moderation" class="admin-tab-panel active" role="tabpanel" aria-labelledby="admin-tab-btn-moderation">
+                        <div class="admin-grid">
+                            <section class="admin-panel admin-panel-wide admin-panel-inset">
+                                <div class="section-toolbar">
+                                    <div>
+                                        <h2>Pending organizations</h2>
+                                        <p>Organizations awaiting verification. Approve serious requests; rejected ones stay view-only.</p>
+                                    </div>
+                                </div>
+                                <div id="admin-org-requests" class="admin-list"></div>
+                            </section>
 
-                    <section class="admin-panel">
-                        <div class="section-toolbar">
-                            <div>
-                                <h2>Community reports</h2>
-                                <p>Reports from users who saw something inaccurate, harmful, or inappropriate.</p>
-                            </div>
+                            <section class="admin-panel admin-panel-inset">
+                                <div class="section-toolbar">
+                                    <div>
+                                        <h2>Community reports</h2>
+                                        <p>Reports from users who saw something inaccurate, harmful, or inappropriate.</p>
+                                    </div>
+                                </div>
+                                <div id="admin-reports" class="admin-list"></div>
+                            </section>
                         </div>
-                        <div id="admin-reports" class="admin-list"></div>
-                    </section>
+                    </div>
+
+                    <div id="admin-tab-health" class="admin-tab-panel" role="tabpanel" aria-labelledby="admin-tab-btn-health" hidden>
+                        <div class="admin-health-shell">
+                            <div class="section-toolbar admin-health-toolbar">
+                                <div>
+                                    <h2>Production probes</h2>
+                                    <p>Read-only checks against the live GloWe site. Refreshed after each deploy and every 15 minutes.</p>
+                                </div>
+                                <div class="admin-health-toolbar-actions">
+                                    <span id="admin-health-overall" class="health-pill health-unknown">No data</span>
+                                    <button type="button" class="btn btn-outline btn-small" id="admin-health-refresh" onclick="loadAdminHealthPanel(true)">Refresh</button>
+                                </div>
+                            </div>
+
+                            <div id="admin-health-summary" class="admin-health-grid" aria-live="polite">
+                                <div class="empty-state admin-health-placeholder"><h3>Open this tab to load probes</h3><p>Health data loads on demand so moderation stays fast.</p></div>
+                            </div>
+
+                            <details class="admin-health-history">
+                                <summary>Recent probe history</summary>
+                                <div class="admin-health-table-wrap">
+                                    <table class="admin-health-table" id="admin-health-history-table" aria-label="Recent probe history">
+                                        <thead>
+                                            <tr>
+                                                <th scope="col">Check</th>
+                                                <th scope="col">Status</th>
+                                                <th scope="col">Latency</th>
+                                                <th scope="col">Version</th>
+                                                <th scope="col">Checked at</th>
+                                                <th scope="col">Detail</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody id="admin-health-history"></tbody>
+                                    </table>
+                                </div>
+                            </details>
+                        </div>
+                    </div>
                 </div>
             </div>
         </section>

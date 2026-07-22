@@ -5098,6 +5098,92 @@ a.user-greeting:hover {
     grid-column: 1 / -1;
 }
 
+.admin-shell {
+    padding: 0;
+    overflow: hidden;
+}
+
+.admin-tab-bar {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+    padding: 16px 18px 0;
+    border-bottom: 1px solid rgba(15, 93, 85, 0.12);
+    background: rgba(255, 255, 255, 0.72);
+}
+
+.admin-tab {
+    appearance: none;
+    border: 1px solid transparent;
+    border-radius: 999px;
+    background: transparent;
+    color: var(--text-secondary);
+    cursor: pointer;
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    font: inherit;
+    font-weight: 800;
+    padding: 10px 16px;
+    transition: background 0.15s ease, color 0.15s ease, border-color 0.15s ease;
+}
+
+.admin-tab:hover {
+    background: rgba(15, 93, 85, 0.06);
+    color: var(--primary-dark);
+}
+
+.admin-tab.active {
+    background: #fff;
+    border-color: rgba(15, 93, 85, 0.16);
+    color: var(--primary-dark);
+    box-shadow: var(--shadow-soft);
+}
+
+.admin-tab-badge {
+    display: inline-flex;
+    align-items: center;
+    padding: 2px 8px;
+    border-radius: 999px;
+    font-size: 0.72rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.admin-tab-panel {
+    padding: 22px;
+}
+
+.admin-tab-panel[hidden] {
+    display: none !important;
+}
+
+.admin-panel-inset {
+    padding: 0;
+    border: none;
+    box-shadow: none;
+    background: transparent;
+}
+
+.admin-panel-inset .section-toolbar h2 {
+    font-size: 1.45rem;
+}
+
+.admin-health-shell {
+    max-width: 1080px;
+}
+
+.admin-health-toolbar .section-toolbar h2 {
+    font-size: 1.45rem;
+}
+
+.admin-health-toolbar-actions {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+}
+
 .admin-list {
     display: grid;
     gap: 14px;
@@ -5105,42 +5191,153 @@ a.user-greeting:hover {
 
 .admin-health-grid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-    gap: 14px;
-    margin-bottom: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+    gap: 12px;
+    margin-bottom: 18px;
 }
 
 .admin-health-card {
-    padding: 16px;
-    border-radius: 16px;
+    padding: 14px 16px;
+    border-radius: 14px;
     border: 1px solid rgba(15, 23, 42, 0.08);
     background: #fff;
+    border-left: 4px solid #d0d5dd;
 }
 
-.admin-health-card h3 {
-    margin: 10px 0 6px;
-    font-size: 1.05rem;
+.admin-health-card.health-ok {
+    border-left-color: #12b76a;
+}
+
+.admin-health-card.health-degraded {
+    border-left-color: #f79009;
+}
+
+.admin-health-card.health-fail {
+    border-left-color: #f04438;
+}
+
+.admin-health-card.health-unknown {
+    border-left-color: #98a2b3;
+}
+
+.admin-health-card-head {
+    display: flex;
+    align-items: center;
+    gap: 10px;
+}
+
+.health-status-dot {
+    width: 10px;
+    height: 10px;
+    border-radius: 50%;
+    background: #98a2b3;
+    flex: 0 0 auto;
+}
+
+.admin-health-card.health-ok .health-status-dot {
+    background: #12b76a;
+}
+
+.admin-health-card.health-degraded .health-status-dot {
+    background: #f79009;
+}
+
+.admin-health-card.health-fail .health-status-dot {
+    background: #f04438;
+}
+
+.admin-health-card-head h3 {
+    margin: 0;
+    flex: 1 1 auto;
+    font-size: 1rem;
+    line-height: 1.3;
+}
+
+.admin-health-card-head .health-pill {
+    margin-left: auto;
 }
 
 .admin-health-meta,
 .admin-health-error {
     color: var(--text-secondary);
-    font-size: 0.92rem;
+    font-size: 0.9rem;
+    margin: 8px 0 0 20px;
 }
 
 .admin-health-error {
     color: #b42318;
-    margin-top: 8px;
+}
+
+.admin-health-placeholder {
+    grid-column: 1 / -1;
 }
 
 .admin-health-history {
-    margin-top: 8px;
+    margin-top: 4px;
+    border: 1px solid rgba(15, 93, 85, 0.12);
+    border-radius: var(--radius-md);
+    background: rgba(255, 255, 255, 0.72);
+    padding: 12px 14px;
 }
 
 .admin-health-history summary {
     cursor: pointer;
-    font-weight: 700;
+    font-weight: 800;
     color: var(--primary-dark);
+    list-style: none;
+}
+
+.admin-health-history summary::-webkit-details-marker {
+    display: none;
+}
+
+.admin-health-history summary::before {
+    content: '▸';
+    display: inline-block;
+    margin-right: 8px;
+    transition: transform 0.15s ease;
+}
+
+.admin-health-history[open] summary::before {
+    transform: rotate(90deg);
+}
+
+.admin-health-table-wrap {
+    overflow-x: auto;
+    margin-top: 12px;
+}
+
+.admin-health-table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.92rem;
+}
+
+.admin-health-table th,
+.admin-health-table td {
+    padding: 10px 12px;
+    border-bottom: 1px solid rgba(15, 23, 42, 0.08);
+    text-align: left;
+    vertical-align: top;
+}
+
+.admin-health-table thead th {
+    color: var(--text-secondary);
+    font-size: 0.8rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: 0.04em;
+}
+
+.admin-health-table tbody tr:last-child th,
+.admin-health-table tbody tr:last-child td {
+    border-bottom: none;
+}
+
+.admin-health-detail {
+    color: var(--text-secondary);
+    max-width: 220px;
+    word-break: break-word;
 }
 
 .health-pill {
