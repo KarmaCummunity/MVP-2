@@ -337,8 +337,8 @@ If you don't see a home for something below, **ask the PM** before inventing a n
 | Environment topology      | `docs/SSOT/ENVIRONMENTS.md`            |
 | **Process rules**         | **`CLAUDE.md`** (this file)            |
 | `docs/AGENTS.md`          | Thin pointer to `CLAUDE.md` (browse from `docs/`) |
-| Implementation plans      | `docs/superpowers/plans/`              |
-| Design specs              | `docs/superpowers/specs/`              |
+| Implementation plans      | `docs/SSOT/archive/superpowers/plans/` (historical) + new plans land there until SSOT says otherwise |
+| Design specs              | `docs/SSOT/archive/superpowers/specs/` (historical) |
 | Historical archive        | `docs/SSOT/archive/`                   |
 | `.cursor/rules/*.mdc`     | Thin pointers to `CLAUDE.md` (kept only so Cursor's `alwaysApply: true` resolves) |
 | `AGENTS.md` (root)        | Thin pointer to `CLAUDE.md` for Codex / Copilot CLI conventions |

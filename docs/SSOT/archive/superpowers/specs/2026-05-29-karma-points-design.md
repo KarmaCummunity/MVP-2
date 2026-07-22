@@ -4,7 +4,7 @@
 > **Status of source spec:** new feature (not in any existing spec) → spec authored as part of this work.
 > **Decision:** `DECISIONS.md` D-155 — karma self-only for MVP (public-ready data model), the points economy, a +1 registration floor, and realtime counter/karma propagation via own-row Supabase Realtime.
 > **Layer scope:** full stack — `packages/{domain,application,infrastructure-supabase}` + `apps/mobile` + new `supabase/migrations`.
-> **Refined by the implementation plan** (`docs/superpowers/plans/2026-05-29-karma-points.md`, after a 4-domain review council): closure karma anchors to the `posts.status` transition (not recipients-row existence); the ledger uses single-anchor append-and-sum with a partial-unique on once-events only (not a global UNIQUE); realtime filters `user_id` (not `id`) + needs `replica identity full`; the outreach soft daily-cap ships in MVP; anti-collusion caps gate the future public flip (D-156).
+> **Refined by the implementation plan** (`docs/SSOT/archive/superpowers/plans/2026-05-29-karma-points.md`, after a 4-domain review council): closure karma anchors to the `posts.status` transition (not recipients-row existence); the ledger uses single-anchor append-and-sum with a partial-unique on once-events only (not a global UNIQUE); realtime filters `user_id` (not `id`) + needs `replica identity full`; the outreach soft daily-cap ships in MVP; anti-collusion caps gate the future public flip (D-156).
 
 ## Problem / Motivation
 

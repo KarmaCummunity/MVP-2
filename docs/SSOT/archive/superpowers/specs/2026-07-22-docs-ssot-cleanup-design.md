@@ -16,7 +16,7 @@ The repo has **172 `.md` files**. New agents face:
 2. **Noise** — `BACKLOG.md` is ~240 lines; ~140 rows are `✅ Done`; KC mobile work mixed with active GLOWE work.
 3. **No entry map** — agents must infer read order from a 380-line `CLAUDE.md`.
 4. **Contradictions** — `AGENTS.md` says KC mobile UI is out of scope; `BACKLOG.md` still lists KC mobile items as `🟡` / `⏳`.
-5. **Unmarked historical trees** — `docs/superpowers/`, `PRD_V2_NOT_FOR_MVP/`, `docs/SSOT/archive/` look equally authoritative.
+5. **Unmarked historical trees** — `docs/SSOT/archive/superpowers/`, `PRD_V2_NOT_FOR_MVP/`, `docs/SSOT/archive/` look equally authoritative.
 
 ## Goals
 
@@ -57,7 +57,7 @@ Insert immediately after the APP VERSION banner (~40 lines):
 
 1. **Product focus** — GLOWE web (`app/apps/glowe-web/**`) is the active MVP; KC mobile UI is paused (link `AGENTS.md`).
 2. **Read order** — `BACKLOG.md` (open items only) → relevant `docs/SSOT/spec/{domain}.md` → scan `TECH_DEBT.md` for the area → check `DECISIONS.md` before structural changes.
-3. **Do not use for implementation** — `docs/SSOT/archive/**`, `PRD_V2_NOT_FOR_MVP/**`, `docs/superpowers/**` (unless explicitly linked from an open backlog row or active spec).
+3. **Do not use for implementation** — `docs/SSOT/archive/**`, `PRD_V2_NOT_FOR_MVP/**`, `docs/SSOT/archive/superpowers/**` (unless explicitly linked from an open backlog row or active spec).
 4. **Pre-push gates** — from `app/`: `pnpm typecheck && pnpm test && pnpm lint`.
 5. **Version** — bump `app/VERSION` PATCH on every PR to `dev`.
 
@@ -157,7 +157,7 @@ docs/SSOT/archive/
 ├── SRS/                               # existing
 ├── PRD_MVP_CORE_SSOT/                 # existing
 ├── AUDIT_2026-05-10_full_codebase_review.md  # existing (if present)
-└── superpowers/                       # MOVED from docs/superpowers/
+└── superpowers/                       # MOVED from docs/SSOT/archive/superpowers/
     ├── specs/
     ├── plans/
     └── audits/
@@ -172,10 +172,10 @@ Sections:
 - **Contents index** — SRS, PRD archive, backlog history, paused KC mobile, superpowers designs, audit reports.
 - **`CODE_QUALITY.md` note** — "Never authored. Architecture rules live in `CLAUDE.md` §5–§8 (`DECISIONS.md` D-*)."
 
-#### 3.2 Move `docs/superpowers/` → `docs/SSOT/archive/superpowers/`
+#### 3.2 Move `docs/SSOT/archive/superpowers/` → `docs/SSOT/archive/superpowers/`
 
 - `git mv` preserves history.
-- Add `docs/superpowers/README.md` stub (3 lines): "Moved to `docs/SSOT/archive/superpowers/`."
+- Add `docs/SSOT/archive/superpowers/README.md` stub (3 lines): "Moved to `docs/SSOT/archive/superpowers/`."
 
 #### 3.3 `PRD_V2_NOT_FOR_MVP/`
 
@@ -186,10 +186,10 @@ Sections:
   > **NOT MVP — historical product vision.** Active requirements: `docs/SSOT/spec/`. Do not implement from this tree unless PM explicitly reopens scope.
   ```
 
-#### 3.4 `docs/SSOT/audit/`
+#### 3.4 `docs/SSOT/archive/audit/`
 
 - Move to `docs/SSOT/archive/audit/` (same archive-only policy).
-- Leave stub `docs/SSOT/audit/README.md` pointing to archive.
+- Leave stub `docs/SSOT/archive/audit/README.md` pointing to archive.
 
 ---
 
@@ -231,7 +231,7 @@ Do **not** archive spec files (they remain the contract for backend behavior).
 | **P2 — Backlog trim** | Split backlog into active + 2 archive files | 3 |
 | **P3 — Archive moves** | `superpowers/` move, audit move, archive README, stubs | ~50 moves |
 | **P4 — Truth pass** | TECH_DEBT header, PRD banner, spec pause banners, link sweep | ~10 |
-| **P5 — Verify** | Grep for broken relative links to `docs/superpowers/`; update inbound links in BACKLOG, DECISIONS, specs | — |
+| **P5 — Verify** | Grep for broken relative links to `docs/SSOT/archive/superpowers/`; update inbound links in BACKLOG, DECISIONS, specs | — |
 
 Single PR to `dev` preferred (atomic doc truth). Bump `app/VERSION` PATCH per policy.
 
@@ -241,7 +241,7 @@ Single PR to `dev` preferred (atomic doc truth). Bump `app/VERSION` PATCH per po
 
 After `git mv docs/superpowers → docs/SSOT/archive/superpowers`:
 
-1. `rg 'docs/superpowers/'` — update to `docs/SSOT/archive/superpowers/` in **active** files only.
+1. `rg 'docs/SSOT/archive/superpowers/'` — update to `docs/SSOT/archive/superpowers/` in **active** files only.
 2. Leave historical archive files pointing to old paths OR batch-update for consistency (prefer update for grep cleanliness).
 3. `rg 'SRS\.md|CODE_QUALITY'` in active paths — replace with `CLAUDE.md` §5 or archive README note.
 
@@ -254,9 +254,9 @@ After `git mv docs/superpowers → docs/SSOT/archive/superpowers`:
 | AC1 | `CLAUDE.md` opens with Quick Start; ≤ 50 lines before §1 Required reading |
 | AC2 | Active `BACKLOG.md` has zero `✅` rows |
 | AC3 | `archive/BACKLOG-history.md` contains all former `✅` rows |
-| AC4 | `docs/superpowers/README.md` stub resolves; no broken links in active BACKLOG |
+| AC4 | `docs/SSOT/archive/superpowers/README.md` stub resolves; no broken links in active BACKLOG |
 | AC5 | `docs/README.md` exists; `docs/AGENTS.md` still points to `CLAUDE.md` |
-| AC6 | `rg 'docs/superpowers/' docs/SSOT/BACKLOG.md docs/SSOT/spec/` returns only updated paths or zero |
+| AC6 | `rg 'docs/SSOT/archive/superpowers/' docs/SSOT/BACKLOG.md docs/SSOT/spec/` returns only updated paths or zero |
 | AC7 | New agent smoke test: "pick next task" reads only GLOWE/shared open items |
 
 ---

@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown only; `git mv` for history-preserving moves; `rg` for link sweep; `node scripts/bump-app-version.mjs` for PATCH bump.
 
-**Design:** `docs/superpowers/specs/2026-07-22-docs-ssot-cleanup-design.md` (will live at `docs/SSOT/archive/superpowers/specs/...` after Task 4).
+**Design:** `docs/SSOT/archive/superpowers/specs/2026-07-22-docs-ssot-cleanup-design.md` (will live at `docs/SSOT/archive/superpowers/specs/...` after Task 4).
 
 ## Global Constraints
 
@@ -285,7 +285,7 @@ Target structure (open rows only; keep original row text except status already o
 
 Use the **full original task cell text** from `/tmp/BACKLOG-before-docs-cleanup.md` for each kept ID — do not shorten descriptions.
 
-Also update any `docs/superpowers/` links inside those kept rows to `docs/SSOT/archive/superpowers/` **after** Task 4, or write them as `docs/SSOT/archive/superpowers/...` now (preferred — Task 4 moves the tree).
+Also update any `docs/SSOT/archive/superpowers/` links inside those kept rows to `docs/SSOT/archive/superpowers/` **after** Task 4, or write them as `docs/SSOT/archive/superpowers/...` now (preferred — Task 4 moves the tree).
 
 - [ ] **Step 5: Acceptance checks**
 
@@ -410,10 +410,10 @@ EOF
 ### Task 4: Move `superpowers/` and `audit/` into archive
 
 **Files:**
-- Move: `docs/superpowers/**` → `docs/SSOT/archive/superpowers/**`
-- Move: `docs/SSOT/audit/**` → `docs/SSOT/archive/audit/**`
-- Create: `docs/superpowers/README.md` (stub)
-- Create: `docs/SSOT/audit/README.md` (stub)
+- Move: `docs/SSOT/archive/superpowers/**` → `docs/SSOT/archive/superpowers/**`
+- Move: `docs/SSOT/archive/audit/**` → `docs/SSOT/archive/audit/**`
+- Create: `docs/SSOT/archive/superpowers/README.md` (stub)
+- Create: `docs/SSOT/archive/audit/README.md` (stub)
 
 **Interfaces:**
 - Consumes: design §3.2, §3.4
@@ -429,7 +429,7 @@ git mv docs/SSOT/audit docs/SSOT/archive/audit
 
 - [ ] **Step 2: Create stubs at old paths**
 
-`docs/superpowers/README.md`:
+`docs/SSOT/archive/superpowers/README.md`:
 
 ```markdown
 # Moved
@@ -439,7 +439,7 @@ This tree moved to [`../SSOT/archive/superpowers/`](../SSOT/archive/superpowers/
 Designs and plans are **historical**. Active requirements: [`../SSOT/spec/`](../SSOT/spec/). Agent entry: [`../../CLAUDE.md`](../../CLAUDE.md) §Quick Start.
 ```
 
-`docs/SSOT/audit/README.md`:
+`docs/SSOT/archive/audit/README.md`:
 
 ```markdown
 # Moved
@@ -450,7 +450,7 @@ Audit reports moved to [`../archive/audit/`](../archive/audit/).
 - [ ] **Step 3: Commit the move**
 
 ```bash
-git add docs/superpowers/README.md docs/SSOT/audit/README.md
+git add docs/SSOT/archive/superpowers/README.md docs/SSOT/archive/audit/README.md
 git add -u docs/superpowers docs/SSOT/audit docs/SSOT/archive/superpowers docs/SSOT/archive/audit
 git commit -m "$(cat <<'EOF'
 docs(ssot): move superpowers and audit trees into archive
@@ -465,7 +465,7 @@ EOF
 ### Task 5: Link sweep + version bump + verify
 
 **Files:**
-- Modify: any **active** file still pointing at `docs/superpowers/` or `docs/SSOT/audit/` (especially `BACKLOG.md`, `DECISIONS.md`, `OPERATOR_RUNBOOK.md`, `spec/*.md`, `AGENTS.md`, `CLAUDE.md` §12 map, `docs/README.md`)
+- Modify: any **active** file still pointing at `docs/SSOT/archive/superpowers/` or `docs/SSOT/archive/audit/` (especially `BACKLOG.md`, `DECISIONS.md`, `OPERATOR_RUNBOOK.md`, `spec/*.md`, `AGENTS.md`, `CLAUDE.md` §12 map, `docs/README.md`)
 - Prefer also updating links inside `docs/SSOT/archive/**` for grep cleanliness (design §7)
 - Modify: `app/VERSION` + `app/apps/glowe-web/js/glowe-version.js` (PATCH bump)
 
@@ -476,18 +476,18 @@ EOF
 - [ ] **Step 1: Find stale paths**
 
 ```bash
-rg -n 'docs/superpowers/' --glob '*.md' -g '!docs/SSOT/archive/**' -g '!docs/superpowers/README.md'
-rg -n 'docs/SSOT/audit/' --glob '*.md' -g '!docs/SSOT/archive/**' -g '!docs/SSOT/audit/README.md'
+rg -n 'docs/SSOT/archive/superpowers/' --glob '*.md' -g '!docs/SSOT/archive/**' -g '!docs/SSOT/archive/superpowers/README.md'
+rg -n 'docs/SSOT/archive/audit/' --glob '*.md' -g '!docs/SSOT/archive/**' -g '!docs/SSOT/archive/audit/README.md'
 rg -n 'SRS\.md|CODE_QUALITY' docs/SSOT/BACKLOG.md docs/SSOT/TECH_DEBT.md CLAUDE.md AGENTS.md docs/README.md docs/SSOT/spec
 ```
 
 - [ ] **Step 2: Rewrite active links**
 
-Replace `docs/superpowers/` → `docs/SSOT/archive/superpowers/` in every active hit from Step 1.
+Replace `docs/SSOT/archive/superpowers/` → `docs/SSOT/archive/superpowers/` in every active hit from Step 1.
 
-Replace `docs/SSOT/audit/` → `docs/SSOT/archive/audit/` similarly.
+Replace `docs/SSOT/archive/audit/` → `docs/SSOT/archive/audit/` similarly.
 
-If `CLAUDE.md` §12 “Repo structure map” still lists `docs/superpowers/plans/` as implementation plans, update to:
+If `CLAUDE.md` §12 “Repo structure map” still lists `docs/SSOT/archive/superpowers/plans/` as implementation plans, update to:
 
 ```markdown
 | Implementation plans | `docs/SSOT/archive/superpowers/plans/` (historical) + new plans land there until SSOT says otherwise |
@@ -498,8 +498,8 @@ Optional batch for archive cleanliness:
 
 ```bash
 # macOS sed — review diff before commit
-rg -l 'docs/superpowers/' docs/SSOT/archive | while read f; do
-  sed -i '' 's|docs/superpowers/|docs/SSOT/archive/superpowers/|g' "$f"
+rg -l 'docs/SSOT/archive/superpowers/' docs/SSOT/archive | while read f; do
+  sed -i '' 's|docs/SSOT/archive/superpowers/|docs/SSOT/archive/superpowers/|g' "$f"
 done
 ```
 
@@ -510,9 +510,9 @@ done
 | AC1 | `rg -n '^## Quick Start\|^## 1\. Required' CLAUDE.md` | Quick Start before §1; ≤50 lines between |
 | AC2 | `rg '✅' docs/SSOT/BACKLOG.md` | zero Status Done rows |
 | AC3 | `test -f docs/SSOT/archive/BACKLOG-history.md && rg -c '✅' docs/SSOT/archive/BACKLOG-history.md` | ≥100 |
-| AC4 | `test -f docs/superpowers/README.md && test -d docs/SSOT/archive/superpowers` | both true |
+| AC4 | `test -f docs/SSOT/archive/superpowers/README.md && test -d docs/SSOT/archive/superpowers` | both true |
 | AC5 | `test -f docs/README.md && head -5 docs/AGENTS.md` | pointer to CLAUDE.md |
-| AC6 | `rg 'docs/superpowers/' docs/SSOT/BACKLOG.md docs/SSOT/spec \|\| true` | no stale hits (only archive paths) |
+| AC6 | `rg 'docs/SSOT/archive/superpowers/' docs/SSOT/BACKLOG.md docs/SSOT/spec \|\| true` | no stale hits (only archive paths) |
 | AC7 | Read active BACKLOG — only GLOWE/shared/deferred IDs from classification table | no RESP-*/V3.0.*/P2.23 etc. |
 
 - [ ] **Step 4: Bump app version PATCH**

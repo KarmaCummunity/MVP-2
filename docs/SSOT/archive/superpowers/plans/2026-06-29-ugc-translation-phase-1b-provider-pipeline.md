@@ -8,7 +8,7 @@
 
 **Tech Stack:** Supabase Edge Functions (Deno), TypeScript, vitest, pnpm + turbo monorepo (packages under `app/`). No new migration — the `content_translations` table, grants, and triggers already exist from Phase 1a (`0208`).
 
-> **Spec:** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` §2 (provider tier), §7 (single-flight/failure), §8 (detection folded into the translate call, short-circuit, variant-aware keys), §9 (Edge Function authorization, prompt-injection hardening, logging). Builds on Phase 0 (`LanguageTag`, `source_language` columns) and Phase 1a (`content_translations`, domain primitives, `ITranslationCacheRepository`). Implements the FR-TRANSLATE-002 **Phase 1b** slice.
+> **Spec:** `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md` §2 (provider tier), §7 (single-flight/failure), §8 (detection folded into the translate call, short-circuit, variant-aware keys), §9 (Edge Function authorization, prompt-injection hardening, logging). Builds on Phase 0 (`LanguageTag`, `source_language` columns) and Phase 1a (`content_translations`, domain primitives, `ITranslationCacheRepository`). Implements the FR-TRANSLATE-002 **Phase 1b** slice.
 
 ---
 

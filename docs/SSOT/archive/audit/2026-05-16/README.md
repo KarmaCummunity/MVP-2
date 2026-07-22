@@ -1,6 +1,6 @@
 # Audit 2026-05-16 — Full-stack review
 
-Companion to `docs/SSOT/archive/AUDIT_2026-05-10_full_codebase_review.md` and `docs/SSOT/AUDIT_2026-05-10_FOLLOWUP.md`.
+Companion to `docs/SSOT/archive/AUDIT_2026-05-10_full_codebase_review.md` and `docs/SSOT/archive/AUDIT_2026-05-10_FOLLOWUP.md`.
 
 This audit was run six days after the prior one, after P2.7–P2.11 landed (privacy-mode reframe, BE security hardening, About refresh, post actor identity). Goals:
 

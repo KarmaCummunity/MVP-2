@@ -131,7 +131,7 @@ GloWe shipped English-only (FR-GLOWE-001 AC1, "design byte-for-byte the original
 
 ## Phase B — Live Content Layer
 
-> **Status:** ⏳ Planned. Phase B wires every existing page to real Supabase persistence. All UI shells are already built; this phase replaces mock/localStorage data with live `glowe_*` table reads and writes. Full PRD: `docs/superpowers/specs/2026-06-29-glowe-mvp-prd.md`. Full SRS: `docs/superpowers/specs/2026-06-29-glowe-mvp-srs.md`.
+> **Status:** ⏳ Planned. Phase B wires every existing page to real Supabase persistence. All UI shells are already built; this phase replaces mock/localStorage data with live `glowe_*` table reads and writes. Full PRD: `docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-mvp-prd.md`. Full SRS: `docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-mvp-srs.md`.
 
 ### Schema at Phase B entry point (migrations 0204–0206)
 
@@ -200,7 +200,7 @@ The Volunteer Network page (`pages/volunteer-network.html`) and opportunity deta
 - AC6. **Featured.** Opportunities with `featured = true` appear at the top of the listing grid.
 - AC7. **Empty state.** Friendly empty state with "Post the first opportunity" CTA when no results.
 - AC8. **Translations.** New UI strings added to Hebrew locale.
-- AC9. **Events (additive model).** An opportunity becomes an **Event** when `start_at` is set. Events are not a separate table or schema subtype — they ride the `glowe_opportunities` read/write/RLS paths and add event metadata: `start_at`/`end_at`, `event_type ∈ {physical, digital}`, `event_link` + `link_visibility ∈ {immediate, before_event}` (+ `link_reveal_hours`), `capacity` (null = unlimited), `registration_mode ∈ {open, gated}`, and `status ∈ {active, cancelled, closed}`. An **RSVP** reuses `glowe_applications` (no separate registrations table). Schema foundation: migration `0211`; the individual registration entry point is the `glowe_register_for_event` `SECURITY DEFINER` RPC (migration `0212`, open→`Accepted` / gated→`Pending`, event-state validation). Organizer decisions run through `glowe_list_event_registrations` + `glowe_decide_event_registration` (migration `0213`, accept/decline + reason, capacity→waitlist routing). The event lifecycle is completed by migration `0214`: an AFTER-UPDATE trigger auto-advances the next `Waitlisted` registrant when a confirmed spot is vacated, `glowe_get_event_link` gates the digital link by entitlement + `link_visibility` window, and `glowe_cancel_event` is owner-only cancellation. ✅ (EVT1–EVT5). Design: `docs/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md` (D-66).
+- AC9. **Events (additive model).** An opportunity becomes an **Event** when `start_at` is set. Events are not a separate table or schema subtype — they ride the `glowe_opportunities` read/write/RLS paths and add event metadata: `start_at`/`end_at`, `event_type ∈ {physical, digital}`, `event_link` + `link_visibility ∈ {immediate, before_event}` (+ `link_reveal_hours`), `capacity` (null = unlimited), `registration_mode ∈ {open, gated}`, and `status ∈ {active, cancelled, closed}`. An **RSVP** reuses `glowe_applications` (no separate registrations table). Schema foundation: migration `0211`; the individual registration entry point is the `glowe_register_for_event` `SECURITY DEFINER` RPC (migration `0212`, open→`Accepted` / gated→`Pending`, event-state validation). Organizer decisions run through `glowe_list_event_registrations` + `glowe_decide_event_registration` (migration `0213`, accept/decline + reason, capacity→waitlist routing). The event lifecycle is completed by migration `0214`: an AFTER-UPDATE trigger auto-advances the next `Waitlisted` registrant when a confirmed spot is vacated, `glowe_get_event_link` gates the digital link by entitlement + `link_visibility` window, and `glowe_cancel_event` is owner-only cancellation. ✅ (EVT1–EVT5). Design: `docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-event-rsvp-org-portal-design.md` (D-66).
 
 ---
 
@@ -400,7 +400,7 @@ Phase-B FRs rather than rebuilding them — Post→FR-008, Event (opportunity+da
 Need→FR-006 (`post_type='wish'`), Offer→new `post_type='offer'` (extends FR-006 CHECK), and the
 Need "I'll help" chat **reuses KC's shared `public.chats`/`public.messages`** (supersedes the
 FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
-`docs/superpowers/specs/2026-06-29-glowe-member-experience-and-create-system-design.md`.
+`docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-member-experience-and-create-system-design.md`.
 
 **Acceptance Criteria.**
 - AC1. **Session integrity (done).** `logout()` clears all identity keys (`gloweUser`, legacy
@@ -444,7 +444,7 @@ single **Continue with Google** CTA (Google-only auth, FR-GLOWE-001 AC2a). On fi
 sign-in a minimal `glowe_profiles` row is created from the Google identity, and the
 attempted action resumes. Refines the existing `gloweWriteGate()`/`canCreateContent()`
 gating (FR-GLOWE-003) rather than adding a login wall. Design:
-`docs/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md`.
+`docs/SSOT/archive/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md`.
 
 **Acceptance Criteria.**
 - AC1. **Single guard.** `requireMemberForAction(actionKey, ctx, proceed)` (`js/glowe-guest.js`)
@@ -506,7 +506,7 @@ English column when present; HE (and other locales) prefer the source name.
 ## FR-GLOWE-025 — App-wide semver in GloWe footer
 
 **Status.** ✅ Done — `app/VERSION` SSOT + auto patch bump on every `dev` push + footer `vX.Y.Z`.
-Decision: D-181. Design: `docs/superpowers/specs/2026-07-19-app-semver-footer-design.md`.
+Decision: D-181. Design: `docs/SSOT/archive/superpowers/specs/2026-07-19-app-semver-footer-design.md`.
 
 **Acceptance Criteria.**
 - AC1. **SSOT.** `app/VERSION` holds `MAJOR.MINOR.PATCH` (one line). Mirrored to

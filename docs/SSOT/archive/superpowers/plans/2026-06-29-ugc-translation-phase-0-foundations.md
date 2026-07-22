@@ -8,7 +8,7 @@
 
 **Tech Stack:** TypeScript, vitest, Supabase Postgres migrations, Expo (`expo-localization`), pnpm + turbo monorepo (packages under `app/`).
 
-> **Spec:** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` §3, §4, §8. This plan implements the §4 schema additions and the §8 `LanguageTag`/locale primitives only.
+> **Spec:** `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md` §3, §4, §8. This plan implements the §4 schema additions and the §8 `LanguageTag`/locale primitives only.
 
 ---
 
@@ -283,7 +283,7 @@ git commit -m "feat(domain): add resolvePreferredLanguage resolver and export la
 ```sql
 -- <NNNN>_ugc_translation_language_columns — FR-TRANSLATE-001 (foundations).
 -- Adds language plumbing for cross-language UGC translation (see
--- docs/superpowers/specs/2026-06-29-ugc-translation-design.md §4).
+-- docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md §4).
 -- All ADD COLUMN are nullable => metadata-only, no table rewrite. Idempotent.
 
 -- Reader's preferred output language (BCP-47). Null => resolve from device locale at runtime.

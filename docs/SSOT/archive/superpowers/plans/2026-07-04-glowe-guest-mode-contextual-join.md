@@ -8,7 +8,7 @@
 
 **Tech Stack:** Vanilla JS (no bundler), Supabase JS (via existing `window.gloweBackend`), vitest for pure-helper unit tests, existing `openModal`/`closeModal`/`translateGloweTree` infra.
 
-**Spec:** `docs/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md` (FR-GLOWE-023)
+**Spec:** `docs/SSOT/archive/superpowers/specs/2026-07-04-glowe-guest-mode-contextual-join-design.md` (FR-GLOWE-023)
 
 **Working dir for all commands:** repo root unless noted. Tests run from `app/apps/glowe-web`.
 **Branch:** `feat/FR-GLOWE-023-guest-contextual-join` (already created off `origin/dev`).

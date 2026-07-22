@@ -3,8 +3,8 @@
 > **Purpose:** This conversation got too long. A fresh chat should read this + the design + the plan, then finish **Phase 3 (mobile)** and **Phase 4 (SSOT)** and open the PR. Phases 0–2 are done, committed, and verified on the dev database.
 
 ## Read first
-- Design: `docs/superpowers/specs/2026-05-29-karma-points-design.md`
-- Plan (20 tasks, council-corrected): `docs/superpowers/plans/2026-05-29-karma-points.md`
+- Design: `docs/SSOT/archive/superpowers/specs/2026-05-29-karma-points-design.md`
+- Plan (20 tasks, council-corrected): `docs/SSOT/archive/superpowers/plans/2026-05-29-karma-points.md`
 - Process rules: `CLAUDE.md` (Hebrew in chat, English in code/docs; PM = user, you decide engineering).
 
 ## TL;DR of where we are
