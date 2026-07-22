@@ -170,7 +170,14 @@ Deno.serve(async (req) => {
     targetLanguage: body.targetLanguage,
   };
 
-  const cached = await getCached(svc, key);
+  let cached;
+  try {
+    cached = await getCached(svc, key);
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error('[glowe-translate] cache read failed', { contentType: body.contentType, detail });
+    return json({ error: 'internal' }, 500, hdrs);
+  }
   if (cached) return json({ status: 'cached', translation: cached }, 200, hdrs);
 
   let result;
@@ -203,7 +210,17 @@ Deno.serve(async (req) => {
     model: result.model,
     confidence: result.confidence,
   };
-  const inserted = await putIfAbsent(svc, row); // single-flight
-  const translation = inserted ? row : (await getCached(svc, key)) ?? row;
-  return json({ status: inserted ? 'translated' : 'cached', translation }, 200, hdrs);
+  try {
+    const inserted = await putIfAbsent(svc, row); // single-flight
+    const translation = inserted ? row : (await getCached(svc, key)) ?? row;
+    return json({ status: inserted ? 'translated' : 'cached', translation }, 200, hdrs);
+  } catch (e) {
+    const detail = e instanceof Error ? e.message : String(e);
+    console.error('[glowe-translate] cache failed', {
+      contentType: body.contentType,
+      field: body.field,
+      detail,
+    });
+    return json({ error: 'internal' }, 500, hdrs);
+  }
 });
