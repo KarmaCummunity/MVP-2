@@ -4,6 +4,8 @@ Thank you for helping improve GLOWE. This guide is written for external
 contributors who do not have access to the internal agent workflow documented in
 `CLAUDE.md`.
 
+Documentation map for maintainers/agents: [`docs/README.md`](docs/README.md). Process rules: [`CLAUDE.md`](CLAUDE.md).
+
 ## Scope
 
 **GLOWE contributions are welcome.** Active product code lives in
