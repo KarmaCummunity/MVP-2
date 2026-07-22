@@ -1036,6 +1036,30 @@
         }
     }
 
+    // FR-GLOWE-024 — lazy-fill missing English organization snapshots on
+    // opportunities so EN readers see a Latin publisher name even when the
+    // opportunity was created with a Hebrew org and no English variant. Anon OK
+    // (edge function mode C). Failures return [] so callers keep the source name.
+    async function ensureOpportunityEnglishNames(opportunityIds) {
+        const ids = (opportunityIds || []).filter(Boolean).map(String);
+        if (!ids.length) return [];
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        try {
+            const { data, error } = await supabaseClient.functions.invoke('glowe-generate-name-en', {
+                body: { opportunityIds: ids }
+            });
+            if (error) {
+                console.warn('ensureOpportunityEnglishNames failed:', error.message || error);
+                return [];
+            }
+            return (data && Array.isArray(data.opportunities)) ? data.opportunities : [];
+        } catch (e) {
+            console.warn('ensureOpportunityEnglishNames failed:', e && e.message ? e.message : e);
+            return [];
+        }
+    }
+
     window.gloweBackend = {
         configured,
         getClient,
@@ -1048,6 +1072,7 @@
         fetchProfile,
         fetchProfileById,
         ensureProfileEnglishNames,
+        ensureOpportunityEnglishNames,
         upsertProfile,
         ensureProfileFromGoogle,
         uploadAvatar,

@@ -185,6 +185,49 @@ describe('authorNeedsEnglishName / applyAuthorEnglishFromProfiles', () => {
     });
 });
 
+describe('opportunityNeedsEnglishName / applyOrganizationEnglishFromPatches', () => {
+    it('detects opportunities with a Hebrew org and no English snapshot', () => {
+        expect(GloweLocalizedName.opportunityNeedsEnglishName({
+            id: 'o1', organization: 'גשרים לחינוך', organizationEn: ''
+        })).toBe(true);
+        // camelCase already filled → no backfill needed.
+        expect(GloweLocalizedName.opportunityNeedsEnglishName({
+            id: 'o2', organization: 'גשרים לחינוך', organizationEn: 'Gesharim LeChinuch'
+        })).toBe(false);
+        // snake_case raw row already filled → no backfill needed.
+        expect(GloweLocalizedName.opportunityNeedsEnglishName({
+            id: 'o3', organization: 'גשרים לחינוך', organization_en: 'Gesharim LeChinuch'
+        })).toBe(false);
+        // Latin org name never needs generation.
+        expect(GloweLocalizedName.opportunityNeedsEnglishName({
+            id: 'o4', organization: 'Open Heart', organizationEn: ''
+        })).toBe(false);
+        // Empty org name → nothing to fill.
+        expect(GloweLocalizedName.opportunityNeedsEnglishName({
+            id: 'o5', organization: '', organizationEn: ''
+        })).toBe(false);
+    });
+
+    it('stamps organizationEn from patches by id, keeping existing values', () => {
+        const patched = GloweLocalizedName.applyOrganizationEnglishFromPatches(
+            [
+                { id: 'o1', organization: 'גשרים לחינוך', organizationEn: '' },
+                { id: 'o2', organization: 'לב פתוח', organizationEn: 'Open Heart' },
+                { id: 'o3', organization: 'יד תומכת', organizationEn: '' }
+            ],
+            [
+                { id: 'o1', organizationEn: 'Gesharim LeChinuch' },
+                { id: 'o2', organizationEn: 'Should Not Override' }
+            ]
+        );
+        expect(patched[0].organizationEn).toBe('Gesharim LeChinuch');
+        // Already had an English snapshot → patch must not clobber it.
+        expect(patched[1].organizationEn).toBe('Open Heart');
+        // No patch for o3 → left untouched.
+        expect(patched[2].organizationEn).toBe('');
+    });
+});
+
 describe('nameForToggleView / initialsForName', () => {
     it('shows primary when toggled to source, localized otherwise', () => {
         expect(GloweLocalizedName.nameForToggleView('נווה', 'Naveh', 'en', true)).toBe('נווה');

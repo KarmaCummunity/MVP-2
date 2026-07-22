@@ -12,6 +12,12 @@
 //   Reads source names server-side, fills missing *_en columns via service role,
 //   so EN readers of existing Hebrew orgs get a Latin name without an edit cycle.
 //
+// Mode C (anon-friendly lazy materialization for opportunity org snapshots):
+//   POST { opportunityIds: string[] }
+//   → 200 { opportunities: [{ id, organizationEn }] }
+//   Same as mode B but for glowe_opportunities.organization → organization_en, so
+//   EN readers on the home / board see a Latin publisher name for historical rows.
+//
 //   → 400 { error:'invalid_body' }  401 { error:'unauthorized' } (mode A only)
 //   → 405 { error:'method_not_allowed' }
 
@@ -24,6 +30,7 @@ const SUPABASE_ANON_KEY = Deno.env.get('SUPABASE_ANON_KEY') ?? '';
 const SERVICE_ROLE_KEY = Deno.env.get('SUPABASE_SERVICE_ROLE_KEY') ?? '';
 const MAX_NAMES = 4;
 const MAX_PROFILES = 20;
+const MAX_OPPORTUNITIES = 20;
 const MAX_INPUT = 120;
 
 const NON_LATIN = /[\u0590-\u05FF\u0600-\u06FF\u0400-\u04FF\u0370-\u03FF\u4E00-\u9FFF]/;
@@ -49,11 +56,18 @@ interface NameItem {
 
 type Body =
   | { mode: 'names'; names: NameItem[] }
-  | { mode: 'profiles'; profileIds: string[] };
+  | { mode: 'profiles'; profileIds: string[] }
+  | { mode: 'opportunities'; opportunityIds: string[] };
 
 function parseBody(raw: unknown): Body | null {
   if (!raw || typeof raw !== 'object') return null;
   const o = raw as Record<string, unknown>;
+
+  if (Array.isArray(o.opportunityIds)) {
+    const ids = o.opportunityIds.filter((id): id is string => typeof id === 'string' && !!id);
+    if (ids.length === 0 || ids.length > MAX_OPPORTUNITIES) return null;
+    return { mode: 'opportunities', opportunityIds: [...new Set(ids)] };
+  }
 
   if (Array.isArray(o.profileIds)) {
     const ids = o.profileIds.filter((id): id is string => typeof id === 'string' && !!id);
@@ -181,6 +195,43 @@ async function handleProfiles(profileIds: string[]): Promise<{
   return out;
 }
 
+async function handleOpportunities(
+  opportunityIds: string[],
+): Promise<{ id: string; organizationEn: string }[]> {
+  const svc = createClient(SUPABASE_URL, SERVICE_ROLE_KEY, { auth: { persistSession: false } });
+  const { data: rows, error } = await svc
+    .from('glowe_opportunities')
+    .select('id, organization, organization_en')
+    .in('id', opportunityIds);
+  if (error) throw new Error(error.message);
+
+  const out: { id: string; organizationEn: string }[] = [];
+  for (const row of rows || []) {
+    let organizationEn = typeof row.organization_en === 'string' ? row.organization_en.trim() : '';
+    if (!organizationEn && typeof row.organization === 'string' && row.organization.trim()) {
+      try {
+        organizationEn = await generateOne(row.organization, 'organization');
+        if (organizationEn) {
+          const { error: upErr } = await svc
+            .from('glowe_opportunities')
+            .update({ organization_en: organizationEn })
+            .eq('id', row.id);
+          if (upErr) {
+            console.warn('[glowe-generate-name-en] opp persist failed', { id: row.id, detail: upErr.message });
+          }
+        }
+      } catch (e) {
+        console.warn('[glowe-generate-name-en] organization failed', {
+          id: row.id,
+          detail: e instanceof Error ? e.message : String(e),
+        });
+      }
+    }
+    if (organizationEn) out.push({ id: row.id, organizationEn });
+  }
+  return out;
+}
+
 Deno.serve(async (req) => {
   const origin = req.headers.get('origin');
   if (req.method === 'OPTIONS') {
@@ -207,14 +258,18 @@ Deno.serve(async (req) => {
     return json({ results }, 200, hdrs);
   }
 
-  // Mode B — public profile materialization (anon OK).
+  // Modes B/C — public materialization via service role (anon OK).
   if (!SERVICE_ROLE_KEY) return json({ error: 'internal' }, 500, hdrs);
   try {
+    if (body.mode === 'opportunities') {
+      const opportunities = await handleOpportunities(body.opportunityIds);
+      return json({ opportunities }, 200, hdrs);
+    }
     const profiles = await handleProfiles(body.profileIds);
     return json({ profiles }, 200, hdrs);
   } catch (e) {
     const detail = e instanceof Error ? e.message : String(e);
-    console.warn('[glowe-generate-name-en] profiles failed', { detail });
+    console.warn('[glowe-generate-name-en] materialization failed', { detail });
     return json({ error: 'internal' }, 500, hdrs);
   }
 });
