@@ -1,0 +1,30 @@
+export {
+  isPrimarilyLatinName,
+  isPrimarilyLatin,
+  resolveLocalizedName,
+  profileNamePair,
+  localizedFirstName,
+  localizedProfileName,
+  localizedAuthorName,
+  localizedOrganizationName,
+  nameForToggleView,
+  initialsForName,
+  applyToggleNamesInCard,
+  type GloweProfileNameInput,
+  type GloweNamePair,
+  type GloweAuthorRow,
+  type GloweOrganizationRow,
+  type ToggleNameElement,
+  type ToggleNameCard,
+} from './localizedNameCore';
+
+export {
+  englishNameOrCopy,
+  profileNeedsEnglishName,
+  applyEnglishNamePatches,
+  englishFromProfilePatch,
+  applyAuthorEnglishFromProfiles,
+  authorNeedsEnglishName,
+  type GloweEnglishNamePatch,
+  type GloweAuthorEnglishRow,
+} from './localizedNamePatches';
