@@ -996,6 +996,166 @@
         return { followers: data.followers_count || 0, following: data.following_count || 0 };
     }
 
+    const FOLLOW_USER_EMBED =
+        '(user_id, display_name, avatar_url, privacy_mode, account_status, followers_count, following_count)';
+
+    function followErrorText(error) {
+        return String(error.message || '') + ' ' + String(error.details || '');
+    }
+
+    function isFollowPkeyConflict(error) {
+        if (!error) return false;
+        if (error.code !== '23505') return false;
+        return followErrorText(error).indexOf('follow_edges_pkey') !== -1;
+    }
+
+    function alreadyFollowingRow(followerId, followedId) {
+        return {
+            follower_id: followerId,
+            followed_id: followedId,
+            created_at: new Date().toISOString()
+        };
+    }
+
+    function resolveFollowInsert(result, followerId, followedId) {
+        if (!result.error) return result.data;
+        // Idempotent: PK conflict means already following (FR-FOLLOW-001 AC1)
+        if (isFollowPkeyConflict(result.error)) {
+            return alreadyFollowingRow(followerId, followedId);
+        }
+        throw result.error;
+    }
+
+    async function kcFollow(targetUserId) {
+        const ctx = await kcContext();
+        if (!ctx || !targetUserId) return null;
+        const result = await ctx.supabaseClient
+            .from('follow_edges')
+            .insert({ follower_id: ctx.user.id, followed_id: targetUserId })
+            .select('follower_id, followed_id, created_at')
+            .single();
+        return resolveFollowInsert(result, ctx.user.id, targetUserId);
+    }
+
+    async function kcUnfollow(targetUserId) {
+        const ctx = await kcContext();
+        if (!ctx || !targetUserId) return false;
+        kcUnwrap(await ctx.supabaseClient
+            .from('follow_edges')
+            .delete()
+            .eq('follower_id', ctx.user.id)
+            .eq('followed_id', targetUserId), null);
+        return true;
+    }
+
+    function mapFollowTarget(t) {
+        if (!t) return null;
+        return {
+            userId: t.user_id,
+            privacyMode: t.privacy_mode,
+            accountStatus: t.account_status
+        };
+    }
+
+    async function loadFollowState(ctx, targetUserId) {
+        const [targetRes, edgeRes] = await Promise.all([
+            ctx.supabaseClient
+                .from('users')
+                .select('user_id, privacy_mode, account_status')
+                .eq('user_id', targetUserId)
+                .maybeSingle(),
+            ctx.supabaseClient
+                .from('follow_edges')
+                .select('follower_id')
+                .eq('follower_id', ctx.user.id)
+                .eq('followed_id', targetUserId)
+                .maybeSingle()
+        ]);
+        if (targetRes.error) throw targetRes.error;
+        if (edgeRes.error) throw edgeRes.error;
+        return {
+            target: mapFollowTarget(targetRes.data),
+            followingExists: edgeRes.data !== null
+        };
+    }
+
+    // MVP: users + follow_edges only (skip follow_requests — private hides Follow).
+    async function kcGetFollowState(targetUserId) {
+        const ctx = await kcContext();
+        if (!ctx || !targetUserId) return { target: null, followingExists: false };
+        return loadFollowState(ctx, targetUserId);
+    }
+
+    function followListLimit(limit) {
+        return Math.min(Math.max(Number(limit) || 50, 1), 100);
+    }
+
+    function mapFollowEmbed(data, embedKey) {
+        return (data || [])
+            .map(function (r) { return r && r[embedKey]; })
+            .filter(Boolean);
+    }
+
+    function buildFollowListQuery(ctx, userId, limit, cursor, opts) {
+        let q = ctx.supabaseClient
+            .from('follow_edges')
+            .select(opts.select)
+            .eq(opts.eqCol, userId)
+            .order('created_at', { ascending: false })
+            .limit(followListLimit(limit));
+        if (cursor) q = q.lt(opts.cursorCol, cursor);
+        return q;
+    }
+
+    async function kcListFollowSide(userId, limit, cursor, opts) {
+        const ctx = await kcContext();
+        if (!ctx || !userId) return [];
+        const data = kcUnwrap(await buildFollowListQuery(ctx, userId, limit, cursor, opts), []);
+        return mapFollowEmbed(data, opts.embedKey);
+    }
+
+    async function kcListFollowers(userId, limit, cursor) {
+        return kcListFollowSide(userId, limit, cursor, {
+            select: 'follower:follower_id' + FOLLOW_USER_EMBED,
+            eqCol: 'followed_id',
+            cursorCol: 'follower_id',
+            embedKey: 'follower'
+        });
+    }
+
+    async function kcListFollowing(userId, limit, cursor) {
+        return kcListFollowSide(userId, limit, cursor, {
+            select: 'followed:followed_id' + FOLLOW_USER_EMBED,
+            eqCol: 'follower_id',
+            cursorCol: 'followed_id',
+            embedKey: 'followed'
+        });
+    }
+
+    function publicCountsFromRow(data) {
+        return {
+            followers: data.followers_count || 0,
+            following: data.following_count || 0
+        };
+    }
+
+    async function fetchPublicCounts(ctx, userId) {
+        const { data, error } = await ctx.supabaseClient
+            .from('users_public')
+            .select('followers_count, following_count')
+            .eq('user_id', userId)
+            .maybeSingle();
+        if (error) return null;
+        if (!data) return null;
+        return publicCountsFromRow(data);
+    }
+
+    async function kcPublicCounts(userId) {
+        const ctx = await kcContext();
+        if (!ctx || !userId) return null;
+        return fetchPublicCounts(ctx, userId);
+    }
+
     async function isGloweAdmin() {
         const supabaseClient = await getClient();
         if (!supabaseClient) return false;
@@ -1108,6 +1268,12 @@
         kcMarkChatRead,
         kcCounterpartProfiles,
         kcFollowCounts,
+        kcFollow,
+        kcUnfollow,
+        kcGetFollowState,
+        kcListFollowers,
+        kcListFollowing,
+        kcPublicCounts,
         apiRequest
     };
 })();

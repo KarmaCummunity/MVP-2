@@ -520,3 +520,13 @@ Decision: D-181. Design: `docs/superpowers/specs/2026-07-19-app-semver-footer-de
   every Cloudflare Pages build so the live site cannot ship a stale mirror.
 - AC5. **Manual major/minor.** Agents bump MAJOR/MINOR in PRs when appropriate (see `CLAUDE.md`
   version banner). KC mobile UI display of the same version is out of scope for this FR.
+
+## FR-GLOWE-026 — Follow graph on GloWe (KC-backed, public MVP)
+
+**Status.** ✅ Done — public follow/unfollow on profile + org cards; tappable followers/following on Personal Area and public profiles; `connections.html` lists. Private accounts hide Follow (no request flow). Design: `docs/superpowers/specs/2026-07-22-glowe-follow-system-design.md`; D-183.
+
+- AC1. Follow / Following ✓ on public profiles and org cards writes/deletes `follow_edges`.
+- AC2. Unfollow confirms with contextual copy.
+- AC3. Counts link to connections lists for self and others.
+- AC4. Guest follow opens contextual join (`follow-profile`).
+- AC5. Private targets: no Follow button + approval note.

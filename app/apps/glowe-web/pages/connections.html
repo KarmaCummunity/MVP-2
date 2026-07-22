@@ -1,9 +1,9 @@
-﻿<!DOCTYPE html>
+<!DOCTYPE html>
 <html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Profile - GloWe</title>
+    <title>Connections - GloWe</title>
     <link rel="icon" type="image/png" href="../assets/glowe-favicon.png">
     <link rel="apple-touch-icon" sizes="180x180" href="../assets/apple-touch-icon.png">
     <link rel="apple-touch-icon" href="../assets/apple-touch-icon.png">
@@ -13,30 +13,59 @@
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Nunito:wght@400;600;700&display=swap" rel="stylesheet">
 </head>
-<body class="organizations-page-body">
+<body class="opportunities-page-body">
     <header class="main-header">
         <div class="container">
-            <a href="../index.html" class="logo"><span class="logo-icon"></span><span class="logo-text">GloWe</span></a>
-            <nav class="main-nav">
-                <a href="../index.html" class="nav-link">Home</a>
-                <a href="organizations.html" class="nav-link">Organizations</a>
-                <a href="community.html" class="nav-link">Community</a>
-                <a href="forums.html" class="nav-link">Forums</a>
-                <a href="wishing-well.html" class="nav-link">Wishing Well</a>
-                <a href="about.html" class="nav-link">About</a>
-            </nav>
-            <div class="auth-buttons"><button class="btn btn-outline" onclick="openModal('login-modal')">Log In</button><button class="btn btn-primary" onclick="openModal('register-modal')">Join GloWe</button></div>
+            <a href="../index.html" class="logo">
+                <span class="logo-icon"></span>
+                <span class="logo-text">GloWe</span>
+            </a>
+            <nav class="main-nav"></nav>
+            <div class="auth-buttons"></div>
+            <div class="user-menu" style="display: none;"></div>
         </div>
     </header>
-    <main class="profile-page">
-        <div class="container" id="profile-content"></div>
+
+    <main>
+        <section class="page-header personal-area-header">
+            <div class="container">
+                <h1>Connections</h1>
+                <p>Followers and people this profile follows on GloWe.</p>
+            </div>
+        </section>
+
+        <section class="personal-area-page">
+            <div class="container">
+                <div id="connections-content">
+                    <!-- Populated by JavaScript -->
+                </div>
+            </div>
+        </section>
     </main>
+
+    <footer class="main-footer">
+        <div class="container">
+            <div class="footer-bottom">
+                <p>2026 GloWe. Built for shared knowledge, mutual support, and action that lasts.</p>
+            </div>
+        </div>
+    </footer>
+
+    <!-- Success Modal -->
+    <div id="success-modal" class="modal">
+        <div class="modal-content modal-success">
+            <span class="success-icon">GloWe</span>
+            <h2 id="success-title">Success</h2>
+            <p id="success-message">Your action was completed successfully.</p>
+            <button class="btn btn-primary" onclick="closeModal('success-modal')">Continue</button>
+        </div>
+    </div>
+
     <script src="../js/backend-config.js"></script>
     <script src="../js/backend.js"></script>
     <script src="../js/data.js"></script>
     <script src="../js/auth.js"></script>
     <script src="../js/glowe-events.js"></script>
-    <script src="../js/glowe-organizations.js"></script>
     <script src="../js/glowe-wishes.js"></script>
     <script src="../js/glowe-moderation.js"></script>
     <script src="../js/glowe-create.js"></script>
@@ -47,9 +76,7 @@
     <script src="../js/glowe-follow.js"></script>
     <script src="../js/glowe-follow-ui.js"></script>
     <script src="../js/glowe-version.js"></script>
-    <script src="../js/glowe-profile-ux.js"></script>
     <script src="../js/app.js"></script>
     <script src="../js/glowe-translate.js"></script>
 </body>
 </html>
-

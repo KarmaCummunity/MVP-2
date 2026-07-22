@@ -19,6 +19,7 @@
     'offer-help':         { title: 'Ready to lend a hand?', body: 'Sign in with Google to reach {org} and offer your help.' },
     'save-item':          { title: 'Keep this for later', body: 'Sign in with Google to save it to your list.' },
     'send-message':       { title: 'Start the conversation', body: 'Sign in with Google to message {org}.' },
+    'follow-profile':     { title: 'Sign in to follow', body: 'Sign in with Google to follow profiles and stay updated on their work.' },
     'report-content':     { title: 'Sign in to report', body: 'Sign in with Google to report this content so our team can review it.' },
     'open-personal-area': { title: 'Sign in to continue', body: 'Sign in with Google to open your personal area.' },
   };
