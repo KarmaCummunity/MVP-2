@@ -2,7 +2,7 @@
 --
 -- CI/cron probes (service-role REST insert) record per-check outcomes; GloWe
 -- admins read the latest summary + recent history via SECURITY DEFINER RPCs.
--- No direct client table access (RLS enabled, zero policies).
+-- No direct client table access (RLS deny-by-default; service_role + RPCs only).
 --
 -- Mapped to spec: FR-GLOWE-018 (admin health visibility extension).
 

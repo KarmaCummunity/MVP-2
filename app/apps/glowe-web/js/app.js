@@ -5910,10 +5910,11 @@ function initForumsPage() {
     if (threadsContainer) {
         threadsContainer.innerHTML = allThreads.length > 0
             ? allThreads.map(thread => `
-                <article class="thread-row">
+                <article class="thread-row" data-tr-card data-tr-type="glowe_forum_thread" data-tr-id="${escapeHtml(String(thread.id))}">
                     <div>
                         <span class="post-type-tag">${escapeHtml(thread.group.title)}</span>
-                        <h3><a href="discussion-group.html?group=${thread.group.id}">${escapeHtml(thread.title)}</a></h3>
+                        ${translationToggleSlotHtml()}
+                        <h3><a href="discussion-group.html?group=${thread.group.id}" data-tr-field="title">${escapeHtml(thread.title)}</a></h3>
                         <p>${thread.replies || 0} replies | Last active ${escapeHtml(formatThreadActivity(thread.createdAt))}</p>
                     </div>
                     <a class="btn btn-outline btn-small" href="discussion-group.html?group=${thread.group.id}">Open</a>
@@ -6015,18 +6016,20 @@ function renderDiscussionThread(thread, group, allReplies) {
     const replies = GloweForums.repliesForThread(allReplies, thread.id);
     const replyItems = replies.length > 0
         ? replies.map(reply => `
-            <li class="thread-reply">
-                <p>${escapeHtml(reply.body)}</p>
+            <li class="thread-reply" data-tr-card data-tr-type="glowe_forum_reply" data-tr-id="${escapeHtml(String(reply.id))}">
+                ${translationToggleSlotHtml()}
+                <p data-tr-field="body">${escapeHtml(reply.body)}</p>
                 <small>${escapeHtml(formatThreadActivity(reply.createdAt))}</small>
             </li>
         `).join('')
         : '<li class="thread-reply muted-note">No replies yet. Be the first to respond.</li>';
     return `
-        <article class="thread-row">
+        <article class="thread-row" data-tr-card data-tr-type="glowe_forum_thread" data-tr-id="${escapeHtml(String(thread.id))}">
             <div>
                 <span class="post-type-tag">${escapeHtml(formatThreadActivity(thread.createdAt))}</span>
-                <h3>${escapeHtml(thread.title)}</h3>
-                <p>${thread.body ? escapeHtml(thread.body) : `Discussion from members of ${escapeHtml(group.title)}.`}</p>
+                ${translationToggleSlotHtml()}
+                <h3 data-tr-field="title">${escapeHtml(thread.title)}</h3>
+                <p data-tr-field="body">${thread.body ? escapeHtml(thread.body) : `Discussion from members of ${escapeHtml(group.title)}.`}</p>
                 <p class="thread-reply-count">${replies.length} replies</p>
                 <ul class="thread-reply-list">${replyItems}</ul>
                 <form class="inline-reply-form" onsubmit="handleReplySubmit(event, '${jsString(thread.id)}')">
