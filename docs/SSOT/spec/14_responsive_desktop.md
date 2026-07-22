@@ -1,8 +1,10 @@
 # 14 — Responsive Desktop (FR-RESP-*)
 
+> **KC mobile UI — paused.** Backend/shared contracts may still apply to GLOWE. Active GLOWE spec: [`17_glowe_frontend.md`](./17_glowe_frontend.md). Paused backlog: [`../archive/BACKLOG-kc-mobile-paused.md`](../archive/BACKLOG-kc-mobile-paused.md).
+
 **Status:** 🟡 In progress
 **Owner:** Autonomous loop
-**Design doc:** `docs/superpowers/specs/2026-05-22-responsive-desktop-design.md`
+**Design doc:** `docs/SSOT/archive/superpowers/specs/2026-05-22-responsive-desktop-design.md`
 
 This domain covers adapting the mobile app to desktop browsers (≥ 768px viewport) without regressing mobile (< 768px). Strategy and decisions captured in `D-RESP-001`.
 
