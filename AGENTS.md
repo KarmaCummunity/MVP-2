@@ -26,6 +26,8 @@ If you landed in [`docs/`](./docs/) first, [`docs/AGENTS.md`](./docs/AGENTS.md) 
 - GLOWE's own interface i18n (FR-GLOWE-004, chrome-only, `localStorage`) is
   SEPARATE from user-generated-content translation (FR-TRANSLATE-003).
 
+Paused KC mobile backlog (do not pick unless PM reopens): [`docs/SSOT/archive/BACKLOG-kc-mobile-paused.md`](./docs/SSOT/archive/BACKLOG-kc-mobile-paused.md).
+
 ### Revision (2026-07-05): production root serves KC, not GLOWE
 
 The above is a *development-priority* directive, not an instruction to redirect

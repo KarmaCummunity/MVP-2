@@ -2,7 +2,7 @@
 
 > **For agentic workers:** REQUIRED SUB-SKILL: Use superpowers:subagent-driven-development (recommended) or superpowers:executing-plans to implement this plan task-by-task. Steps use checkbox (`- [ ]`) syntax for tracking.
 
-**Goal:** Soft “Complete profile” status (no Draft), type-aware Individual/Organization edit forms, avatar camera modal, partial saves, EN name backfill, bio translation on Personal Area + public profile, and icon project actions — per approved design `docs/superpowers/specs/2026-07-19-glowe-profile-completion-ux-design.md`.
+**Goal:** Soft “Complete profile” status (no Draft), type-aware Individual/Organization edit forms, avatar camera modal, partial saves, EN name backfill, bio translation on Personal Area + public profile, and icon project actions — per approved design `docs/SSOT/archive/superpowers/specs/2026-07-19-glowe-profile-completion-ux-design.md`.
 
 **Architecture:** Pure helpers live in a new small module `js/glowe-profile-ux.js` (status chip + sparse check + bio field resolution). UI wiring stays in `js/app.js` (modals, Personal Area hero, public profile owner chrome, project card). Avatar upload reuses existing `validateAvatarFile` + `uploadProfileImage` + `upsertProfile`. Translation reuses FR-TRANSLATE-005 `data-tr-*` attributes. No DB migration.
 

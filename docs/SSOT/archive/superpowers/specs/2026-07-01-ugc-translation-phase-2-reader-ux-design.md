@@ -2,7 +2,7 @@
 
 > **Spec:** FR-TRANSLATE-003 (`docs/SSOT/spec/18_translation.md`).
 > **Depends on (all landed):** FR-TRANSLATE-001 (language foundations), FR-TRANSLATE-002 (cache + provider + posts read substrate).
-> **Prior design:** `docs/superpowers/specs/2026-06-29-ugc-translation-design.md` (overall architecture).
+> **Prior design:** `docs/SSOT/archive/superpowers/specs/2026-06-29-ugc-translation-design.md` (overall architecture).
 > **Status:** Design approved; ready for implementation plan.
 
 ---

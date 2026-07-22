@@ -6,7 +6,7 @@
 | **Scope** | Full-stack read-only audit (8 parallel reviewers) |
 | **Areas** | Supabase/RLS, Edge Functions, domain/application, mobile, auth, profile/privacy, social features, CI/CD, perf/maintainability |
 | **Method** | Static code + migration review; no live exploitation |
-| **Prior audits** | Cross-checked `docs/SSOT/audit/2026-05-16/`, open `TECH_DEBT.md` rows |
+| **Prior audits** | Cross-checked `docs/SSOT/archive/audit/2026-05-16/`, open `TECH_DEBT.md` rows |
 
 ---
 
@@ -223,4 +223,4 @@ See implementation plan (linked at top). Order:
 
 ---
 
-*This document is audit-only. Implementation tracking: `docs/superpowers/plans/2026-05-29-security-remediation.md` and `docs/SSOT/TECH_DEBT.md`.*
+*This document is audit-only. Implementation tracking: `docs/SSOT/archive/superpowers/plans/2026-05-29-security-remediation.md` and `docs/SSOT/TECH_DEBT.md`.*

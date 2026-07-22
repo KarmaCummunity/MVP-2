@@ -828,7 +828,7 @@ git commit -m "feat(glowe): wire follow buttons, stats links, and connections li
 **Files:**
 - Modify: `docs/SSOT/DECISIONS.md`, `docs/SSOT/BACKLOG.md`, `docs/SSOT/spec/17_glowe_frontend.md`
 - Modify: `app/VERSION`, `app/apps/glowe-web/js/glowe-version.js`
-- Add (if not already committed): design + plan under `docs/superpowers/`
+- Add (if not already committed): design + plan under `docs/SSOT/archive/superpowers/`
 
 - [ ] **Step 1: D-183** in `DECISIONS.md`
 
@@ -837,7 +837,7 @@ GloWe follow system rides KC `follow_edges` via thin `backend.js` adapters + `gl
 - [ ] **Step 2: BACKLOG** — add near GLOWE.C:
 
 ```markdown
-| GLOWE.C2 | **GloWe follow system (public MVP)** — real follow/unfollow on profile + org cards; connections lists; KC `follow_edges` | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-026; design `docs/superpowers/specs/2026-07-22-glowe-follow-system-design.md` |
+| GLOWE.C2 | **GloWe follow system (public MVP)** — real follow/unfollow on profile + org cards; connections lists; KC `follow_edges` | agent-fullstack | ✅ Done | `spec/17_glowe_frontend.md` FR-GLOWE-026; design `docs/SSOT/archive/superpowers/specs/2026-07-22-glowe-follow-system-design.md` |
 ```
 
 - [ ] **Step 3: FR-GLOWE-026** in `spec/17_glowe_frontend.md`
@@ -845,7 +845,7 @@ GloWe follow system rides KC `follow_edges` via thin `backend.js` adapters + `gl
 ```markdown
 ## FR-GLOWE-026 — Follow graph on GloWe (KC-backed, public MVP)
 
-**Status.** ✅ Done — public follow/unfollow on profile + org cards; tappable followers/following on Personal Area and public profiles; `connections.html` lists. Private accounts hide Follow (no request flow). Design: `docs/superpowers/specs/2026-07-22-glowe-follow-system-design.md`; D-183.
+**Status.** ✅ Done — public follow/unfollow on profile + org cards; tappable followers/following on Personal Area and public profiles; `connections.html` lists. Private accounts hide Follow (no request flow). Design: `docs/SSOT/archive/superpowers/specs/2026-07-22-glowe-follow-system-design.md`; D-183.
 
 - AC1. Follow / Following ✓ on public profiles and org cards writes/deletes `follow_edges`.
 - AC2. Unfollow confirms with contextual copy.
@@ -868,8 +868,8 @@ cd app/apps/glowe-web && pnpm test
 ```bash
 git add docs/SSOT/DECISIONS.md docs/SSOT/BACKLOG.md docs/SSOT/spec/17_glowe_frontend.md \
   app/VERSION app/apps/glowe-web/js/glowe-version.js \
-  docs/superpowers/specs/2026-07-22-glowe-follow-system-design.md \
-  docs/superpowers/plans/2026-07-22-glowe-follow-system.md
+  docs/SSOT/archive/superpowers/specs/2026-07-22-glowe-follow-system-design.md \
+  docs/SSOT/archive/superpowers/plans/2026-07-22-glowe-follow-system.md
 git commit -m "docs(ssot): record GloWe follow system D-183 and FR-GLOWE-026"
 ```
 

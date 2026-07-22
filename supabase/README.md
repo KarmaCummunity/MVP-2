@@ -64,6 +64,6 @@ Commit the regenerated file.
 
 ## Slice plan
 
-See `docs/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md` for the full
+See `docs/SSOT/archive/superpowers/plans/2026-05-07-p0-2-db-schema-rls.md` for the full
 P0.2 decomposition (P0.2.a..f). Each slice ships its own migration file and
 its own commit.

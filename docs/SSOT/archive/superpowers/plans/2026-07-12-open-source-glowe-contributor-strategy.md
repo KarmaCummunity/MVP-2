@@ -8,7 +8,7 @@
 
 **Tech Stack:** Markdown governance files, GitHub Settings API / Apps, Supabase CLI + Docker, existing Vitest/CI, optional Snyk + GitGuardian + CodeRabbit integrations.
 
-**Design SSOT:** `docs/superpowers/specs/2026-07-12-open-source-glowe-contributor-strategy-design.md`
+**Design SSOT:** `docs/SSOT/archive/superpowers/specs/2026-07-12-open-source-glowe-contributor-strategy-design.md`
 
 ---
 
@@ -46,7 +46,7 @@
 Under `## INFRA — Tooling & Environment` in `docs/SSOT/BACKLOG.md`, append:
 
 ```markdown
-| INFRA-OSS-1 | **Open-source contributor docs pack** — root README/LICENSE/CLA/CONTRIBUTING/CoC/SECURITY + issue templates; GLOWE-only framing | infra | 🟡 In progress | `docs/superpowers/specs/2026-07-12-open-source-glowe-contributor-strategy-design.md` |
+| INFRA-OSS-1 | **Open-source contributor docs pack** — root README/LICENSE/CLA/CONTRIBUTING/CoC/SECURITY + issue templates; GLOWE-only framing | infra | 🟡 In progress | `docs/SSOT/archive/superpowers/specs/2026-07-12-open-source-glowe-contributor-strategy-design.md` |
 | INFRA-OSS-2 | **GitHub settings for external contributors** — fork-PR approval, Discussions, private vulnerability reporting | infra | ⏳ Planned | same design §5 |
 | INFRA-OSS-3 | **Local Docker Supabase + fictional GLOWE seed** — contributor-safe local stack; refuse hosted URLs | infra | ⏳ Planned | same design §8 |
 | INFRA-OSS-4 | **Snyk PR scan** — workflow or App; non-blocking then required | infra | ⏳ Planned [blocked: needs SNYK_TOKEN / org App] | same design §7 |

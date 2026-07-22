@@ -1,7 +1,7 @@
 # GloWe Admin Portal — Comprehensive Test Plan
 
 > **Status:** 🟡 Design (2026-06-29) — companion to
-> `docs/superpowers/specs/2026-06-29-glowe-admin-portal-design.md`.
+> `docs/SSOT/archive/superpowers/specs/2026-06-29-glowe-admin-portal-design.md`.
 > **Scope:** FR-GLOWE-017..022. Covers unit, DB-regression, and end-to-end layers.
 
 ## 1. Philosophy & layers

@@ -37,7 +37,7 @@
 | Backend CI | Local Supabase + `sqlProbes.integration.test.ts` + RLS lint | Not full persona fuzzer (`NFR-SEC-002`) |
 | Dev smoke | Manual checklist in `RELEASE_CHECKLIST.md` | Not automated |
 | Prod smoke | `prod-smoke.yml` — HTTP 200 only | Not functional |
-| Performance | Sentry/observability waves (plans in `docs/superpowers/plans/2026-05-25-perf-*`) | No CI budgets |
+| Performance | Sentry/observability waves (plans in `docs/SSOT/archive/superpowers/plans/2026-05-25-perf-*`) | No CI budgets |
 | Native E2E | Mentioned in specs; not implemented | Maestro deferred |
 
 ---

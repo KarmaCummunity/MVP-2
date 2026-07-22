@@ -3,7 +3,7 @@
 > **Status:** Approved (PM, 2026-05-26) — v0.2 after 4-agent council review.
 > **Spec targets:** `docs/SSOT/spec/11_settings.md` — FR-SETTINGS-015..017 (Survey A) **and** new file `docs/SSOT/spec/16_public_research.md` — FR-RESEARCH-001..003 (Survey B).
 > **Backlog targets:** P2.34 (Survey A) and P1.x (Survey B — research is acquisition-critical, ahead of in-app UX poll).
-> **Pattern reference:** `docs/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md` (server content, Studio publish, append-only answers).
+> **Pattern reference:** `docs/SSOT/archive/superpowers/specs/2026-05-24-server-driven-legal-documents-design.md` (server content, Studio publish, append-only answers).
 
 ---
 
@@ -20,7 +20,7 @@ Both reuse one native Hebrew RTL question runner (validated demo, single questio
 
 This is **not** a backend deliverable — it is the actual product of the research, and is part of the spec so it does not get forgotten after the tables fill up.
 
-After ≥50 responses per survey, the PM (or assigned operator) exports all free-text answers via the admin portal (`docs/superpowers/specs/2026-05-25-admin-portal-design.md`) to CSV, then maps quotes into a 3-column Google Sheet:
+After ≥50 responses per survey, the PM (or assigned operator) exports all free-text answers via the admin portal (`docs/SSOT/archive/superpowers/specs/2026-05-25-admin-portal-design.md`) to CSV, then maps quotes into a 3-column Google Sheet:
 
 | Pain language (Survey B quote) | Relief language (Survey A quote) | Where it ships |
 |---|---|---|
