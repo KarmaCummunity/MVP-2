@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest';
 
 import type {
   IGloweAdminGateway,
+  IGloweAuthGateway,
   IGloweChatGateway,
   IGloweFollowGateway,
   IGloweForumRepository,
@@ -15,6 +16,7 @@ import type {
 describe('@kc/glowe-application ports', () => {
   it('exports compile-time port interfaces for all aggregates', () => {
     const ports: unknown[] = [
+      {} as IGloweAuthGateway,
       {} as IGloweProfileRepository,
       {} as IGlowePostRepository,
       {} as IGloweOpportunityRepository,
@@ -25,6 +27,6 @@ describe('@kc/glowe-application ports', () => {
       {} as IGloweModerationGateway,
       {} as IGloweAdminGateway,
     ];
-    expect(ports).toHaveLength(9);
+    expect(ports).toHaveLength(10);
   });
 });
