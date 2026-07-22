@@ -66,11 +66,11 @@ begin
     h.checked_at
   from public.glowe_health_checks h
   inner join (
-    select distinct on (check_name) id
-    from public.glowe_health_checks
-    where environment = 'glowe_prod'
-      and checked_at > now() - interval '7 days'
-    order by check_name, checked_at desc, id desc
+    select distinct on (c.check_name) c.id
+    from public.glowe_health_checks c
+    where c.environment = 'glowe_prod'
+      and c.checked_at > now() - interval '7 days'
+    order by c.check_name, c.checked_at desc, c.id desc
   ) latest on latest.id = h.id;
 end;
 $$;
