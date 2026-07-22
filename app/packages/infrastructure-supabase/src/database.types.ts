@@ -1208,6 +1208,45 @@ export type Database = {
           },
         ]
       }
+      glowe_health_checks: {
+        Row: {
+          app_version: string | null
+          check_name: string
+          checked_at: string
+          environment: string
+          error_code: string | null
+          error_detail: string | null
+          id: string
+          latency_ms: number | null
+          run_id: string
+          status: string
+        }
+        Insert: {
+          app_version?: string | null
+          check_name: string
+          checked_at?: string
+          environment?: string
+          error_code?: string | null
+          error_detail?: string | null
+          id?: string
+          latency_ms?: number | null
+          run_id: string
+          status: string
+        }
+        Update: {
+          app_version?: string | null
+          check_name?: string
+          checked_at?: string
+          environment?: string
+          error_code?: string | null
+          error_detail?: string | null
+          id?: string
+          latency_ms?: number | null
+          run_id?: string
+          status?: string
+        }
+        Relationships: []
+      }
       glowe_offers: {
         Row: {
           availability: string | null
@@ -4325,6 +4364,32 @@ export type Database = {
       }
       get_public_research_questions: { Args: { p_slug: string }; Returns: Json }
       get_survey_bundle: { Args: { p_slug: string }; Returns: Json }
+      glowe_admin_health_summary: {
+        Args: never
+        Returns: {
+          app_version: string | null
+          check_name: string
+          checked_at: string
+          error_detail: string | null
+          latency_ms: number | null
+          status: string
+        }[]
+      }
+      glowe_admin_list_health_checks: {
+        Args: { p_limit?: number }
+        Returns: {
+          app_version: string | null
+          check_name: string
+          checked_at: string
+          environment: string
+          error_code: string | null
+          error_detail: string | null
+          id: string
+          latency_ms: number | null
+          run_id: string
+          status: string
+        }[]
+      }
       glowe_admin_dismiss_report: {
         Args: { p_report_id: string }
         Returns: {
