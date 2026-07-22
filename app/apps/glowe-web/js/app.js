@@ -5485,37 +5485,12 @@ function updateWellSummary(projectCount) {
     `;
 }
 
-async function paintCommunityProfileSidebar() {
-    const communityProfile = await getLocalizedPersonalProfile();
-    const profileName = document.getElementById('community-profile-name');
-    const profileLine = document.getElementById('community-profile-line');
-    const profileAvatar = document.getElementById('community-profile-avatar');
-    const profileCard = document.querySelector('.community-profile-card');
-    const displayName = localizedProfileDisplayName(communityProfile);
-    const pair = profileNamePairFrom(communityProfile);
-    const bioText = communityProfile.shortLine || communityProfile.about
-        || 'Share knowledge, ask for support, and build practical impact with the community.';
-    if (profileName) {
-        profileName.textContent = displayName;
-        applyLocalizedNameAttrs(profileName, communityProfile);
-    }
-    if (profileLine) {
-        profileLine.textContent = bioText;
-    }
-    if (profileAvatar) {
-        profileAvatar.textContent = getInitials(displayName);
-        applyLocalizedNameAttrs(profileAvatar, communityProfile);
-    }
-    if (profileCard) markProfileBioTranslation(profileCard, communityProfile);
-}
-
 async function initCommunityPage() {
     const container = document.getElementById('community-feed');
     const peopleContainer = document.getElementById('people-list');
     const groupsContainer = document.getElementById('topic-groups-list');
     const searchInput = document.getElementById('community-feed-search');
     const feedFilterButtons = document.querySelectorAll('[data-feed-filter]');
-    paintCommunityProfileSidebar();
 
     function postMatchesFilter(post, filter) {
         if (filter === 'all') return true;
