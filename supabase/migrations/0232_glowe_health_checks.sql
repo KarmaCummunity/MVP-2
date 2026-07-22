@@ -36,6 +36,13 @@ create index if not exists glowe_health_checks_run_id_idx
 
 alter table public.glowe_health_checks enable row level security;
 
+-- Deny-by-default for clients; probes ingest via service_role, admins read via RPC.
+drop policy if exists "glowe health checks deny clients" on public.glowe_health_checks;
+create policy "glowe health checks deny clients" on public.glowe_health_checks
+  for all to authenticated, anon
+  using (false)
+  with check (false);
+
 -- Latest row per check_name (production only, last 7 days).
 create or replace function public.glowe_admin_health_summary()
 returns table (
@@ -51,6 +58,7 @@ stable
 security definer
 set search_path = public
 as $$
+#variable_conflict use_column
 begin
   if not public.is_glowe_admin(auth.uid()) then
     raise exception 'forbidden' using errcode = '42501';
