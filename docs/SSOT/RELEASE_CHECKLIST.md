@@ -58,11 +58,10 @@ Watch **Railway → prod** — new deployment from `main` reaches **Success**.
 
 ## Post-deploy smoke (operator — ~5 min)
 
-Automated **Prod smoke** only checks HTTP 200 on the prod URL. Complete these manually:
+Automated **Prod smoke** checks HTTP 200 **and** read-only GloWe functional probes (home, feed, wishing well, forums, messages guest gate). Results surface in **Admin → System health** when ingest secrets are configured. Spot-check manually:
 
 - [ ] **Prod URL loads** — incognito window, no dev banner.
 - [ ] **Sign-in** — Google (web) or email OTP path you ship.
-- [ ] **Feed** — home feed renders.
 - [ ] **One write path** — e.g. edit profile or create draft post.
 - [ ] **If migrations merged** — exercise the feature that migration enables; run SQL checks from OPERATOR_RUNBOOK for that migration if listed.
 - [ ] **If functions merged** — donation link edit smoke (same row `id`, no duplicate insert).

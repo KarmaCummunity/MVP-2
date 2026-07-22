@@ -194,7 +194,7 @@
 | INFRA-QA-W4 | Performance budgets (Lighthouse + k6) | infra | ⏳ Planned | Wave 4 |
 | INFRA-QA-W5 | Accessibility axe gate | infra | ⏳ Planned | Wave 5 |
 | INFRA-QA-W6 | Maestro native smoke | infra | ⏳ Planned | Wave 6 |
-| INFRA-QA-W7 | Expanded prod synthetic monitoring | infra | ⏳ Planned | Wave 7 |
+| INFRA-QA-W7 | Expanded prod synthetic monitoring | infra | 🟡 In progress | Wave 7 — `prod-health` Playwright probes, `glowe_health_checks` table, admin portal panel, `prod-smoke.yml` cron |
 | PERF-1 | Performance Wave 0 — Sentry crash + perf instrumentation + Edge Function timing logger | infra | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 0; `docs/superpowers/plans/2026-05-25-perf-wave-0-observability.md` |
 | PERF-2 | Performance Wave 1 — KCImage + transform URLs + React.memo + Zustand selectors + memoized date/URL composition | agent-fe | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 1; `docs/superpowers/plans/2026-05-25-perf-wave-1-images-rerenders.md` |
 | PERF-3 | Performance Wave 2 (partial) — column pruning + .limit() defenses + QueryClient defaults + per-query staleTime + stats Realtime + feed gap-fill on resume + actor identity projection completion. Wave 2 A+B (new feed/inbox RPCs) deferred to a separate PR for safety. | agent-fullstack | ✅ Done | `docs/superpowers/specs/2026-05-25-app-performance-overhaul-design.md` § Wave 2; `docs/superpowers/plans/2026-05-25-perf-wave-2-db-rq.md` |

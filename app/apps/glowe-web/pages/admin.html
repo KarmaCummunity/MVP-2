@@ -51,6 +51,23 @@
                     <article><strong data-admin-stat="reports">0</strong><span>Open reports</span></article>
                 </div>
 
+                <section class="admin-panel admin-panel-wide" id="admin-health-panel">
+                    <div class="section-toolbar">
+                        <div>
+                            <h2>System health</h2>
+                            <p>Automated production probes (read-only). Refreshed after each deploy and on a 15-minute schedule.</p>
+                        </div>
+                        <span id="admin-health-overall" class="health-pill health-unknown">No data</span>
+                    </div>
+                    <div id="admin-health-summary" class="admin-health-grid">
+                        <div class="empty-state"><h3>Loading…</h3><p>Fetching the latest probe results.</p></div>
+                    </div>
+                    <details class="admin-health-history">
+                        <summary>Recent probe history</summary>
+                        <div id="admin-health-history" class="admin-list"></div>
+                    </details>
+                </section>
+
                 <div class="admin-grid">
                     <section class="admin-panel admin-panel-wide">
                         <div class="section-toolbar">
@@ -85,6 +102,7 @@
     <script src="../js/glowe-events.js"></script>
     <script src="../js/glowe-wishes.js"></script>
     <script src="../js/glowe-moderation.js"></script>
+    <script src="../js/glowe-health.js"></script>
     <script src="../js/glowe-create.js"></script>
     <script src="../js/glowe-messages.js"></script>
     <script src="../js/glowe-guest.js"></script>

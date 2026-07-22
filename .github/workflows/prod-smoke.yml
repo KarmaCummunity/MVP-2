@@ -1,8 +1,8 @@
 name: Prod smoke
 
-# Post-merge HTTP check after Railway redeploys the web app from `main`, or after
-# DB / Edge Function changes that can break the live site.
-# Set repository variable PROD_WEB_URL (Settings → Actions → Variables).
+# Post-merge HTTP + GloWe functional probes after production deploy, plus
+# scheduled synthetics (INFRA-QA-W7). Set PROD_WEB_URL in repo variables.
+# Optional ingest: SUPABASE_SERVICE_ROLE_KEY (prod) + EXPO_PUBLIC_SUPABASE_URL.
 
 on:
   push:
@@ -12,9 +12,13 @@ on:
       - 'Dockerfile'
       - 'supabase/migrations/**'
       - 'supabase/functions/**'
+      - 'tests/e2e/**'
+      - 'scripts/record-prod-health.mjs'
       - '.github/workflows/prod-smoke.yml'
       - '.github/workflows/db-deploy.yml'
   workflow_dispatch:
+  schedule:
+    - cron: '*/15 * * * *'
 
 concurrency:
   group: prod-smoke-main
@@ -25,9 +29,9 @@ permissions:
 
 jobs:
   smoke:
-    name: prod URL health check
+    name: prod URL + GloWe health probes
     runs-on: ubuntu-latest
-    timeout-minutes: 15
+    timeout-minutes: 20
 
     steps:
       - name: Require PROD_WEB_URL variable
@@ -38,12 +42,13 @@ jobs:
           if [ -z "${PROD_WEB_URL}" ]; then
             echo "::error::Repository variable PROD_WEB_URL is not set."
             echo "GitHub → Settings → Secrets and variables → Actions → Variables"
-            echo "Add PROD_WEB_URL = https://<your-prod-service>.up.railway.app"
+            echo "Add PROD_WEB_URL = https://karma-community-kc.com"
             exit 1
           fi
           echo "Target: ${PROD_WEB_URL}"
 
       - name: Wait for deploy window
+        if: github.event_name == 'push'
         run: sleep 90
 
       - name: Poll prod URL (HTTP 200)
@@ -67,3 +72,54 @@ jobs:
           done
           echo "::error::Prod URL did not return HTTP 200 within ~11 minutes."
           exit 1
+
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version-file: .nvmrc
+
+      - name: Install Playwright
+        working-directory: tests/e2e
+        run: |
+          npm install
+          npx playwright install --with-deps chromium
+
+      - name: Resolve deployed app version
+        id: version
+        env:
+          PROD_WEB_URL: ${{ vars.PROD_WEB_URL }}
+        run: |
+          set -euo pipefail
+          ver="$(curl -fsSL "${PROD_WEB_URL%/}/glowe/js/glowe-version.js" | grep -oE "version: '[0-9]+\.[0-9]+\.[0-9]+'" | head -1 | grep -oE '[0-9]+\.[0-9]+\.[0-9]+' || true)"
+          echo "version=${ver}" >> "$GITHUB_OUTPUT"
+          echo "Deployed GloWe version: ${ver:-unknown}"
+
+      - name: Run GloWe prod-health probes
+        working-directory: tests/e2e
+        env:
+          PROD_WEB_URL: ${{ vars.PROD_WEB_URL }}
+          PLAYWRIGHT_JSON_OUTPUT_NAME: test-results/prod-health.json
+        run: npx playwright test --project=prod-health --reporter=json,list
+
+      - name: Ingest probe results (optional)
+        if: always()
+        env:
+          EXPO_PUBLIC_SUPABASE_URL: ${{ vars.EXPO_PUBLIC_SUPABASE_URL_PROD }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY_PROD }}
+          GLOWE_APP_VERSION: ${{ steps.version.outputs.version }}
+          GITHUB_RUN_ID: ${{ github.run_id }}
+        run: |
+          if [ -f tests/e2e/test-results/prod-health.json ]; then
+            node scripts/record-prod-health.mjs tests/e2e/test-results/prod-health.json
+          else
+            echo "::warning::Playwright JSON report missing — skipping health ingest."
+          fi
+
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: prod-health-report
+          path: |
+            tests/e2e/playwright-report/
+            tests/e2e/test-results/

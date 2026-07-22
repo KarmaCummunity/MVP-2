@@ -50,7 +50,17 @@ export default defineConfig({
     {
       name: 'glowe',
       testMatch: /glowe-.*\.spec\.ts/,
+      testIgnore: /prod-health\.spec\.ts/,
       dependencies: ['glowe-setup'],
+      use: {
+        ...devices['Desktop Chrome'],
+      },
+    },
+    // Read-only production synthetics (INFRA-QA-W7). Uses PROD_WEB_URL + /glowe;
+    // no auth setup or write credentials.
+    {
+      name: 'prod-health',
+      testMatch: /prod-health\.spec\.ts/,
       use: {
         ...devices['Desktop Chrome'],
       },

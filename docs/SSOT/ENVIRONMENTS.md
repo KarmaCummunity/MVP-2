@@ -131,7 +131,17 @@ Draft PRs skip every job except none (PR hygiene waits for `ready_for_review`). 
 
 **CI gates on `main` PRs:** `CI — frontend / web export (production bundle)` mirrors the Dockerfile builder (`EXPO_PUBLIC_*` + `pnpm build:web`).
 
-**Post-merge smoke:** `.github/workflows/prod-smoke.yml` polls repository variable **`PROD_WEB_URL`** after app/Dockerfile changes on `main`. Set it under GitHub → Settings → Secrets and variables → Actions → Variables.
+**Post-merge smoke:** `.github/workflows/prod-smoke.yml` polls **`PROD_WEB_URL`**, runs read-only GloWe Playwright probes (`tests/e2e/journeys/prod-health.spec.ts`), and optionally ingests results into `glowe_health_checks` for the admin portal. Triggers: push to `main` (app/migration paths), `workflow_dispatch`, and a **15-minute cron**.
+
+### Production synthetic monitoring (`INFRA-QA-W7`)
+
+| GitHub | Name | Value / purpose |
+| --- | --- | --- |
+| Variable | `PROD_WEB_URL` | Production site root, e.g. `https://karma-community-kc.com` |
+| Variable | `EXPO_PUBLIC_SUPABASE_URL_PROD` | Prod Supabase URL (`https://slxijdfvinbjmrsfgbzx.supabase.co`) — health ingest only |
+| Secret | `SUPABASE_SERVICE_ROLE_KEY_PROD` | Prod service role — inserts probe rows (optional; probes still run without it) |
+
+Admin visibility: GloWe `admin.html` → **System health** panel (RPCs `glowe_admin_health_summary`, `glowe_admin_list_health_checks`). Ingest script: `scripts/record-prod-health.mjs`.
 
 ## E2E automation (Web, `D-55`)
 

@@ -801,6 +801,25 @@
         return true;
     }
 
+    // Production synthetic probes — GLOWE admins only (migration 0232).
+    async function adminHealthSummary() {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_admin_health_summary');
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
+    async function adminListHealthChecks(limit = 50) {
+        const supabaseClient = await getClient();
+        if (!supabaseClient) return [];
+        const { data, error } = await supabaseClient.rpc('glowe_admin_list_health_checks', {
+            p_limit: limit
+        });
+        if (error) throw error;
+        return Array.isArray(data) ? data : [];
+    }
+
     // ── Direct messaging on KC's shared chat backend (FR-GLOWE-016 AC6) ──────
     // GloWe reuses KC's public.chats / public.messages directly (D-61): these
     // tables are NOT glowe_-prefixed. RLS scopes everything to the signed-in
@@ -1077,6 +1096,8 @@
         adminListReports,
         adminDismissReport,
         adminRemoveContent,
+        adminHealthSummary,
+        adminListHealthChecks,
         kcGetOrCreateDmChat,
         kcListMyChats,
         kcLastMessages,

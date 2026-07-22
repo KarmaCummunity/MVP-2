@@ -5103,6 +5103,76 @@ a.user-greeting:hover {
     gap: 14px;
 }
 
+.admin-health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+    gap: 14px;
+    margin-bottom: 16px;
+}
+
+.admin-health-card {
+    padding: 16px;
+    border-radius: 16px;
+    border: 1px solid rgba(15, 23, 42, 0.08);
+    background: #fff;
+}
+
+.admin-health-card h3 {
+    margin: 10px 0 6px;
+    font-size: 1.05rem;
+}
+
+.admin-health-meta,
+.admin-health-error {
+    color: var(--text-secondary);
+    font-size: 0.92rem;
+}
+
+.admin-health-error {
+    color: #b42318;
+    margin-top: 8px;
+}
+
+.admin-health-history {
+    margin-top: 8px;
+}
+
+.admin-health-history summary {
+    cursor: pointer;
+    font-weight: 700;
+    color: var(--primary-dark);
+}
+
+.health-pill {
+    display: inline-flex;
+    align-items: center;
+    padding: 4px 10px;
+    border-radius: 999px;
+    font-size: 0.82rem;
+    font-weight: 800;
+    letter-spacing: 0.02em;
+}
+
+.health-ok {
+    background: #ecfdf3;
+    color: #027a48;
+}
+
+.health-degraded {
+    background: #fffaeb;
+    color: #b54708;
+}
+
+.health-fail {
+    background: #fef3f2;
+    color: #b42318;
+}
+
+.health-unknown {
+    background: #f2f4f7;
+    color: #475467;
+}
+
 .admin-card {
     padding: 18px;
 }
