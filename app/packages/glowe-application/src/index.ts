@@ -11,6 +11,8 @@ export * from './use-cases/OfferSupport';
 export * from './use-cases/ListOpportunities';
 export * from './use-cases/GetOpportunityDetail';
 export * from './use-cases/SubmitRsvp';
+export * from './use-cases/ListOrganizations';
+export * from './use-cases/SubmitOutreach';
 export * from './ports/IGlowePostRepository';
 export * from './ports/IGloweOpportunityRepository';
 export * from './ports/IGloweForumRepository';
