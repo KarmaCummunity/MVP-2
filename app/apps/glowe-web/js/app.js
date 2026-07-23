@@ -4687,16 +4687,20 @@ function renderMemberHighlight(entry) {
         : renderMemberFeedPost(entry.item);
 }
 
-function renderMemberHomeMarkup(firstName, activity, highlights) {
+function isGloweMobileHomeViewport() {
+    return window.matchMedia('(max-width: 680px)').matches;
+}
+
+function renderMemberHomeMarkup(firstName, activity, highlights, options = {}) {
+    const { communityOnly = false } = options;
     const activityBody = activity.length
         ? activity.map(renderMemberFeedPost).join('')
         : '<div class="empty-state"><h3>You have not shared anything yet</h3><p>Your posts, opportunities, and requests will gather here.</p><a class="btn btn-primary btn-small" href="pages/community.html">Write your first post</a></div>';
     const highlightsBody = highlights.length
         ? highlights.map(renderMemberHighlight).join('')
         : '<div class="empty-state"><h3>The community is just getting started</h3><p>Be the first to share a post or an opportunity others can join.</p><a class="btn btn-primary btn-small" href="pages/community.html">Start the conversation</a></div>';
-    return `
-        <div class="container member-home-inner">
-            <section class="member-hero">
+    const personalSections = communityOnly ? '' : `
+            <section class="member-hero member-home-personal">
                 <div class="member-hero-copy">
                     <span class="hero-kicker">Your GloWe</span>
                     <h1>Welcome back, <span class="member-hero-name">${escapeHtml(firstName)}</span></h1>
@@ -4708,14 +4712,17 @@ function renderMemberHomeMarkup(firstName, activity, highlights) {
                     <button class="btn btn-outline btn-large" type="button" onclick="openWishModal()">Ask for support</button>
                 </div>
             </section>
-            <section class="member-section">
+            <section class="member-section member-home-personal">
                 <div class="section-toolbar">
                     <div><h2>Your activity</h2></div>
                     <a class="btn btn-outline btn-small" href="pages/my-applications.html">Open Personal Area</a>
                 </div>
                 <div class="member-feed-grid">${activityBody}</div>
-            </section>
-            <section class="member-section">
+            </section>`;
+    return `
+        <div class="container member-home-inner${communityOnly ? ' member-home-community-only' : ''}">
+            ${personalSections}
+            <section class="member-section member-home-community">
                 <div class="section-toolbar">
                     <div><h2>What is happening on GloWe</h2></div>
                     <a class="btn btn-outline btn-small" href="pages/community.html">See all</a>
@@ -4742,9 +4749,12 @@ async function initMemberHome() {
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
     const firstName = (profile.firstName || (profile.name || '').split(' ')[0] || 'there').trim();
     const allPosts = getAllCommunityPosts();
-    const activity = selectMemberActivity(allPosts, user ? user.id : '');
-    const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts);
-    root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights);
+    const communityOnly = isGloweMobileHomeViewport();
+    const activity = communityOnly ? [] : selectMemberActivity(allPosts, user ? user.id : '');
+    const highlightLimit = communityOnly ? 9 : 6;
+    const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts, highlightLimit);
+    root.classList.toggle('member-home-community-only', communityOnly);
+    root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights, { communityOnly });
 }
 
 // Initialize all opportunities page
