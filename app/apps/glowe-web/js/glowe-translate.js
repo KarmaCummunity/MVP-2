@@ -220,12 +220,15 @@ if (typeof window !== 'undefined') {
             for (const f of entry.fields) {
                 const source = (f.el.textContent || '').trim();
                 const norm = await resolveField(sb, entry, f, target, cacheMap);
-                if (norm && T.needsTranslation(norm.sourceLanguage, target)
-                    && applyTranslation(f.el, source, norm.translated)) {
+                // Show the toggle whenever displayed text actually changed.
+                // Do not gate on sourceLanguage metadata — a bad/missing
+                // source_language in cache must not suppress the toggle.
+                if (norm && applyTranslation(f.el, source, norm.translated)) {
                     any = true;
                 }
             }
             if (any) injectToggle(entry.card, target);
+            entry.card.setAttribute('data-tr-done', '1');
         }
 
         async function scan(rootEl) {
@@ -235,7 +238,6 @@ if (typeof window !== 'undefined') {
             const sb = await client();
             if (!sb) return;
             const target = readerLang();
-            entries.forEach(function (e) { e.card.setAttribute('data-tr-done', '1'); });
             const ids = Array.from(new Set(entries.map(function (e) { return e.id; })));
             const cacheMap = await readCache(sb, ids, target);
             for (const e of entries) await processCard(sb, e, target, cacheMap);

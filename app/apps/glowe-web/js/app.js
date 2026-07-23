@@ -5095,11 +5095,16 @@ function renderMemberHighlight(entry) {
 
 function scheduleMemberHomeTranslation(root) {
     if (!root || !window.GloweTranslate || typeof window.GloweTranslate.scan !== 'function') return;
-    const scan = () => window.GloweTranslate.scan(root);
+    const scan = function () {
+        // Retry cards that rendered before the Supabase client was ready.
+        root.querySelectorAll('[data-tr-card]').forEach(function (card) {
+            if (!card.querySelector('.tr-toggle')) card.removeAttribute('data-tr-done');
+        });
+        window.GloweTranslate.scan(root);
+    };
     scan();
-    // Demand-driven UGC translation runs after async render; a second pass
-    // covers slow Supabase client init without blocking the first paint.
     setTimeout(scan, 500);
+    setTimeout(scan, 2000);
 }
 
 function isGloweMobileHomeViewport() {
