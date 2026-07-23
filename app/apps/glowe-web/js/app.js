@@ -73,6 +73,32 @@ function showToast(message, options) {
     gloweToastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
 }
 
+// Auto-dismissing confirmation for completed actions (save, publish, etc.).
+function showActionToast(title, message) {
+    if (typeof document === 'undefined') return;
+    const dict = typeof gloweDict === 'function' ? gloweDict() : null;
+    const localTitle = (dict && dict[title]) ? dict[title] : title;
+    const localMessage = message ? ((dict && dict[message]) ? dict[message] : message) : '';
+    let toast = document.getElementById('glowe-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'glowe-toast';
+        toast.className = 'glowe-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = localMessage
+        ? `<strong>${escapeHtml(localTitle)}</strong><span>${escapeHtml(localMessage)}</span>`
+        : escapeHtml(localTitle);
+    toast.classList.remove('is-error');
+    toast.classList.add('is-success');
+    void toast.offsetWidth;
+    toast.classList.add('visible');
+    if (gloweToastTimer) clearTimeout(gloweToastTimer);
+    gloweToastTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
+}
+
 // ── View-only write gating (FR-GLOWE-003) ───────────────────────────────────
 // Browsing is open to everyone, but creating content (a need, post, event, or
 // discussion) requires a registered account that is allowed to publish. Two
@@ -301,7 +327,8 @@ async function submitCreateDraft(form, options) {
         await window.gloweBackend.insertOwned(options.table, options.payload);
         closeModal(options.modalId);
         form.reset();
-        showSuccessModal(options.successTitle, options.successBody);
+        showActionToast(options.successTitle, options.successBody);
+        if (options.table === 'posts' && reloadWishBoard) await reloadWishBoard();
     } catch (_e) {
         showSuccessModal('Could not publish', options.failBody);
     }
@@ -2941,7 +2968,7 @@ async function handlePersonalProjectSubmit(event) {
     if (typeof window.renderPersonalArea === 'function') {
         window.renderPersonalArea();
     }
-    showSuccessModal(id ? 'Project updated' : 'Project added', id
+    showActionToast(id ? 'Project updated' : 'Project added', id
         ? 'Your project changes were saved.'
         : 'The project now appears in your personal area.');
 }
@@ -3001,8 +3028,15 @@ async function handleWishSubmit(event) {
         });
         closeModal('wish-modal');
         event.target.reset();
-        showSuccessModal('Wish published', 'Your need is now live on the Wishing Well.');
-        if (reloadWishBoard) await reloadWishBoard();
+        showActionToast('Wish published', 'Your need is now live on the Wishing Well.');
+        const onWishPage = resolveGlowePage(window.location.pathname) === 'wishing-well';
+        if (onWishPage) {
+            if (typeof resetWishBoardFilters === 'function') resetWishBoardFilters();
+            if (reloadWishBoard) await reloadWishBoard();
+        } else {
+            const inPages = window.location.pathname.includes('/pages/');
+            window.location.href = `${inPages ? '' : 'pages/'}wishing-well.html`;
+        }
     } catch (_e) {
         showSuccessModal('Could not publish', 'Something went wrong publishing your wish. Please try again.');
     } finally {
@@ -3072,7 +3106,7 @@ async function submitSupportOffer(form, draft) {
         redirectToChatThread(chatId);
         return;
     }
-    showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
+    showActionToast('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
 }
 
 async function handleConnectSubmit(event) {
@@ -3093,7 +3127,7 @@ async function handleConnectSubmit(event) {
 
 function handleQuickConnect() {
     closeModal('connect-modal');
-    showSuccessModal('Draft saved', 'Your offer draft is saved in this workspace so you can return to it later.');
+    showActionToast('Draft saved', 'Your offer draft is saved in this workspace so you can return to it later.');
 }
 
 // FR-GLOWE-010 AC6 — "Reach out" contact flow. Opens a lightweight modal that,
@@ -3189,7 +3223,7 @@ function openNotificationPrefs() {
 function handleNotificationPrefs(event) {
     event.preventDefault();
     closeModal('notification-modal');
-    showSuccessModal('Preferences saved', 'GloWe will focus on action-oriented updates and avoid unnecessary noise.');
+    showActionToast('Preferences saved', 'GloWe will focus on action-oriented updates and avoid unnecessary noise.');
 }
 
 function openFundingBrief() {
@@ -3256,11 +3290,11 @@ async function handleMessageSubmit(event) {
 }
 
 function addProjectFeedback() {
-    showSuccessModal('Feedback saved', 'This recommendation can appear on the project after community moderation.');
+    showActionToast('Feedback saved', 'This recommendation can appear on the project after community moderation.');
 }
 
 function rateOrganization(name = 'this organization') {
-    showSuccessModal('Rating recorded', `Your trust signal for ${name} will help rank active organizations by involvement and documented impact.`);
+    showActionToast('Rating recorded', `Your trust signal for ${name} will help rank active organizations by involvement and documented impact.`);
 }
 
 function toggleLowDataMode() {
@@ -3467,7 +3501,7 @@ function saveItem(type, id, title, meta = '', href = '') {
             window.gloweBackend.insertOwned('saved_items', payload).catch(() => {});
         }
     }
-    showSuccessModal('Saved', `${title} was added to your saved area.`);
+    showActionToast('Saved', `${title} was added to your saved area.`);
 }
 
 function removeSavedItem(type, id) {
@@ -3890,11 +3924,12 @@ async function copyShareLink(url) {
     showSuccessModal('Copy this link', url);
 }
 
-function renderShareButton(title, path = '') {
+function renderShareButton(title, path = '', extraClass = '') {
     const safeTitle = escapeHtml(title);
     const titleArg = jsString(title);
     const pathArg = jsString(path);
-    return `<button type="button" class="post-share-button" onclick="sharePost('${titleArg}', '${pathArg}')" aria-label="Share ${safeTitle}" title="Share">${SHARE_ICON_SVG}<span class="post-share-label">Share</span></button>`;
+    const cls = ['post-share-button', extraClass].filter(Boolean).join(' ');
+    return `<button type="button" class="${cls}" onclick="sharePost('${titleArg}', '${pathArg}')" aria-label="Share ${safeTitle}" title="Share">${SHARE_ICON_SVG}<span class="post-share-label">Share</span></button>`;
 }
 
 // FR-GLOWE-015 AC1 — persist a report to glowe_reports. Duplicate reports on
@@ -3933,7 +3968,7 @@ async function handleReportSubmit(event) {
         await window.gloweBackend.submitReport(GloweModeration.buildReportPayload(draft));
         event.target.reset();
         closeModal('report-modal');
-        showSuccessModal('Report received', 'Thank you. We will review this with care and confidentiality.');
+        showActionToast('Report received', 'Thank you. We will review this with care and confidentiality.');
     } catch (error) {
         closeModal('report-modal');
         showReportSubmitError(error);
@@ -4168,7 +4203,7 @@ async function deleteCommunityPost(postId) {
         return;
     }
     await initCommunityPage();
-    showSuccessModal('Post deleted', 'Your post was removed from the community feed.');
+    showActionToast('Post deleted', 'Your post was removed from the community feed.');
 }
 
 // Display name for the signed-in author, falling back to their saved profile.
@@ -4207,14 +4242,16 @@ function mapProfileToOrg(profile) {
     };
 }
 
-async function fetchAndPopulate(backendFn, targetArray, mapper) {
+async function fetchAndPopulate(backendFn, targetArray, mapper, postProcess) {
     try {
         if (typeof gloweBackend === 'undefined' || !gloweBackend.configured()) return;
         const rows = await backendFn();
         if (!rows) return;
         // FR-GLOWE-015 AC5 — admin-removed content never surfaces publicly.
         const visible = rows.filter(row => !row || row.status !== 'removed');
-        targetArray.splice(0, targetArray.length, ...visible.map(mapper));
+        let mapped = visible.map(mapper);
+        if (typeof postProcess === 'function') mapped = await postProcess(mapped);
+        targetArray.splice(0, targetArray.length, ...mapped);
     } catch (_e) {
         // leave array empty; page shows empty state
     }
@@ -4287,6 +4324,31 @@ async function withEnsuredAuthorEnglishNames(items) {
     return GloweLocalizedName.applyAuthorEnglishFromProfiles(list, patches);
 }
 
+// FR-GLOWE-024 — backfill missing organization English snapshots on opportunities
+// from the publisher's glowe_profiles row (generate-on-read when still empty).
+async function withEnsuredOrganizationEnglishNames(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.organizationNeedsEnglishName);
+    if (!needing.length) return list;
+    const ids = [];
+    const seen = {};
+    needing.forEach(function (row) {
+        const id = row.ownerId || row.userId;
+        if (!id || seen[String(id)]) return;
+        seen[String(id)] = true;
+        ids.push(String(id));
+    });
+    if (!ids.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return list;
+    const patches = await backend.ensureProfileEnglishNames(ids);
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyOrganizationEnglishFromProfiles(list, patches);
+}
+
 function translationToggleSlotHtml() {
     if (typeof GloweUiConventions !== 'undefined') {
         return GloweUiConventions.translationToggleSlotHtml();
@@ -4327,6 +4389,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
     const location = opportunity.location || '';
     const duration = opportunity.duration || '';
     const commitment = opportunity.commitment || '';
+    const badgeTr = (!isEvent && commitment) ? ' data-tr-field="commitment"' : '';
 
     return `
         <div class="opportunity-card" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${opportunity.id}">
@@ -4343,19 +4406,19 @@ function renderOpportunityCard(opportunity, basePath = '') {
                     ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName)}
                     <span ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(orgName)}</span>
                 </div>
-                ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}">${escapeHtml(badge)}</span>` : ''}
+                ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}"${badgeTr}>${escapeHtml(badge)}</span>` : ''}
             </div>
             ${translationToggleSlotHtml()}
             <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
             <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
             <div class="opportunity-meta-group opportunity-details">
                 ${eventMeta}
-                ${location ? `<span class="opportunity-detail"><strong>Location:</strong> ${escapeHtml(location)}</span>` : ''}
-                ${duration ? `<span class="opportunity-detail"><strong>Duration:</strong> ${escapeHtml(duration)}</span>` : ''}
-                ${!isEvent && commitment ? `<span class="opportunity-detail"><strong>Commitment:</strong> ${escapeHtml(commitment)}</span>` : ''}
+                ${location ? `<span class="opportunity-detail"><strong>Location:</strong> <span data-tr-field="location">${escapeHtml(location)}</span></span>` : ''}
+                ${duration ? `<span class="opportunity-detail"><strong>Duration:</strong> <span data-tr-field="duration">${escapeHtml(duration)}</span></span>` : ''}
+                ${!isEvent && commitment ? `<span class="opportunity-detail"><strong>Commitment:</strong> <span data-tr-field="commitment">${escapeHtml(commitment)}</span></span>` : ''}
             </div>
             <div class="opportunity-skills">
-                ${skills.map(skill => `<span class="skill-tag" title="${escapeHtml(skill)}">${escapeHtml(skill)}</span>`).join('')}
+                ${skills.map((skill, i) => `<span class="skill-tag" title="${escapeHtml(skill)}" data-tr-field="skills.${i}">${escapeHtml(skill)}</span>`).join('')}
             </div>
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
@@ -4425,19 +4488,21 @@ function renderWishCard(wish) {
         ? GloweLocalizedName.resolveLocalizedName(authorPair.primary, authorPair.english, gloweReaderLang())
             || authorPair.primary || 'GloWe Member'
         : (wish.author || 'GloWe Member');
+    const wishHref = `wishing-well.html?wish=${wish.id}`;
     return `
         <article class="wish-card" style="--tag-color: ${style.color}" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More wish actions">...</summary>
                 <div class="post-more-panel">
-                    ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save wish', 'post-menu-action')}
+                    ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, wishHref, 'Save wish', 'post-menu-action')}
+                    <button type="button" onclick="sharePost('${jsString(wish.title)}', '${jsString(wishHref)}')">Share</button>
                     <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(wish.authorId || '')}')">Message author</button>
                     <button type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 </div>
             </details>
             <div class="wish-card-top">
                 <span class="wish-type" style="background:${style.color}" title="${escapeHtml(wish.type)}">${escapeHtml(wish.type)}</span>
-                ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save', 'heart-button')}
+                ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, wishHref, 'Save', 'heart-button wish-save-desktop')}
             </div>
             ${translationToggleSlotHtml()}
             <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
@@ -4459,7 +4524,7 @@ function renderWishCard(wish) {
             <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail('${wish.id}')">Learn More</button>
             <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
             ${wishOwnerControls(wish)}
-            ${renderShareButton(wish.title, `wishing-well.html?wish=${wish.id}`)}
+            ${renderShareButton(wish.title, wishHref, 'wish-share-action')}
         </div>
     </article>
 `;
@@ -4792,7 +4857,7 @@ async function handleInlinePostSubmit(event) {
     if (!published) return;
     closeInlineComposer();
     await initCommunityPage();
-    showSuccessModal('Post published to feed', 'The new post appears at the top of the community feed.');
+    showActionToast('Post published to feed', 'The new post appears at the top of the community feed.');
 }
 
 function initWritePostPage() {
@@ -4868,7 +4933,7 @@ function initWritePostPage() {
             author_name_en: author.english || null
         });
         if (!published) return;
-        showSuccessModal('Post connected to feed', 'Your post was saved and will appear at the top of the community feed.');
+        showActionToast('Post connected to feed', 'Your post was saved and will appear at the top of the community feed.');
         setTimeout(() => {
             window.location.href = 'community.html';
         }, 700);
@@ -4912,7 +4977,7 @@ async function initFeaturedOpportunities() {
     const container = document.getElementById('featured-opportunities');
     if (container) {
         container.innerHTML = '<p class="muted-note">Loading opportunities…</p>';
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
         const featured = getFeaturedOpportunities().slice(0, 3);
         container.innerHTML = featured.length
             ? featured.map(opp => renderOpportunityCard(opp)).join('')
@@ -4982,34 +5047,81 @@ function renderMemberFeedPost(post) {
     const postId = post.id || '';
     const href = `pages/community.html#post-${encodeURIComponent(postId)}`;
     const snippet = (post.text || '').slice(0, 140);
+    const authorPair = authorNamePairFrom(post);
     const authorName = (typeof GloweLocalizedName !== 'undefined')
         ? GloweLocalizedName.localizedAuthorName(post, gloweReaderLang(), 'Community Member')
         : (post.authorName || 'Community Member');
     return `
-        <a class="member-feed-card" href="${href}">
-            <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
-            <h3>${escapeHtml(post.title || 'Community post')}</h3>
-            <p>${escapeHtml(snippet)}</p>
-            <span class="member-feed-author">${escapeHtml(authorName)}</span>
-        </a>`;
+        <article class="member-feed-card" data-tr-card data-tr-type="glowe_post" data-tr-id="${escapeHtml(String(postId))}">
+            ${translationToggleSlotHtml()}
+            <a class="member-feed-card-link" href="${href}">
+                <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
+                <h3 data-tr-field="title">${escapeHtml(post.title || 'Community post')}</h3>
+                <p data-tr-field="text">${escapeHtml(snippet)}</p>
+                <span class="member-feed-author" ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
+            </a>
+        </article>`;
+}
+
+// Compact opportunity teaser for the member-home grid. The full
+// renderOpportunityCard() is too tall here: card-actions uses margin-top:auto
+// and stretches against taller post neighbours in the same grid row.
+function renderMemberFeedOpportunity(opportunity) {
+    const detailHref = `pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
+    const snippet = (opportunity.description || '').slice(0, 140);
+    const orgName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedOrganizationName(opportunity, gloweReaderLang(), 'GloWe Member')
+        : (opportunity.organization || 'GloWe Member');
+    const orgPair = orgNamePairFrom(opportunity);
+    return `
+        <article class="member-feed-card member-feed-opportunity" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${escapeHtml(String(opportunity.id))}">
+            <div class="member-feed-opportunity-header">
+                ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName, 'entity-mark')}
+                <span class="member-feed-opportunity-org" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(orgName)}</span>
+            </div>
+            ${translationToggleSlotHtml()}
+            <a class="member-feed-card-link" href="${detailHref}">
+                <span class="member-feed-type">Opportunity</span>
+                <h3 data-tr-field="title">${escapeHtml(opportunity.title || 'Opportunity')}</h3>
+                <p data-tr-field="description">${escapeHtml(snippet)}</p>
+            </a>
+        </article>`;
 }
 
 function renderMemberHighlight(entry) {
     return entry.kind === 'opportunity'
-        ? renderOpportunityCard(entry.item)
+        ? renderMemberFeedOpportunity(entry.item)
         : renderMemberFeedPost(entry.item);
 }
 
-function renderMemberHomeMarkup(firstName, activity, highlights) {
+function scheduleMemberHomeTranslation(root) {
+    if (!root || !window.GloweTranslate || typeof window.GloweTranslate.scan !== 'function') return;
+    const scan = function () {
+        // Retry cards that rendered before the Supabase client was ready.
+        root.querySelectorAll('[data-tr-card]').forEach(function (card) {
+            if (!card.querySelector('.tr-toggle')) card.removeAttribute('data-tr-done');
+        });
+        window.GloweTranslate.scan(root);
+    };
+    scan();
+    setTimeout(scan, 500);
+    setTimeout(scan, 2000);
+}
+
+function isGloweMobileHomeViewport() {
+    return window.matchMedia('(max-width: 680px)').matches;
+}
+
+function renderMemberHomeMarkup(firstName, activity, highlights, options = {}) {
+    const { communityOnly = false } = options;
     const activityBody = activity.length
         ? activity.map(renderMemberFeedPost).join('')
         : '<div class="empty-state"><h3>You have not shared anything yet</h3><p>Your posts, opportunities, and requests will gather here.</p><a class="btn btn-primary btn-small" href="pages/community.html">Write your first post</a></div>';
     const highlightsBody = highlights.length
         ? highlights.map(renderMemberHighlight).join('')
         : '<div class="empty-state"><h3>The community is just getting started</h3><p>Be the first to share a post or an opportunity others can join.</p><a class="btn btn-primary btn-small" href="pages/community.html">Start the conversation</a></div>';
-    return `
-        <div class="container member-home-inner">
-            <section class="member-hero">
+    const personalSections = communityOnly ? '' : `
+            <section class="member-hero member-home-personal">
                 <div class="member-hero-copy">
                     <span class="hero-kicker">Your GloWe</span>
                     <h1>Welcome back, <span class="member-hero-name">${escapeHtml(firstName)}</span></h1>
@@ -5021,14 +5133,17 @@ function renderMemberHomeMarkup(firstName, activity, highlights) {
                     <button class="btn btn-outline btn-large" type="button" onclick="openWishModal()">Ask for support</button>
                 </div>
             </section>
-            <section class="member-section">
+            <section class="member-section member-home-personal">
                 <div class="section-toolbar">
                     <div><h2>Your activity</h2></div>
                     <a class="btn btn-outline btn-small" href="pages/my-applications.html">Open Personal Area</a>
                 </div>
                 <div class="member-feed-grid">${activityBody}</div>
-            </section>
-            <section class="member-section">
+            </section>`;
+    return `
+        <div class="container member-home-inner${communityOnly ? ' member-home-community-only' : ''}">
+            ${personalSections}
+            <section class="member-section member-home-community">
                 <div class="section-toolbar">
                     <div><h2>What is happening on GloWe</h2></div>
                     <a class="btn btn-outline btn-small" href="pages/community.html">See all</a>
@@ -5046,7 +5161,7 @@ async function initMemberHome() {
     root.innerHTML = '<div class="container"><p class="muted-note">Loading your GloWe home…</p></div>';
 
     await Promise.all([
-        fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow),
+        fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames),
         loadCommunityPosts(),
         loadPostComments()
     ]);
@@ -5055,9 +5170,13 @@ async function initMemberHome() {
     const user = typeof getCurrentUser === 'function' ? getCurrentUser() : null;
     const firstName = localizedProfileFirstName(profile, 'there');
     const allPosts = getAllCommunityPosts();
-    const activity = selectMemberActivity(allPosts, user ? user.id : '');
-    const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts);
-    root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights);
+    const communityOnly = isGloweMobileHomeViewport();
+    const activity = communityOnly ? [] : selectMemberActivity(allPosts, user ? user.id : '');
+    const highlightLimit = communityOnly ? 9 : 6;
+    const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts, highlightLimit);
+    root.classList.toggle('member-home-community-only', communityOnly);
+    root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights, { communityOnly });
+    scheduleMemberHomeTranslation(root);
 }
 
 // Initialize all opportunities page
@@ -5097,7 +5216,7 @@ async function initOpportunitiesPage() {
     // Re-fetch the live board after a publish so created opportunities appear
     // with real server ids (working detail links), not a client-side copy.
     reloadOpportunities = async function () {
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
         renderOpportunities();
     };
 
@@ -5146,7 +5265,7 @@ async function initOpportunitiesPage() {
     // Fetch real data then render
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading opportunities…</p></div>';
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
         renderOpportunities();
     }
 
@@ -5268,7 +5387,7 @@ async function handleOpportunitySubmit(event) {
         closeOpportunityComposer();
         event.target.reset();
         if (reloadOpportunities) await reloadOpportunities();
-        showSuccessModal('Opportunity published', `${payload.title} was added to the opportunities board.`);
+        showActionToast('Opportunity published', `${payload.title} was added to the opportunities board.`);
     } catch (_e) {
         showSuccessModal('Could not publish', 'Something went wrong publishing your opportunity. Please try again.');
     }
@@ -5354,23 +5473,48 @@ async function initOrganizationsPage() {
 // Re-read + re-render the wish board after a create/close. Assigned when the
 // Wishing Well page initialises; a no-op elsewhere.
 let reloadWishBoard = null;
+let resetWishBoardFilters = null;
 
 async function initWishingWellPage() {
     const container = document.getElementById('wishes-list');
     const typeButtons = document.querySelectorAll('[data-wish-type]');
     const areaButtons = document.querySelectorAll('[data-impact-area]');
-    const locationInput = document.getElementById('wish-location');
+    const searchInput = document.getElementById('wish-search');
+    const sortSelect = document.getElementById('wish-sort');
     const clearBtn = document.getElementById('clear-wish-filters');
-    const filters = { type: 'all', area: 'all', location: '' };
+    const resultsCount = document.getElementById('wish-results-count');
+    const filterToggle = document.getElementById('wish-filter-toggle');
+    const advancedFilters = document.getElementById('wish-filter-advanced');
+    const filters = { type: 'all', area: 'all', query: '', sort: 'newest' };
 
     function renderWishes() {
         const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
-        const hasFilters = filters.type !== 'all' || filters.area !== 'all' || filters.location;
+        const hasFilters = filters.type !== 'all' || filters.area !== 'all' || filters.query;
         const filtered = helpers ? helpers.filterWishes(wishes, filters) : wishes;
-        container.innerHTML = filtered.length
-            ? filtered.map(renderWishCard).join('')
+        const sorted = helpers ? helpers.sortWishes(filtered, filters.sort) : filtered;
+        container.innerHTML = sorted.length
+            ? sorted.map(renderWishCard).join('')
             : hasFilters ? emptyWishFilteredHtml() : emptyWishBoardHtml();
+        if (resultsCount) {
+            resultsCount.textContent = sorted.length
+                ? `${sorted.length} wish${sorted.length === 1 ? '' : 'es'} shown`
+                : hasFilters ? 'No wishes match your filters' : '';
+        }
     }
+
+    resetWishBoardFilters = function () {
+        filters.type = 'all';
+        filters.area = 'all';
+        filters.query = '';
+        filters.sort = 'newest';
+        if (searchInput) searchInput.value = '';
+        if (sortSelect) sortSelect.value = 'newest';
+        typeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.wishType === 'all'));
+        areaButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.impactArea === 'all'));
+        if (advancedFilters) advancedFilters.classList.remove('is-open');
+        if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+        renderWishes();
+    };
 
     reloadWishBoard = async function () { await loadLiveWishes(); renderWishes(); };
 
@@ -5386,24 +5530,30 @@ async function initWishingWellPage() {
         this.classList.add('active');
         renderWishes();
     }));
-    if (locationInput) locationInput.addEventListener('input', function() {
-        filters.location = this.value;
+    if (searchInput) searchInput.addEventListener('input', function() {
+        filters.query = this.value.trim();
         renderWishes();
     });
-    if (clearBtn) clearBtn.addEventListener('click', function() {
-        filters.type = 'all';
-        filters.area = 'all';
-        filters.location = '';
-        if (locationInput) locationInput.value = '';
-        typeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.wishType === 'all'));
-        areaButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.impactArea === 'all'));
+    if (sortSelect) sortSelect.addEventListener('change', function() {
+        filters.sort = this.value || 'newest';
         renderWishes();
     });
+    if (filterToggle && advancedFilters) {
+        filterToggle.addEventListener('click', function() {
+            const open = advancedFilters.classList.toggle('is-open');
+            filterToggle.setAttribute('aria-expanded', String(open));
+        });
+    }
+    if (clearBtn) clearBtn.addEventListener('click', resetWishBoardFilters);
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading wishes…</p></div>';
         await loadLiveWishes();
         renderWishes();
     }
+    window.addEventListener('pageshow', function onWishBoardShow(event) {
+        if (!event.persisted || !container) return;
+        reloadWishBoard();
+    });
 }
 
 function emptyWishFilteredHtml() {
@@ -5789,11 +5939,11 @@ function renderModerationReports(reports) {
 async function applyGloweReportDecision(reportId, action, targetType, targetId) {
     if (action === 'remove') {
         await window.gloweBackend.adminRemoveContent(GloweModeration.canonicalTargetType(targetType), targetId, reportId);
-        showSuccessModal('Content removed', 'The reported content is no longer publicly visible.');
+        showActionToast('Content removed', 'The reported content is no longer publicly visible.');
         return;
     }
     await window.gloweBackend.adminDismissReport(reportId);
-    showSuccessModal('Report dismissed', 'The report was closed with no action.');
+    showActionToast('Report dismissed', 'The report was closed with no action.');
 }
 
 function showModerationDecisionError(error) {
@@ -5919,7 +6069,7 @@ async function decideGloweOrg(profileId, decision) {
         return;
     }
     const verb = decision === 'approved' ? 'approved' : 'rejected';
-    showSuccessModal('Decision saved', `The organization has been ${verb}.`);
+    showActionToast('Decision saved', `The organization has been ${verb}.`);
     loadPendingOrgs();
 }
 
@@ -6022,7 +6172,7 @@ async function handleForumQuestionSubmit(event) {
         tags: group.tags,
         audience: group.title
     });
-    showSuccessModal('Question published', 'Your forum post is now visible in the forum and community feed.');
+    showActionToast('Question published', 'Your forum post is now visible in the forum and community feed.');
     form.reset();
     await reloadForumThreads();
     initForumsPage();
@@ -6196,7 +6346,7 @@ async function handleDiscussionSubmit(event, groupId) {
         tags: group.tags,
         audience: group.title
     });
-    showSuccessModal('Thread published', 'Your discussion thread now appears in the community feed and this group.');
+    showActionToast('Thread published', 'Your discussion thread now appears in the community feed and this group.');
     event.target.reset();
     await reloadForumThreads();
     initDiscussionGroupPage();
@@ -6598,12 +6748,10 @@ function _renderProfileContent(profile, container) {
 }
 
 // Initialize opportunity detail page
-// FR-TRANSLATE-005 AC7 — mark the opportunity detail page's `.opportunity-main`
-// as a translatable card, then nudge the GloweTranslate driver. Title +
-// description carry scalar `data-tr-field`s here; the requirements/
-// responsibilities chips are tagged per-element by the caller before this runs.
+// FR-TRANSLATE-005 AC7 — mark the opportunity detail grid as one translatable
+// card (main + sidebar meta), then nudge the GloweTranslate driver.
 function markOpportunityDetailForTranslation(opportunityId) {
-    const card = document.querySelector('.opportunity-main');
+    const card = document.querySelector('.opportunity-detail-grid');
     if (!card || !opportunityId) return;
     card.setAttribute('data-tr-card', '');
     card.setAttribute('data-tr-type', 'glowe_opportunity');
@@ -6612,6 +6760,12 @@ function markOpportunityDetailForTranslation(opportunityId) {
     if (title) title.setAttribute('data-tr-field', 'title');
     const description = document.getElementById('opp-description');
     if (description) description.setAttribute('data-tr-field', 'description');
+    const location = document.getElementById('opp-location');
+    if (location) location.setAttribute('data-tr-field', 'location');
+    const duration = document.getElementById('opp-duration');
+    if (duration) duration.setAttribute('data-tr-field', 'duration');
+    const commitment = document.getElementById('opp-commitment');
+    if (commitment) commitment.setAttribute('data-tr-field', 'commitment');
     if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
         window.GloweTranslate.scan();
     }
@@ -6630,7 +6784,7 @@ async function initOpportunityDetailPage() {
     // opportunities/events aren't present yet — fetch before the lookup.
     if (!getOpportunityByAnyId(opportunityId)
         && typeof gloweBackend !== 'undefined' && gloweBackend.configured()) {
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
     }
 
     const opportunity = getOpportunityByAnyId(opportunityId);
@@ -6651,12 +6805,9 @@ async function initOpportunityDetailPage() {
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
     document.getElementById('opp-description').textContent = opportunity.description;
 
-    // FR-TRANSLATE-005 AC7 — requirements/responsibilities are text[] columns;
-    // tag each chip with a per-element field ("requirements.<i>") so the reader
-    // driver translates and caches every item independently. `skills` stays
-    // untranslated (short tech/label tags, excluded from the registry by AC4).
-    // Explicit empty state so a blank section reads as "nothing listed" rather
-    // than a load error (design fix #2 — Missing Empty States).
+    // FR-TRANSLATE-005 AC7 — requirements/responsibilities/skills are text[]
+    // columns; tag each chip with a per-element field so the reader driver
+    // translates and caches every item independently.
     const emptyDetail = '<li class="empty-detail">None specified for this opportunity.</li>';
 
     const requirementsList = document.getElementById('opp-requirements');
@@ -6671,12 +6822,14 @@ async function initOpportunityDetailPage() {
         ? resps.map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('')
         : emptyDetail;
 
-    // Mark the card + scan AFTER the chips exist so title, description and every
-    // array element are collected in a single pass (the card gets data-tr-done).
-    markOpportunityDetailForTranslation(opportunity.id);
-    
     const skillsContainer = document.getElementById('opp-skills');
-    skillsContainer.innerHTML = (opportunity.skills || []).map(skill => `<span class="skill-tag" title="${escapeHtml(skill)}">${escapeHtml(skill)}</span>`).join('');
+    const skillItems = (opportunity.skills || []).filter(Boolean);
+    skillsContainer.innerHTML = skillItems.length
+        ? skillItems.map((skill, i) => `<span class="skill-tag" title="${escapeHtml(skill)}" data-tr-field="skills.${i}">${escapeHtml(skill)}</span>`).join('')
+        : '';
+
+    // Mark the card + scan AFTER every tagged field exists (main + sidebar).
+    markOpportunityDetailForTranslation(opportunity.id);
     
     // Organization info
     const org = getOrganizationByName(opportunity.organization);
@@ -12713,6 +12866,15 @@ function translateGloweTree(root) {
             if (isGloweI18nExempt(node)) return NodeFilter.FILTER_REJECT;
             if (parent.nodeName === 'SCRIPT' || parent.nodeName === 'STYLE') {
                 return NodeFilter.FILTER_REJECT;
+            }
+            // Never chrome-localize UGC fields — those are demand-translated by
+            // glowe-translate.js with a per-card "Show original" toggle.
+            let el = parent;
+            while (el && el.nodeType === Node.ELEMENT_NODE) {
+                if (el.hasAttribute && el.hasAttribute('data-tr-field')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                el = el.parentNode;
             }
             return node.nodeValue && node.nodeValue.trim()
                 ? NodeFilter.FILTER_ACCEPT

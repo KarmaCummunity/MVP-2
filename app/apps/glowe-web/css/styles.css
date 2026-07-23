@@ -2698,9 +2698,71 @@ a.user-greeting:hover {
 .well-layout .container,
 .community-layout .container {
     display: grid;
-    grid-template-columns: 292px minmax(0, 1fr);
+    grid-template-columns: minmax(0, 1fr);
     gap: 28px;
     align-items: start;
+}
+
+.wishes-board-shell {
+    gap: 22px;
+}
+
+.wish-filter-panel {
+    display: grid;
+    gap: 16px;
+    padding: 22px 24px;
+    background:
+        linear-gradient(135deg, rgba(232, 247, 243, 0.88), rgba(255, 255, 255, 0.96)),
+        var(--white);
+    border: 1px solid rgba(20, 124, 117, 0.18);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 18px 44px rgba(24, 36, 61, 0.06);
+}
+
+.wish-filter-intro h2 {
+    margin: 6px 0 8px;
+    font-size: clamp(1.35rem, 2.6vw, 1.9rem);
+}
+
+.wish-filter-intro p {
+    margin: 0;
+    color: var(--text-secondary);
+}
+
+.wish-filter-primary {
+    display: grid;
+    grid-template-columns: minmax(220px, 1.35fr) minmax(150px, 0.65fr) auto auto;
+    gap: 12px;
+    align-items: end;
+}
+
+.wish-filter-primary .form-group {
+    margin: 0;
+}
+
+.wish-filter-advanced {
+    display: grid;
+    gap: 8px;
+    padding-top: 4px;
+    border-top: 1px solid rgba(20, 124, 117, 0.12);
+}
+
+.wish-filter-advanced .filter-pill {
+    width: auto;
+    flex: 1 1 180px;
+    margin-bottom: 0;
+    justify-content: center;
+    text-align: center;
+}
+
+.wish-filter-advanced .filter-pill-group {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 8px;
+}
+
+.wishes-list-toolbar {
+    margin-top: 4px;
 }
 
 .well-filters,
@@ -3161,6 +3223,19 @@ a.user-greeting:hover {
 .glowe-toast.visible {
     opacity: 1;
     transform: translate(-50%, 0);
+}
+
+.glowe-toast strong {
+    display: block;
+    font-size: 0.95rem;
+}
+
+.glowe-toast span {
+    display: block;
+    margin-top: 2px;
+    font-size: 0.82rem;
+    font-weight: 600;
+    opacity: 0.92;
 }
 
 .glowe-toast.is-error {
@@ -4502,6 +4577,46 @@ a.user-greeting:hover {
         flex-wrap: wrap;
         gap: 8px;
         order: 2;
+    }
+
+    .wish-filter-primary {
+        grid-template-columns: 1fr 1fr;
+    }
+
+    .wish-filter-search {
+        grid-column: 1 / -1;
+    }
+
+    .wish-filter-toggle {
+        grid-column: 1;
+    }
+
+    #clear-wish-filters {
+        grid-column: 2;
+    }
+
+    .wish-filter-advanced {
+        display: none;
+    }
+
+    .wish-filter-advanced.is-open {
+        display: grid;
+    }
+
+    .wish-card-top .heart-button {
+        display: none;
+    }
+
+    .wish-card .card-actions .post-share-label {
+        display: none;
+    }
+
+    .wish-card .card-actions .post-share-button {
+        width: 40px;
+        height: 40px;
+        padding: 0;
+        justify-content: center;
+        border-radius: 50%;
     }
 
     .wishes-column {
@@ -5934,6 +6049,17 @@ a.user-greeting:hover {
     }
 }
 
+/* Wishes board — desktop keeps advanced filters open; mobile uses a toggle. */
+@media (min-width: 901px) {
+    .wish-filter-toggle {
+        display: none;
+    }
+
+    .wish-filter-advanced {
+        display: grid !important;
+    }
+}
+
 /* ===== Cross-device responsive refinements ===== */
 @media (max-width: 1180px) {
     .container {
@@ -6883,15 +7009,31 @@ body.glowe-member-home main > section:not(#member-home) {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 20px;
-    text-decoration: none;
     color: inherit;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
 }
 
+.member-feed-card-link {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+}
+
+.member-feed-card-link:hover {
+    text-decoration: none;
+}
+
 .member-feed-card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
+}
+
+.member-feed-card:hover .member-feed-card-link {
+    color: inherit;
 }
 
 .member-feed-type {
@@ -6918,12 +7060,54 @@ body.glowe-member-home main > section:not(#member-home) {
     color: var(--text-light);
 }
 
+.member-feed-opportunity-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.member-feed-opportunity-org {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.member-feed-card .tr-slot {
+    order: -1;
+    margin: 0 0 4px;
+}
+
+.member-feed-grid .opportunity-card {
+    height: auto;
+}
+
+.member-feed-grid .opportunity-card > .card-actions {
+    margin-top: 12px;
+}
+
 @media (max-width: 640px) {
     .member-hero {
         padding: 24px;
     }
     .member-hero-actions .btn {
         flex: 1 1 100%;
+    }
+}
+
+/* Phone home: community feed only — personal hero/activity live in Profile tab (FR-GLOWE-016 AC2). */
+@media (max-width: 680px) {
+    .member-home-personal {
+        display: none !important;
+    }
+
+    .member-home.member-home-community-only,
+    .member-home:has(.member-home-community-only) {
+        padding-top: 24px;
+    }
+
+    .member-home-community-only {
+        gap: 0;
     }
 }
 

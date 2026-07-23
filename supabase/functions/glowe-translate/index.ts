@@ -50,9 +50,11 @@ const SOURCE: Record<string, SourceEntry> = {
     table: 'glowe_opportunities', pk: 'id',
     fields: {
       title: 'title', description: 'description',
+      location: 'location', duration: 'duration', commitment: 'commitment',
       requirements: 'requirements', responsibilities: 'responsibilities',
+      skills: 'skills',
     },
-    arrayFields: new Set(['requirements', 'responsibilities']),
+    arrayFields: new Set(['requirements', 'responsibilities', 'skills']),
   },
   glowe_project: {
     table: 'glowe_projects', pk: 'id',
