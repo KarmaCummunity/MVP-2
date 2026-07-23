@@ -416,7 +416,10 @@ FR-GLOWE-014 outreach-post model; aligns with D-61). Full design:
 - AC2. **Adaptive home (done).** Signed-in members see a personal hero ("Welcome back, {first
   name}" + create CTAs), a "Your activity" rail (their own posts, filtered by `authorId`), and a
   unified "What's happening" feed (recency-interleaved opportunities + posts, capped) in place of
-  the marketing home; guests keep the marketing home untouched. The member view renders into a
+  the marketing home; guests keep the marketing home untouched. **On phone viewports (≤680px, same
+  breakpoint as the bottom nav), the signed-in home shows only the community "What's happening"
+  feed** — personal hero and "Your activity" are omitted so Home stays community-first; members
+  reach personal content via the Profile tab. The member view renders into a
   hidden `#member-home` section revealed by `initMemberHome()`; a `body.glowe-member-home` class
   hides the marketing sections. Empty states are creation CTAs. Selectors (`selectMemberActivity`,
   `selectCommunityHighlights`) are pure; cards reuse `renderOpportunityCard` (root-relative) plus a
