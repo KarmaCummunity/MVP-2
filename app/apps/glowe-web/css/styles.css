@@ -1,4 +1,8 @@
-@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@400;500;700&display=swap');
+/* Script coverage for the reader languages (FR-TRANSLATE-003): Assistant/Heebo
+   for Hebrew, Noto Sans Arabic for Arabic, Noto Sans Ethiopic for Amharic —
+   Ethiopic in particular is absent from most system font stacks, so without it
+   Amharic renders as tofu boxes. Cyrillic is covered by Nunito. */
+@import url('https://fonts.googleapis.com/css2?family=Assistant:wght@400;600;700&family=Heebo:wght@400;500;700&family=Noto+Sans+Arabic:wght@400;600;700&family=Noto+Sans+Ethiopic:wght@400;600;700&display=swap');
 
 /* ===== CSS Variables ===== */
 :root {
@@ -6660,15 +6664,30 @@ a.user-greeting:hover {
     margin-bottom: 16px;
 }
 
-/* ===== FR-GLOWE-004: Hebrew interface + RTL ===== */
-/* Hebrew typography. dir="rtl" on <html> handles most layout mirroring
-   (flex order, default alignment, list markers) automatically; the rules
-   below cover spots with explicit physical alignment. */
+/* ===== FR-GLOWE-004 / FR-TRANSLATE-003: localized interface + RTL ===== */
+/* dir="rtl" on <html> handles most layout mirroring (flex order, default
+   alignment, list markers) automatically; the rules below cover spots with
+   explicit physical alignment. Typography is per-script rather than per-
+   direction: Hebrew and Arabic are both RTL but need different font stacks. */
 html[dir="rtl"] body,
-body.lang-he {
-    font-family: 'Assistant', 'Heebo', 'Rubik', 'Noto Sans Hebrew', 'Inter', system-ui, sans-serif;
+body.lang-he,
+body.lang-ar,
+body.lang-am {
     line-height: 1.7;
     letter-spacing: normal;
+}
+
+body.lang-he {
+    font-family: 'Assistant', 'Heebo', 'Rubik', 'Noto Sans Hebrew', 'Inter', system-ui, sans-serif;
+}
+
+body.lang-ar {
+    font-family: 'Noto Sans Arabic', 'Noto Naskh Arabic', 'Segoe UI', 'Tahoma', system-ui, sans-serif;
+}
+
+/* Amharic (Ge'ez script) — system stacks rarely ship Ethiopic glyphs. */
+body.lang-am {
+    font-family: 'Noto Sans Ethiopic', 'Abyssinica SIL', 'Nyala', system-ui, sans-serif;
 }
 
 html[dir="rtl"] {
@@ -6731,25 +6750,41 @@ html[dir="rtl"] textarea {
 }
 
 /* Keep brand/identifier values left-to-right inside RTL text. */
-html[dir="rtl"] .logo-text,
-html[dir="rtl"] .lang-toggle {
+html[dir="rtl"] .logo-text {
     direction: ltr;
 }
 
-/* Header language switch — visible only for anonymous visitors (removed on sign-in). */
+/* Header language picker — visible only for anonymous visitors (removed on
+   sign-in). Direction is deliberately NOT forced: the options are endonyms in
+   mixed scripts, so each <option lang> renders in its own script. */
 .lang-toggle {
     flex: 0 0 auto;
-    min-width: 42px;
+    min-width: 92px;
+    max-width: 140px;
     height: 36px;
-    padding: 0 12px;
+    padding: 0 30px 0 12px;
     border-radius: 999px;
     border: 1px solid rgba(15, 93, 85, 0.25);
-    background: var(--white);
+    background-color: var(--white);
     color: var(--primary-dark);
     font-weight: 700;
     font-size: 0.9rem;
+    font-family: inherit;
     cursor: pointer;
     transition: var(--transition);
+    /* Custom chevron so the pill keeps its shape across browsers. */
+    appearance: none;
+    -webkit-appearance: none;
+    background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 8' fill='none' stroke='%23073f42' stroke-width='1.8'%3E%3Cpath d='M1 1.5 6 6.5l5-5'/%3E%3C/svg%3E");
+    background-repeat: no-repeat;
+    background-position: right 11px center;
+    background-size: 11px 7px;
+    text-overflow: ellipsis;
+}
+
+html[dir="rtl"] .lang-toggle {
+    padding: 0 12px 0 30px;
+    background-position: left 11px center;
 }
 
 .lang-toggle:hover {
