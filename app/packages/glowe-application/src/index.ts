@@ -25,6 +25,8 @@ export * from './helpers/messageHelpers';
 export * from './use-cases/ListChats';
 export * from './use-cases/GetOrCreateChat';
 export * from './use-cases/SendMessage';
+export * from './helpers/moderationHelpers';
+export * from './use-cases/SubmitReport';
 export * from './ports/IGlowePostRepository';
 export * from './ports/IGloweOpportunityRepository';
 export * from './ports/IGloweForumRepository';
