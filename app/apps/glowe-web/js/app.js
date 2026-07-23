@@ -73,6 +73,32 @@ function showToast(message, options) {
     gloweToastTimer = setTimeout(() => toast.classList.remove('visible'), 2600);
 }
 
+// Auto-dismissing confirmation for completed actions (save, publish, etc.).
+function showActionToast(title, message) {
+    if (typeof document === 'undefined') return;
+    const dict = typeof gloweDict === 'function' ? gloweDict() : null;
+    const localTitle = (dict && dict[title]) ? dict[title] : title;
+    const localMessage = message ? ((dict && dict[message]) ? dict[message] : message) : '';
+    let toast = document.getElementById('glowe-toast');
+    if (!toast) {
+        toast = document.createElement('div');
+        toast.id = 'glowe-toast';
+        toast.className = 'glowe-toast';
+        toast.setAttribute('role', 'status');
+        toast.setAttribute('aria-live', 'polite');
+        document.body.appendChild(toast);
+    }
+    toast.innerHTML = localMessage
+        ? `<strong>${escapeHtml(localTitle)}</strong><span>${escapeHtml(localMessage)}</span>`
+        : escapeHtml(localTitle);
+    toast.classList.remove('is-error');
+    toast.classList.add('is-success');
+    void toast.offsetWidth;
+    toast.classList.add('visible');
+    if (gloweToastTimer) clearTimeout(gloweToastTimer);
+    gloweToastTimer = setTimeout(() => toast.classList.remove('visible'), 3200);
+}
+
 // ── View-only write gating (FR-GLOWE-003) ───────────────────────────────────
 // Browsing is open to everyone, but creating content (a need, post, event, or
 // discussion) requires a registered account that is allowed to publish. Two
@@ -301,7 +327,8 @@ async function submitCreateDraft(form, options) {
         await window.gloweBackend.insertOwned(options.table, options.payload);
         closeModal(options.modalId);
         form.reset();
-        showSuccessModal(options.successTitle, options.successBody);
+        showActionToast(options.successTitle, options.successBody);
+        if (options.table === 'posts' && reloadWishBoard) await reloadWishBoard();
     } catch (_e) {
         showSuccessModal('Could not publish', options.failBody);
     }
@@ -2941,7 +2968,7 @@ async function handlePersonalProjectSubmit(event) {
     if (typeof window.renderPersonalArea === 'function') {
         window.renderPersonalArea();
     }
-    showSuccessModal(id ? 'Project updated' : 'Project added', id
+    showActionToast(id ? 'Project updated' : 'Project added', id
         ? 'Your project changes were saved.'
         : 'The project now appears in your personal area.');
 }
@@ -3001,8 +3028,15 @@ async function handleWishSubmit(event) {
         });
         closeModal('wish-modal');
         event.target.reset();
-        showSuccessModal('Wish published', 'Your need is now live on the Wishing Well.');
-        if (reloadWishBoard) await reloadWishBoard();
+        showActionToast('Wish published', 'Your need is now live on the Wishing Well.');
+        const onWishPage = resolveGlowePage(window.location.pathname) === 'wishing-well';
+        if (onWishPage) {
+            if (typeof resetWishBoardFilters === 'function') resetWishBoardFilters();
+            if (reloadWishBoard) await reloadWishBoard();
+        } else {
+            const inPages = window.location.pathname.includes('/pages/');
+            window.location.href = `${inPages ? '' : 'pages/'}wishing-well.html`;
+        }
     } catch (_e) {
         showSuccessModal('Could not publish', 'Something went wrong publishing your wish. Please try again.');
     } finally {
@@ -3072,7 +3106,7 @@ async function submitSupportOffer(form, draft) {
         redirectToChatThread(chatId);
         return;
     }
-    showSuccessModal('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
+    showActionToast('Offer sent', 'Your offer of support has been recorded. The organizer can follow up with you.');
 }
 
 async function handleConnectSubmit(event) {
@@ -3093,7 +3127,7 @@ async function handleConnectSubmit(event) {
 
 function handleQuickConnect() {
     closeModal('connect-modal');
-    showSuccessModal('Draft saved', 'Your offer draft is saved in this workspace so you can return to it later.');
+    showActionToast('Draft saved', 'Your offer draft is saved in this workspace so you can return to it later.');
 }
 
 // FR-GLOWE-010 AC6 — "Reach out" contact flow. Opens a lightweight modal that,
@@ -3189,7 +3223,7 @@ function openNotificationPrefs() {
 function handleNotificationPrefs(event) {
     event.preventDefault();
     closeModal('notification-modal');
-    showSuccessModal('Preferences saved', 'GloWe will focus on action-oriented updates and avoid unnecessary noise.');
+    showActionToast('Preferences saved', 'GloWe will focus on action-oriented updates and avoid unnecessary noise.');
 }
 
 function openFundingBrief() {
@@ -3256,11 +3290,11 @@ async function handleMessageSubmit(event) {
 }
 
 function addProjectFeedback() {
-    showSuccessModal('Feedback saved', 'This recommendation can appear on the project after community moderation.');
+    showActionToast('Feedback saved', 'This recommendation can appear on the project after community moderation.');
 }
 
 function rateOrganization(name = 'this organization') {
-    showSuccessModal('Rating recorded', `Your trust signal for ${name} will help rank active organizations by involvement and documented impact.`);
+    showActionToast('Rating recorded', `Your trust signal for ${name} will help rank active organizations by involvement and documented impact.`);
 }
 
 function toggleLowDataMode() {
@@ -3467,7 +3501,7 @@ function saveItem(type, id, title, meta = '', href = '') {
             window.gloweBackend.insertOwned('saved_items', payload).catch(() => {});
         }
     }
-    showSuccessModal('Saved', `${title} was added to your saved area.`);
+    showActionToast('Saved', `${title} was added to your saved area.`);
 }
 
 function removeSavedItem(type, id) {
@@ -3890,11 +3924,12 @@ async function copyShareLink(url) {
     showSuccessModal('Copy this link', url);
 }
 
-function renderShareButton(title, path = '') {
+function renderShareButton(title, path = '', extraClass = '') {
     const safeTitle = escapeHtml(title);
     const titleArg = jsString(title);
     const pathArg = jsString(path);
-    return `<button type="button" class="post-share-button" onclick="sharePost('${titleArg}', '${pathArg}')" aria-label="Share ${safeTitle}" title="Share">${SHARE_ICON_SVG}<span class="post-share-label">Share</span></button>`;
+    const cls = ['post-share-button', extraClass].filter(Boolean).join(' ');
+    return `<button type="button" class="${cls}" onclick="sharePost('${titleArg}', '${pathArg}')" aria-label="Share ${safeTitle}" title="Share">${SHARE_ICON_SVG}<span class="post-share-label">Share</span></button>`;
 }
 
 // FR-GLOWE-015 AC1 — persist a report to glowe_reports. Duplicate reports on
@@ -3933,7 +3968,7 @@ async function handleReportSubmit(event) {
         await window.gloweBackend.submitReport(GloweModeration.buildReportPayload(draft));
         event.target.reset();
         closeModal('report-modal');
-        showSuccessModal('Report received', 'Thank you. We will review this with care and confidentiality.');
+        showActionToast('Report received', 'Thank you. We will review this with care and confidentiality.');
     } catch (error) {
         closeModal('report-modal');
         showReportSubmitError(error);
@@ -4168,7 +4203,7 @@ async function deleteCommunityPost(postId) {
         return;
     }
     await initCommunityPage();
-    showSuccessModal('Post deleted', 'Your post was removed from the community feed.');
+    showActionToast('Post deleted', 'Your post was removed from the community feed.');
 }
 
 // Display name for the signed-in author, falling back to their saved profile.
@@ -4425,19 +4460,21 @@ function renderWishCard(wish) {
         ? GloweLocalizedName.resolveLocalizedName(authorPair.primary, authorPair.english, gloweReaderLang())
             || authorPair.primary || 'GloWe Member'
         : (wish.author || 'GloWe Member');
+    const wishHref = `wishing-well.html?wish=${wish.id}`;
     return `
         <article class="wish-card" style="--tag-color: ${style.color}" data-tr-card data-tr-type="glowe_post" data-tr-id="${wish.id}">
             <details class="post-more-menu card-more-menu">
                 <summary aria-label="More wish actions">...</summary>
                 <div class="post-more-panel">
-                    ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save wish', 'post-menu-action')}
+                    ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, wishHref, 'Save wish', 'post-menu-action')}
+                    <button type="button" onclick="sharePost('${jsString(wish.title)}', '${jsString(wishHref)}')">Share</button>
                     <button type="button" onclick="openPrivateMessage('${jsString(authorName)}', '${jsString(wish.authorId || '')}')">Message author</button>
                     <button type="button" onclick="openReportModal('wish', '${wish.id}', '${jsString(wish.title)}')">Report</button>
                 </div>
             </details>
             <div class="wish-card-top">
                 <span class="wish-type" style="background:${style.color}" title="${escapeHtml(wish.type)}">${escapeHtml(wish.type)}</span>
-                ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, `wishing-well.html?wish=${wish.id}`, 'Save', 'heart-button')}
+                ${savedToggleButtonHtml('wish', wish.id, wish.title, authorName, wishHref, 'Save', 'heart-button wish-save-desktop')}
             </div>
             ${translationToggleSlotHtml()}
             <button class="card-open-button" type="button" onclick="openWishDetail('${wish.id}')">
@@ -4459,7 +4496,7 @@ function renderWishCard(wish) {
             <button class="btn btn-outline btn-small" type="button" onclick="openWishDetail('${wish.id}')">Learn More</button>
             <button class="btn btn-primary btn-small" type="button" onclick="showSupportModal('${wish.id}')">Offer Support</button>
             ${wishOwnerControls(wish)}
-            ${renderShareButton(wish.title, `wishing-well.html?wish=${wish.id}`)}
+            ${renderShareButton(wish.title, wishHref, 'wish-share-action')}
         </div>
     </article>
 `;
@@ -4792,7 +4829,7 @@ async function handleInlinePostSubmit(event) {
     if (!published) return;
     closeInlineComposer();
     await initCommunityPage();
-    showSuccessModal('Post published to feed', 'The new post appears at the top of the community feed.');
+    showActionToast('Post published to feed', 'The new post appears at the top of the community feed.');
 }
 
 function initWritePostPage() {
@@ -4868,7 +4905,7 @@ function initWritePostPage() {
             author_name_en: author.english || null
         });
         if (!published) return;
-        showSuccessModal('Post connected to feed', 'Your post was saved and will appear at the top of the community feed.');
+        showActionToast('Post connected to feed', 'Your post was saved and will appear at the top of the community feed.');
         setTimeout(() => {
             window.location.href = 'community.html';
         }, 700);
@@ -5268,7 +5305,7 @@ async function handleOpportunitySubmit(event) {
         closeOpportunityComposer();
         event.target.reset();
         if (reloadOpportunities) await reloadOpportunities();
-        showSuccessModal('Opportunity published', `${payload.title} was added to the opportunities board.`);
+        showActionToast('Opportunity published', `${payload.title} was added to the opportunities board.`);
     } catch (_e) {
         showSuccessModal('Could not publish', 'Something went wrong publishing your opportunity. Please try again.');
     }
@@ -5354,23 +5391,48 @@ async function initOrganizationsPage() {
 // Re-read + re-render the wish board after a create/close. Assigned when the
 // Wishing Well page initialises; a no-op elsewhere.
 let reloadWishBoard = null;
+let resetWishBoardFilters = null;
 
 async function initWishingWellPage() {
     const container = document.getElementById('wishes-list');
     const typeButtons = document.querySelectorAll('[data-wish-type]');
     const areaButtons = document.querySelectorAll('[data-impact-area]');
-    const locationInput = document.getElementById('wish-location');
+    const searchInput = document.getElementById('wish-search');
+    const sortSelect = document.getElementById('wish-sort');
     const clearBtn = document.getElementById('clear-wish-filters');
-    const filters = { type: 'all', area: 'all', location: '' };
+    const resultsCount = document.getElementById('wish-results-count');
+    const filterToggle = document.getElementById('wish-filter-toggle');
+    const advancedFilters = document.getElementById('wish-filter-advanced');
+    const filters = { type: 'all', area: 'all', query: '', sort: 'newest' };
 
     function renderWishes() {
         const helpers = (typeof GloweWishes !== 'undefined') ? GloweWishes : null;
-        const hasFilters = filters.type !== 'all' || filters.area !== 'all' || filters.location;
+        const hasFilters = filters.type !== 'all' || filters.area !== 'all' || filters.query;
         const filtered = helpers ? helpers.filterWishes(wishes, filters) : wishes;
-        container.innerHTML = filtered.length
-            ? filtered.map(renderWishCard).join('')
+        const sorted = helpers ? helpers.sortWishes(filtered, filters.sort) : filtered;
+        container.innerHTML = sorted.length
+            ? sorted.map(renderWishCard).join('')
             : hasFilters ? emptyWishFilteredHtml() : emptyWishBoardHtml();
+        if (resultsCount) {
+            resultsCount.textContent = sorted.length
+                ? `${sorted.length} wish${sorted.length === 1 ? '' : 'es'} shown`
+                : hasFilters ? 'No wishes match your filters' : '';
+        }
     }
+
+    resetWishBoardFilters = function () {
+        filters.type = 'all';
+        filters.area = 'all';
+        filters.query = '';
+        filters.sort = 'newest';
+        if (searchInput) searchInput.value = '';
+        if (sortSelect) sortSelect.value = 'newest';
+        typeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.wishType === 'all'));
+        areaButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.impactArea === 'all'));
+        if (advancedFilters) advancedFilters.classList.remove('is-open');
+        if (filterToggle) filterToggle.setAttribute('aria-expanded', 'false');
+        renderWishes();
+    };
 
     reloadWishBoard = async function () { await loadLiveWishes(); renderWishes(); };
 
@@ -5386,24 +5448,30 @@ async function initWishingWellPage() {
         this.classList.add('active');
         renderWishes();
     }));
-    if (locationInput) locationInput.addEventListener('input', function() {
-        filters.location = this.value;
+    if (searchInput) searchInput.addEventListener('input', function() {
+        filters.query = this.value.trim();
         renderWishes();
     });
-    if (clearBtn) clearBtn.addEventListener('click', function() {
-        filters.type = 'all';
-        filters.area = 'all';
-        filters.location = '';
-        if (locationInput) locationInput.value = '';
-        typeButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.wishType === 'all'));
-        areaButtons.forEach(btn => btn.classList.toggle('active', btn.dataset.impactArea === 'all'));
+    if (sortSelect) sortSelect.addEventListener('change', function() {
+        filters.sort = this.value || 'newest';
         renderWishes();
     });
+    if (filterToggle && advancedFilters) {
+        filterToggle.addEventListener('click', function() {
+            const open = advancedFilters.classList.toggle('is-open');
+            filterToggle.setAttribute('aria-expanded', String(open));
+        });
+    }
+    if (clearBtn) clearBtn.addEventListener('click', resetWishBoardFilters);
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading wishes…</p></div>';
         await loadLiveWishes();
         renderWishes();
     }
+    window.addEventListener('pageshow', function onWishBoardShow(event) {
+        if (!event.persisted || !container) return;
+        reloadWishBoard();
+    });
 }
 
 function emptyWishFilteredHtml() {
@@ -5789,11 +5857,11 @@ function renderModerationReports(reports) {
 async function applyGloweReportDecision(reportId, action, targetType, targetId) {
     if (action === 'remove') {
         await window.gloweBackend.adminRemoveContent(GloweModeration.canonicalTargetType(targetType), targetId, reportId);
-        showSuccessModal('Content removed', 'The reported content is no longer publicly visible.');
+        showActionToast('Content removed', 'The reported content is no longer publicly visible.');
         return;
     }
     await window.gloweBackend.adminDismissReport(reportId);
-    showSuccessModal('Report dismissed', 'The report was closed with no action.');
+    showActionToast('Report dismissed', 'The report was closed with no action.');
 }
 
 function showModerationDecisionError(error) {
@@ -5919,7 +5987,7 @@ async function decideGloweOrg(profileId, decision) {
         return;
     }
     const verb = decision === 'approved' ? 'approved' : 'rejected';
-    showSuccessModal('Decision saved', `The organization has been ${verb}.`);
+    showActionToast('Decision saved', `The organization has been ${verb}.`);
     loadPendingOrgs();
 }
 
@@ -6022,7 +6090,7 @@ async function handleForumQuestionSubmit(event) {
         tags: group.tags,
         audience: group.title
     });
-    showSuccessModal('Question published', 'Your forum post is now visible in the forum and community feed.');
+    showActionToast('Question published', 'Your forum post is now visible in the forum and community feed.');
     form.reset();
     await reloadForumThreads();
     initForumsPage();
@@ -6196,7 +6264,7 @@ async function handleDiscussionSubmit(event, groupId) {
         tags: group.tags,
         audience: group.title
     });
-    showSuccessModal('Thread published', 'Your discussion thread now appears in the community feed and this group.');
+    showActionToast('Thread published', 'Your discussion thread now appears in the community feed and this group.');
     event.target.reset();
     await reloadForumThreads();
     initDiscussionGroupPage();
