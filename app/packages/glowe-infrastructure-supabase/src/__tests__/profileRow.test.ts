@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest';
 
-import { fromProfileRow } from '../mappers/profileRow';
+import { fromProfileRow, toProfileUpsertPayload } from '../mappers/profileRow';
 
 describe('fromProfileRow', () => {
   it('maps snake_case DB row to GloweProfile', () => {
@@ -33,5 +33,26 @@ describe('fromProfileRow', () => {
 
   it('returns null for empty row', () => {
     expect(fromProfileRow(null)).toBeNull();
+  });
+
+  it('maps upsert payload from profile input', () => {
+    const payload = toProfileUpsertPayload({
+      id: 'user-1',
+      email: 'n@example.com',
+      name: 'Naveh',
+      nameEn: 'Naveh',
+      type: 'Individual',
+      country: 'IL',
+      skills: ['teaching'],
+    });
+    expect(payload).toMatchObject({
+      id: 'user-1',
+      display_name: 'Naveh',
+      display_name_en: 'Naveh',
+      email: 'n@example.com',
+      profile_type: 'Individual',
+      country: 'IL',
+      skills: ['teaching'],
+    });
   });
 });
