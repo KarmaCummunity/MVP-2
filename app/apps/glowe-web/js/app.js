@@ -4389,6 +4389,7 @@ function renderOpportunityCard(opportunity, basePath = '') {
     const location = opportunity.location || '';
     const duration = opportunity.duration || '';
     const commitment = opportunity.commitment || '';
+    const badgeTr = (!isEvent && commitment) ? ' data-tr-field="commitment"' : '';
 
     return `
         <div class="opportunity-card" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${opportunity.id}">
@@ -4405,19 +4406,19 @@ function renderOpportunityCard(opportunity, basePath = '') {
                     ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName)}
                     <span ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(orgName)}</span>
                 </div>
-                ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}">${escapeHtml(badge)}</span>` : ''}
+                ${badge ? `<span class="opportunity-badge" title="${escapeHtml(badge)}"${badgeTr}>${escapeHtml(badge)}</span>` : ''}
             </div>
             ${translationToggleSlotHtml()}
             <h3 class="opportunity-title" data-tr-field="title">${escapeHtml(opportunity.title)}</h3>
             <p class="opportunity-description" data-tr-field="description">${escapeHtml(opportunity.description)}</p>
             <div class="opportunity-meta-group opportunity-details">
                 ${eventMeta}
-                ${location ? `<span class="opportunity-detail"><strong>Location:</strong> ${escapeHtml(location)}</span>` : ''}
-                ${duration ? `<span class="opportunity-detail"><strong>Duration:</strong> ${escapeHtml(duration)}</span>` : ''}
-                ${!isEvent && commitment ? `<span class="opportunity-detail"><strong>Commitment:</strong> ${escapeHtml(commitment)}</span>` : ''}
+                ${location ? `<span class="opportunity-detail"><strong>Location:</strong> <span data-tr-field="location">${escapeHtml(location)}</span></span>` : ''}
+                ${duration ? `<span class="opportunity-detail"><strong>Duration:</strong> <span data-tr-field="duration">${escapeHtml(duration)}</span></span>` : ''}
+                ${!isEvent && commitment ? `<span class="opportunity-detail"><strong>Commitment:</strong> <span data-tr-field="commitment">${escapeHtml(commitment)}</span></span>` : ''}
             </div>
             <div class="opportunity-skills">
-                ${skills.map(skill => `<span class="skill-tag" title="${escapeHtml(skill)}">${escapeHtml(skill)}</span>`).join('')}
+                ${skills.map((skill, i) => `<span class="skill-tag" title="${escapeHtml(skill)}" data-tr-field="skills.${i}">${escapeHtml(skill)}</span>`).join('')}
             </div>
             <div class="card-actions">
                 <a href="${detailHref}" class="btn btn-primary btn-small">View Details</a>
@@ -6747,12 +6748,10 @@ function _renderProfileContent(profile, container) {
 }
 
 // Initialize opportunity detail page
-// FR-TRANSLATE-005 AC7 — mark the opportunity detail page's `.opportunity-main`
-// as a translatable card, then nudge the GloweTranslate driver. Title +
-// description carry scalar `data-tr-field`s here; the requirements/
-// responsibilities chips are tagged per-element by the caller before this runs.
+// FR-TRANSLATE-005 AC7 — mark the opportunity detail grid as one translatable
+// card (main + sidebar meta), then nudge the GloweTranslate driver.
 function markOpportunityDetailForTranslation(opportunityId) {
-    const card = document.querySelector('.opportunity-main');
+    const card = document.querySelector('.opportunity-detail-grid');
     if (!card || !opportunityId) return;
     card.setAttribute('data-tr-card', '');
     card.setAttribute('data-tr-type', 'glowe_opportunity');
@@ -6761,6 +6760,12 @@ function markOpportunityDetailForTranslation(opportunityId) {
     if (title) title.setAttribute('data-tr-field', 'title');
     const description = document.getElementById('opp-description');
     if (description) description.setAttribute('data-tr-field', 'description');
+    const location = document.getElementById('opp-location');
+    if (location) location.setAttribute('data-tr-field', 'location');
+    const duration = document.getElementById('opp-duration');
+    if (duration) duration.setAttribute('data-tr-field', 'duration');
+    const commitment = document.getElementById('opp-commitment');
+    if (commitment) commitment.setAttribute('data-tr-field', 'commitment');
     if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
         window.GloweTranslate.scan();
     }
@@ -6800,12 +6805,9 @@ async function initOpportunityDetailPage() {
     document.getElementById('opp-commitment').textContent = opportunity.commitment;
     document.getElementById('opp-description').textContent = opportunity.description;
 
-    // FR-TRANSLATE-005 AC7 — requirements/responsibilities are text[] columns;
-    // tag each chip with a per-element field ("requirements.<i>") so the reader
-    // driver translates and caches every item independently. `skills` stays
-    // untranslated (short tech/label tags, excluded from the registry by AC4).
-    // Explicit empty state so a blank section reads as "nothing listed" rather
-    // than a load error (design fix #2 — Missing Empty States).
+    // FR-TRANSLATE-005 AC7 — requirements/responsibilities/skills are text[]
+    // columns; tag each chip with a per-element field so the reader driver
+    // translates and caches every item independently.
     const emptyDetail = '<li class="empty-detail">None specified for this opportunity.</li>';
 
     const requirementsList = document.getElementById('opp-requirements');
@@ -6820,12 +6822,14 @@ async function initOpportunityDetailPage() {
         ? resps.map((resp, i) => `<li data-tr-field="responsibilities.${i}">${escapeHtml(resp)}</li>`).join('')
         : emptyDetail;
 
-    // Mark the card + scan AFTER the chips exist so title, description and every
-    // array element are collected in a single pass (the card gets data-tr-done).
-    markOpportunityDetailForTranslation(opportunity.id);
-    
     const skillsContainer = document.getElementById('opp-skills');
-    skillsContainer.innerHTML = (opportunity.skills || []).map(skill => `<span class="skill-tag" title="${escapeHtml(skill)}">${escapeHtml(skill)}</span>`).join('');
+    const skillItems = (opportunity.skills || []).filter(Boolean);
+    skillsContainer.innerHTML = skillItems.length
+        ? skillItems.map((skill, i) => `<span class="skill-tag" title="${escapeHtml(skill)}" data-tr-field="skills.${i}">${escapeHtml(skill)}</span>`).join('')
+        : '';
+
+    // Mark the card + scan AFTER every tagged field exists (main + sidebar).
+    markOpportunityDetailForTranslation(opportunity.id);
     
     // Organization info
     const org = getOrganizationByName(opportunity.organization);
