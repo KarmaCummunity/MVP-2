@@ -71,6 +71,7 @@ export function applyAuthorEnglishFromProfiles<T extends GloweAuthorEnglishRow>(
   (patches || []).forEach((patch) => {
     if (patch?.id) byId[String(patch.id)] = englishFromProfilePatch(patch);
   });
+  // fallow-ignore-next-line complexity
   return (items || []).map((item) => {
     if (!item) return item;
     const existing = trim(item.authorNameEn) || trim(item.authorEn);

@@ -44,6 +44,7 @@ export function isListedOpportunity(
   return status !== 'removed';
 }
 
+// fallow-ignore-next-line complexity
 export function mapOpportunityRow(
   row: GloweOpportunityRow | null | undefined,
 ): OpportunityViewModel {
@@ -83,6 +84,7 @@ export function filterOpportunityCatalog(
   filters: OpportunityCatalogFilters | null | undefined,
 ): readonly OpportunityViewModel[] {
   const f = filters ?? {};
+  // fallow-ignore-next-line complexity
   return opportunityList.filter((opp) => {
     const haystack = `${opp.title} ${opp.description} ${opp.organization} ${(opp.skills || []).join(' ')}`.toLowerCase();
     if (

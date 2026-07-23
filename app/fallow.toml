@@ -4,3 +4,12 @@ entry = [
   "apps/glowe-web/index.html",
   "apps/glowe-web/pages/**/*.html",
 ]
+
+# FR-GLOWE-027 phase-1 packages intentionally mirror glowe-web oracles until
+# the Expo app wires them; exclude from duplication gates (D-1 additive-only).
+[duplicates]
+ignore = [
+  "packages/glowe-domain/**",
+  "packages/glowe-application/**",
+  "packages/glowe-infrastructure-supabase/**",
+]

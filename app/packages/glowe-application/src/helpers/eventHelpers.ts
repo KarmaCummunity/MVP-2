@@ -1,11 +1,11 @@
 import type { OpportunityViewModel } from './opportunityCatalog';
 
-export type EventTiming = 'past' | 'ongoing' | 'upcoming';
-
-export interface EventFilters {
+export type EventFilters = {
   readonly type?: 'all' | 'physical' | 'digital';
   readonly timeframe?: 'all' | 'upcoming';
-}
+};
+
+type EventTiming = 'past' | 'ongoing' | 'upcoming';
 
 type EventLike = {
   readonly startAt?: string | null;
@@ -38,15 +38,15 @@ export function isEvent(opp: EventLike | null | undefined): boolean {
   return Boolean(opp && (opp.startAt || opp.start_at));
 }
 
-export function startTime(opp: EventLike | null | undefined): number {
+function startTime(opp: EventLike | null | undefined): number {
   return toTime(opp && (opp.startAt || opp.start_at));
 }
 
-export function endTime(opp: EventLike | null | undefined): number {
+function endTime(opp: EventLike | null | undefined): number {
   return toTime(opp && (opp.endAt || opp.end_at));
 }
 
-export function eventTiming(
+function eventTiming(
   opp: EventLike | null | undefined,
   nowMs?: number,
 ): EventTiming | null {
@@ -111,16 +111,12 @@ export function findRegistration(
   return null;
 }
 
-export function isActiveRegistration(status: string | undefined): boolean {
+function isActiveRegistration(status: string | undefined): boolean {
   return status === 'Accepted' || status === 'Pending' || status === 'Waitlisted';
 }
 
 export function isEventCancelled(event: EventLike | null | undefined): boolean {
   return Boolean(event && event.status === 'cancelled');
-}
-
-export function isDigital(event: EventLike | null | undefined): boolean {
-  return Boolean(event && (event.eventType || event.event_type) === 'digital');
 }
 
 export function isEventOpenForRegistration(

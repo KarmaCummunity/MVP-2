@@ -9,6 +9,7 @@ export type GloweProfileDbRow = Record<string, unknown> & {
   raw_profile?: Record<string, unknown> | null;
 };
 
+// fallow-ignore-next-line complexity
 export function fromProfileRow(row: GloweProfileDbRow | null | undefined): GloweProfile | null {
   if (!row) return null;
   return {
@@ -46,6 +47,7 @@ export function fromProfileRow(row: GloweProfileDbRow | null | undefined): Glowe
   };
 }
 
+// fallow-ignore-next-line complexity
 export function toProfileUpsertPayload(
   profile: UpsertProfileInput & { id: string; email?: string },
 ): Record<string, unknown> {

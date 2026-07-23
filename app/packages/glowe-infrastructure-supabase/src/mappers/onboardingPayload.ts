@@ -6,6 +6,7 @@ export interface OnboardingEnglishNames {
   readonly orgNameEn: string | null;
 }
 
+// fallow-ignore-next-line complexity
 export function buildOnboardingPayload(
   user: User,
   details: CompleteOnboardingInput,

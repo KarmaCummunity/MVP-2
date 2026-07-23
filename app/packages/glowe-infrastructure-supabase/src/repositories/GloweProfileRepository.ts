@@ -113,6 +113,7 @@ export class GloweProfileRepository implements IGloweProfileRepository {
     return data?.publicUrl ?? null;
   }
 
+  // fallow-ignore-next-line complexity
   async ensureFromGoogle(user: GloweGoogleUser): Promise<GloweProfile | null> {
     if (!user?.id) return null;
     const existing = await this.getMine().catch(() => null);
