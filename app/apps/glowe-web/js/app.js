@@ -4242,14 +4242,16 @@ function mapProfileToOrg(profile) {
     };
 }
 
-async function fetchAndPopulate(backendFn, targetArray, mapper) {
+async function fetchAndPopulate(backendFn, targetArray, mapper, postProcess) {
     try {
         if (typeof gloweBackend === 'undefined' || !gloweBackend.configured()) return;
         const rows = await backendFn();
         if (!rows) return;
         // FR-GLOWE-015 AC5 — admin-removed content never surfaces publicly.
         const visible = rows.filter(row => !row || row.status !== 'removed');
-        targetArray.splice(0, targetArray.length, ...visible.map(mapper));
+        let mapped = visible.map(mapper);
+        if (typeof postProcess === 'function') mapped = await postProcess(mapped);
+        targetArray.splice(0, targetArray.length, ...mapped);
     } catch (_e) {
         // leave array empty; page shows empty state
     }
@@ -4320,6 +4322,31 @@ async function withEnsuredAuthorEnglishNames(items) {
     const patches = await backend.ensureProfileEnglishNames(ids);
     if (!patches || !patches.length) return list;
     return GloweLocalizedName.applyAuthorEnglishFromProfiles(list, patches);
+}
+
+// FR-GLOWE-024 — backfill missing organization English snapshots on opportunities
+// from the publisher's glowe_profiles row (generate-on-read when still empty).
+async function withEnsuredOrganizationEnglishNames(items) {
+    const list = Array.isArray(items) ? items.filter(Boolean) : [];
+    if (!list.length) return list;
+    if (gloweReaderLang() !== 'en') return list;
+    if (typeof GloweLocalizedName === 'undefined') return list;
+    const needing = list.filter(GloweLocalizedName.organizationNeedsEnglishName);
+    if (!needing.length) return list;
+    const ids = [];
+    const seen = {};
+    needing.forEach(function (row) {
+        const id = row.ownerId || row.userId;
+        if (!id || seen[String(id)]) return;
+        seen[String(id)] = true;
+        ids.push(String(id));
+    });
+    if (!ids.length) return list;
+    const backend = window.gloweBackend;
+    if (!backend || typeof backend.ensureProfileEnglishNames !== 'function') return list;
+    const patches = await backend.ensureProfileEnglishNames(ids);
+    if (!patches || !patches.length) return list;
+    return GloweLocalizedName.applyOrganizationEnglishFromProfiles(list, patches);
 }
 
 function translationToggleSlotHtml() {
@@ -4949,7 +4976,7 @@ async function initFeaturedOpportunities() {
     const container = document.getElementById('featured-opportunities');
     if (container) {
         container.innerHTML = '<p class="muted-note">Loading opportunities…</p>';
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
         const featured = getFeaturedOpportunities().slice(0, 3);
         container.innerHTML = featured.length
             ? featured.map(opp => renderOpportunityCard(opp)).join('')
@@ -5019,16 +5046,20 @@ function renderMemberFeedPost(post) {
     const postId = post.id || '';
     const href = `pages/community.html#post-${encodeURIComponent(postId)}`;
     const snippet = (post.text || '').slice(0, 140);
+    const authorPair = authorNamePairFrom(post);
     const authorName = (typeof GloweLocalizedName !== 'undefined')
         ? GloweLocalizedName.localizedAuthorName(post, gloweReaderLang(), 'Community Member')
         : (post.authorName || 'Community Member');
     return `
-        <a class="member-feed-card" href="${href}">
-            <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
-            <h3>${escapeHtml(post.title || 'Community post')}</h3>
-            <p>${escapeHtml(snippet)}</p>
-            <span class="member-feed-author">${escapeHtml(authorName)}</span>
-        </a>`;
+        <article class="member-feed-card" data-tr-card data-tr-type="glowe_post" data-tr-id="${escapeHtml(String(postId))}">
+            <a class="member-feed-card-link" href="${href}">
+                <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
+                <h3 data-tr-field="title">${escapeHtml(post.title || 'Community post')}</h3>
+                <p data-tr-field="text">${escapeHtml(snippet)}</p>
+                <span class="member-feed-author" ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
+            </a>
+            ${translationToggleSlotHtml()}
+        </article>`;
 }
 
 function renderMemberHighlight(entry) {
@@ -5090,7 +5121,7 @@ async function initMemberHome() {
     root.innerHTML = '<div class="container"><p class="muted-note">Loading your GloWe home…</p></div>';
 
     await Promise.all([
-        fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow),
+        fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames),
         loadCommunityPosts(),
         loadPostComments()
     ]);
@@ -5105,6 +5136,9 @@ async function initMemberHome() {
     const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts, highlightLimit);
     root.classList.toggle('member-home-community-only', communityOnly);
     root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights, { communityOnly });
+    if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
+        window.GloweTranslate.scan(root);
+    }
 }
 
 // Initialize all opportunities page
@@ -5144,7 +5178,7 @@ async function initOpportunitiesPage() {
     // Re-fetch the live board after a publish so created opportunities appear
     // with real server ids (working detail links), not a client-side copy.
     reloadOpportunities = async function () {
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
         renderOpportunities();
     };
 
@@ -5193,7 +5227,7 @@ async function initOpportunitiesPage() {
     // Fetch real data then render
     if (container) {
         container.innerHTML = '<div class="empty-state"><p class="muted-note">Loading opportunities…</p></div>';
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
         renderOpportunities();
     }
 
@@ -6708,7 +6742,7 @@ async function initOpportunityDetailPage() {
     // opportunities/events aren't present yet — fetch before the lookup.
     if (!getOpportunityByAnyId(opportunityId)
         && typeof gloweBackend !== 'undefined' && gloweBackend.configured()) {
-        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow);
+        await fetchAndPopulate(() => gloweBackend.listAll('opportunities'), opportunities, mapOpportunityRow, withEnsuredOrganizationEnglishNames);
     }
 
     const opportunity = getOpportunityByAnyId(opportunityId);

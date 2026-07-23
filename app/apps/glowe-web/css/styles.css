@@ -6974,15 +6974,31 @@ body.glowe-member-home main > section:not(#member-home) {
     border: 1px solid var(--border-color);
     border-radius: var(--radius-md);
     padding: 20px;
-    text-decoration: none;
     color: inherit;
     box-shadow: var(--shadow-sm);
     transition: var(--transition);
 }
 
+.member-feed-card-link {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    text-decoration: none;
+    color: inherit;
+    flex: 1;
+}
+
+.member-feed-card-link:hover {
+    text-decoration: none;
+}
+
 .member-feed-card:hover {
     box-shadow: var(--shadow-md);
     transform: translateY(-2px);
+}
+
+.member-feed-card:hover .member-feed-card-link {
+    color: inherit;
 }
 
 .member-feed-type {
