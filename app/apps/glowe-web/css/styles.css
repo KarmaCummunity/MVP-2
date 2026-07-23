@@ -7018,6 +7018,22 @@ body.glowe-member-home main > section:not(#member-home) {
     }
 }
 
+/* Phone home: community feed only — personal hero/activity live in Profile tab (FR-GLOWE-016 AC2). */
+@media (max-width: 680px) {
+    .member-home-personal {
+        display: none !important;
+    }
+
+    .member-home.member-home-community-only,
+    .member-home:has(.member-home-community-only) {
+        padding-top: 24px;
+    }
+
+    .member-home-community-only {
+        gap: 0;
+    }
+}
+
 /* FR-TRANSLATE-005 — reserved slot + "Show original" toggle on UGC cards. */
 .tr-slot {
     display: flex;
