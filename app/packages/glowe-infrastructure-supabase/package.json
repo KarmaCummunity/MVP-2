@@ -12,6 +12,7 @@
   },
   "dependencies": {
     "@kc/glowe-application": "workspace:*",
+    "@kc/glowe-domain": "workspace:*",
     "@supabase/supabase-js": "^2.69.0"
   },
   "devDependencies": {

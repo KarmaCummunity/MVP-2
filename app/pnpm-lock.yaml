@@ -308,6 +308,9 @@ importers:
       '@kc/glowe-application':
         specifier: workspace:*
         version: link:../glowe-application
+      '@kc/glowe-domain':
+        specifier: workspace:*
+        version: link:../glowe-domain
       '@supabase/supabase-js':
         specifier: ^2.69.0
         version: 2.105.3
