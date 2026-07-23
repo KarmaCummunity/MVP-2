@@ -5052,20 +5052,54 @@ function renderMemberFeedPost(post) {
         : (post.authorName || 'Community Member');
     return `
         <article class="member-feed-card" data-tr-card data-tr-type="glowe_post" data-tr-id="${escapeHtml(String(postId))}">
+            ${translationToggleSlotHtml()}
             <a class="member-feed-card-link" href="${href}">
                 <span class="member-feed-type">Post${post.category ? ` · ${escapeHtml(post.category)}` : ''}</span>
                 <h3 data-tr-field="title">${escapeHtml(post.title || 'Community post')}</h3>
                 <p data-tr-field="text">${escapeHtml(snippet)}</p>
                 <span class="member-feed-author" ${bilingualNameAttrs(authorPair.primary, authorPair.english)}>${escapeHtml(authorName)}</span>
             </a>
+        </article>`;
+}
+
+// Compact opportunity teaser for the member-home grid. The full
+// renderOpportunityCard() is too tall here: card-actions uses margin-top:auto
+// and stretches against taller post neighbours in the same grid row.
+function renderMemberFeedOpportunity(opportunity) {
+    const detailHref = `pages/opportunity.html?id=${encodeURIComponent(opportunity.id)}`;
+    const snippet = (opportunity.description || '').slice(0, 140);
+    const orgName = (typeof GloweLocalizedName !== 'undefined')
+        ? GloweLocalizedName.localizedOrganizationName(opportunity, gloweReaderLang(), 'GloWe Member')
+        : (opportunity.organization || 'GloWe Member');
+    const orgPair = orgNamePairFrom(opportunity);
+    return `
+        <article class="member-feed-card member-feed-opportunity" data-tr-card data-tr-type="glowe_opportunity" data-tr-id="${escapeHtml(String(opportunity.id))}">
+            <div class="member-feed-opportunity-header">
+                ${renderLocalizedEntityMark(orgPair.primary, orgPair.english, orgName, 'entity-mark')}
+                <span class="member-feed-opportunity-org" ${bilingualNameAttrs(orgPair.primary, orgPair.english)}>${escapeHtml(orgName)}</span>
+            </div>
             ${translationToggleSlotHtml()}
+            <a class="member-feed-card-link" href="${detailHref}">
+                <span class="member-feed-type">Opportunity</span>
+                <h3 data-tr-field="title">${escapeHtml(opportunity.title || 'Opportunity')}</h3>
+                <p data-tr-field="description">${escapeHtml(snippet)}</p>
+            </a>
         </article>`;
 }
 
 function renderMemberHighlight(entry) {
     return entry.kind === 'opportunity'
-        ? renderOpportunityCard(entry.item)
+        ? renderMemberFeedOpportunity(entry.item)
         : renderMemberFeedPost(entry.item);
+}
+
+function scheduleMemberHomeTranslation(root) {
+    if (!root || !window.GloweTranslate || typeof window.GloweTranslate.scan !== 'function') return;
+    const scan = () => window.GloweTranslate.scan(root);
+    scan();
+    // Demand-driven UGC translation runs after async render; a second pass
+    // covers slow Supabase client init without blocking the first paint.
+    setTimeout(scan, 500);
 }
 
 function isGloweMobileHomeViewport() {
@@ -5136,9 +5170,7 @@ async function initMemberHome() {
     const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts, highlightLimit);
     root.classList.toggle('member-home-community-only', communityOnly);
     root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights, { communityOnly });
-    if (window.GloweTranslate && typeof window.GloweTranslate.scan === 'function') {
-        window.GloweTranslate.scan(root);
-    }
+    scheduleMemberHomeTranslation(root);
 }
 
 // Initialize all opportunities page
@@ -9029,6 +9061,15 @@ function translateGloweTree(root) {
             if (!parent) return NodeFilter.FILTER_REJECT;
             if (parent.nodeName === 'SCRIPT' || parent.nodeName === 'STYLE') {
                 return NodeFilter.FILTER_REJECT;
+            }
+            // Never chrome-localize UGC fields — those are demand-translated by
+            // glowe-translate.js with a per-card "Show original" toggle.
+            let el = parent;
+            while (el && el.nodeType === Node.ELEMENT_NODE) {
+                if (el.hasAttribute && el.hasAttribute('data-tr-field')) {
+                    return NodeFilter.FILTER_REJECT;
+                }
+                el = el.parentNode;
             }
             return node.nodeValue && node.nodeValue.trim()
                 ? NodeFilter.FILTER_ACCEPT
