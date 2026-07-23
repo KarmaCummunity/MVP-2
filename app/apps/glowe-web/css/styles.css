@@ -7025,6 +7025,32 @@ body.glowe-member-home main > section:not(#member-home) {
     color: var(--text-light);
 }
 
+.member-feed-opportunity-header {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    font-size: 0.85rem;
+    color: var(--text-secondary);
+}
+
+.member-feed-opportunity-org {
+    font-weight: 600;
+    color: var(--text-primary);
+}
+
+.member-feed-card .tr-slot {
+    order: -1;
+    margin: 0 0 4px;
+}
+
+.member-feed-grid .opportunity-card {
+    height: auto;
+}
+
+.member-feed-grid .opportunity-card > .card-actions {
+    margin-top: 12px;
+}
+
 @media (max-width: 640px) {
     .member-hero {
         padding: 24px;
