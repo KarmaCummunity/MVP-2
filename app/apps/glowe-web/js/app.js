@@ -7,7 +7,9 @@ const LOGIN_MODAL_DEFAULT_INTRO = 'Sign in with your Google account to continue.
 function openModal(modalId) {
     const modal = document.getElementById(modalId);
     if (modal) {
-        if (modalId === 'login-modal') {
+        if (modalId === 'login-modal' && typeof upgradeLoginModal === 'function') {
+            upgradeLoginModal();
+        } else if (modalId === 'login-modal') {
             const intro = modal.querySelector('.modal-intro');
             if (intro) intro.textContent = LOGIN_MODAL_DEFAULT_INTRO;
         }
@@ -1351,6 +1353,55 @@ async function uploadProfileImage(file) {
     return uploadProfileImageToCloudinary(file);
 }
 
+async function uploadCoverImage(file) {
+    const backend = window.gloweBackend;
+    if (backend && backend.configured() && isLoggedIn() && typeof backend.uploadCover === 'function') {
+        const url = await backend.uploadCover(file);
+        if (url) return url;
+    }
+    return uploadProfileImageToCloudinary(file);
+}
+
+function profileCoverImageUrl(profile) {
+    if (!profile) return '';
+    return profile.coverImageUrl || profile.cover_image_url || '';
+}
+
+function profileCoverStyleAttr(profile) {
+    const url = profileCoverImageUrl(profile);
+    if (!url) return '';
+    const safeUrl = String(url).replace(/\\/g, '\\\\').replace(/'/g, "\\'");
+    return ` style="--profile-cover-image: url('${safeUrl}')"`;
+}
+
+function renderSocialCover(profile, options = {}) {
+    const editable = Boolean(options && options.editable);
+    const extraClass = (options && options.extraClass) || '';
+    const hasCover = Boolean(profileCoverImageUrl(profile));
+    const classNames = [
+        options && options.band ? 'profile-cover-band' : 'social-cover',
+        hasCover ? 'has-cover-image' : '',
+        extraClass
+    ].filter(Boolean).join(' ');
+    const styleAttr = profileCoverStyleAttr(profile);
+    if (!editable) {
+        return `<div class="${classNames}"${styleAttr}></div>`;
+    }
+    const cameraIcon = (typeof GloweProfileUx !== 'undefined') ? GloweProfileUx.CAMERA_ICON_SVG : '';
+    return `
+        <div class="social-cover-wrap">
+            <div class="${classNames}"${styleAttr}></div>
+            <button type="button" class="social-cover-change" aria-label="Change cover photo" title="Change cover photo" onclick="openCoverEditModal()">${cameraIcon}</button>
+        </div>`;
+}
+
+function refreshOwnedProfileViews() {
+    if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+    if (document.getElementById('profile-content') && typeof initProfilePage === 'function') {
+        initProfilePage();
+    }
+}
+
 function renderPersonalAvatar(profile, className = 'profile-avatar') {
     const displayName = localizedProfileDisplayName(profile);
     if (profile.avatarUrl) {
@@ -1677,25 +1728,36 @@ function normalizeMainNavigation() {
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const homeHref = inPages ? '../index.html' : 'index.html';
+    const signedIn = typeof isLoggedIn === 'function' && isLoggedIn();
+    const profilePages = ['my-applications', 'connections', 'saved', 'settings'];
     // Home stays in the top nav for every session — parity with the mobile
-    // bottom-nav Home tab. Personal Area is reached via the greeting / Profile
-    // tab, not by replacing Home when signed in.
+    // bottom-nav Home tab. Profile appears in the desktop header only when signed in.
     const links = [
         { label: 'Home', href: homeHref, match: 'index' },
         { label: 'Wishing Well', href: `${prefix}wishing-well.html`, match: 'wishing-well' },
         { label: 'Organizations', href: `${prefix}organizations.html`, match: 'organizations' },
-        { label: 'Community', href: `${prefix}community.html`, match: 'community' },
-        { label: 'About', href: `${prefix}about.html`, match: 'about' }
+        { label: 'Community', href: `${prefix}community.html`, match: 'community' }
     ];
+    if (signedIn) {
+        links.push({
+            label: 'Profile',
+            href: `${prefix}my-applications.html`,
+            match: 'profile',
+            pages: profilePages
+        });
+    }
+    links.push({ label: 'About', href: `${prefix}about.html`, match: 'about' });
     const page = resolveGlowePage(window.location.pathname);
     nav.innerHTML = links.map(link => {
         const active = page === link.match
+            || (Array.isArray(link.pages) && link.pages.includes(page))
             || (link.match === 'about' && page === 'whats-next')
             || (link.match === 'community' && (page === 'forums' || page === 'discussion-group'))
             || (link.match === 'wishing-well' && (page === 'volunteer-network' || page === 'opportunities' || page === 'opportunity'));
-        return `<a href="${link.href}" class="nav-link${active ? ' active' : ''}">${link.label}</a>`;
+        return `<a href="${link.href}" class="nav-link${active ? ' active' : ''}"${active ? ' aria-current="page"' : ''}>${link.label}</a>`;
     }).join('');
 }
+window.normalizeMainNavigation = normalizeMainNavigation;
 
 function ensureHeaderEnd() {
     const headerContainer = document.querySelector('.main-header .container');
@@ -1708,6 +1770,38 @@ function ensureHeaderEnd() {
     }
     return headerEnd;
 }
+
+function ensureLogoBrand() {
+    const logo = document.querySelector('.main-header .logo');
+    if (!logo) return;
+    const inPages = window.location.pathname.includes('/pages/');
+    const prefix = inPages ? '' : 'pages/';
+    let brand = logo.querySelector('.logo-brand');
+    if (!brand) {
+        const logoText = logo.querySelector('.logo-text');
+        brand = document.createElement('div');
+        brand.className = 'logo-brand';
+        if (logoText) {
+            brand.appendChild(logoText);
+        } else {
+            brand.innerHTML = '<span class="logo-text">GloWe</span>';
+        }
+        logo.appendChild(brand);
+    }
+    let greeting = brand.querySelector('.logo-user-greeting');
+    if (!greeting) {
+        greeting = document.createElement('a');
+        greeting.className = 'logo-user-greeting';
+        greeting.href = `${prefix}my-applications.html`;
+        greeting.hidden = true;
+        greeting.innerHTML = 'Hi, <span id="user-name">there</span>';
+        brand.appendChild(greeting);
+    } else {
+        greeting.href = `${prefix}my-applications.html`;
+    }
+}
+
+window.ensureLogoBrand = ensureLogoBrand;
 
 function normalizeHeaderUserMenu() {
     const headerContainer = document.querySelector('.main-header .container');
@@ -1730,10 +1824,11 @@ function normalizeHeaderUserMenu() {
     const chatIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M21 11.5a8.38 8.38 0 0 1-.9 3.8 8.5 8.5 0 0 1-7.6 4.7 8.38 8.38 0 0 1-3.8-.9L3 21l1.9-5.7a8.38 8.38 0 0 1-.9-3.8 8.5 8.5 0 0 1 4.7-7.6 8.38 8.38 0 0 1 3.8-.9h.5a8.48 8.48 0 0 1 8 8v.5z"></path></svg>';
     const gearIcon = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>';
     userMenu.innerHTML = `
-        <a class="user-greeting" href="${prefix}my-applications.html">Hi, <span id="user-name">there</span></a>
         <button class="btn btn-primary btn-small header-create-btn" type="button" onclick="openCreateMenu()">+ Create</button>
-        <a class="header-icon-btn" href="${prefix}messages.html" aria-label="Messages" title="Messages">${chatIcon}</a>
-        <a class="btn btn-outline btn-small header-settings-btn" href="${prefix}settings.html" aria-label="Settings" title="Settings"><span class="header-settings-icon">${gearIcon}</span><span class="header-settings-label">Settings</span></a>
+        <div class="header-corner-actions">
+            <a class="header-icon-btn" href="${prefix}messages.html" aria-label="Messages" title="Messages">${chatIcon}</a>
+            <a class="header-icon-btn" href="${prefix}settings.html" aria-label="Settings" title="Settings">${gearIcon}</a>
+        </div>
     `;
 }
 
@@ -1749,13 +1844,14 @@ async function applyAdminLink() {
     const inPages = window.location.pathname.includes('/pages/');
     const prefix = inPages ? '' : 'pages/';
     const shieldSvg = '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" width="18" height="18"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"></path></svg>';
+    const corner = userMenu.querySelector('.header-corner-actions') || userMenu;
     const link = document.createElement('a');
-    link.className = 'btn btn-outline btn-small glowe-admin-link';
+    link.className = 'header-icon-btn glowe-admin-link';
     link.href = `${prefix}admin.html`;
     link.title = 'Admin review';
     link.setAttribute('aria-label', 'Admin review');
-    link.innerHTML = `<span class="glowe-admin-icon">${shieldSvg}</span><span class="glowe-admin-label">Admin review</span>`;
-    userMenu.appendChild(link);
+    link.innerHTML = shieldSvg;
+    corner.appendChild(link);
 }
 window.applyAdminLink = applyAdminLink;
 
@@ -1771,10 +1867,11 @@ function normalizeHeaderAuthButtons() {
     if (authButtons.parentElement !== headerEnd) {
         headerEnd.appendChild(authButtons);
     }
-    // Auth is Google-only, so signing in and joining are the same action.
-    // A single combined button avoids the false "Log In vs Join" distinction.
+    const localDev = window.GloweDevAuth
+        && (window.GloweDevAuth.isActive() || window.GloweDevAuth.isLocalSupabaseConfigured());
+    const signInLabel = localDev ? 'Dev sign in' : 'Sign up / Sign in';
     authButtons.innerHTML = `
-        <button class="btn btn-primary btn-small" type="button" onclick="handleGoogleSignIn()">Sign up / Sign in</button>
+        <button class="btn btn-primary btn-small" type="button" onclick="handleGoogleSignIn()">${signInLabel}</button>
     `;
 }
 
@@ -1862,33 +1959,38 @@ function ensureBottomNavigation() {
             label: 'Home',
             href: homeHref,
             match: 'index',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>'
+            iconOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M3 9l9-7 9 7v11a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2z"></path><polyline points="9 22 9 12 15 12 15 22"></polyline></svg>',
+            iconFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M10 20v-6h4v6h5v-8h3L12 3 2 12h3v8z"></path></svg>'
         },
         { 
             label: 'Wishes',
             href: `${prefix}wishing-well.html`,
             match: 'wishing-well',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>'
+            iconOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><polygon points="12 2 15.09 8.26 22 9.27 17 14.14 18.18 21.02 12 17.77 5.82 21.02 7 14.14 2 9.27 8.91 8.26 12 2"></polygon></svg>',
+            iconFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"></path></svg>'
         },
         { 
             label: 'Community',
             href: `${prefix}community.html`,
             match: 'community',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>'
+            iconOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M17 21v-2a4 4 0 0 0-4-4H5a4 4 0 0 0-4 4v2"></path><circle cx="9" cy="7" r="4"></circle><path d="M23 21v-2a4 4 0 0 0-3-3.87"></path><path d="M16 3.13a4 4 0 0 1 0 7.75"></path></svg>',
+            iconFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M16 11c1.66 0 2.99-1.34 2.99-3S17.66 5 16 5s-3 1.34-3 3 1.34 3 3 3zm-8 0c1.66 0 2.99-1.34 2.99-3S9.66 5 8 5 5 6.34 5 8s1.34 3 3 3zm0 2c-2.33 0-7 1.17-7 3.5V19h14v-2.5C15 14.17 10.33 13 8 13zm8 0c-.29 0-.62.02-.97.05 1.16.84 1.97 1.97 1.97 3.45V19h6v-2.5c0-2.33-4.67-3.5-7-3.5z"></path></svg>'
         },
         { 
             label: 'Profile',
             href: `${prefix}my-applications.html`,
             match: 'my-applications',
-            icon: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>'
+            iconOutline: '<svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2"></path><circle cx="12" cy="7" r="4"></circle></svg>',
+            iconFilled: '<svg viewBox="0 0 24 24" fill="currentColor" stroke="none"><path d="M12 12c2.21 0 4-1.79 4-4s-1.79-4-4-4-4 1.79-4 4 1.79 4 4 4zm0 2c-2.67 0-8 1.34-8 4v2h16v-2c0-2.66-5.33-4-8-4z"></path></svg>'
         }
     ];
 
     const linkHtml = (link) => {
         const active = bottomNavActive(page, link.match);
+        const icon = active ? link.iconFilled : link.iconOutline;
         return `
-            <a href="${link.href}" class="bottom-nav-link${active ? ' active' : ''}">
-                <span class="nav-icon">${link.icon}</span>
+            <a href="${link.href}" class="bottom-nav-link${active ? ' active' : ''}"${active ? ' aria-current="page"' : ''}>
+                <span class="nav-icon">${icon}</span>
                 <span class="nav-label">${link.label}</span>
             </a>
         `;
@@ -1907,6 +2009,7 @@ function ensureBottomNavigation() {
 }
 
 function ensureGlobalUI() {
+    ensureLogoBrand();
     normalizeHeaderAuthButtons();
     normalizeHeaderUserMenu();
     ensureGlobalFooter();
@@ -2244,6 +2347,28 @@ function ensureGlobalUI() {
         `);
     }
 
+    if (!document.getElementById('cover-edit-modal')) {
+        document.body.insertAdjacentHTML('beforeend', `
+            <div id="cover-edit-modal" class="modal">
+                <div class="modal-content cover-edit-modal-content">
+                    <span class="close-modal" onclick="closeCoverEditModal()">&times;</span>
+                    <h2>Change cover photo</h2>
+                    <div class="cover-edit-preview-wrap">
+                        <div id="cover-edit-preview" class="cover-edit-preview" hidden></div>
+                    </div>
+                    <input type="file" id="cover-edit-file" accept="image/*" hidden onchange="handleCoverEditFileChange(event)">
+                    <small id="cover-edit-status"></small>
+                    <div class="modal-actions cover-edit-actions">
+                        <button type="button" class="btn btn-outline" onclick="triggerCoverEditReplace()">Replace</button>
+                        <button type="button" class="btn btn-outline" onclick="handleCoverEditRemove()">Remove cover</button>
+                        <button type="button" class="btn btn-primary" id="cover-edit-save-btn" onclick="handleCoverEditSave()">Save cover</button>
+                        <button type="button" class="btn btn-outline" onclick="closeCoverEditModal()">Cancel</button>
+                    </div>
+                </div>
+            </div>
+        `);
+    }
+
     if (!document.getElementById('glowe-onboarding-modal')) {
         document.body.insertAdjacentHTML('beforeend', `
             <div id="glowe-onboarding-modal" class="modal">
@@ -2510,7 +2635,24 @@ function upgradeLoginModal() {
     const modal = document.getElementById('login-modal');
     if (!modal) return;
     const content = modal.querySelector('.modal-content');
-    if (!content || content.dataset.googleOnly === 'true') return;
+    if (!content) return;
+
+    if (window.GloweDevAuth && (window.GloweDevAuth.isActive() || window.GloweDevAuth.isLocalSupabaseConfigured())) {
+        if (content.dataset.googleOnly === 'local-dev') {
+            if (typeof window.bindLocalDevPersonaButtons === 'function') {
+                window.bindLocalDevPersonaButtons(content);
+            }
+            return;
+        }
+        content.innerHTML = window.GloweDevAuth.loginModalHtml();
+        content.dataset.googleOnly = 'local-dev';
+        if (typeof window.bindLocalDevPersonaButtons === 'function') {
+            window.bindLocalDevPersonaButtons(content);
+        }
+        return;
+    }
+
+    if (content.dataset.googleOnly === 'true') return;
     content.innerHTML = `
         <span class="close-modal" onclick="closeModal('login-modal')">&times;</span>
         <h2>Welcome Back!</h2>
@@ -2842,10 +2984,161 @@ async function handleAvatarEditSave() {
         }
 
         closeAvatarEditModal();
-        if (typeof window.renderPersonalArea === 'function') window.renderPersonalArea();
+        refreshOwnedProfileViews();
         showToast('Profile saved');
     } catch (error) {
         setAvatarEditStatus(error.message || 'Could not save photo.', { error: true });
+    } finally {
+        if (saveBtn) saveBtn.disabled = false;
+    }
+}
+
+let coverEditPendingFile = null;
+let coverEditRemoveRequested = false;
+let coverEditPreviewObjectUrl = null;
+
+function revokeCoverEditPreviewUrl() {
+    if (coverEditPreviewObjectUrl) {
+        URL.revokeObjectURL(coverEditPreviewObjectUrl);
+        coverEditPreviewObjectUrl = null;
+    }
+}
+
+function setCoverEditStatus(message, options) {
+    const status = document.getElementById('cover-edit-status');
+    if (!status) return;
+    status.textContent = message || '';
+    const isError = Boolean(options && options.error);
+    status.classList.toggle('is-error', isError && Boolean(message));
+    status.classList.toggle('is-info', !isError && Boolean(message));
+}
+
+function updateCoverEditPreview(src) {
+    const preview = document.getElementById('cover-edit-preview');
+    if (!preview) return;
+    if (src) {
+        preview.style.backgroundImage = `url('${String(src).replace(/'/g, "\\'")}')`;
+        preview.hidden = false;
+    } else {
+        preview.style.backgroundImage = '';
+        preview.hidden = true;
+    }
+}
+
+function resetCoverEditState() {
+    coverEditPendingFile = null;
+    coverEditRemoveRequested = false;
+    revokeCoverEditPreviewUrl();
+    setCoverEditStatus('');
+    const input = document.getElementById('cover-edit-file');
+    if (input) input.value = '';
+    const saveBtn = document.getElementById('cover-edit-save-btn');
+    if (saveBtn) saveBtn.disabled = false;
+}
+
+function closeCoverEditModal() {
+    resetCoverEditState();
+    closeModal('cover-edit-modal');
+}
+
+function openCoverEditModal() {
+    ensureGlobalUI();
+    resetCoverEditState();
+    const profile = getPersonalProfile();
+    updateCoverEditPreview(profileCoverImageUrl(profile));
+    openModal('cover-edit-modal');
+}
+
+function triggerCoverEditReplace() {
+    const input = document.getElementById('cover-edit-file');
+    if (input) input.click();
+}
+
+async function handleCoverEditFileChange(event) {
+    const file = event.target.files && event.target.files[0];
+    if (!file) return;
+    const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+    if (orgHelpers && typeof orgHelpers.prepareAvatarUploadFile === 'function') {
+        setCoverEditStatus('Preparing photo...');
+        const prepared = await orgHelpers.prepareAvatarUploadFile(file);
+        if (!prepared.ok) {
+            setCoverEditStatus(prepared.error, { error: true });
+            event.target.value = '';
+            return;
+        }
+        coverEditPendingFile = prepared.file;
+        coverEditRemoveRequested = false;
+        revokeCoverEditPreviewUrl();
+        coverEditPreviewObjectUrl = URL.createObjectURL(prepared.file);
+        updateCoverEditPreview(coverEditPreviewObjectUrl);
+        setCoverEditStatus(
+            prepared.compressed ? 'Photo optimized for upload.' : '',
+            { error: false }
+        );
+        return;
+    }
+    const check = orgHelpers ? orgHelpers.validateAvatarFile(file) : { valid: true };
+    if (!check.valid) {
+        setCoverEditStatus(check.error, { error: true });
+        event.target.value = '';
+        return;
+    }
+    coverEditPendingFile = file;
+    coverEditRemoveRequested = false;
+    revokeCoverEditPreviewUrl();
+    coverEditPreviewObjectUrl = URL.createObjectURL(file);
+    updateCoverEditPreview(coverEditPreviewObjectUrl);
+    setCoverEditStatus('');
+}
+
+function handleCoverEditRemove() {
+    coverEditPendingFile = null;
+    coverEditRemoveRequested = true;
+    revokeCoverEditPreviewUrl();
+    const input = document.getElementById('cover-edit-file');
+    if (input) input.value = '';
+    updateCoverEditPreview('');
+    setCoverEditStatus('Cover will be removed when you save.', { error: false });
+}
+
+async function handleCoverEditSave() {
+    const saveBtn = document.getElementById('cover-edit-save-btn');
+    if (saveBtn) saveBtn.disabled = true;
+
+    try {
+        if (coverEditRemoveRequested) {
+            setCoverEditStatus('Saving...');
+            await persistPersonalProfile({ coverImageUrl: '' });
+        } else if (coverEditPendingFile) {
+            const orgHelpers = (typeof GloweOrganizations !== 'undefined') ? GloweOrganizations : null;
+            let fileToUpload = coverEditPendingFile;
+            if (orgHelpers && typeof orgHelpers.prepareAvatarUploadFile === 'function') {
+                const prepared = await orgHelpers.prepareAvatarUploadFile(coverEditPendingFile);
+                if (!prepared.ok) {
+                    setCoverEditStatus(prepared.error, { error: true });
+                    return;
+                }
+                fileToUpload = prepared.file;
+            } else {
+                const check = orgHelpers ? orgHelpers.validateAvatarFile(coverEditPendingFile) : { valid: true };
+                if (!check.valid) {
+                    setCoverEditStatus(check.error, { error: true });
+                    return;
+                }
+            }
+            setCoverEditStatus('Uploading...');
+            const coverImageUrl = await uploadCoverImage(fileToUpload);
+            await persistPersonalProfile({ coverImageUrl });
+        } else {
+            closeCoverEditModal();
+            return;
+        }
+
+        closeCoverEditModal();
+        refreshOwnedProfileViews();
+        showToast('Profile saved');
+    } catch (error) {
+        setCoverEditStatus(error.message || 'Could not save cover photo.', { error: true });
     } finally {
         if (saveBtn) saveBtn.disabled = false;
     }
@@ -5038,6 +5331,7 @@ function selectCommunityHighlights(opportunities, posts, limit = 6) {
         if (postItems[i]) mixed.push(postItems[i]);
         if (oppItems[i]) mixed.push(oppItems[i]);
     }
+    if (limit == null || limit === Infinity) return mixed;
     return mixed.slice(0, limit);
 }
 
@@ -5120,6 +5414,11 @@ function renderMemberHomeMarkup(firstName, activity, highlights, options = {}) {
     const highlightsBody = highlights.length
         ? highlights.map(renderMemberHighlight).join('')
         : '<div class="empty-state"><h3>The community is just getting started</h3><p>Be the first to share a post or an opportunity others can join.</p><a class="btn btn-primary btn-small" href="pages/community.html">Start the conversation</a></div>';
+    const communityToolbar = communityOnly ? '' : `
+                <div class="section-toolbar">
+                    <div><h2>What is happening on GloWe</h2></div>
+                    <a class="btn btn-outline btn-small" href="pages/community.html">See all</a>
+                </div>`;
     const personalSections = communityOnly ? '' : `
             <section class="member-hero member-home-personal">
                 <div class="member-hero-copy">
@@ -5144,10 +5443,7 @@ function renderMemberHomeMarkup(firstName, activity, highlights, options = {}) {
         <div class="container member-home-inner${communityOnly ? ' member-home-community-only' : ''}">
             ${personalSections}
             <section class="member-section member-home-community">
-                <div class="section-toolbar">
-                    <div><h2>What is happening on GloWe</h2></div>
-                    <a class="btn btn-outline btn-small" href="pages/community.html">See all</a>
-                </div>
+                ${communityToolbar}
                 <div class="member-feed-grid">${highlightsBody}</div>
             </section>
         </div>`;
@@ -5172,7 +5468,7 @@ async function initMemberHome() {
     const allPosts = getAllCommunityPosts();
     const communityOnly = isGloweMobileHomeViewport();
     const activity = communityOnly ? [] : selectMemberActivity(allPosts, user ? user.id : '');
-    const highlightLimit = communityOnly ? 9 : 6;
+    const highlightLimit = communityOnly ? null : 6;
     const highlights = selectCommunityHighlights(getAllOpportunitiesForDisplay(), allPosts, highlightLimit);
     root.classList.toggle('member-home-community-only', communityOnly);
     root.innerHTML = renderMemberHomeMarkup(firstName, activity, highlights, { communityOnly });
@@ -6411,6 +6707,7 @@ function _adaptDbProfile(p, projects) {
         orgDescription: p.orgDescription || '',
         orgField: p.orgField || '',
         avatarUrl: p.avatarUrl || '',
+        coverImageUrl: profileCoverImageUrl(p),
         _raw: p,
         isOwnerView: false
     };
@@ -6525,7 +6822,7 @@ function _renderProfileContent(profile, container) {
 
     container.innerHTML = `
         <section class="profile-cover profile-story-cover">
-            <div class="profile-cover-band"></div>
+            ${renderSocialCover(profile, { editable: isOwnerView, band: true })}
             <div class="profile-hero">
                 ${avatarHtml}
                 <div class="profile-summary">
@@ -7399,6 +7696,11 @@ function initMyApplicationsPage() {
         const bioText = bioSrc.text || profile.shortLine || profile.about || profile.story || 'Your GloWe profile is ready to be completed.';
         const chipHtml = chip ? renderProfileStatusChipHtml(chip) : '';
         const cameraIcon = ux ? ux.CAMERA_ICON_SVG : '';
+        const isOrganization = profile.accountType === 'organization';
+        const profileTypeHtml = isOrganization
+            ? `<span class="profile-type">${escapeHtml(profile.type || 'Organization')}</span>`
+            : '';
+        const editIcon = '<svg xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M12 20h9"/><path d="M16.5 3.5a2.1 2.1 0 0 1 3 3L7 19l-4 1 1-4Z"/></svg>';
         // FR-GLOWE-024 — EN UI prefers display_name_en; HE prefers primary Hebrew name.
         const heroDisplayName = (typeof GloweLocalizedName !== 'undefined')
             ? GloweLocalizedName.localizedProfileName(profile, gloweReaderLang())
@@ -7408,7 +7710,7 @@ function initMyApplicationsPage() {
             <div class="personal-shell personal-shell--compact">
                 <div class="personal-main">
                     ${showProfileSkeleton ? personalProfileSkeletonHero() : `<section class="social-profile-hero" id="personal-profile">
-                        <div class="social-cover"></div>
+                        ${renderSocialCover(profile, { editable: true })}
                         <div class="social-profile-body">
                             <div class="social-profile-head">
                                 <div class="social-avatar-wrap">
@@ -7417,10 +7719,13 @@ function initMyApplicationsPage() {
                                 </div>
                                 <div class="social-profile-copy">
                                     <div class="social-profile-tags">
-                                        <span class="profile-type">${escapeHtml(profile.type || 'Personal workspace')}</span>
+                                        ${profileTypeHtml}
                                         ${chipHtml}
                                     </div>
-                                    <h2 ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(heroDisplayName)}</h2>
+                                    <h2 class="social-profile-name-row">
+                                        <span ${bilingualNameAttrs(namePair.primary, namePair.english)}>${escapeHtml(heroDisplayName)}</span>
+                                        <button type="button" class="profile-name-edit-btn" aria-label="Edit profile" title="Edit profile" onclick="openEditProfile()">${editIcon}</button>
+                                    </h2>
                                     <div class="social-profile-bio" data-tr-card data-tr-type="glowe_profile" data-tr-id="${escapeHtml(profile.id || '')}">
                                         <p data-tr-field="${bioSrc.field || 'about'}">${escapeHtml(bioText)}</p>
                                     </div>
@@ -7432,10 +7737,8 @@ function initMyApplicationsPage() {
                                 <span>${escapeHtml(profile.availability || 'Team size not added yet')}</span>
                             </div>
                             <div class="personal-actions">
-                                <button class="btn btn-primary" type="button" onclick="openEditProfile()">Edit Profile</button>
                                 <button class="btn btn-outline" type="button" onclick="openPersonalProjectModal()">Add Project</button>
                                 <a class="btn btn-outline" href="community.html">Write Post</a>
-                                <a class="btn btn-outline" href="settings.html">Settings</a>
                             </div>
                         </div>
                     </section>`}
@@ -7467,12 +7770,12 @@ function initMyApplicationsPage() {
                             <div class="profile-section-heading">
                                 <span>01</span>
                                 <h2>Profile From Questionnaire</h2>
-                                ${sessionStorage.getItem(QUESTIONNAIRE_BADGE_DISMISSED_KEY) === '1' ? '' : `
+                                ${isOrganization && sessionStorage.getItem(QUESTIONNAIRE_BADGE_DISMISSED_KEY) !== '1' ? `
                                     <span class="questionnaire-type-badge">
-                                        ${escapeHtml(profile.accountType === 'organization' ? 'Organization' : 'Individual')}
+                                        ${escapeHtml('Organization')}
                                         <button type="button" class="questionnaire-badge-close" onclick="dismissQuestionnaireBadge()" aria-label="Dismiss">&times;</button>
                                     </span>
-                                `}
+                                ` : ''}
                                 <button type="button" class="section-collapse-toggle" onclick="toggleQuestionnaireProfile()" aria-expanded="${!isQuestionnaireCollapsed()}">
                                     ${isQuestionnaireCollapsed() ? 'Show details' : 'Hide details'}
                                     <span class="collapse-chevron" aria-hidden="true">▾</span>
@@ -7771,8 +8074,12 @@ const GLOWE_TRANSLATIONS = {
         'Needs changes': 'דרושים שינויים',
         'Save profile': 'שמירת פרופיל',
         'Change profile photo': 'שינוי תמונת פרופיל',
+        'Change cover photo': 'שינוי תמונת נושא',
         'Remove photo': 'הסרת תמונה',
+        'Remove cover': 'הסרת תמונת נושא',
         'Save photo': 'שמירת תמונה',
+        'Save cover': 'שמירת תמונת נושא',
+        'Cover will be removed when you save.': 'תמונת הנושא תוסר לאחר השמירה.',
         'Profile saved': 'הפרופיל נשמר',
         'Could not save profile.': 'לא ניתן לשמור את הפרופיל.',
         'Replace': 'החלפה',
@@ -9055,6 +9362,10 @@ const GLOWE_TRANSLATIONS = {
         "Needs changes": "Требуются изменения",
         "Save profile": "Сохранить профиль",
         "Change profile photo": "Изменить фото профиля",
+        "Change cover photo": "Изменить обложку",
+        "Remove cover": "Удалить обложку",
+        "Save cover": "Сохранить обложку",
+        "Cover will be removed when you save.": "Обложка будет удалена при сохранении.",
         "Remove photo": "Удалить фото",
         "Save photo": "Сохранить фото",
         "Profile saved": "Профиль сохранён",
@@ -10312,6 +10623,10 @@ const GLOWE_TRANSLATIONS = {
         "Needs changes": "يحتاج إلى تعديلات",
         "Save profile": "حفظ الملف الشخصي",
         "Change profile photo": "تغيير صورة الملف الشخصي",
+        "Change cover photo": "تغيير صورة الغلاف",
+        "Remove cover": "إزالة الغلاف",
+        "Save cover": "حفظ الغلاف",
+        "Cover will be removed when you save.": "ستتم إزالة الغلاف عند الحفظ.",
         "Remove photo": "إزالة الصورة",
         "Save photo": "حفظ الصورة",
         "Profile saved": "تم حفظ الملف الشخصي",
@@ -11569,6 +11884,10 @@ const GLOWE_TRANSLATIONS = {
         "Needs changes": "ማስተካከያ ያስፈልገዋል",
         "Save profile": "መገለጫን አስቀምጥ",
         "Change profile photo": "የመገለጫ ፎቶ ይቀይሩ",
+        "Change cover photo": "የሽፋን ፎቶ ይቀይሩ",
+        "Remove cover": "ሽፋኑን አስወግድ",
+        "Save cover": "ሽፋኑን አስቀምጥ",
+        "Cover will be removed when you save.": "ሲያስቀምጡ ሽፋኑ ይወገዳል።",
         "Remove photo": "ፎቶውን አስወግድ",
         "Save photo": "ፎቶውን አስቀምጥ",
         "Profile saved": "መገለጫው ተቀምጧል",
@@ -13017,6 +13336,7 @@ function initSettingsPage() {
                     <p><strong>Account type</strong><span>${escapeHtml(profile.type || 'Community member')}</span></p>
                 </div>
                 <a class="btn btn-outline btn-small" href="my-applications.html">Open Personal Area</a>
+                <button class="btn btn-primary btn-small" type="button" onclick="openEditProfile()">Edit Profile</button>
             </article>
 
             <article class="profile-section-card">
@@ -13320,6 +13640,7 @@ function resolveGlowePage(pathname) {
 document.addEventListener('DOMContentLoaded', function() {
     applyGloweDirection();
     ensureGlobalUI();
+    if (typeof updateAuthUI === 'function') updateAuthUI();
     normalizeMainNavigation();
     refreshMessagesBadge();
     if (localStorage.getItem('gloweLowDataMode') === 'true') {
